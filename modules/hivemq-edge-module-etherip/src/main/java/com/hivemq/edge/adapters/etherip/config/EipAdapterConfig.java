@@ -22,7 +22,9 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class EipAdapterConfig implements ProtocolAdapterConfig {
 
@@ -91,6 +93,11 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull String getId() {
         return id;
+    }
+
+    @Override
+    public @NotNull List<String> calculateAllUsedTags() {
+        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toList());
     }
 
     public @NotNull String getHost() {

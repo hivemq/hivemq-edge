@@ -136,6 +136,11 @@ public class SchemaNodeGeneratorTest {
         public @NotNull String getId() {
             return id;
         }
+
+        @Override
+        public @NotNull List<String> calculateAllUsedTags() {
+            return List.of();
+        }
     }
 
     static class TestNestedEntity implements ProtocolAdapterConfig {
@@ -161,6 +166,11 @@ public class SchemaNodeGeneratorTest {
         @Override
         public @NotNull String getId() {
             return id;
+        }
+
+        @Override
+        public @NotNull List<String> calculateAllUsedTags() {
+            return List.of();
         }
     }
 }

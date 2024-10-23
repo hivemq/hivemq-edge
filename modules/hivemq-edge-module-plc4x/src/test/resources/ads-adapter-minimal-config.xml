@@ -30,7 +30,6 @@
                     <adsToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <tagName>tag-name</tagName>
-                        <tagAddress>tag-address</tagAddress>
                         <dataType>BOOL</dataType>
                     </adsToMqttMapping>
                 </adsToMqttMappings>

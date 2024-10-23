@@ -39,7 +39,6 @@
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <tagName>tag-name</tagName>
-                        <tagAddress>tag-address</tagAddress>
                         <dataType>WORD</dataType>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -59,7 +58,6 @@
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <tagName>tag-name</tagName>
-                        <tagAddress>tag-address</tagAddress>
                         <dataType>WORD</dataType>
                         <mqttUserProperties>
                             <mqttUserProperty>

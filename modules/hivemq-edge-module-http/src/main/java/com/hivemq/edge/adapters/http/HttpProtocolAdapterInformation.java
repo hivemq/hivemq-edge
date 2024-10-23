@@ -37,6 +37,8 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapterInformation.class);
     public static final ProtocolAdapterInformation INSTANCE = new HttpProtocolAdapterInformation();
+    public static final String PROTOCOL_ID = "http";
+
 
     protected HttpProtocolAdapterInformation() {
     }
@@ -48,7 +50,7 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getProtocolId() {
-        return "http";
+        return PROTOCOL_ID;
     }
 
     @Override

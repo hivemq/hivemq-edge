@@ -21,6 +21,7 @@ import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.connection.ConnectionPersistence;
+import com.hivemq.persistence.domain.DomainTagPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
@@ -41,6 +42,8 @@ public class Persistences {
     private final @NotNull ConnectionPersistence connectionPersistence;
     private final @NotNull ScheduledCleanUpService scheduledCleanUpService;
     private final @NotNull MessageDroppedService messageDroppedService;
+    private final @NotNull DomainTagPersistence domainTagPersistence;
+
 
     @Inject
     public Persistences(
@@ -53,7 +56,8 @@ public class Persistences {
             final @NotNull RetainedMessagePersistence retainedMessagePersistence,
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull ScheduledCleanUpService scheduledCleanUpService,
-            final @NotNull MessageDroppedService messageDroppedService) {
+            final @NotNull MessageDroppedService messageDroppedService,
+            final @NotNull DomainTagPersistence domainTagPersistence) {
         this.clientQueueLocalPersistence = clientQueueLocalPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
@@ -64,6 +68,7 @@ public class Persistences {
         this.connectionPersistence = connectionPersistence;
         this.scheduledCleanUpService = scheduledCleanUpService;
         this.messageDroppedService = messageDroppedService;
+        this.domainTagPersistence = domainTagPersistence;
     }
 
     public @NotNull ClientQueueLocalPersistence queueLocal() {
@@ -100,5 +105,9 @@ public class Persistences {
 
     public @NotNull ClientQueuePersistence clientQueuePersistence() {
         return clientQueuePersistence;
+    }
+
+    public @NotNull DomainTagPersistence domainTagPersistence() {
+        return domainTagPersistence;
     }
 }

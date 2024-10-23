@@ -31,11 +31,7 @@
                         <mqttTopic>my/topic</mqttTopic>
                         <mqttQos>1</mqttQos>
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                        <addressRange>
-                            <startIdx>11</startIdx>
-                            <readType>HOLDING_REGISTERS</readType>
-                            <unitId>0</unitId>
-                        </addressRange>
+                        <tagName>tag1</tagName>
                         <mqttUserProperties>
                             <mqttUserProperty>
                                 <name>name</name>
@@ -48,17 +44,12 @@
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <dataType>INT_64</dataType>
                     </modbusToMqttMapping>
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
                         <mqttQos>1</mqttQos>
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                        <addressRange>
-                            <startIdx>16</startIdx>
-                            <readType>HOLDING_REGISTERS</readType>
-                            <unitId>0</unitId>
-                        </addressRange>
+                        <tagName>tag2</tagName>
                         <mqttUserProperties>
                             <mqttUserProperty>
                                 <name>name</name>
@@ -71,11 +62,9 @@
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <dataType>INT_32</dataType>
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>
             </modbusToMqtt>
-
         </modbus>
     </protocol-adapters>
 </hivemq>

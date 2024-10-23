@@ -27,13 +27,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -55,7 +55,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -78,6 +79,8 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics = mock();
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private @NotNull ProtocolAdapterManager protocolAdapterManager;
@@ -95,8 +98,7 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
-                protocolAdapterWritingService,
-                executorService);
+                protocolAdapterWritingService, executorService, protocolAdapterTagService);
     }
 
     @AfterEach

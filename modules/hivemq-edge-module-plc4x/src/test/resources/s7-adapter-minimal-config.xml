@@ -27,7 +27,6 @@
                     <s7ToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <tagName>tag-name</tagName>
-                        <tagAddress>tag-address</tagAddress>
                         <dataType>BOOL</dataType>
                     </s7ToMqttMapping>
                 </s7ToMqttMappings>

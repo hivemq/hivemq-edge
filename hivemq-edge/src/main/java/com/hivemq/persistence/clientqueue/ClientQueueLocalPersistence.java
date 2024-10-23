@@ -108,6 +108,32 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
             int bucketIndex);
 
     /**
+     * Returns a batch of PUBLISHes and marks them by setting packet identifiers. The size of the batch is limited by 2
+     * factors:
+     * <li>
+     * <ul>The count of PUBLISHes will be less than or equal to the size of the given packet id list</ul>
+     * <ul>The estimated memory usage will be approximately less than or equal to the given bytes limit but never less
+     * than one publish</ul>
+     * </li>
+     * <p>
+     * IMPORTANT: No messages are altered in the process
+     *
+     * @param queueId     for which to read the PUBLISHes
+     * @param shared      is true if the queueId is actually a shared subscription false if it is a client ID
+     * @param bytesLimit  the estimated memory limit of the batch
+     * @param bucketIndex provided by the single writer
+     * @param maxMessages maximal amount of publishes that will be fetched.
+     * @return a list of queued messages with the provided ID's
+     */
+    @NotNull
+    ImmutableList<PUBLISH> peek(
+            @NotNull String queueId,
+            boolean shared,
+            long bytesLimit,
+            final int maxMessages,
+            int bucketIndex);
+
+    /**
      * Returns a batch of PUBLISHes that already have a packet identifier. The size of the batch is limited by 2
      * factors:
      * <li>

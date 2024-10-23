@@ -42,11 +42,7 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<Void> add(
-            @NotNull String queueId,
-            boolean shared,
-            @NotNull PUBLISH publish,
-            boolean retained,
-            long queueLimit);
+            @NotNull String queueId, boolean shared, @NotNull PUBLISH publish, boolean retained, long queueLimit);
 
     /**
      * Add a list of publishes to the queue.
@@ -80,10 +76,23 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<ImmutableList<PUBLISH>> readNew(
-            @NotNull String queueId,
-            boolean shared,
-            @NotNull ImmutableIntArray packetIds,
-            long byteLimit);
+            @NotNull String queueId, boolean shared, @NotNull ImmutableIntArray packetIds, long byteLimit);
+
+    /**
+     * Read publishes that are not yet in-flight.
+     * Sets the given packet ID's for the returned publishes if qos > 0.
+     * The amount of packet ID's is also the limit for the read batch.
+     *
+     * @param queueId     of the queue
+     * @param shared      true if the queue is for a shared subscription
+     * @param byteLimit   of the read batch
+     * @param maxMessages the maximal amount of publishes that are returned.
+     * @return The read publishes
+     */
+    @NotNull
+    ListenableFuture<ImmutableList<PUBLISH>> peek(
+            @NotNull String queueId, boolean shared, long byteLimit, final int maxMessages);
+
 
     /**
      * Read publishes and pubrels that are in-flight.
@@ -95,9 +104,7 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<ImmutableList<MessageWithID>> readInflight(
-            @NotNull String client,
-            long byteLimit,
-            int messageLimit);
+            @NotNull String client, long byteLimit, int messageLimit);
 
     /**
      * Remove the entry for a given packet ID.
@@ -162,9 +169,7 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<ImmutableList<PUBLISH>> readShared(
-            @NotNull String sharedSubscription,
-            int messageLimit,
-            long byteLimit);
+            @NotNull String sharedSubscription, int messageLimit, long byteLimit);
 
     /**
      * Remove a PUBLISH which has the same unique ID as the one that is provided.

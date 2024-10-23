@@ -30,14 +30,15 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -60,7 +61,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,6 +94,7 @@ public class ProtocolAdapterManager {
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
     private final @NotNull Object lock = new Object();
 
@@ -108,7 +112,8 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
             final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
-            final @NotNull ExecutorService executorService) {
+            final @NotNull ExecutorService executorService,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -122,6 +127,7 @@ public class ProtocolAdapterManager {
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
 
@@ -230,12 +236,11 @@ public class ProtocolAdapterManager {
 
         implementations.add(SimulationProtocolAdapterFactory.class);
 
-        for (final Class<? extends ProtocolAdapterFactory> facroryClass : implementations) {
+        for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
             try {
-                final ProtocolAdapterFactory<?> protocolAdapterFactory =
-                        facroryClass.getDeclaredConstructor(boolean.class).newInstance(writingEnabled());
+                final ProtocolAdapterFactory<?> protocolAdapterFactory = findConstructorAndInitialize(factoryClass);
                 if (log.isDebugEnabled()) {
-                    log.debug("Discovered protocol adapter implementation {}.", facroryClass.getName());
+                    log.debug("Discovered protocol adapter implementation {}.", factoryClass.getName());
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
@@ -253,6 +258,36 @@ public class ProtocolAdapterManager {
                                 protocolAdapterFactory.getInformation().getProtocolName() +
                                 "'")
                         .collect(Collectors.joining(", ")));
+    }
+
+    private ProtocolAdapterFactory<?> findConstructorAndInitialize(final @NotNull Class<? extends ProtocolAdapterFactory> factoryClass)
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        final Constructor<?>[] declaredConstructors = factoryClass.getDeclaredConstructors();
+        // check all possible constructors to enable backwards compatibility
+        for (final Constructor<?> declaredConstructor : declaredConstructors) {
+            final Parameter[] parameters = declaredConstructor.getParameters();
+            // likely custom protocol adapter implementations still have the old default no-arg constructor.
+            if (parameters.length == 0) {
+                return factoryClass.getDeclaredConstructor().newInstance();
+            }
+
+            // this should not be out in the wild, but this was the constructor format after adding bi-directional adapters
+            if (parameters.length == 1 && parameters[0].getType().equals(boolean.class)) {
+                return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
+                        .newInstance(writingEnabled(), protocolAdapterTagService);
+            }
+
+            // current format: ProtocolAdapterFactoryInput expandable interface that will be backwards co patible if methods get added.
+            if (parameters.length == 1 && parameters[0].getType().equals(ProtocolAdapterFactoryInput.class)) {
+                final ProtocolAdapterFactoryInput protocolAdapterFactoryInput =
+                        new ProtocolAdapterFactoryInputImpl(writingEnabled(), protocolAdapterTagService, eventService);
+                return factoryClass.getDeclaredConstructor(ProtocolAdapterFactoryInput.class)
+                        .newInstance(protocolAdapterFactoryInput);
+            }
+
+            log.warn("No fitting constructor was found to initialize adapter factory class '{}'.", factoryClass);
+        }
+        throw new IllegalAccessException();
     }
 
     public @Nullable ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
@@ -318,8 +353,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
-        if (writingEnabled() &&
-                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        if (writingEnabled() && protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
@@ -347,7 +381,8 @@ public class ProtocolAdapterManager {
                         moduleServices.adapterPublishService(),
                         adapterSubscription,
                         eventService,
-                        jsonPayloadDefaultCreator);
+                        jsonPayloadDefaultCreator,
+                        protocolAdapterTagService);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }
@@ -563,7 +598,9 @@ public class ProtocolAdapterManager {
                             protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
-                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(), eventService);
+                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
+                            eventService,
+                            moduleServices.protocolAdapterTagService());
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,

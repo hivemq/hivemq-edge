@@ -28,11 +28,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public class ModbusProtocolAdapterInformation
-        implements ProtocolAdapterInformation {
+public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ModbusProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterInformation.class);
+    public static final @NotNull String PROTOCOL_ID = "modbus";
 
     protected ModbusProtocolAdapterInformation() {
     }
@@ -44,7 +44,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolId() {
-        return "modbus";
+        return PROTOCOL_ID;
     }
 
     @Override

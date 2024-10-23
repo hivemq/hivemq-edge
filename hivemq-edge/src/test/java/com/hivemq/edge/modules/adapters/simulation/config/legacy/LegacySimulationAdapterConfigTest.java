@@ -16,34 +16,50 @@
 package com.hivemq.edge.modules.adapters.simulation.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("unchecked")
 class LegacySimulationAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -54,7 +70,7 @@ class LegacySimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false);
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
                 (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
 
@@ -98,7 +114,7 @@ class LegacySimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false);
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
                 (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
 

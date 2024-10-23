@@ -15,14 +15,12 @@
  */
 package com.hivemq.edge.adapters.modbus.config;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +46,13 @@ public class ModbusToMqttMapping implements PollingContext {
                        numberMax = 2,
                        defaultValue = "0")
     private final int qos;
+
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "tagName",
+                       description = "The name of the tag that holds the address data.",
+                       format = ModuleConfigField.FieldType.URI,
+                       required = true)
+    private final @NotNull String tagName;
 
     @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
@@ -76,38 +81,28 @@ public class ModbusToMqttMapping implements PollingContext {
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
-    @JsonProperty(value = "addressRange", required = true)
-    @ModuleConfigField(title = "Address Range",
-                       description = "Define the start and end index values for your memory addresses",
-                       required = true)
-    private final @NotNull AddressRange addressRange;
 
-    @JsonProperty("dataType")
-    @ModuleConfigField(title = "Data Type", description = "Define how the read registers are interpreted", defaultValue = "INT_16")
-    private final @NotNull ModbusDataType dataType;
 
     @JsonCreator
     public ModbusToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
-            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange,
-            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) {
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
+        this.tagName = tagName;
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
-        this.addressRange = addressRange;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
-        this.dataType = requireNonNullElse(dataType, ModbusDataType.INT_16);
     }
 
-    public @NotNull AddressRange getAddressRange() {
-        return addressRange;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
     @Override
@@ -138,9 +133,5 @@ public class ModbusToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
-    }
-
-    public @NotNull ModbusDataType getDataType() {
-        return dataType;
     }
 }

@@ -25,11 +25,7 @@
                 <modbusToMqttMappings>
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <addressRange>
-                            <startIdx>11</startIdx>
-                            <readType>HOLDING_REGISTERS</readType>
-                            <unitId>0</unitId>
-                        </addressRange>
+                        <tagName>tag1</tagName>
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>
             </modbusToMqtt>

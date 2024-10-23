@@ -34,7 +34,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -46,16 +45,15 @@ public class ModbusClient {
 
     public static final int DEFAULT_MAX_INPUT_REGISTERS = 125;
     public static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
-    private final @NotNull DataPointFactory dataPointFactory;
 
-    private final ModbusTcpMaster modbusClient;
+    private final @NotNull DataPointFactory dataPointFactory;
+    private final @NotNull ModbusTcpMaster modbusClient;
 
     public ModbusClient(
             final @NotNull ModbusAdapterConfig adapterConfig, final @NotNull DataPointFactory dataPointFactory) {
         this.dataPointFactory = dataPointFactory;
         final ModbusTcpMasterConfig config =
-                new ModbusTcpMasterConfig.Builder(adapterConfig.getHost())
-                        .setPort(adapterConfig.getPort())
+                new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
                         .setInstanceId(adapterConfig.getId())
                         .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis()))
                         .build();
@@ -66,7 +64,8 @@ public class ModbusClient {
         return modbusClient.isConnected();
     }
 
-    public CompletableFuture<Void> connect() {
+
+    public @NotNull CompletableFuture<Void> connect() {
         return modbusClient.connect().thenApply(unused -> null);
     }
 
@@ -74,82 +73,85 @@ public class ModbusClient {
      * Coils are 1bit.
      */
     public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int unitId) {
-        return modbusClient
-            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
-            .thenApply(response -> {
-                try {
-                    final ByteBuf buf = response.getCoilStatus();
-                    return dataPointFactory.create("registers-" + startIdx,
-                            convert(buf, ModbusDataType.BOOL, 1, false));
-                } finally {
-                    ReferenceCountUtil.release(response);
-                }
-            });
+        return modbusClient.<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx,
+                Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId).thenApply(response -> {
+            try {
+                final ByteBuf buf = response.getCoilStatus();
+                return dataPointFactory.create("registers-" + startIdx, convert(buf, ModbusDataType.BOOL, 1, false));
+            } finally {
+                ReferenceCountUtil.release(response);
+            }
+        });
     }
 
     /**
      * Discrete registers are 1bit.
      */
     public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int unitId) {
-        return modbusClient
-                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(1,
-                        DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
-                .thenApply(response -> {
-                    try {
-                        final ByteBuf buf = response.getInputStatus();
-                        return dataPointFactory.create("registers-" + startIdx,
-                                convert(buf, ModbusDataType.BOOL, 1, false));
-                    } finally {
-                        ReferenceCountUtil.release(response);
-                    }
-                });
+        return modbusClient.<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx,
+                Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId).thenApply(response -> {
+            try {
+                final ByteBuf buf = response.getInputStatus();
+                return dataPointFactory.create("registers-" + startIdx, convert(buf, ModbusDataType.BOOL, 1, false));
+            } finally {
+                ReferenceCountUtil.release(response);
+            }
+        });
     }
 
     /**
      * Holding registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
+    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(
+            final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
 
-        return modbusClient
-                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(dataType.nrOfRegistersToRead,
-                        DEFAULT_MAX_INPUT_REGISTERS)), unitId)
-                .thenApply(response -> {
-                    try {
-                        final ByteBuf buf = response.getRegisters();
-                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + dataType.nrOfRegistersToRead - 1),
-                                convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
-                    } finally {
-                        ReferenceCountUtil.release(response);
-                    }
-                });
+        return modbusClient.<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx,
+                Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)), unitId).thenApply(response -> {
+            try {
+                final ByteBuf buf = response.getRegisters();
+                return dataPointFactory.create("registers-" +
+                                startIdx +
+                                "-" +
+                                (startIdx + dataType.nrOfRegistersToRead - 1),
+                        convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
+            } finally {
+                ReferenceCountUtil.release(response);
+            }
+        });
     }
 
     /**
      * Inout registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
-        return modbusClient
-                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(dataType.nrOfRegistersToRead,
-                        DEFAULT_MAX_INPUT_REGISTERS)), unitId)
-                .thenApply(response -> {
-                    try {
-                        final ByteBuf buf = response.getRegisters();
-                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + dataType.nrOfRegistersToRead - 1),
-                                convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
-                    } finally {
-                        ReferenceCountUtil.release(response);
-                    }
-                });
+    public @NotNull CompletableFuture<DataPoint> readInputRegisters(
+            final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
+        return modbusClient.<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx,
+                Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)), unitId).thenApply(response -> {
+            try {
+                final ByteBuf buf = response.getRegisters();
+                return dataPointFactory.create("registers-" +
+                                startIdx +
+                                "-" +
+                                (startIdx + dataType.nrOfRegistersToRead - 1),
+                        convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
+            } finally {
+                ReferenceCountUtil.release(response);
+            }
+        });
     }
 
-    public CompletableFuture<Void> disconnect() {
+
+    public @NotNull CompletableFuture<Void> disconnect() {
         //-- If the client is manually disconnected before connection established ensure we still call into the client
         //-- to shut it all down.
         return modbusClient.disconnect().thenApply(t -> null);
     }
 
     private @NotNull Object convert(
-            final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType, final int count, final boolean flipRegisters) {
+            final @NotNull ByteBuf buffi,
+            final @NotNull ModbusDataType dataType,
+            final int count,
+            final boolean flipRegisters) {
         switch (dataType) {
             case BOOL:
                 return buffi.readBoolean();
@@ -158,60 +160,60 @@ public class ModbusClient {
             case UINT_16:
                 return Short.toUnsignedInt(buffi.readShort());
             case INT_32:
-                if(flipRegisters) {
-                    byte b1 = buffi.readByte();
-                    byte b2 = buffi.readByte();
-                    byte b3 = buffi.readByte();
-                    byte b4 = buffi.readByte();
-                    return Unpooled.wrappedBuffer(new byte[] {b4 ,b3, b2, b1}).readInt();
+                if (flipRegisters) {
+                    final byte b1 = buffi.readByte();
+                    final byte b2 = buffi.readByte();
+                    final byte b3 = buffi.readByte();
+                    final byte b4 = buffi.readByte();
+                    return Unpooled.wrappedBuffer(new byte[]{b4, b3, b2, b1}).readInt();
                 } else {
                     return buffi.readInt();
                 }
             case UINT_32:
-                if(flipRegisters) {
-                    byte b1 = buffi.readByte();
-                    byte b2 = buffi.readByte();
-                    byte b3 = buffi.readByte();
-                    byte b4 = buffi.readByte();
-                    return Unpooled.wrappedBuffer(new byte[] {b3 ,b4, b1, b2}).readUnsignedInt();
+                if (flipRegisters) {
+                    final byte b1 = buffi.readByte();
+                    final byte b2 = buffi.readByte();
+                    final byte b3 = buffi.readByte();
+                    final byte b4 = buffi.readByte();
+                    return Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readUnsignedInt();
                 } else {
                     return buffi.readUnsignedInt();
                 }
             case INT_64:
-                if(flipRegisters) {
-                    byte b1 = buffi.readByte();
-                    byte b2 = buffi.readByte();
-                    byte b3 = buffi.readByte();
-                    byte b4 = buffi.readByte();
-                    byte b5 = buffi.readByte();
-                    byte b6 = buffi.readByte();
-                    byte b7 = buffi.readByte();
-                    byte b8 = buffi.readByte();
-                    return Unpooled.wrappedBuffer(new byte[] {b7 ,b8, b5 ,b6, b3 ,b4, b1, b2}).readUnsignedInt();
+                if (flipRegisters) {
+                    final byte b1 = buffi.readByte();
+                    final byte b2 = buffi.readByte();
+                    final byte b3 = buffi.readByte();
+                    final byte b4 = buffi.readByte();
+                    final byte b5 = buffi.readByte();
+                    final byte b6 = buffi.readByte();
+                    final byte b7 = buffi.readByte();
+                    final byte b8 = buffi.readByte();
+                    return Unpooled.wrappedBuffer(new byte[]{b7, b8, b5, b6, b3, b4, b1, b2}).readUnsignedInt();
                 } else {
                     return buffi.readLong();
                 }
             case FLOAT_32:
-                if(flipRegisters) {
-                    byte b1 = buffi.readByte();
-                    byte b2 = buffi.readByte();
-                    byte b3 = buffi.readByte();
-                    byte b4 = buffi.readByte();
-                    return Unpooled.wrappedBuffer(new byte[] {b3 ,b4, b1, b2}).readFloat();
+                if (flipRegisters) {
+                    final byte b1 = buffi.readByte();
+                    final byte b2 = buffi.readByte();
+                    final byte b3 = buffi.readByte();
+                    final byte b4 = buffi.readByte();
+                    return Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readFloat();
                 } else {
                     return buffi.readFloat();
                 }
             case FLOAT_64:
-                if(flipRegisters) {
-                    byte b1 = buffi.readByte();
-                    byte b2 = buffi.readByte();
-                    byte b3 = buffi.readByte();
-                    byte b4 = buffi.readByte();
-                    byte b5 = buffi.readByte();
-                    byte b6 = buffi.readByte();
-                    byte b7 = buffi.readByte();
-                    byte b8 = buffi.readByte();
-                    return Unpooled.wrappedBuffer(new byte[] {b7 ,b8, b5 ,b6, b3 ,b4, b1, b2}).readUnsignedInt();
+                if (flipRegisters) {
+                    final byte b1 = buffi.readByte();
+                    final byte b2 = buffi.readByte();
+                    final byte b3 = buffi.readByte();
+                    final byte b4 = buffi.readByte();
+                    final byte b5 = buffi.readByte();
+                    final byte b6 = buffi.readByte();
+                    final byte b7 = buffi.readByte();
+                    final byte b8 = buffi.readByte();
+                    return Unpooled.wrappedBuffer(new byte[]{b7, b8, b5, b6, b3, b4, b1, b2}).readUnsignedInt();
                 } else {
                     return buffi.readDouble();
                 }

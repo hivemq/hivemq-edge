@@ -23,12 +23,19 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
+
+    @Override
+    public @NotNull List<String> calculateAllUsedTags() {
+        // TODO
+        return List.of();
+    }
 
     public enum ControllerType {
         S7_300,

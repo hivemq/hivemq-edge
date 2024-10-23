@@ -35,6 +35,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new FileProtocolAdapterInformation();
     private static final @NotNull Logger LOG = LoggerFactory.getLogger(FileProtocolAdapterInformation.class);
+    public static final String PROTOCOL_ID = "file";
 
     protected FileProtocolAdapterInformation() {
     }
@@ -46,7 +47,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getProtocolId() {
-        return "file";
+        return PROTOCOL_ID;
     }
 
     @Override

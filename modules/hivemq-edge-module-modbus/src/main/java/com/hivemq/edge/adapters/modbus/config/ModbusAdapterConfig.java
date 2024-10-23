@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 
@@ -87,6 +88,12 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull String getId() {
         return id;
+    }
+
+    @Override
+    public @NotNull List<String> calculateAllUsedTags() {
+        // TODO
+        return List.of();
     }
 
     public @NotNull String getHost() {

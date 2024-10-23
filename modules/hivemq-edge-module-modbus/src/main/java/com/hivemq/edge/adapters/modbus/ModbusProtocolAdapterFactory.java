@@ -18,9 +18,11 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
@@ -28,22 +30,30 @@ import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusPollingContext;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.UUID;
+
+import static com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterInformation.PROTOCOL_ID;
 
 public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public ModbusProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public ModbusProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
+        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
     }
 
     @Override
@@ -65,13 +75,13 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
 
     @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
+                log.warn(
+                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         ModbusProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
@@ -91,23 +101,34 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
         }
     }
 
-    private static @NotNull ModbusAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+    private @NotNull ModbusAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyModbusAdapterConfig legacyModbusAdapterConfig =
                 objectMapper.convertValue(config, LegacyModbusAdapterConfig.class);
 
-        final List<ModbusToMqttMapping> modbusToMqttMappings = legacyModbusAdapterConfig.getSubscriptions()
-                .stream()
-                .map(context -> new ModbusToMqttMapping(context.getMqttTopic(),
-                        context.getMqttQos(),
-                        context.getMessageHandlingOptions(),
-                        context.getIncludeTimestamp(),
-                        context.getIncludeTagNames(),
-                        context.getLegacyProperties(),
-                        new AddressRange(context.getAddressRange().startIdx, ModbusAdu.HOLDING_REGISTERS, 0, false),
-                        ModbusDataType.INT_32))
-                .collect(Collectors.toList());
+
+        final List<ModbusToMqttMapping> modbusToMqttMappings = new ArrayList<>();
+        for (final LegacyModbusPollingContext context : legacyModbusAdapterConfig.getSubscriptions()) {
+            // create tag first
+            final String newTagName = legacyModbusAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
+
+
+            protocolAdapterTagService.addTag(legacyModbusAdapterConfig.getId(),
+                    PROTOCOL_ID,
+                    new ModbusTag(newTagName,
+                            new ModbusTagDefinition(new AddressRange(context.getAddressRange().startIdx,
+                                    ModbusAdu.HOLDING_REGISTERS,
+                                    0,
+                                    false), ModbusDataType.INT_32)));
+            final ModbusToMqttMapping modbusToMqttMapping = new ModbusToMqttMapping(context.getMqttTopic(),
+                    context.getMqttQos(),
+                    newTagName,
+                    context.getMessageHandlingOptions(),
+                    context.getIncludeTimestamp(),
+                    context.getIncludeTagNames(),
+                    context.getLegacyProperties());
+            modbusToMqttMappings.add(modbusToMqttMapping);
+        }
 
         final ModbusToMqttConfig modbusToMqttConfig =
                 new ModbusToMqttConfig(legacyModbusAdapterConfig.getPollingIntervalMillis(),

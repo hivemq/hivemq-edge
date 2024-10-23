@@ -32,6 +32,7 @@ import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
+import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.RootResource;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -80,6 +81,8 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<ITokenGenerator> tokenGenerator;
     private final @NotNull Lazy<ITokenVerifier> tokenVerifier;
     private final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy;
+    private final @NotNull Lazy<SamplingApi> samplingResourceLazy;
+
 
     @Inject
     public ApiResourceRegistry(
@@ -97,7 +100,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers,
             final @NotNull Lazy<ITokenGenerator> tokenGenerator,
             final @NotNull Lazy<ITokenVerifier> tokenVerifier,
-            final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy) {
+            final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy,
+            final @NotNull Lazy<SamplingApi> samplingResourceLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -113,6 +117,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
         this.genericAPIHolderLazy = genericAPIHolderLazy;
+        this.samplingResourceLazy = samplingResourceLazy;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -148,6 +153,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized gatewayApi API resources");
         register(eventApi.get());
         logger.trace("Initialized event API resources");
+        register(samplingResourceLazy.get());
+        logger.trace("Initialized sampling API resources");
     }
 
     protected void registerMappers() {

@@ -29,7 +29,7 @@
                 <assertResponseIsJson>false</assertResponseIsJson>
                 <httpToMqttMappings>
                     <httpToMqttMapping>
-                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+                        <tagName>tag1</tagName>
                         <mqttTopic>my/destination</mqttTopic>
                         <mqttQos>0</mqttQos>
                         <mqttUserProperties>
@@ -58,7 +58,7 @@
                         </httpHeaders>
                     </httpToMqttMapping>
                     <httpToMqttMapping>
-                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+                        <tagName>tag2</tagName>
                         <mqttTopic>my/destination2</mqttTopic>
                         <mqttQos>0</mqttQos>
                         <mqttUserProperties>
@@ -91,7 +91,7 @@
             <mqttToHttp>
                 <mqttToHttpMappings>
                     <mqttToHttpMapping>
-                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+                        <tagName>tag3</tagName>
                         <mqttTopicFilter>my/#</mqttTopicFilter>
                         <mqttMaxQos>0</mqttMaxQos>
                         <httpRequestMethod>POST</httpRequestMethod>
@@ -108,7 +108,7 @@
                         </httpHeaders>
                     </mqttToHttpMapping>
                     <mqttToHttpMapping>
-                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+                        <tagName>tag4</tagName>
                         <mqttTopicFilter>my/#</mqttTopicFilter>
                         <mqttMaxQos>1</mqttMaxQos>
                         <httpRequestMethod>PUT</httpRequestMethod>

@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import org.jetbrains.annotations.NotNull;
 
 @JsonPropertyOrder({"startIdx", "nrRegistersToRead"})
 public class AddressRange {
@@ -34,7 +35,7 @@ public class AddressRange {
     @ModuleConfigField(title = "The way the register range should be read",
                        description = "Type of read to performe on the registers",
                        required = true)
-    public final ModbusAdu readType;
+    public final @NotNull ModbusAdu readType;
 
     @JsonProperty(value = "unitId", required = true)
     @ModuleConfigField(title = "The id of the unit to access",
@@ -50,7 +51,7 @@ public class AddressRange {
 
     public AddressRange(
             @JsonProperty(value = "startIdx", required = true) final int startIdx,
-            @JsonProperty(value = "readType", required = true) final ModbusAdu readType,
+            @JsonProperty(value = "readType", required = true) final @NotNull ModbusAdu readType,
             @JsonProperty(value = "unitId", required = true) final int unitId,
             @JsonProperty(value = "flipRegisters", defaultValue = "false") final boolean flipRegisters) {
         this.startIdx = startIdx;

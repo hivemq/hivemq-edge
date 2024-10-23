@@ -17,6 +17,9 @@ package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -41,7 +44,24 @@ import static org.mockito.Mockito.mock;
 class FileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
 
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-full-config.xml");
@@ -50,7 +70,8 @@ class FileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -63,7 +84,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getFilePath()).isEqualTo("path/to/file1");
+            assertThat(mapping.getTagName()).isEqualTo("tag1");
             assertThat(mapping.getContentType()).isEqualTo(ContentType.BINARY);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -79,7 +100,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getFilePath()).isEqualTo("path/to/file2");
+            assertThat(mapping.getTagName()).isEqualTo("tag2");
             assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -100,7 +121,8 @@ class FileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -113,7 +135,7 @@ class FileAdapterConfigTest {
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
-            assertThat(subscription.getFilePath()).isEqualTo("path/to/file1");
+            assertThat(subscription.getTagName()).isEqualTo("tag1");
             assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
     }
@@ -126,22 +148,24 @@ class FileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'contentType'");
     }
 
     @Test
-    public void convertConfigObject_filePathMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/file-adapter-file-path-missing.xml");
+    public void convertConfigObject_tagNameMissing_exception() throws Exception {
+        final URL resource = getClass().getResource("/file-adapter-tag-name-missing.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'filePath'");
+                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -152,7 +176,8 @@ class FileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -164,14 +189,14 @@ class FileAdapterConfigTest {
                 MQTTMessagePerTag,
                 false,
                 true,
-                List.of(new MqttUserProperty("my-name", "my-value")),
-                "path/to/file",
+                List.of(new MqttUserProperty("my-name", "my-value")), "tag",
                 ContentType.BINARY);
 
         final FileAdapterConfig modbusAdapterConfig =
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
 
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -189,7 +214,7 @@ class FileAdapterConfigTest {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
-            assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
+            assertThat(mapping.get("tagName")).isEqualTo("tag");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
     }
@@ -201,14 +226,14 @@ class FileAdapterConfigTest {
                 null,
                 null,
                 null,
-                null,
-                "path/to/file",
+                null, "tag",
                 ContentType.BINARY);
 
         final FileAdapterConfig modbusAdapterConfig =
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
 
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -223,7 +248,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-            assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
+            assertThat(mapping.get("tagName")).isEqualTo("tag");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
     }
