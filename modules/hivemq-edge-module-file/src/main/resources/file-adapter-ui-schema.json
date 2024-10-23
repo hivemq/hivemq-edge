@@ -10,7 +10,7 @@
     },
     {
       "id" : "subFields",
-      "title" : "File 2 MQTT",
+      "title" : "File to MQTT",
       "properties" : [
         "fileToMqtt"
       ]
@@ -26,9 +26,9 @@
   "fileToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
+      "fileToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
-      "fileToMqttMappings",
       "*"
     ],
     "fileToMqttMappings" : {
@@ -36,11 +36,11 @@
       "items": {
         "ui:order" : [
           "mqttTopic",
+          "filePath",
+          "contentType",
           "mqttQos",
           "*",
-          "mqttUserProperties",
-          "filePath",
-          "dataType"
+          "mqttUserProperties"
         ],
         "ui:collapsable" : {
           "titleKey" : "mqttTopic"
