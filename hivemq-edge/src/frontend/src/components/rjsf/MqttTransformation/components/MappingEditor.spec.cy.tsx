@@ -41,7 +41,7 @@ describe('MappingEditor', () => {
 
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />,
+      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />,
       { wrapper }
     )
 
