@@ -17,6 +17,9 @@ package com.hivemq.edge.modules.adapters.simulation.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -41,6 +44,24 @@ import static org.mockito.Mockito.mock;
 class SimulationAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -51,7 +72,7 @@ class SimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false, mock());
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
                 (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
 
@@ -95,7 +116,7 @@ class SimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false, mock());
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
                 (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
 
@@ -121,7 +142,7 @@ class SimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false, mock());
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -135,7 +156,7 @@ class SimulationAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(false, mock());
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -157,7 +178,7 @@ class SimulationAdapterConfigTest {
                         14,
                         15);
 
-        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(false, mock());
+        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config = factory.unconvertConfigObject(mapper, simulationAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-simulation-adapter");
@@ -197,7 +218,7 @@ class SimulationAdapterConfigTest {
                         null,
                         null);
 
-        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(false, mock());
+        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config = factory.unconvertConfigObject(mapper, simulationAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-simulation-adapter");
