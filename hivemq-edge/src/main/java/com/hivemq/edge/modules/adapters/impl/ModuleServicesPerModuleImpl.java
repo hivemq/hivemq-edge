@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import dagger.internal.Preconditions;
@@ -27,13 +28,16 @@ import dagger.internal.Preconditions;
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishServicePerAdapter;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
     private final @NotNull EventService eventService;
 
     public ModuleServicesPerModuleImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.eventService = eventService;
         this.adapterPublishServicePerAdapter = new ProtocolAdapterPublishServicePerAdapter(adapterPublishService);
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override
@@ -44,6 +48,11 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     @Override
     public @NotNull EventService eventService() {
         return eventService;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+        return protocolAdapterTagService;
     }
 
     public void setAdapter(final @NotNull ProtocolAdapter protocolAdapter) {

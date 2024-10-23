@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -25,11 +27,14 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
+import com.hivemq.edge.adapters.etherip.tag.EipTagDefinition;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import etherip.types.CIPData;
@@ -44,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMqttMapping> {
 
-    private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
+    private static final @NotNull org.slf4j.Logger log = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
     private static final @NotNull String TAG_ADDRESS_TYPE_SEP = ":";
 
@@ -98,14 +103,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
                 protocolAdapterStopOutput.stoppedSuccessfully();
 
                 protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                LOG.info("Stopped");
+                log.info("Stopped");
             } else {
                 protocolAdapterStopOutput.stoppedSuccessfully();
-                LOG.info("Stopped without an open connection");
+                log.info("Stopped without an open connection");
             }
         } catch (Exception e) {
             protocolAdapterStopOutput.failStop(e, "Unable to stop Ethernet IP connection");
-            LOG.error("Unable to stop", e);
+            log.error("Unable to stop", e);
         }
     }
 
@@ -123,9 +128,28 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             return;
         }
 
-        final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext());
+        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+        final String tagName = pollingInput.getPollingContext().getTagName();
+
+        final Tag<EipTagDefinition> eipAddressTag;
         try {
-            final CIPData evt = etherNetIP.readTag(pollingInput.getPollingContext().getTagAddress());
+            eipAddressTag = protocolAdapterTagService.resolveTag(tagName, EipTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
+
+        final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
+                eipAddressTag.getTagDefinition().getAddress());
+        try {
+            final CIPData evt = etherNetIP.readTag(eipAddressTag.getTagDefinition().getAddress());
 
             if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                 handleResult(evt, tagAddress).forEach(it -> {
@@ -142,21 +166,21 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             pollingOutput.finish();
         } catch (CipException e) {
             if (e.getStatusCode() == 0x04) {
-                LOG.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
+                log.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
                 pollingOutput.fail(e, "Tag '" + tagAddress + "'  doesn't exist on device");
             } else {
-                LOG.warn("Problem accessing tag '{}' on device.", tagAddress, e);
+                log.warn("Problem accessing tag '{}' on device.", tagAddress, e);
                 pollingOutput.fail(e, "Problem accessing tag '" + tagAddress + "' on device.");
             }
         } catch (Exception e) {
-            LOG.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
+            log.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
             pollingOutput.fail(e, "An exception occurred while reading tag '" + tagAddress + "'.");
         }
     }
 
     private @NotNull List<EtherIpValue> handleResult(final @NotNull CIPData evt, final @NotNull String tagAddress) {
         return EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, evt).map(List::of).orElseGet(() -> {
-            LOG.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
+            log.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
             return List.of();
         });
     }
@@ -178,12 +202,13 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
 
     /**
      * Use this hook method to modify the query generated used to read|subscribe to the devices,
-     * for the most part this is simply the tagAddress field unchanged from the subscription
+     * for the most part this is simply the tagAddress field unchanged from the eipToMqttMapping
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final EipToMqttMapping subscription) {
-        return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
+    protected @NotNull String createTagAddressForSubscription(
+            @NotNull final EipToMqttMapping eipToMqttMapping, final @NotNull String address) {
+        return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, eipToMqttMapping.getDataType());
     }
 
 }

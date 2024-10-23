@@ -16,6 +16,9 @@
 package com.hivemq.edge.adapters.opcua.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -33,12 +36,33 @@ import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SuppressWarnings("unchecked")
 class LegacyOpcUaAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -48,9 +72,10 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
-        final OpcUaAdapterConfig config =
-                (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
+                new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -83,20 +108,22 @@ class LegacyOpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(1);
             assertThat(mapping.getPublishingInterval()).isEqualTo(12);
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
         }, mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=2;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/#");
             assertThat(mapping.getQos()).isEqualTo(2);
             assertThat(mapping.getPublishingInterval()).isEqualTo(13);
             assertThat(mapping.getServerQueueSize()).isEqualTo(14);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
         });
+
+        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
     }
 
     @Test
@@ -107,9 +134,10 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
-        final OpcUaAdapterConfig config =
-                (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
+                new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -127,13 +155,15 @@ class LegacyOpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(0);
             assertThat(mapping.getPublishingInterval()).isEqualTo(1000);
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(4294967295L);
         });
+        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
+
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

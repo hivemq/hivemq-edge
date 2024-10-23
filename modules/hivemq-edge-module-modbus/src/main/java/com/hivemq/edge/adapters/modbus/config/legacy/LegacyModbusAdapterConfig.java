@@ -79,6 +79,11 @@ public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
         return id;
     }
 
+    @Override
+    public @NotNull List<String> calculateAllUsedTags() {
+        return List.of();
+    }
+
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;
     }

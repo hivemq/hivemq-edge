@@ -17,6 +17,9 @@ package com.hivemq.edge.adapters.plc4x.types.ads.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -35,13 +38,30 @@ import java.util.Map;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static org.mockito.Mockito.mock;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class ADSAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -51,7 +71,8 @@ class ADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
+                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
@@ -71,7 +92,6 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -87,7 +107,6 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -108,7 +127,8 @@ class ADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
+                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
@@ -128,7 +148,6 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
             assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.BOOL);
         });
@@ -142,10 +161,7 @@ class ADSAdapterConfigTest {
                 false,
                 true,
                 "tag-name",
-                "tag-address",
-                Plc4xDataType.DATA_TYPE.BOOL,
-                List.of(new MqttUserProperty("my-name", "my-value"))
-                );
+                Plc4xDataType.DATA_TYPE.BOOL, List.of(new MqttUserProperty("my-name", "my-value")));
 
         final ADSAdapterConfig adsAdapterConfig = new ADSAdapterConfig("my-ads-adapter",
                 14,
@@ -156,9 +172,9 @@ class ADSAdapterConfigTest {
                 "1.2.3.4.5.7",
                 new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
-        final Map<String, Object> config =
-                adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
+                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final Map<String, Object> config = adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-ads-adapter");
         assertThat(config.get("port")).isEqualTo(14);
@@ -180,7 +196,6 @@ class ADSAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
             assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("tagAddress")).isEqualTo("tag-address");
             assertThat(mapping.get("jsonPayloadCreator")).isNull();
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");

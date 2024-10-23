@@ -23,7 +23,7 @@
                 <fileToMqttMappings>
                     <fileToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <filePath>path/to/file1</filePath>
+                        <tagName>tag1</tagName>
                     </fileToMqttMapping>
                 </fileToMqttMappings>
             </fileToMqtt>

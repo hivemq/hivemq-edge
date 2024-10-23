@@ -34,6 +34,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
+    public static final String PROTOCOL_ID = "opcua";
 
 
     private OpcUaProtocolAdapterInformation() {
@@ -46,7 +47,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getProtocolId() {
-        return "opcua";
+        return PROTOCOL_ID;
     }
 
     @Override

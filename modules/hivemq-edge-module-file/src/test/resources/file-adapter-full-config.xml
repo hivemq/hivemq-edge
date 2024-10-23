@@ -29,7 +29,7 @@
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <filePath>path/to/file1</filePath>
+                        <tagName>tag1</tagName>
                         <contentType>BINARY</contentType>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -48,7 +48,7 @@
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <filePath>path/to/file2</filePath>
+                        <tagName>tag2</tagName>
                         <contentType>TEXT_CSV</contentType>
                         <mqttUserProperties>
                             <mqttUserProperty>

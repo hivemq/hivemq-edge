@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.file;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -24,10 +26,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +93,27 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     @Override
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        final String absolutePathToFle = pollingInput.getPollingContext().getFilePath();
+        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+
+        final String tagName = pollingInput.getPollingContext().getTagName();
+        final Tag<FileTagDefinition> fileTag;
+        try {
+            fileTag= protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
+                    FileTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
+
+
+        final String absolutePathToFle = fileTag.getTagDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
             final long length = path.toFile().length();
