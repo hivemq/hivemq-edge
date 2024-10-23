@@ -228,9 +228,11 @@
       },
       "instructions": {
         "dropzone": {
+          "role": "Dropzone",
           "arial-label": "Drag a source property here"
         },
         "editor": {
+          "role": "Transformation Editor",
           "arial-label": "Edit the transformation"
         },
         "actions": {
@@ -246,6 +248,21 @@
         "title_error": "Some errors",
         "title_success": "Complete"
       }
+    }
+  },
+  "GenericSchema": {
+    "data": {
+      "type_null": "Null",
+      "type_object": "Object",
+      "type_array": "Array of $t(components:GenericSchema.data.type, { 'context': '{{arrayType}}' })",
+      "type_string": "String",
+      "type_integer": "Integer",
+      "type_number": "Number",
+      "type_boolean": "Number"
+    },
+    "structure": {
+      "property": "Property",
+      "example": "Example"
     }
   }
 }
