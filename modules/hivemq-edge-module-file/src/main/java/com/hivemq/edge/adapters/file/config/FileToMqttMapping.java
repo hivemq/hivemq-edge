@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.edge.adapters.file.payload.FileJsonPayloadCreator;
 import org.jetbrains.annotations.NotNull;
@@ -76,11 +76,8 @@ public class FileToMqttMapping implements PollingContext {
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
-    @JsonProperty(value = "filePath", required = true)
-    @ModuleConfigField(title = "The file path",
-                       description = "The absolute path to the file that should be scraped.",
-                       required = true)
-    private final @NotNull String filePath;
+    @JsonProperty(value = "tagName")
+    private final @NotNull String tagName;
 
     @JsonProperty(value = "contentType", required = true)
     @ModuleConfigField(title = "Content Type",
@@ -102,7 +99,7 @@ public class FileToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "filePath", required = true) final @NotNull String filePath,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "contentType", required = true) final @NotNull ContentType contentType) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
@@ -111,11 +108,11 @@ public class FileToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.contentType = contentType;
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
-        this.filePath = filePath;
+        this.tagName = tagName;
     }
 
-    public @NotNull String getFilePath() {
-        return filePath;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
     @Override
