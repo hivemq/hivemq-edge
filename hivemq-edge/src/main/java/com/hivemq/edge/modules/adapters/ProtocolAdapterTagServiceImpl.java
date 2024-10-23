@@ -53,7 +53,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
 
                 @Override
                 public @NotNull String getTagName() {
-                    return tag.getTag();
+                    return tag.getTagName();
                 }
             };
         } catch (final JsonProcessingException e) {
@@ -66,7 +66,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
             final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
         final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagDefinition());
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(adapterId, new DomainTag(tag.getTagName(), protocolId, "", jsonNode));
+                domainTagPersistence.addDomainTag(new DomainTag(tag.getTagName(), adapterId, protocolId, "", jsonNode));
 
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:

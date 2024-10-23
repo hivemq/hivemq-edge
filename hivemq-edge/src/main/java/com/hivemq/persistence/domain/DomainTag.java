@@ -27,35 +27,48 @@ import org.jetbrains.annotations.Nullable;
 @Immutable
 public class DomainTag {
 
-    private final @NotNull JsonNode tagDefinition;
-    private final @NotNull String tag;
+    private final @NotNull String tagName;
+    private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull String description;
+    private final @NotNull JsonNode tagDefinition;
+
 
     public DomainTag(
             final @NotNull String tagName,
+            final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull String description,
             final @NotNull JsonNode tagDefinition) {
+        this.adapterId = adapterId;
         this.tagDefinition = tagDefinition;
-        this.tag = tagName;
+        this.tagName = tagName;
         this.protocolId = protocolId;
         this.description = description;
     }
 
-    public static @NotNull DomainTag fromDomainTagEntity(final @NotNull DomainTagModel domainTag) {
+    public static @NotNull DomainTag fromDomainTagEntity(
+            final @NotNull DomainTagModel domainTag,
+            final @NotNull String adapterId) {
         return new DomainTag(domainTag.getTag(),
-                domainTag.getProtocolId(), domainTag.getDescription(), domainTag.getTagDefinition());
+                adapterId,
+                domainTag.getProtocolId(),
+                domainTag.getDescription(),
+                domainTag.getTagDefinition());
     }
 
     public static @NotNull DomainTag simpleAddress(final @NotNull String domainAddress, final @NotNull String tag) {
         final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
         objectNode.set("address", new TextNode(domainAddress));
-        return new DomainTag(tag, "someProtocolId", "someDescription", objectNode);
+        return new DomainTag(tag, "adapter","someProtocolId", "someDescription", objectNode);
     }
 
-    public @NotNull String getTag() {
-        return tag;
+    public @NotNull String getTagName() {
+        return tagName;
+    }
+
+    public @NotNull String getAdapterId() {
+        return adapterId;
     }
 
     public @NotNull JsonNode getTagDefinition() {
@@ -81,12 +94,12 @@ public class DomainTag {
         }
 
         final DomainTag domainTag = (DomainTag) o;
-        return tag.equals(domainTag.tag);
+        return tagName.equals(domainTag.tagName);
     }
 
     @Override
     public int hashCode() {
-        return tag.hashCode();
+        return tagName.hashCode();
     }
 
     @Override
@@ -98,7 +111,7 @@ public class DomainTag {
                 ", tagDefinition=" +
                 tagDefinition +
                 ", tag='" +
-                tag +
+                tagName +
                 '\'' +
                 ", protocolId='" +
                 protocolId +

@@ -72,7 +72,7 @@ public class DomainTagModel {
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
         return new DomainTagModel(domainTag.getTagDefinition(),
-                domainTag.getTag(),
+                domainTag.getTagName(),
                 "someProtocolId",
                 "someDescription");
     }

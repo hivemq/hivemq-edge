@@ -24,11 +24,10 @@ public interface DomainTagPersistence {
 
 
     @NotNull
-    DomainTagAddResult addDomainTag(@NotNull String adapterId, @NotNull DomainTag domainTag);
+    DomainTagAddResult addDomainTag( @NotNull DomainTag domainTag);
 
     @NotNull
     DomainTagUpdateResult updateDomainTag(
-            @NotNull String adapterId,
             @NotNull String tagId,
             @NotNull DomainTag domainTag);
 

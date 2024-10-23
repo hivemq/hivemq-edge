@@ -81,7 +81,7 @@ class ProtocolAdaptersResourceImplTest {
 
     @Test
     void addAdapterDomainTag_whenAddingSucceeds_thenReturn200() {
-        when(domainTagPersistence.addDomainTag(any(), any())).thenReturn(DomainTagAddResult.success());
+        when(domainTagPersistence.addDomainTag(any())).thenReturn(DomainTagAddResult.success());
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
                  DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
@@ -91,7 +91,7 @@ class ProtocolAdaptersResourceImplTest {
 
     @Test
     void addAdapterDomainTag_whenAlreadyExists_thenReturn403() {
-        when(domainTagPersistence.addDomainTag(any(),
+        when(domainTagPersistence.addDomainTag(
                 any())).thenReturn(DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS));
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
@@ -127,7 +127,6 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagExists_thenReturn200() {
         when(domainTagPersistence.updateDomainTag(any(),
-                any(),
                 any())).thenReturn(DomainTagUpdateResult.success());
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
@@ -140,7 +139,6 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(domainTagPersistence.updateDomainTag(any(),
-                any(),
                 any())).thenReturn(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND));
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
