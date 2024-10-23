@@ -17,12 +17,11 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -34,7 +33,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -46,6 +45,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
+import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -158,8 +158,28 @@ public class HttpProtocolAdapter
 
         final HttpToMqttMapping httpToMqttMapping = pollingInput.getPollingContext();
 
+        // first resolve the tag
+        final String tagName = pollingInput.getPollingContext().getTagName();
+        final Tag<HttpTagDefinition> httpTag;
+        try {
+            httpTag= pollingInput.protocolAdapterTagService().resolveTag(pollingInput.getPollingContext().getTagName(),
+                    HttpTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
+
+
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(httpToMqttMapping.getUrl()));
+        final String url = httpTag.getTagDefinition().getUrl();
+        builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
@@ -228,8 +248,7 @@ public class HttpProtocolAdapter
                 }
             }
 
-            final HttpData data = new HttpData(httpToMqttMapping,
-                    httpToMqttMapping.getUrl(),
+            final HttpData data = new HttpData(httpToMqttMapping, url,
                     httpResponse.statusCode(),
                     responseContentType,
                     adapterFactories.dataPointFactory());
@@ -281,10 +300,31 @@ public class HttpProtocolAdapter
             writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
-
         final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
+
+        // first resolve the tag
+
+        final String tagName = mqttToHttpMapping.getTagName();
+        final Tag<HttpTagDefinition> httpTag;
+        try {
+            httpTag= writingInput.protocolAdapterTagService().resolveTag(mqttToHttpMapping.getTagName(),
+                    HttpTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
+
+        final String url = httpTag.getTagDefinition().getUrl();
+
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(mqttToHttpMapping.getUrl()));
+        builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(mqttToHttpMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
         mqttToHttpMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
@@ -317,8 +357,7 @@ public class HttpProtocolAdapter
                 writingOutput.finish();
             } else {
                 writingOutput.fail(String.format(
-                        "Forwarding a message to url '%s' failed with status code '%d",
-                        mqttToHttpMapping.getUrl(),
+                        "Forwarding a message to url '%s' failed with status code '%d", url,
                         httpResponse.statusCode()));
             }
         });

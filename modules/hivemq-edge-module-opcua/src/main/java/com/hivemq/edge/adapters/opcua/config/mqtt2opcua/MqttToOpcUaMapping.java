@@ -26,11 +26,11 @@ import static java.util.Objects.requireNonNullElse;
 
 public class MqttToOpcUaMapping implements WritingContext {
 
-    @JsonProperty(value = "node", required = true)
-    @ModuleConfigField(title = "Destination Node ID",
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "Tag name of the Destination",
                        description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
                        required = true)
-    private final @NotNull String node;
+    private final @NotNull String tagName;
 
     @JsonProperty(value = "mqttTopicFilter", required = true)
     @ModuleConfigField(title = "Source MQTT topic filter",
@@ -49,10 +49,10 @@ public class MqttToOpcUaMapping implements WritingContext {
 
     @JsonCreator
     public MqttToOpcUaMapping(
-            @JsonProperty(value = "node", required = true) final @NotNull String node,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopicFilter", required = true) final @NotNull String mqttTopicFilter,
             @JsonProperty("mqttMaxQos") final @Nullable Integer qos) {
-        this.node = node;
+        this.tagName = tagName;
         this.mqttTopicFilter = mqttTopicFilter;
         this.qos = requireNonNullElse(qos, 1);
     }
@@ -66,8 +66,8 @@ public class MqttToOpcUaMapping implements WritingContext {
         return qos;
     }
 
-    public @NotNull String getNode() {
-        return node;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
 }

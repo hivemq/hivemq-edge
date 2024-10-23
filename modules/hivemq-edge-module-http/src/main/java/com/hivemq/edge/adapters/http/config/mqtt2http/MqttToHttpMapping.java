@@ -19,12 +19,12 @@ import static java.util.Objects.requireNonNullElse;
 
 public class MqttToHttpMapping implements WritingContext {
 
-    @JsonProperty(value = "url", required = true)
-    @ModuleConfigField(title = "URL",
-                       description = "The url of the HTTP request you would like to make",
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "tagName", description = "The name of the tag that holds the address data.",
                        format = ModuleConfigField.FieldType.URI,
                        required = true)
-    private final @NotNull String url;
+    private final @NotNull String tagName;
+
 
     @JsonProperty(value = "mqttTopicFilter", required = true)
     @ModuleConfigField(title = "Source MQTT topic filter",
@@ -61,13 +61,13 @@ public class MqttToHttpMapping implements WritingContext {
 
     @JsonCreator
     public MqttToHttpMapping(
-            @JsonProperty(value = "url", required = true) final @NotNull String url,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopicFilter", required = true) final @NotNull String mqttTopicFilter,
             @JsonProperty(value = "mqttMaxQos") final @Nullable Integer mqttMaxQos,
             @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
             @JsonProperty(value = "httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders) {
-        this.url = url;
+        this.tagName = tagName;
         this.mqttTopicFilter = mqttTopicFilter;
         this.mqttMaxQos = requireNonNullElse(mqttMaxQos, 1);
         this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, POST);
@@ -80,8 +80,8 @@ public class MqttToHttpMapping implements WritingContext {
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
     }
 
-    public @NotNull String getUrl() {
-        return url;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
     public @NotNull String getMqttTopicFilter() {

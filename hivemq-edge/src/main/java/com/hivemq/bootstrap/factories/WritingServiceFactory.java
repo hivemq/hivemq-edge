@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
@@ -30,5 +30,6 @@ public interface WritingServiceFactory {
             @NotNull ObjectMapper objectMapper,
             @NotNull LocalTopicTree localTopicTree,
             @NotNull NanoTimeProvider nanoTimeProvider,
-            @NotNull SingleWriterService singleWriterService);
+            @NotNull SingleWriterService singleWriterService,
+            @NotNull ProtocolAdapterTagService protocolAdapterTagService);
 }

@@ -426,9 +426,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return ErrorResponseUtil.alreadyExists("The tag '" +
                         tagId +
                         "' cannot be created since another item already exists with the same id.");
-
-            case INTERNAL_ERROR:
-                return Response.serverError().build();
         }
         return Response.serverError().build();
     }

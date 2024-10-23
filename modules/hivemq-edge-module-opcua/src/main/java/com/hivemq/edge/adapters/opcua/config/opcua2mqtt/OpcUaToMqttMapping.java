@@ -25,11 +25,13 @@ import static java.util.Objects.requireNonNullElse;
 
 public class OpcUaToMqttMapping {
 
-    @JsonProperty(value = "node", required = true)
-    @ModuleConfigField(title = "Source Node ID",
-                       description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
+
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "tagName",
+                       description = "The name of the tag that holds the address data.",
+                       format = ModuleConfigField.FieldType.URI,
                        required = true)
-    private final @NotNull String node;
+    private final @NotNull String tagName;
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT topic",
@@ -69,13 +71,13 @@ public class OpcUaToMqttMapping {
 
     @JsonCreator
     public OpcUaToMqttMapping(
-            @JsonProperty(value = "node", required = true) final @NotNull String node,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
             @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize,
             @JsonProperty("mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
-        this.node = node;
+        this.tagName = tagName;
         this.mqttTopic = mqttTopic;
         this.publishingInterval = requireNonNullElse(publishingInterval, 1000);
         this.serverQueueSize = requireNonNullElse(serverQueueSize, 1);
@@ -83,8 +85,8 @@ public class OpcUaToMqttMapping {
         this.messageExpiryInterval = requireNonNullElse(messageExpiryInterval, 4294967295L);
     }
 
-    public @NotNull String getNode() {
-        return node;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
     public @NotNull String getMqttTopic() {

@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,17 +33,10 @@ import static java.util.Objects.requireNonNullElseGet;
 public class EipToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
-    @ModuleConfigField(title = "Tag Name",
-                       description = "The name to assign to this address. The tag name must be unique for all subscriptions within this protocol adapter.",
+    @ModuleConfigField(title = "Tag Name", description = "The name of the tag that defines the data point on the plc.",
                        required = true,
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
-
-    @JsonProperty(value = "tagAddress", required = true)
-    @ModuleConfigField(title = "Tag Address",
-                       description = "The well formed address of the tag to read",
-                       required = true)
-    private final @NotNull String tagAddress;
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination Mqtt Topic",
@@ -114,7 +107,6 @@ public class EipToMqttMapping implements PollingContext {
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "tagAddress", required = true) final @NotNull String tagAddress,
             @JsonProperty(value = "dataType", required = true) final @NotNull EipDataType dataType,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
@@ -123,17 +115,12 @@ public class EipToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
-        this.tagAddress = tagAddress;
         this.dataType = dataType;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    public @NotNull String getTagAddress() {
-        return tagAddress;
     }
 
     public @NotNull EipDataType getDataType() {
