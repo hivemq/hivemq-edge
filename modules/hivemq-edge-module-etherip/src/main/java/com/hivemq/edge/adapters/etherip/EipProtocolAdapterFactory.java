@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
@@ -46,11 +48,15 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     final boolean writingEnabled;
 
     private final @NotNull ProtocolAdapterTagService tagService;
+    private final @NotNull EventService eventService;
 
     public EipProtocolAdapterFactory(
-            final boolean writingEnabled, final @NotNull ProtocolAdapterTagService tagService) {
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService tagService,
+            final @NotNull EventService eventService) {
         this.writingEnabled = writingEnabled;
         this.tagService = tagService;
+        this.eventService = eventService;
     }
 
     @Override
@@ -102,7 +108,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         return EipAdapterConfig.class;
     }
 
-    private static @NotNull EipAdapterConfig tryConvertLegacyConfig(
+    private @NotNull EipAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config,
             final @NotNull ProtocolAdapterTagService tagService) {
@@ -115,7 +121,8 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
             final ProtocolAdapterTagService.AddStatus addStatus = tagService.addTag(legacyEipAdapterConfig.getId(),
-                    PROTOCOL_ID, new EipTag(context.getTagName(), new EipTagDefinition(context.getTagAddress())));
+                    PROTOCOL_ID,
+                    new EipTag(context.getTagName(), new EipTagDefinition(context.getTagAddress())));
             switch (addStatus) {
                 case SUCCESS:
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
@@ -133,7 +140,17 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                             "While migrating the EIPConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
                             context.getTagName(),
                             newTagName);
-                    tagService.addTag(legacyEipAdapterConfig.getId(), PROTOCOL_ID,
+                    eventService.createAdapterEvent(legacyEipAdapterConfig.getId(), PROTOCOL_ID)
+                            .withMessage(
+                                    "While migrating the EIPConfig a tag could not be added because a tag with the same name '" +
+                                            context.getTagName() +
+                                            "' was already present. Another tagName using an random Uuid is used instead: '" +
+                                            newTagName +
+                                            "'")
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .fire();
+                    tagService.addTag(legacyEipAdapterConfig.getId(),
+                            PROTOCOL_ID,
                             new EipTag(newTagName, new EipTagDefinition(context.getTagAddress())));
 
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),

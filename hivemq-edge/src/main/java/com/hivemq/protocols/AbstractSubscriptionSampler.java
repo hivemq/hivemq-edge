@@ -58,7 +58,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull EventService eventService;
     private final @NotNull TimeUnit unit = TimeUnit.MILLISECONDS;
     private final @NotNull String adapterId;
     private final @NotNull UUID uuid;
@@ -71,6 +70,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
     protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter;
     protected final @NotNull ProtocolAdapterTagService tagService;
+    protected final @NotNull EventService eventService;
 
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
@@ -110,7 +110,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
      * the cause of the error.
      */
     protected void onSamplerError(
-            final @NotNull Throwable exception, boolean continuing) {
+            final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
             protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), new ProtocolAdapterStopOutputImpl());
@@ -137,7 +137,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 jsonPayloadsAsBytes = jsonPayloadDefaultCreator.convertToJson(sample, objectMapper);
             }
 
-            for (byte[] json : jsonPayloadsAsBytes) {
+            for (final byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                         .withTopic(pollingContext.getMqttTopic())
                         .withQoS(pollingContext.getMqttQos())
@@ -165,7 +165,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 publishFutures.add(publishFuture);
             }
             return CompletableFuture.allOf(publishFutures.build().toArray(new CompletableFuture[0]));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Exception during polling of data for adapters '{}':", adapterId, e);
             return CompletableFuture.failedFuture(e);
         }

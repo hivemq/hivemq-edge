@@ -18,6 +18,7 @@ package com.hivemq.protocols;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
@@ -48,7 +49,9 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         super(protocolAdapter,
                 objectMapper,
                 adapterPublishService,
-                eventService, jsonPayloadDefaultCreator, tagService);
+                eventService,
+                jsonPayloadDefaultCreator,
+                tagService);
         this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
         this.pollingContext = pollingContext;
     }
@@ -81,16 +84,30 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
                     log.warn("During the polling for adapter with id '{}' an exception occurred: ",
                             getAdapterId(),
                             throwable.getCause());
+                    eventService.createAdapterEvent(protocolAdapter.getId(),
+                                    protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .withMessage("During the polling for adapter with id '" +
+                                    protocolAdapter.getId() +
+                                    "' an exception occurred: " +
+                                    throwable.getClass().getSimpleName() +
+                                    ":" +
+                                    throwable.getMessage());
                 } else {
                     log.warn(
                             "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
                             getAdapterId(),
                             pollingOutput.getErrorMessage(),
                             throwable.getCause());
+                    eventService.createAdapterEvent(protocolAdapter.getId(),
+                                    protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .withMessage("During the polling for adapter with id '" +
+                                    protocolAdapter.getId() +
+                                    "' an exception occurred. Detailed error message:" +
+                                    pollingOutput.getErrorMessage());
                 }
             }
         });
     }
-
-
 }

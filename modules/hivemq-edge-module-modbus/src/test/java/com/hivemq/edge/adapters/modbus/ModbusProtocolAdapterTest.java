@@ -60,10 +60,12 @@ class ModbusProtocolAdapterTest {
 
     protected static ModBusData createSampleData() {
         final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("topic",
-                2, "tag1",
+                2,
+                "tag1",
                 MessageHandlingOptions.MQTTMessagePerSubscription,
                 true,
-                false, List.of());
+                false,
+                List.of());
         final ModBusData data = new ModBusData(pollingContext);
         IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));
         return data;
