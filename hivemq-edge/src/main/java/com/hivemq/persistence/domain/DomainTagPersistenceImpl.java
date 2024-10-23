@@ -16,6 +16,7 @@
 package com.hivemq.persistence.domain;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -155,6 +156,10 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     @Override
     public @NotNull DomainTag getTag(@NotNull final String tagId) {
-        return nodeIdToDomainTag.get(tagId);
+        final DomainTag domainTag = nodeIdToDomainTag.get(tagId);
+        if (domainTag == null) {
+            throw new TagNotFoundException("Tag'" + tagId + "' was not found in the persistence.");
+        }
+        return domainTag;
     }
 }

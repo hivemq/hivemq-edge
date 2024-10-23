@@ -1,6 +1,8 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
@@ -112,7 +114,24 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     public CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
-        final String nodeId = resolveNodeIDFromTagName(subscription.getTagName());
+        final @NotNull String tagName = subscription.getTagName();
+        // first resolve the tag
+        final Tag<OpcuaTagDefinition> opcuaTag;
+        try {
+            opcuaTag = moduleServices.protocolAdapterTagService()
+                    .resolveTag(tagName, OpcuaTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+        } catch (final TagDefinitionParseException e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol."));
+        }
+
+
+        final String nodeId = opcuaTag.getTagDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
@@ -156,13 +175,6 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
 
     public CompletableFuture<Void> stop() {
         return CompletableFuture.completedFuture(null);
-    }
-
-    private @NotNull String resolveNodeIDFromTagName(final @NotNull String tagName) {
-        // first resolve the tag
-        final Tag<OpcuaTagDefinition> addressTag =
-                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagDefinition.class);
-        return addressTag.getTagDefinition().getNode();
     }
 
 }

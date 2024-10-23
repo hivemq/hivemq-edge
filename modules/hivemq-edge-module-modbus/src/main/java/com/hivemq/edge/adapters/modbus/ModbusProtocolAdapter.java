@@ -21,6 +21,8 @@ import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -76,48 +78,61 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
     @Override
-    public void start(@NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
-        modbusClient
-                .connect()
-                .whenComplete((unused, throwable) -> {
-                    if (throwable == null) {
-                        output.startedSuccessfully();
-                        protocolAdapterState.setConnectionStatus(CONNECTED);
-                    } else {
-                        output.failStart(throwable, "Exception during setup of Modbus client.");
-                    }});
+    public void start(
+            @NotNull final ProtocolAdapterStartInput input,
+            @NotNull final ProtocolAdapterStartOutput output) {
+        modbusClient.connect().whenComplete((unused, throwable) -> {
+            if (throwable == null) {
+                output.startedSuccessfully();
+                protocolAdapterState.setConnectionStatus(CONNECTED);
+            } else {
+                output.failStart(throwable, "Exception during setup of Modbus client.");
+            }
+        });
     }
 
     @Override
     public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
-            modbusClient
-                .disconnect()
-                .whenComplete((unused,t) -> {
-                        if(t == null) {
-                            output.stoppedSuccessfully();
-                            protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                        } else {
-                            output.failStop(t, "Error encountered closing connection to Modbus device.");
-                        }
-                    }
-                );
+        modbusClient.disconnect().whenComplete((unused, t) -> {
+            if (t == null) {
+                output.stoppedSuccessfully();
+                protocolAdapterState.setConnectionStatus(DISCONNECTED);
+            } else {
+                output.failStop(t, "Error encountered closing connection to Modbus device.");
+            }
+        });
     }
 
     @Override
     public void poll(
             final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
+        // first resolve the tag
+        final String tagName = pollingInput.getPollingContext().getTagName();
+        final Tag<ModbusTagDefinition> modbusTag;
+        try {
+            modbusTag = pollingInput.protocolAdapterTagService()
+                    .resolveTag(pollingInput.getPollingContext().getTagName(), ModbusTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
 
-        //-- If a previously linked job has terminally disconnected the client
-        //-- we need to ensure any orphaned jobs tidy themselves up properly
-
-        readRegisters(pollingInput.getPollingContext(), modbusClient)
-            .whenComplete((modbusdata, throwable) -> {
-                if (throwable != null) {
-                    pollingOutput.fail(throwable, null);
-                } else {
-                    this.captureDataSample(modbusdata, pollingOutput);
-                }
-            });
+        readRegisters(pollingInput.getPollingContext(),
+                modbusClient,
+                modbusTag).whenComplete((modbusdata, throwable) -> {
+            if (throwable != null) {
+                pollingOutput.fail(throwable, null);
+            } else {
+                this.captureDataSample(modbusdata, pollingOutput);
+            }
+        });
     }
 
     @Override
@@ -149,7 +164,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         if (input.getRootNode() == null) {
             nodeTree.addNode("holding-registers",
                     "Holding Registers",
-                    "Holding Registers", "Holding Registers",
+                    "Holding Registers",
+                    "Holding Registers",
                     null,
                     NodeType.FOLDER,
                     false);
@@ -181,12 +197,12 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
     private void calculateDelta(@NotNull final ModBusData modBusData, @NotNull final PollingOutput pollingOutput) {
-        final ModbusToMqttMapping subscription =
-                (ModbusToMqttMapping) modBusData.getPollingContext();
+        final ModbusToMqttMapping subscription = (ModbusToMqttMapping) modBusData.getPollingContext();
 
         final List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
         final List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
-        final List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+        final List<DataPoint> delta =
+                AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
         if (log.isTraceEnabled()) {
             log.trace("Calculating change data old {} samples, new {} sample, delta {}",
                     previousSampleDataPoints != null ? previousSampleDataPoints.size() : 0,
@@ -201,10 +217,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     protected @NotNull CompletableFuture<ModBusData> readRegisters(
             final @NotNull ModbusToMqttMapping modbusToMqttMapping,
-            final @NotNull ModbusClient modbusClient) {
-        final Tag<ModbusTagDefinition> modbusTag =
-                protocolAdapterTagService.resolveTag(modbusToMqttMapping.getTagName(), ModbusTagDefinition.class);
-
+            final @NotNull ModbusClient modbusClient,
+            final @NotNull Tag<ModbusTagDefinition> modbusTag) {
         final AddressRange addressRange = modbusTag.getTagDefinition().getAddressRange();
 
         return doRead(addressRange.startIdx,
@@ -212,12 +226,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 addressRange.flipRegisters,
                 modbusTag.getTagDefinition().getDataType(),
                 addressRange.readType,
-                modbusClient)
-                .thenApply(dataPoint -> {
-                    final ModBusData data = new ModBusData(modbusToMqttMapping);
-                    data.addDataPoint(dataPoint);
-                    return data;
-                });
+                modbusClient).thenApply(dataPoint -> {
+            final ModBusData data = new ModBusData(modbusToMqttMapping);
+            data.addDataPoint(dataPoint);
+            return data;
+        });
     }
 
     protected static @NotNull CompletableFuture<DataPoint> doRead(
@@ -229,29 +242,13 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusClient modbusClient) {
         switch (readType) {
             case HOLDING_REGISTERS:
-                return modbusClient
-                        .readHoldingRegisters(
-                                startIdx,
-                                dataType,
-                                unitId,
-                                flipRegisters);
+                return modbusClient.readHoldingRegisters(startIdx, dataType, unitId, flipRegisters);
             case INPUT_REGISTERS:
-                return modbusClient
-                        .readInputRegisters(
-                                startIdx,
-                                dataType,
-                                unitId,
-                                flipRegisters);
+                return modbusClient.readInputRegisters(startIdx, dataType, unitId, flipRegisters);
             case COILS:
-                return modbusClient
-                        .readCoils(
-                                startIdx,
-                                unitId);
+                return modbusClient.readCoils(startIdx, unitId);
             case DISCRETE_INPUT:
-                return modbusClient
-                        .readDiscreteInput(
-                                startIdx,
-                                unitId);
+                return modbusClient.readDiscreteInput(startIdx, unitId);
             default:
                 return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
         }
@@ -268,7 +265,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         if (groupIdx < count) {
             tree.addNode("grouping-" + startIdx,
                     "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1),
-                    "", "",
+                    "",
+                    "",
                     parent,
                     NodeType.FOLDER,
                     false);
@@ -285,7 +283,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             if (i % groupIdx == 0 && i < count) {
                 tree.addNode("grouping-" + i,
                         "Addresses " + (i + 1) + "-" + (i + groupIdx),
-                        "", "",
+                        "",
+                        "",
                         parent,
                         NodeType.FOLDER,
                         false);

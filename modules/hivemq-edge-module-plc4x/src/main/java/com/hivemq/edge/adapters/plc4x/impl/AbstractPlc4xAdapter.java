@@ -16,9 +16,10 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -94,10 +95,32 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     @Override
     public void poll(final @NotNull PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
         if (connection != null && connection.isConnected()) {
-            connection.read((Plc4xToMqttMapping) pollingInput.getPollingContext())
+            final Plc4xToMqttMapping plc4xToMqttMapping = (Plc4xToMqttMapping) pollingInput.getPollingContext();
+            final String tagName = plc4xToMqttMapping.getTagName();
+
+            // first resolve the tag
+            final Tag<Plc4xTagDefinition> plc4xTag;
+            try {
+                plc4xTag= pollingInput.protocolAdapterTagService().resolveTag(tagName,
+                        Plc4xTagDefinition.class);
+            } catch (final TagNotFoundException e) {
+                pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                        tagName +
+                        "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+                return;
+            } catch (final TagDefinitionParseException e) {
+                pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                        tagName +
+                        "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+                return;
+            }
+
+
+
+            connection.read(plc4xToMqttMapping)
                     .thenApply(response -> processReadResponse((Plc4xToMqttMapping) pollingInput.getPollingContext(),
                             response))
-                    .thenApply(data -> captureDataSample(data, pollingInput.getPollingContext()))
+                    .thenApply(data -> captureDataSample(data, plc4xTag))
                     .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
         }
     }
@@ -231,14 +254,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
 
     protected @Nullable ProtocolAdapterDataSample captureDataSample(
-            final @NotNull ProtocolAdapterDataSample data, final @NotNull PollingContext pollingContext) {
+            final @NotNull ProtocolAdapterDataSample data, final @NotNull Tag<Plc4xTagDefinition> plc4xTag) {
         boolean publishData = true;
-        final Plc4xToMqttMapping plc4xToMqttMapping = (Plc4xToMqttMapping) pollingContext;
-
-        // resolve the tag
-        final Tag<Plc4xTagDefinition> tag =
-                protocolAdapterTagService.resolveTag(plc4xToMqttMapping.getTagName(), Plc4xTagDefinition.class);
-        final String tagAddress = tag.getTagDefinition().getTagAddress();
+        final String tagAddress = plc4xTag.getTagDefinition().getTagAddress();
 
         if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
             final ProtocolAdapterDataSample previousSample = lastSamples.put(tagAddress, data);

@@ -18,6 +18,7 @@ package com.hivemq.edge.modules.adapters;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.domain.DomainTag;
@@ -40,10 +41,10 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     }
 
     @Override
-    public @NotNull <T> Tag<T> resolveTag(final @NotNull String tagName, final @NotNull Class<T> addressClass) {
+    public @NotNull <T> Tag<T> resolveTag(final @NotNull String tagName, final @NotNull Class<T> definitionClass) {
         final DomainTag tag = domainTagPersistence.getTag(tagName);
         try {
-            final T address = objectMapper.treeToValue(tag.getTagDefinition(), addressClass);
+            final T address = objectMapper.treeToValue(tag.getTagDefinition(), definitionClass);
             return new Tag<T>() {
                 @Override
                 public @NotNull T getTagDefinition() {
@@ -55,11 +56,9 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
                     return tag.getTag();
                 }
             };
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } catch (final JsonProcessingException e) {
+            throw new TagDefinitionParseException("Parsing of definition for class '"+definitionClass+"' failed, original exception by framework: " + e.getMessage());
         }
-
-
     }
 
     @Override

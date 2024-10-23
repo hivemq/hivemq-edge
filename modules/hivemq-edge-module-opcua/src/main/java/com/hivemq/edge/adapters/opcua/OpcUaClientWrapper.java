@@ -7,6 +7,8 @@ import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -81,7 +83,23 @@ public class OpcUaClientWrapper {
     }
 
     public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToOpcUaMapping writeContext) {
-        final String nodeId = resolveNodeIDFromTagName(writeContext.getTagName());
+        final @NotNull String tagName = writeContext.getTagName();
+        // first resolve the tag
+        final Tag<OpcuaTagDefinition> opcuaTag;
+        try {
+            opcuaTag = moduleServices.protocolAdapterTagService()
+                    .resolveTag(tagName, OpcuaTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Schema discovery for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+        } catch (final TagDefinitionParseException e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Schema discovery for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol."));
+        }
+
+        final String nodeId = opcuaTag.getTagDefinition().getNode();
         return jsonSchemaGenerator.map(gen -> gen.createJsonSchema(NodeId.parse(nodeId)))
                 .orElseGet(() -> CompletableFuture.failedFuture(new NullPointerException()));
     }
@@ -126,7 +144,25 @@ public class OpcUaClientWrapper {
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) writingInput.getWritingPayload();
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) writingInput.getWritingContext();
         log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
-        final NodeId nodeId = NodeId.parse(resolveNodeIDFromTagName(writeContext.getTagName()));
+        final @NotNull String tagName = writeContext.getTagName();
+        // first resolve the tag
+        final Tag<OpcuaTagDefinition> opcuaTag;
+        try {
+            opcuaTag = writingInput.protocolAdapterTagService()
+                    .resolveTag(writeContext.getTagName(), OpcuaTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
+
+        final NodeId nodeId = NodeId.parse(opcuaTag.getTagDefinition().getNode());
 
         jsonToOpcUAConverter.map(conv -> conv.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId))
                 .ifPresentOrElse(opcUaObject -> {
@@ -294,12 +330,5 @@ public class OpcUaClientWrapper {
         });
     }
 
-
-    private @NotNull String resolveNodeIDFromTagName(final @NotNull String tagName) {
-        // first resolve the tag
-        final Tag<OpcuaTagDefinition> addressTag =
-                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagDefinition.class);
-        return addressTag.getTagDefinition().getNode();
-    }
 
 }

@@ -20,6 +20,8 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -78,7 +80,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
 
 
-
     @BeforeEach
     public void before() {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
@@ -95,12 +96,18 @@ abstract class AbstractOpcUaPayloadConverterTest {
     }
 
     @NotNull
-    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId) throws Exception {
+    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
+            throws Exception, TagNotFoundException, TagDefinitionParseException {
         when(protocolAdapterTagService.resolveTag(any(), eq(OpcuaTagDefinition.class))).thenReturn(new OpcuaTag("",
                 new OpcuaTagDefinition(subcribedNodeId)));
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));
+                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId,
+                        "topic",
+                        null,
+                        null,
+                        null,
+                        null)));
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test-" + UUID.randomUUID(),
                 opcUaServerExtension.getServerUri(),
                 false,

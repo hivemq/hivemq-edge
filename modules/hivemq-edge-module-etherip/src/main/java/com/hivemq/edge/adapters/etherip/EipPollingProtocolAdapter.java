@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
+import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -47,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMqttMapping> {
 
-    private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
+    private static final @NotNull org.slf4j.Logger log = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
     private static final @NotNull String TAG_ADDRESS_TYPE_SEP = ":";
 
@@ -101,14 +103,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
                 protocolAdapterStopOutput.stoppedSuccessfully();
 
                 protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                LOG.info("Stopped");
+                log.info("Stopped");
             } else {
                 protocolAdapterStopOutput.stoppedSuccessfully();
-                LOG.info("Stopped without an open connection");
+                log.info("Stopped without an open connection");
             }
         } catch (Exception e) {
             protocolAdapterStopOutput.failStop(e, "Unable to stop Ethernet IP connection");
-            LOG.error("Unable to stop", e);
+            log.error("Unable to stop", e);
         }
     }
 
@@ -127,9 +129,22 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
         }
 
         final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
-        final Tag<EipTagDefinition> eipAddressTag =
-                protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
-                        EipTagDefinition.class);
+        final String tagName = pollingInput.getPollingContext().getTagName();
+
+        final Tag<EipTagDefinition> eipAddressTag;
+        try {
+            eipAddressTag = protocolAdapterTagService.resolveTag(tagName, EipTagDefinition.class);
+        } catch (final TagNotFoundException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                    tagName +
+                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+            return;
+        } catch (final TagDefinitionParseException e) {
+            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
+                    tagName +
+                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
+            return;
+        }
 
         final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
                 eipAddressTag.getTagDefinition().getAddress());
@@ -151,21 +166,21 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             pollingOutput.finish();
         } catch (CipException e) {
             if (e.getStatusCode() == 0x04) {
-                LOG.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
+                log.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
                 pollingOutput.fail(e, "Tag '" + tagAddress + "'  doesn't exist on device");
             } else {
-                LOG.warn("Problem accessing tag '{}' on device.", tagAddress, e);
+                log.warn("Problem accessing tag '{}' on device.", tagAddress, e);
                 pollingOutput.fail(e, "Problem accessing tag '" + tagAddress + "' on device.");
             }
         } catch (Exception e) {
-            LOG.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
+            log.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
             pollingOutput.fail(e, "An exception occurred while reading tag '" + tagAddress + "'.");
         }
     }
 
     private @NotNull List<EtherIpValue> handleResult(final @NotNull CIPData evt, final @NotNull String tagAddress) {
         return EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, evt).map(List::of).orElseGet(() -> {
-            LOG.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
+            log.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
             return List.of();
         });
     }
@@ -192,8 +207,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(
-            @NotNull final EipToMqttMapping eipToMqttMapping,
-            final @NotNull String address) {
+            @NotNull final EipToMqttMapping eipToMqttMapping, final @NotNull String address) {
         return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, eipToMqttMapping.getDataType());
     }
 
