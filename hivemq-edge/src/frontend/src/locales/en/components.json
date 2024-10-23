@@ -209,6 +209,10 @@
         }
       },
       "sources": {
+        "selector": {
+          "placeholder": "Type or select a topic filter ...",
+          "noOptionsMessage": "No topic filter matching the selection"
+        },
         "header": "Sources",
         "samples": {
           "aria-label": "Reload samples"
@@ -221,6 +225,10 @@
         }
       },
       "destination": {
+        "selector": {
+          "placeholder": "Type or select a tag ...",
+          "noOptionsMessage": "No tag matching the selection"
+        },
         "header": "Destination output",
         "check": {
           "aria-label": "Mapping valid"
