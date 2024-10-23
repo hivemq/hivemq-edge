@@ -8,7 +8,7 @@ import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 interface SourceSelectorProps {
   adapterType?: string
   adapterId?: string
-  value: string
+  value: string | undefined
   onChange: (v: string | string[] | undefined) => void
 }
 
@@ -20,7 +20,7 @@ export const SelectSourceTopics: FC<SourceSelectorProps> = ({ value, onChange })
       isLoading={isLoading}
       options={data}
       id="mapping-select-source"
-      value={value}
+      value={value || ''}
       onChange={onChange}
       isCreatable={false}
       isTag
@@ -36,7 +36,7 @@ export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, value
       isLoading={isLoading}
       options={data?.items?.map((deviceTag) => deviceTag.tag) || []}
       id="mapping-select-destination"
-      value={value}
+      value={value || ''}
       onChange={onChange}
       isCreatable={false}
       isTag

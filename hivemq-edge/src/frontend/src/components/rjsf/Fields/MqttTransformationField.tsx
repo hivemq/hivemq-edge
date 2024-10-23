@@ -45,8 +45,8 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
     setSubsData((old) => [
       ...(old || []),
       {
-        mqttTopicFilter: '',
-        tag: '',
+        mqttTopicFilter: undefined,
+        tag: undefined,
         fieldMapping: [],
       },
     ])

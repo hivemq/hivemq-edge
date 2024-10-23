@@ -27,8 +27,8 @@ export interface MappingManagerType<T = any> {
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
 export interface OutwardMapping {
-  mqttTopicFilter: string
-  tag: string
+  mqttTopicFilter: string | undefined
+  tag: string | undefined
   fieldMapping: FieldMapping[]
 }
 

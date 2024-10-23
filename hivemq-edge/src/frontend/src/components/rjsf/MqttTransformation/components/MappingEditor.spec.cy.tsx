@@ -3,9 +3,9 @@ import MappingEditor from './MappingEditor.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 const MOCK_SUBS: OutwardMapping = {
-  node: 'my-node',
-  'mqtt-topic': ['my-topic'],
-  mapping: [{ source: ['dropped-property'], destination: 'Second String' }],
+  tag: 'my-node',
+  mqttTopicFilter: 'my-topic',
+  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'Second String' } }],
 }
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,7 +21,7 @@ describe('MappingEditor', () => {
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
 
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />
+      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />
     )
 
     cy.get('h3').should('have.text', 'Properties to set')
