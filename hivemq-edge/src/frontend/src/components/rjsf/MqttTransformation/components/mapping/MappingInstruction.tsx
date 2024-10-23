@@ -2,6 +2,7 @@ import { FC, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {
+  Box,
   ButtonGroup,
   Card,
   CardBody,
@@ -10,7 +11,6 @@ import {
   Code,
   FormControl,
   HStack,
-  List,
   Textarea,
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
@@ -71,29 +71,37 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
   return (
     <HStack>
-      <Card size="sm" variant="outline" flex={1}>
+      <Card size="sm" variant="outline" w="100%">
         <CardHeader>
-          <List>
-            <PropertyItem property={property} />
-          </List>
+          <PropertyItem property={property} hasTooltip />
         </CardHeader>
-        <CardBody
-          {...getDropZoneBorder(activeColor)}
-          backgroundColor={backgroundColor}
-          m={2}
-          p={4}
-          ref={dropTargetRef}
-          minW={250}
-          data-testid="mapping-instruction-dropzone"
-        >
-          {mapping ? (
-            <Code>{mapping.source.join(' ')}</Code>
-          ) : (
-            t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')
-          )}
+        <CardBody display="flex" flexDirection="row" gap={2}>
+          <Box
+            {...getDropZoneBorder(activeColor)}
+            backgroundColor={backgroundColor}
+            p={4}
+            ref={dropTargetRef}
+            minW={250}
+            data-testid="mapping-instruction-dropzone"
+            role="group"
+            aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
+          >
+            {mapping ? (
+              <Code>{mapping.source.propertyPath}</Code>
+            ) : (
+              t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')
+            )}
+          </Box>
+          <ButtonGroup isAttached size="xs" role="toolbar">
+            <IconButton
+              aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
+              icon={<RiDeleteBin2Fill />}
+              onClick={() => setState(DropState.IDLE)}
+            />
+          </ButtonGroup>
         </CardBody>
         {state === DropState.COMPLETED && showTransformation && (
-          <CardFooter>
+          <CardFooter role="group" aria-label={t('rjsf.MqttTransformationField.instructions.editor.role')}>
             <ButtonGroup isAttached size="xs" isDisabled>
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.instructions.actions.edit.aria-label')}
@@ -101,18 +109,11 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               />
             </ButtonGroup>
             <FormControl>
-              <Textarea size="xs" aria-label="ssss" value="`${veniam}${campana}`" />
+              <Textarea size="xs" aria-label="ssss" />
             </FormControl>
           </CardFooter>
         )}
       </Card>
-      <ButtonGroup isAttached size="xs">
-        <IconButton
-          aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
-          icon={<RiDeleteBin2Fill />}
-          onClick={() => setState(DropState.IDLE)}
-        />
-      </ButtonGroup>
     </HStack>
   )
 }
