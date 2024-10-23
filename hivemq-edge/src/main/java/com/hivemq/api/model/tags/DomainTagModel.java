@@ -17,6 +17,7 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -25,9 +26,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "DomainTag")
 public class DomainTagModel {
 
-    @JsonProperty("tagAddress")
+    @JsonProperty("tagDefinition")
     @Schema(description = "The address for the data point on the device.")
-    private final @NotNull TagAddress tagAddress;
+    private final @NotNull JsonNode tagDefinition;
 
     @JsonProperty("tagName")
     @Schema(description = "The name of the tag that identifies it within this edge instance.")
@@ -43,11 +44,11 @@ public class DomainTagModel {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
-            @JsonProperty("tagAddress") final @NotNull TagAddress tagAddress,
+            @JsonProperty("tagDefinition") final @NotNull JsonNode tagDefinition,
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @NotNull String description) {
-        this.tagAddress = tagAddress;
+        this.tagDefinition = tagDefinition;
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = description;
@@ -57,8 +58,8 @@ public class DomainTagModel {
         return tag;
     }
 
-    public @NotNull TagAddress getTagAddress() {
-        return tagAddress;
+    public @NotNull JsonNode getTagDefinition() {
+        return tagDefinition;
     }
 
     public @NotNull String getDescription() {
@@ -70,7 +71,7 @@ public class DomainTagModel {
     }
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(new TagAddress(domainTag.getTagAddress()),
+        return new DomainTagModel(domainTag.getTagDefinition(),
                 domainTag.getTag(),
                 "someProtocolId",
                 "someDescription");
@@ -82,7 +83,7 @@ public class DomainTagModel {
         if (o == null || getClass() != o.getClass()) return false;
 
         final DomainTagModel that = (DomainTagModel) o;
-        return tagAddress.equals(that.tagAddress) &&
+        return tagDefinition.equals(that.tagDefinition) &&
                 tag.equals(that.tag) &&
                 protocolId.equals(that.protocolId) &&
                 description.equals(that.description);
@@ -90,7 +91,7 @@ public class DomainTagModel {
 
     @Override
     public int hashCode() {
-        int result = tagAddress.hashCode();
+        int result = tagDefinition.hashCode();
         result = 31 * result + tag.hashCode();
         result = 31 * result + protocolId.hashCode();
         result = 31 * result + description.hashCode();
@@ -102,9 +103,7 @@ public class DomainTagModel {
         return "DomainTagModel{" +
                 "description='" +
                 description +
-                '\'' +
-                ", tagAddress=" +
-                tagAddress +
+                '\'' + ", tagAddress=" + tagDefinition +
                 ", tag='" +
                 tag +
                 '\'' +

@@ -75,7 +75,6 @@ public class EipPollingProtocolAdapterIT {
         when(inputMock.getConfig()).thenReturn(config);
 
         EipToMqttMapping ctx = mock(EipToMqttMapping.class);
-        when(ctx.getTagAddress()).thenReturn(tagAddress);
         when(ctx.getDataType()).thenReturn(tagType);
 
         PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
@@ -117,7 +116,6 @@ public class EipPollingProtocolAdapterIT {
         when(inputMock.getConfig()).thenReturn(config);
 
         EipToMqttMapping ctx = mock(EipToMqttMapping.class);
-        when(ctx.getTagAddress()).thenReturn(TAG_INT);
         when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
         PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
@@ -153,7 +151,6 @@ public class EipPollingProtocolAdapterIT {
         when(inputMock.getConfig()).thenReturn(config);
 
         EipToMqttMapping ctx = mock(EipToMqttMapping.class);
-        when(ctx.getTagAddress()).thenReturn(TAG_INT);
         when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
         PollingInput<EipToMqttMapping> input = mock(PollingInput.class);

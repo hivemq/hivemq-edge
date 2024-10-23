@@ -35,6 +35,7 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
 
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new EipProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterInformation.class);
+    public static final String PROTOCOL_ID = "eip";
 
     private EipProtocolAdapterInformation() {
     }
@@ -46,7 +47,7 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolId() {
-        return "eip";
+        return PROTOCOL_ID;
     }
 
     @Override

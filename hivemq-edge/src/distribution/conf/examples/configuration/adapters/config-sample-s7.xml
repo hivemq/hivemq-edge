@@ -47,7 +47,7 @@
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                         <tagName>my-tag-name-1</tagName>
-                        <tagAddress>%I205.0</tagAddress>
+                        <tagDefinition>tag1</tagDefinition>
                         <dataType>BOOL</dataType>
                     </s7ToMqttMapping>
                 </s7ToMqttMappings>

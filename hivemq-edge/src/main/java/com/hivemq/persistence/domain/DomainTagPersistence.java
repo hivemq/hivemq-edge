@@ -15,7 +15,6 @@
  */
 package com.hivemq.persistence.domain;
 
-import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -51,4 +50,7 @@ public interface DomainTagPersistence {
 
     @NotNull
     List<DomainTag> getTagsForAdapter(@NotNull String adapterId);
+
+    @NotNull
+    DomainTag getTag(@NotNull String tagId);
 }
