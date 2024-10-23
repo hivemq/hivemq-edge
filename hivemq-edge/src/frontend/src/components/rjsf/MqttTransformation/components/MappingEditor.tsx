@@ -36,6 +36,9 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
       <CardBody maxH="58vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
+        {!isSuccess && !isError && !isLoading && (
+          <ErrorMessage message={t('rjsf.MqttTransformationField.destination.prompt')} status="info" />
+        )}
         {isSuccess && (
           <List>
             {properties.map((property) => {

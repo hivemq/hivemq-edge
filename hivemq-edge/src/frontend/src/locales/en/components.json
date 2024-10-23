@@ -209,6 +209,7 @@
         }
       },
       "sources": {
+        "prompt": "Select a topic filter as a source for your mappings",
         "selector": {
           "placeholder": "Type or select a topic filter ...",
           "noOptionsMessage": "No topic filter matching the selection"
@@ -225,6 +226,7 @@
         }
       },
       "destination": {
+        "prompt": "Select a device tag as a destination for your mappings",
         "selector": {
           "placeholder": "Type or select a tag ...",
           "noOptionsMessage": "No tag matching the selection"

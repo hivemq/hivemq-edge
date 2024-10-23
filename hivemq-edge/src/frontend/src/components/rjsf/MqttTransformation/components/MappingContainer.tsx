@@ -1,8 +1,8 @@
 import { FC, useState } from 'react'
-import { Box, Button, ButtonGroup, HStack, Stack, VStack } from '@chakra-ui/react'
+import { FaRightFromBracket } from 'react-icons/fa6'
+import { Button, ButtonGroup, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
 import { JsonNode } from '@/api/__generated__'
-import DataModelDestination from '@/components/rjsf/MqttTransformation/components/DataModelDestination.tsx'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import {
@@ -42,32 +42,28 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
         <VStack flex={1} alignItems="stretch" maxW="40vw">
-          <Box>
-            <SelectSourceTopics value={item.mqttTopicFilter} onChange={(v) => onChange('mqttTopicFilter', v)} />
-          </Box>
-          <DataModelSources flex={1} topics={[item.mqttTopicFilter]} />
+          <SelectSourceTopics value={item.mqttTopicFilter} onChange={(v) => onChange('mqttTopicFilter', v)} />
+          <DataModelSources flex={1} topics={item.mqttTopicFilter ? [item.mqttTopicFilter] : []} minH={250} />
         </VStack>
-        <VStack flex={2} alignItems="stretch">
-          <Box maxW="50%">
-            <SelectDestinationTag
-              adapterId={adapterId}
-              adapterType={adapterType}
-              value={item.tag}
-              onChange={(v) => onChange('tag', v)}
-            />
-          </Box>
-          <HStack alignItems="stretch">
-            {strategy != MappingStrategy.EXACT && (
-              <MappingEditor
-                flex={1}
-                topic={item.tag}
-                mapping={item.fieldMapping}
-                showTransformation={strategy === MappingStrategy.TRANSFORMED}
-                onChange={(mappings) => onChange('fieldMapping', mappings)}
-              />
-            )}
-            <DataModelDestination flex={1} topic={item.tag} validation={validation} />
+        <VStack justifyContent="flex-start">
+          <HStack height={38}>
+            <Icon as={FaRightFromBracket} />
           </HStack>
+        </VStack>
+        <VStack flex={1} alignItems="stretch" maxW="50vw">
+          <SelectDestinationTag
+            adapterId={adapterId}
+            adapterType={adapterType}
+            value={item.tag}
+            onChange={(v) => onChange('tag', v)}
+          />
+          <MappingEditor
+            flex={1}
+            topic={item.tag}
+            mapping={item.fieldMapping}
+            showTransformation={strategy === MappingStrategy.TRANSFORMED}
+            onChange={(mappings) => onChange('fieldMapping', mappings)}
+          />
         </VStack>
       </Stack>
       <HStack justifyContent="flex-end">
