@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.file.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -45,6 +47,23 @@ class LegacyFileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -55,7 +74,7 @@ class LegacyFileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -107,7 +126,7 @@ class LegacyFileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 

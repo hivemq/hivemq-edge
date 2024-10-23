@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -50,6 +52,8 @@ public class HttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+
 
     @Test
     public void convertConfigObject_urlNull_exception() throws Exception {
@@ -60,7 +64,7 @@ public class HttpAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -74,7 +78,7 @@ public class HttpAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -88,7 +92,7 @@ public class HttpAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("http"));
@@ -129,7 +133,7 @@ public class HttpAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
@@ -161,7 +165,7 @@ public class HttpAdapterConfigTest {
         assertThat(adapters.get("http")).isNotNull();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("http"));
@@ -254,7 +258,8 @@ public class HttpAdapterConfigTest {
         final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(1337,
                 11,
                 true,
-                true, List.of(new HttpToMqttMapping("tag1",
+                true,
+                List.of(new HttpToMqttMapping("tag1",
                                 "my/destination",
                                 0,
                                 List.of(),
@@ -263,7 +268,8 @@ public class HttpAdapterConfigTest {
                                 1774,
                                 YAML,
                                 "my-body",
-                                List.of(httpHeader2, httpHeader1)), new HttpToMqttMapping("tag2",
+                                List.of(httpHeader2, httpHeader1)),
+                        new HttpToMqttMapping("tag2",
                                 "my/destination2",
                                 0,
                                 List.of(),
@@ -280,18 +286,14 @@ public class HttpAdapterConfigTest {
                         1,
                         POST,
                         11,
-                        List.of(httpHeader1, httpHeader2)), new MqttToHttpMapping("tag4",
-                        "my1/#",
-                        2,
-                        POST,
-                        11,
-                        List.of(httpHeader1, httpHeader2))));
+                        List.of(httpHeader1, httpHeader2)),
+                new MqttToHttpMapping("tag4", "my1/#", 2, POST, 11, List.of(httpHeader1, httpHeader2))));
 
         final BidirectionalHttpAdapterConfig httpAdapterConfig =
                 new BidirectionalHttpAdapterConfig("my-protocol-adapter", 50, httpToMqttConfig, mqttToHttpConfig, true);
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
@@ -382,7 +384,8 @@ public class HttpAdapterConfigTest {
         final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(null,
                 null,
                 null,
-                null, List.of(new HttpToMqttMapping("tag1",
+                null,
+                List.of(new HttpToMqttMapping("tag1",
                         "my/destination",
                         null,
                         null,
@@ -393,12 +396,8 @@ public class HttpAdapterConfigTest {
                         null,
                         null)));
 
-        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag1",
-                "my/#",
-                null,
-                null,
-                null,
-                null)));
+        final MqttToHttpConfig mqttToHttpConfig =
+                new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag1", "my/#", null, null, null, null)));
 
         final BidirectionalHttpAdapterConfig httpAdapterConfig = new BidirectionalHttpAdapterConfig(
                 "my-protocol-adapter",
@@ -408,7 +407,7 @@ public class HttpAdapterConfigTest {
                 null);
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
+                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
@@ -468,5 +467,32 @@ public class HttpAdapterConfigTest {
                 mock(),
                 mock());
         return readerWriter.applyConfig();
+    }
+
+
+    private class ProtocolAdapterFactoryTestInput implements ProtocolAdapterFactoryInput {
+
+        private final Boolean writingEnabled;
+
+        private ProtocolAdapterFactoryTestInput(final Boolean writingEnabled) {
+            this.writingEnabled = writingEnabled;
+        }
+
+        @Override
+        public boolean isWritingEnabled() {
+            return writingEnabled;
+        }
+
+
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
     }
 }

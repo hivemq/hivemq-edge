@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -43,7 +45,23 @@ class FileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
 
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-full-config.xml");
@@ -53,7 +71,7 @@ class FileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -104,7 +122,7 @@ class FileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -131,7 +149,7 @@ class FileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'contentType'");
     }
@@ -145,7 +163,7 @@ class FileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -159,7 +177,7 @@ class FileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -178,7 +196,7 @@ class FileAdapterConfigTest {
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
 
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -215,7 +233,7 @@ class FileAdapterConfigTest {
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
 
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
+                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 

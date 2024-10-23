@@ -30,6 +30,7 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
@@ -267,7 +268,7 @@ public class ProtocolAdapterManager {
             final Parameter[] parameters = declaredConstructor.getParameters();
             // likely custom protocol adapter implementations still have the old default no-arg constructor.
             if (parameters.length == 0) {
-                return factoryClass.getDeclaredConstructor().newInstance(writingEnabled(), protocolAdapterTagService);
+                return factoryClass.getDeclaredConstructor().newInstance();
             }
 
             // this should not be out in the wild, but this was the constructor format after adding bi-directional adapters
@@ -276,11 +277,12 @@ public class ProtocolAdapterManager {
                         .newInstance(writingEnabled(), protocolAdapterTagService);
             }
 
-            // current format: 1. Boolean writeEnabled, 2. ProtocolAdapterTagService to add tags during config migration
-            if (parameters.length == 2 && parameters[0].getType().equals(boolean.class) &&
-                    parameters[1].getType().equals(ProtocolAdapterTagService.class)) {
-                return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
-                        .newInstance(writingEnabled(), protocolAdapterTagService);
+            // current format: ProtocolAdapterFactoryInput expandable interface that will be backwards co patible if methods get added.
+            if (parameters.length == 1 && parameters[0].getType().equals(ProtocolAdapterFactoryInput.class)) {
+                final ProtocolAdapterFactoryInput protocolAdapterFactoryInput =
+                        new ProtocolAdapterFactoryInputImpl(writingEnabled(), protocolAdapterTagService, eventService);
+                return factoryClass.getDeclaredConstructor(ProtocolAdapterFactoryInput.class)
+                        .newInstance(protocolAdapterFactoryInput);
             }
 
             log.warn("No fitting constructor was found to initialize adapter factory class '{}'.", factoryClass);
@@ -377,7 +379,10 @@ public class ProtocolAdapterManager {
                         protocolAdapterWrapper,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        adapterSubscription, eventService, jsonPayloadDefaultCreator, protocolAdapterTagService);
+                        adapterSubscription,
+                        eventService,
+                        jsonPayloadDefaultCreator,
+                        protocolAdapterTagService);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }

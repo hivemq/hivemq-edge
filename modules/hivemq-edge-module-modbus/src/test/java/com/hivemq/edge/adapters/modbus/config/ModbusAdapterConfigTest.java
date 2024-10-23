@@ -17,7 +17,9 @@ package com.hivemq.edge.adapters.modbus.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -43,6 +45,23 @@ public class ModbusAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -53,7 +72,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"));
@@ -111,7 +130,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"));
@@ -143,7 +162,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -157,7 +176,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'host'");
     }
@@ -171,7 +190,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'port'");
     }
@@ -185,7 +204,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -199,7 +218,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus")));
     }
@@ -213,7 +232,7 @@ public class ModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -233,7 +252,7 @@ public class ModbusAdapterConfigTest {
                 new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -277,7 +296,7 @@ public class ModbusAdapterConfigTest {
                 new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 

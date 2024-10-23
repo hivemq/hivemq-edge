@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -46,6 +48,7 @@ class OpcUaAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -56,7 +59,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalOpcUaAdapterConfig config =
                 (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("opcua"));
@@ -128,7 +131,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalOpcUaAdapterConfig config =
                 (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("opcua"));
@@ -174,7 +177,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(false, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -188,7 +191,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(false, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -202,7 +205,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(false, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -216,7 +219,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(false, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'uri'");
     }
@@ -230,7 +233,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -244,7 +247,7 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
     }
@@ -271,7 +274,7 @@ class OpcUaAdapterConfigTest {
                 new Security(BASIC128RSA15));
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -336,7 +339,7 @@ class OpcUaAdapterConfigTest {
                 null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
+                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -385,5 +388,31 @@ class OpcUaAdapterConfigTest {
                 mock(),
                 mock());
         return readerWriter.applyConfig();
+    }
+
+    private class ProtocolAdapterFactoryTestInput implements ProtocolAdapterFactoryInput {
+
+        private final Boolean writingEnabled;
+
+        private ProtocolAdapterFactoryTestInput(final Boolean writingEnabled) {
+            this.writingEnabled = writingEnabled;
+        }
+
+        @Override
+        public boolean isWritingEnabled() {
+            return writingEnabled;
+        }
+
+
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
     }
 }

@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
@@ -50,10 +51,9 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     final boolean writingEnabled;
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public ModbusProtocolAdapterFactory(
-            final boolean writingEnabled, final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
-        this.writingEnabled = writingEnabled;
-        this.protocolAdapterTagService = protocolAdapterTagService;
+    public ModbusProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
+        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
     }
 
     @Override

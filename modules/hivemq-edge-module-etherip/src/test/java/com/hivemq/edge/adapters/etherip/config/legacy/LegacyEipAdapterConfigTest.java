@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -49,6 +51,23 @@ class LegacyEipAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @BeforeEach
     void setUp() {
@@ -66,7 +85,7 @@ class LegacyEipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false, protocolAdapterTagService);
+                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"));
 
@@ -125,7 +144,7 @@ class LegacyEipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false, protocolAdapterTagService);
+                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"));
 

@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.etherip.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -41,8 +42,24 @@ import static org.mockito.Mockito.mock;
 class EipAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService tagService = mock();
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
     private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -53,7 +70,7 @@ class EipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false, tagService, eventService);
+                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config =
                 (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
 
@@ -109,7 +126,7 @@ class EipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false, tagService, eventService);
+                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config =
                 (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
 
@@ -151,7 +168,7 @@ class EipAdapterConfigTest {
                 new EipToMqttConfig(12, 13, true, List.of(pollingContext)));
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false, tagService, eventService);
+                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config = eipProtocolAdapterFactory.unconvertConfigObject(mapper, eipAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-eip-adapter");

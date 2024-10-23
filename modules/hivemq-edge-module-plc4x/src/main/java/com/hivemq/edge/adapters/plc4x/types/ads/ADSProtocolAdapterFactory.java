@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
@@ -49,12 +51,12 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     final boolean writingEnabled;
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
+    private final @NotNull EventService eventService;
 
-    public ADSProtocolAdapterFactory(
-            final boolean writingEnabled,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
-        this.writingEnabled = writingEnabled;
-        this.protocolAdapterTagService = protocolAdapterTagService;
+    public ADSProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
+        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+        this.eventService = protocolAdapterFactoryInput.eventService();
     }
 
     @Override
@@ -133,6 +135,13 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
                             "While migrating the AdsConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
                             subscription.getTagName(),
                             newTagName);
+                    eventService.createAdapterEvent(legacyAdsAdapterConfig.getId(), PROTOCOL_ID)
+                            .withMessage(
+                                    "While migrating the AdsConfig a tag could not be added because a tag with the same name '" +
+                                            subscription.getTagName() +
+                                            "' was already present. Another tagName using an random Uuid is used instead: '" +
+                                            newTagName +
+                                            "'");
                     protocolAdapterTagService.addTag(legacyAdsAdapterConfig.getId(),
                             PROTOCOL_ID,
                             new Plc4xTag(newTagName, new Plc4xTagDefinition(subscription.getTagAddress())));

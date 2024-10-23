@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
@@ -50,13 +51,10 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     private final @NotNull ProtocolAdapterTagService tagService;
     private final @NotNull EventService eventService;
 
-    public EipProtocolAdapterFactory(
-            final boolean writingEnabled,
-            final @NotNull ProtocolAdapterTagService tagService,
-            final @NotNull EventService eventService) {
-        this.writingEnabled = writingEnabled;
-        this.tagService = tagService;
-        this.eventService = eventService;
+    public EipProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
+        this.tagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+        this.eventService = protocolAdapterFactoryInput.eventService();
     }
 
     @Override
@@ -75,11 +73,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
-            final ProtocolAdapterConfig protocolAdapterConfig =
-                    ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-            System.err.println(protocolAdapterConfig);
-            return protocolAdapterConfig;
-
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(

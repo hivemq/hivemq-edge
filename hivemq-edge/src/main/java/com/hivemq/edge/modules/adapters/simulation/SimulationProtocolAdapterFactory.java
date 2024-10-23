@@ -20,8 +20,8 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
@@ -39,13 +39,10 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     private static final @NotNull Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final ProtocolAdapterTagService protocolAdapterTagService;
 
     public SimulationProtocolAdapterFactory(
-            final boolean writingEnabled,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
-        this.writingEnabled = writingEnabled;
-        this.protocolAdapterTagService = protocolAdapterTagService;
+            final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
     }
 
     @Override
@@ -67,13 +64,13 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
 
     @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
+                log.warn(
+                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         SimulationProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
@@ -94,8 +91,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     private static @NotNull SimulationAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacySimulationAdapterConfig legacySimulationAdapterConfig =
                 objectMapper.convertValue(config, LegacySimulationAdapterConfig.class);
 

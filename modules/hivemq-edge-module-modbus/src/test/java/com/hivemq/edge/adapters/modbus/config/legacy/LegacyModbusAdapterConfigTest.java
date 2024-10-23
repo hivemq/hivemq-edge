@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.modbus.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -43,7 +45,23 @@ public class LegacyModbusAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull EventService eventService = mock();
+    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
+        @Override
+        public boolean isWritingEnabled() {
+            return true;
+        }
 
+        @Override
+        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+            return protocolAdapterTagService;
+        }
+
+        @Override
+        public @NotNull EventService eventService() {
+            return eventService;
+        }
+    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -54,7 +72,7 @@ public class LegacyModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"));
@@ -110,7 +128,7 @@ public class LegacyModbusAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
+                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"));
