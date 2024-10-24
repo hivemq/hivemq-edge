@@ -63,7 +63,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
 
   return (
     <Form
-      id="adapter-instance-form"
+      id="adapter-mapping-form"
       schema={mappingManager.schema}
       uiSchema={mappingManager.uiSchema}
       formData={mappingManager.formData}

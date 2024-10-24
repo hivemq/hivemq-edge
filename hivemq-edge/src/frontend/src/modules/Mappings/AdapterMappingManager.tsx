@@ -3,10 +3,12 @@ import { Node } from 'reactflow'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
+  Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
   Text,
@@ -70,6 +72,11 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
             />
           )}
         </DrawerBody>
+        <DrawerFooter>
+          <Button variant="primary" type="submit" form="adapter-mapping-form">
+            {t('protocolAdapter.mapping.actions.submit')}
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
