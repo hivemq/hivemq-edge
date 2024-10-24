@@ -9,7 +9,6 @@ import {
   SelectDestinationTag,
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
-import { useMappingValidation } from '@/components/rjsf/MqttTransformation/hooks/useMappingValidation.tsx'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 export enum MappingStrategy {
@@ -36,7 +35,6 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({
   onChange,
 }) => {
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
-  const validation = useMappingValidation(item)
 
   return (
     <VStack alignItems="stretch" gap={4}>
