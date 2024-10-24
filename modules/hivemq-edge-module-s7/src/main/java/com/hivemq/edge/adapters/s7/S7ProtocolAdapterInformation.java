@@ -49,7 +49,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull String getProtocolId() {
-        return "s7";
+        return "s7-new";
     }
 
     @Override
@@ -59,7 +59,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to S7-300, S7-400, S7-1200, S7-1500 & LOGO devices, reading data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to S7-200, S7-200 Smart, S7-300, S7-400, S7-1200, S7-1500, reading data from the PLC into MQTT.";
     }
 
     @Override
