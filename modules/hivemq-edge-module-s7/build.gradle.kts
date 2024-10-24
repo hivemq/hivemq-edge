@@ -38,7 +38,6 @@ dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.jackson.databind)
-    compileOnly(libs.iot.communication)
     compileOnly(libs.slf4j.api)
     implementation(libs.iot.communication)
 
