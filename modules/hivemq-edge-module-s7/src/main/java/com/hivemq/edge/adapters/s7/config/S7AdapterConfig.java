@@ -31,7 +31,7 @@ import java.util.Objects;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
 
-public class S7AdapterConfig implements ProtocolAdapterConfig, PollingContext {
+public class S7AdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -47,6 +47,26 @@ public class S7AdapterConfig implements ProtocolAdapterConfig, PollingContext {
         S7_1500,
         SINUMERIK_828D
     }
+
+    @JsonProperty("pollingIntervalMillis")
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       defaultValue = "1000")
+    private final int pollingIntervalMillis;
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+                       numberMin = -1,
+                       defaultValue = "10")
+    private final int maxPollingErrorsBeforeRemoval;
+
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private final boolean publishChangedDataOnly;
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
@@ -82,81 +102,24 @@ public class S7AdapterConfig implements ProtocolAdapterConfig, PollingContext {
 
     @JsonProperty("remoteRack")
     @ModuleConfigField(title = "Remote Rack",
-                       description = "Rack value for the remote main CPU (PLC).",
-                       defaultValue = "0")
-    private final int remoteRack;
-
-    @JsonProperty("remoteRack2")
-    @ModuleConfigField(title = "Remote Rack 2",
-                       description = "Rack value for the remote secondary CPU (PLC).",
-                       defaultValue = "0")
-    private final int remoteRack2;
+                       description = "Rack value for the remote main CPU (PLC).")
+    private final Integer remoteRack;
 
     @JsonProperty("remoteSlot")
     @ModuleConfigField(title = "Remote Slot",
-                       description = "Slot value for the remote main CPU (PLC).",
-                       defaultValue = "0")
-    private final int remoteSlot;
+                       description = "Slot value for the remote main CPU (PLC).")
+    private final Integer remoteSlot;
 
-    @JsonProperty("remoteSlot2")
-    @ModuleConfigField(title = "Remote Slot 2",
-                       description = "Slot value for the remote secondary CPU (PLC).",
-                       defaultValue = "0")
-    private final int remoteSlot2;
+    @JsonProperty("pduLength")
+    @ModuleConfigField(title = "PDU length",
+                       description = "")
+    private final Integer pduLength;
 
-    @JsonProperty("remoteTsap")
-    @ModuleConfigField(title = "Remote TSAP",
-                       description = "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
-                       defaultValue = "0")
-    private final int remoteTsap;
-
-    @JsonProperty(value = "s7ToMqtt", required = true)
+    @JsonProperty(value = "s7ToMqttMappings", required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
                        required = true)
-    private final @NotNull S7ToMqttConfig s7ToMqttConfig;
-
-    @JsonProperty(value = "mqttTopic", required = true)
-    @ModuleConfigField(title = "Destination MQTT Topic",
-                       description = "The topic to publish data on",
-                       required = true,
-                       format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    private final @NotNull String mqttTopic;
-
-    @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "MQTT QoS",
-                       description = "MQTT Quality of Service level",
-                       numberMin = 0,
-                       numberMax = 2,
-                       defaultValue = "0")
-    private final int qos;
-
-    @JsonProperty(value = "messageHandlingOptions")
-    @ModuleConfigField(title = "Message Handling Options",
-                       description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
-                       enumDisplayValues = {
-                               "MQTT Message Per Device Tag",
-                               "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
-                       defaultValue = "MQTTMessagePerTag")
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
-
-    @JsonProperty(value = "includeTimestamp")
-    @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
-                       description = "Include the unix timestamp of the sample time in the resulting MQTT message",
-                       defaultValue = "true")
-    private final boolean includeTimestamp;
-
-    @JsonProperty(value = "includeTagNames")
-    @ModuleConfigField(title = "Include Tag Names In Publish?",
-                       description = "Include the names of the tags in the resulting MQTT publish",
-                       defaultValue = "false")
-    private final boolean includeTagNames;
-
-    @JsonProperty(value = "mqttUserProperties")
-    @ModuleConfigField(title = "MQTT User Properties",
-                       description = "Arbitrary properties to associate with the mapping",
-                       arrayMaxItems = 10)
-    private final @NotNull List<MqttUserProperty> userProperties;
+    private final @NotNull List<S7ToMqttConfig> s7ToMqttConfig;
 
     @JsonCreator
     public S7AdapterConfig(
@@ -165,58 +128,51 @@ public class S7AdapterConfig implements ProtocolAdapterConfig, PollingContext {
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
             @JsonProperty(value = "remoteRack") final @Nullable Integer remoteRack,
-            @JsonProperty(value = "remoteRack2") final @Nullable Integer remoteRack2,
             @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
-            @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
-            @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
-            @JsonProperty(value = "s7ToMqtt", required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig,
-            @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
-            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
-            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
-            @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
-            @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
+            @JsonProperty(value = "pduLength") final @Nullable Integer pduLength,
+            @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
+            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = "s7ToMqttMappings", required = true) final @NotNull List<S7ToMqttConfig> s7ToMqttConfig) {
         this.id = id;
         this.port = port;
         this.host = host;
         this.controllerType = controllerType;
-        this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);
-        this.remoteRack2 = Objects.requireNonNullElse(remoteRack2, 0);
-        this.remoteSlot = Objects.requireNonNullElse(remoteSlot, 0);
-        this.remoteSlot2 = Objects.requireNonNullElse(remoteSlot2, 0);
-        this.remoteTsap = Objects.requireNonNullElse(remoteTsap, 0);
+        this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
+        this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
+        this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
+        this.remoteRack = remoteRack;
+        this.remoteSlot = remoteSlot;
+        this.pduLength = pduLength;
         this.s7ToMqttConfig = s7ToMqttConfig;
-        this.mqttTopic = mqttTopic;
-        this.qos = requireNonNullElse(qos, 0);
-        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
-        this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
-        this.includeTagNames = requireNonNullElse(includeTagNames, false);
-        this.userProperties = requireNonNullElse(userProperties, List.of());
+    }
 
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
+    }
+
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 
     public int getPort() {
         return port;
     }
 
-    public int getRemoteRack() {
+    public @Nullable Integer getRemoteRack() {
         return remoteRack;
     }
 
-    public int getRemoteRack2() {
-        return remoteRack2;
-    }
-
-    public int getRemoteSlot() {
+    public @Nullable Integer getRemoteSlot() {
         return remoteSlot;
     }
 
-    public int getRemoteSlot2() {
-        return remoteSlot2;
-    }
-
-    public int getRemoteTsap() {
-        return remoteTsap;
+    public @Nullable Integer getPduLength() {
+        return pduLength;
     }
 
     public @NotNull ControllerType getControllerType() {
@@ -232,37 +188,7 @@ public class S7AdapterConfig implements ProtocolAdapterConfig, PollingContext {
         return host;
     }
 
-    public @NotNull S7ToMqttConfig getS7ToMqttConfig() {
+    public @NotNull List<S7ToMqttConfig> getS7ToMqttMappings() {
         return s7ToMqttConfig;
-    }
-
-    @Override
-    public @NotNull String getMqttTopic() {
-        return mqttTopic;
-    }
-
-    @Override
-    public int getMqttQos() {
-        return qos;
-    }
-
-    @Override
-    public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return messageHandlingOptions;
-    }
-
-    @Override
-    public @NotNull Boolean getIncludeTimestamp() {
-        return includeTimestamp;
-    }
-
-    @Override
-    public @NotNull Boolean getIncludeTagNames() {
-        return includeTagNames;
-    }
-
-    @Override
-    public @NotNull List<MqttUserProperty> getUserProperties() {
-        return userProperties;
     }
 }

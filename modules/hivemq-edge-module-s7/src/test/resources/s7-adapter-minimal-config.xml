@@ -17,16 +17,19 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <file>
-            <id>my-file-protocol-adapter</id>
-            <fileToMqtt>
-                <fileToMqttMappings>
-                    <fileToMqttMapping>
-                        <filePath>path/to/file1</filePath>
-                        <contentType>BINARY</contentType>
-                    </fileToMqttMapping>
-                </fileToMqttMappings>
-            </fileToMqtt>
-        </file>
+        <s7-new>
+            <id>my-s7-protocol-adapter</id>
+            <port>1234</port>
+            <host>my.s7-server.com</host>
+            <controllerType>S7_400</controllerType>
+            <s7ToMqttMappings>
+                <s7ToMqttMapping>
+                    <mqttTopic>my/topic</mqttTopic>
+                    <tagName>tag-name</tagName>
+                    <tagAddress>tag-address</tagAddress>
+                    <dataType>BOOL</dataType>
+                </s7ToMqttMapping>
+            </s7ToMqttMappings>
+        </s7-new>
     </protocol-adapters>
 </hivemq>
