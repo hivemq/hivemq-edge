@@ -6,6 +6,7 @@ import { LuWand } from 'react-icons/lu'
 import { useGetTagSchemas } from '@/api/hooks/useDomainModel/useGetTagSchemas.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { FieldMapping } from '@/modules/Mappings/types.ts'
@@ -21,7 +22,8 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
   const { t } = useTranslation('components')
   const { data, isLoading, isError, error, isSuccess } = useGetTagSchemas(topic ? [topic] : [])
 
-  const properties = data ? getPropertyListFrom(data) : []
+  const allProperties = data ? getPropertyListFrom(data) : []
+  const properties = allProperties.filter(filterSupportedProperties)
 
   return (
     <Card {...props} size="sm">
@@ -50,14 +52,19 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
                     property={property}
                     mapping={instruction !== -1 ? mapping?.[instruction] : undefined}
                     onChange={(source, destination) => {
-                      const newMappings = [...(mapping || [])]
-                      const newItem: FieldMapping = {
-                        source: { propertyPath: source },
-                        destination: { propertyPath: destination },
+                      let newMappings = [...(mapping || [])]
+                      if (source) {
+                        const newItem: FieldMapping = {
+                          source: { propertyPath: source },
+                          destination: { propertyPath: destination },
+                        }
+                        if (instruction !== -1) {
+                          newMappings[instruction] = newItem
+                        } else newMappings.push(newItem)
+                      } else {
+                        newMappings = newMappings.filter((mapped) => mapped.destination.propertyPath !== destination)
                       }
-                      if (instruction !== -1) {
-                        newMappings[instruction] = newItem
-                      } else newMappings.push(newItem)
+
                       onChange?.(newMappings)
                     }}
                   />

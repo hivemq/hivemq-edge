@@ -31,7 +31,7 @@ interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
   mapping?: FieldMapping
-  onChange?: (source: string, destination: string) => void
+  onChange?: (source: string | undefined, destination: string) => void
 }
 
 const MappingInstruction: FC<MappingInstructionProps> = ({
