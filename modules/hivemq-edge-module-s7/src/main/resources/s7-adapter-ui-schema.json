@@ -5,42 +5,61 @@
       "title" : "Connection",
       "properties" : [
         "id",
-        "*"
+        "host",
+        "port"
       ]
     },
     {
       "id" : "subFields",
-      "title" : "File 2 MQTT",
+      "title" : "S7 To MQTT",
       "properties" : [
-        "fileToMqtt"
+        "s7ToMqtt"
+      ]
+    },
+    {
+      "id" : "s7-new",
+      "title" : "S7 Device",
+      "properties" : [
+        "controllerType",
+        "remoteRack",
+        "remoteSlot",
+        "remoteTsap",
+        "remoteRack2",
+        "remoteSlot2"
       ]
     }
   ],
   "id" : {
     "ui:disabled" : false
   },
+  "port" : {
+    "ui:widget" : "updown"
+  },
   "ui:order" : [
     "id",
+    "host",
+    "port",
     "*"
   ],
-  "fileToMqtt" : {
+  "s7ToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
+      "s7ToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
-      "fileToMqttMappings",
+      "publishChangedDataOnly",
       "*"
     ],
-    "fileToMqttMappings" : {
+    "s7ToMqttMappings" : {
       "ui:batchMode" : true,
-      "items": {
+      "items" : {
         "ui:order" : [
+          "tagName",
+          "tagAddress",
+          "dataType",
           "mqttTopic",
           "mqttQos",
-          "*",
-          "mqttUserProperties",
-          "filePath",
-          "dataType"
+          "*"
         ],
         "ui:collapsable" : {
           "titleKey" : "mqttTopic"

@@ -113,6 +113,25 @@
       }
     },
     {
+      "id" : "s7-new",
+      "version" : "2024.9",
+      "name" : "S7 to MQTT Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to S7-300, S7-400, S7-1200 & S7-1500 devices, reading data from the PLC into MQTT.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-plc4x/src/main/resources/httpd/images/s7-icon.png",
+        "external" : true
+      }
+    },
+    {
       "id" : "ads",
       "version" : "2024.7",
       "name" : "ADS to MQTT Protocol Adapter",
