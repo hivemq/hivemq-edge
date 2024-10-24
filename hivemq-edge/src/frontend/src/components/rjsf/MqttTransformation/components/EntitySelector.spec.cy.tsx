@@ -19,7 +19,7 @@ describe('SelectSourceTopics', () => {
       cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
       cy.intercept('/api/v1/management/client/filters', [mockClientSubscription])
 
-      cy.mountWithProviders(<SelectSourceTopics values={['topic/test1', 'topic/test2']} onChange={cy.stub()} />)
+      cy.mountWithProviders(<SelectSourceTopics value="topic/test1" onChange={cy.stub()} />)
 
       cy.get('#mapping-select-source').should('contain.text', 'Loading...')
       cy.get('#mapping-select-source').should('not.contain.text', 'Loading...')
@@ -36,9 +36,7 @@ describe('SelectSourceTopics', () => {
       const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId) }
       cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
 
-      cy.mountWithProviders(
-        <SelectDestinationTag adapterId={mockAdapterId} values={['tag/test1']} onChange={cy.stub()} />
-      )
+      cy.mountWithProviders(<SelectDestinationTag adapterId={mockAdapterId} value="tag/test1" onChange={cy.stub()} />)
 
       // // Loading
       // cy.get('#mapping-select-destination').should('contain.text', 'Loading...')

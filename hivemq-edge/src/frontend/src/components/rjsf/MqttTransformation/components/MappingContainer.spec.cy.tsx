@@ -1,12 +1,12 @@
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
-import SubscriptionContainer from './SubscriptionContainer.tsx'
+import MappingContainer from './MappingContainer.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 const MOCK_SUBS: OutwardMapping = {
-  node: 'my-node',
-  'mqtt-topic': ['my-topic'],
-  mapping: [{ source: ['dropped-property'], destination: 'Second String' }],
+  tag: 'my-tag',
+  mqttTopicFilter: 'my-topic',
+  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'Second String' } }],
 }
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
@@ -25,7 +25,7 @@ describe('SubscriptionContainer', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(
-      <SubscriptionContainer onClose={cy.stub()} onSubmit={cy.stub()} onChange={cy.stub()} item={MOCK_SUBS} />,
+      <MappingContainer onClose={cy.stub()} onSubmit={cy.stub()} onChange={cy.stub()} item={MOCK_SUBS} />,
       { wrapper }
     )
 

@@ -11,5 +11,6 @@ export const useGetTopicSchemas = (topics: Array<string>) => {
   return useQuery<TagSchema, ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_TAGS, topics, QUERY_KEYS.DISCOVERY_TOPICS],
     queryFn: () => appClient.domain.getTopicSchemas(topics),
+    enabled: topics.length > 0,
   })
 }

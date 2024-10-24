@@ -24,6 +24,10 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
       },
       age: {
         type: 'integer',
+        title: short ? 'Integer' : 'age',
+      },
+      weight: {
+        type: 'number',
         title: short ? 'Number' : 'age',
       },
       subItems: {
@@ -43,6 +47,12 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
             title: 'type',
             default: 'Default type',
           },
+        },
+      },
+      array: {
+        type: 'array',
+        items: {
+          type: 'string',
         },
       },
     },

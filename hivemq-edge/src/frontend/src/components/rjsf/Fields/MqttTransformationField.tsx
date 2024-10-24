@@ -6,8 +6,8 @@ import { Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIco
 
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
-import ListSubscriptions from '@/components/rjsf/MqttTransformation/components/ListSubscriptions.tsx'
-import SubscriptionContainer from '@/components/rjsf/MqttTransformation/components/SubscriptionContainer.tsx'
+import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMappings.tsx'
+import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
 
 export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')
@@ -17,9 +17,8 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   const { adapterId, adapterType } = props.formContext || {}
 
   useEffect(() => {
-    // TODO[NVL] Add validation and persistence
-    return () => undefined
-  }, [])
+    props.onChange(subsData)
+  }, [props, subsData])
 
   const handleEdit = (index: number) => {
     setSelectedItem(index)
@@ -39,15 +38,16 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
 
   const handleSubmit = () => {
     setSelectedItem(undefined)
+    props.onChange(subsData)
   }
 
   const handleAdd = () => {
     setSubsData((old) => [
       ...(old || []),
       {
-        node: '',
-        'mqtt-topic': [],
-        mapping: [],
+        mqttTopicFilter: undefined,
+        tag: undefined,
+        fieldMapping: [],
       },
     ])
   }
@@ -74,7 +74,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
           <AccordionIcon />
         </AccordionButton>
         <AccordionPanel pb={4}>
-          <ListSubscriptions
+          <ListMappings
             items={subsData}
             onEdit={handleEdit}
             onAdd={handleAdd}
@@ -93,7 +93,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
         </AccordionButton>
         <AccordionPanel pb={4}>
           {selectedItem !== undefined && (
-            <SubscriptionContainer
+            <MappingContainer
               adapterId={adapterId}
               adapterType={adapterType}
               item={subsData[selectedItem]}

@@ -1,5 +1,6 @@
 import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
+import { JsonNode } from '@/api/__generated__'
 
 export interface ManagerContextType {
   schema?: RJSFSchema
@@ -26,27 +27,31 @@ export interface MappingManagerType<T = any> {
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
 export interface OutwardMapping {
-  node: string
-  'mqtt-topic': string[]
-  mapping: Mapping[]
+  mqttTopicFilter: string | undefined
+  tag: string | undefined
+  fieldMapping: FieldMapping[]
 }
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface Mapping {
-  source: string[]
-  destination: string
-  transformation?: Transformation
+export interface FieldMapping {
+  source: FieldMappingDefinition
+  destination: FieldMappingDefinition
+  transformation?: FieldTransformation
 }
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface Transformation {
-  function: 'toString' | 'toInt' | 'join'
-  params: string
+export interface FieldMappingDefinition {
+  propertyPath: string
 }
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export type FieldTransformation = JsonNode
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available

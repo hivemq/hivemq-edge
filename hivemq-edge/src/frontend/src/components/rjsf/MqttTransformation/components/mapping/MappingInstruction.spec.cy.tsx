@@ -3,9 +3,9 @@ import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingInstruction from './MappingInstruction.tsx'
 
 const MOCK_SUBS: OutwardMapping = {
-  node: 'my-node',
-  'mqtt-topic': ['my-topic'],
-  mapping: [],
+  tag: 'my-node',
+  mqttTopicFilter: 'my-topic',
+  fieldMapping: [],
 }
 
 const MOCK_PROPERTY: FlatJSONSchema7 = {
@@ -26,7 +26,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.mapping[0]}
+        mapping={MOCK_SUBS.fieldMapping[0]}
       />
     )
 
@@ -49,7 +49,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.mapping[0]}
+        mapping={MOCK_SUBS.fieldMapping[0]}
       />
     )
 

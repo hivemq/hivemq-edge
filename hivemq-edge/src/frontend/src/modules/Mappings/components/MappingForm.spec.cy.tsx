@@ -14,9 +14,12 @@ describe('MappingForm', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} />, {
-      routerProps: { initialEntries: [`/node/wrong-adapter`] },
-    })
+    cy.mountWithProviders(
+      <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
+      {
+        routerProps: { initialEntries: [`/node/wrong-adapter`] },
+      }
+    )
 
     cy.getByTestId('mapping-editor-switch').should('be.visible')
 

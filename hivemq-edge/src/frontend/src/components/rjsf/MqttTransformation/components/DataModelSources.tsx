@@ -16,7 +16,7 @@ interface DataModelSourcesProps extends CardProps {
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetTopicSchemas(topics)
+  const { data, isLoading, isError, error, isSuccess } = useGetTopicSchemas(topics)
 
   const structuredSchema = useMemo(() => {
     return Object.keys(data || {}).reduce<JSONSchema7[]>((acc, schemaId) => {
@@ -45,7 +45,10 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
       <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isLoading &&
+        {!isSuccess && !isError && !isLoading && (
+          <ErrorMessage message={t('components:rjsf.MqttTransformationField.sources.prompt')} status="info" />
+        )}
+        {isSuccess &&
           structuredSchema.map((schema) => (
             <JsonSchemaBrowser schema={schema} isDraggable hasExamples key={schema.title} />
           ))}
