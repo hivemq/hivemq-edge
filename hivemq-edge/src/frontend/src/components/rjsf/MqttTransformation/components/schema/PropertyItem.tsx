@@ -5,7 +5,7 @@ import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Badge, Code, HStack, Tooltip, Box, Icon } from '@chakra-ui/react'
 
-import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.tsx'
+import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 interface PropertyItemProps {

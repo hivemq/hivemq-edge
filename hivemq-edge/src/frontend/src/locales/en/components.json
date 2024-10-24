@@ -257,6 +257,11 @@
       "status": {
         "title_error": "Some errors",
         "title_success": "Complete"
+      },
+      "validation": {
+        "required": "Required",
+        "notSupported": "Not supported",
+        "matching": "Matching"
       }
     }
   },
