@@ -206,6 +206,12 @@
         },
         "add": {
           "aria-label": "Add a new mapping"
+        },
+        "save": {
+          "aria-label": "Save"
+        },
+        "cancel": {
+          "aria-label": "Cancel"
         }
       },
       "sources": {

@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 import { FaRightFromBracket } from 'react-icons/fa6'
-import { Button, ButtonGroup, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
+import { HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
 import { JsonNode } from '@/api/__generated__'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
@@ -26,14 +26,7 @@ interface SubscriptionContainerProps {
   onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
 }
 
-const MappingContainer: FC<SubscriptionContainerProps> = ({
-  adapterId,
-  adapterType,
-  item,
-  onClose,
-  onSubmit,
-  onChange,
-}) => {
+const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
 
   return (
@@ -64,14 +57,6 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({
           />
         </VStack>
       </Stack>
-      <HStack justifyContent="flex-end">
-        <ButtonGroup size="sm">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onSubmit(item)} variant="primary">
-            Save
-          </Button>
-        </ButtonGroup>
-      </HStack>
     </VStack>
   )
 }
