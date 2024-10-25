@@ -136,13 +136,18 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
             dataPoint = s7Client.read(s7ToMqtt.getDataType(), List.of(tagAddress)).get(0);
         }
 
-        if(adapterConfig.getPublishChangedDataOnly() && dataPoints.containsKey(tagAddress)) {
-            final DataPoint existingDataPoint = dataPoints.get(tagAddress);
-            if(existingDataPoint != null && !existingDataPoint.equals(dataPoint)) {
+        if(adapterConfig.getPublishChangedDataOnly()) {
+            if(dataPoints.containsKey(tagAddress)) {
+                final DataPoint existingDataPoint = dataPoints.get(tagAddress);
+                if(existingDataPoint != null && existingDataPoint.equals(dataPoint)) {
+                    log.info("Skipping sending for {} because publishChangedDataOnly=true", tagAddress);
+                } else {
+                    dataPoints.put(tagAddress, dataPoint);
+                    pollingOutput.addDataPoint(dataPoint);
+                }
+            } else {
                 dataPoints.put(tagAddress, dataPoint);
                 pollingOutput.addDataPoint(dataPoint);
-            } else {
-                log.debug("Skipping sending for {} because publishChangedDataOnly=true", tagAddress);
             }
         } else {
             pollingOutput.addDataPoint(dataPoint);
