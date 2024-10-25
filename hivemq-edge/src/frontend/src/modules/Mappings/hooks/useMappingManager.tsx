@@ -122,7 +122,7 @@ export const useMappingManager = (adapterId: string) => {
         )
       },
     }
-  }, [adapterInfo])
+  }, [adapterId, adapterInfo, processMutation, updateProtocolAdapter])
 
   const isLoading = isAdapterLoading || isProtocolLoading
 

@@ -79,7 +79,6 @@ describe('useMappingManager', () => {
       inwardManager: undefined,
       isLoading: false,
       outwardManager: undefined,
-      tagsManager: undefined,
     })
   })
 
@@ -171,7 +170,7 @@ describe('useMappingManager', () => {
     expect(outwardManager).not.toBeUndefined()
 
     const { formData, schema, uiSchema } = outwardManager as MappingManagerType
-    expect(formData).not.toBeUndefined()
+    expect(formData).toBeUndefined()
     expect(schema).not.toBeUndefined()
     expect(uiSchema).not.toBeUndefined()
 
