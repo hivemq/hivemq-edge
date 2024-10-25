@@ -15,17 +15,14 @@
  */
 package com.hivemq.persistence.domain;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
-import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,10 +40,8 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     @Inject
     public DomainTagPersistenceImpl(
-            final @NotNull SystemInformation systemInformation, final @NotNull ObjectMapper objectMapper) {
-        domainTagPersistenceReaderWriter =
-                new DomainTagPersistenceReaderWriter(new File(systemInformation.getConfigFolder(), "tag.xml"),
-                        objectMapper);
+            final @NotNull DomainTagPersistenceReaderWriter domainTagPersistenceReaderWriter) {
+        this.domainTagPersistenceReaderWriter = domainTagPersistenceReaderWriter;
         loadPersistence();
     }
 

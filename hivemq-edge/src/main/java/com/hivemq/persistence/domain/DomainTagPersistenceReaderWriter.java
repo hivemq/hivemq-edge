@@ -24,6 +24,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.domain.xml.DomainTagPersistenceEntity;
@@ -31,6 +32,8 @@ import com.hivemq.persistence.domain.xml.DomainTagXmlEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,18 +41,21 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Singleton
 public class DomainTagPersistenceReaderWriter {
 
     private static final Logger log = LoggerFactory.getLogger(DomainTagPersistenceReaderWriter.class);
+    public static final String PERSISTENCE_FILE_NAME = "tag.xml";
 
     private final @NotNull File persistenceFile;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull XmlMapper xmlMapper = new XmlMapper();
 
 
+    @Inject
     public DomainTagPersistenceReaderWriter(
-            final @NotNull File persistenceFile, final @NotNull ObjectMapper objectMapper) {
-        this.persistenceFile = persistenceFile;
+            final @NotNull SystemInformation systemInformation, final @NotNull ObjectMapper objectMapper) {
+        this.persistenceFile = new File(systemInformation.getConfigFolder(), PERSISTENCE_FILE_NAME);
         this.objectMapper = objectMapper;
         xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonXmlAnnotationIntrospector(),
                 new JaxbAnnotationIntrospector(TypeFactory.defaultInstance())));

@@ -33,18 +33,18 @@ public class DomainTag {
     private final @NotNull String description;
     private final @NotNull JsonNode tagDefinition;
 
-
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull String description,
             final @NotNull JsonNode tagDefinition) {
-        this.adapterId = adapterId;
-        this.tagDefinition = tagDefinition;
         this.tagName = tagName;
+        this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.description = description;
+        this.tagDefinition = tagDefinition;
+
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(
@@ -57,10 +57,19 @@ public class DomainTag {
                 domainTag.getTagDefinition());
     }
 
-    public static @NotNull DomainTag simpleAddress(final @NotNull String domainAddress, final @NotNull String tag) {
+
+
+    public static @NotNull DomainTag simpleAddress(final @NotNull String tag, final @NotNull String tagDefinition) {
+        return simpleAddress(tag, "adapter", tagDefinition);
+    }
+
+    public static @NotNull DomainTag simpleAddress(
+            final @NotNull String tagName,
+            final @NotNull String adapterId,
+            final @NotNull String tagDefinition) {
         final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-        objectNode.set("address", new TextNode(domainAddress));
-        return new DomainTag(tag, "adapter","someProtocolId", "someDescription", objectNode);
+        objectNode.set("address", new TextNode(tagDefinition));
+        return new DomainTag(tagName, adapterId,"someProtocolId", "someDescription", objectNode);
     }
 
     public @NotNull String getTagName() {
