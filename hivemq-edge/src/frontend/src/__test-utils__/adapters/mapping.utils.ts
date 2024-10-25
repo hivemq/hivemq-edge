@@ -14,7 +14,7 @@ export const MOCK_OUTWARD_MAPPING_OPCUA: MockMapping = {
   schema: mqttToXMappings as RJSFSchema,
   uiSchema: {
     'ui:submitButtonOptions': {
-      // norender: true,
+      norender: true,
     },
     mqttToOpcuaMappings: {
       'ui:field': 'mqtt:transform',
