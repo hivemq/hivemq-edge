@@ -75,6 +75,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.AUTH_IN_PROGRESS_MESSAGE_HANDLER;
@@ -84,6 +85,7 @@ import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_KEEPALIVE_IDLE
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_PUBLISH_FLOW_HANDLER;
 import static com.hivemq.configuration.service.InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS;
+import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNECTION_AUTH_CLEAR_PASSWORD;
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 
@@ -210,6 +212,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             final @NotNull CONNECT connect,
             final @Nullable ModifiableClientSettingsImpl clientSettings) {
 
+        clearPasswordIfWanted(clientConnection);
         if (AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.get()) {
             mqttConnacker.connackError(
                     clientConnection.getChannel(),
@@ -233,9 +236,23 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             final @NotNull CONNECT connect,
             final @Nullable ModifiableClientSettingsImpl clientSettings) {
 
+        clearPasswordIfWanted(clientConnection);
         clientConnection.proposeClientState(ClientState.AUTHENTICATED);
         connectAuthenticated(ctx, clientConnection, connect, clientSettings);
         cleanChannelAttributesAfterAuth(clientConnection);
+    }
+
+    private void clearPasswordIfWanted(final @NotNull ClientConnection clientConnection) {
+        final Optional<Boolean> clearPasswordAfterAuthOptional = clientConnection.isClearPasswordAfterAuth();
+        if(clearPasswordAfterAuthOptional.isPresent()) {
+            if(clearPasswordAfterAuthOptional.get()) {
+                clientConnection.clearPassword();
+            }
+        } else {
+            if(MQTT_CONNECTION_AUTH_CLEAR_PASSWORD) {
+                clientConnection.clearPassword();
+            }
+        }
     }
 
     private static void cleanChannelAttributesAfterAuth(final @NotNull ClientConnection clientConnection) {
