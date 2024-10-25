@@ -18,9 +18,6 @@ package com.hivemq.edge.adapters.s7.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,15 +25,30 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static java.util.Objects.requireNonNullElse;
-
 public class S7AdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
+
+    public static final String DEFAULT_POLLING_INTERVAL_MS = "1000";
+    public static final String DEFAULT_MAX_POLLING_ERRORS = "10";
+    public static final String DEFAULT_PUBLISH_CHANGED_DATA_ONLY = "true";
+    public static final String DEFAULT_S7_PORT = "102";
+    public static final String DEFAULT_CONTROLER_TYPE = "S7_300";
+
+    public static final String PROPERTY_ID = "id";
+    public static final String PROPERTY_PORT = "port";
+    public static final String PROPERTY_HOST = "host";
+    public static final String PROPERTY_CONTROLLER_TYPE = "controllerType";
+    public static final String PROPERTY_REMOTE_RACK = "remoteRack";
+    public static final String PROPERTY_REMOTE_SLOT = "remoteSlot";
+    public static final String PROPERTY_PDU_LENGTH = "pduLength";
+    public static final String PROPERTY_POLLING_INTERVAL_MILLIS = "pollingIntervalMillis";
+    public static final String PROPERTY_MAX_POLLING_ERRORS_BEFORE_REMOVAL = "maxPollingErrorsBeforeRemoval";
+    public static final String PROPERTY_PUBLISH_CHANGED_DATA_ONLY = "publishChangedDataOnly";
+    public static final String PROPERTY_S_7_TO_MQTT_MAPPINGS = "s7ToMqttMappings";
 
     public enum ControllerType {
         S7_200,
@@ -48,27 +60,27 @@ public class S7AdapterConfig implements ProtocolAdapterConfig {
         SINUMERIK_828D
     }
 
-    @JsonProperty("pollingIntervalMillis")
+    @JsonProperty(PROPERTY_POLLING_INTERVAL_MILLIS)
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
-                       defaultValue = "1000")
+                       defaultValue = DEFAULT_POLLING_INTERVAL_MS)
     private final int pollingIntervalMillis;
 
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @JsonProperty(PROPERTY_MAX_POLLING_ERRORS_BEFORE_REMOVAL)
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
                        numberMin = -1,
-                       defaultValue = "10")
+                       defaultValue = DEFAULT_MAX_POLLING_ERRORS)
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("publishChangedDataOnly")
+    @JsonProperty(PROPERTY_PUBLISH_CHANGED_DATA_ONLY)
     @ModuleConfigField(title = "Only publish data items that have changed since last poll",
-                       defaultValue = "true",
+                       defaultValue = DEFAULT_PUBLISH_CHANGED_DATA_ONLY,
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
-    @JsonProperty(value = "id", required = true)
+    @JsonProperty(value = PROPERTY_ID, required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
@@ -78,44 +90,45 @@ public class S7AdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty(value = "port", required = true)
+    @JsonProperty(value = PROPERTY_PORT, required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",
                        required = true,
+                       defaultValue = DEFAULT_S7_PORT,
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX)
     private final int port;
 
-    @JsonProperty(value = "host", required = true)
+    @JsonProperty(value = PROPERTY_HOST, required = true)
     @ModuleConfigField(title = "Host",
                        description = "IP Address or hostname of the device you wish to connect to",
                        required = true,
                        format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
-    @JsonProperty(value = "controllerType", required = true)
+    @JsonProperty(value = PROPERTY_CONTROLLER_TYPE, required = true)
     @ModuleConfigField(title = "S7 Controller Type",
                        description = "The type of the S7 Controller",
                        required = true,
-                       defaultValue = "S7_300")
+                       defaultValue = DEFAULT_CONTROLER_TYPE)
     private final @NotNull S7AdapterConfig.ControllerType controllerType;
 
-    @JsonProperty("remoteRack")
+    @JsonProperty(PROPERTY_REMOTE_RACK)
     @ModuleConfigField(title = "Remote Rack",
                        description = "Rack value for the remote main CPU (PLC).")
     private final Integer remoteRack;
 
-    @JsonProperty("remoteSlot")
+    @JsonProperty(PROPERTY_REMOTE_SLOT)
     @ModuleConfigField(title = "Remote Slot",
                        description = "Slot value for the remote main CPU (PLC).")
     private final Integer remoteSlot;
 
-    @JsonProperty("pduLength")
+    @JsonProperty(PROPERTY_PDU_LENGTH)
     @ModuleConfigField(title = "PDU length",
                        description = "")
     private final Integer pduLength;
 
-    @JsonProperty(value = "s7ToMqttMappings", required = true)
+    @JsonProperty(value = PROPERTY_S_7_TO_MQTT_MAPPINGS, required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
                        required = true)
@@ -123,24 +136,27 @@ public class S7AdapterConfig implements ProtocolAdapterConfig {
 
     @JsonCreator
     public S7AdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "port", required = true, defaultValue = "102") final int port,
-            @JsonProperty(value = "host", required = true) final @NotNull String host,
-            @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
-            @JsonProperty(value = "remoteRack") final @Nullable Integer remoteRack,
-            @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
-            @JsonProperty(value = "pduLength") final @Nullable Integer pduLength,
-            @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "s7ToMqttMappings", required = true) final @NotNull List<S7ToMqttConfig> s7ToMqttConfig) {
+            @JsonProperty(value = PROPERTY_ID, required = true) final @NotNull String id,
+            @JsonProperty(value = PROPERTY_PORT, required = true) final Integer port,
+            @JsonProperty(value = PROPERTY_HOST, required = true) final @NotNull String host,
+            @JsonProperty(value = PROPERTY_CONTROLLER_TYPE, required = true) final @NotNull ControllerType controllerType,
+            @JsonProperty(value = PROPERTY_REMOTE_RACK) final @Nullable Integer remoteRack,
+            @JsonProperty(value = PROPERTY_REMOTE_SLOT) final @Nullable Integer remoteSlot,
+            @JsonProperty(value = PROPERTY_PDU_LENGTH) final @Nullable Integer pduLength,
+            @JsonProperty(value = PROPERTY_POLLING_INTERVAL_MILLIS) final @Nullable Integer pollingIntervalMillis,
+            @JsonProperty(value = PROPERTY_MAX_POLLING_ERRORS_BEFORE_REMOVAL) final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = PROPERTY_PUBLISH_CHANGED_DATA_ONLY) final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = PROPERTY_S_7_TO_MQTT_MAPPINGS, required = true) final @NotNull List<S7ToMqttConfig> s7ToMqttConfig) {
         this.id = id;
-        this.port = port;
         this.host = host;
         this.controllerType = controllerType;
-        this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
-        this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
+        this.port = port;
+        this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis,
+                Integer.valueOf(DEFAULT_POLLING_INTERVAL_MS));
+        this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval,
+                Integer.valueOf(DEFAULT_MAX_POLLING_ERRORS));
+        this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly,
+                Boolean.valueOf(DEFAULT_PUBLISH_CHANGED_DATA_ONLY));
         this.remoteRack = remoteRack;
         this.remoteSlot = remoteSlot;
         this.pduLength = pduLength;
