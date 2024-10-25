@@ -66,7 +66,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
       onDrop: (dropTarget) => {
         setState(DropState.COMPLETED)
         const target = dropTarget.source.data as unknown as FlatJSONSchema7
-        onChange?.([...target.path, target.title].join('.') as string, property.title as string)
+        onChange?.([...target.path, target.key].join('.') as string, property.key as string)
       },
     })
   }, [onChange, property])
@@ -77,7 +77,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
   const onHandleClear = () => {
     setState(DropState.IDLE)
-    onChange?.(undefined, property.title as string)
+    onChange?.(undefined, property.key as string)
   }
 
   if (!isSupported)

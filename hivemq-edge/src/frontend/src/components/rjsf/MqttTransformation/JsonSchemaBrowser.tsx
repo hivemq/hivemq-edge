@@ -31,7 +31,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
       <List {...props}>
         {properties.map((property) => {
           return (
-            <ListItem key={[...property.path, property.title].join('-')} ml={(property?.path?.length || 0) * 8}>
+            <ListItem key={[...property.path, property.key].join('-')} ml={(property?.path?.length || 0) * 8}>
               <PropertyItem property={property} isDraggable={isDraggable} hasExamples={hasExamples} hasTooltip />
             </ListItem>
           )

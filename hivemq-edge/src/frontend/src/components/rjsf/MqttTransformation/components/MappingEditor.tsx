@@ -44,9 +44,9 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
         {isSuccess && (
           <List>
             {properties.map((property) => {
-              const instruction = mapping ? mapping.findIndex((e) => e.destination.propertyPath === property.title) : -1
+              const instruction = mapping ? mapping.findIndex((e) => e.destination.propertyPath === property.key) : -1
               return (
-                <ListItem key={property.title}>
+                <ListItem key={property.key}>
                   <MappingInstruction
                     showTransformation={showTransformation}
                     property={property}

@@ -35,8 +35,10 @@ const PropertyItem: FC<PropertyItemProps> = ({
   }, [isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
-  const path = [...property.path, property.title].join('.')
   const type = t('GenericSchema.data.type', { context: property.type || 'null', arrayType: property.arrayType })
+  // TODO[NVL] key should be use for mapping. But what to use for display? key or title or both ?
+  const propertyName = property.title
+  const path = [...property.path, property.key].join('.')
 
   return (
     <HStack
@@ -68,7 +70,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
         </Tooltip>
         <Tooltip label={path} placement="top" isDisabled={!hasTooltip} hasArrow>
           <Badge data-testid="property-name" aria-label={path}>
-            {property.title}
+            {propertyName}
           </Badge>
         </Tooltip>
       </HStack>
