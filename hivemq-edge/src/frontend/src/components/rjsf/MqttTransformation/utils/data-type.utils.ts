@@ -17,7 +17,7 @@ export const DataTypeIcon: Record<JSONSchema7TypeName, IconType> = {
 }
 
 export const isMappingSupported = (property: FlatJSONSchema7) => {
-  return property.type !== 'object'
+  return property.type != undefined && property.type !== 'object'
 }
 
 export const filterSupportedProperties = (property: FlatJSONSchema7) => Boolean(property.path.length === 0)
