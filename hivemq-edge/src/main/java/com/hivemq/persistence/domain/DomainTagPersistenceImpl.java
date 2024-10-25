@@ -17,6 +17,7 @@ package com.hivemq.persistence.domain;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,9 +56,8 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
         for (final DomainTag domainTag : domainTags) {
             final String tagName = domainTag.getTagName();
             if (tagIdToDomainTag.containsKey(domainTag.getTagName())) {
-                // TODO ERROR HANDLING; could be fatal error
-                log.warn("Found duplicate tag for name '{}'. The tag will be skipped.", tagName);
-                continue;
+                log.error("Found duplicate tag for name '{}' during initialization of tag persistence. HiveMQ Edge startup will stopped..", tagName);
+                throw new UnrecoverableException(false);
             }
 
             tagIdToDomainTag.put(tagName, domainTag);

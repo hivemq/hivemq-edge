@@ -70,8 +70,7 @@ public class DomainTagPersistenceReaderWriter {
 
     public synchronized void writePersistence(final @NotNull Collection<DomainTag> tags) {
         if (persistenceFile.exists() && !persistenceFile.canWrite()) {
-            log.error("Unable to write to persistence file {}", persistenceFile);
-            // TODO likely wrong exception
+            log.error("Unable to write to persistence file {}, because it is not writable.", persistenceFile);
             throw new UnrecoverableException(false);
         }
         log.debug("Writing persistence file {}", persistenceFile);
