@@ -9,7 +9,7 @@ describe('JsonSchemaBrowser', () => {
   it('should render properly', () => {
     cy.mountWithProviders(<JsonSchemaBrowser schema={MOCK_MQTT_SCHEMA_REFS} />)
 
-    cy.get('ul').find('li').as('metadata')
+    cy.get('ul').find('li > div').as('metadata')
     cy.get('@metadata').should('have.length', 11)
     cy.get('@metadata').eq(0).should('have.text', 'Billing address').should('have.attr', 'data-type', 'object')
     cy.get('@metadata').eq(9).should('have.text', 'name').should('have.attr', 'data-type', 'string')

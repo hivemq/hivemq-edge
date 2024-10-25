@@ -5,7 +5,7 @@ import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 const MOCK_SUBS: OutwardMapping = {
   tag: 'my-node',
   mqttTopicFilter: 'my-topic',
-  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'Second String' } }],
+  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'lastName' } }],
 }
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {

@@ -53,7 +53,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
     >
       <HStack gap={0} ref={draggableRef} flex={1}>
         <Tooltip label={type} placement="top" hasArrow>
-          <Box marginInlineEnd={2} aria-label={type} role="img" display="flex">
+          <Box marginInlineEnd={2} aria-label={type} role="img" display="flex" data-testid="property-type">
             <Icon as={TypeIcon as IconType} color="green.500" m={0} />
             {property.arrayType && (
               <Icon
