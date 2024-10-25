@@ -17,7 +17,10 @@ package com.hivemq.persistence.domain;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,22 +33,57 @@ import java.util.stream.Collectors;
 @Singleton
 public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
+    private static final Logger log = LoggerFactory.getLogger(DomainTagPersistenceImpl.class);
+
     private final @NotNull HashMap<String, Set<DomainTag>> adapterToDomainTag = new HashMap<>();
-    private final @NotNull HashMap<String, DomainTag> nodeIdToDomainTag = new HashMap<>();
+    private final @NotNull HashMap<String, DomainTag> tagIdToDomainTag = new HashMap<>();
+    private final @NotNull DomainTagPersistenceReaderWriter domainTagPersistenceReaderWriter;
 
     @Inject
-    public DomainTagPersistenceImpl() {
+    public DomainTagPersistenceImpl(
+            final @NotNull DomainTagPersistenceReaderWriter domainTagPersistenceReaderWriter) {
+        this.domainTagPersistenceReaderWriter = domainTagPersistenceReaderWriter;
+        loadPersistence();
+    }
+
+    @Override
+    public void sync() {
+        loadPersistence();
+    }
+
+    private void loadPersistence() {
+        final List<DomainTag> domainTags = domainTagPersistenceReaderWriter.readPersistence();
+        for (final DomainTag domainTag : domainTags) {
+            final String tagName = domainTag.getTagName();
+            if (tagIdToDomainTag.containsKey(domainTag.getTagName())) {
+                log.error("Found duplicate tag for name '{}' during initialization of tag persistence. HiveMQ Edge startup will stopped..", tagName);
+                throw new UnrecoverableException(false);
+            }
+
+            tagIdToDomainTag.put(tagName, domainTag);
+            adapterToDomainTag.compute(domainTag.getAdapterId(), (key, currentValue) -> {
+                if (currentValue == null) {
+                    final Set<DomainTag> currentDomainTags = new HashSet<>();
+                    currentDomainTags.add(domainTag);
+                    return currentDomainTags;
+                } else {
+                    currentValue.add(domainTag);
+                    return currentValue;
+                }
+            });
+        }
     }
 
     @Override
     public synchronized @NotNull DomainTagAddResult addDomainTag(
-            final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
-        if (nodeIdToDomainTag.containsKey(domainTag.getTag())) {
+            final @NotNull DomainTag domainTag) {
+        final String adapterId = domainTag.getAdapterId();
+        if (tagIdToDomainTag.containsKey(domainTag.getTagName())) {
             return DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
                     "An identical DomainTag exists already for adapter '" + adapterId + "'");
         }
 
-        nodeIdToDomainTag.put(domainTag.getTag(), domainTag);
+        tagIdToDomainTag.put(domainTag.getTagName(), domainTag);
         adapterToDomainTag.compute(adapterId, (key, currentValue) -> {
             if (currentValue == null) {
                 final Set<DomainTag> domainTags = new HashSet<>();
@@ -56,19 +94,21 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
                 return currentValue;
             }
         });
+        domainTagPersistenceReaderWriter.writePersistence(tagIdToDomainTag.values());
         return DomainTagAddResult.success();
     }
 
     @Override
     public synchronized @NotNull DomainTagUpdateResult updateDomainTag(
-            @NotNull final String adapterId, @NotNull final String tagId, @NotNull final DomainTag domainTag) {
+            @NotNull final String tagId, @NotNull final DomainTag domainTag) {
+        final String adapterId = domainTag.getAdapterId();
         final Set<DomainTag> domainTags = adapterToDomainTag.get(adapterId);
         if (domainTags == null || domainTags.isEmpty()) {
             return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND,
                     "No adapter with id '{}' was found.");
         }
 
-        final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTag().equals(tagId));
+        final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTagName().equals(tagId));
         if (!removed) {
             return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND,
                     "No tag with id '" + tagId + "' was found for adapter '" + adapterId + "'.");
@@ -91,28 +131,28 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
         }
 
         final Set<String> alreadyExistingIdsForTheAdapter =
-                existingDomainTags.stream().map(DomainTag::getTag).collect(Collectors.toSet());
+                existingDomainTags.stream().map(DomainTag::getTagName).collect(Collectors.toSet());
 
         for (final DomainTag domainTag : domainTags) {
-            if (alreadyExistingIdsForTheAdapter.contains(domainTag.getTag())) {
+            if (alreadyExistingIdsForTheAdapter.contains(domainTag.getTagName())) {
                 // adapter already has the tag and updating is ok
                 continue;
             }
 
-            if (nodeIdToDomainTag.containsKey(domainTag.getTag())) {
+            if (tagIdToDomainTag.containsKey(domainTag.getTagName())) {
                 // this is a problem: Another adapter has a tag with the same name. This is not allowed and we must stop here.
                 return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ALREADY_USED_BY_ANOTHER_ADAPTER,
-                        domainTag.getTag());
+                        domainTag.getTagName());
             }
         }
 
         // we need to remove all tag names that are not used anymore and add tag names that are used now and were not before
         for (final String tagName : alreadyExistingIdsForTheAdapter) {
-            nodeIdToDomainTag.remove(tagName);
+            tagIdToDomainTag.remove(tagName);
         }
 
         for (final DomainTag domainTag : domainTags) {
-            nodeIdToDomainTag.put(domainTag.getTag(), domainTag);
+            tagIdToDomainTag.put(domainTag.getTagName(), domainTag);
         }
 
         adapterToDomainTag.put(adapterId, domainTags);
@@ -129,12 +169,12 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
                     "No adapter with name '{}' was found with DomainTags");
         }
 
-        final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTag().equals(tagId));
+        final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTagName().equals(tagId));
         if (!removed) {
             return DomainTagDeleteResult.failed(DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND,
                     "No tag with name '{}' was found.");
         } else {
-            nodeIdToDomainTag.remove(tagId);
+            tagIdToDomainTag.remove(tagId);
             return DomainTagDeleteResult.success();
         }
     }
@@ -156,7 +196,7 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     @Override
     public @NotNull DomainTag getTag(@NotNull final String tagId) {
-        final DomainTag domainTag = nodeIdToDomainTag.get(tagId);
+        final DomainTag domainTag = tagIdToDomainTag.get(tagId);
         if (domainTag == null) {
             throw new TagNotFoundException("Tag'" + tagId + "' was not found in the persistence.");
         }

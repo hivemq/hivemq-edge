@@ -63,7 +63,7 @@ class ProtocolAdaptersResourceImplTest {
     void getDomainTagsForAdapter() {
         final ArrayList<DomainTag> domainTags = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            domainTags.add(DomainTag.simpleAddress("address", "tag"));
+            domainTags.add(DomainTag.simpleAddress("tag", "address"));
         }
 
         when(domainTagPersistence.getTagsForAdapter(any())).thenReturn(domainTags);
@@ -81,21 +81,21 @@ class ProtocolAdaptersResourceImplTest {
 
     @Test
     void addAdapterDomainTag_whenAddingSucceeds_thenReturn200() {
-        when(domainTagPersistence.addDomainTag(any(), any())).thenReturn(DomainTagAddResult.success());
+        when(domainTagPersistence.addDomainTag(any())).thenReturn(DomainTagAddResult.success());
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                 DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
+                 DomainTagModel.fromDomainTag(DomainTag.simpleAddress("tag", "address")));
 
         assertEquals(200, response.getStatus());
     }
 
     @Test
     void addAdapterDomainTag_whenAlreadyExists_thenReturn403() {
-        when(domainTagPersistence.addDomainTag(any(),
+        when(domainTagPersistence.addDomainTag(
                 any())).thenReturn(DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS));
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("tag", "address")));
 
         assertEquals(403, response.getStatus());
     }
@@ -127,12 +127,11 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagExists_thenReturn200() {
         when(domainTagPersistence.updateDomainTag(any(),
-                any(),
                 any())).thenReturn(DomainTagUpdateResult.success());
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("tag", "address")));
 
         assertEquals(200, response.getStatus());
     }
@@ -140,12 +139,11 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(domainTagPersistence.updateDomainTag(any(),
-                any(),
                 any())).thenReturn(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND));
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("tag", "address")));
 
         assertEquals(403, response.getStatus());
     }
@@ -154,7 +152,7 @@ class ProtocolAdaptersResourceImplTest {
     void getDomainTags() {
         final ArrayList<DomainTag> domainTags = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            domainTags.add(DomainTag.simpleAddress("address", "tag"));
+            domainTags.add(DomainTag.simpleAddress("tag", "address"));
         }
 
         when(domainTagPersistence.getDomainTags()).thenReturn(domainTags);
