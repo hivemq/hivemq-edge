@@ -23,6 +23,8 @@ import java.util.Set;
 public interface DomainTagPersistence {
 
 
+    void sync();
+
     @NotNull
     DomainTagAddResult addDomainTag( @NotNull DomainTag domainTag);
 

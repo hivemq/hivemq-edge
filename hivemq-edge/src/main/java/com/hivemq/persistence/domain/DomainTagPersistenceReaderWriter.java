@@ -15,34 +15,28 @@
  */
 package com.hivemq.persistence.domain;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlAnnotationIntrospector;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.domain.xml.DomainTagPersistenceEntity;
+import com.hivemq.persistence.domain.xml.DomainTagXmlEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.ValidationEventLocator;
-import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNullElse;
 
 public class DomainTagPersistenceReaderWriter {
 
@@ -50,12 +44,17 @@ public class DomainTagPersistenceReaderWriter {
 
     private final @NotNull File persistenceFile;
     private final @NotNull ObjectMapper objectMapper;
-    private final Object lock = new Object();
+    private final @NotNull XmlMapper xmlMapper = new XmlMapper();
+
 
     public DomainTagPersistenceReaderWriter(
             final @NotNull File persistenceFile, final @NotNull ObjectMapper objectMapper) {
         this.persistenceFile = persistenceFile;
         this.objectMapper = objectMapper;
+        xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonXmlAnnotationIntrospector(),
+                new JaxbAnnotationIntrospector(TypeFactory.defaultInstance())));
+        xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
     }
 
     public @NotNull List<DomainTag> readPersistence() {
@@ -63,157 +62,62 @@ public class DomainTagPersistenceReaderWriter {
         return convertToDomainTags(persistenceEntity);
     }
 
-    public void writePersistence(final @NotNull Collection<DomainTag> tags) {
+    public synchronized void writePersistence(final @NotNull Collection<DomainTag> tags) {
+        if (persistenceFile.exists() && !persistenceFile.canWrite()) {
+            log.error("Unable to write to persistence file {}", persistenceFile);
+            // TODO likely wrong exception
+            throw new UnrecoverableException(false);
+        }
+        log.debug("Writing persistence file {}", persistenceFile);
 
-        synchronized (lock) {
-            if (persistenceFile.exists() && !persistenceFile.canWrite()) {
-                log.error("Unable to write to persistence file {}", persistenceFile);
-                // TODO likely wrong exception
-                throw new UnrecoverableException(false);
-            }
-
-            try {
-                log.debug("Writing persistence file {}", persistenceFile);
-                final FileWriter fileWriter = new FileWriter(persistenceFile, StandardCharsets.UTF_8);
-                writePersistence(fileWriter, tags);
-            } catch (final IOException e) {
-                log.error("Error writing file:", e);
-                throw new UnrecoverableException(false);
-            }
+        try {
+            final DomainTagPersistenceEntity persistenceEntity = convertToEntity(tags);
+            final String xml = xmlMapper.writeValueAsString(persistenceEntity);
+            Files.writeString(persistenceFile.toPath(), xml);
+        } catch (final JsonProcessingException e) {
+            log.error("Error while trying to persist the tags in disc. Exception happened during serialization of tags:",
+                    e);
+            throw new RuntimeException(e);
+        } catch (final IOException e) {
+            log.error("Error while trying to persist the tags in disc. Exception happened during writing of tag.xml:",
+                    e);
+            throw new RuntimeException(e);
         }
     }
 
 
-    private @NotNull Class<? extends DomainTagPersistenceEntity> getPersistenceEntityClass() {
-        return DomainTagPersistenceEntity.class;
-    }
+    private synchronized @NotNull DomainTagPersistenceEntity readPersistenceXml() {
+        log.debug("Reading persistence file {}", persistenceFile);
 
-    private @NotNull List<Class<?>> getInheritedEntityClasses() {
-        return ImmutableList.of(DomainTagXmlEntity.class);
-    }
-
-    private @NotNull JAXBContext createContext() throws JAXBException {
-        final Class<?>[] classes = ImmutableList.<Class<?>>builder()
-                .add(getPersistenceEntityClass())
-                .addAll(getInheritedEntityClasses())
-                .build()
-                .toArray(new Class<?>[0]);
-
-        return JAXBContext.newInstance(classes);
-    }
-
-
-    private void writePersistence(@NotNull final Writer writer, final @NotNull Collection<DomainTag> tags) {
-        synchronized (lock) {
-            try {
-                final JAXBContext context = createContext();
-                final Marshaller marshaller = context.createMarshaller();
-                final DomainTagPersistenceEntity persistenceEntity = convertToEntity(tags);
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-                marshaller.marshal(persistenceEntity, writer);
-            } catch (final JAXBException e) {
-                log.error("Original error message:", e);
-                throw new UnrecoverableException(false);
-            }
+        if (!persistenceFile.exists()) {
+            log.debug("No tag persistence is yet present. Creating new empty persistence.");
+            writePersistence(List.of());
+            return new DomainTagPersistenceEntity();
         }
+
+        try {
+            final String xml = Files.readString(persistenceFile.toPath());
+            return xmlMapper.readValue(xml, DomainTagPersistenceEntity.class);
+        } catch (final IOException e) {
+            log.error(
+                    "Critical Exception happened during reading of tag persistence. In case this happens during the startup HiveMQ Edge will shutdown. Original Exception: ",
+                    e);
+            throw new UnrecoverableException();
+        }
+
     }
 
-    private @NotNull DomainTagPersistenceEntity convertToEntity(final @NotNull Collection<DomainTag> tags) {
+    private static @NotNull DomainTagPersistenceEntity convertToEntity(final @NotNull Collection<DomainTag> tags) {
         final List<DomainTagXmlEntity> tagsAsEntities =
                 tags.stream().map(DomainTagMapper::domainTagEntityFromDomainTag).collect(Collectors.toList());
         return new DomainTagPersistenceEntity(tagsAsEntities);
 
     }
 
-
     private @NotNull List<DomainTag> convertToDomainTags(final @NotNull DomainTagPersistenceEntity persistenceEntity) {
         return persistenceEntity.getTags()
                 .stream()
                 .map(tagEntity -> DomainTagMapper.domainTagFromDomainTagEntity(tagEntity, objectMapper))
                 .collect(Collectors.toList());
-    }
-
-    private @NotNull DomainTagPersistenceEntity readPersistenceXml() {
-        log.debug("Reading persistence file {}", persistenceFile);
-        final List<ValidationEvent> validationErrors = new ArrayList<>();
-
-        if(!persistenceFile.exists()){
-            log.debug("No tag persistence is yet present. Creating new empty persistence.");
-            writePersistence(List.of());
-            return new DomainTagPersistenceEntity();
-        }
-
-        synchronized (lock) {
-            try {
-                final JAXBContext context = createContext();
-                final Unmarshaller unmarshaller = context.createUnmarshaller();
-                final String persistenceContent = Files.readString(persistenceFile.toPath());
-                final ByteArrayInputStream is =
-                        new ByteArrayInputStream(persistenceContent.getBytes(StandardCharsets.UTF_8));
-                final StreamSource streamSource = new StreamSource(is);
-
-                unmarshaller.setEventHandler(e -> {
-                    if (e.getSeverity() > ValidationEvent.ERROR) {
-                        validationErrors.add(e);
-                    }
-                    return true;
-                });
-
-                final JAXBElement<? extends DomainTagPersistenceEntity> result =
-                        unmarshaller.unmarshal(streamSource, getPersistenceEntityClass());
-
-                if (!validationErrors.isEmpty()) {
-                    throw new JAXBException("Parsing failed");
-                }
-                return result.getValue();
-
-            } catch (final JAXBException | IOException e) {
-                final StringBuilder messageBuilder = new StringBuilder();
-
-                if (validationErrors.isEmpty()) {
-                    messageBuilder.append("of the following error: ");
-                    messageBuilder.append(requireNonNullElse(e.getCause(), e));
-                } else {
-                    messageBuilder.append("of the following errors:");
-                    for (final ValidationEvent validationError : validationErrors) {
-                        messageBuilder.append(System.lineSeparator()).append(toValidationMessage(validationError));
-                    }
-                }
-                log.error("Not able to parse persistence file because {}", messageBuilder);
-                throw new UnrecoverableException(false);
-            } catch (final Exception e) {
-
-                if (e.getCause() instanceof UnrecoverableException) {
-                    if (((UnrecoverableException) e.getCause()).isShowException()) {
-                        log.error("An unrecoverable Exception occurred. Exiting HiveMQ", e);
-                        log.debug("Original error message:", e);
-                    }
-                    System.exit(1);
-                }
-                log.error("Could not read the persistence file {}. Exiting HiveMQ Edge.",
-                        persistenceFile.getAbsolutePath());
-                log.debug("Original error message:", e);
-                throw new UnrecoverableException(false);
-            }
-        }
-    }
-
-    private @NotNull String toValidationMessage(final @NotNull ValidationEvent validationEvent) {
-        final StringBuilder validationMessageBuilder = new StringBuilder();
-        final ValidationEventLocator locator = validationEvent.getLocator();
-        if (locator == null) {
-            validationMessageBuilder.append("\t- XML schema violation caused by: \"")
-                    .append(validationEvent.getMessage())
-                    .append("\"");
-        } else {
-            validationMessageBuilder.append("\t- XML schema violation in line '")
-                    .append(locator.getLineNumber())
-                    .append("' and column '")
-                    .append(locator.getColumnNumber())
-                    .append("' caused by: \"")
-                    .append(validationEvent.getMessage())
-                    .append("\"");
-        }
-        return validationMessageBuilder.toString();
     }
 }

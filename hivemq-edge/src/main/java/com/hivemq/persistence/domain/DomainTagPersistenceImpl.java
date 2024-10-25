@@ -43,35 +43,39 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     @Inject
     public DomainTagPersistenceImpl(
-            final @NotNull SystemInformation systemInformation,
-            final @NotNull ObjectMapper objectMapper) {
+            final @NotNull SystemInformation systemInformation, final @NotNull ObjectMapper objectMapper) {
         domainTagPersistenceReaderWriter =
                 new DomainTagPersistenceReaderWriter(new File(systemInformation.getConfigFolder(), "tag.xml"),
                         objectMapper);
         loadPersistence();
     }
 
-    private void loadPersistence(){
+    @Override
+    public void sync() {
+        loadPersistence();
+    }
+
+    private void loadPersistence() {
         final List<DomainTag> domainTags = domainTagPersistenceReaderWriter.readPersistence();
         for (final DomainTag domainTag : domainTags) {
             final String tagName = domainTag.getTagName();
             if (tagIdToDomainTag.containsKey(domainTag.getTagName())) {
-               // TODO ERROR HANDLING; could be fatal error
+                // TODO ERROR HANDLING; could be fatal error
                 log.warn("Found duplicate tag for name '{}'. The tag will be skipped.", tagName);
                 continue;
             }
 
             tagIdToDomainTag.put(tagName, domainTag);
             adapterToDomainTag.compute(domainTag.getAdapterId(), (key, currentValue) -> {
-                        if (currentValue == null) {
-                            final Set<DomainTag> currentDomainTags = new HashSet<>();
-                            currentDomainTags.add(domainTag);
-                            return currentDomainTags;
-                        } else {
-                            currentValue.add(domainTag);
-                            return currentValue;
-                        }
-                    });
+                if (currentValue == null) {
+                    final Set<DomainTag> currentDomainTags = new HashSet<>();
+                    currentDomainTags.add(domainTag);
+                    return currentDomainTags;
+                } else {
+                    currentValue.add(domainTag);
+                    return currentValue;
+                }
+            });
         }
     }
 
