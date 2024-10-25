@@ -10,12 +10,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { type MappingManagerType } from '@/modules/Mappings/types.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
-import {
-  getInwardMappingRootProperty,
-  getInwardMappingSchema,
-  isBidirectional,
-} from '@/modules/Workspace/utils/adapter.utils.ts'
-import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
+import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const useMappingManager = (adapterId: string) => {
   const { t } = useTranslation()
@@ -115,31 +110,7 @@ export const useMappingManager = (adapterId: string) => {
     }
   }, [adapterInfo])
 
-  const tagsManager = useMemo<MappingManagerType<DomainTagList> | undefined>(() => {
-    if (!adapterInfo) return undefined
-
-    const handleOnError = (e: Error) => {
-      console.error(e.message)
-    }
-
-    try {
-      const schema = getInwardMappingSchema(adapterInfo.selectedProtocol)
-      return {
-        schema: createSchema(schema.items as RJSFSchema),
-        uiSchema: {
-          'ui:submitButtonOptions': {
-            norender: true,
-          },
-        },
-        onSubmit: (e) => console.log('XXXXXXXX', e),
-      }
-    } catch (e) {
-      handleOnError(e as Error)
-      return { schema: {}, uiSchema: {}, errors: (e as Error).message }
-    }
-  }, [adapterInfo])
-
   const isLoading = isAdapterLoading || isProtocolLoading
 
-  return { isLoading, inwardManager, outwardManager, tagsManager }
+  return { isLoading, inwardManager, outwardManager }
 }
