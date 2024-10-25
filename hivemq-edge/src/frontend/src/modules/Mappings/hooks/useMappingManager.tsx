@@ -80,7 +80,12 @@ export const useMappingManager = (adapterId: string) => {
     return {
       schema,
       formData: { [mappingPropName]: formData },
-      uiSchema: rest,
+      uiSchema: {
+        ...rest,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      },
       onSubmit: (data) =>
         processMutation(
           updateProtocolAdapter.mutateAsync({
