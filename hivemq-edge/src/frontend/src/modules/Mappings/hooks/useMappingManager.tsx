@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 
-import { MOCK_MAPPING_DATA, MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
+import { MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
 import { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
@@ -102,16 +102,25 @@ export const useMappingManager = (adapterId: string) => {
 
   const outwardManager = useMemo<MappingManagerType | undefined>(() => {
     if (!adapterInfo) return undefined
-    const { selectedProtocol } = adapterInfo
+    const { selectedProtocol, selectedAdapter } = adapterInfo
 
     if (!isBidirectional(selectedProtocol)) return undefined
 
     return {
       schema: MOCK_OUTWARD_MAPPING_OPCUA.schema || {},
-      formData: {
-        subscriptions: MOCK_MAPPING_DATA,
-      },
       uiSchema: MOCK_OUTWARD_MAPPING_OPCUA.uiSchema || {},
+      onSubmit: (data) => {
+        processMutation(
+          updateProtocolAdapter.mutateAsync({
+            adapterId: adapterId,
+            requestBody: {
+              id: adapterId,
+              type: adapterInfo.selectedProtocol.id,
+              config: { ...selectedAdapter.config, ...data },
+            },
+          })
+        )
+      },
     }
   }, [adapterInfo])
 
