@@ -128,13 +128,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               isDisabled={Boolean(!mapping?.source.propertyPath)}
             />
           </ButtonGroup>
-          <Alert
-            status={mapping?.source.propertyPath ? 'success' : 'error'}
-            size="sm"
-            variant="left-accent"
-            flex={1}
-            w="140px"
-          >
+          <Alert status={mapping?.source.propertyPath ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
             <AlertIcon />
             {mapping?.source.propertyPath
               ? t('rjsf.MqttTransformationField.validation.matching')
