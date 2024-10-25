@@ -3,7 +3,7 @@ import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 
 import { MOCK_MAPPING_DATA, MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
-import { ApiError, DomainTagList } from '@/api/__generated__'
+import { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
