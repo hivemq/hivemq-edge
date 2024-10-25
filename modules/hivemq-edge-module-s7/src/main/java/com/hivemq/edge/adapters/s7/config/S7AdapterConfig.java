@@ -124,7 +124,7 @@ public class S7AdapterConfig implements ProtocolAdapterConfig {
     @JsonCreator
     public S7AdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "port", required = true) final int port,
+            @JsonProperty(value = "port", required = true, defaultValue = "102") final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
             @JsonProperty(value = "remoteRack") final @Nullable Integer remoteRack,
