@@ -126,7 +126,8 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
             @NotNull final PollingInput<S7ToMqttConfig> pollingInput,
             @NotNull final PollingOutput pollingOutput) {
         final S7ToMqttConfig s7ToMqtt = pollingInput.getPollingContext();
-        //Every S7 address starts with a % but the iot-communications lib doesn't like it so we are stripping it.
+
+        //Every S7 address starts with a % but the iot-communications lib doesn't like it, so we are stripping it.
         final String tagAddress = s7ToMqtt.getTagAddress().replace("%","");
         final DataPoint dataPoint;
 
@@ -140,7 +141,9 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
             if(dataPoints.containsKey(tagAddress)) {
                 final DataPoint existingDataPoint = dataPoints.get(tagAddress);
                 if(existingDataPoint != null && existingDataPoint.equals(dataPoint)) {
-                    log.info("Skipping sending for {} because publishChangedDataOnly=true", tagAddress);
+                    if (log.isTraceEnabled()){
+                        log.trace("Skipping sending for {} because publishChangedDataOnly=true", tagAddress);
+                    }
                 } else {
                     dataPoints.put(tagAddress, dataPoint);
                     pollingOutput.addDataPoint(dataPoint);
