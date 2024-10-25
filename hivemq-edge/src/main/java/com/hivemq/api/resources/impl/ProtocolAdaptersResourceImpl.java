@@ -17,8 +17,6 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -416,7 +414,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response addAdapterDomainTag(
             @NotNull final String adapterId, @NotNull final DomainTagModel domainTag) {
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(adapterId, DomainTag.fromDomainTagEntity(domainTag));
+                domainTagPersistence.addDomainTag(DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -449,8 +447,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateDomainTag(
             final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
-        final DomainTagUpdateResult domainTagUpdateResult =
-                domainTagPersistence.updateDomainTag(adapterId, tagId, DomainTag.fromDomainTagEntity(domainTag));
+        final DomainTagUpdateResult domainTagUpdateResult = domainTagPersistence.updateDomainTag(tagId,
+                DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -465,8 +463,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateDomainTags(
             final @NotNull String adapterId, final @NotNull DomainTagModelList domainTagList) {
-        final Set<DomainTag> domainTags =
-                domainTagList.getItems().stream().map(DomainTag::fromDomainTagEntity).collect(Collectors.toSet());
+        final Set<DomainTag> domainTags = domainTagList.getItems()
+                .stream()
+                .map(e -> DomainTag.fromDomainTagEntity(e, adapterId))
+                .collect(Collectors.toSet());
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTags(adapterId, domainTags);
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
@@ -497,26 +497,4 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
         return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
     }
-
-
-    public @NotNull String adapterNotFound(final @NotNull String adapterId) {
-        final ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/not-found"));
-        objectNode.set("title", new TextNode("The item cannot be found."));
-        objectNode.set("detail",
-                new TextNode("The adapter '" + adapterId + "' cannot be found and therefore no tags can be created."));
-        objectNode.set("instance", new TextNode("/adapters/" + adapterId));
-        return objectNode.toString();
-    }
-
-    public @NotNull String itemNotFound(final @NotNull String tagId) {
-        final ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/not-found"));
-        objectNode.set("title", new TextNode("The item cannot be found."));
-        objectNode.set("detail",
-                new TextNode("The tag '" + tagId + "' cannot be found and therefore cannot be deleted"));
-        objectNode.set("instance", new TextNode("/tags/" + tagId));
-        return objectNode.toString();
-    }
-
 }

@@ -184,6 +184,7 @@ dependencies {
     implementation(libs.jackson.jaxrs.json.provider)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.dataformat.xml)
 
     //Open API
     implementation(libs.swagger.annotations)
