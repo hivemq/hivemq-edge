@@ -3986,6 +3986,11 @@ paths:
                     present for this name.
                   summary: An example response in case a topic filter is already present
                     for this name.
+                  value:
+                    errors:
+                    - title: The resource already exists
+                      detail: The topic filter 'filter' cannot be created since another
+                        item already exists with the same name.
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Already Present
@@ -4036,6 +4041,10 @@ paths:
                     for this name.
                   summary: An example response in case no topic filter is present
                     for this name.
+                  value:
+                    errors:
+                    - title: Resource not found
+                      detail: topic filter with id 'filter1' not found
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
