@@ -34,7 +34,6 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
@@ -219,13 +218,13 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusToMqttMapping modbusToMqttMapping,
             final @NotNull ModbusClient modbusClient,
             final @NotNull Tag<ModbusTagDefinition> modbusTag) {
-        final AddressRange addressRange = modbusTag.getTagDefinition().getAddressRange();
+        final ModbusTagDefinition modbusTagDefinition = modbusTag.getTagDefinition();
 
-        return doRead(addressRange.startIdx,
-                addressRange.unitId,
-                addressRange.flipRegisters,
+        return doRead(modbusTagDefinition.startIdx,
+                modbusTagDefinition.unitId,
+                modbusTagDefinition.flipRegisters,
                 modbusTag.getTagDefinition().getDataType(),
-                addressRange.readType,
+                modbusTagDefinition.readType,
                 modbusClient).thenApply(dataPoint -> {
             final ModBusData data = new ModBusData(modbusToMqttMapping);
             data.addDataPoint(dataPoint);
@@ -247,7 +246,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 return modbusClient.readInputRegisters(startIdx, dataType, unitId, flipRegisters);
             case COILS:
                 return modbusClient.readCoils(startIdx, unitId);
-            case DISCRETE_INPUT:
+            case DISCRETE_INPUTS:
                 return modbusClient.readDiscreteInput(startIdx, unitId);
             default:
                 return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
