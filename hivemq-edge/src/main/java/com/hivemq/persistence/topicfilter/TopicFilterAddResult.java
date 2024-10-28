@@ -52,7 +52,8 @@ public class TopicFilterAddResult {
 
     public enum TopicFilterPutStatus {
         SUCCESS(),
-        ALREADY_EXISTS()
+        TOPIC_NAME_ALREADY_USED(),
+        TOPIC_FILTER_ALREADY_PRESENT()
     }
 
 

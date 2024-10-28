@@ -46,15 +46,18 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     public @NotNull Response addTopicFilter(@NotNull final TopicFilterModel topicFilterModel) {
         final @NotNull TopicFilterAddResult addResult =
                 topicFilterPersistence.addTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+        final @NotNull String name = topicFilterModel.getName();
         switch (addResult.getTopicFilterPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
-            case ALREADY_EXISTS:
-                final @NotNull String name = topicFilterModel.getName();
-
+            case TOPIC_NAME_ALREADY_USED:
                 return ErrorResponseUtil.alreadyExists("The topic filter '" +
                         name +
                         "' cannot be created since another item already exists with the same name.");
+            case TOPIC_FILTER_ALREADY_PRESENT:
+                return ErrorResponseUtil.alreadyExists("The topic filter '" +
+                        name +
+                        "' cannot be created since another item already exists with the same filter.");
         }
         return Response.serverError().build();
     }

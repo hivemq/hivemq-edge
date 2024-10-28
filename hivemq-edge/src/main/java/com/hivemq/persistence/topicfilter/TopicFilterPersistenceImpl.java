@@ -26,6 +26,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Singleton
 public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
@@ -66,9 +67,18 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     public synchronized @NotNull TopicFilterAddResult addTopicFilter(
             final @NotNull TopicFilter topicFilter) {
         if (nameToTopicFilter.containsKey(topicFilter.getName())) {
-            return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.ALREADY_EXISTS,
+            return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_NAME_ALREADY_USED,
                     "An identical TopicFilter exists already for name '" + topicFilter.getName() + "'");
         }
+        if (nameToTopicFilter.values()
+                .stream()
+                .map(TopicFilter::getTopicFilter)
+                .collect(Collectors.toList())
+                .contains(topicFilter.getTopicFilter())) {
+            return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_FILTER_ALREADY_PRESENT,
+                    "An identical TopicFilter exists already for the filter '" + topicFilter.getTopicFilter() + "'");
+        }
+
 
         nameToTopicFilter.put(topicFilter.getName(), topicFilter);
         topicFilterPersistenceReaderWriter.writePersistence(nameToTopicFilter.values());
