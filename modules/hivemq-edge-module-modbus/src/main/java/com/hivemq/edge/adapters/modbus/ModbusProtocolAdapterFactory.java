@@ -116,10 +116,11 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
             protocolAdapterTagService.addTag(legacyModbusAdapterConfig.getId(),
                     PROTOCOL_ID,
                     new ModbusTag(newTagName,
-                            new ModbusTagDefinition(new AddressRange(context.getAddressRange().startIdx,
+                            new ModbusTagDefinition(context.getAddressRange().startIdx,
                                     ModbusAdu.HOLDING_REGISTERS,
                                     0,
-                                    false), ModbusDataType.INT_32)));
+                                    false,
+                                    ModbusDataType.INT_32)));
             final ModbusToMqttMapping modbusToMqttMapping = new ModbusToMqttMapping(context.getMqttTopic(),
                     context.getMqttQos(),
                     newTagName,
