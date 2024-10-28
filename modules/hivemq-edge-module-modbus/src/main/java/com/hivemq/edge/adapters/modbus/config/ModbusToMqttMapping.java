@@ -30,7 +30,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-public class ModbusToMqttMapping implements PollingContext {
+    public class ModbusToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT Topic",
