@@ -1,0 +1,68 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.persistence.topicfilter;
+
+import com.hivemq.api.model.topicFilters.TopicFilterModel;
+import com.hivemq.extension.sdk.api.annotations.Immutable;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+@Immutable
+public class TopicFilter {
+
+    private final @NotNull String name;
+    private final @NotNull String topicFilter;
+
+    public TopicFilter(
+            final @NotNull String name, final @NotNull String topicFilter) {
+        this.name = name;
+        this.topicFilter = topicFilter;
+    }
+
+    public static @NotNull TopicFilter fromTopicFilterModel(
+            final @NotNull TopicFilterModel topicFilter) {
+        return new TopicFilter(topicFilter.getName(), topicFilter.getTopicFilter());
+    }
+
+    public @NotNull String getName() {
+        return name;
+    }
+
+    public @NotNull String getTopicFilter() {
+        return topicFilter;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final TopicFilter that = (TopicFilter) o;
+        return name.equals(that.name) && topicFilter.equals(that.topicFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + topicFilter.hashCode();
+        return result;
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "TopicFilter{" + "name='" + name + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
+    }
+}

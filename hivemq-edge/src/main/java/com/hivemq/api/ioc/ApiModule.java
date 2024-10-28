@@ -34,6 +34,7 @@ import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.SamplingApi;
+import com.hivemq.api.resources.TopicFilterApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
@@ -44,6 +45,7 @@ import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
 import com.hivemq.api.resources.impl.MetricsResourceImpl;
 import com.hivemq.api.resources.impl.ProtocolAdaptersResourceImpl;
 import com.hivemq.api.resources.impl.SamplingResourceImpl;
+import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
@@ -91,6 +93,9 @@ public abstract class ApiModule {
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
     @Binds
     abstract @NotNull SamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
+    @Binds
+    abstract @NotNull TopicFilterApi topicFilterApi(@NotNull TopicFilterResourceImpl topicFilterResource);
+
 
     @Provides
     @Singleton

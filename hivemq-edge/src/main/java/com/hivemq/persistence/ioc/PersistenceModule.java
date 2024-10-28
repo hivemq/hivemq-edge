@@ -57,6 +57,8 @@ import com.hivemq.persistence.qos.IncomingMessageFlowPersistenceImpl;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistenceImpl;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistenceImpl;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -69,6 +71,7 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * @author Dominik Obermaier
  */
+@SuppressWarnings("unused")
 @Module
 public abstract class PersistenceModule {
 
@@ -97,67 +100,71 @@ public abstract class PersistenceModule {
     @Binds
     abstract @NotNull DomainTagPersistence domainTagPersistence(@NotNull DomainTagPersistenceImpl domainTagPersistence);
 
+    @Binds
+    abstract @NotNull TopicFilterPersistence topicFilterPersistence(@NotNull TopicFilterPersistenceImpl topicFilterPersistence);
+
+
     @Provides
     @Singleton
     static @NotNull MessageDroppedService messageDroppedService(
-            @NotNull MetricsHolder metricsHolder, @NotNull EventLog eventLog) {
+            @NotNull final MetricsHolder metricsHolder, @NotNull final EventLog eventLog) {
         return new MessageDroppedServiceImpl(metricsHolder, eventLog);
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence(@NotNull ClientQueueLocalPersistenceProvider clientQueueLocalPersistenceProvider) {
+    static @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence(@NotNull final ClientQueueLocalPersistenceProvider clientQueueLocalPersistenceProvider) {
         return clientQueueLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(@NotNull RetainedMessageLocalPersistenceProvider retainedMessageLocalPersistenceProvider) {
+    static @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(@NotNull final RetainedMessageLocalPersistenceProvider retainedMessageLocalPersistenceProvider) {
         return retainedMessageLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence(@NotNull ClientSessionLocalPersistenceProvider clientSessionLocalPersistenceProvider) {
+    static @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence(@NotNull final ClientSessionLocalPersistenceProvider clientSessionLocalPersistenceProvider) {
         return clientSessionLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence(@NotNull ClientSessionSubscriptionLocalPersistenceProvider clientSessionSubscriptionLocalPersistenceProvider) {
+    static @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence(@NotNull final ClientSessionSubscriptionLocalPersistenceProvider clientSessionSubscriptionLocalPersistenceProvider) {
         return clientSessionSubscriptionLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull PublishPayloadPersistence publishPayloadPersistence(@NotNull PublishPayloadPersistenceProvider publishPayloadPersistenceProvider) {
+    static @NotNull PublishPayloadPersistence publishPayloadPersistence(@NotNull final PublishPayloadPersistenceProvider publishPayloadPersistenceProvider) {
         return publishPayloadPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull SingleWriterService singleWriterService(@NotNull SingleWriterProvider singleWriterProvider) {
+    static @NotNull SingleWriterService singleWriterService(@NotNull final SingleWriterProvider singleWriterProvider) {
         return singleWriterProvider.get();
     }
 
     @Provides
     @Singleton
     @Persistence
-    static @NotNull ExecutorService persistenceExecutorService(PersistenceExecutorProvider persistenceExecutorProvider) {
+    static @NotNull ExecutorService persistenceExecutorService(final PersistenceExecutorProvider persistenceExecutorProvider) {
         return persistenceExecutorProvider.get();
     }
 
     @Provides
     @Singleton
     @Persistence
-    static @NotNull ListeningExecutorService persistenceListeningExecutorService(PersistenceExecutorProvider persistenceExecutorProvider) {
+    static @NotNull ListeningExecutorService persistenceListeningExecutorService(final PersistenceExecutorProvider persistenceExecutorProvider) {
         return persistenceExecutorProvider.get();
     }
 
     @Provides
     @Singleton
     @Persistence
-    static @NotNull ScheduledExecutorService persistenceScheduledExecutorService(PersistenceScheduledExecutorProvider persistenceScheduledExecutorProvider) {
+    static @NotNull ScheduledExecutorService persistenceScheduledExecutorService(final PersistenceScheduledExecutorProvider persistenceScheduledExecutorProvider) {
         return persistenceScheduledExecutorProvider.get();
     }
 
@@ -165,7 +172,7 @@ public abstract class PersistenceModule {
     @Singleton
     @Persistence
     static @NotNull ListeningScheduledExecutorService persistenceListeningScheduledExecutorService(
-            PersistenceScheduledExecutorProvider persistenceScheduledExecutorProvider) {
+            final PersistenceScheduledExecutorProvider persistenceScheduledExecutorProvider) {
         return persistenceScheduledExecutorProvider.get();
     }
 

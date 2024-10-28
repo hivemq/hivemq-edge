@@ -15,7 +15,7 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiBodyExamples;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

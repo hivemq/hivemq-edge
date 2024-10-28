@@ -35,6 +35,8 @@ tags:
   name: Protocol Adapters
 - description: Manage samples of payloads.
   name: Payload Sampling
+- description: Interact with topic filters.
+  name: Topic Filters
 - description: Configure Unified Namespace.
   name: UNS
 - description: This resource bundles endpoints for the available Finite State Machines
@@ -3944,6 +3946,102 @@ paths:
       summary: Start sampling for the given topic.
       tags:
       - Payload Sampling
+  /api/v1/management/topic-filters:
+    get:
+      description: Get the list of all topic filters created in this Edge instance
+      operationId: get-topicFilters
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                An example for the topic filter list:
+                  description: An example for the topic filter list
+                  summary: An example for the topic filter list
+              schema:
+                $ref: '#/components/schemas/TopicFilterList'
+          description: Success
+      summary: Get the list of all topic filters created in this Edge instance
+      tags:
+      - Topic Filters
+    post:
+      description: Add a new topic filter.
+      operationId: add-topicFilters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicFilter'
+        description: The topic filter.
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case a topic filter is already
+                    present for this name.
+                  summary: An example response in case a topic filter is already present
+                    for this name.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Already Present
+      summary: Add a new topic filter
+      tags:
+      - Topic Filters
+  /api/v1/management/topic-filters/{name}:
+    delete:
+      description: Delete the specified topic filter.
+      operationId: delete-topicFilter
+      parameters:
+      - description: The topic filter name.
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+      summary: Delete an topic filter
+      tags:
+      - Topic Filters
+    put:
+      description: Update a topic filter
+      operationId: update-topicFilter
+      parameters:
+      - description: The name of the topic filter that will be updated.
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicFilter'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no topic filter is present
+                    for this name.
+                  summary: An example response in case no topic filter is present
+                    for this name.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update a topic filter.
+      tags:
+      - Topic Filters
   /api/v1/management/uns/isa95:
     get:
       description: Obtain isa95 config.
@@ -5421,6 +5519,23 @@ components:
           type: boolean
           default: false
           description: The verifyHostname from the config
+    TopicFilter:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name for this topic filter.
+        topicFilter:
+          type: string
+          description: The topic filter according to the MQTT specification.
+    TopicFilterList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/TopicFilter'
     TypeIdentifier:
       type: object
       description: The unique id of the event object
