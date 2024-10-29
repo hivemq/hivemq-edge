@@ -33,6 +33,7 @@ import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.SamplingApi;
+import com.hivemq.api.resources.TopicFilterApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.RootResource;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -82,6 +83,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<ITokenVerifier> tokenVerifier;
     private final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy;
     private final @NotNull Lazy<SamplingApi> samplingResourceLazy;
+    private final @NotNull Lazy<TopicFilterApi> topicFilterApiLazy;
 
 
     @Inject
@@ -101,7 +103,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<ITokenGenerator> tokenGenerator,
             final @NotNull Lazy<ITokenVerifier> tokenVerifier,
             final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy,
-            final @NotNull Lazy<SamplingApi> samplingResourceLazy) {
+            final @NotNull Lazy<SamplingApi> samplingResourceLazy,
+            final @NotNull Lazy<TopicFilterApi> topicFilterApiLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -118,6 +121,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.tokenVerifier = tokenVerifier;
         this.genericAPIHolderLazy = genericAPIHolderLazy;
         this.samplingResourceLazy = samplingResourceLazy;
+        this.topicFilterApiLazy = topicFilterApiLazy;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -155,6 +159,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized event API resources");
         register(samplingResourceLazy.get());
         logger.trace("Initialized sampling API resources");
+        register(topicFilterApiLazy.get());
+        logger.trace("Initialized topic filter API resources");
     }
 
     protected void registerMappers() {

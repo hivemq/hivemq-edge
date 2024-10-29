@@ -18,6 +18,7 @@ package com.hivemq.api.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.tags.DomainTagModelList;
+import com.hivemq.api.resources.examples.TagResourceExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.error.Errors;
 import org.junit.jupiter.api.Test;
