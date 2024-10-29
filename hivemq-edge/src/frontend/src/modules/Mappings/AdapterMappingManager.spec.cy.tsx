@@ -50,9 +50,10 @@ describe('AdapterMappingManager', () => {
     cy.get('[role="dialog"]').should('be.visible')
 
     cy.get('header').should('contain.text', 'Manage inward mappings')
-    cy.get('[role="dialog"]').find('button').as('dialog-buttons').should('have.length', 2)
+    cy.get('[role="dialog"]').find('button').as('dialog-buttons').should('have.length', 3)
     cy.get('@dialog-buttons').eq(0).should('have.attr', 'aria-label', 'Close')
     cy.get('@dialog-buttons').eq(1).should('have.attr', 'aria-label', 'Shrink')
+    cy.get('@dialog-buttons').eq(2).should('have.text', 'Submit')
 
     cy.get('@dialog-buttons').eq(1).click()
     cy.get('@dialog-buttons').eq(1).should('have.attr', 'aria-label', 'Expand')
