@@ -317,8 +317,8 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(
-                @NotNull final WritingContext writeContext) {
-            return null;
+                @NotNull final String tagName) {
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
