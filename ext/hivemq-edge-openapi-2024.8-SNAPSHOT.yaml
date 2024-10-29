@@ -4018,9 +4018,9 @@ paths:
       description: Update a topic filter
       operationId: update-topicFilter
       parameters:
-      - description: The name of the topic filter that will be updated.
+      - description: The filter of the topic filter that will be updated.
         in: path
-        name: name
+        name: filter
         required: true
         schema:
           type: string
@@ -5531,7 +5531,7 @@ components:
     TopicFilter:
       type: object
       properties:
-        name:
+        description:
           type: string
           description: The name for this topic filter.
         topicFilter:
