@@ -15,8 +15,8 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.events.EventList;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;

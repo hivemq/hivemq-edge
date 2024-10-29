@@ -15,10 +15,9 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.components.ListenerList;
-import com.hivemq.api.model.components.NotificationList;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
