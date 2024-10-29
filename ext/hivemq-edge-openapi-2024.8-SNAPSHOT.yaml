@@ -3888,6 +3888,49 @@ paths:
       summary: Obtain a list of configured adapters for the specified type
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
+    get:
+      description: Get a json schema that explains the json schema that is used to
+        write to a PLC for the given tag name."
+      operationId: get-writing-schema
+      parameters:
+      - description: The id of the adapter for which the Json Schema for writing to
+          a PLC gets created.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      - description: The tag name (base64 encoded) for which the Json Schema for writing
+          to a PLC gets created.
+        in: path
+        name: tagName
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value:
+                    items:
+                    - tagDefinition:
+                        node: ns=2;i=test
+                      tagName: tag1
+                    - tagDefinition:
+                        node: ns=2;i=test2
+                      tagName: tag2
+              schema:
+                $ref: '#/components/schemas/JsonNode'
+          description: Success
+      summary: Get a json schema that explains the json schema that is used to write
+        to a PLC for the given tag name.
+      tags:
+      - Protocol Adapters
   /api/v1/management/sampling/schema/{topic}:
     get:
       description: Obtain a JsonSchema based in the stored samples for a given topic.

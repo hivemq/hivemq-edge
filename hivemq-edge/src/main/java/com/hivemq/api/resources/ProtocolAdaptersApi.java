@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.TagResourceExamples;
 import com.hivemq.api.model.adapters.Adapter;
@@ -444,7 +445,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = DomainTagModelList.class),
+                                                       schema = @Schema(implementation = JsonNode.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example for domain tags in opc ua",
                                                                               name = "opc ua domain tags example",

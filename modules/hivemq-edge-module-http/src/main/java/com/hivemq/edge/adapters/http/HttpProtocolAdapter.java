@@ -312,7 +312,7 @@ public class HttpProtocolAdapter
         } catch (final TagNotFoundException e) {
             writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
                     tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+                    "' was not found. For the writing to work the tag must be created via REST API or the UI.");
             return;
         } catch (final TagDefinitionParseException e) {
             writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +

@@ -123,7 +123,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         } catch (final TagNotFoundException e) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
                     tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
         } catch (final TagDefinitionParseException e) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the definition for the used tag '" +
                     tagName +
