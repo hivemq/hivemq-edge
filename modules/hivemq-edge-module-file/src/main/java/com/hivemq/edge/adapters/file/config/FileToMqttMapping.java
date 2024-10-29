@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
@@ -146,6 +147,7 @@ public class FileToMqttMapping implements PollingContext {
     }
 
     @Override
+    @JsonIgnore
     public @Nullable JsonPayloadCreator getJsonPayloadCreator() {
         return FileJsonPayloadCreator.INSTANCE;
     }
