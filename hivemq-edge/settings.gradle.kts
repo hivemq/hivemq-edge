@@ -25,8 +25,8 @@ includeBuild("./src/frontend") {
     name = "hivemq-edge-frontend"
 }
 
-if (file("../hivemq-extension-sdk").exists()) {
-    includeBuild("../hivemq-extension-sdk")
+if (file("../../hivemq-extension-sdk").exists()) {
+    includeBuild("../../hivemq-extension-sdk")
 } else {
     logger.warn(
         """
