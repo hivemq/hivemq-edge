@@ -14,10 +14,9 @@ interface ListSubscriptionsProps {
   onEdit?: (index: number) => void
   onDelete?: (index: number) => void
   onAdd?: () => void
-  isDisabled: boolean
 }
 
-const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd, isDisabled }) => {
+const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd }) => {
   const { t } = useTranslation('components')
 
   const columns = useMemo<ColumnDef<OutwardMapping>[]>(() => {
@@ -47,7 +46,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
         sortingFn: undefined,
         cell: (info) => {
           return (
-            <ButtonGroup isAttached size="xs" isDisabled={isDisabled}>
+            <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.actions.edit.aria-label')}
                 icon={<LuPencil />}
@@ -63,7 +62,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
         },
         footer: () => {
           return (
-            <ButtonGroup isAttached size="xs" isDisabled={isDisabled}>
+            <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.actions.add.aria-label')}
                 icon={<LuPlus />}
@@ -74,12 +73,12 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
         },
       },
     ]
-  }, [isDisabled, onAdd, onDelete, onEdit, t])
+  }, [onAdd, onDelete, onEdit, t])
 
   return (
     <Card>
       <PaginatedTable<OutwardMapping>
-        aria-label="list of mapping"
+        aria-label={t('rjsf.MqttTransformationField.tabs.list')}
         data={items}
         columns={columns}
         enablePagination={false}

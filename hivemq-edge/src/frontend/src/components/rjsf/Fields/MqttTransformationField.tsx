@@ -63,7 +63,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
 
   return (
     <>
-      <ListMappings items={subsData} onEdit={handleEdit} onAdd={handleAdd} onDelete={handleDelete} isDisabled={false} />
+      <ListMappings items={subsData} onEdit={handleEdit} onAdd={handleAdd} onDelete={handleDelete} />
       {selectedItem != undefined && (
         <MappingDrawer
           adapterId={adapterId}
