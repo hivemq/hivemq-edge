@@ -26,14 +26,13 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Singleton
 public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(TopicFilterPersistenceImpl.class);
 
-    private final @NotNull HashMap<String, TopicFilter> nameToTopicFilter = new HashMap<>();
+    private final @NotNull HashMap<String, TopicFilter> filterToTopicFilter = new HashMap<>();
     private final @NotNull TopicFilterPersistenceReaderWriter topicFilterPersistenceReaderWriter;
 
     @Inject
@@ -51,14 +50,13 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     private void loadPersistence() {
         final List<TopicFilter> topicFilters = topicFilterPersistenceReaderWriter.readPersistence();
         for (final TopicFilter topicFilter : topicFilters) {
-            final String name = topicFilter.getTopicFilter();
-            if (nameToTopicFilter.containsKey(topicFilter.getName())) {
+            if (this.filterToTopicFilter.containsKey(topicFilter.getTopicFilter())) {
                 log.error(
-                        "Found duplicate topic filter for name '{}' during initialization of tag persistence. HiveMQ Edge startup will stopped..",
-                        name);
+                        "Found duplicate topic filter for filter '{}' during initialization of tag persistence. HiveMQ Edge startup will stopped..",
+                        topicFilter.getTopicFilter());
                 throw new UnrecoverableException(false);
             }
-            nameToTopicFilter.put(name, topicFilter);
+            this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
         }
     }
 
@@ -66,40 +64,31 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     @Override
     public synchronized @NotNull TopicFilterAddResult addTopicFilter(
             final @NotNull TopicFilter topicFilter) {
-        if (nameToTopicFilter.containsKey(topicFilter.getName())) {
-            return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_NAME_ALREADY_USED,
-                    "An identical TopicFilter exists already for name '" + topicFilter.getName() + "'");
-        }
-        if (nameToTopicFilter.values()
-                .stream()
-                .map(TopicFilter::getTopicFilter)
-                .collect(Collectors.toList())
-                .contains(topicFilter.getTopicFilter())) {
+        if (filterToTopicFilter.containsKey(topicFilter.getTopicFilter())) {
             return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_FILTER_ALREADY_PRESENT,
                     "An identical TopicFilter exists already for the filter '" + topicFilter.getTopicFilter() + "'");
         }
 
-
-        nameToTopicFilter.put(topicFilter.getName(), topicFilter);
-        topicFilterPersistenceReaderWriter.writePersistence(nameToTopicFilter.values());
+        this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
+        topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
         return TopicFilterAddResult.success();
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(
-            @NotNull final String name, @NotNull final TopicFilter topicFilter) {
-        final TopicFilter topicFilters = nameToTopicFilter.get(name);
-        if (topicFilters == null) {
+    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull final TopicFilter topicFilter) {
+        final TopicFilter removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
+        if (removed != null) {
+            this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
+            return TopicFilterUpdateResult.success();
+        } else {
             return TopicFilterUpdateResult.failed(TopicFilterUpdateResult.TopicFilterUpdateStatus.NOT_FOUND,
-                    "No topic filter with name '{}' was found.");
+                    "No topic filter with filter '" + topicFilter.getTopicFilter() + "' was found.");
         }
-        nameToTopicFilter.put(name, topicFilter);
-        return TopicFilterUpdateResult.success();
     }
 
     @Override
-    public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(@NotNull final String name) {
-        final TopicFilter topicFilter = nameToTopicFilter.remove(name);
+    public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(@NotNull final String filter) {
+        final TopicFilter topicFilter = filterToTopicFilter.remove(filter);
         if (topicFilter == null) {
             return TopicFilterDeleteResult.failed(TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
                     "No topic filter with name '{}' was found.");
@@ -110,14 +99,14 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
 
     @Override
     public synchronized @NotNull List<TopicFilter> getTopicFilters() {
-        return new ArrayList<>(nameToTopicFilter.values());
+        return new ArrayList<>(filterToTopicFilter.values());
     }
 
     @Override
-    public @NotNull TopicFilter getTag(@NotNull final String name) {
-        final TopicFilter topicFilter = nameToTopicFilter.get(name);
+    public @NotNull TopicFilter getTag(@NotNull final String filter) {
+        final TopicFilter topicFilter = filterToTopicFilter.get(filter);
         if (topicFilter == null) {
-            throw new TagNotFoundException("TopicFilter '" + name + "' was not found in the persistence.");
+            throw new TagNotFoundException("TopicFilter for filter '" + filter + "' was not found in the persistence.");
         }
         return topicFilter;
     }

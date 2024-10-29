@@ -27,18 +27,13 @@ public interface TopicFilterPersistence {
     @NotNull
     TopicFilterAddResult addTopicFilter(@NotNull TopicFilter domainTag);
 
-    @NotNull
-    TopicFilterUpdateResult updateTopicFilter(
-            @NotNull String tagId, @NotNull TopicFilter domainTag);
-
+    @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilter topicFilter);
 
     @NotNull
-    TopicFilterDeleteResult deleteTopicFilter(@NotNull String tagId);
-
-
-    @NotNull
-    TopicFilter getTag(@NotNull String name);
+    TopicFilterDeleteResult deleteTopicFilter(@NotNull String filter);
 
     @NotNull
     List<TopicFilter> getTopicFilters();
+
+    @NotNull TopicFilter getTag(@NotNull String filter);
 }

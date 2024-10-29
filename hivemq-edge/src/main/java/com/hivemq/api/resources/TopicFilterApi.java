@@ -131,11 +131,11 @@ public interface TopicFilterApi {
                                                                               value = TopicFiltersResourceExamples.EXAMPLE_NOT_PRESENT)}))})
     @NotNull
     Response updateTopicFilter(
-            @NotNull @Parameter(name = "name",
-                                description = "The name of the topic filter that will be updated.",
+            @NotNull @Parameter(name = "filter",
+                                description = "The filter of the topic filter that will be updated.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("name") String name,
-            final @NotNull TopicFilterModel domainTag);
+                                in = ParameterIn.PATH) @PathParam("filter") String filter,
+            final @NotNull TopicFilterModel topicFilterModel);
 
 
 }

@@ -21,12 +21,12 @@ import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 public class TopicFilterMapper {
 
     public static @NotNull TopicFilter topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
-        return new TopicFilter(topicFilterXmlEntity.getName(), topicFilterXmlEntity.getTopicFilter());
+        return new TopicFilter(topicFilterXmlEntity.getTopicFilter(), topicFilterXmlEntity.getDescription());
 
     }
 
     public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterXmlEntity(topicFilter.getName(), topicFilter.getTopicFilter());
+        return new TopicFilterXmlEntity(topicFilter.getTopicFilter(), topicFilter.getDescription());
     }
 
 }

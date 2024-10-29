@@ -23,46 +23,45 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 @Immutable
 public class TopicFilter {
 
-    private final @NotNull String name;
+    private final @NotNull String description;
     private final @NotNull String topicFilter;
 
     public TopicFilter(
-            final @NotNull String name, final @NotNull String topicFilter) {
-        this.name = name;
+            final @NotNull String topicFilter, final @NotNull String description) {
+        this.description = description;
         this.topicFilter = topicFilter;
     }
 
     public static @NotNull TopicFilter fromTopicFilterModel(
             final @NotNull TopicFilterModel topicFilter) {
-        return new TopicFilter(topicFilter.getName(), topicFilter.getTopicFilter());
+        return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription());
     }
 
-    public @NotNull String getName() {
-        return name;
+    public @NotNull String getDescription() {
+        return description;
     }
 
     public @NotNull String getTopicFilter() {
         return topicFilter;
     }
 
+    // IMPORTANT: Only use filter for equals and hashcode as we do not care about the description and these methods are used for removal
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         final TopicFilter that = (TopicFilter) o;
-        return name.equals(that.name) && topicFilter.equals(that.topicFilter);
+        return topicFilter.equals(that.topicFilter);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + topicFilter.hashCode();
-        return result;
+        return topicFilter.hashCode();
     }
 
     @Override
     public @NotNull String toString() {
-        return "TopicFilter{" + "name='" + name + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
+        return "TopicFilter{" + "name='" + description + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
     }
 }

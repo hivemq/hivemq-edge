@@ -22,28 +22,29 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.topicfilter.TopicFilter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Objects;
+
 @Schema(name = "TopicFilter")
 public class TopicFilterModel {
-
-    @JsonProperty("name")
-    @Schema(description = "The name for this topic filter.")
-    private final @NotNull String name;
 
     @JsonProperty("topicFilter")
     @Schema(description = "The topic filter according to the MQTT specification.")
     private final @NotNull String topicFilter;
 
+    @JsonProperty("description")
+    @Schema(description = "The name for this topic filter.")
+    private final @NotNull String description;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TopicFilterModel(
-            @JsonProperty("name") final @NotNull String name,
-            @JsonProperty("topicFilter") final @NotNull String topicFilter) {
-        this.name = name;
+            @JsonProperty("topicFilter") final @NotNull String topicFilter,
+            @JsonProperty("description") final @Nullable String description) {
+        this.description = Objects.requireNonNullElse(description, "");
         this.topicFilter = topicFilter;
     }
 
-    public @NotNull String getName() {
-        return name;
+    public @NotNull String getDescription() {
+        return description;
     }
 
     public @NotNull String getTopicFilter() {
@@ -52,26 +53,37 @@ public class TopicFilterModel {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         final TopicFilterModel that = (TopicFilterModel) o;
-        return name.equals(that.name) && topicFilter.equals(that.topicFilter);
+        return description.equals(that.description) && topicFilter.equals(that.topicFilter);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = description.hashCode();
         result = 31 * result + topicFilter.hashCode();
         return result;
     }
 
     @Override
     public @NotNull String toString() {
-        return "TopicFilterModel{" + "name='" + name + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
+        return "TopicFilterModel{" +
+                "description='" +
+                description +
+                '\'' +
+                ", topicFilter='" +
+                topicFilter +
+                '\'' +
+                '}';
     }
 
     public static @NotNull TopicFilterModel fromTopicFilter(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterModel(topicFilter.getName(), topicFilter.getTopicFilter());
+        return new TopicFilterModel(topicFilter.getTopicFilter(), topicFilter.getDescription());
     }
 }

@@ -24,28 +24,29 @@ import javax.xml.bind.annotation.XmlElement;
 @XmlAccessorType(XmlAccessType.NONE)
 public class TopicFilterXmlEntity {
 
-    @XmlElement(name = "name", required = true)
-    private final @NotNull String name;
+    @XmlElement(name = "description", required = true)
+    private final @NotNull String description;
 
     @XmlElement(name = "filter", required = true)
     private final @NotNull String topicFilter;
 
 
     //no-arg for JaxB
+    @SuppressWarnings("unused")
     public TopicFilterXmlEntity() {
-        this.name = "";
+        this.description = "";
         this.topicFilter = "";
     }
 
     public TopicFilterXmlEntity(
-            final @NotNull String name, final @NotNull String topicFilter) {
-        this.name = name;
+            final @NotNull String topicFilter, final @NotNull String description) {
+        this.description = description;
         this.topicFilter = topicFilter;
     }
 
 
-    public @NotNull String getName() {
-        return name;
+    public @NotNull String getDescription() {
+        return description;
     }
 
     public @NotNull String getTopicFilter() {
@@ -54,6 +55,6 @@ public class TopicFilterXmlEntity {
 
     @Override
     public @NotNull String toString() {
-        return "TopicFilterXmlEntity{" + "name='" + name + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
+        return "TopicFilterXmlEntity{" + "description='" + description + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
     }
 }

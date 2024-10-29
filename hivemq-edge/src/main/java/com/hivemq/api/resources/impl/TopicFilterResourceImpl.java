@@ -46,7 +46,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     public @NotNull Response addTopicFilter(@NotNull final TopicFilterModel topicFilterModel) {
         final @NotNull TopicFilterAddResult addResult =
                 topicFilterPersistence.addTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
-        final @NotNull String name = topicFilterModel.getName();
+        final @NotNull String name = topicFilterModel.getDescription();
         switch (addResult.getTopicFilterPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -85,10 +85,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
 
     @Override
     public @NotNull Response updateTopicFilter(
-            @NotNull final String name,
-            final @NotNull TopicFilterModel topicFilterModel) {
+            final @NotNull String filter, final @NotNull TopicFilterModel topicFilterModel) {
         final @NotNull TopicFilterUpdateResult updateResult =
-                topicFilterPersistence.updateTopicFilter(name, TopicFilter.fromTopicFilterModel( topicFilterModel));
+                topicFilterPersistence.updateTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
         switch (updateResult.getTopicFilterUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();

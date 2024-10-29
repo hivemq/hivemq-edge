@@ -66,7 +66,6 @@ import static org.mockito.Mockito.when;
 
 class ProtocolAdapterManagerTest {
 
-
     private final @NotNull ConfigurationService configurationService = mock();
     private final @NotNull MetricRegistry metricRegistry = mock();
     private final @NotNull ModuleServicesImpl moduleServices = mock();
