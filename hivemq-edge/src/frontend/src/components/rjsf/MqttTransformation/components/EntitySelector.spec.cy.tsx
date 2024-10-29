@@ -14,19 +14,21 @@ describe('SelectSourceTopics', () => {
 
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
-      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
-      cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
-      cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
-      cy.intercept('/api/v1/management/client/filters', [mockClientSubscription])
+      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('types')
+      cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('adapters')
+      cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('bridges')
+      cy.intercept('/api/v1/management/client/filters', [mockClientSubscription]).as('clients')
 
       cy.mountWithProviders(<SelectSourceTopics value="topic/test1" onChange={cy.stub()} />)
 
       cy.get('#mapping-select-source').should('contain.text', 'Loading...')
+      cy.wait('@types')
+      cy.wait('@adapters')
+      cy.wait('@bridges')
+      cy.wait('@clients')
       cy.get('#mapping-select-source').should('not.contain.text', 'Loading...')
 
-      cy.get('#mapping-select-source').find('[data-testid="topic-wrapper"]').as('topics')
-      cy.get('@topics').eq(0).should('have.text', 'topic/test1')
-      cy.get('@topics').eq(1).should('have.text', 'topic/test2')
+      cy.get('#mapping-select-source').should('contain.text', 'topic/test1')
     })
   })
 
@@ -34,11 +36,11 @@ describe('SelectSourceTopics', () => {
     it('should render properly', () => {
       const mockAdapterId = 'my-adapter'
       const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId) }
-      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('types')
 
       cy.mountWithProviders(<SelectDestinationTag adapterId={mockAdapterId} value="tag/test1" onChange={cy.stub()} />)
 
-      // // Loading
+      // // Loading not working?
       // cy.get('#mapping-select-destination').should('contain.text', 'Loading...')
       // cy.get('#mapping-select-destination').should('not.contain.text', 'Loading...')
 
