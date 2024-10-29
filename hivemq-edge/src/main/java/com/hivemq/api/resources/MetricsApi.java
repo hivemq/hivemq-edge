@@ -15,9 +15,9 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.MetricList;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

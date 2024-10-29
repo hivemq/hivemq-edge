@@ -27,6 +27,7 @@ import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 
 import javax.inject.Inject;
 
@@ -43,7 +44,7 @@ public class Persistences {
     private final @NotNull ScheduledCleanUpService scheduledCleanUpService;
     private final @NotNull MessageDroppedService messageDroppedService;
     private final @NotNull DomainTagPersistence domainTagPersistence;
-
+    private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
     @Inject
     public Persistences(
@@ -57,7 +58,8 @@ public class Persistences {
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull ScheduledCleanUpService scheduledCleanUpService,
             final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull DomainTagPersistence domainTagPersistence) {
+            final @NotNull DomainTagPersistence domainTagPersistence,
+            final @NotNull TopicFilterPersistence topicFilterPersistence) {
         this.clientQueueLocalPersistence = clientQueueLocalPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
@@ -69,6 +71,7 @@ public class Persistences {
         this.scheduledCleanUpService = scheduledCleanUpService;
         this.messageDroppedService = messageDroppedService;
         this.domainTagPersistence = domainTagPersistence;
+        this.topicFilterPersistence = topicFilterPersistence;
     }
 
     public @NotNull ClientQueueLocalPersistence queueLocal() {
@@ -109,5 +112,9 @@ public class Persistences {
 
     public @NotNull DomainTagPersistence domainTagPersistence() {
         return domainTagPersistence;
+    }
+
+    public @NotNull TopicFilterPersistence topicFilterPersistence() {
+        return topicFilterPersistence;
     }
 }

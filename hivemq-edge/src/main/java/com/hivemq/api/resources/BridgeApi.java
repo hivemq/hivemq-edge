@@ -15,14 +15,13 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.bridge.Bridge;
 import com.hivemq.api.model.bridge.BridgeList;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
-import com.hivemq.codec.transcoder.TranscodingResult;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
