@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
@@ -22,6 +23,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -73,6 +75,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -422,7 +425,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return Response.ok().build();
             case ALREADY_EXISTS:
                 final @NotNull String tagId = domainTag.getTag();
-
                 return ErrorResponseUtil.alreadyExists("The tag '" +
                         tagId +
                         "' cannot be created since another item already exists with the same id.");
@@ -449,8 +451,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateDomainTag(
             final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
-        final DomainTagUpdateResult domainTagUpdateResult = domainTagPersistence.updateDomainTag(tagId,
-                DomainTag.fromDomainTagEntity(domainTag, adapterId));
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTag(tagId, DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -498,5 +500,41 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<DomainTagModel> domainTagModels =
                 domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
         return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
+    }
+
+    @Override
+    public @NotNull Response getWritingSchema(@NotNull final String adapterId, @NotNull final String tagName) {
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>>
+                optionalProtocolAdapterWrapper = protocolAdapterManager.getAdapterById(adapterId);
+        if (optionalProtocolAdapterWrapper.isEmpty()) {
+            log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
+            return ErrorResponseUtil.notFound("Adapter", adapterId);
+        }
+
+        final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter = optionalProtocolAdapterWrapper.get().getAdapter();
+
+        if (!(adapter instanceof WritingProtocolAdapter)) {
+            log.warn("The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
+                    adapterId);
+            return ErrorResponseUtil.errorResponse(400,
+                    "Operation not supported.",
+                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.");
+        }
+
+        final WritingProtocolAdapter<?> writingProtocolAdapter = (WritingProtocolAdapter<?>) adapter;
+        final CompletableFuture<JsonNode> mqttPayloadJsonSchema =
+                writingProtocolAdapter.createMqttPayloadJsonSchema(tagName);
+        try {
+            final JsonNode jsonSchemaRootNode = mqttPayloadJsonSchema.get();
+            return Response.ok().entity(jsonSchemaRootNode).build();
+        } catch (final InterruptedException e) {
+            log.warn("Creation of json schema for writing to PLCs were interrupted.");
+            log.debug("Original exception: ", e);
+            return Response.serverError().build();
+        } catch (final ExecutionException e) {
+            log.warn("Exception was raised during creation of json schema for writing to PLCs.");
+            log.debug("Original exception: ", e);
+            return Response.serverError().build();
+        }
     }
 }

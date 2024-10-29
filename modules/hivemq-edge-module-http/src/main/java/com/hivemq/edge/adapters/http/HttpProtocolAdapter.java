@@ -372,7 +372,7 @@ public class HttpProtocolAdapter
     }
 
     @Override
-    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToHttpMapping writeContext) {
+    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull String tagName) {
         return CompletableFuture.completedFuture(JsonSchema.createJsonSchema());
     }
 

@@ -82,8 +82,7 @@ public class OpcUaClientWrapper {
                 .thenCompose(ignored -> client.disconnect().thenApply(ignored2 -> null));
     }
 
-    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToOpcUaMapping writeContext) {
-        final @NotNull String tagName = writeContext.getTagName();
+    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull String tagName) {
         // first resolve the tag
         final Tag<OpcuaTagDefinition> opcuaTag;
         try {

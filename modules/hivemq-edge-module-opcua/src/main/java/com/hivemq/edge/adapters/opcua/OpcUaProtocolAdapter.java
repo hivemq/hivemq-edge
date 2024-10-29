@@ -167,10 +167,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     }
 
     @Override
-    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToOpcUaMapping writeContext) {
+    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull String tagName) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
         if(opcUaClientWrapperTemp != null) {
-            return opcUaClientWrapperTemp.createMqttPayloadJsonSchema(writeContext);
+            return opcUaClientWrapperTemp.createMqttPayloadJsonSchema(tagName);
         } else {
             log.warn("Tried executing createMqttPayloadJsonSchema while client wasn't started");
             return CompletableFuture.failedFuture(new IllegalStateException("Tried executing createMqttPayloadJsonSchema while client wasn't started"));

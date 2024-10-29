@@ -15,6 +15,8 @@
  */
 package com.hivemq.api.resources;
 
+import com.hivemq.api.model.ApiBodyExamples;
+import com.hivemq.api.model.TagResourceExamples;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
@@ -25,8 +27,6 @@ import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
-import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.api.resources.examples.TagResourceExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.error.Errors;
@@ -434,4 +434,33 @@ public interface ProtocolAdaptersApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTags();
+
+    @GET
+    @Path("/writing-schema/{adapterId}/{tagName}")
+    @Operation(summary = "Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.",
+               operationId = "get-writing-schema",
+               description = "Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.\"",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = DomainTagModelList.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for domain tags in opc ua",
+                                                                              name = "opc ua domain tags example",
+                                                                              summary = "Example for domain tags for opc ua ",
+                                                                              // TODO
+                                                                              value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getWritingSchema(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The id of the adapter for which the Json Schema for writing to a PLC gets created.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
+            @NotNull @Parameter(name = "tagName",
+                                description = "The tag name (base64 encoded) for which the Json Schema for writing to a PLC gets created.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+
 }
