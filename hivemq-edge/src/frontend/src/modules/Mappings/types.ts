@@ -1,6 +1,7 @@
 import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
 import { JsonNode } from '@/api/__generated__'
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 export interface ManagerContextType {
   schema?: RJSFSchema
@@ -30,6 +31,10 @@ export interface OutwardMapping {
   mqttTopicFilter: string | undefined
   tag: string | undefined
   fieldMapping: FieldMapping[]
+  metadata?: {
+    source?: FlatJSONSchema7[]
+    destination?: FlatJSONSchema7[]
+  }
 }
 
 /**

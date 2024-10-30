@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
@@ -9,6 +9,7 @@ import {
   SelectDestinationTag,
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 export enum MappingStrategy {
@@ -28,6 +29,13 @@ interface SubscriptionContainerProps {
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
+
+  const onSchemaReadyHandler = useCallback(
+    (properties: FlatJSONSchema7[]) => {
+      onChange('metadata', { ...item.metadata, destination: properties })
+    },
+    [item.metadata, onChange]
+  )
 
   return (
     <VStack alignItems="stretch" gap={4}>
@@ -53,7 +61,10 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
             topic={item.tag}
             mapping={item.fieldMapping}
             showTransformation={strategy === MappingStrategy.TRANSFORMED}
-            onChange={(mappings) => onChange('fieldMapping', mappings)}
+            onChange={(mappings) => {
+              if (mappings) onChange('fieldMapping', mappings)
+            }}
+            onSchemaReady={onSchemaReadyHandler}
           />
         </VStack>
       </Stack>
