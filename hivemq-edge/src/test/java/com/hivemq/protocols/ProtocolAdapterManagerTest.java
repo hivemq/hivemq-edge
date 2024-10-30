@@ -306,7 +306,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void write(
-                @NotNull final WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
+                final @NotNull WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
 
         }
 
@@ -327,7 +327,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void start(
-                @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 output.startedSuccessfully();
             } else {
@@ -337,7 +337,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void stop(
-                @NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 output.stoppedSuccessfully();
             } else {
