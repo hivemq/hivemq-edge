@@ -14,7 +14,7 @@ import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validat
 import { MappingType } from '@/modules/Mappings/types.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
 
 interface MappingFormProps {
   adapterId: string
@@ -30,14 +30,15 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
   const { errorToast } = useEdgeToast()
-
+  const validationSchemas = useState<FlatJSONSchema7[]>()
   const mappingManager = type === MappingType.INWARD ? inwardManager : outwardManager
 
-  const context: AdapterContext = {
+  const context: MappingContext = {
     isEditAdapter: true,
     isDiscoverable: false,
     adapterType: adapterType,
     adapterId: adapterId,
+    validationSchemas,
   }
 
   const onFormSubmit = useCallback(
