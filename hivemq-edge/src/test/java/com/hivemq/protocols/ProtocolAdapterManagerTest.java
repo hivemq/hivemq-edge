@@ -316,12 +316,6 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(
-                @NotNull final String tagName) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
         public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
             return null;
         }
@@ -352,7 +346,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        public @NotNull @org.jetbrains.annotations.NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
             return new TestWritingProtocolAdapterInformation();
         }
     }

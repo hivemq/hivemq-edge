@@ -60,6 +60,8 @@ import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.params.NodeTreeImpl;
+import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
+import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.util.ErrorResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -521,20 +523,26 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.");
         }
 
-        final WritingProtocolAdapter<?> writingProtocolAdapter = (WritingProtocolAdapter<?>) adapter;
-        final CompletableFuture<JsonNode> mqttPayloadJsonSchema =
-                writingProtocolAdapter.createMqttPayloadJsonSchema(tagName);
+        final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
+        adapter.createTagSchema(new TagSchemaCreationInputImpl(tagName), tagSchemaCreationOutput);
+
         try {
-            final JsonNode jsonSchemaRootNode = mqttPayloadJsonSchema.get();
+            final JsonNode jsonSchemaRootNode = tagSchemaCreationOutput.getFuture().get();
             return Response.ok().entity(jsonSchemaRootNode).build();
         } catch (final InterruptedException e) {
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
             log.debug("Original exception: ", e);
             return Response.serverError().build();
         } catch (final ExecutionException e) {
-            log.warn("Exception was raised during creation of json schema for writing to PLCs.");
-            log.debug("Original exception: ", e);
-            return Response.serverError().build();
+            if(e.getCause() instanceof UnsupportedOperationException){
+                return ErrorResponseUtil.errorResponse(400, "Operation not supported", e.getCause().getMessage());
+            } else if(e.getCause() instanceof IllegalStateException){
+                return ErrorResponseUtil.errorResponse(400, "Adapter not started", e.getCause().getMessage());
+            } else {
+                log.warn("Exception was raised during creation of json schema for writing to PLCs.");
+                log.debug("Original exception: ", e);
+                return Response.serverError().build();
+            }
         }
     }
 }
