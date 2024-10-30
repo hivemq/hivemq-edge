@@ -1,4 +1,4 @@
-import { type FC, useCallback } from 'react'
+import { type FC, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Form from '@rjsf/chakra-ui'
 import { type IChangeEvent } from '@rjsf/core'
@@ -9,8 +9,9 @@ import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
-import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { customFormatsValidator, customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
@@ -73,6 +74,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
       noHtml5Validate
       focusOnFirstError
       onSubmit={onFormSubmit}
+      customValidate={type === MappingType.INWARD ? undefined : customMappingValidate}
       validator={customFormatsValidator}
       showErrorList="bottom"
       widgets={adapterJSFWidgets}

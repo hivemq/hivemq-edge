@@ -267,7 +267,12 @@
       "validation": {
         "required": "Required",
         "notSupported": "Not supported",
-        "matching": "Matching"
+        "matching": "Matching",
+        "error": {
+          "noValidation": "There is a problem validating the mapping instructions",
+          "noSchema": "The destination schema cannot be generated",
+          "missingMapping": "Some of the required properties are missing"
+        }
       }
     }
   },
