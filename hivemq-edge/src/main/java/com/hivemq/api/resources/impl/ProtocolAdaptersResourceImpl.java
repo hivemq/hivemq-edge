@@ -518,7 +518,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (!(adapter instanceof WritingProtocolAdapter)) {
             log.warn("The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
                     adapterId);
-            return ErrorResponseUtil.errorResponse(400,
+            return ErrorResponseUtil.errorResponse(404,
                     "Operation not supported.",
                     "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.");
         }
@@ -535,9 +535,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return Response.serverError().build();
         } catch (final ExecutionException e) {
             if(e.getCause() instanceof UnsupportedOperationException){
-                return ErrorResponseUtil.errorResponse(400, "Operation not supported", e.getCause().getMessage());
+                return ErrorResponseUtil.errorResponse(404, "Operation not supported", e.getCause().getMessage());
             } else if(e.getCause() instanceof IllegalStateException){
-                return ErrorResponseUtil.errorResponse(400, "Adapter not started", e.getCause().getMessage());
+                return ErrorResponseUtil.errorResponse(404, "Adapter not started", e.getCause().getMessage());
             } else {
                 log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                 log.debug("Original exception: ", e);
