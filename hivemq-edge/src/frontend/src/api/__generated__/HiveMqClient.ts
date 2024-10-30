@@ -24,7 +24,9 @@ import { FrontendService } from './services/FrontendService';
 import { GatewayEndpointService } from './services/GatewayEndpointService';
 import { MetricsService } from './services/MetricsService';
 import { MetricsEndpointService } from './services/MetricsEndpointService';
+import { PayloadSamplingService } from './services/PayloadSamplingService';
 import { ProtocolAdaptersService } from './services/ProtocolAdaptersService';
+import { TopicFiltersService } from './services/TopicFiltersService';
 import { UnsService } from './services/UnsService';
 
 type HttpRequestConstructor = new (config: OpenAPIConfig) => BaseHttpRequest;
@@ -49,7 +51,9 @@ export class HiveMqClient {
     public readonly gatewayEndpoint: GatewayEndpointService;
     public readonly metrics: MetricsService;
     public readonly metricsEndpoint: MetricsEndpointService;
+    public readonly payloadSampling: PayloadSamplingService;
     public readonly protocolAdapters: ProtocolAdaptersService;
+    public readonly topicFilters: TopicFiltersService;
     public readonly uns: UnsService;
 
     public readonly request: BaseHttpRequest;
@@ -85,7 +89,9 @@ export class HiveMqClient {
         this.gatewayEndpoint = new GatewayEndpointService(this.request);
         this.metrics = new MetricsService(this.request);
         this.metricsEndpoint = new MetricsEndpointService(this.request);
+        this.payloadSampling = new PayloadSamplingService(this.request);
         this.protocolAdapters = new ProtocolAdaptersService(this.request);
+        this.topicFilters = new TopicFiltersService(this.request);
         this.uns = new UnsService(this.request);
     }
 }
