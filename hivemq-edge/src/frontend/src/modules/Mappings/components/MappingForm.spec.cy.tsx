@@ -59,7 +59,11 @@ describe('MappingForm', () => {
     cy.get('@mappingCTAs').eq(1).should('have.attr', 'aria-label', 'Delete mapping')
 
     cy.get('form').find('[role="alert"]').should('have.attr', 'data-status', 'error')
-    cy.get('form').find('[role="alert"] ul li').should('have.length', 2)
+    cy.get('form').find('[role="alert"] ul li').should('have.length', 3)
+    cy.get('form')
+      .find('[role="alert"] ul li')
+      .eq(2)
+      .should('contain.text', 'There is a problem validating the mapping instructions')
   })
 
   it('should delete mapping', () => {
