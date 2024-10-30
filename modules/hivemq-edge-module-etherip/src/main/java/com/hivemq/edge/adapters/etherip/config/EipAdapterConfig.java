@@ -19,14 +19,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class EipAdapterConfig implements ProtocolAdapterConfig {
+public class EipAdapterConfig implements ProtocolAdapterConfig<EipTag> {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
@@ -67,12 +69,17 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
     private final int slot;
 
-
     @JsonProperty(value = "eipToMqtt", required = true)
     @ModuleConfigField(title = "Ethernet IP To MQTT Config",
                        description = "The configuration for a data stream from Ethernet IP to MQTT",
                        required = true)
     private final @NotNull EipToMqttConfig eipToMqttConfig;
+
+    @JsonProperty(value = "tags", required = true)
+    @ModuleConfigField(title = "Tags defined for this adapter",
+                       description = "All tags used by this adapter",
+                       required = true)
+    private final @NotNull List<EipTag> tags;
 
     @JsonCreator
     public EipAdapterConfig(
@@ -81,14 +88,15 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
-            @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig) {
+            @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig,
+            @JsonProperty(value = "tags", required = true) final @NotNull List<EipTag> tags) {
         this.id = id;
         this.host = host;
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.eipToMqttConfig = eipToMqttConfig;
-
+        this.tags = tags;
     }
 
     public @NotNull String getId() {
@@ -118,5 +126,18 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
+    }
+
+    @Override
+    public List<EipTag> getTags() {
+        return Collections.unmodifiableList(tags);
+    }
+
+    public void addTag(EipTag tag) {
+        tags.add(tag);
+    }
+
+    public void removeTag(EipTag tag) {
+        tags.remove(tag);
     }
 }

@@ -33,25 +33,22 @@ public interface DomainTagPersistence {
             @NotNull String tagId,
             @NotNull DomainTag domainTag);
 
-
     @NotNull
     DomainTagUpdateResult updateDomainTags(
             @NotNull String adapterId,
             @NotNull Set<DomainTag> domainTags);
 
-
     @NotNull
     DomainTagDeleteResult deleteDomainTag(@NotNull String adapterId, @NotNull String tagId);
 
-
-
     @NotNull
     List<DomainTag> getDomainTags();
-
 
     @NotNull
     List<DomainTag> getTagsForAdapter(@NotNull String adapterId);
 
     @NotNull
     DomainTag getTag(@NotNull String tagId);
+
+    void adapterIsGone(@NotNull String adapterId);
 }

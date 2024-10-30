@@ -1,4 +1,4 @@
-package com.hivemq.edge.adapters.etherip.tag;
+package com.hivemq.edge.adapters.etherip.config.tag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

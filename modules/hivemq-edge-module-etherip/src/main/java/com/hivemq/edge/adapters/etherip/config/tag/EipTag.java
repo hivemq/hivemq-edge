@@ -1,11 +1,15 @@
-package com.hivemq.edge.adapters.etherip.tag;
+package com.hivemq.edge.adapters.etherip.config.tag;
 
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 public class EipTag implements Tag<EipTagDefinition> {
 
+
     private final @NotNull String tagName;
+    private final Optional<String> tagDescription;
     private final @NotNull EipTagDefinition eipTagDefinition;
 
     public EipTag(final @NotNull String tagName, final @NotNull EipTagDefinition eipTagDefinition) {
@@ -22,6 +26,11 @@ public class EipTag implements Tag<EipTagDefinition> {
     @Override
     public @NotNull String getTagName() {
         return tagName;
+    }
+
+    @Override
+    public @NotNull Optional<String> getDescription() {
+        return Optional.empty();
     }
 
     @Override

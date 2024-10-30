@@ -37,6 +37,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -53,6 +54,8 @@ import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFact
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.domain.DomainTag;
+import com.hivemq.persistence.domain.DomainTagPersistence;
 import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -95,6 +98,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
+    private final @NotNull DomainTagPersistence domainTagPersistence;
 
     private final @NotNull Object lock = new Object();
 
@@ -113,7 +117,8 @@ public class ProtocolAdapterManager {
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
             final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ExecutorService executorService,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService,
+            final @NotNull DomainTagPersistence domainTagPersistence) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -128,6 +133,7 @@ public class ProtocolAdapterManager {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
         this.protocolAdapterTagService = protocolAdapterTagService;
+        this.domainTagPersistence = domainTagPersistence;
     }
 
 
@@ -309,6 +315,15 @@ public class ProtocolAdapterManager {
     @NotNull
     CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
+
+        protocolAdapterWrapper.getConfigObject().getTags().forEach(tag ->
+                new DomainTag(
+                        ((Tag)tag).getTagName(),
+                        protocolAdapterWrapper.getId(),
+                        protocolAdapterWrapper.getAdapterInformation().getProtocolId(),
+
+                        );
+
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(moduleServices, eventService), output);
@@ -412,6 +427,7 @@ public class ProtocolAdapterManager {
 
         return stopWritingFuture.thenComposeAsync(ignored -> {
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
+            domainTagPersistence.adapterIsGone(protocolAdapterWrapper.getId());
             if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
                 protocolAdapterWrapper.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
                 return adapterStopOutput.getOutputFuture();
@@ -432,6 +448,7 @@ public class ProtocolAdapterManager {
             if (log.isWarnEnabled()) {
                 log.warn("Protocol-adapter '{}' was unable to stop cleanly", protocolAdapterWrapper.getId(), throwable);
             }
+            domainTagPersistence.adapterIsGone(protocolAdapterWrapper.getId());
             eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
                             protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
                     .withSeverity(Event.SEVERITY.CRITICAL)

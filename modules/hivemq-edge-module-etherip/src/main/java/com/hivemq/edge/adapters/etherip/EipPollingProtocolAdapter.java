@@ -34,7 +34,7 @@ import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
-import com.hivemq.edge.adapters.etherip.tag.EipTagDefinition;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import etherip.types.CIPData;
