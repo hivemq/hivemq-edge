@@ -28,6 +28,7 @@
                     </mqttToOpcuaMapping>
                 </mqttToOpcuaMappings>
             </mqttToOpcua>
+            <tags></tags>
         </opcua>
     </protocol-adapters>
 </hivemq>

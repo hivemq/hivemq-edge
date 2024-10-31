@@ -38,7 +38,7 @@
             </mqttToOpcua>
             <tags>
                 <tag>
-                    <name>ns=1;i=1004</name>
+                    <name>wrong-ns=1;i=1004</name>
                     <description>description1</description>
                     <definition>
                         <node>ns=1;i=1004</node>

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -74,8 +77,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "tags", required = true)
     @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter",
-                       required = true)
+                       description = "All tags used by this adapter")
     private final @NotNull List<OpcuaTag> tags;
 
     @JsonCreator
@@ -87,7 +89,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security,
-            @JsonProperty(value = "tags", required = true) final @NotNull List<OpcuaTag> tags) {
+            @JsonProperty(value = "tags") final @Nullable List<OpcuaTag> tags) {
         this.id = id;
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
@@ -97,17 +99,11 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(List.of()));
 
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
-        this.tags = tags;
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
         return id;
-    }
-
-    @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        // TODO
-        return List.of();
     }
 
     public @NotNull String getUri() {
@@ -137,5 +133,10 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @Override
     public List<OpcuaTag> getTags() {
         return Collections.unmodifiableList(tags);
+    }
+
+    @Override
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return opcuaToMqttConfig.getOpcuaToMqttMappings().stream().map(OpcUaToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 }

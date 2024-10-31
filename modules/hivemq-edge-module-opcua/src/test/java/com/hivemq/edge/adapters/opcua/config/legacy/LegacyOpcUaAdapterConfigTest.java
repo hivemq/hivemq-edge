@@ -16,9 +16,6 @@
 package com.hivemq.edge.adapters.opcua.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -36,33 +33,12 @@ import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @SuppressWarnings("unchecked")
 class LegacyOpcUaAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -73,7 +49,7 @@ class LegacyOpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new OpcUaProtocolAdapterFactory(true);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"), false);
 
@@ -123,7 +99,6 @@ class LegacyOpcUaAdapterConfigTest {
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
         });
 
-        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
     }
 
     @Test
@@ -135,7 +110,7 @@ class LegacyOpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new OpcUaProtocolAdapterFactory(true);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"), false);
 
@@ -162,7 +137,6 @@ class LegacyOpcUaAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(4294967295L);
         });
-        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
 
     }
 

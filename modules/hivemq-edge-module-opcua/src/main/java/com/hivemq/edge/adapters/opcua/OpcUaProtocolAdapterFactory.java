@@ -46,12 +46,9 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public OpcUaProtocolAdapterFactory(
-            final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public OpcUaProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -101,12 +98,11 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
 
 
         final List<OpcUaToMqttMapping> opcuaToMqttMappings = new ArrayList<>();
+        final List<OpcuaTag> tags = new ArrayList<>();
         for (final LegacyOpcUaAdapterConfig.Subscription subscription : legacyOpcUaAdapterConfig.getSubscriptions()) {
             // create tag first
             final String newTagName = legacyOpcUaAdapterConfig.getId() + "-" + UUID.randomUUID();
-            protocolAdapterTagService.addTag(legacyOpcUaAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new OpcuaTag(newTagName, new OpcuaTagDefinition(subscription.getNode())));
+            tags.add(new OpcuaTag(newTagName, "not set", new OpcuaTagDefinition(subscription.getNode())));
             opcuaToMqttMappings.add(new OpcUaToMqttMapping(subscription.getNode(),
                     subscription.getMqttTopic(),
                     subscription.getPublishingInterval(),
@@ -124,6 +120,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
                 legacyOpcUaAdapterConfig.getAuth(),
                 legacyOpcUaAdapterConfig.getTls(),
                 opcuaToMqttConfig,
-                legacyOpcUaAdapterConfig.getSecurity());
+                legacyOpcUaAdapterConfig.getSecurity(),
+                tags);
     }
 }
