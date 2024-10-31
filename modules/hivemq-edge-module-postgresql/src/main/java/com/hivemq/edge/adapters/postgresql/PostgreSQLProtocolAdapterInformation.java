@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,10 +20,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
-import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterConfig;
-import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,14 +42,14 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getProtocolName() {
         // the returned string will be used for logging information on the protocol adapter
-        return "PostgreSQL Protocol";
+        return "PostgreSQL";
     }
 
     @Override
     public @NotNull String getProtocolId() {
         // this id is very important as this is how the adapters configurations in the config.xml are linked to the adapter implementations.
         // any change here means you will need to edit the config.xml
-        return "postgresql";
+        return "PostgreSQL_Protocol";
     }
 
     @Override
@@ -65,7 +61,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getDescription() {
         // the description that will be shown for this protocol adapter within edge's ui
-        return "This protocol adapter allow you to execute SQL query on a PostgreSQL database, retrieve the result and send it via MQTT.";
+        return "This protocol adapter allow you to execute SQL query on a database, retrieve the result and send it via MQTT.";
     }
 
     @Override
@@ -78,7 +74,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getVersion() {
         // the version of this protocol adapter, the usage of semantic versioning is advised.
-        return "${edge-version}-ALPHA";
+        return "2024.7 (Alpha)";
     }
 
     @Override
@@ -96,7 +92,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getAuthor() {
         // your name/nick
-        return "HiveMQ";
+        return "Anthony O. (HiveMQ)";
     }
 
     @Override
@@ -108,9 +104,10 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public List<ProtocolAdapterTag> getTags() {
         // here you can set which Tags should be applied to this protocol adapter
-        return List.of(ProtocolAdapterTag.INTERNET, ProtocolAdapterTag.TCP, ProtocolAdapterTag.AUTOMATION);
+        return List.of(ProtocolAdapterTag.INTERNET,
+                ProtocolAdapterTag.TCP,
+                ProtocolAdapterTag.AUTOMATION);
     }
-
 
     @Override
     public @Nullable String getUiSchema() {
@@ -122,31 +119,9 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (final Exception e) {
+        } catch (Exception e) {
             LOG.warn("The UISchema for the PostgreSQL Adapter could not be loaded from resources:", e);
             return null;
         }
     }
-
-    @Override
-    public int getCurrentConfigVersion() {
-        return 1;
-    }
-
-    @Override
-    public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return PostgreSQLAdapterTag.class;
-    }
-
-    @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
-        return PostgreSQLAdapterConfig.class;
-    }
-
-    @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
-        return PostgreSQLAdapterConfig.class;
-    }
-
-
 }

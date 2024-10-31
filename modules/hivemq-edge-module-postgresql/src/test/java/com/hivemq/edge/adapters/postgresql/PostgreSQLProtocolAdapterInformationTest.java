@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,18 @@ import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PostgreSQLProtocolAdapterInformationTest {
-
     @Test
     void getProtocolId_MustNotContainWhiteSpaces() {
         final PostgreSQLProtocolAdapterInformation information = new PostgreSQLProtocolAdapterInformation();
         assertFalse(information.getProtocolId().contains(" "));
     }
 
-
     @Test
-    void getProtocolId_MustBeAlphaNummercialOrUnderscore() {
+    void getProtocolId_MustBeAlphaNumericalOrUnderscore() {
         final String ALPHA_NUM = "[A-Za-z0-9_]*";
         final Pattern alphaNumPattern = Pattern.compile(ALPHA_NUM);
         final PostgreSQLProtocolAdapterInformation information = new PostgreSQLProtocolAdapterInformation();
