@@ -26,4 +26,8 @@ export const handlers = [
   http.get('**/management/topic-filters', () => {
     return HttpResponse.json<TopicFilterList>({ items: [MOCK_TOPIC_FILTER] }, { status: 200 })
   }),
+
+  http.put('**/management/topic-filters', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
 ]
