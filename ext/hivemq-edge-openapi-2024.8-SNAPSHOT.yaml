@@ -4026,9 +4026,9 @@ paths:
               examples:
                 already present example:
                   description: An example response in case a topic filter is already
-                    present for this name.
+                    present for this filter.
                   summary: An example response in case a topic filter is already present
-                    for this name.
+                    for this filter.
                   value:
                     errors:
                     - title: The resource already exists
@@ -4040,17 +4040,18 @@ paths:
       summary: Add a new topic filter
       tags:
       - Topic Filters
-  /api/v1/management/topic-filters/{name}:
+  /api/v1/management/topic-filters/{filter}:
     delete:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
       parameters:
-      - description: The topic filter name.
+      - description: The URL-encoded  filter of the topic filter that should be deleted.
         in: path
-        name: name
+        name: filter
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           description: Success
@@ -4061,12 +4062,13 @@ paths:
       description: Update a topic filter
       operationId: update-topicFilter
       parameters:
-      - description: The filter of the topic filter that will be updated.
+      - description: The URL-encoded filter of the topic filter that will be updated.
         in: path
         name: filter
         required: true
         schema:
           type: string
+          format: urlencoded
       requestBody:
         content:
           application/json:
@@ -4081,9 +4083,9 @@ paths:
               examples:
                 already present example:
                   description: An example response in case no topic filter is present
-                    for this name.
+                    for this filter.
                   summary: An example response in case no topic filter is present
-                    for this name.
+                    for this filter.
                   value:
                     errors:
                     - title: Resource not found
