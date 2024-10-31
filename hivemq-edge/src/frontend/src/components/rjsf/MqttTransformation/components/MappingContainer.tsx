@@ -62,7 +62,10 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
             mapping={item.fieldMapping}
             showTransformation={strategy === MappingStrategy.TRANSFORMED}
             onChange={(mappings) => {
-              if (mappings) onChange('fieldMapping', mappings)
+              if (!mappings) {
+                return
+              }
+              onChange('fieldMapping', mappings)
             }}
             onSchemaReady={onSchemaReadyHandler}
           />
