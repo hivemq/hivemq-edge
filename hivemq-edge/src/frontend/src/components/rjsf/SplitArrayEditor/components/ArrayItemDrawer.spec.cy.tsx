@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import DeviceTagDrawer from '@/modules/Device/components/DeviceTagDrawer.tsx'
+import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 
 describe('DeviceTagDrawer', () => {
   beforeEach(() => {
@@ -8,7 +8,7 @@ describe('DeviceTagDrawer', () => {
   })
 
   it('should render in disabled state', () => {
-    cy.mountWithProviders(<DeviceTagDrawer context={{}} isDisabled />, {
+    cy.mountWithProviders(<ArrayItemDrawer context={{}} isDisabled />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
     })
     cy.getByAriaLabel('Edit tags').should('be.visible').should('be.disabled')
@@ -17,7 +17,7 @@ describe('DeviceTagDrawer', () => {
 
   it('should properly', () => {
     const onSubmit = cy.stub().as('onSubmit')
-    cy.mountWithProviders(<DeviceTagDrawer context={{}} onSubmit={onSubmit} />, {
+    cy.mountWithProviders(<ArrayItemDrawer context={{}} onSubmit={onSubmit} />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
     })
 

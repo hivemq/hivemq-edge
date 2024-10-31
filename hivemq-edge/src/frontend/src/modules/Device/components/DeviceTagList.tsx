@@ -6,7 +6,7 @@ import { Adapter, DomainTagList } from '@/api/__generated__'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
-import DeviceTagDrawer from '@/modules/Device/components/DeviceTagDrawer.tsx'
+import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
 import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
 
@@ -29,7 +29,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
           <Flex flex="1" alignItems="center" flexWrap="wrap">
             <Heading size="sm">{t('device.drawer.tagList.title')}</Heading>
           </Flex>
-          <DeviceTagDrawer isDisabled={isLoading || isError} context={context} onSubmit={onHandleSubmit} />
+          <ArrayItemDrawer isDisabled={isLoading || isError} context={context} onSubmit={onHandleSubmit} />
         </Flex>
       </CardHeader>
       <CardBody>

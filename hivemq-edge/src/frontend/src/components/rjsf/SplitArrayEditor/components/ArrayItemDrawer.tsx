@@ -25,7 +25,7 @@ interface DeviceTagDrawerProps {
   onSubmit?: (data: DomainTagList | undefined) => void
 }
 
-const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ context, onSubmit, isDisabled = false }) => {
+const ArrayItemDrawer: FC<DeviceTagDrawerProps> = ({ context, onSubmit, isDisabled = false }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -66,4 +66,4 @@ const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ context, onSubmit, isDisabl
   )
 }
 
-export default DeviceTagDrawer
+export default ArrayItemDrawer
