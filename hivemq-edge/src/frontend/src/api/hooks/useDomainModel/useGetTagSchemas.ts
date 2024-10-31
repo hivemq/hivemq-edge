@@ -11,5 +11,6 @@ export const useGetTagSchemas = (tags: Array<string>) => {
   return useQuery<TagSchema, ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_TAGS, tags, QUERY_KEYS.DISCOVERY_SCHEMAS],
     queryFn: () => appClient.domain.getTagSchemas(tags),
+    enabled: tags.length > 0,
   })
 }

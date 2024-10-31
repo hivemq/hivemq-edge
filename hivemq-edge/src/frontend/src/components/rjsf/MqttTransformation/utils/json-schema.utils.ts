@@ -10,6 +10,7 @@ export const ARRAY_ITEM_INDEX = '___index'
 export interface FlatJSONSchema7 extends JSONSchema7 {
   path: string[]
   key: string
+  arrayType?: string
 }
 
 export const getProperty = (
@@ -49,7 +50,9 @@ export const getProperty = (
       }
     }
   } else if (type === 'array') {
-    // TODO[NVL] Check recursively for item's properties? Need to decide how to process items in arrays
+    const { items } = tempProperty as JSONSchema7
+    const { type: arrayType } = items as JSONSchema7
+    if (arrayType) mainProps.arrayType = Array.isArray(arrayType) ? arrayType[0] : arrayType
   }
 
   return [mainProps, ...subProperties]

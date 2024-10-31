@@ -188,7 +188,7 @@
     },
     "MqttTransformationField": {
       "tabs": {
-        "list": "List of subscriptions",
+        "list": "List of mappings",
         "editor": "Mapping Editor"
       },
       "unset": "< unset >",
@@ -199,16 +199,27 @@
       },
       "actions": {
         "delete": {
-          "aria-label": "Delete subscription"
+          "aria-label": "Delete mapping"
         },
         "edit": {
-          "aria-label": "Edit subscription"
+          "aria-label": "Edit mapping"
         },
         "add": {
-          "aria-label": "Add a new subscription"
+          "aria-label": "Add a new mapping"
+        },
+        "save": {
+          "aria-label": "Save"
+        },
+        "cancel": {
+          "aria-label": "Cancel"
         }
       },
       "sources": {
+        "prompt": "Select a topic filter as a source for your mappings",
+        "selector": {
+          "placeholder": "Type or select a topic filter ...",
+          "noOptionsMessage": "No topic filter matching the selection"
+        },
         "header": "Sources",
         "samples": {
           "aria-label": "Reload samples"
@@ -221,6 +232,11 @@
         }
       },
       "destination": {
+        "prompt": "Select a device tag as a destination for your mappings",
+        "selector": {
+          "placeholder": "Type or select a tag ...",
+          "noOptionsMessage": "No tag matching the selection"
+        },
         "header": "Destination output",
         "check": {
           "aria-label": "Mapping valid"
@@ -228,9 +244,11 @@
       },
       "instructions": {
         "dropzone": {
+          "role": "Dropzone",
           "arial-label": "Drag a source property here"
         },
         "editor": {
+          "role": "Transformation Editor",
           "arial-label": "Edit the transformation"
         },
         "actions": {
@@ -245,7 +263,32 @@
       "status": {
         "title_error": "Some errors",
         "title_success": "Complete"
+      },
+      "validation": {
+        "required": "Required",
+        "notSupported": "Not supported",
+        "matching": "Matching",
+        "error": {
+          "noValidation": "There is a problem validating the mapping instructions",
+          "noSchema": "The destination schema cannot be generated",
+          "missingMapping": "Some of the required properties are missing"
+        }
       }
+    }
+  },
+  "GenericSchema": {
+    "data": {
+      "type_null": "Null",
+      "type_object": "Object",
+      "type_array": "Array of $t(components:GenericSchema.data.type, { 'context': '{{arrayType}}' })",
+      "type_string": "String",
+      "type_integer": "Integer",
+      "type_number": "Number",
+      "type_boolean": "Number"
+    },
+    "structure": {
+      "property": "Property",
+      "example": "Example"
     }
   }
 }

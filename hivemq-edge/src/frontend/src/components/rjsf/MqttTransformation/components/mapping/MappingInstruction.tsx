@@ -2,6 +2,9 @@ import { FC, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {
+  Alert,
+  AlertIcon,
+  Box,
   ButtonGroup,
   Card,
   CardBody,
@@ -10,15 +13,16 @@ import {
   Code,
   FormControl,
   HStack,
-  List,
+  Text,
   Textarea,
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
+import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { Mapping } from '@/modules/Mappings/types.ts'
+import { FieldMapping } from '@/modules/Mappings/types.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
@@ -30,8 +34,8 @@ enum DropState {
 interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
-  mapping?: Mapping
-  onChange?: (source: string, destination: string) => void
+  mapping?: FieldMapping
+  onChange?: (source: string | undefined, destination: string) => void
 }
 
 const MappingInstruction: FC<MappingInstructionProps> = ({
@@ -51,7 +55,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
     return dropTargetForElements({
       element,
       canDrop: (dropTarget) => {
-        return dropTarget.source.data.type === property.type
+        return dropTarget.source.data.type === property.type && dropTarget.source.data.arrayType === property.arrayType
       },
       onDragEnter: () => {
         setState(DropState.DRAG_OVER)
@@ -61,39 +65,79 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
       },
       onDrop: (dropTarget) => {
         setState(DropState.COMPLETED)
-        onChange?.(dropTarget.source.data.title as string, property.title as string)
+        const target = dropTarget.source.data as unknown as FlatJSONSchema7
+        onChange?.([...target.path, target.key].join('.') as string, property.key as string)
       },
     })
   }, [onChange, property])
 
-  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : 'blue.500'
+  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : 'gray.500'
   const backgroundColor = state === DropState.DRAG_OVER ? 'green.100' : 'inherit'
+  const isSupported = isMappingSupported(property)
+
+  const onHandleClear = () => {
+    setState(DropState.IDLE)
+    onChange?.(undefined, property.key as string)
+  }
+
+  if (!isSupported)
+    return (
+      <Card size="sm" variant="outline" w="100%">
+        <CardHeader as={HStack} justifyContent="space-between">
+          <PropertyItem property={property} hasTooltip />
+          <Alert status="warning" size="sm" variant="left-accent" w="140px">
+            <AlertIcon />
+            {t('rjsf.MqttTransformationField.validation.notSupported')}
+          </Alert>
+        </CardHeader>
+      </Card>
+    )
 
   return (
     <HStack>
-      <Card size="sm" variant="outline" flex={1}>
+      <Card size="sm" variant="outline" w="100%">
         <CardHeader>
-          <List>
-            <PropertyItem property={property} />
-          </List>
+          <PropertyItem property={property} hasTooltip />
         </CardHeader>
-        <CardBody
-          {...getDropZoneBorder(activeColor)}
-          backgroundColor={backgroundColor}
-          m={2}
-          p={4}
-          ref={dropTargetRef}
-          minW={250}
-          data-testid="mapping-instruction-dropzone"
-        >
-          {mapping ? (
-            <Code>{mapping.source.join(' ')}</Code>
-          ) : (
-            t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')
-          )}
+
+        <CardBody display="flex" flexDirection="row" gap={2}>
+          <Box
+            {...getDropZoneBorder(activeColor)}
+            backgroundColor={backgroundColor}
+            p={4}
+            py={2}
+            ref={dropTargetRef}
+            data-testid="mapping-instruction-dropzone"
+            role="group"
+            aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
+            flex={3}
+          >
+            {mapping?.source.propertyPath ? (
+              <Code>{formatPath(mapping.source.propertyPath)}</Code>
+            ) : (
+              <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
+                {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
+              </Text>
+            )}
+          </Box>
+          <ButtonGroup isAttached size="xs" role="toolbar">
+            <IconButton
+              aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
+              icon={<RiDeleteBin2Fill />}
+              onClick={onHandleClear}
+              isDisabled={Boolean(!mapping?.source.propertyPath)}
+            />
+          </ButtonGroup>
+          <Alert status={mapping?.source.propertyPath ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
+            <AlertIcon />
+            {mapping?.source.propertyPath
+              ? t('rjsf.MqttTransformationField.validation.matching')
+              : t('rjsf.MqttTransformationField.validation.required')}
+          </Alert>
         </CardBody>
+
         {state === DropState.COMPLETED && showTransformation && (
-          <CardFooter>
+          <CardFooter role="group" aria-label={t('rjsf.MqttTransformationField.instructions.editor.role')}>
             <ButtonGroup isAttached size="xs" isDisabled>
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.instructions.actions.edit.aria-label')}
@@ -101,18 +145,11 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               />
             </ButtonGroup>
             <FormControl>
-              <Textarea size="xs" aria-label="ssss" value="`${veniam}${campana}`" />
+              <Textarea size="xs" aria-label="ssss" />
             </FormControl>
           </CardFooter>
         )}
       </Card>
-      <ButtonGroup isAttached size="xs">
-        <IconButton
-          aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
-          icon={<RiDeleteBin2Fill />}
-          onClick={() => setState(DropState.IDLE)}
-        />
-      </ButtonGroup>
     </HStack>
   )
 }

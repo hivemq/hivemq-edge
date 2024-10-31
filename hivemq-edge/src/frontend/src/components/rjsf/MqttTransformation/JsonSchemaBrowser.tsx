@@ -1,6 +1,6 @@
 import { type FC, useMemo } from 'react'
 import type { JSONSchema7 } from 'json-schema'
-import { Heading, List, ListProps } from '@chakra-ui/react'
+import { Heading, List, ListItem, ListProps } from '@chakra-ui/react'
 
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
@@ -31,12 +31,9 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
       <List {...props}>
         {properties.map((property) => {
           return (
-            <PropertyItem
-              key={[...property.path, property.title].join('-')}
-              property={property}
-              isDraggable={isDraggable}
-              hasExamples={hasExamples}
-            />
+            <ListItem key={[...property.path, property.key].join('-')} ml={(property?.path?.length || 0) * 8}>
+              <PropertyItem property={property} isDraggable={isDraggable} hasExamples={hasExamples} hasTooltip />
+            </ListItem>
           )
         })}
       </List>

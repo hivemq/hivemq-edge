@@ -3,10 +3,12 @@ import { Node } from 'reactflow'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
+  Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
   Text,
@@ -61,8 +63,20 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
-          {adapterId && <MappingForm adapterId={adapterId} adapterType={selectedNode?.data.type} type={type} />}
+          {adapterId && (
+            <MappingForm
+              adapterId={adapterId}
+              adapterType={selectedNode?.data.type}
+              type={type}
+              onSubmit={handleClose}
+            />
+          )}
         </DrawerBody>
+        <DrawerFooter>
+          <Button variant="primary" type="submit" form="adapter-mapping-form">
+            {t('protocolAdapter.mapping.actions.submit')}
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )

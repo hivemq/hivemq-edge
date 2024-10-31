@@ -26,8 +26,8 @@ describe('DataModelDestination', () => {
     // loading
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.getByTestId('loading-spinner').should('not.exist')
-    cy.get('[role=list]').find('li').as('properties')
-    cy.get('@properties').should('have.length', 6)
+    cy.get('[role=list]').find('li > div').as('properties')
+    cy.get('@properties').should('have.length', 8)
 
     cy.get('@properties')
       .eq(0)
@@ -42,7 +42,7 @@ describe('DataModelDestination', () => {
 
     cy.get('@properties')
       .eq(2)
-      .should('have.text', 'Number')
+      .should('have.text', 'Integer')
       .should('have.attr', 'data-type', 'integer')
       .should('not.have.attr', 'draggable')
   })

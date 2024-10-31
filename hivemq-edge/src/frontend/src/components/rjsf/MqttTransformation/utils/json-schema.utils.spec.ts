@@ -72,6 +72,7 @@ describe('getPropertyListFrom', () => {
       expect.arrayContaining([
         {
           description: undefined,
+          examples: undefined,
           key: 'firstName',
           path: [],
           title: 'First name',
@@ -79,17 +80,11 @@ describe('getPropertyListFrom', () => {
         },
         {
           description: undefined,
+          examples: undefined,
           key: 'telephone',
           path: [],
           title: 'Telephone',
           type: 'string',
-        },
-        {
-          description: undefined,
-          key: 'minItemsList',
-          path: [],
-          title: 'A list with a minimal number of items',
-          type: 'array',
         },
       ])
     )

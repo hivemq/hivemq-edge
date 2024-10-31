@@ -14,26 +14,25 @@ interface ListSubscriptionsProps {
   onEdit?: (index: number) => void
   onDelete?: (index: number) => void
   onAdd?: () => void
-  isDisabled: boolean
 }
 
-const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd, isDisabled }) => {
+const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd }) => {
   const { t } = useTranslation('components')
 
   const columns = useMemo<ColumnDef<OutwardMapping>[]>(() => {
     return [
       {
-        accessorKey: 'mqtt-topic',
+        accessorKey: 'mqttTopicFilter',
         enableSorting: false,
         cell: (info) => {
-          const values = info.getValue<string[]>()
-          if (!values.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
-          return values.map((e) => <Topic key={e} tagTitle={e} />)
+          const values = info.getValue<string>()
+          if (!values?.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
+          return <Topic key={values} tagTitle={values} />
         },
         header: t('rjsf.MqttTransformationField.listing.sources'),
       },
       {
-        accessorKey: 'node',
+        accessorKey: 'tag',
         cell: (info) => {
           const val = info.getValue<string>()
           return val ? <PLCTag tagTitle={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
@@ -47,7 +46,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         sortingFn: undefined,
         cell: (info) => {
           return (
-            <ButtonGroup isAttached size="xs" isDisabled={isDisabled}>
+            <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.actions.edit.aria-label')}
                 icon={<LuPencil />}
@@ -63,7 +62,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         },
         footer: () => {
           return (
-            <ButtonGroup isAttached size="xs" isDisabled={isDisabled}>
+            <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('rjsf.MqttTransformationField.actions.add.aria-label')}
                 icon={<LuPlus />}
@@ -74,12 +73,12 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         },
       },
     ]
-  }, [isDisabled, onAdd, onDelete, onEdit, t])
+  }, [onAdd, onDelete, onEdit, t])
 
   return (
     <Card>
       <PaginatedTable<OutwardMapping>
-        aria-label="list of mapping"
+        aria-label={t('rjsf.MqttTransformationField.tabs.list')}
         data={items}
         columns={columns}
         enablePagination={false}
@@ -88,4 +87,4 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
   )
 }
 
-export default ListSubscriptions
+export default ListMappings

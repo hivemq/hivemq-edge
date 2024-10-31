@@ -1,6 +1,8 @@
 import { UseFormReturn, FieldValues } from 'react-hook-form'
 import { IdSchema } from '@rjsf/utils'
 import { Adapter, ProtocolAdapter } from '@/api/__generated__'
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { Dispatch, SetStateAction } from 'react'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 
@@ -48,6 +50,10 @@ export interface AdapterContext {
   isDiscoverable: boolean
   adapterType?: string
   adapterId?: string
+}
+
+export interface MappingContext extends AdapterContext {
+  validationSchemas: [FlatJSONSchema7[] | undefined, Dispatch<SetStateAction<FlatJSONSchema7[] | undefined>>]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace

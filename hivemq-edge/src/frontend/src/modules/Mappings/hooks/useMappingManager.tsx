@@ -1,22 +1,45 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
+import { useTranslation } from 'react-i18next'
 
-import { MOCK_MAPPING_DATA, MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
+import { MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
+import { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { type MappingManagerType } from '@/modules/Mappings/types.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
-import {
-  getInwardMappingRootProperty,
-  getInwardMappingSchema,
-  isBidirectional,
-} from '@/modules/Workspace/utils/adapter.utils.ts'
-import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
-import { DomainTagList } from '@/api/__generated__'
+import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const useMappingManager = (adapterId: string) => {
+  const { t } = useTranslation()
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
   const { data: allAdapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
+  const updateProtocolAdapter = useUpdateProtocolAdapter()
+  const { successToast, errorToast } = useEdgeToast()
+
+  const processMutation = useCallback(
+    (promise: Promise<unknown>) => {
+      promise
+        .then(() => {
+          successToast({
+            title: t('protocolAdapter.toast.update.title'),
+            description: t('protocolAdapter.toast.update.description'),
+          })
+        })
+        .catch((err: ApiError) =>
+          errorToast(
+            {
+              title: t('protocolAdapter.toast.update.title'),
+              description: t('protocolAdapter.toast.update.error'),
+            },
+            err
+          )
+        )
+    },
+    [errorToast, successToast, t]
+  )
 
   const adapterInfo = useMemo(() => {
     const selectedAdapter = allAdapters?.find((adapter) => adapter.id === adapterId)
@@ -48,56 +71,60 @@ export const useMappingManager = (adapterId: string) => {
 
     const mappingPropName = getInwardMappingRootProperty(selectedProtocol.id as string)
     const schema: RJSFSchema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
       properties: {
         [mappingPropName]: mappingProperties,
       },
     }
     const { ['ui:tabs']: tabs, ...rest } = selectedProtocol.uiSchema as UiSchema
-    return { schema, formData: { [mappingPropName]: formData }, uiSchema: rest }
-  }, [adapterInfo])
+    return {
+      schema,
+      formData: { [mappingPropName]: formData },
+      uiSchema: {
+        ...rest,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      },
+      onSubmit: (data) =>
+        processMutation(
+          updateProtocolAdapter.mutateAsync({
+            adapterId: adapterId,
+            requestBody: {
+              id: adapterId,
+              type: adapterInfo.selectedProtocol.id,
+              config: { ...selectedAdapter.config, ...data },
+            },
+          })
+        ),
+    }
+  }, [adapterId, adapterInfo, processMutation, updateProtocolAdapter])
 
   const outwardManager = useMemo<MappingManagerType | undefined>(() => {
     if (!adapterInfo) return undefined
-    const { selectedProtocol } = adapterInfo
+    const { selectedProtocol, selectedAdapter } = adapterInfo
 
     if (!isBidirectional(selectedProtocol)) return undefined
 
     return {
       schema: MOCK_OUTWARD_MAPPING_OPCUA.schema || {},
-      formData: {
-        subscriptions: MOCK_MAPPING_DATA,
-      },
       uiSchema: MOCK_OUTWARD_MAPPING_OPCUA.uiSchema || {},
+      onSubmit: (data) => {
+        processMutation(
+          updateProtocolAdapter.mutateAsync({
+            adapterId: adapterId,
+            requestBody: {
+              id: adapterId,
+              type: adapterInfo.selectedProtocol.id,
+              config: { ...selectedAdapter.config, ...data },
+            },
+          })
+        )
+      },
     }
-  }, [adapterInfo])
-
-  const tagsManager = useMemo<MappingManagerType<DomainTagList> | undefined>(() => {
-    if (!adapterInfo) return undefined
-
-    const handleOnError = (e: Error) => {
-      console.error(e.message)
-    }
-
-    try {
-      const schema = getInwardMappingSchema(adapterInfo.selectedProtocol)
-      return {
-        schema: createSchema(schema.items as RJSFSchema),
-        uiSchema: {
-          'ui:submitButtonOptions': {
-            norender: true,
-          },
-        },
-        onSubmit: (e) => console.log('XXXXXXXX', e),
-      }
-    } catch (e) {
-      handleOnError(e as Error)
-      return { schema: {}, uiSchema: {}, errors: (e as Error).message }
-    }
-  }, [adapterInfo])
+  }, [adapterId, adapterInfo, processMutation, updateProtocolAdapter])
 
   const isLoading = isAdapterLoading || isProtocolLoading
 
-  return { isLoading, inwardManager, outwardManager, tagsManager }
+  return { isLoading, inwardManager, outwardManager }
 }
