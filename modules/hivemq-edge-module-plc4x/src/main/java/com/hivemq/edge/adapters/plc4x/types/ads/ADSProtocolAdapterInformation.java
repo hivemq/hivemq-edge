@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -127,11 +128,11 @@ public class ADSProtocolAdapterInformation
 
     @Override
     public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
-        return Plc4xAdapterConfig.class;
+        return ADSAdapterConfig.class;
     }
 
     @Override
     public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
-        return Plc4xAdapterConfig.class;
+        return ADSAdapterConfig.class;
     }
 }

@@ -45,31 +45,6 @@ import static org.mockito.Mockito.when;
 class LegacyADSAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
-
-    @BeforeEach
-    void setUp() {
-        when(protocolAdapterTagService.addTag(any(),
-                any(),
-                any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
-    }
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -80,7 +55,7 @@ class LegacyADSAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
@@ -121,7 +96,7 @@ class LegacyADSAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 

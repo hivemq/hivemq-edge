@@ -16,9 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -26,7 +23,6 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -39,40 +35,11 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig.ControllerType.S7_1500;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class LegacyS7AdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
-
-    @BeforeEach
-    void setUp() {
-        when(protocolAdapterTagService.addTag(any(),
-                any(),
-                any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
-    }
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -82,7 +49,7 @@ class LegacyS7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
@@ -116,8 +83,6 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
         });
-
-        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
     }
 
     @Test
@@ -129,7 +94,7 @@ class LegacyS7AdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
@@ -154,8 +119,6 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
         });
-
-        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
 
     }
 

@@ -1,46 +1,83 @@
 package com.hivemq.edge.adapters.plc4x.config.tag;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class Plc4xTag implements Tag<Plc4xTagDefinition> {
 
-    private final @NotNull String tagName;
-    private final @NotNull Plc4xTagDefinition plc4XTagDefinition;
+    @JsonProperty(value = "name", required = true)
+    @ModuleConfigField(title = "name",
+                       description = "name of the tag to be used in mappings",
+                       required = true)
+    private final @NotNull String name;
 
-    public Plc4xTag(final @NotNull String tagName, final @NotNull Plc4xTagDefinition plc4XTagDefinition) {
-        this.tagName = tagName;
-        this.plc4XTagDefinition = plc4XTagDefinition;
+    @JsonProperty(value = "description", required = true)
+    @ModuleConfigField(title = "description",
+                       description = "A human readable description of the tag",
+                       required = true)
+    private final @NotNull String description;
+
+    @JsonProperty(value = "definition", required = true)
+    @ModuleConfigField(title = "definition",
+                       description = "The actual definition of the tag on the device",
+                       required = true)
+    private final @NotNull Plc4xTagDefinition definition;;;
+
+    public Plc4xTag(
+            @JsonProperty(value = "name", required = true) final @NotNull String name,
+            @JsonProperty(value = "description", required = true) final @NotNull String description,
+            @JsonProperty(value = "definition", required = true) final @NotNull Plc4xTagDefinition definiton) {
+        this.name = name;
+        this.description = description;
+        this.definition = definiton;
     }
 
     @Override
     public @NotNull Plc4xTagDefinition getDefinition() {
-        return plc4XTagDefinition;
+        return definition;
     }
 
     @Override
     public @NotNull String getName() {
-        return tagName;
+        return name;
     }
 
     @Override
-    public boolean equals(@Nullable final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public @NotNull String getDescription() {
+        return description;
+    }
 
-        final Plc4xTag httpTag = (Plc4xTag) o;
-        return tagName.equals(httpTag.tagName) && plc4XTagDefinition.equals(httpTag.plc4XTagDefinition);
+    @Override
+    public String toString() {
+        return "Plc4xTag{" +
+                "name='" +
+                name +
+                '\'' +
+                ", description='" +
+                description +
+                '\'' +
+                ", definition=" +
+                definition +
+                '}';
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Plc4xTag plc4xTag = (Plc4xTag) o;
+        return Objects.equals(name, plc4xTag.name) &&
+                Objects.equals(description, plc4xTag.description) &&
+                Objects.equals(definition, plc4xTag.definition);
     }
 
     @Override
     public int hashCode() {
-        int result = tagName.hashCode();
-        result = 31 * result + plc4XTagDefinition.hashCode();
-        return result;
+        return Objects.hash(name, description, definition);
     }
 }

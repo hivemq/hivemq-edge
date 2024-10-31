@@ -72,6 +72,15 @@
                     </s7ToMqttMapping>
                 </s7ToMqttMappings>
             </s7ToMqtt>
+            <tags>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <tagAddress>123</tagAddress>
+                    </definition>
+                </tag>
+            </tags>
         </s7>
     </protocol-adapters>
 </hivemq>

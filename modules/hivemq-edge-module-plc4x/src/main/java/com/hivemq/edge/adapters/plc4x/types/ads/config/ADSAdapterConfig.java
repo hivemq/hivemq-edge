@@ -19,10 +19,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
@@ -86,8 +90,9 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
             @JsonProperty(value = "sourceAmsPort", required = true) final int sourceAmsPort,
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
-            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig) {
-        super(id, port, host);
+            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig,
+            @JsonProperty(value = "tags") final @Nullable List<Plc4xTag> tags) {
+        super(id, port, host, tags);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
         this.sourceAmsPort = sourceAmsPort;
@@ -125,7 +130,6 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        // TODO
-        return Set.of();
+        return adsToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 }

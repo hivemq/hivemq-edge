@@ -52,63 +52,63 @@ public class S7ProtocolAdapterTest {
 
     @Test
     public void whenTagSpecialDataType_thenModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%IW200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IW200"));
         assertEquals("%IX200:DATE",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE), tag));
     }
 
     @Test
     public void whenTagNormalDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%IW200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IW200"));
         assertEquals("%IW200:WORD",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WORD), tag));
     }
 
     @Test
     public void whenTagBitDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%IX200.2"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IX200.2"));
         assertEquals("%IX200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
     }
 
     @Test
     public void whenBlockSpecialDataType_thenModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB23.DBW200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23.DBW200"));
         assertEquals("%DB23.DBX200:WCHAR",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WCHAR), tag));
     }
 
     @Test
     public void whenBlockNormalDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB23.DBD200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23.DBD200"));
         assertEquals("%DB23.DBD200:DINT",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT), tag));
     }
 
     @Test
     public void whenBlockShortSpecialDataType_thenModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB23:200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23:200"));
         assertEquals("%DB23:200:DATE",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE), tag));
     }
 
     @Test
     public void whenBlockBitDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB100:DBX200.2"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB100:DBX200.2"));
         assertEquals("%DB100:DBX200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
     }
 
     @Test
     public void whenBlockShortNormalDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB23:200"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23:200"));
         assertEquals("%DB23:200:DINT",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT), tag));
     }
 
     @Test
     public void whenBlockShortBitDataType_thenDoNotModifyAddress() {
-        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", new Plc4xTagDefinition("%DB100:200.2"));
+        final Tag<Plc4xTagDefinition> tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB100:200.2"));
         assertEquals("%DB100:200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
     }

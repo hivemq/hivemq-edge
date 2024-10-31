@@ -49,11 +49,9 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public S7ProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public S7ProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -104,17 +102,10 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
 
         final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
+        final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
-            // create tag first
-            final ProtocolAdapterTagService.AddStatus addStatus =
-                    protocolAdapterTagService.addTag(legacyS7AdapterConfig.getId(),
-                            PROTOCOL_ID,
-                            new Plc4xTag(subscription.getTagName(),
-                                    new Plc4xTagDefinition(subscription.getTagAddress())));
-            // we need to check the tagName as it comes from the
-            switch (addStatus) {
-                case SUCCESS:
-                    // good case: the tag name was not used yet and we can just register a new tag
+            tags.add(new Plc4xTag(subscription.getTagName(),"not set",
+                    new Plc4xTagDefinition(subscription.getTagAddress())));
                     plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
                             subscription.getMqttQos(),
                             subscription.getMessageHandlingOptions(),
@@ -123,26 +114,6 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                             subscription.getTagName(),
                             subscription.getDataType(),
                             subscription.getUserProperties()));
-                    break;
-                case ALREADY_PRESENT:
-                    final String newTagName = legacyS7AdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-                    log.warn(
-                            "While migrating the S7Config a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
-                            subscription.getTagName(),
-                            newTagName);
-                    protocolAdapterTagService.addTag(legacyS7AdapterConfig.getId(),
-                            PROTOCOL_ID,
-                            new Plc4xTag(newTagName, new Plc4xTagDefinition(subscription.getTagAddress())));
-                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
-                            subscription.getMqttQos(),
-                            subscription.getMessageHandlingOptions(),
-                            subscription.getIncludeTimestamp(),
-                            subscription.getIncludeTagNames(),
-                            newTagName,
-                            subscription.getDataType(),
-                            subscription.getUserProperties()));
-                    break;
-            }
         }
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
@@ -159,6 +130,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                 legacyS7AdapterConfig.getRemoteSlot(),
                 legacyS7AdapterConfig.getRemoteSlot2(),
                 legacyS7AdapterConfig.getRemoteTsap(),
-                s7ToMqttConfig);
+                s7ToMqttConfig,
+                tags);
     }
 }

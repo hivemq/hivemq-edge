@@ -17,29 +17,32 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <s7>
-            <id>my-s7-protocol-adapter</id>
+        <ads>
+            <id>my-ads-protocol-adapter</id>
             <port>1234</port>
-            <host>my.s7-server.com</host>
-            <controllerType>S7_400</controllerType>
-            <s7ToMqtt>
-                <s7ToMqttMappings>
-                    <s7ToMqttMapping>
+            <host>my.ads-server.com</host>
+            <targetAmsPort>123</targetAmsPort>
+            <sourceAmsPort>124</sourceAmsPort>
+            <targetAmsNetId>1.2.3.4.5.6</targetAmsNetId>
+            <sourceAmsNetId>1.2.3.4.5.7</sourceAmsNetId>
+            <adsToMqtt>
+                <adsToMqttMappings>
+                    <adsToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <tagName>tag-name</tagName>
                         <dataType>BOOL</dataType>
-                    </s7ToMqttMapping>
-                </s7ToMqttMappings>
-            </s7ToMqtt>
+                    </adsToMqttMapping>
+                </adsToMqttMappings>
+            </adsToMqtt>
             <tags>
                 <tag>
-                    <name>tag-name</name>
+                    <name>wrong-tag-name</name>
                     <description>description</description>
                     <definition>
                         <tagAddress>123</tagAddress>
                     </definition>
                 </tag>
             </tags>
-        </s7>
+        </ads>
     </protocol-adapters>
 </hivemq>

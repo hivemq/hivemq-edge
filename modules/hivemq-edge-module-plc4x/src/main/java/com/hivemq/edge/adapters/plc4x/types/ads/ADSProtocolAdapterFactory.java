@@ -19,11 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -38,9 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import static com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterInformation.PROTOCOL_ID;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -50,13 +44,9 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
-    private final @NotNull EventService eventService;
 
-    public ADSProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
-        this.eventService = protocolAdapterFactoryInput.eventService();
+    public ADSProtocolAdapterFactory(final @NotNull boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -105,51 +95,17 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
                 objectMapper.convertValue(config, LegacyADSAdapterConfig.class);
 
         final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
+        final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyAdsAdapterConfig.getSubscriptions()) {
-            // create tag first
-            final ProtocolAdapterTagService.AddStatus addStatus = protocolAdapterTagService.addTag(
-                    legacyAdsAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new Plc4xTag(subscription.getTagName(), new Plc4xTagDefinition(subscription.getTagAddress())));
-            // we need to check the tagName as it comes from the
-            switch (addStatus) {
-                case SUCCESS:
-                    // good case: the tag name was not used yet and we can just register a new tag
-                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
-                            subscription.getMqttQos(),
-                            subscription.getMessageHandlingOptions(),
-                            subscription.getIncludeTimestamp(),
-                            subscription.getIncludeTagNames(),
-                            subscription.getTagName(),
-                            subscription.getDataType(),
-                            subscription.getUserProperties()));
-                    break;
-                case ALREADY_PRESENT:
-                    final String newTagName = legacyAdsAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-                    log.warn(
-                            "While migrating the AdsConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
-                            subscription.getTagName(),
-                            newTagName);
-                    eventService.createAdapterEvent(legacyAdsAdapterConfig.getId(), PROTOCOL_ID)
-                            .withMessage(
-                                    "While migrating the AdsConfig a tag could not be added because a tag with the same name '" +
-                                            subscription.getTagName() +
-                                            "' was already present. Another tagName using an random Uuid is used instead: '" +
-                                            newTagName +
-                                            "'");
-                    protocolAdapterTagService.addTag(legacyAdsAdapterConfig.getId(),
-                            PROTOCOL_ID,
-                            new Plc4xTag(newTagName, new Plc4xTagDefinition(subscription.getTagAddress())));
-                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
-                            subscription.getMqttQos(),
-                            subscription.getMessageHandlingOptions(),
-                            subscription.getIncludeTimestamp(),
-                            subscription.getIncludeTagNames(),
-                            newTagName,
-                            subscription.getDataType(),
-                            subscription.getUserProperties()));
-                    break;
-            }
+            tags.add(new Plc4xTag(subscription.getTagName(), "not set", new Plc4xTagDefinition(subscription.getTagAddress())));
+            plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
+                    subscription.getMqttQos(),
+                    subscription.getMessageHandlingOptions(),
+                    subscription.getIncludeTimestamp(),
+                    subscription.getIncludeTagNames(),
+                    subscription.getTagName(),
+                    subscription.getDataType(),
+                    subscription.getUserProperties()));
         }
 
 
@@ -167,6 +123,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
                 legacyAdsAdapterConfig.getSourceAmsPort(),
                 legacyAdsAdapterConfig.getTargetAmsNetId(),
                 legacyAdsAdapterConfig.getSourceAmsNetId(),
-                modbusToMqttConfig);
+                modbusToMqttConfig,
+                tags);
     }
 }

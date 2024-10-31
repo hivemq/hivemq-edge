@@ -17,9 +17,6 @@ package com.hivemq.edge.adapters.plc4x.types.ads.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -39,29 +36,12 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 class ADSAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -72,7 +52,7 @@ class ADSAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
@@ -128,7 +108,7 @@ class ADSAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
@@ -154,6 +134,21 @@ class ADSAdapterConfigTest {
     }
 
     @Test
+    public void convertConfigObject_defaults_missing_tag() throws Exception {
+        final URL resource = getClass().getResource("/ads-adapter-minimal-missing-tag-config.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
+                new ADSProtocolAdapterFactory(false);
+        assertThatThrownBy(() -> adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false))
+                .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     public void unconvertConfigObject_full_valid() {
         final Plc4xToMqttMapping pollingContext = new Plc4xToMqttMapping("my/destination",
                 1,
@@ -170,10 +165,10 @@ class ADSAdapterConfigTest {
                 16,
                 "1.2.3.4.5.6",
                 "1.2.3.4.5.7",
-                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
+                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)), List.of());
 
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new ADSProtocolAdapterFactory(false);
         final Map<String, Object> config = adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-ads-adapter");

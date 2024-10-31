@@ -20,7 +20,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements ProtocolAdapterConfig {
 
@@ -53,14 +59,21 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
                        format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
+    @JsonProperty(value = "tags", required = true)
+    @ModuleConfigField(title = "Tags defined for this adapter",
+                       description = "All tags used by this adapter")
+    private final @NotNull List<Plc4xTag> tags;
+
     @JsonCreator
     public Plc4xAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
-            @JsonProperty(value = "host", required = true) final @NotNull String host) {
+            @JsonProperty(value = "host", required = true) final @NotNull String host,
+            @JsonProperty(value = "tags") final @Nullable List<Plc4xTag> tags) {
         this.id = id;
         this.port = port;
         this.host = host;
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
@@ -73,6 +86,11 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
 
     public @NotNull String getHost() {
         return host;
+    }
+
+    @Override
+    public List<Plc4xTag> getTags() {
+        return Collections.unmodifiableList(tags);
     }
 
     @NotNull
