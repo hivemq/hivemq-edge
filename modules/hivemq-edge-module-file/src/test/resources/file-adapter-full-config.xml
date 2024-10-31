@@ -63,6 +63,22 @@
                     </fileToMqttMapping>
                 </fileToMqttMappings>
             </fileToMqtt>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>decsription</description>
+                    <definition>
+                        <filePath>pathy</filePath>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>tag2</name>
+                    <description>decsription2</description>
+                    <definition>
+                        <filePath>pathy2</filePath>
+                    </definition>
+                </tag>
+            </tags>
         </file>
     </protocol-adapters>
 </hivemq>

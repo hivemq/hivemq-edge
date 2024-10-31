@@ -86,11 +86,6 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
             }
         }
 
-        final Set<String> usedTags = ret.calculateAllUsedTags();
-        ret.getTags().forEach(tag -> usedTags.remove(tag.getName()));
-        if (!usedTags.isEmpty()) {
-            throw new IllegalArgumentException("The following tags are used in mappings but not configured on the adapter: " + usedTags);
-        }
         return ret;
     }
 

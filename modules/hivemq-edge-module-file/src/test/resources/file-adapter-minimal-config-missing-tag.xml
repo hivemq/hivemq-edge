@@ -30,7 +30,7 @@
             </fileToMqtt>
             <tags>
                 <tag>
-                    <name>tag1</name>
+                    <name>wrong-tag</name>
                     <description>decsription</description>
                     <definition>
                         <filePath>pathy</filePath>

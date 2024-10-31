@@ -18,10 +18,15 @@ package com.hivemq.edge.adapters.file.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.file.tag.FileTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileAdapterConfig implements ProtocolAdapterConfig {
@@ -44,11 +49,18 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull FileToMqttConfig fileToMqttConfig;
 
+    @JsonProperty(value = "tags", required = true)
+    @ModuleConfigField(title = "Tags defined for this adapter",
+                       description = "All tags used by this adapter")
+    private final @NotNull List<FileTag> tags;
+
     public FileAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig) {
+            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig,
+            @JsonProperty(value = "tags") final @Nullable List<FileTag> tags) {
         this.id = id;
         this.fileToMqttConfig = fileToMqttConfig;
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     @Override
@@ -58,11 +70,15 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        //TODO
-        return Set.of();
+        return fileToMqttConfig.getMappings().stream().map(FileToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {
         return fileToMqttConfig;
+    }
+
+    @Override
+    public List<FileTag> getTags() {
+        return Collections.unmodifiableList(tags);
     }
 }

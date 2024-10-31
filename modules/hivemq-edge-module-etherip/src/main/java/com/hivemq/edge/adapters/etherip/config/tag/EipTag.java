@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class EipTag implements Tag<EipTagDefinition> {
 
-
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",
                        description = "name of the tag to be used in mappings",

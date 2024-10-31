@@ -46,24 +46,6 @@ import static org.mockito.Mockito.verify;
 class LegacyFileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -74,7 +56,7 @@ class LegacyFileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new FileProtocolAdapterFactory(false);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 
@@ -113,8 +95,6 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
-
     }
 
     @Test
@@ -126,7 +106,7 @@ class LegacyFileAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new FileProtocolAdapterFactory(false);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 

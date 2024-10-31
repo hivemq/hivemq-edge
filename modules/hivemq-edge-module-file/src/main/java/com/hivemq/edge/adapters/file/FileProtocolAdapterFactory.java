@@ -46,11 +46,9 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public FileProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public FileProtocolAdapterFactory(final @NotNull boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -79,7 +77,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                 if (log.isDebugEnabled()) {
                     log.debug("Original Exception:", currentConfigFailedException);
                 }
-                return tryConvertLegacyConfig(objectMapper, config, protocolAdapterTagService);
+                return tryConvertLegacyConfig(objectMapper, config);
             } catch (final Exception legacyConfigFailedException) {
                 log.warn("Could not load legacy '{}' configuration. Because: '{}'",
                         FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
@@ -95,18 +93,17 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     private static @NotNull FileAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config,
-            ProtocolAdapterTagService tagService) {
+            final @NotNull Map<String, Object> config) {
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
         final List<FileToMqttMapping> fileToMqttMappings = new ArrayList<>();
+        final List<FileTag> tags = new ArrayList<>();
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
             final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-            tagService.addTag(legacyFileAdapterConfig.getId(),
-                    PROTOCOL_ID, new FileTag(newTagName, new FileTagDefinition(context.getFilePath())));
-            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
+            tags.add(new FileTag(newTagName, "not set", new FileTagDefinition(context.getFilePath())));
+            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(), //TODO why nullable??
                     context.getQos(),
                     context.getMessageHandlingOptions(),
                     context.getIncludeTimestamp(),
@@ -122,7 +119,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         fileToMqttMappings);
 
-        return new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig);
+        return new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig, tags);
     }
 
 }
