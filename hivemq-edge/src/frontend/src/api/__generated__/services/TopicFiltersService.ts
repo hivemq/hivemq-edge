@@ -92,4 +92,26 @@ export class TopicFiltersService {
         });
     }
 
+  /**
+   * TODO[27517] Fixing a bug with specs, https://hivemq.kanbanize.com/ctrl_board/57/cards/27517/details/
+   * Update a topic filter.
+   * Update a topic filter
+   * @param requestBody
+   * @returns any Success
+   * @throws ApiError
+   */
+  public updateAllTopicFilters(
+      requestBody?: TopicFilterList,
+  ): CancelablePromise<any> {
+    return this.httpRequest.request({
+      method: 'PUT',
+      url: '/api/v1/management/topic-filters',
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        403: `Not Found`,
+      },
+    });
+  }
+
 }
