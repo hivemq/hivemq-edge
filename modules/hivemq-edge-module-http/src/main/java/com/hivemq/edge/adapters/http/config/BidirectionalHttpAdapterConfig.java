@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,8 +43,9 @@ public class BidirectionalHttpAdapterConfig extends HttpAdapterConfig {
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
             @JsonProperty(value = "mqttToHttp") final @Nullable MqttToHttpConfig mqttToHttpConfig,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
-        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
+            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
+            @JsonProperty(value = "tags") final @Nullable List<HttpTag> tags) {
+        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates, tags);
         this.mqttToHttpConfig = Objects.requireNonNullElseGet(mqttToHttpConfig, () -> new MqttToHttpConfig(List.of()));
     }
 

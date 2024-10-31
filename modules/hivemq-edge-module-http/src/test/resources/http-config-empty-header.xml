@@ -39,7 +39,15 @@
                     </httpToMqttMapping>
                 </httpToMqttMappings>
             </httpToMqtt>
-
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>description1</description>
+                    <definition>
+                        <url>http://lol1.com</url>
+                    </definition>
+                </tag>
+            </tags>
         </http>
     </protocol-adapters>
 </hivemq>

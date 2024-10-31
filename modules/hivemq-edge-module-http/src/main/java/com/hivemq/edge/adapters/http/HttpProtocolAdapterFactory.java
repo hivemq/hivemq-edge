@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,11 +49,9 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public HttpProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public HttpProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -82,7 +81,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                 if (log.isDebugEnabled()) {
                     log.debug("Original Exception:", currentConfigFailedException);
                 }
-                return tryConvertLegacyConfig(objectMapper, config, protocolAdapterTagService);
+                return tryConvertLegacyConfig(objectMapper, config);
             } catch (final Exception legacyConfigFailedException) {
                 log.warn("Could not load legacy '{}' configuration. Because: '{}'",
                         HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
@@ -98,15 +97,14 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
+            final @NotNull Map<String, Object> config) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
         // create tag first
-        final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-        protocolAdapterTagService.addTag(legacyHttpAdapterConfig.getId(),
-                PROTOCOL_ID, new HttpTag(newTagName, new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
+        final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
+        ArrayList<HttpTag> tags = new ArrayList<>();
+        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
@@ -129,6 +127,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
         return new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                 httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates());
+                legacyHttpAdapterConfig.isAllowUntrustedCertificates(),
+                tags);
     }
 }

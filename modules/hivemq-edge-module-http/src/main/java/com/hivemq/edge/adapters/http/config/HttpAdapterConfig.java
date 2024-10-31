@@ -20,12 +20,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
@@ -71,13 +75,19 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        description = "The configuration for a data stream from HTTP to MQTT")
     private final @NotNull HttpToMqttConfig httpToMqttConfig;
 
+    @JsonProperty(value = "tags", required = true)
+    @ModuleConfigField(title = "Tags defined for this adapter",
+                       description = "All tags used by this adapter")
+    private final @NotNull List<HttpTag> tags;
+
 
     @JsonCreator
     public HttpAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
+            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
+            @JsonProperty(value = "tags") final @Nullable List<HttpTag> tags) {
         this.id = id;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
@@ -87,6 +97,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         }
         this.httpToMqttConfig = Objects.requireNonNullElse(httpToMqttConfig, HttpToMqttConfig.DEFAULT);
         this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     @Override
@@ -96,8 +107,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        // TODO
-        return Set.of();
+        return httpToMqttConfig.getMappings().stream().map(HttpToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public int getHttpConnectTimeoutSeconds() {
@@ -137,6 +147,11 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         public @NotNull String getValue() {
             return value;
         }
+    }
+
+    @Override
+    public List<HttpTag> getTags() {
+        return Collections.unmodifiableList(tags);
     }
 
     public enum HttpMethod {

@@ -126,6 +126,22 @@
                     </mqttToHttpMapping>
                 </mqttToHttpMappings>
             </mqttToHttp>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>description1</description>
+                    <definition>
+                        <url>http://lol1.com</url>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>tag2</name>
+                    <description>description2</description>
+                    <definition>
+                        <url>http://lol2.com</url>
+                    </definition>
+                </tag>
+            </tags>
         </http>
     </protocol-adapters>
 </hivemq>

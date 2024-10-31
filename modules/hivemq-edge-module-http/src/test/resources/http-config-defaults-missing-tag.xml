@@ -39,7 +39,7 @@
             </mqttToHttp>
             <tags>
                 <tag>
-                    <name>tag1</name>
+                    <name>wrong-tag1</name>
                     <description>description1</description>
                     <definition>
                         <url>http://lol1.com</url>
