@@ -1,13 +1,20 @@
+import { useMemo } from 'react'
+import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { type TopicFilter, type TopicFilterList } from '@/api/__generated__'
+import { $TopicFilter, type TopicFilter, type TopicFilterList } from '@/api/__generated__'
 
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { useCreateTopicFilter } from '@/api/hooks/useTopicFilters/useCreateTopicFilter.ts'
 import { useDeleteTopicFilter } from '@/api/hooks/useTopicFilters/useDeleteTopicFilter.ts'
 import { useUpdateTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateTopicFilter.ts'
 import { useUpdateAllTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateAllTopicFilters.ts'
+import { ManagerContextType } from '@/modules/Mappings/types.ts'
+
+interface TopicFilterSchemas {
+  schema: RJSFSchema
+}
 
 export const useTopicFilterOperations = () => {
   const { t } = useTranslation()
@@ -19,6 +26,31 @@ export const useTopicFilterOperations = () => {
   const deleteMutator = useDeleteTopicFilter()
   const updateMutator = useUpdateTopicFilter()
   const updateCollectionMutator = useUpdateAllTopicFilter()
+
+  // TODO[24980] This is due to limitation of the openapi-typescript-codegen library
+  //  - schemas are not properly exported as reusable JSONSchema
+  //  - the split in different files doesn't allow programmatic manipulation
+  //  - some information (required, format ) is missing (partly due to limited quality of generated openAPI
+  const topicFilterSchemas = useMemo<TopicFilterSchemas>(() => {
+    return {
+      schema: {
+        // $schema: 'https://json-schema.org/draft/2020-12/schema',
+        definitions: {
+          TopicFilter: $TopicFilter,
+        },
+        properties: {
+          items: {
+            type: 'array',
+            // title: 'List of tags',
+            // description: 'The list of all tags defined in the device',
+            items: {
+              $ref: '#/definitions/TopicFilter',
+            },
+          },
+        },
+      },
+    }
+  }, [])
 
   // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
@@ -52,7 +84,15 @@ export const useTopicFilterOperations = () => {
     toast.promise(updateCollectionMutator.mutateAsync({ requestBody: requestBody }), formatToast('updateCollection'))
   }
 
+  const context: ManagerContextType = {
+    schema: topicFilterSchemas.schema,
+    uiSchema: {},
+    formData: topicFilterList,
+  }
+
   return {
+    // The schema context
+    context,
     // The CRUD operations
     data: topicFilterList,
     onCreate,
