@@ -49,11 +49,9 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public ModbusProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public ModbusProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -103,19 +101,18 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
 
 
         final List<ModbusToMqttMapping> modbusToMqttMappings = new ArrayList<>();
+        final List<ModbusTag> modbusTags = new ArrayList<>();
         for (final LegacyModbusPollingContext context : legacyModbusAdapterConfig.getSubscriptions()) {
             // create tag first
-            final String newTagName = legacyModbusAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-
-
-            protocolAdapterTagService.addTag(legacyModbusAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new ModbusTag(newTagName,
-                            new ModbusTagDefinition(context.getAddressRange().startIdx,
-                                    ModbusAdu.HOLDING_REGISTERS,
-                                    0,
-                                    false,
-                                    ModbusDataType.INT_32)));
+            final String newTagName = legacyModbusAdapterConfig.getId() + "-" + UUID.randomUUID();
+            modbusTags.add(new ModbusTag(
+                    newTagName,
+                    "not set",
+                    new ModbusTagDefinition(context.getAddressRange().startIdx,
+                            ModbusAdu.HOLDING_REGISTERS,
+                            0,
+                            false,
+                            ModbusDataType.INT_32)));
             final ModbusToMqttMapping modbusToMqttMapping = new ModbusToMqttMapping(context.getMqttTopic(),
                     context.getMqttQos(),
                     newTagName,
@@ -137,6 +134,7 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                 legacyModbusAdapterConfig.getPort(),
                 legacyModbusAdapterConfig.getHost(),
                 legacyModbusAdapterConfig.getTimeout(),
-                modbusToMqttConfig);
+                modbusToMqttConfig,
+                modbusTags);
     }
 }

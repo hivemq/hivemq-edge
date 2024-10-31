@@ -65,6 +65,26 @@
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>
             </modbusToMqtt>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>description1</description>
+                    <definition>
+                        <startIdx>1</startIdx>
+                        <readType>HOLDING_REGISTERS</readType>
+                        <unitId>1</unitId>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>tag2</name>
+                    <description>description2</description>
+                    <definition>
+                        <startIdx>10</startIdx>
+                        <readType>HOLDING_REGISTERS</readType>
+                        <unitId>1</unitId>
+                    </definition>
+                </tag>
+            </tags>
         </modbus>
     </protocol-adapters>
 </hivemq>

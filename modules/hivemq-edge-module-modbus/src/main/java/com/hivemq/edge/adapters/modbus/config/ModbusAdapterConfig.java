@@ -19,12 +19,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @SuppressWarnings("FieldCanBeLocal")
@@ -73,18 +76,25 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull ModbusToMqttConfig modbusToMQTTConfig;
 
+    @JsonProperty(value = "tags", required = true)
+    @ModuleConfigField(title = "Tags defined for this adapter",
+                       description = "All tags used by this adapter")
+    private final @NotNull List<ModbusTag> tags;
+
     @JsonCreator
     public ModbusAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
-            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
+            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig,
+            @JsonProperty(value = "tags") final @Nullable List<ModbusTag> tags) {
         this.id = id;
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
         this.modbusToMQTTConfig = modbusToMQTTConfig;
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
@@ -93,8 +103,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        // TODO
-        return Set.of();
+        return modbusToMQTTConfig.getMappings().stream().map(ModbusToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {
@@ -111,5 +120,10 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull ModbusToMqttConfig getModbusToMQTTConfig() {
         return modbusToMQTTConfig;
+    }
+
+    @Override
+    public List<ModbusTag> getTags() {
+        return Collections.unmodifiableList(tags);
     }
 }

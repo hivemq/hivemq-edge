@@ -80,7 +80,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        description = "All tags used by this adapter")
     private final @NotNull List<HttpTag> tags;
 
-
     @JsonCreator
     public HttpAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,

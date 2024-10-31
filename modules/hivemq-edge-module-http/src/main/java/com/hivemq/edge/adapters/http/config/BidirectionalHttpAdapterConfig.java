@@ -20,13 +20,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
+import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.*;
 
@@ -51,6 +56,14 @@ public class BidirectionalHttpAdapterConfig extends HttpAdapterConfig {
 
     public @NotNull MqttToHttpConfig getMqttToHttpConfig() {
         return mqttToHttpConfig;
+    }
+
+    @Override
+    public @NotNull Set<String> calculateAllUsedTags() {
+        final Set<String> distinct = new HashSet<>();
+        distinct.addAll(super.calculateAllUsedTags());
+        distinct.addAll(mqttToHttpConfig.getMappings().stream().map(MqttToHttpMapping::getTagName).collect(Collectors.toSet()));
+        return distinct;
     }
 
 }

@@ -25,7 +25,7 @@ public class HttpTag implements Tag<HttpTagDefinition> {
     @ModuleConfigField(title = "definition",
                        description = "The actual definition of the tag on the device",
                        required = true)
-    private final @NotNull HttpTagDefinition definition;;
+    private final @NotNull HttpTagDefinition definition;
 
     public HttpTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,

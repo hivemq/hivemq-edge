@@ -12,7 +12,7 @@ public class ModbusMainTest {
         String host = args[0];
         int port = Integer.parseInt(args[1]);
 
-        ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("1", port, host, 5000, null) ;
+        ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("1", port, host, 5000, null, null) ;
         ModbusClient modbusClient = new ModbusClient(modbusAdapterConfig, DataPointImpl::new);
 
         modbusClient.connect().get();

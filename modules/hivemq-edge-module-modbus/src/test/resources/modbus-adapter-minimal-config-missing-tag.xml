@@ -31,7 +31,7 @@
             </modbusToMqtt>
             <tags>
                 <tag>
-                    <name>tag1</name>
+                    <name>wrong-tag1</name>
                     <description>description1</description>
                     <definition>
                         <startIdx>1</startIdx>
