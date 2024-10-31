@@ -66,22 +66,23 @@ export class TopicFiltersService {
     }
 
     /**
+     * TODO[27517] Fixing a bug with specs, https://hivemq.kanbanize.com/ctrl_board/57/cards/27517/details/
      * Update a topic filter.
      * Update a topic filter
-     * @param filter The filter of the topic filter that will be updated.
+     * @param name The filter of the topic filter that will be updated.
      * @param requestBody
      * @returns any Success
      * @throws ApiError
      */
     public updateTopicFilter(
-        filter: string,
+        name: string,
         requestBody?: TopicFilter,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
             url: '/api/v1/management/topic-filters/{name}',
             path: {
-                'filter': filter,
+                'name': name,
             },
             body: requestBody,
             mediaType: 'application/json',
