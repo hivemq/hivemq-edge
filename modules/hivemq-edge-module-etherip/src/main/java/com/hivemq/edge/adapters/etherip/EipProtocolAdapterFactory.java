@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.etherip;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -35,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
 
@@ -42,8 +42,8 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
 
     final boolean writingEnabled;
 
-    public EipProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
+    public EipProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
     }
 
     @Override
@@ -86,8 +86,8 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
             }
         }
 
-        final List<String> usedTags = ret.calculateAllUsedTags();
-        ret.getTags().forEach(tag -> usedTags.remove(tag.getTagName()));
+        final Set<String> usedTags = ret.calculateAllUsedTags();
+        ret.getTags().forEach(tag -> usedTags.remove(tag.getName()));
         if (!usedTags.isEmpty()) {
             throw new IllegalArgumentException("The following tags are used in mappings but not configured on the adapter: " + usedTags);
         }

@@ -15,12 +15,12 @@ public class FileTag implements Tag<FileTagDefinition> {
 
 
     @Override
-    public @NotNull FileTagDefinition getTagDefinition() {
+    public @NotNull FileTagDefinition getDefinition() {
         return fileTagDefinition;
     }
 
     @Override
-    public @NotNull String getTagName() {
+    public @NotNull String getName() {
         return tagName;
     }
 

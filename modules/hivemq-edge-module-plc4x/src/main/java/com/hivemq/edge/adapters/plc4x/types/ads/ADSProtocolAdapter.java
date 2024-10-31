@@ -55,7 +55,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
 
     @Override
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
-        return tag.getTagDefinition().getTagAddress();
+        return tag.getDefinition().getTagAddress();
     }
 
     @Override

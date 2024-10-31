@@ -32,7 +32,7 @@
             </eipToMqtt>
             <tags>
                 <tag>
-                    <name>tag-name</name>
+                    <name>wrong-tag-name</name>
                     <description>description</description>
                     <definition>
                         <address>addressy</address>

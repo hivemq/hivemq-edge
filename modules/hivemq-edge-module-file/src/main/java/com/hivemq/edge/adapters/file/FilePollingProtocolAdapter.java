@@ -16,8 +16,6 @@
 package com.hivemq.edge.adapters.file;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -26,7 +24,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
@@ -94,7 +91,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> pollFile(pollingInput, pollingOutput, def),
@@ -108,7 +105,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
             @NotNull PollingInput<FileToMqttMapping> pollingInput,
             @NotNull PollingOutput pollingOutput,
             Tag<FileTagDefinition> fileTag) {
-        final String absolutePathToFle = fileTag.getTagDefinition().getFilePath();
+        final String absolutePathToFle = fileTag.getDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
             final long length = path.toFile().length();

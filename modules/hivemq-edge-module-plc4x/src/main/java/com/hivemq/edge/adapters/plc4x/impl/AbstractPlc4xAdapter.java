@@ -113,7 +113,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     }
 
     private @NotNull Optional<? extends Tag> findTag(String tagName) {
-        return adapterConfig.getTags().stream().filter(tag -> tag.getTagName().equals(tagName)).findFirst();
+        return adapterConfig.getTags().stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
     }
 
     protected void handleDataAndExceptions(
@@ -250,7 +250,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     protected @Nullable ProtocolAdapterDataSample captureDataSample(
             final @NotNull ProtocolAdapterDataSample data, final @NotNull Tag<Plc4xTagDefinition> plc4xTag) {
         boolean publishData = true;
-        final String tagAddress = plc4xTag.getTagDefinition().getTagAddress();
+        final String tagAddress = plc4xTag.getDefinition().getTagAddress();
 
         if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
             final ProtocolAdapterDataSample previousSample = lastSamples.put(tagAddress, data);
@@ -286,7 +286,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
-        final String tagAddress = tag.getTagDefinition().getTagAddress();
+        final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 

@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 
 @SuppressWarnings("FieldCanBeLocal")
@@ -91,9 +92,9 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
+    public @NotNull Set<String> calculateAllUsedTags() {
         // TODO
-        return List.of();
+        return Set.of();
     }
 
     public @NotNull String getHost() {

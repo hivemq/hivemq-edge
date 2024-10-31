@@ -24,6 +24,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
+import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 class EipAdapterConfigTest {
@@ -44,22 +46,6 @@ class EipAdapterConfigTest {
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
     private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -70,7 +56,7 @@ class EipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
                 eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
@@ -118,6 +104,21 @@ class EipAdapterConfigTest {
     }
 
     @Test
+    public void convertConfigObject_minimalConfig_invalid() throws Exception {
+        final URL resource = getClass().getResource("/eip-adapter-minimal-config-broken-mapping.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory =
+                new EipProtocolAdapterFactory(false);
+        assertThatThrownBy(() -> eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false))
+                .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/eip-adapter-minimal-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
@@ -126,7 +127,7 @@ class EipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
                 eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
@@ -168,7 +169,7 @@ class EipAdapterConfigTest {
                 new EipToMqttConfig(12, 13, true, List.of(pollingContext)), List.of());
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(false);
         final Map<String, Object> config = eipProtocolAdapterFactory.unconvertConfigObject(mapper, eipAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-eip-adapter");

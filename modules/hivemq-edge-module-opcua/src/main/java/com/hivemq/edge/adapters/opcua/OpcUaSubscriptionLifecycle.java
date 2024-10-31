@@ -1,9 +1,6 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -116,7 +113,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
 
     public Optional<OpcuaTag> findTag(String tagName) {
         return opcuaTags.stream()
-                .filter(tag -> tag.getTagName().equals(tagName))
+                .filter(tag -> tag.getName().equals(tagName))
                 .findFirst();
     }
 
@@ -135,7 +132,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private CompletableFuture<Void> subscribeToOpcua(
             @NotNull OpcUaToMqttMapping subscription,
             Tag<OpcuaTagDefinition> opcuaTag) {
-        final String nodeId = opcuaTag.getTagDefinition().getNode();
+        final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);

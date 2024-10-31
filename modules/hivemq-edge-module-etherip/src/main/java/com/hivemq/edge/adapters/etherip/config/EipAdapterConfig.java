@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EipAdapterConfig implements ProtocolAdapterConfig {
@@ -77,8 +78,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "tags", required = true)
     @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter",
-                       required = true)
+                       description = "All tags used by this adapter")
     private final @NotNull List<EipTag> tags;
 
     @JsonCreator
@@ -89,14 +89,14 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig,
-            @JsonProperty(value = "tags", required = true) final @NotNull List<EipTag> tags) {
+            @JsonProperty(value = "tags") final @Nullable List<EipTag> tags) {
         this.id = id;
         this.host = host;
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.eipToMqttConfig = eipToMqttConfig;
-        this.tags = tags;
+        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
@@ -104,8 +104,8 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toList());
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {

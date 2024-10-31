@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 
 @SuppressWarnings("FieldCanBeLocal")
@@ -80,8 +81,8 @@ public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        return List.of();
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return Set.of();
     }
 
     public int getPollingIntervalMillis() {

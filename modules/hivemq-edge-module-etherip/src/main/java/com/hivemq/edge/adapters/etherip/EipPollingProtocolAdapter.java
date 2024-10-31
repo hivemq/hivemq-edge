@@ -127,7 +127,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
         }
 
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> pollWithAddress(pollingInput, pollingOutput, def),
@@ -142,9 +142,9 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             @NotNull PollingOutput pollingOutput,
             Tag<EipTagDefinition> eipAddressTag) {
         final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
-                eipAddressTag.getTagDefinition().getAddress());
+                eipAddressTag.getDefinition().getAddress());
         try {
-            final CIPData evt = etherNetIP.readTag(eipAddressTag.getTagDefinition().getAddress());
+            final CIPData evt = etherNetIP.readTag(eipAddressTag.getDefinition().getAddress());
 
             if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                 handleResult(evt, tagAddress).forEach(it -> {

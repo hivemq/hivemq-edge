@@ -14,12 +14,12 @@ public class OpcuaTag implements Tag<OpcuaTagDefinition> {
     }
 
     @Override
-    public @NotNull OpcuaTagDefinition getTagDefinition() {
+    public @NotNull OpcuaTagDefinition getDefinition() {
         return opcuaTagDefinition;
     }
 
     @Override
-    public @NotNull String getTagName() {
+    public @NotNull String getName() {
         return tagName;
     }
 

@@ -26,6 +26,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
@@ -138,8 +140,13 @@ public class SchemaNodeGeneratorTest {
         }
 
         @Override
-        public @NotNull List<String> calculateAllUsedTags() {
-            return List.of();
+        public @NotNull Set<String> calculateAllUsedTags() {
+            return Set.of();
+        }
+
+        @Override
+        public List<? extends Tag> getTags() {
+            return List.of(); //TODO
         }
     }
 
@@ -169,8 +176,13 @@ public class SchemaNodeGeneratorTest {
         }
 
         @Override
-        public @NotNull List<String> calculateAllUsedTags() {
-            return List.of();
+        public @NotNull Set<String> calculateAllUsedTags() {
+            return Set.of();
+        }
+
+        @Override
+        public List<? extends Tag> getTags() {
+            return List.of(); //TODO
         }
     }
 }

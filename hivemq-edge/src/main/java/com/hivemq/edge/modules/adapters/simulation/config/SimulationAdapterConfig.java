@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
@@ -103,8 +104,8 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        return List.of();
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return Set.of();
     }
 
     public int getMinValue() {

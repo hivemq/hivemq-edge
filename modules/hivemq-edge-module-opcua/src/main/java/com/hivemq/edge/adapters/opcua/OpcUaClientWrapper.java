@@ -49,7 +49,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -87,7 +86,7 @@ public class OpcUaClientWrapper {
     public void createMqttPayloadJsonSchema(
             final @NotNull OpcuaTag tag, final @NotNull TagSchemaCreationOutput output) {
 
-        final String nodeId = tag.getTagDefinition().getNode();
+        final String nodeId = tag.getDefinition().getNode();
         jsonSchemaGenerator
                 .ifPresentOrElse(
                         gen -> gen.createJsonSchema(NodeId.parse(nodeId)).whenComplete((jsonNode, throwable) -> {

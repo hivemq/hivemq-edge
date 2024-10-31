@@ -15,12 +15,12 @@ public class ModbusTag implements Tag<ModbusTagDefinition> {
 
 
     @Override
-    public @NotNull ModbusTagDefinition getTagDefinition() {
+    public @NotNull ModbusTagDefinition getDefinition() {
         return modbusTagDefinition;
     }
 
     @Override
-    public @NotNull String getTagName() {
+    public @NotNull String getName() {
         return tagName;
     }
 

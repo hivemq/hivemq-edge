@@ -161,7 +161,7 @@ public class HttpProtocolAdapter
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> pollHttp(pollingOutput, def, httpToMqttMapping),
@@ -177,7 +177,7 @@ public class HttpProtocolAdapter
             Tag<HttpTagDefinition> httpTag,
             HttpToMqttMapping httpToMqttMapping) {
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = httpTag.getTagDefinition().getUrl();
+        final String url = httpTag.getDefinition().getUrl();
         builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
@@ -304,7 +304,7 @@ public class HttpProtocolAdapter
         final String tagName = mqttToHttpMapping.getTagName();
         final Tag<HttpTagDefinition> httpTag;
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(mqttToHttpMapping.getTagName()))
+                .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> writeHttp(writingInput, writingOutput, def, mqttToHttpMapping),
@@ -319,7 +319,7 @@ public class HttpProtocolAdapter
             @NotNull WritingOutput writingOutput,
             Tag<HttpTagDefinition> httpTag,
             MqttToHttpMapping mqttToHttpMapping) {
-        final String url = httpTag.getTagDefinition().getUrl();
+        final String url = httpTag.getDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(url));

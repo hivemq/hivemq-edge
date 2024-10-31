@@ -158,7 +158,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) input.getWritingContext();
         if(opcUaClientWrapperTemp != null) {
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(writeContext.getTagName()))
+                .filter(tag -> tag.getName().equals(writeContext.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> opcUaClientWrapperTemp.write(input, output, def),

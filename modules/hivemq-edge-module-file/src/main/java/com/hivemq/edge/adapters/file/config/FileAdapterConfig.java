@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileAdapterConfig implements ProtocolAdapterConfig {
@@ -56,9 +57,9 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
+    public @NotNull Set<String> calculateAllUsedTags() {
         //TODO
-        return List.of();
+        return Set.of();
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

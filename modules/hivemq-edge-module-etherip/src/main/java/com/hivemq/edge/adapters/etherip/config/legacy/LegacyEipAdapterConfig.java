@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
 
@@ -58,15 +59,15 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty(value = "id", required = true)
     protected @NotNull String id;
 
-    public Integer getBackplane() {
+    public LegacyEipAdapterConfig() {
+    }
+
+    public @NotNull Integer getBackplane() {
         return backplane;
     }
 
-    public Integer getSlot() {
+    public @NotNull Integer getSlot() {
         return slot;
-    }
-
-    public LegacyEipAdapterConfig() {
     }
 
     public @NotNull String getId() {
@@ -74,9 +75,9 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
+    public @NotNull Set<String> calculateAllUsedTags() {
         // TODO
-        return List.of();
+        return Set.of();
     }
 
     @Override

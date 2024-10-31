@@ -1,32 +1,49 @@
 package com.hivemq.edge.adapters.etherip.config.tag;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
 
 public class EipTag implements Tag<EipTagDefinition> {
 
 
-    private final @NotNull String tagName;
+    @JsonProperty(value = "name", required = true)
+    @ModuleConfigField(title = "name",
+                       description = "name of the tag to be used in mappings",
+                       required = true)
+    private final @NotNull String name;
+
+    @JsonProperty(value = "description", required = true)
+    @ModuleConfigField(title = "description",
+                       description = "A human readable description of the tag",
+                       required = true)
     private final @NotNull String description;
-    private final @NotNull EipTagDefinition eipTagDefinition;
 
-    public EipTag(final @NotNull String tagName, final @NotNull String description, final @NotNull EipTagDefinition eipTagDefinition) {
-        this.tagName = tagName;
+    @JsonProperty(value = "definition", required = true)
+    @ModuleConfigField(title = "definition",
+                       description = "The actual definition of the tag on the device",
+                       required = true)
+    private final @NotNull EipTagDefinition definition;
+
+    public EipTag(
+            @JsonProperty(value = "name", required = true) final @NotNull String name,
+            @JsonProperty(value = "description", required = true) final @NotNull String description,
+            @JsonProperty(value = "definition", required = true) final @NotNull EipTagDefinition definiton) {
+        this.name = name;
         this.description = description;
-        this.eipTagDefinition = eipTagDefinition;
+        this.definition = definiton;
     }
 
 
     @Override
-    public @NotNull EipTagDefinition getTagDefinition() {
-        return eipTagDefinition;
+    public @NotNull EipTagDefinition getDefinition() {
+        return definition;
     }
 
     @Override
-    public @NotNull String getTagName() {
-        return tagName;
+    public @NotNull String getName() {
+        return name;
     }
 
     @Override
@@ -44,13 +61,13 @@ public class EipTag implements Tag<EipTagDefinition> {
         }
 
         final EipTag eipTag = (EipTag) o;
-        return tagName.equals(eipTag.tagName) && eipTagDefinition.equals(eipTag.eipTagDefinition);
+        return name.equals(eipTag.name) && definition.equals(eipTag.definition);
     }
 
     @Override
     public int hashCode() {
-        int result = tagName.hashCode();
-        result = 31 * result + eipTagDefinition.hashCode();
+        int result = name.hashCode();
+        result = 31 * result + definition.hashCode();
         return result;
     }
 }

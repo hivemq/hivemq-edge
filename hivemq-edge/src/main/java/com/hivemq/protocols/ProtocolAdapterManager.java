@@ -320,7 +320,7 @@ public class ProtocolAdapterManager {
         protocolAdapterWrapper.getConfigObject().getTags().stream()
                 .map(tag ->
                     new DomainTag(
-                        tag.getTagName(),
+                        tag.getName(),
                         protocolAdapterWrapper.getId(),
                         protocolAdapterWrapper.getAdapterInformation().getProtocolId(),
                         tag.getDescription()))

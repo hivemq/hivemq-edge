@@ -22,6 +22,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
@@ -123,8 +124,8 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
+    public @NotNull Set<String> calculateAllUsedTags() {
         // TODO
-        return List.of();
+        return Set.of();
     }
 }

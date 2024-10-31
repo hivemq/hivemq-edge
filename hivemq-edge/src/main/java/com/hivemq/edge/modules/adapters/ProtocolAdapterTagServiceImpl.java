@@ -41,9 +41,9 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     @Override
     public @NotNull AddStatus addTag(
             final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
-        final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagDefinition());
+        final JsonNode jsonNode = objectMapper.valueToTree(tag.getDefinition());
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(new DomainTag(tag.getTagName(), adapterId, protocolId, ""));
+                domainTagPersistence.addDomainTag(new DomainTag(tag.getName(), adapterId, protocolId, ""));
 
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:

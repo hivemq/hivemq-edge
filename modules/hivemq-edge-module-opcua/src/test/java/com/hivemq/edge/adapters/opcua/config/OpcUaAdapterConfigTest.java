@@ -271,7 +271,8 @@ class OpcUaAdapterConfigTest {
                 tls,
                 opcuaToMqttConfig,
                 mqttToOpcUaConfig,
-                new Security(BASIC128RSA15));
+                new Security(BASIC128RSA15),
+                List.of());
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
@@ -336,7 +337,8 @@ class OpcUaAdapterConfigTest {
                 null,
                 opcuaToMqttConfig,
                 mqttToOpcUaConfig,
-                null);
+                null,
+                List.of());
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));

@@ -50,31 +50,6 @@ import static org.mockito.Mockito.when;
 class LegacyEipAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
-
-    @BeforeEach
-    void setUp() {
-        when(protocolAdapterTagService.addTag(any(),
-                any(),
-                any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
-    }
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -85,7 +60,7 @@ class LegacyEipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"), false);
 
@@ -130,9 +105,6 @@ class LegacyEipAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
         });
-
-        verify(protocolAdapterTagService, times(2)).addTag(any(),
-                any(), eq(new EipTag("tag-name", "not-set", new EipTagDefinition("tag-address"))));
     }
 
     @Test
@@ -144,7 +116,7 @@ class LegacyEipAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"), false);
 
@@ -165,9 +137,6 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
-
-        verify(protocolAdapterTagService, times(1)).addTag(any(),
-                any(), eq(new EipTag("tag-name", "not-set", new EipTagDefinition("tag-address"))));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

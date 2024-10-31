@@ -15,12 +15,12 @@ public class HttpTag implements Tag<HttpTagDefinition> {
 
 
     @Override
-    public @NotNull HttpTagDefinition getTagDefinition() {
+    public @NotNull HttpTagDefinition getDefinition() {
         return httpTagDefinition;
     }
 
     @Override
-    public @NotNull String getTagName() {
+    public @NotNull String getName() {
         return tagName;
     }
 

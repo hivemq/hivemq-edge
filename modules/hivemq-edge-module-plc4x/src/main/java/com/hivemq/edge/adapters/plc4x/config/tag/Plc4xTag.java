@@ -15,12 +15,12 @@ public class Plc4xTag implements Tag<Plc4xTagDefinition> {
     }
 
     @Override
-    public @NotNull Plc4xTagDefinition getTagDefinition() {
+    public @NotNull Plc4xTagDefinition getDefinition() {
         return plc4XTagDefinition;
     }
 
     @Override
-    public @NotNull String getTagName() {
+    public @NotNull String getName() {
         return tagName;
     }
 

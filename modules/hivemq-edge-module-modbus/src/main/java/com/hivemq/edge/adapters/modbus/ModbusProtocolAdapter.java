@@ -21,8 +21,6 @@ import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -106,7 +104,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     public void poll(
             final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
         adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
                         def -> pollModbus(pollingInput, pollingOutput, def),
@@ -214,12 +212,12 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusToMqttMapping modbusToMqttMapping,
             final @NotNull ModbusClient modbusClient,
             final @NotNull Tag<ModbusTagDefinition> modbusTag) {
-        final ModbusTagDefinition modbusTagDefinition = modbusTag.getTagDefinition();
+        final ModbusTagDefinition modbusTagDefinition = modbusTag.getDefinition();
 
         return doRead(modbusTagDefinition.startIdx,
                 modbusTagDefinition.unitId,
                 modbusTagDefinition.flipRegisters,
-                modbusTag.getTagDefinition().getDataType(),
+                modbusTag.getDefinition().getDataType(),
                 modbusTagDefinition.readType,
                 modbusClient).thenApply(dataPoint -> {
             final ModBusData data = new ModBusData(modbusToMqttMapping);

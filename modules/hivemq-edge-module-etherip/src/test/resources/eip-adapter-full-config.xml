@@ -68,6 +68,15 @@
                     </eipToMqttMapping>
                 </eipToMqttMappings>
             </eipToMqtt>
+            <tags>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <address>addressy</address>
+                    </definition>
+                </tag>
+            </tags>
         </eip>
     </protocol-adapters>
 </hivemq>
