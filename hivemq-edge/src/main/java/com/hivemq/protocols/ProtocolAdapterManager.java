@@ -37,7 +37,6 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -55,8 +54,9 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
+import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagPersistence;
-import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -316,13 +316,42 @@ public class ProtocolAdapterManager {
     CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
 
-        protocolAdapterWrapper.getConfigObject().getTags().forEach(tag ->
-                new DomainTag(
-                        ((Tag)tag).getTagName(),
+        Map<String, DomainTagAddResult> duplicatedTags = new HashMap<>();
+        protocolAdapterWrapper.getConfigObject().getTags().stream()
+                .map(tag ->
+                    new DomainTag(
+                        tag.getTagName(),
                         protocolAdapterWrapper.getId(),
                         protocolAdapterWrapper.getAdapterInformation().getProtocolId(),
+                        tag.getDescription()))
+                .forEach(dTag -> {
+                    DomainTagAddResult result = domainTagPersistence.addDomainTag(dTag);
+                    if(result.getDomainTagPutStatus().equals(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS)) {
+                        duplicatedTags.put(dTag.getTagName(), result);
+                    }
+                });
 
-                        );
+        if(!duplicatedTags.isEmpty()) {
+            List<String> tagIdToOwningAdapter = duplicatedTags.entrySet().stream()
+                    .map(entry -> entry.getKey() + " => " + entry.getValue().getAdapterIdOfOwningAdapter())
+                    .collect(Collectors.toList());
+
+            log.error("The adapter {} contains tags already provided by other adapters: {}", protocolAdapterWrapper.getId(), tagIdToOwningAdapter);
+            domainTagPersistence.adapterIsGone(protocolAdapterWrapper.getId());
+
+            eventService
+                    .createAdapterEvent(protocolAdapterWrapper.getId(), protocolAdapterWrapper.getAdapterInformation().getProtocolId())
+                    .withMessage(
+                            "Starting the adapter failed because it tried to register tag names owned by another adapter: " +
+                                    tagIdToOwningAdapter)
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
+
+            CompletableFuture.failedFuture(
+                    new ProtocolAdapterException("Tried to register tags owned by another adapter: " + tagIdToOwningAdapter));
+        }
+
+
 
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
@@ -602,7 +631,7 @@ public class ProtocolAdapterManager {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
-            final ProtocolAdapterConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
+            final ProtocolAdapterConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config, writingEnabled());
 
 
             final ProtocolAdapterMetricsService protocolAdapterMetricsService = new ProtocolAdapterMetricsServiceImpl(
@@ -619,7 +648,8 @@ public class ProtocolAdapterManager {
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
                     new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
                             eventService,
-                            moduleServices.protocolAdapterTagService());
+                            moduleServices.protocolAdapterTagService(),
+                            protocolAdapterWritingService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,

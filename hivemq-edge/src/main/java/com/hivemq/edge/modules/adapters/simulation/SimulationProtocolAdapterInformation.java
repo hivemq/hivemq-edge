@@ -19,6 +19,9 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.io.IOUtils;
@@ -108,5 +111,21 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
             log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+
+    @Override
+    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+        return null; //TODO what would be correct here?
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+        return SimulationAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+        return SimulationAdapterConfig.class;
     }
 }

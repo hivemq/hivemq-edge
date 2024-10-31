@@ -24,12 +24,10 @@ public class DomainTagMapper {
 
     public static @NotNull DomainTag domainTagFromDomainTagEntity(
             final @NotNull DomainTagXmlEntity domainTagXmlEntity, final @NotNull ObjectMapper objectMapper) {
-        final JsonNode jsonNode = objectMapper.valueToTree(domainTagXmlEntity.getDefinition());
         return new DomainTag(domainTagXmlEntity.getTagName(),
                 domainTagXmlEntity.getAdapterId(),
                 domainTagXmlEntity.getProtocolId(),
-                domainTagXmlEntity.getDescription(),
-                jsonNode);
+                domainTagXmlEntity.getDescription());
     }
 
     public static @NotNull DomainTagXmlEntity domainTagEntityFromDomainTag(
@@ -37,8 +35,7 @@ public class DomainTagMapper {
         return new DomainTagXmlEntity(domainTag.getTagName(),
                 domainTag.getAdapterId(),
                 domainTag.getProtocolId(),
-                domainTag.getDescription(),
-                domainTag.getTagDefinition());
+                domainTag.getDescription());
     }
 
 }

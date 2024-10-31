@@ -23,12 +23,10 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Objects;
+
 @Schema(name = "DomainTag")
 public class DomainTagModel {
-
-    @JsonProperty("tagDefinition")
-    @Schema(description = "The address for the data point on the device.")
-    private final @NotNull JsonNode tagDefinition;
 
     @JsonProperty("tagName")
     @Schema(description = "The name of the tag that identifies it within this edge instance.")
@@ -44,11 +42,9 @@ public class DomainTagModel {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
-            @JsonProperty("tagDefinition") final @NotNull JsonNode tagDefinition,
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @NotNull String description) {
-        this.tagDefinition = tagDefinition;
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = description;
@@ -56,10 +52,6 @@ public class DomainTagModel {
 
     public @NotNull String getTag() {
         return tag;
-    }
-
-    public @NotNull JsonNode getTagDefinition() {
-        return tagDefinition;
     }
 
     public @NotNull String getDescription() {
@@ -71,45 +63,38 @@ public class DomainTagModel {
     }
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(domainTag.getTagDefinition(),
-                domainTag.getTagName(),
+        return new DomainTagModel(domainTag.getTagName(),
                 "someProtocolId",
                 "someDescription");
     }
 
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final DomainTagModel that = (DomainTagModel) o;
-        return tagDefinition.equals(that.tagDefinition) &&
-                tag.equals(that.tag) &&
-                protocolId.equals(that.protocolId) &&
-                description.equals(that.description);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = tagDefinition.hashCode();
-        result = 31 * result + tag.hashCode();
-        result = 31 * result + protocolId.hashCode();
-        result = 31 * result + description.hashCode();
-        return result;
-    }
-
-    @Override
-    public @NotNull String toString() {
+    public String toString() {
         return "DomainTagModel{" +
-                "description='" +
-                description +
-                '\'' + ", tagAddress=" + tagDefinition +
-                ", tag='" +
+                "tag='" +
                 tag +
                 '\'' +
                 ", protocolId='" +
                 protocolId +
                 '\'' +
+                ", description='" +
+                description +
+                '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final DomainTagModel that = (DomainTagModel) o;
+        return Objects.equals(tag, that.tag) &&
+                Objects.equals(protocolId, that.protocolId) &&
+                Objects.equals(description, that.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tag, protocolId, description);
     }
 }

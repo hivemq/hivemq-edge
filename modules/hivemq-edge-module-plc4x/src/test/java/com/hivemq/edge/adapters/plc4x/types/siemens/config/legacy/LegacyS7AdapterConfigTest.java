@@ -84,7 +84,7 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
         final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
@@ -131,7 +131,7 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
         final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);

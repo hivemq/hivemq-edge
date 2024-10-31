@@ -74,7 +74,7 @@ class ADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -130,7 +130,7 @@ class ADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);

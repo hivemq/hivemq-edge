@@ -20,6 +20,10 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,5 +116,20 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
             log.warn("The UISchema for the EIP Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+        return EipTag.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+        return EipAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+        return EipAdapterConfig.class;
     }
 }

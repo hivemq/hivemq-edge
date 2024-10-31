@@ -20,8 +20,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.protocols.writing.NanoTimeProvider;
-import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 
 public interface WritingServiceFactory {
 
@@ -29,7 +28,6 @@ public interface WritingServiceFactory {
     ProtocolAdapterWritingService build(
             @NotNull ObjectMapper objectMapper,
             @NotNull LocalTopicTree localTopicTree,
-            @NotNull NanoTimeProvider nanoTimeProvider,
             @NotNull SingleWriterService singleWriterService,
             @NotNull ProtocolAdapterTagService protocolAdapterTagService);
 }

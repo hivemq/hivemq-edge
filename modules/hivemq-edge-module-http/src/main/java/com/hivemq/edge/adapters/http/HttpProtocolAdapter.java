@@ -20,8 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -162,23 +160,22 @@ public class HttpProtocolAdapter
 
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
-        final Tag<HttpTagDefinition> httpTag;
-        try {
-            httpTag= pollingInput.protocolAdapterTagService().resolveTag(pollingInput.getPollingContext().getTagName(),
-                    HttpTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
+        adapterConfig.getTags().stream()
+                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> pollHttp(pollingOutput, def, httpToMqttMapping),
+                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
 
+    }
 
+    private void pollHttp(
+            @NotNull PollingOutput pollingOutput,
+            Tag<HttpTagDefinition> httpTag,
+            HttpToMqttMapping httpToMqttMapping) {
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getTagDefinition().getUrl();
         builder.uri(URI.create(url));
@@ -304,25 +301,24 @@ public class HttpProtocolAdapter
         }
         final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
 
-        // first resolve the tag
-
         final String tagName = mqttToHttpMapping.getTagName();
         final Tag<HttpTagDefinition> httpTag;
-        try {
-            httpTag= writingInput.protocolAdapterTagService().resolveTag(mqttToHttpMapping.getTagName(),
-                    HttpTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the writing to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
+        adapterConfig.getTags().stream()
+                .filter(tag -> tag.getTagName().equals(mqttToHttpMapping.getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> writeHttp(writingInput, writingOutput, def, mqttToHttpMapping),
+                        () -> writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
+                                mqttToHttpMapping.getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
+    }
 
+    private void writeHttp(
+            @NotNull WritingInput writingInput,
+            @NotNull WritingOutput writingOutput,
+            Tag<HttpTagDefinition> httpTag,
+            MqttToHttpMapping mqttToHttpMapping) {
         final String url = httpTag.getTagDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();

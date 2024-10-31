@@ -37,48 +37,27 @@ public class DomainTagXmlEntity {
     @XmlElement(name = "description", required = true)
     private final @NotNull String description;
 
-    @XmlElement(name = "definition", required = true)
-    private final @NotNull JsonNode definition;
-
     //no-arg for JaxB
     public DomainTagXmlEntity(){
         this.tagName ="";
         this.adapterId = "";
         this.protocolId = "";
         this.description = "";
-        definition = null;
     }
 
     public DomainTagXmlEntity(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
-            final @NotNull String description,
-            final @NotNull JsonNode definition) {
+            final @NotNull String description) {
         this.tagName = tagName;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.description = description;
-        this.definition = definition;
-        /*
-        try {
-            ObjectMapper xmlMapper = new XmlMapper();
-            String xml = xmlMapper.writeValueAsString(definition);
-            System.out.println(xml);
-            this.definition = xml;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        */
-
     }
 
     public @NotNull String getAdapterId() {
         return adapterId;
-    }
-
-    public @NotNull JsonNode getDefinition() {
-        return definition;
     }
 
     public @NotNull String getDescription() {
@@ -94,13 +73,13 @@ public class DomainTagXmlEntity {
     }
 
     @Override
-    public @NotNull String toString() {
+    public String toString() {
         return "DomainTagXmlEntity{" +
-                "adapterId='" +
-                adapterId +
-                '\'' +
-                ", tagName='" +
+                "tagName='" +
                 tagName +
+                '\'' +
+                ", adapterId='" +
+                adapterId +
                 '\'' +
                 ", protocolId='" +
                 protocolId +
@@ -108,8 +87,6 @@ public class DomainTagXmlEntity {
                 ", description='" +
                 description +
                 '\'' +
-                ", definition=" +
-                definition +
                 '}';
     }
 }

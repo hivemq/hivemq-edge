@@ -75,7 +75,7 @@ public class ModbusAdapterConfigTest {
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                        (Map) adapters.get("modbus"), false);
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -133,7 +133,7 @@ public class ModbusAdapterConfigTest {
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                        (Map) adapters.get("modbus"), false);
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -164,7 +164,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'id'");
+                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -178,7 +178,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'host'");
+                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'host'");
     }
 
     @Test
@@ -192,7 +192,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'port'");
+                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'port'");
     }
 
     @Test
@@ -206,7 +206,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test
@@ -220,7 +220,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus")));
+                (Map) adapters.get("modbus"), false));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'tagName'");
+                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test

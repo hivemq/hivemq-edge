@@ -125,10 +125,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription) {
-        // resolve the tag
-        final Tag<Plc4xTagDefinition> tag =
-                protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagDefinition.class);
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
         final String tagAddress = tag.getTagDefinition().getTagAddress();
 
         final String formattedAddress = String.format("%s%s%s", tagAddress, ":", subscription.getDataType());

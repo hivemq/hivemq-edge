@@ -37,6 +37,7 @@ class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {
     public @NotNull ModuleServices moduleServices() {
         return new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
                 eventService,
-                moduleServices.protocolAdapterTagService());
+                moduleServices.protocolAdapterTagService(),
+                moduleServices.protocolAdapterWritingService());
     }
 }

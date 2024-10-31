@@ -67,9 +67,9 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(
@@ -91,11 +91,6 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                 throw currentConfigFailedException;
             }
         }
-    }
-
-    @Override
-    public @NotNull Class<FileAdapterConfig> getConfigClass() {
-        return FileAdapterConfig.class;
     }
 
     private static @NotNull FileAdapterConfig tryConvertLegacyConfig(

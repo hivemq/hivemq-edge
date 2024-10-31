@@ -86,8 +86,8 @@ class LegacyEipAdapterConfigTest {
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("ethernet-ip"));
+        final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("ethernet-ip"), false);
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -132,7 +132,7 @@ class LegacyEipAdapterConfigTest {
         });
 
         verify(protocolAdapterTagService, times(2)).addTag(any(),
-                any(), eq(new EipTag("tag-name", new EipTagDefinition("tag-address"))));
+                any(), eq(new EipTag("tag-name", "not-set", new EipTagDefinition("tag-address"))));
     }
 
     @Test
@@ -145,8 +145,8 @@ class LegacyEipAdapterConfigTest {
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("ethernet-ip"));
+        final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("ethernet-ip"), false);
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -167,7 +167,7 @@ class LegacyEipAdapterConfigTest {
         });
 
         verify(protocolAdapterTagService, times(1)).addTag(any(),
-                any(), eq(new EipTag("tag-name", new EipTagDefinition("tag-address"))));
+                any(), eq(new EipTag("tag-name", "not-set", new EipTagDefinition("tag-address"))));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

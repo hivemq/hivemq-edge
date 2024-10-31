@@ -75,7 +75,7 @@ public class LegacyModbusAdapterConfigTest {
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                        (Map) adapters.get("modbus"), false);
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-full");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -131,7 +131,7 @@ public class LegacyModbusAdapterConfigTest {
                 new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                        (Map) adapters.get("modbus"), false);
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-min");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);

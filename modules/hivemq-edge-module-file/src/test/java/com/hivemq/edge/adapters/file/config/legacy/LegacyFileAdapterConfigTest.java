@@ -76,7 +76,7 @@ class LegacyFileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -128,7 +128,7 @@ class LegacyFileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);

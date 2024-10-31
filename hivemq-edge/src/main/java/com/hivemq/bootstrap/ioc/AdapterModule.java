@@ -19,7 +19,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterTagServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;

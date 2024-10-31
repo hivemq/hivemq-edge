@@ -67,18 +67,10 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> getConfigClass() {
-        if (writingEnabled) {
-            return BidirectionalOpcUaAdapterConfig.class;
-        }
-        return OpcUaAdapterConfig.class;
-    }
-
-    @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(

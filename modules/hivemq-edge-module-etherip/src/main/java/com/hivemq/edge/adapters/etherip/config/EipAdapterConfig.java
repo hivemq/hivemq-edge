@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class EipAdapterConfig implements ProtocolAdapterConfig<EipTag> {
+public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
@@ -131,13 +131,5 @@ public class EipAdapterConfig implements ProtocolAdapterConfig<EipTag> {
     @Override
     public List<EipTag> getTags() {
         return Collections.unmodifiableList(tags);
-    }
-
-    public void addTag(EipTag tag) {
-        tags.add(tag);
-    }
-
-    public void removeTag(EipTag tag) {
-        tags.remove(tag);
     }
 }

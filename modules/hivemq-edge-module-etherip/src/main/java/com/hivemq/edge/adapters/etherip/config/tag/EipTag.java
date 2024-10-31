@@ -9,11 +9,12 @@ public class EipTag implements Tag<EipTagDefinition> {
 
 
     private final @NotNull String tagName;
-    private final Optional<String> tagDescription;
+    private final @NotNull String description;
     private final @NotNull EipTagDefinition eipTagDefinition;
 
-    public EipTag(final @NotNull String tagName, final @NotNull EipTagDefinition eipTagDefinition) {
+    public EipTag(final @NotNull String tagName, final @NotNull String description, final @NotNull EipTagDefinition eipTagDefinition) {
         this.tagName = tagName;
+        this.description = description;
         this.eipTagDefinition = eipTagDefinition;
     }
 
@@ -29,8 +30,8 @@ public class EipTag implements Tag<EipTagDefinition> {
     }
 
     @Override
-    public @NotNull Optional<String> getDescription() {
-        return Optional.empty();
+    public @NotNull String getDescription() {
+        return description;
     }
 
     @Override

@@ -72,15 +72,10 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     }
 
     @Override
-    public @NotNull Class<ADSAdapterConfig> getConfigClass() {
-        return ADSAdapterConfig.class;
-    }
-
-    @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(

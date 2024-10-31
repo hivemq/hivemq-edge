@@ -18,8 +18,6 @@ package com.hivemq.edge.adapters.plc4x.impl;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -52,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -94,35 +93,27 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
     @Override
     public void poll(final @NotNull PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
-        if (connection != null && connection.isConnected()) {
+        final Plc4xConnection<T> tempConnection = connection;
+        if (tempConnection != null && tempConnection.isConnected()) {
             final Plc4xToMqttMapping plc4xToMqttMapping = (Plc4xToMqttMapping) pollingInput.getPollingContext();
             final String tagName = plc4xToMqttMapping.getTagName();
 
-            // first resolve the tag
-            final Tag<Plc4xTagDefinition> plc4xTag;
-            try {
-                plc4xTag= pollingInput.protocolAdapterTagService().resolveTag(tagName,
-                        Plc4xTagDefinition.class);
-            } catch (final TagNotFoundException e) {
-                pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                        tagName +
-                        "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-                return;
-            } catch (final TagDefinitionParseException e) {
-                pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                        tagName +
-                        "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-                return;
-            }
-
-
-
-            connection.read(plc4xToMqttMapping)
-                    .thenApply(response -> processReadResponse((Plc4xToMqttMapping) pollingInput.getPollingContext(),
-                            response))
-                    .thenApply(data -> captureDataSample(data, plc4xTag))
-                    .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
+            findTag(tagName)
+                    .ifPresentOrElse(
+                            def -> tempConnection.read(plc4xToMqttMapping)
+                                    .thenApply(response -> processReadResponse((Plc4xToMqttMapping) pollingInput.getPollingContext(),
+                                            response))
+                                    .thenApply(data -> captureDataSample(data, def))
+                                    .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput)),
+                            () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                    tagName +
+                                    "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                    );
         }
+    }
+
+    private @NotNull Optional<? extends Tag> findTag(String tagName) {
+        return adapterConfig.getTags().stream().filter(tag -> tag.getTagName().equals(tagName)).findFirst();
     }
 
     protected void handleDataAndExceptions(
@@ -157,8 +148,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
-            initConnection();
-            subscribeAllInternal(connection);
+            subscribeAllInternal(initConnection());
             output.startedSuccessfully();
         } catch (final Exception e) {
             output.failStart(e, null);
@@ -167,15 +157,15 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
     @Override
     public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
-        if (connection != null) {
+        final Plc4xConnection<T> tempConnection = connection;
+        connection = null;
+        if (tempConnection != null) {
             try {
                 //-- Disconnect client
-                connection.disconnect();
+                tempConnection.disconnect();
             } catch (final Exception e) {
                 protocolAdapterState.setErrorConnectionStatus(e, null);
                 output.failStop(e, "Error disconnecting from PLC4X client");
-            } finally {
-                connection = null;
             }
         }
         output.stoppedSuccessfully();
@@ -186,7 +176,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         return adapterInformation;
     }
 
-    private void initConnection() {
+    private Plc4xConnection<T> initConnection() {
         if (connection == null) {
             synchronized (lock) {
                 if (connection == null) {
@@ -196,12 +186,14 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
                         }
                         connection = createConnection();
                         protocolAdapterState.setConnectionStatus(CONNECTED);
+                        return connection;
                     } catch (final Plc4xException e) {
                         throw new RuntimeException(e);
                     }
                 }
             }
         }
+        return connection;
     }
 
     protected @NotNull Plc4xConnection<T> createConnection() throws Plc4xException {
@@ -221,7 +213,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
             @Override
             protected @NotNull String getTagAddressForSubscription(final Plc4xToMqttMapping context) {
-                return createTagAddressForSubscription(context);
+                return findTag(context.getTagName())
+                        .map(tag -> createTagAddressForSubscription(context, tag))
+                        .orElseThrow(); //TODO this sucks
             }
         };
     }
@@ -291,10 +285,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription) {
-        // resolve the tag
-        final Tag<Plc4xTagDefinition> tag =
-                protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagDefinition.class);
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
         final String tagAddress = tag.getTagDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }

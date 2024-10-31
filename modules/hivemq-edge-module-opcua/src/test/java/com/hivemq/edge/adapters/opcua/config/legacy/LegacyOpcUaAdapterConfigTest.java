@@ -75,7 +75,7 @@ class LegacyOpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"));
+                (Map) adapters.get("opcua"), false);
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -137,7 +137,7 @@ class LegacyOpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(protocolAdapterFactoryInput);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"));
+                (Map) adapters.get("opcua"), false);
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");

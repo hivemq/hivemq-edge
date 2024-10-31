@@ -76,7 +76,7 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
         final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -119,7 +119,7 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(protocolAdapterFactoryInput);
         final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);

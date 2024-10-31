@@ -72,7 +72,7 @@ class LegacySimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
@@ -116,7 +116,7 @@ class LegacySimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);

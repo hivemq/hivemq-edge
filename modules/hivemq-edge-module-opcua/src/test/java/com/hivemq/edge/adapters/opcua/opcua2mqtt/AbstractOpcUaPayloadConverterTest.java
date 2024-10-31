@@ -98,8 +98,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
             throws Exception, TagNotFoundException, TagDefinitionParseException {
-        when(protocolAdapterTagService.resolveTag(any(), eq(OpcuaTagDefinition.class))).thenReturn(new OpcuaTag("",
-                new OpcuaTagDefinition(subcribedNodeId)));
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
                 new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId,
@@ -114,7 +112,9 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 null,
                 null,
                 opcuaToMqttConfig,
-                null);
+                null,
+                List.of(new OpcuaTag("",
+                        new OpcuaTagDefinition(subcribedNodeId))));
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =

@@ -59,11 +59,11 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        ProtocolAdapterConfig<EipTag> ret;
+    public @NotNull EipAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
+        EipAdapterConfig ret;
         try {
-            ret = ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            ret = (EipAdapterConfig)ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(
@@ -94,11 +94,6 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         return ret;
     }
 
-    @Override
-    public @NotNull Class<EipAdapterConfig> getConfigClass() {
-        return EipAdapterConfig.class;
-    }
-
     private @NotNull EipAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
@@ -111,7 +106,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         final List<EipTag> tags = new ArrayList<>();
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
-            tags.add(new EipTag(context.getTagName(), new EipTagDefinition(context.getTagAddress())));
+            tags.add(new EipTag(context.getTagName(), "not available", new EipTagDefinition(context.getTagAddress())));
             eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
                     context.getQos(),
                     context.getMessageHandlingOptions(),

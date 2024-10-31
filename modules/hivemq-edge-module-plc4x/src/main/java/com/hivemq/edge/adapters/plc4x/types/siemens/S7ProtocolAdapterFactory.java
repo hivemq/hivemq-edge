@@ -70,16 +70,10 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
 
     @Override
-    public @NotNull Class<S7AdapterConfig> getConfigClass() {
-        return S7AdapterConfig.class;
-    }
-
-
-    @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(

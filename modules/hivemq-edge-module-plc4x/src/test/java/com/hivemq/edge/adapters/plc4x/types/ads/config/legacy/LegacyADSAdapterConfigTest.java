@@ -82,7 +82,7 @@ class LegacyADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
         assertThat(config.getId()).isEqualTo("asd");
         assertThat(config.getHost()).isEqualTo("172.16.10.54");
@@ -123,7 +123,7 @@ class LegacyADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(protocolAdapterFactoryInput);
         final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
         assertThat(config.getId()).isEqualTo("my-ads-id");
         assertThat(config.getPort()).isEqualTo(48898);

@@ -93,26 +93,21 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     @Override
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+        adapterConfig.getTags().stream()
+                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> pollFile(pollingInput, pollingOutput, def),
+                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
+    }
 
-        final String tagName = pollingInput.getPollingContext().getTagName();
-        final Tag<FileTagDefinition> fileTag;
-        try {
-            fileTag= protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
-                    FileTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
-
-
+    private static void pollFile(
+            @NotNull PollingInput<FileToMqttMapping> pollingInput,
+            @NotNull PollingOutput pollingOutput,
+            Tag<FileTagDefinition> fileTag) {
         final String absolutePathToFle = fileTag.getTagDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);

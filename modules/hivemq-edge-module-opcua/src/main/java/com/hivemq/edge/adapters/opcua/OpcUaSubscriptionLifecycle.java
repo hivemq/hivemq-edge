@@ -9,6 +9,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
@@ -45,7 +46,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull ModuleServices moduleServices;
+    private final @NotNull List<OpcuaTag> opcuaTags;
 
     public OpcUaSubscriptionLifecycle(
             final @NotNull OpcUaClient opcUaClient,
@@ -54,14 +55,14 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull ModuleServices moduleServices) {
+            final @NotNull List<OpcuaTag> opcuaTags) {
         this.opcUaClient = opcUaClient;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterPublishService = adapterPublishService;
-        this.moduleServices = moduleServices;
+        this.opcuaTags = opcuaTags;
     }
 
     @Override
@@ -113,24 +114,27 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         }
     }
 
+    public Optional<OpcuaTag> findTag(String tagName) {
+        return opcuaTags.stream()
+                .filter(tag -> tag.getTagName().equals(tagName))
+                .findFirst();
+    }
+
     public CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
         final @NotNull String tagName = subscription.getTagName();
-        // first resolve the tag
-        final Tag<OpcuaTagDefinition> opcuaTag;
-        try {
-            opcuaTag = moduleServices.protocolAdapterTagService()
-                    .resolveTag(tagName, OpcuaTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
-        } catch (final TagDefinitionParseException e) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol."));
-        }
 
+        return findTag(subscription.getTagName())
+                .map(tag -> subscribeToOpcua(subscription, tag))
+                .orElseGet(() ->
+                        CompletableFuture.failedFuture(
+                                new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
+                                    tagName +
+                                    "' was not found. For the polling to work the tag must be created via REST API or the UI.")));
+    }
 
+    private CompletableFuture<Void> subscribeToOpcua(
+            @NotNull OpcUaToMqttMapping subscription,
+            Tag<OpcuaTagDefinition> opcuaTag) {
         final String nodeId = opcuaTag.getTagDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =

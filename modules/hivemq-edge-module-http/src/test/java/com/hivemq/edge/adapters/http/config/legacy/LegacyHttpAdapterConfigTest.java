@@ -77,7 +77,7 @@ public class LegacyHttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
         final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"), false);
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -110,7 +110,7 @@ public class LegacyHttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
         final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"), false);
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);

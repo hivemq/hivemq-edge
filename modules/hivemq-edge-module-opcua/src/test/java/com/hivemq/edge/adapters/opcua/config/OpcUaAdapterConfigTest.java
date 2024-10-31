@@ -62,7 +62,7 @@ class OpcUaAdapterConfigTest {
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalOpcUaAdapterConfig config =
                 (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("opcua"));
+                        (Map) adapters.get("opcua"), true);
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -134,7 +134,7 @@ class OpcUaAdapterConfigTest {
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalOpcUaAdapterConfig config =
                 (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("opcua"));
+                        (Map) adapters.get("opcua"), true);
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -179,7 +179,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'id'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -193,7 +193,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test
@@ -207,7 +207,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -221,7 +221,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'uri'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'uri'");
     }
 
     @Test
@@ -235,7 +235,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -249,7 +249,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
+                (Map) adapters.get("opcua"), false)).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
     }
 
     @Test

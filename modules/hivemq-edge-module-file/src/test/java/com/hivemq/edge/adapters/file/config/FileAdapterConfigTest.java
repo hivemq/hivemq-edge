@@ -73,7 +73,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -124,7 +124,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"), false);
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -151,7 +151,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'contentType'");
+                (Map) adapters.get("file"), false)).hasMessageContaining("Missing required creator property 'contentType'");
     }
 
     @Test
@@ -165,7 +165,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'tagName'");
+                (Map) adapters.get("file"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -179,7 +179,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                (Map) adapters.get("file"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test

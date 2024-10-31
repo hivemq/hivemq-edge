@@ -25,6 +25,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -91,6 +92,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull DomainTagPersistence domainTagPersistence;
@@ -100,6 +102,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull VersionProvider versionProvider,
             final @NotNull DomainTagPersistence domainTagPersistence) {
@@ -109,6 +112,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.versionProvider = versionProvider;
         this.domainTagPersistence = domainTagPersistence;
+        this.protocolAdapterWritingService = protocolAdapterWritingService;
     }
 
     @Override
@@ -391,7 +395,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final ProtocolAdapterFactory<?> protocolAdapterFactory =
                 protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
-                new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
+                new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterWritingService.writingEnabled() ? information.configurationClassWriting() : information.configurationClassReading());
         final ProtocolAdapterValidator validator =
                 (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =

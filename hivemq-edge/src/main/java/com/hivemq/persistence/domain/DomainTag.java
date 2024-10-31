@@ -31,19 +31,16 @@ public class DomainTag {
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull String description;
-    private final @NotNull JsonNode tagDefinition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
-            final @NotNull String description,
-            final @NotNull JsonNode tagDefinition) {
+            final @NotNull String description) {
         this.tagName = tagName;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.description = description;
-        this.tagDefinition = tagDefinition;
 
     }
 
@@ -53,8 +50,7 @@ public class DomainTag {
         return new DomainTag(domainTag.getTag(),
                 adapterId,
                 domainTag.getProtocolId(),
-                domainTag.getDescription(),
-                domainTag.getTagDefinition());
+                domainTag.getDescription());
     }
 
 
@@ -69,7 +65,7 @@ public class DomainTag {
             final @NotNull String tagDefinition) {
         final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
         objectNode.set("address", new TextNode(tagDefinition));
-        return new DomainTag(tagName, adapterId,"someProtocolId", "someDescription", objectNode);
+        return new DomainTag(tagName, adapterId,"someProtocolId", "someDescription");
     }
 
     public @NotNull String getTagName() {
@@ -78,10 +74,6 @@ public class DomainTag {
 
     public @NotNull String getAdapterId() {
         return adapterId;
-    }
-
-    public @NotNull JsonNode getTagDefinition() {
-        return tagDefinition;
     }
 
     public @NotNull String getDescription() {
@@ -117,8 +109,6 @@ public class DomainTag {
                 "description='" +
                 description +
                 '\'' +
-                ", tagDefinition=" +
-                tagDefinition +
                 ", tag='" +
                 tagName +
                 '\'' +

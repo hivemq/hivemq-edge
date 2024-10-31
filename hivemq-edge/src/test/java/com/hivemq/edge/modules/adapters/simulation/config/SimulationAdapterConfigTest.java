@@ -74,7 +74,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
@@ -118,7 +118,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
@@ -144,7 +144,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'id'");
+                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -158,7 +158,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test

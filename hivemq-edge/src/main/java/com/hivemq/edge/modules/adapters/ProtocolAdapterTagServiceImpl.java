@@ -15,10 +15,8 @@
  */
 package com.hivemq.edge.modules.adapters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.domain.DomainTag;
@@ -41,32 +39,11 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     }
 
     @Override
-    public @NotNull <T> Tag<T> resolveTag(final @NotNull String tagName, final @NotNull Class<T> definitionClass) {
-        final DomainTag tag = domainTagPersistence.getTag(tagName);
-        try {
-            final T address = objectMapper.treeToValue(tag.getTagDefinition(), definitionClass);
-            return new Tag<T>() {
-                @Override
-                public @NotNull T getTagDefinition() {
-                    return address;
-                }
-
-                @Override
-                public @NotNull String getTagName() {
-                    return tag.getTagName();
-                }
-            };
-        } catch (final JsonProcessingException e) {
-            throw new TagDefinitionParseException("Parsing of definition for class '"+definitionClass+"' failed, original exception by framework: " + e.getMessage());
-        }
-    }
-
-    @Override
     public @NotNull AddStatus addTag(
             final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
         final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagDefinition());
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(new DomainTag(tag.getTagName(), adapterId, protocolId, "", jsonNode));
+                domainTagPersistence.addDomainTag(new DomainTag(tag.getTagName(), adapterId, protocolId, ""));
 
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:

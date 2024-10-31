@@ -70,9 +70,10 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull Map<String, Object> config,
+            final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
@@ -93,14 +94,6 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                 throw currentConfigFailedException;
             }
         }
-    }
-
-    @Override
-    public @NotNull Class<? extends HttpAdapterConfig> getConfigClass() {
-        if (writingEnabled) {
-            return BidirectionalHttpAdapterConfig.class;
-        }
-        return HttpAdapterConfig.class;
     }
 
     private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(

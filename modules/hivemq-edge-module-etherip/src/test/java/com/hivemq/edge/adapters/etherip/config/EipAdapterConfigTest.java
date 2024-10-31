@@ -72,7 +72,7 @@ class EipAdapterConfigTest {
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -128,7 +128,7 @@ class EipAdapterConfigTest {
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
         final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -165,7 +165,7 @@ class EipAdapterConfigTest {
                 "my.host.com",
                 15,
                 16,
-                new EipToMqttConfig(12, 13, true, List.of(pollingContext)));
+                new EipToMqttConfig(12, 13, true, List.of(pollingContext)), List.of());
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(protocolAdapterFactoryInput);

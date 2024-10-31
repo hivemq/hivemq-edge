@@ -66,7 +66,7 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'tagName'");
+                (Map) adapters.get("http"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'id'");
+                (Map) adapters.get("http"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -95,7 +95,7 @@ public class HttpAdapterConfigTest {
                 new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("http"));
+                        (Map) adapters.get("http"), false);
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -135,7 +135,7 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
         final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"), false);
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
@@ -168,7 +168,7 @@ public class HttpAdapterConfigTest {
                 new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("http"));
+                        (Map) adapters.get("http"), false);
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();

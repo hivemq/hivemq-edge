@@ -16,8 +16,6 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -27,14 +25,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import etherip.types.CIPData;
@@ -97,9 +94,10 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
         try {
-            if (etherNetIP != null) {
-                etherNetIP.close();
-                etherNetIP = null;
+            final EtherNetIP etherNetIPTemp = etherNetIP;
+            etherNetIP = null;
+            if (etherNetIPTemp != null) {
+                etherNetIPTemp.close();
                 protocolAdapterStopOutput.stoppedSuccessfully();
 
                 protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
@@ -123,29 +121,26 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
     @Override
     public void poll(
             final @NotNull PollingInput<EipToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-
         if (etherNetIP == null) {
+            pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
         }
 
-        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
-        final String tagName = pollingInput.getPollingContext().getTagName();
+        adapterConfig.getTags().stream()
+                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> pollWithAddress(pollingInput, pollingOutput, def),
+                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
+    }
 
-        final Tag<EipTagDefinition> eipAddressTag;
-        try {
-            eipAddressTag = protocolAdapterTagService.resolveTag(tagName, EipTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
-
+    private void pollWithAddress(
+            @NotNull PollingInput<EipToMqttMapping> pollingInput,
+            @NotNull PollingOutput pollingOutput,
+            Tag<EipTagDefinition> eipAddressTag) {
         final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
                 eipAddressTag.getTagDefinition().getAddress());
         try {

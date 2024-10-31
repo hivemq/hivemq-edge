@@ -20,6 +20,10 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.edge.adapters.file.tag.FileTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -110,5 +114,20 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
             LOG.warn("The UISchema for the File Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+        return FileTag.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+        return FileAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+        return FileAdapterConfig.class;
     }
 }

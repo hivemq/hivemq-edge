@@ -105,27 +105,23 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     @Override
     public void poll(
             final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        // first resolve the tag
-        final String tagName = pollingInput.getPollingContext().getTagName();
-        final Tag<ModbusTagDefinition> modbusTag;
-        try {
-            modbusTag = pollingInput.protocolAdapterTagService()
-                    .resolveTag(pollingInput.getPollingContext().getTagName(), ModbusTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
+        adapterConfig.getTags().stream()
+                .filter(tag -> tag.getTagName().equals(pollingInput.getPollingContext().getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> pollModbus(pollingInput, pollingOutput, def),
+                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
+    }
 
+    private void pollModbus(
+            @NotNull PollingInput<ModbusToMqttMapping> pollingInput,
+            @NotNull PollingOutput pollingOutput,
+            Tag<ModbusTagDefinition> modbusTag) {
         readRegisters(pollingInput.getPollingContext(),
-                modbusClient,
-                modbusTag).whenComplete((modbusdata, throwable) -> {
+                modbusClient, modbusTag).whenComplete((modbusdata, throwable) -> {
             if (throwable != null) {
                 pollingOutput.fail(throwable, null);
             } else {
