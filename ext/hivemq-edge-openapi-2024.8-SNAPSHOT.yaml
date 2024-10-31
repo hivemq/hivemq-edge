@@ -4040,6 +4040,20 @@ paths:
       summary: Add a new topic filter
       tags:
       - Topic Filters
+    put:
+      description: Update all topic filters
+      operationId: update-topicFilters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicFilterList'
+      responses:
+        "200":
+          description: Success
+      summary: Update all topic filters.
+      tags:
+      - Topic Filters
   /api/v1/management/topic-filters/{filter}:
     delete:
       description: Delete the specified topic filter.
@@ -5575,12 +5589,14 @@ components:
           description: The verifyHostname from the config
     TopicFilter:
       type: object
+      description: List of result items that are returned by this endpoint
       properties:
         description:
           type: string
           description: The name for this topic filter.
         topicFilter:
           type: string
+          format: mqtt-topic-filter
           description: The topic filter according to the MQTT specification.
     TopicFilterList:
       type: object

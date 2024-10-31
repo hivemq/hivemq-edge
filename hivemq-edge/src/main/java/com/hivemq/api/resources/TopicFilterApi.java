@@ -140,4 +140,14 @@ public interface TopicFilterApi {
             final @NotNull TopicFilterModel topicFilterModel);
 
 
+    @PUT
+    @Operation(summary = "Update all topic filters.",
+               description = "Update all topic filters",
+               operationId = "update-topicFilters",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @NotNull
+    Response updateTopicFilters(
+            final @NotNull TopicFilterModelList topicFilterModelList);
+
 }

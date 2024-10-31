@@ -113,4 +113,21 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
         }
         return Response.serverError().build();
     }
+
+    @Override
+    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterModelList topicFilterModelList) {
+        final List<TopicFilter> topicFilters = topicFilterModelList.getItems()
+                .stream()
+                .map(TopicFilter::fromTopicFilterModel)
+                .collect(Collectors.toList());
+        final @NotNull TopicFilterUpdateResult updateResult =
+                topicFilterPersistence.updateAllTopicFilters(topicFilters);
+        switch (updateResult.getTopicFilterUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
 }
