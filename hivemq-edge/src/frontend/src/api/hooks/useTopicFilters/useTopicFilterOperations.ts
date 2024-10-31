@@ -1,12 +1,13 @@
 import { useToast } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import type { TopicFilter } from '@/api/__generated__'
+import { type TopicFilter, type TopicFilterList } from '@/api/__generated__'
 
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { useCreateTopicFilter } from '@/api/hooks/useTopicFilters/useCreateTopicFilter.ts'
 import { useDeleteTopicFilter } from '@/api/hooks/useTopicFilters/useDeleteTopicFilter.ts'
 import { useUpdateTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateTopicFilter.ts'
+import { useUpdateAllTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateAllTopicFilters.ts'
 
 export const useTopicFilterOperations = () => {
   const { t } = useTranslation()
@@ -17,6 +18,7 @@ export const useTopicFilterOperations = () => {
   const createMutator = useCreateTopicFilter()
   const deleteMutator = useDeleteTopicFilter()
   const updateMutator = useUpdateTopicFilter()
+  const updateCollectionMutator = useUpdateAllTopicFilter()
 
   // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
@@ -46,16 +48,25 @@ export const useTopicFilterOperations = () => {
     toast.promise(updateMutator.mutateAsync({ name: filter, requestBody: requestBody }), formatToast('update'))
   }
 
+  const onUpdateCollection = (requestBody: TopicFilterList) => {
+    toast.promise(updateCollectionMutator.mutateAsync({ requestBody: requestBody }), formatToast('updateCollection'))
+  }
+
   return {
     // The CRUD operations
     data: topicFilterList,
     onCreate,
     onDelete,
     onUpdate,
+    onUpdateCollection,
     // The state (as in ReactQuery)
     isLoading,
     isError,
     error,
-    isPending: createMutator.isPending || updateMutator.isPending || deleteMutator.isPending, // assuming only one operation at a time
+    isPending:
+      createMutator.isPending ||
+      updateMutator.isPending ||
+      deleteMutator.isPending ||
+      updateCollectionMutator.isPending, // assuming only one operation at a time
   }
 }
