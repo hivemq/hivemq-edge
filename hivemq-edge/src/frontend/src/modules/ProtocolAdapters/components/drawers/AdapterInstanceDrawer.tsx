@@ -40,7 +40,11 @@ import {
   getRequiredUiSchema,
 } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
+import {
+  getInwardMappingRootProperty,
+  getOutwardMappingRootProperty,
+  isBidirectional,
+} from '@/modules/Workspace/utils/adapter.utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -73,17 +77,19 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
 
-    // TODO[NVL] This is still a hack; backend needs to provide identification of mapping-related properties
-    const paths = getTopicPaths(configSchema || {})
-    const subIndex = getMainRootFromPath(paths)
-    const hiddenMappingsKey = import.meta.env.VITE_FLAG_ADAPTER_SPLIT_SCHEMA === 'true' ? subIndex : undefined
+    // If the config schema is split across entities, replace the fields by a warning
+    const hideProperties = []
+    if (import.meta.env.VITE_FLAG_ADAPTER_MAPPINGS_IN_WORKSPACE === 'true' && adapter?.id) {
+      hideProperties.push(getInwardMappingRootProperty(adapter?.id))
+      if (isBidirectional(adapter)) hideProperties.push(getOutwardMappingRootProperty(adapter?.id))
+    }
 
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hiddenMappingsKey),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hideProperties),
     }
   }, [data?.items, isNewAdapter, adapterType])
 
