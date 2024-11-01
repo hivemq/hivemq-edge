@@ -6,7 +6,6 @@ import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
 import { RiCompassDiscoverLine } from 'react-icons/ri'
 
-import { isMockAdapterTypeBidirectional } from '@/__test-utils__/adapters/types.ts'
 import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
@@ -25,7 +24,7 @@ export const getOutwardMappingRootProperty = (adapterType: string) =>
   `${MQTT_PROPERTY_STUB.outward}${capitalize(adapterType)}`
 
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
-  return Boolean(adapter?.capabilities?.includes('WRITE') || isMockAdapterTypeBidirectional(adapter?.id))
+  return Boolean(adapter?.capabilities?.includes('WRITE'))
 }
 
 export const getInwardMappingSchema = (adapter: ProtocolAdapter | undefined): RJSFSchema => {
