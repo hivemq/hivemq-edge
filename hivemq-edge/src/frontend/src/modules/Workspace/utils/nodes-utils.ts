@@ -201,8 +201,7 @@ export const createAdapterNode = (
   let nodeDevice: Node<ProtocolAdapter, NodeTypes.DEVICE_NODE> | undefined = undefined
   let deviceConnector: Edge | undefined = undefined
 
-  const HACK_BIDIRECTIONAL = isBidirectional(type)
-  if (HACK_BIDIRECTIONAL) {
+  if (isBidirectional(type)) {
     const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
     nodeDevice = {
       id: idBAdapterDevice,
