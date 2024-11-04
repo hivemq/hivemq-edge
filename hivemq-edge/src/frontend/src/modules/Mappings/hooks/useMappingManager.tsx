@@ -2,15 +2,13 @@ import { useCallback, useMemo } from 'react'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 
-import { MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
 import { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { type MappingManagerType } from '@/modules/Mappings/types.ts'
-import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
-import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { getInwardMappingRootProperty, getOutwardMappingRootProperty } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const useMappingManager = (adapterId: string) => {
   const { t } = useTranslation()
@@ -58,18 +56,15 @@ export const useMappingManager = (adapterId: string) => {
     const { properties } = selectedProtocol?.configSchema as RJSFSchema
     if (!properties) return undefined
 
-    // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
-    const paths = getTopicPaths(selectedProtocol?.configSchema || {})
-    const mappingIndex = getMainRootFromPath(paths)
-    if (!mappingIndex) return undefined
+    if (!selectedProtocol?.id) return undefined
+    const mappingPropName = getInwardMappingRootProperty(selectedProtocol.id)
 
-    const formData = selectedAdapter.config?.[mappingIndex]
-    if (!formData) return undefined
-
-    const mappingProperties = properties?.[mappingIndex]
+    const mappingProperties = properties?.[mappingPropName]
     if (!mappingProperties) return undefined
 
-    const mappingPropName = getInwardMappingRootProperty(selectedProtocol.id as string)
+    const formData = selectedAdapter.config?.[mappingPropName]
+    if (!formData) return undefined
+
     const schema: RJSFSchema = {
       type: 'object',
       properties: {
@@ -104,11 +99,35 @@ export const useMappingManager = (adapterId: string) => {
     if (!adapterInfo) return undefined
     const { selectedProtocol, selectedAdapter } = adapterInfo
 
-    if (!isBidirectional(selectedProtocol)) return undefined
+    const { properties } = selectedProtocol?.configSchema as RJSFSchema
+    if (!properties) return undefined
+
+    if (!selectedProtocol?.id) return undefined
+    const mappingPropName = getOutwardMappingRootProperty(selectedProtocol.id)
+
+    const mappingProperties = properties?.[mappingPropName]
+    if (!mappingProperties) return undefined
+
+    const formData = selectedAdapter.config?.[mappingPropName]
+    if (!formData) return undefined
+
+    const schema: RJSFSchema = {
+      type: 'object',
+      properties: {
+        [mappingPropName]: mappingProperties,
+      },
+    }
+    const { ['ui:tabs']: tabs, ...rest } = selectedProtocol.uiSchema as UiSchema
 
     return {
-      schema: MOCK_OUTWARD_MAPPING_OPCUA.schema || {},
-      uiSchema: MOCK_OUTWARD_MAPPING_OPCUA.uiSchema || {},
+      schema,
+      formData: { [mappingPropName]: formData },
+      uiSchema: {
+        ...rest,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      },
       onSubmit: (data) => {
         processMutation(
           updateProtocolAdapter.mutateAsync({
