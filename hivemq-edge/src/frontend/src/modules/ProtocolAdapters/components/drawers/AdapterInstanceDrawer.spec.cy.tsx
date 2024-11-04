@@ -97,7 +97,7 @@ describe('AdapterInstanceDrawer', () => {
       cy.get('button').contains('Add Item').click()
 
       cy.get('[role="listitem"]').eq(0).as('firstItem')
-      cy.get('@firstItem').find('h5').eq(0).should('have.text', 'simulationToMqttMappings-0')
+      cy.get('@firstItem').find('h2').eq(0).should('have.text', 'simulationToMqttMappings-0')
       cy.get('@firstItem').find('label').eq(0).should('contain.text', 'Destination MQTT Topic')
       cy.get('@firstItem').find('button[aria-label="Collapse Item"]').click()
       cy.get('@firstItem').find('label').should('not.exist')
