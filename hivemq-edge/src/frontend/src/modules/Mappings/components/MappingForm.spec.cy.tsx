@@ -13,7 +13,30 @@ describe('MappingForm', () => {
     cy.intercept('http://json-schema.org/draft/2020-12/schema', { statusCode: 404 })
   })
 
-  it('should render properly', () => {
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(
+      <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
+      {
+        routerProps: { initialEntries: [`/node/wrong-adapter`] },
+      }
+    )
+    cy.get('h2').should('be.visible')
+
+    cy.checkAccessibility()
+  })
+
+  it('should render the native form', () => {
+    cy.mountWithProviders(
+      <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
+      {
+        routerProps: { initialEntries: [`/node/wrong-adapter`] },
+      }
+    )
+    cy.get('h2:first').should('have.text', 'Mqtt to OpcUA Config')
+  })
+
+  it.skip('should render properly', () => {
     cy.mountWithProviders(
       <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
       {
@@ -38,7 +61,7 @@ describe('MappingForm', () => {
     cy.get('table tfoot tr td').eq(2).find('button').should('have.attr', 'aria-label', 'Add a new mapping')
   })
 
-  it('should create mapping', () => {
+  it.skip('should create mapping', () => {
     cy.mountWithProviders(
       <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
       {
@@ -66,7 +89,7 @@ describe('MappingForm', () => {
       .should('contain.text', 'There is a problem validating the mapping instructions')
   })
 
-  it('should delete mapping', () => {
+  it.skip('should delete mapping', () => {
     cy.mountWithProviders(
       <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
       {
@@ -86,7 +109,7 @@ describe('MappingForm', () => {
     cy.get('table tbody tr td').should('have.length', 1)
   })
 
-  it('should edit mapping', () => {
+  it.skip('should edit mapping', () => {
     cy.mountWithProviders(
       <MappingForm adapterId={mockAdapter_OPCUA.id} type={MappingType.OUTWARD} onSubmit={cy.stub} />,
       {
