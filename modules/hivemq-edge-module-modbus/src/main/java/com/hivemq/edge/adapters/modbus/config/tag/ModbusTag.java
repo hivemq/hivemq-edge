@@ -25,7 +25,7 @@ public class ModbusTag implements Tag<ModbusTagDefinition> {
     @ModuleConfigField(title = "definition",
                        description = "The actual definition of the tag on the device",
                        required = true)
-    private final @NotNull ModbusTagDefinition definition;;
+    private final @NotNull ModbusTagDefinition definition;
 
     public ModbusTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
