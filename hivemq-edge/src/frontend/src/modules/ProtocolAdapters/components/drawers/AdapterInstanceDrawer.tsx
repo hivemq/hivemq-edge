@@ -123,6 +123,8 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   formData={defaultValues}
                   formContext={context}
                   onSubmit={onValidate}
+                  // TODO[NVL] Types need fixing
+                  // @ts-ignore
                   customValidate={customValidate(schema, allAdapters, t)}
                 />
               )}

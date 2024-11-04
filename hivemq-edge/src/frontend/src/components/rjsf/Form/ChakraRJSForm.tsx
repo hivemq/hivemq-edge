@@ -25,7 +25,7 @@ interface CustomFormProps<T>
     FormProps<T>,
     'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly'
   > {
-  onSubmit: (data: IChangeEvent<unknown>) => void
+  onSubmit: (data: IChangeEvent) => void
 }
 
 const FLAG_POST_VALIDATE = false
