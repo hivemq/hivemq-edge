@@ -80,6 +80,7 @@ public class MqttToHttpMapping implements WritingContext {
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }

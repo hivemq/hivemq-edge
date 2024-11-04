@@ -66,6 +66,7 @@ public class MqttToOpcUaMapping implements WritingContext {
         return qos;
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }
