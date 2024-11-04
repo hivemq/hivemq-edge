@@ -141,6 +141,20 @@
                         <url>http://lol2.com</url>
                     </definition>
                 </tag>
+                <tag>
+                    <name>tag3</name>
+                    <description>description3</description>
+                    <definition>
+                        <url>http://lol3.com</url>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>tag4</name>
+                    <description>description4</description>
+                    <definition>
+                        <url>http://lol4.com</url>
+                    </definition>
+                </tag>
             </tags>
         </http>
     </protocol-adapters>

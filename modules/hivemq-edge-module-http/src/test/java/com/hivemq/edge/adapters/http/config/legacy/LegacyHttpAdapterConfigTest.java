@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -36,6 +37,7 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class LegacyHttpAdapterConfigTest {
@@ -50,8 +52,10 @@ public class LegacyHttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false);
+                new HttpProtocolAdapterFactory(mockInput);
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"), false);
 
@@ -81,8 +85,10 @@ public class LegacyHttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(false);
+                new HttpProtocolAdapterFactory(mockInput);
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"), false);
 

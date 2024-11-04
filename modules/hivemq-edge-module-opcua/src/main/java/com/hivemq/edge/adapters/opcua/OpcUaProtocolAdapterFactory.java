@@ -47,8 +47,8 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
 
     final boolean writingEnabled;
 
-    public OpcUaProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public OpcUaProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

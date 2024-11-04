@@ -42,8 +42,8 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
 
     final boolean writingEnabled;
 
-    public EipProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public EipProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

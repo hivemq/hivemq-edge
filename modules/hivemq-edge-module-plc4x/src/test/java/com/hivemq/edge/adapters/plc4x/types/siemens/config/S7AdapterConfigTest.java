@@ -17,11 +17,13 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class S7AdapterConfigTest {
 
@@ -53,8 +56,10 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
@@ -96,8 +101,10 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
@@ -132,8 +139,10 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false))
                 .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
                 .isInstanceOf(IllegalArgumentException.class);
@@ -163,8 +172,10 @@ class S7AdapterConfigTest {
                 List.of()
         );
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-s7-adapter");

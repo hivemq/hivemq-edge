@@ -50,8 +50,8 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     final boolean writingEnabled;
 
-    public HttpProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public HttpProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -34,6 +35,7 @@ import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class LegacyOpcUaAdapterConfigTest {
@@ -48,8 +50,10 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true);
+                new OpcUaProtocolAdapterFactory(mockInput);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"), false);
 
@@ -109,8 +113,10 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(true);
+                new OpcUaProtocolAdapterFactory(mockInput);
         final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"), false);
 

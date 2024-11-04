@@ -50,8 +50,8 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
     final boolean writingEnabled;
 
-    public S7ProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public S7ProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

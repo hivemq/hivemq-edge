@@ -124,6 +124,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                             protocolAdapterState.setErrorConnectionStatus(t, null);
                             output.failStop(t, null);
                         } else {
+                            opcUaClientWrapper = null;
                             protocolAdapterState.setConnectionStatus(DISCONNECTED);
                             output.stoppedSuccessfully();
                         }

@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -36,6 +37,7 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ModbusAdapterConfigTest {
@@ -50,8 +52,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"), false);
@@ -108,8 +112,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"), false);
@@ -140,8 +146,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"), false))
                 .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag1]")
@@ -156,8 +164,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -170,8 +180,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'host'");
     }
@@ -184,8 +196,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'port'");
     }
@@ -198,8 +212,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -212,8 +228,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false));
     }
@@ -226,8 +244,10 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'tagName'");
     }
@@ -247,8 +267,10 @@ public class ModbusAdapterConfigTest {
                 new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)),
                 List.of());
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -292,8 +314,10 @@ public class ModbusAdapterConfigTest {
                 new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)),
                 List.of());
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 

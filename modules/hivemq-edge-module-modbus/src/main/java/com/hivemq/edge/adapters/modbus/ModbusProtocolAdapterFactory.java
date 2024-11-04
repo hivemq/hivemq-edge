@@ -50,8 +50,8 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
 
     final boolean writingEnabled;
 
-    public ModbusProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public ModbusProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

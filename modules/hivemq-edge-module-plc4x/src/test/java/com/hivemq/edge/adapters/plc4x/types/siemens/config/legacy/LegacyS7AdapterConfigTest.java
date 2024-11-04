@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -36,6 +37,7 @@ import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfi
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LegacyS7AdapterConfigTest {
 
@@ -48,8 +50,10 @@ class LegacyS7AdapterConfigTest {
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 
@@ -93,8 +97,10 @@ class LegacyS7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(false);
+                new S7ProtocolAdapterFactory(mockInput);
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
 

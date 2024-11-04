@@ -59,8 +59,10 @@ class LegacyEipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"), false);
 
@@ -115,8 +117,10 @@ class LegacyEipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("ethernet-ip"), false);
 

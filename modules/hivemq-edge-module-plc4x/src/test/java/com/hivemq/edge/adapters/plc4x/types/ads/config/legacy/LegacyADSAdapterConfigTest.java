@@ -54,8 +54,10 @@ class LegacyADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(false);
+                new ADSProtocolAdapterFactory(mockInput);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
@@ -95,8 +97,10 @@ class LegacyADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(false);
+                new ADSProtocolAdapterFactory(mockInput);
         final ADSAdapterConfig config =
                 (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 

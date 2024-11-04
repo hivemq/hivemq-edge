@@ -24,7 +24,6 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
-import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +39,7 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class EipAdapterConfigTest {
 
@@ -55,8 +55,10 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         final EipAdapterConfig config =
                 eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
@@ -111,8 +113,10 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         assertThatThrownBy(() -> eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false))
                 .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
                 .isInstanceOf(IllegalArgumentException.class);
@@ -126,8 +130,10 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         final EipAdapterConfig config =
                 eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"), false);
 
@@ -168,8 +174,10 @@ class EipAdapterConfigTest {
                 16,
                 new EipToMqttConfig(12, 13, true, List.of(pollingContext)), List.of());
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(false);
+                new EipProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = eipProtocolAdapterFactory.unconvertConfigObject(mapper, eipAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-eip-adapter");

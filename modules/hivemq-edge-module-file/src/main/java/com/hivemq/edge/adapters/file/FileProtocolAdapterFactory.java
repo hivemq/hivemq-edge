@@ -47,8 +47,8 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     final boolean writingEnabled;
 
-    public FileProtocolAdapterFactory(final @NotNull boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
+    public FileProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override

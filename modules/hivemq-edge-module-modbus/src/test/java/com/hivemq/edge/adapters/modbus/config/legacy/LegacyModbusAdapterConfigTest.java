@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -33,6 +34,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LegacyModbusAdapterConfigTest {
@@ -47,8 +49,10 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"), false);
@@ -101,8 +105,10 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(false);
+                new ModbusProtocolAdapterFactory(mockInput);
         final ModbusAdapterConfig config =
                 (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
                         (Map) adapters.get("modbus"), false);
