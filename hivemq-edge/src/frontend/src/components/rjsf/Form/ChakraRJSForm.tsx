@@ -99,8 +99,9 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
         TitleFieldTemplate,
       }}
       liveValidate
-      noHtml5Validate // ?
-      focusOnFirstError // ?
+      // TODO[NVL] Strange lack of initial validation; preventing it by enforcing HTML validation
+      // noHtml5Validate
+      focusOnFirstError
       onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
