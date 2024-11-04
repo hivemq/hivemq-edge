@@ -16,8 +16,6 @@
 package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.api.model.ApiBodyExamples;
-import com.hivemq.api.model.TagResourceExamples;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
@@ -28,6 +26,8 @@ import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
+import com.hivemq.api.resources.examples.ApiBodyExamples;
+import com.hivemq.api.resources.examples.TagResourceExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.error.Errors;
