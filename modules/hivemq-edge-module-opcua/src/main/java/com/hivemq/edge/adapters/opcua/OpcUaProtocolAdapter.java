@@ -26,6 +26,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -86,7 +88,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                                 moduleServices,
                                 adapterConfig.getId(),
                                 adapterInformation.getProtocolId(),
-                                protocolAdapterMetricsService).thenApply(wrapper -> {
+                                protocolAdapterMetricsService, output).thenApply(wrapper -> {
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;
                             return wrapper;
@@ -167,13 +169,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     }
 
     @Override
-    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToOpcUaMapping writeContext) {
+    public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
         if(opcUaClientWrapperTemp != null) {
-            return opcUaClientWrapperTemp.createMqttPayloadJsonSchema(writeContext);
+            opcUaClientWrapperTemp.createMqttPayloadJsonSchema(input.getTagName(), output);
         } else {
-            log.warn("Tried executing createMqttPayloadJsonSchema while client wasn't started");
-            return CompletableFuture.failedFuture(new IllegalStateException("Tried executing createMqttPayloadJsonSchema while client wasn't started"));
+            output.adapterNotStarted();
         }
     }
 

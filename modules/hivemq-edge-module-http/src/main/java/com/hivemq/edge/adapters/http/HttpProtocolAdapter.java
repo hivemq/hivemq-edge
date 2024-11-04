@@ -31,6 +31,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -312,7 +314,7 @@ public class HttpProtocolAdapter
         } catch (final TagNotFoundException e) {
             writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
                     tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+                    "' was not found. For the writing to work the tag must be created via REST API or the UI.");
             return;
         } catch (final TagDefinitionParseException e) {
             writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +
@@ -372,8 +374,8 @@ public class HttpProtocolAdapter
     }
 
     @Override
-    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToHttpMapping writeContext) {
-        return CompletableFuture.completedFuture(JsonSchema.createJsonSchema());
+    public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
+        output.finish(JsonSchema.createJsonSchema());
     }
 
     @Override
