@@ -25,7 +25,7 @@ interface CustomFormProps<T>
     FormProps<T>,
     'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly'
   > {
-  onSubmit: (data: T) => void
+  onSubmit: (data: IChangeEvent<unknown>) => void
 }
 
 const FLAG_POST_VALIDATE = false
@@ -55,7 +55,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   }
 
   const onValidate = useCallback(
-    (data: IChangeEvent) => {
+    (data: IChangeEvent<unknown>) => {
       onSubmit?.(data)
     },
     [onSubmit]
