@@ -26,12 +26,12 @@ describe('useGetAdapterTypes', () => {
       expect.objectContaining({
         id: 'simulation',
         installed: true,
-        logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
+        logoUrl: '/module/images/hivemq-icon.png',
         name: 'Simulated Edge Device',
         protocol: 'Simulation',
         tags: ['tag1', 'tag2', 'tag3'],
-        url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation-adapter',
-        version: 'Development Snapshot',
+        url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter',
+        version: 'Development Version',
       }),
     ])
   })

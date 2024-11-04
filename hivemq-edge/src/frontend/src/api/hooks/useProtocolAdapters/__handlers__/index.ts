@@ -31,14 +31,12 @@ export const mockUISchema: UiSchema = {
       properties: ['simulationToMqtt'],
     },
   ],
-  'ui:submitButtonOptions': {
-    norender: true,
-  },
   id: {
     'ui:disabled': false,
   },
   'ui:order': ['id', 'minValue', 'maxValue', 'minDelay', 'maxDelay', '*'],
   simulationToMqtt: {
+    'ui:order': ['simulationToMqttMappings', 'pollingIntervalMillis', 'maxPollingErrorsBeforeRemoval', '*'],
     simulationToMqttMappings: {
       'ui:batchMode': true,
       items: {
@@ -203,20 +201,20 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   protocol: 'Simulation',
   name: 'Simulated Edge Device',
   description: 'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
-  url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation-adapter',
-  version: 'Development Snapshot',
-  logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter',
+  version: 'Development Version',
+  logoUrl: '/module/images/hivemq-icon.png',
   author: 'HiveMQ',
-  configSchema: mockJSONSchema,
-  uiSchema: mockUISchema,
   installed: true,
-  capabilities: ['READ', 'DISCOVER'],
+  capabilities: ['READ'],
   category: {
-    description: 'Industrial, typically field bus protocols.',
-    displayName: 'Industrial',
-    name: 'INDUSTRIAL',
+    name: 'SIMULATION',
+    displayName: 'Simulation',
+    description: 'Simulation protocols, that emulate real world devices',
   },
   tags: ['tag1', 'tag2', 'tag3'],
+  configSchema: mockJSONSchema,
+  uiSchema: mockUISchema,
 }
 
 export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
@@ -230,7 +228,7 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
   logoUrl: '/module/images/opc-ua-icon.jpg',
   author: 'HiveMQ',
   installed: true,
-  capabilities: ['DISCOVER', 'READ'],
+  capabilities: ['READ', 'DISCOVER', 'WRITE'],
   category: {
     name: 'INDUSTRIAL',
     displayName: 'Industrial',
@@ -282,6 +280,43 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
         maxLength: 1024,
         format: 'identifier',
         pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      mqttToOpcua: {
+        type: 'object',
+        properties: {
+          mqttToOpcuaMappings: {
+            title: 'mqttToOpcuaMappings',
+            description: 'Map your MQTT data to OpcUA.',
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                mqttMaxQos: {
+                  type: 'integer',
+                  title: 'MQTT Maximum QoS',
+                  description: 'MQTT maximum quality of service level for the subscription',
+                  default: 1,
+                  minimum: 0,
+                  maximum: 1,
+                },
+                mqttTopicFilter: {
+                  type: 'string',
+                  title: 'Source MQTT topic filter',
+                  description: 'The MQTT topic filter to map from',
+                  format: 'mqtt-topic-filter',
+                },
+                node: {
+                  type: 'string',
+                  title: 'Destination Node ID',
+                  description: 'identifier of the node on the OPC UA server. Example: "ns=3;s=85/0:Temperature"',
+                },
+              },
+              required: ['mqttTopicFilter', 'node'],
+            },
+          },
+        },
+        title: 'Mqtt to OpcUA Config',
+        description: 'The configuration for a data stream from MQTT to OpcUa',
       },
       opcuaToMqtt: {
         type: 'object',
@@ -395,7 +430,6 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
                 description: 'Password to access the private key.',
               },
             },
-            required: ['password', 'path', 'privateKeyPassword'],
             title: 'Keystore',
             description:
               'Keystore that contains the client certificate including the chain. Required for X509 authentication.',
@@ -414,7 +448,6 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
                 description: 'Path on the local file system to the truststore.',
               },
             },
-            required: ['password', 'path'],
             title: 'Truststore',
             description: 'Truststore wich contains the trusted server certificates or trusted intermediates.',
           },
@@ -427,35 +460,30 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
         format: 'uri',
       },
     },
-    required: ['id', 'opcuaToMqtt', 'uri'],
+    required: ['id', 'uri'],
   },
   uiSchema: {
     'ui:tabs': [
       {
         id: 'coreFields',
         title: 'Connection',
-        properties: ['id', 'uri', 'overrideUri'],
+        properties: ['id', 'uri', 'overrideUri', 'security', 'tls', 'auth'],
       },
       {
-        id: 'subFields',
+        id: 'opcuaToMqtt',
         title: 'OPC UA to MQTT',
         properties: ['opcuaToMqtt'],
       },
       {
-        id: 'security',
-        title: 'Security',
-        properties: ['security', 'tls'],
-      },
-      {
-        id: 'authentication',
-        title: 'Authentication',
-        properties: ['auth'],
+        id: 'mqttToOpcua',
+        title: 'MQTT to OPC UA',
+        properties: ['mqttToOpcua'],
       },
     ],
     id: {
       'ui:disabled': true,
     },
-    'ui:order': ['id', 'uri', '*'],
+    'ui:order': ['id', 'uri', 'overrideUri', 'security', 'tls', 'auth', '*'],
     opcuaToMqtt: {
       'ui:batchMode': true,
       opcuaToMqttMappings: {
@@ -463,6 +491,20 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
           'ui:order': ['node', 'mqttTopic', 'mqttQos', '*'],
           'ui:collapsable': {
             titleKey: 'mqttTopic',
+          },
+          node: {
+            'ui:widget': 'discovery:tagBrowser',
+          },
+        },
+      },
+    },
+    mqttToOpcua: {
+      'ui:batchMode': true,
+      mqttToOpcuaMappings: {
+        items: {
+          'ui:order': ['node', 'mqttTopicFilter', 'mqttMaxQos', '*'],
+          'ui:collapsable': {
+            titleKey: 'mqttTopicFilter',
           },
           node: {
             'ui:widget': 'discovery:tagBrowser',
@@ -520,6 +562,7 @@ export const mockAdapter_OPCUA: Adapter = {
     tls: {
       enabled: false,
     },
+    mqttToOpcua: {},
     opcuaToMqtt: {
       opcuaToMqttMappings: [
         {

@@ -12,7 +12,7 @@ describe('AdapterTypeSummary', () => {
     cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} />)
 
     cy.getByTestId('protocol-name').should('contain.text', 'Simulated Edge Device')
-    cy.getByTestId('protocol-version').should('contain.text', 'Development Snapshot')
+    cy.getByTestId('protocol-version').should('contain.text', 'Development Version')
     cy.getByTestId('protocol-type').should('contain.text', 'Simulation')
     cy.getByTestId('protocol-author').should('contain.text', 'HiveMQ')
     cy.getByTestId('protocol-description').should(

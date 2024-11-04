@@ -16,11 +16,10 @@ describe('NodeDevice', () => {
     cy.getByTestId('device-description')
       .should('have.text', 'Simulation')
       .find('svg')
-      .should('have.attr', 'data-type', 'INDUSTRIAL')
+      .should('have.attr', 'data-type', 'SIMULATION')
 
-    cy.getByTestId('device-capabilities').find('svg').as('capabilities').should('have.length', 2)
+    cy.getByTestId('device-capabilities').find('svg').as('capabilities').should('have.length', 1)
     cy.get('@capabilities').eq(0).should('have.attr', 'data-type', 'READ')
-    cy.get('@capabilities').eq(1).should('have.attr', 'data-type', 'DISCOVER')
   })
 
   it('should render the selected adapter properly', () => {
