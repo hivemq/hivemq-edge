@@ -306,19 +306,13 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void write(
-                @NotNull final WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
+                final @NotNull WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
 
         }
 
         @Override
         public @NotNull List<WritingContext> getWritingContexts() {
             return List.of();
-        }
-
-        @Override
-        public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(
-                @NotNull final WritingContext writeContext) {
-            return null;
         }
 
         @Override
@@ -333,7 +327,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void start(
-                @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 output.startedSuccessfully();
             } else {
@@ -343,7 +337,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void stop(
-                @NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 output.stoppedSuccessfully();
             } else {
@@ -352,7 +346,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        public @NotNull @org.jetbrains.annotations.NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
             return new TestWritingProtocolAdapterInformation();
         }
     }
