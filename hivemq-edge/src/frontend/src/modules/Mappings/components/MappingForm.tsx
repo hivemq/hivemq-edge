@@ -1,21 +1,17 @@
 import { type FC, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Form from '@rjsf/chakra-ui'
 import { type IChangeEvent } from '@rjsf/core'
-import debug from 'debug'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
-import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
-import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
-import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
+import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
-import { customFormatsValidator, customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
-import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
+import { CustomValidator, RJSFSchema } from '@rjsf/utils'
+import { FormContextType } from '@rjsf/utils/src/types.ts'
 
 interface MappingFormProps {
   adapterId: string
@@ -24,9 +20,6 @@ interface MappingFormProps {
   onSubmit: () => void
 }
 
-const rjsfLog = debug('RJSF:MappingForm')
-
-// TODO[NVL] Should replicate the config from the adapter form; share component?
 const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSubmit }) => {
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
@@ -43,7 +36,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
   }
 
   const onFormSubmit = useCallback(
-    (data: IChangeEvent) => {
+    (data: IChangeEvent<unknown>) => {
       if (!mappingManager?.onSubmit) {
         errorToast(
           {
@@ -64,30 +57,18 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
   if (!mappingManager) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
 
   return (
-    <Form
+    <ChakraRJSForm
       id="adapter-mapping-form"
       schema={mappingManager.schema}
       uiSchema={mappingManager.uiSchema}
       formData={mappingManager.formData}
       formContext={context}
-      liveValidate
-      noHtml5Validate
-      focusOnFirstError
       onSubmit={onFormSubmit}
-      customValidate={type === MappingType.INWARD ? undefined : customMappingValidate}
-      validator={customFormatsValidator}
-      showErrorList="bottom"
-      widgets={adapterJSFWidgets}
-      fields={adapterJSFFields}
-      templates={{
-        // TODO[NVL] There is a bug with that template (user properties not displayed)
-        // ObjectFieldTemplate,
-        FieldTemplate,
-        BaseInputTemplate,
-        ArrayFieldTemplate,
-        ArrayFieldItemTemplate,
-      }}
-      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
+      customValidate={
+        type === MappingType.OUTWARD && import.meta.env.VITE_FLAG_ADAPTER_MAPPINGS_IN_WORKSPACE === 'true'
+          ? (customMappingValidate as CustomValidator<unknown, RJSFSchema, FormContextType>)
+          : undefined
+      }
     />
   )
 }
