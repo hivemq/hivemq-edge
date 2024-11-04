@@ -27,7 +27,6 @@ export const getRequiredUiSchema = (
 
   if (hideProperties) {
     for (const property of hideProperties) {
-      console.log('XXXXXXXX proptt', property)
       const status: AlertStatus = 'info'
       newSchema[property] = {
         'ui:field': 'text:warning',
