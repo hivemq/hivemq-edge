@@ -23,5 +23,5 @@ export const DescriptionFieldTemplate = <
     )
   }
 
-  return <>{description}</>
+  return description
 }
