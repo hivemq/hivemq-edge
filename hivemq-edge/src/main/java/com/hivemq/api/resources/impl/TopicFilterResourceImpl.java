@@ -29,6 +29,8 @@ import com.hivemq.util.ErrorResponseUtil;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,22 +74,54 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     }
 
     @Override
-    public @NotNull Response deleteTopicFilter(@NotNull final String name) {
-        final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(name);
+    public @NotNull Response deleteTopicFilter(@NotNull final String filterUriEncoded) {
+        final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
+
+        final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(filter);
         switch (deleteResult.getTopicFilterDeleteStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
-                return ErrorResponseUtil.notFound("topic filter", name);
+                return ErrorResponseUtil.notFound("topic filter", filter);
         }
         return Response.serverError().build();
     }
 
     @Override
     public @NotNull Response updateTopicFilter(
-            final @NotNull String filter, final @NotNull TopicFilterModel topicFilterModel) {
+            final @NotNull String filterUriEncoded, final @NotNull TopicFilterModel topicFilterModel) {
+        final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
+        if (!filter.equals(topicFilterModel.getTopicFilter())) {
+            return ErrorResponseUtil.errorResponse(400,
+                    "Filter does not match",
+                    "the filter in the path '" +
+                            filter +
+                            "' (uriEncoded: '" +
+                            filterUriEncoded +
+                            "')does not fit to the filter in the body '" +
+                            topicFilterModel.getTopicFilter() +
+                            "',");
+        }
+
         final @NotNull TopicFilterUpdateResult updateResult =
                 topicFilterPersistence.updateTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+        switch (updateResult.getTopicFilterUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterModelList topicFilterModelList) {
+        final List<TopicFilter> topicFilters = topicFilterModelList.getItems()
+                .stream()
+                .map(TopicFilter::fromTopicFilterModel)
+                .collect(Collectors.toList());
+        final @NotNull TopicFilterUpdateResult updateResult =
+                topicFilterPersistence.updateAllTopicFilters(topicFilters);
         switch (updateResult.getTopicFilterUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();

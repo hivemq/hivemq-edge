@@ -28,7 +28,7 @@ import java.util.Objects;
 public class TopicFilterModel {
 
     @JsonProperty("topicFilter")
-    @Schema(description = "The topic filter according to the MQTT specification.")
+    @Schema(format = "mqtt-topic-filter", description = "The topic filter according to the MQTT specification.")
     private final @NotNull String topicFilter;
 
     @JsonProperty("description")

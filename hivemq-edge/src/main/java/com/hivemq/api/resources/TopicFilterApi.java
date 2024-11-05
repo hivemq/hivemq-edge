@@ -65,9 +65,9 @@ public interface TopicFilterApi {
                                     content = @Content(mediaType = APPLICATION_JSON,
                                                        schema = @Schema(implementation = Errors.class),
                                                        examples = {
-                                                               @ExampleObject(description = "An example response in case a topic filter is already present for this name.",
+                                                               @ExampleObject(description = "An example response in case a topic filter is already present for this filter.",
                                                                               name = "already present example",
-                                                                              summary = "An example response in case a topic filter is already present for this name.",
+                                                                              summary = "An example response in case a topic filter is already present for this filter.",
                                                                               value = TopicFiltersResourceExamples.EXAMPLE_ALREADY_PRESENT)}))}
 
     )
@@ -99,7 +99,7 @@ public interface TopicFilterApi {
 
 
     @DELETE
-    @Path("/{name}")
+    @Path("/{filter}")
     @Operation(summary = "Delete an topic filter",
                operationId = "delete-topicFilter",
                description = "Delete the specified topic filter.",
@@ -107,14 +107,15 @@ public interface TopicFilterApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response deleteTopicFilter(
-            @NotNull @Parameter(name = "name",
-                                description = "The topic filter name.",
+            @NotNull @Parameter(name = "filter",
+                                description = "The URL-encoded  filter of the topic filter that should be deleted.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("name") String name);
+                                schema = @Schema(format = "urlencoded"),
+                                in = ParameterIn.PATH) @PathParam("filter") String filter);
 
 
     @PUT
-    @Path("/{name}")
+    @Path("/{filter}")
     @Operation(summary = "Update a topic filter.",
                description = "Update a topic filter",
                operationId = "update-topicFilter",
@@ -125,17 +126,28 @@ public interface TopicFilterApi {
                                     content = @Content(mediaType = APPLICATION_JSON,
                                                        schema = @Schema(implementation = Errors.class),
                                                        examples = {
-                                                               @ExampleObject(description = "An example response in case no topic filter is present for this name.",
+                                                               @ExampleObject(description = "An example response in case no topic filter is present for this filter.",
                                                                               name = "already present example",
-                                                                              summary = "An example response in case no topic filter is present for this name.",
+                                                                              summary = "An example response in case no topic filter is present for this filter.",
                                                                               value = TopicFiltersResourceExamples.EXAMPLE_NOT_PRESENT)}))})
     @NotNull
     Response updateTopicFilter(
             @NotNull @Parameter(name = "filter",
-                                description = "The filter of the topic filter that will be updated.",
+                                description = "The URL-encoded filter of the topic filter that will be updated.",
                                 required = true,
+                                schema = @Schema(format = "urlencoded"),
                                 in = ParameterIn.PATH) @PathParam("filter") String filter,
             final @NotNull TopicFilterModel topicFilterModel);
 
+
+    @PUT
+    @Operation(summary = "Update all topic filters.",
+               description = "Update all topic filters",
+               operationId = "update-topicFilters",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @NotNull
+    Response updateTopicFilters(
+            final @NotNull TopicFilterModelList topicFilterModelList);
 
 }
