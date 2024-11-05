@@ -25,7 +25,6 @@ import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -74,11 +73,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "HTTP To MQTT Config",
                        description = "The configuration for a data stream from HTTP to MQTT")
     private final @NotNull HttpToMqttConfig httpToMqttConfig;
-
-    @JsonProperty(value = "tags", required = true)
-    @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter")
-    private final @NotNull List<HttpTag> tags;
 
     @JsonCreator
     public HttpAdapterConfig(
@@ -146,11 +140,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         public @NotNull String getValue() {
             return value;
         }
-    }
-
-    @Override
-    public List<HttpTag> getTags() {
-        return Collections.unmodifiableList(tags);
     }
 
     public enum HttpMethod {

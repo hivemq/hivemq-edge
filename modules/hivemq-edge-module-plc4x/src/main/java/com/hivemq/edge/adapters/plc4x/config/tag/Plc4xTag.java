@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class Plc4xTag implements Tag<Plc4xTagDefinition> {
+public class Plc4xTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",

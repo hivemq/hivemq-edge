@@ -23,6 +23,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Map;
 import java.util.Objects;
 
 @Schema(name = "DomainTag")
@@ -40,14 +41,20 @@ public class DomainTagModel {
     @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
 
+    @JsonProperty("description")
+    @Schema(description = "A user created description for this tag.")
+    private final @NotNull Map<String, Object> definition;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
-            @JsonProperty("description") final @NotNull String description) {
+            @JsonProperty("description") final @NotNull String description,
+            @JsonProperty("definition") final @NotNull Map<String, Object> definition) {
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = description;
+        this.definition = definition;
     }
 
     public @NotNull String getTag() {
@@ -62,10 +69,16 @@ public class DomainTagModel {
         return protocolId;
     }
 
+    public @NotNull Map<String, Object> getDefinition() {
+        return definition;
+    }
+
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(domainTag.getTagName(),
-                "someProtocolId",
-                "someDescription");
+        return new DomainTagModel(
+                domainTag.getTagName(),
+                domainTag.getProtocolId(),
+                domainTag.getDescription(),
+                domainTag.getDefinition());
     }
 
     @Override

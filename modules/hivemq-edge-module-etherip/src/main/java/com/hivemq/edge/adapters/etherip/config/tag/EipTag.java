@@ -5,7 +5,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
-public class EipTag implements Tag<EipTagDefinition> {
+public class EipTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",

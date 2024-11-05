@@ -113,9 +113,4 @@ public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
     public int getTimeout() {
         return timeout;
     }
-
-    @Override
-    public List<? extends Tag> getTags() {
-        return List.of();
-    }
 }

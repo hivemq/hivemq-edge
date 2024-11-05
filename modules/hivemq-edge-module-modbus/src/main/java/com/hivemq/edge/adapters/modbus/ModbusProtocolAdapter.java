@@ -31,11 +31,11 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
@@ -117,7 +117,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     private void pollModbus(
             @NotNull PollingInput<ModbusToMqttMapping> pollingInput,
             @NotNull PollingOutput pollingOutput,
-            Tag<ModbusTagDefinition> modbusTag) {
+            @NotNull ModbusTag modbusTag) {
         readRegisters(pollingInput.getPollingContext(),
                 modbusClient, modbusTag).whenComplete((modbusdata, throwable) -> {
             if (throwable != null) {
@@ -211,7 +211,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     protected @NotNull CompletableFuture<ModBusData> readRegisters(
             final @NotNull ModbusToMqttMapping modbusToMqttMapping,
             final @NotNull ModbusClient modbusClient,
-            final @NotNull Tag<ModbusTagDefinition> modbusTag) {
+            final @NotNull ModbusTag modbusTag) {
         final ModbusTagDefinition modbusTagDefinition = modbusTag.getDefinition();
 
         return doRead(modbusTagDefinition.startIdx,

@@ -1,13 +1,26 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
@@ -130,8 +143,8 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     private CompletableFuture<Void> subscribeToOpcua(
-            @NotNull OpcUaToMqttMapping subscription,
-            Tag<OpcuaTagDefinition> opcuaTag) {
+            final @NotNull OpcUaToMqttMapping subscription,
+            final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =

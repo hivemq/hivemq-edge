@@ -18,18 +18,20 @@
 <hivemq>
     <protocol-adapters>
         <eip>
-            <id>my-eip-protocol-adapter</id>
-            <port>1234</port>
-            <host>my.eip-server.com</host>
-            <eipToMqtt>
-                <eipToMqttMappings>
-                    <eipToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag-name</tagName>
-                        <dataType>BOOL</dataType>
-                    </eipToMqttMapping>
-                </eipToMqttMappings>
-            </eipToMqtt>
+            <config>
+                <id>my-eip-protocol-adapter</id>
+                <port>1234</port>
+                <host>my.eip-server.com</host>
+                <eipToMqtt>
+                    <eipToMqttMappings>
+                        <eipToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <tagName>tag-name</tagName>
+                            <dataType>BOOL</dataType>
+                        </eipToMqttMapping>
+                    </eipToMqttMappings>
+                </eipToMqtt>
+            </config>
             <tags>
                 <tag>
                     <name>tag-name</name>

@@ -80,12 +80,6 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
         return Set.of();
     }
 
-    @Override
-    public List getTags() {
-        // TODO
-        return List.of();
-    }
-
     public int getPort() {
         return port;
     }

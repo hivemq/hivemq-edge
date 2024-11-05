@@ -76,25 +76,18 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull ModbusToMqttConfig modbusToMQTTConfig;
 
-    @JsonProperty(value = "tags", required = true)
-    @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter")
-    private final @NotNull List<ModbusTag> tags;
-
     @JsonCreator
     public ModbusAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
-            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig,
-            @JsonProperty(value = "tags") final @Nullable List<ModbusTag> tags) {
+            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
         this.id = id;
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
         this.modbusToMQTTConfig = modbusToMQTTConfig;
-        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
@@ -120,10 +113,5 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull ModbusToMqttConfig getModbusToMQTTConfig() {
         return modbusToMQTTConfig;
-    }
-
-    @Override
-    public List<ModbusTag> getTags() {
-        return Collections.unmodifiableList(tags);
     }
 }

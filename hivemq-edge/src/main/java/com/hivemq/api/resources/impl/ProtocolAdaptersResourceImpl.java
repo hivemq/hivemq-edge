@@ -271,9 +271,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         try {
             final Map<String, Object> config =
-                    objectMapper.convertValue(adapter.getConfig(), new TypeReference<Map<String, Object>>() {
+                    objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
                     });
-            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), config);
+            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), config, List.of()); //FIXME not correct
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -306,7 +306,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Map<String, Object> config =
                 objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
                 });
-        protocolAdapterManager.updateAdapter(adapterId, config);
+        protocolAdapterManager.updateAdapter(adapterId, config, List.of()); //FIXME not correct
         return Response.ok().build();
     }
 

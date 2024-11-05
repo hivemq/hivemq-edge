@@ -118,7 +118,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
 
     @Override
-    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
         return OpcuaTag.class;
     }
 

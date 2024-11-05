@@ -20,11 +20,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -122,10 +120,5 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     public int getMinDelay() {
         return minDelay;
-    }
-
-    @Override
-    public List<? extends Tag> getTags() {
-        return List.of();
     }
 }

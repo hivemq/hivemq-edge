@@ -106,9 +106,8 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
             @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
-            @JsonProperty(value = "s7ToMqtt", required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig,
-            @JsonProperty(value = "tags") final @Nullable List<Plc4xTag> tags) {
-        super(id, port, host, tags);
+            @JsonProperty(value = "s7ToMqtt", required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
+        super(id, port, host);
         this.port = port;
         this.controllerType = controllerType;
         this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);

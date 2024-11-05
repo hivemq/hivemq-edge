@@ -29,6 +29,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
@@ -57,12 +58,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
     private volatile @Nullable EtherNetIP etherNetIP;
 
     private final @NotNull Map<String, EtherIpValue> lastSeenValues;
+    private final @NotNull List<Tag> tags;
 
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<EipAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.tags = input.getTags();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.lastSeenValues = new ConcurrentHashMap<>();
@@ -126,11 +129,11 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             return;
         }
 
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> pollWithAddress(pollingInput, pollingOutput, def),
+                        def -> pollWithAddress(pollingInput, pollingOutput, (EipTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")
@@ -140,7 +143,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
     private void pollWithAddress(
             @NotNull PollingInput<EipToMqttMapping> pollingInput,
             @NotNull PollingOutput pollingOutput,
-            Tag<EipTagDefinition> eipAddressTag) {
+            EipTag eipAddressTag) {
         final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
                 eipAddressTag.getDefinition().getAddress());
         try {

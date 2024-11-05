@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class ModbusTag implements Tag<ModbusTagDefinition> {
+public class ModbusTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",

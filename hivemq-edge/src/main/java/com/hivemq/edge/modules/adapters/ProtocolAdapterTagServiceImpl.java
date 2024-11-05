@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Map;
 
 @Singleton
 public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService {
@@ -40,10 +42,10 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
 
     @Override
     public @NotNull AddStatus addTag(
-            final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
-        final JsonNode jsonNode = objectMapper.valueToTree(tag.getDefinition());
+            final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag tag) {
+        final Map<String, Object> tagMap = objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {});
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(new DomainTag(tag.getName(), adapterId, protocolId, ""));
+                domainTagPersistence.addDomainTag(new DomainTag(tag.getName(), adapterId, protocolId, tag.getDescription(), tagMap));
 
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:

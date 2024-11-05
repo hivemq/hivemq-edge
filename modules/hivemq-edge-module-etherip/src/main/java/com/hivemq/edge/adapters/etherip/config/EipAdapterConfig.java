@@ -76,11 +76,6 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull EipToMqttConfig eipToMqttConfig;
 
-    @JsonProperty(value = "tags", required = true)
-    @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter")
-    private final @NotNull List<EipTag> tags;
-
     @JsonCreator
     public EipAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -88,15 +83,13 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
-            @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig,
-            @JsonProperty(value = "tags") final @Nullable List<EipTag> tags) {
+            @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig) {
         this.id = id;
         this.host = host;
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.eipToMqttConfig = eipToMqttConfig;
-        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {
@@ -126,10 +119,5 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
-    }
-
-    @Override
-    public List<EipTag> getTags() {
-        return Collections.unmodifiableList(tags);
     }
 }

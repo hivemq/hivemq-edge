@@ -108,7 +108,7 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     }
 
     @Override
-    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
         return ModbusTag.class;
     }
 

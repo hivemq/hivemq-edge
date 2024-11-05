@@ -3,10 +3,11 @@ package com.hivemq.edge.adapters.file.tag;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class FileTagDefinition {
+public class FileTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",

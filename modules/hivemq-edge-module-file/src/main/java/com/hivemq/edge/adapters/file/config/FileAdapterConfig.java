@@ -49,18 +49,11 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull FileToMqttConfig fileToMqttConfig;
 
-    @JsonProperty(value = "tags", required = true)
-    @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter")
-    private final @NotNull List<FileTag> tags;
-
     public FileAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig,
-            @JsonProperty(value = "tags") final @Nullable List<FileTag> tags) {
+            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig) {
         this.id = id;
         this.fileToMqttConfig = fileToMqttConfig;
-        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     @Override
@@ -75,10 +68,5 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {
         return fileToMqttConfig;
-    }
-
-    @Override
-    public List<FileTag> getTags() {
-        return Collections.unmodifiableList(tags);
     }
 }

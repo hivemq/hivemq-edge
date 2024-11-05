@@ -15,14 +15,12 @@
  */
 package com.hivemq.persistence.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 @Immutable
 public class DomainTag {
@@ -31,17 +29,19 @@ public class DomainTag {
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull String description;
+    private final @NotNull Map<String, Object> definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
-            final @NotNull String description) {
+            final @NotNull String description,
+            final @NotNull Map<String, Object> definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.description = description;
-
+        this.definition = definition;
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(
@@ -50,22 +50,8 @@ public class DomainTag {
         return new DomainTag(domainTag.getTag(),
                 adapterId,
                 domainTag.getProtocolId(),
-                domainTag.getDescription());
-    }
-
-
-
-    public static @NotNull DomainTag simpleAddress(final @NotNull String tag, final @NotNull String tagDefinition) {
-        return simpleAddress(tag, "adapter", tagDefinition);
-    }
-
-    public static @NotNull DomainTag simpleAddress(
-            final @NotNull String tagName,
-            final @NotNull String adapterId,
-            final @NotNull String tagDefinition) {
-        final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-        objectNode.set("address", new TextNode(tagDefinition));
-        return new DomainTag(tagName, adapterId,"someProtocolId", "someDescription");
+                domainTag.getDescription(),
+                domainTag.getDefinition());
     }
 
     public @NotNull String getTagName() {
@@ -82,6 +68,10 @@ public class DomainTag {
 
     public @NotNull String getProtocolId() {
         return protocolId;
+    }
+
+    public @NotNull Map<String, Object> getDefinition() {
+        return definition;
     }
 
     // only tag is used as duplicates based on this field are not allowed.

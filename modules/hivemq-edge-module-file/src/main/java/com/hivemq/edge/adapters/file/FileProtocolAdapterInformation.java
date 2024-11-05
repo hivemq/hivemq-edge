@@ -117,7 +117,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
         return FileTag.class;
     }
 

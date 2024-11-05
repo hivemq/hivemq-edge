@@ -90,9 +90,8 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
             @JsonProperty(value = "sourceAmsPort", required = true) final int sourceAmsPort,
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
-            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig,
-            @JsonProperty(value = "tags") final @Nullable List<Plc4xTag> tags) {
-        super(id, port, host, tags);
+            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig) {
+        super(id, port, host);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
         this.sourceAmsPort = sourceAmsPort;

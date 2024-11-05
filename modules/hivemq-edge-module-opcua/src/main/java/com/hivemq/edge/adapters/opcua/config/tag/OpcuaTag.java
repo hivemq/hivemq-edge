@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class OpcuaTag implements Tag<OpcuaTagDefinition> {
+public class OpcuaTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",

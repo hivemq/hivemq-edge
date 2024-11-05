@@ -75,11 +75,6 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                        description = "The configuration for a data stream from OPC UA to MQTT")
     private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
-    @JsonProperty(value = "tags", required = true)
-    @ModuleConfigField(title = "Tags defined for this adapter",
-                       description = "All tags used by this adapter")
-    private final @NotNull List<OpcuaTag> tags;
-
     @JsonCreator
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -88,8 +83,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
-            @JsonProperty("security") final @Nullable Security security,
-            @JsonProperty(value = "tags") final @Nullable List<OpcuaTag> tags) {
+            @JsonProperty("security") final @Nullable Security security) {
         this.id = id;
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
@@ -99,7 +93,6 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(List.of()));
 
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
-        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     public @NotNull String getId() {

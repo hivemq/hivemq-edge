@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
 
@@ -122,7 +121,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                 legacyEipAdapterConfig.getHost(),
                 legacyEipAdapterConfig.getBackplane(),
                 legacyEipAdapterConfig.getSlot(),
-                eipToMqttConfig,
-                tags);
+                eipToMqttConfig);
+                //tags);// FIXME
     }
 }

@@ -17,10 +17,9 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -125,7 +124,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
 
         final String formattedAddress = String.format("%s%s%s", tagAddress, ":", subscription.getDataType());

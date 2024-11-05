@@ -123,7 +123,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     }
 
     @Override
-    public @NotNull Class<? extends Tag<?>> tagConfigurationClass() {
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
         return Plc4xTag.class;
     }
 

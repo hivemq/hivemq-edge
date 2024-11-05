@@ -33,7 +33,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
@@ -248,7 +248,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
 
     protected @Nullable ProtocolAdapterDataSample captureDataSample(
-            final @NotNull ProtocolAdapterDataSample data, final @NotNull Tag<Plc4xTagDefinition> plc4xTag) {
+            final @NotNull ProtocolAdapterDataSample data, final @NotNull Plc4xTag plc4xTag) {
         boolean publishData = true;
         final String tagAddress = plc4xTag.getDefinition().getTagAddress();
 
@@ -285,7 +285,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Tag<Plc4xTagDefinition> tag) {
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }

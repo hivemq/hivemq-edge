@@ -50,9 +50,8 @@ public class BidirectionalOpcUaAdapterConfig extends OpcUaAdapterConfig {
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty(value = "mqttToOpcua") final @Nullable MqttToOpcUaConfig mqttToOpcUaConfig,
-            @JsonProperty("security") final @Nullable Security security,
-            @JsonProperty(value = "tags") final @Nullable List<OpcuaTag> tags) {
-        super(id, uri, overrideUri, auth, tls, opcuaToMqttConfig, security, tags);
+            @JsonProperty("security") final @Nullable Security security) {
+        super(id, uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
         this.mqttToOpcUaConfig =
                 Objects.requireNonNullElseGet(mqttToOpcUaConfig, () -> new MqttToOpcUaConfig(List.of()));
     }
