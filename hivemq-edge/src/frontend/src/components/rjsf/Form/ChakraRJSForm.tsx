@@ -5,7 +5,6 @@ import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-j
 import Form from '@rjsf/chakra-ui'
 import { FormProps, IChangeEvent } from '@rjsf/core'
 import { IdSchema } from '@rjsf/utils'
-import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
 
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
@@ -49,11 +48,6 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
     return formData
   }, [batchData, formData])
 
-  const filterUnboundErrors = (errors: RJSFValidationError[]) => {
-    // Hide the AJV8 validation error from the view. It has no other identifier so matching the text
-    return errors.filter((error) => !error.stack.startsWith('no schema with key or ref'))
-  }
-
   const onValidate = useCallback(
     (data: IChangeEvent<unknown>) => {
       onSubmit?.(data)
@@ -79,12 +73,15 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
+  // TODO[27657] Problem with the $schema property again; removing from the UI
+  //   https://hivemq.kanbanize.com/ctrl_board/57/cards/27041/details/
+  const { $schema, ...unspecifiedSchema } = schema
 
   return (
     <Form
       id={id}
       readonly={readonly}
-      schema={schema}
+      schema={unspecifiedSchema}
       uiSchema={uiSchema}
       formData={defaultValues}
       formContext={context}
@@ -99,13 +96,12 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
         TitleFieldTemplate,
       }}
       liveValidate
-      // TODO[NVL] Strange lack of initial validation; preventing it by enforcing HTML validation
-      // noHtml5Validate
+      // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation
+      noHtml5Validate
       focusOnFirstError
       onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
-      transformErrors={filterUnboundErrors}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
       onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
