@@ -245,7 +245,7 @@ public class MqttsnToMqtt5Transcoder
 
     protected void processConnection(ClientConnection connection, CONNECT connect){
         log.trace("processing connect information onto connection {}", connect);
-        connection.setConnectMessage(connect);
+        connection.setWillPublish(connect.getWillPublish());
         connection.setClientId(connect.getClientIdentifier());
         connection.setCleanStart(connect.isCleanStart());
         connection.setMaxPacketSizeSend(connect.getMaximumPacketSize());
