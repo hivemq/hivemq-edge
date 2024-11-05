@@ -29,6 +29,9 @@ public interface TopicFilterPersistence {
 
     @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilter topicFilter);
 
+    @NotNull TopicFilterUpdateResult updateAllTopicFilters(@NotNull List<TopicFilter> topicFilter);
+
+
     @NotNull
     TopicFilterDeleteResult deleteTopicFilter(@NotNull String filter);
 
