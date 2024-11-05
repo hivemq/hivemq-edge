@@ -22,7 +22,7 @@ describe('useGetAdapterInfo', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
     })
-    expect(result.current.isDiscoverable).toBeTruthy()
+    expect(result.current.isDiscoverable).toBeFalsy()
     expect(result.current.adapter).toStrictEqual(
       expect.objectContaining({
         id: 'my-adapter',
@@ -40,7 +40,7 @@ describe('useGetAdapterInfo', () => {
           'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
         id: 'simulation',
         installed: true,
-        logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
+        logoUrl: '/module/images/hivemq-icon.png',
         name: 'Simulated Edge Device',
         protocol: 'Simulation',
       })

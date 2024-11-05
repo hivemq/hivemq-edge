@@ -37,7 +37,7 @@ describe('MappingDrawer', () => {
     cy.get('@modalCTAs').eq(1).should('have.text', 'Save')
 
     cy.get('@onChange').should('not.have.been.called')
-    cy.getByAriaLabel('Clear selected options').should('be.visible').click()
+    cy.getByAriaLabel('Clear selected options').eq(1).click()
     cy.get('@onChange').should('have.been.calledWith', 'tag', undefined)
 
     cy.get('@onSubmit').should('not.have.been.called')

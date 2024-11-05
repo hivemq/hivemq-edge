@@ -35,14 +35,14 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const showSkeleton = useStore(selectorIsSkeletonZoom)
   const { data } = useGetDomainTags(adapter.id)
 
-  const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
+  const bidirectional = isBidirectional(adapterProtocol)
   const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
 
   return (
     <>
       <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu}>
         <ToolbarButtonGroup>
-          {HACK_BIDIRECTIONAL && (
+          {bidirectional && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
               aria-label={t('workspace.toolbar.command.mappings.outward')}
@@ -65,7 +65,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {HACK_BIDIRECTIONAL && <MappingBadge destinations={data?.items?.map((e) => e.tag) || []} isTag />}
+            {bidirectional && <MappingBadge destinations={data?.items?.map((e) => e.tag) || []} isTag />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
@@ -100,7 +100,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
         )}
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
-      {HACK_BIDIRECTIONAL && <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />}
+      {bidirectional && <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />}
     </>
   )
 }

@@ -8,7 +8,7 @@ import i18n from '@/config/i18n.config.ts'
 export const getRequiredUiSchema = (
   uiSchema: UiSchema | undefined,
   isNewAdapter: boolean,
-  hiddenMappingsKey?: string
+  hideProperties?: string[]
 ): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
   const newSchema: UiSchema = {
@@ -25,15 +25,16 @@ export const getRequiredUiSchema = (
     ...rest,
   }
 
-  // If the config schema is split across entities, replace the field by a warning
-  if (hiddenMappingsKey) {
-    const status: AlertStatus = 'info'
-    newSchema[hiddenMappingsKey] = {
-      'ui:field': 'text:warning',
-      'ui:options': {
-        status,
-        message: i18n.t('warnings.featureFlag.splitSchema'),
-      },
+  if (hideProperties) {
+    for (const property of hideProperties) {
+      const status: AlertStatus = 'info'
+      newSchema[property] = {
+        'ui:field': 'text:warning',
+        'ui:options': {
+          status,
+          message: i18n.t('warnings.featureFlag.splitSchema'),
+        },
+      }
     }
   }
 

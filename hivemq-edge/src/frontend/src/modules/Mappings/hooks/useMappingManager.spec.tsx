@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import { beforeEach, expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -9,12 +7,16 @@ import { http, HttpResponse } from 'msw'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import {
+  mockAdapter,
+  mockAdapter_OPCUA,
+  mockProtocolAdapter,
+  mockProtocolAdapter_OPCUA,
+} from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
 import { MappingManagerType } from '@/modules/Mappings/types.ts'
-import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider
@@ -152,14 +154,8 @@ describe('useMappingManager', () => {
   })
 
   it('should return outward mapping specs', async () => {
-    server.use(
-      ...customHandlers(
-        [{ ...mockProtocolAdapter, id: MockAdapterType.OPC_UA }],
-        [{ ...mockAdapter, type: MockAdapterType.OPC_UA }],
-        []
-      )
-    )
-    const { result } = renderHook(() => useMappingManager(MOCK_ADAPTER_ID), { wrapper })
+    server.use(...customHandlers([{ ...mockProtocolAdapter_OPCUA }], [{ ...mockAdapter_OPCUA }], []))
+    const { result } = renderHook(() => useMappingManager('opcua-1'), { wrapper })
     expect(result.current.isLoading).toBeTruthy()
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
@@ -170,7 +166,7 @@ describe('useMappingManager', () => {
     expect(outwardManager).not.toBeUndefined()
 
     const { formData, schema, uiSchema } = outwardManager as MappingManagerType
-    expect(formData).toBeUndefined()
+    expect(formData).not.toBeUndefined()
     expect(schema).not.toBeUndefined()
     expect(uiSchema).not.toBeUndefined()
 

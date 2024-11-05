@@ -10,5 +10,6 @@ export const useListClientSubscriptions = () => {
   return useQuery<ClientFilterList, ApiError>({
     queryKey: [QUERY_KEYS.CLIENTS],
     queryFn: () => appClient.client.getClientFilters(),
+    retry: false,
   })
 }

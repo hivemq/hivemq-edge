@@ -1,5 +1,5 @@
 import { isRouteErrorResponse, Link as RouterLink, useRouteError } from 'react-router-dom'
-import { Heading, VStack, Text, Button } from '@chakra-ui/react'
+import { chakra as Chakra, Heading, VStack, Text, Button, Box } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { FaHome } from 'react-icons/fa'
 
@@ -37,9 +37,23 @@ const ErrorPage = () => {
         </Button>
       </VStack>
       {import.meta.env.MODE === 'development' && stack && (
-        <VStack m={8} maxH="250px" mt={20} p={2} overflow="auto" bgColor="gray.100">
-          <pre style={{ width: '100%' }}>{stack}</pre>
-        </VStack>
+        <Box
+          overflow="auto"
+          tabIndex={0}
+          m={8}
+          p={4}
+          h="33vh"
+          sx={{
+            _light: {
+              bgColor: 'gray.100',
+            },
+            _dark: {
+              bgColor: 'gray.700',
+            },
+          }}
+        >
+          <Chakra.pre>{stack}</Chakra.pre>
+        </Box>
       )}
     </main>
   )

@@ -33,7 +33,6 @@ describe('TopicSampler', () => {
         req.on('response', (res) => {
           // Throttle the response to 1 Mbps to simulate a
           // mobile 3G connection
-          console.log('SXXXXX')
           res.setThrottle(5000)
         })
       }

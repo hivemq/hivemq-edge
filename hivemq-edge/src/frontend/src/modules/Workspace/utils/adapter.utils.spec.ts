@@ -10,8 +10,8 @@ import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 describe('isBidirectional', () => {
   it('should return the layout characteristics of a group', async () => {
     expect(isBidirectional(mockProtocolAdapter)).toStrictEqual(false)
-    expect(isBidirectional({ ...mockProtocolAdapter, id: MockAdapterType.OPC_UA })).toStrictEqual(true)
-    expect(isBidirectional({ ...mockProtocolAdapter, id: MockAdapterType.S7 })).toStrictEqual(false)
+    expect(isBidirectional({ ...mockProtocolAdapter, capabilities: ['READ', 'DISCOVER'] })).toStrictEqual(false)
+    expect(isBidirectional({ ...mockProtocolAdapter, capabilities: ['READ', 'WRITE'] })).toStrictEqual(true)
   })
 })
 
