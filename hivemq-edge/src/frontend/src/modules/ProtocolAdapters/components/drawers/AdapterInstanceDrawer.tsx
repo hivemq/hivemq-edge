@@ -34,6 +34,8 @@ import {
 } from '@/modules/Workspace/utils/adapter.utils.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 
+import config from '@/config'
+
 interface AdapterInstanceDrawerProps {
   adapterType?: string
   isNewAdapter?: boolean
@@ -63,7 +65,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
     // If the config schema is split across entities, replace the fields by a warning
     const hideProperties = []
-    if (import.meta.env.VITE_FLAG_ADAPTER_MAPPINGS_IN_WORKSPACE === 'true' && adapter?.id) {
+    if (config.features.ADAPTER_MAPPINGS_IN_WORKSPACE && adapter?.id) {
       hideProperties.push(getInwardMappingRootProperty(adapter?.id))
       if (isBidirectional(adapter)) hideProperties.push(getOutwardMappingRootProperty(adapter?.id))
     }
