@@ -66,8 +66,8 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     private final @NotNull Security security;
 
     @JsonProperty(value = "opcuaToMqtt")
-    @ModuleConfigField(title = "OpcUA To MQTT Config",
-                       description = "The configuration for a data stream from OpcUA to MQTT")
+    @ModuleConfigField(title = "OPC UA To MQTT Config",
+                       description = "The configuration for a data stream from OPC UA to MQTT")
     private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
     @JsonCreator
