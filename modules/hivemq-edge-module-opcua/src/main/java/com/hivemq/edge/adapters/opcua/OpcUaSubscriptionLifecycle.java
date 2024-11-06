@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
@@ -56,7 +57,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull List<OpcuaTag> opcuaTags;
+    private final @NotNull List<Tag> opcuaTags;
 
     public OpcUaSubscriptionLifecycle(
             final @NotNull OpcUaClient opcUaClient,
@@ -65,7 +66,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull List<OpcuaTag> opcuaTags) {
+            final @NotNull List<Tag> opcuaTags) {
         this.opcUaClient = opcUaClient;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
@@ -124,7 +125,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         }
     }
 
-    public Optional<OpcuaTag> findTag(String tagName) {
+    public Optional<Tag> findTag(String tagName) {
         return opcuaTags.stream()
                 .filter(tag -> tag.getName().equals(tagName))
                 .findFirst();
@@ -134,7 +135,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         final @NotNull String tagName = subscription.getTagName();
 
         return findTag(subscription.getTagName())
-                .map(tag -> subscribeToOpcua(subscription, tag))
+                .map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
                 .orElseGet(() ->
                         CompletableFuture.failedFuture(
                                 new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +

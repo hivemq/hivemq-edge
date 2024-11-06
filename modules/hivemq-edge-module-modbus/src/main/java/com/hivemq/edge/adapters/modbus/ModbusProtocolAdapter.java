@@ -29,8 +29,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
@@ -61,16 +61,15 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     private final @NotNull ModbusClient modbusClient;
     private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
+    private final @NotNull List<Tag> tags;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ModbusAdapterConfig adapterConfig,
             final @NotNull ProtocolAdapterInput<ModbusAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
-        this.adapterConfig = adapterConfig;
+        this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.protocolAdapterTagService = input.moduleServices().protocolAdapterTagService();
+        this.tags = input.getTags();
         this.modbusClient = new ModbusClient(adapterConfig, input.adapterFactories().dataPointFactory());
     }
 
@@ -103,11 +102,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     @Override
     public void poll(
             final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> pollModbus(pollingInput, pollingOutput, def),
+                        def -> pollModbus(pollingInput, pollingOutput, (ModbusTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")

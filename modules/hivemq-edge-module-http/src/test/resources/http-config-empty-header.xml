@@ -19,26 +19,28 @@
 <hivemq>
     <protocol-adapters>
         <http>
-            <id>my-protocol-adapter</id>
-            <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
-            <httpToMqtt>
-                <pollingIntervalMillis>1773</pollingIntervalMillis>
-                <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
-                <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
-                <httpToMqttMappings>
-                    <httpToMqttMapping>
-                        <tagName>tag1</tagName>
-                        <mqttTopic>my/destination</mqttTopic>
-                        <mqttQos>0</mqttQos>
-                        <httpRequestMethod>POST</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>1338</httpRequestTimeoutSeconds>
-                        <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
-                        <httpHeaders>
-                            <httpHeader/>
-                        </httpHeaders>
-                    </httpToMqttMapping>
-                </httpToMqttMappings>
-            </httpToMqtt>
+            <config>
+                <id>my-protocol-adapter</id>
+                <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
+                <httpToMqtt>
+                    <pollingIntervalMillis>1773</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
+                    <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
+                    <httpToMqttMappings>
+                        <httpToMqttMapping>
+                            <tagName>tag1</tagName>
+                            <mqttTopic>my/destination</mqttTopic>
+                            <mqttQos>0</mqttQos>
+                            <httpRequestMethod>POST</httpRequestMethod>
+                            <httpRequestTimeoutSeconds>1338</httpRequestTimeoutSeconds>
+                            <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
+                            <httpHeaders>
+                                <httpHeader/>
+                            </httpHeaders>
+                        </httpToMqttMapping>
+                    </httpToMqttMappings>
+                </httpToMqtt>
+            </config>
             <tags>
                 <tag>
                     <name>tag1</name>

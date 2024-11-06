@@ -18,17 +18,18 @@
 <hivemq>
     <protocol-adapters>
         <opcua>
-            <id>simulation-server-2</id>
-            <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
-            <mqttToOpcua>
-                <mqttToOpcuaMappings>
-                    <mqttToOpcuaMapping>
-                        <tagName>ns=1;i=1004</tagName>
-                        <mqttQos>1</mqttQos>
-                    </mqttToOpcuaMapping>
-                </mqttToOpcuaMappings>
-            </mqttToOpcua>
-            <tags></tags>
+            <config>
+                <id>simulation-server-2</id>
+                <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
+                <mqttToOpcua>
+                    <mqttToOpcuaMappings>
+                        <mqttToOpcuaMapping>
+                            <tagName>ns=1;i=1004</tagName>
+                            <mqttQos>1</mqttQos>
+                        </mqttToOpcuaMapping>
+                    </mqttToOpcuaMappings>
+                </mqttToOpcua>
+            </config>
         </opcua>
     </protocol-adapters>
 </hivemq>

@@ -17,17 +17,24 @@ package com.hivemq.protocols;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 public class ProtocolAdapterConfigPersistence {
+
+    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterConfigPersistence.class);
 
     private @NotNull final ProtocolAdapterConfig adapterConfig;
     private @NotNull final List<? extends Tag> tags;
@@ -35,6 +42,8 @@ public class ProtocolAdapterConfigPersistence {
     public ProtocolAdapterConfigPersistence(
             @NotNull final ProtocolAdapterConfig adapterConfig,
             @NotNull final List<? extends Tag> tags) {
+        Objects.requireNonNull(adapterConfig);
+        Objects.requireNonNull(tags);
         this.adapterConfig = adapterConfig;
         this.tags = tags;
     }
@@ -43,19 +52,33 @@ public class ProtocolAdapterConfigPersistence {
                                                                         final boolean writingEnabled,
                                                                         @NotNull final ObjectMapper mapper,
                                                                         @NotNull final ProtocolAdapterFactory protocolAdapterFactory) {
-        return fromMaps((Map<String, Object>)adapterConfig.get("config"), (List<Map<String, Object>>)adapterConfig.get("tags"), writingEnabled, mapper, protocolAdapterFactory);
-    }
+        Map<String, Object> adapterConfigMap = (Map<String, Object>)adapterConfig.get("config");
+        List<Map<String, Object>> tagMaps = Objects.requireNonNullElse((List<Map<String, Object>>)adapterConfig.get("tags"), List.of());
 
-    public static ProtocolAdapterConfigPersistence fromMaps(@NotNull final Map<String, Object> adapterConfig,
-                                                            @NotNull final List<Map<String, Object>> tagMaps,
-                                                            final boolean writingEnabled,
-                                                            @NotNull final ObjectMapper mapper,
-                                                            @NotNull final ProtocolAdapterFactory protocolAdapterFactory) {
+        if(adapterConfigMap != null) {
+            final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterFactory.convertConfigObject(
+                    mapper,
+                    adapterConfigMap,
+                    writingEnabled);
+            final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
+            return new ProtocolAdapterConfigPersistence(protocolAdapterConfig,tags);
+        } else if(protocolAdapterFactory instanceof LegacyConfigConversion) {
+            log.warn(
+                    "Trying to load {} as legacy configuration. Support for the legacy configuration will be removed in the beginning of 2025.",
+                    protocolAdapterFactory.getInformation().getDisplayName());
 
-        return new ProtocolAdapterConfigPersistence(
-                protocolAdapterFactory.convertConfigObject(mapper, (Map<String, Object>)adapterConfig.get("config"), writingEnabled),
-                protocolAdapterFactory.convertTagDefinitionObjects(mapper, (List<Map<String, Object>>)adapterConfig.get("tags"))
-        );
+            final ConfigTagsTuple configTagsTuple = ((LegacyConfigConversion) protocolAdapterFactory)
+                            .tryConvertLegacyConfig(mapper, adapterConfig);
+            return new ProtocolAdapterConfigPersistence(
+                    configTagsTuple.getConfig(),
+                    configTagsTuple.getTags());
+        } else {
+            log.error(
+                    "No <config>-tag in configuration file for {}",
+                    protocolAdapterFactory.getInformation().getDisplayName());
+            throw new IllegalArgumentException("No <config>-tag in configuration file for " + protocolAdapterFactory.getInformation().getDisplayName());
+        }
+
     }
 
     public @NotNull ProtocolAdapterConfig getAdapterConfig() {

@@ -48,9 +48,8 @@ public class BidirectionalHttpAdapterConfig extends HttpAdapterConfig {
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
             @JsonProperty(value = "mqttToHttp") final @Nullable MqttToHttpConfig mqttToHttpConfig,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
-            @JsonProperty(value = "tags") final @Nullable List<HttpTag> tags) {
-        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates, tags);
+            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
+        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
         this.mqttToHttpConfig = Objects.requireNonNullElseGet(mqttToHttpConfig, () -> new MqttToHttpConfig(List.of()));
     }
 

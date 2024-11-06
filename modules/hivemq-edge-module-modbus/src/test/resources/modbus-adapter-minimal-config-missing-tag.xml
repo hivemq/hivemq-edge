@@ -18,17 +18,19 @@
 <hivemq>
     <protocol-adapters>
         <modbus>
-            <id>my-modbus-protocol-adapter</id>
-            <port>1234</port>
-            <host>my.modbus-server.com</host>
-            <modbusToMqtt>
-                <modbusToMqttMappings>
-                    <modbusToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag1</tagName>
-                    </modbusToMqttMapping>
-                </modbusToMqttMappings>
-            </modbusToMqtt>
+            <config>
+                <id>my-modbus-protocol-adapter</id>
+                <port>1234</port>
+                <host>my.modbus-server.com</host>
+                <modbusToMqtt>
+                    <modbusToMqttMappings>
+                        <modbusToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <tagName>tag1</tagName>
+                        </modbusToMqttMapping>
+                    </modbusToMqttMappings>
+                </modbusToMqtt>
+            </config>
             <tags>
                 <tag>
                     <name>wrong-tag1</name>

@@ -24,7 +24,9 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -60,8 +62,16 @@ class S7AdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
-        final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+                        true,
+                        mapper,
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final S7AdapterConfig config = (S7AdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -105,8 +115,16 @@ class S7AdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
-        final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false);
+        
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+                        true,
+                        mapper,
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final S7AdapterConfig config = (S7AdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -143,9 +161,15 @@ class S7AdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"), false))
-                .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
-                .isInstanceOf(IllegalArgumentException.class);
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+                        true,
+                        mapper,
+                        s7ProtocolAdapterFactory);
+
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
 
     @Test
@@ -168,8 +192,7 @@ class S7AdapterConfigTest {
                 3,
                 4,
                 5,
-                new S7ToMqttConfig(12, 13, true, List.of(pollingContext)),
-                List.of()
+                new S7ToMqttConfig(12, 13, true, List.of(pollingContext))
         );
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);

@@ -79,8 +79,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
-            @JsonProperty(value = "tags") final @Nullable List<HttpTag> tags) {
+            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
         this.id = id;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
@@ -90,7 +89,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         }
         this.httpToMqttConfig = Objects.requireNonNullElse(httpToMqttConfig, HttpToMqttConfig.DEFAULT);
         this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
-        this.tags = Objects.requireNonNullElse(tags, List.of());
     }
 
     @Override

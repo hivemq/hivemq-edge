@@ -25,6 +25,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,8 +59,16 @@ class LegacyADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+                        true,
+                        mapper,
+                        adsProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ADSAdapterConfig config = (ADSAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("asd");
         assertThat(config.getHost()).isEqualTo("172.16.10.54");
@@ -101,8 +110,16 @@ class LegacyADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+                        true,
+                        mapper,
+                        adsProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ADSAdapterConfig config = (ADSAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-ads-id");
         assertThat(config.getPort()).isEqualTo(48898);

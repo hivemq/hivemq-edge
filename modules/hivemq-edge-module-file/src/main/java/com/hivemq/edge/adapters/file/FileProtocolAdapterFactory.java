@@ -18,11 +18,11 @@ package com.hivemq.edge.adapters.file;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
@@ -39,9 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.file.FileProtocolAdapterInformation.PROTOCOL_ID;
-
-public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAdapterConfig> {
+public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
@@ -64,36 +62,9 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
-        try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn(
-                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-    }
-
-    private static @NotNull FileAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+    @NotNull
+    public ConfigTagsTuple tryConvertLegacyConfig(
+            @NotNull ObjectMapper objectMapper, @NotNull Map<String, Object> config) {
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
@@ -101,16 +72,18 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
         final List<FileTag> tags = new ArrayList<>();
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
-            final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
+            final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID();
             tags.add(new FileTag(newTagName, "not set", new FileTagDefinition(context.getFilePath())));
-            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(), //TODO why nullable??
-                    context.getQos(),
-                    context.getMessageHandlingOptions(),
-                    context.getIncludeTimestamp(),
-                    context.getIncludeTagNames(),
-                    context.getUserProperties(),
-                    context.getFilePath(),
-                    context.getContentType());
+            final FileToMqttMapping fileToMqttMapping =
+                    new FileToMqttMapping(context.getDestinationMqttTopic(),
+                            //TODO why nullable??
+                            context.getQos(),
+                            context.getMessageHandlingOptions(),
+                            context.getIncludeTimestamp(),
+                            context.getIncludeTagNames(),
+                            context.getUserProperties(),
+                            newTagName,
+                            context.getContentType());
             fileToMqttMappings.add(fileToMqttMapping);
         }
 
@@ -119,7 +92,6 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         fileToMqttMappings);
 
-        return new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig, tags);
+        return new ConfigTagsTuple(new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig), tags);
     }
-
 }

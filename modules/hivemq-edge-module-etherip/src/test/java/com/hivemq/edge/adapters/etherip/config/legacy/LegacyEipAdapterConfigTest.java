@@ -16,19 +16,16 @@
 package com.hivemq.edge.adapters.etherip.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -40,11 +37,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class LegacyEipAdapterConfigTest {
@@ -63,8 +56,10 @@ class LegacyEipAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(mockInput);
-        final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("ethernet-ip"), false);
+        final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
+                (Map) adapters.get("ethernet-ip"));
+
+        final EipAdapterConfig config = (EipAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -96,7 +91,7 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name");
+            assertThat(mapping.getTagName()).isEqualTo("tag-name2");
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -107,6 +102,9 @@ class LegacyEipAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
         });
+
+        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+                .isEmpty();
     }
 
     @Test
@@ -121,8 +119,10 @@ class LegacyEipAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(mockInput);
-        final EipAdapterConfig config = eipProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("ethernet-ip"), false);
+        final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
+                (Map) adapters.get("ethernet-ip"));
+
+        final EipAdapterConfig config = (EipAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -141,6 +141,9 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
+
+        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+                .isEmpty();
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

@@ -19,113 +19,115 @@
 <hivemq>
     <protocol-adapters>
         <http>
-            <id>my-protocol-adapter</id>
-            <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
-            <allowUntrustedCertificates>true</allowUntrustedCertificates>
-            <httpToMqtt>
-                <pollingIntervalMillis>1773</pollingIntervalMillis>
-                <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
-                <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
-                <assertResponseIsJson>false</assertResponseIsJson>
-                <httpToMqttMappings>
-                    <httpToMqttMapping>
-                        <tagName>tag1</tagName>
-                        <mqttTopic>my/destination</mqttTopic>
-                        <mqttQos>0</mqttQos>
-                        <mqttUserProperties>
-                            <mqttUserProperty>
-                                <name>name</name>
-                                <value>value1</value>
-                            </mqttUserProperty>
-                            <mqttUserProperty>
-                                <name>name</name>
-                                <value>value2</value>
-                            </mqttUserProperty>
-                        </mqttUserProperties>
-                        <httpRequestMethod>GET</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
-                        <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
-                        <httpRequestBody>my-body</httpRequestBody>
-                        <httpHeaders>
-                            <httpHeader>
-                                <name>foo 1</name>
-                                <value>bar 1</value>
-                            </httpHeader>
-                            <httpHeader>
-                                <name>foo 2</name>
-                                <value>bar 2</value>
-                            </httpHeader>
-                        </httpHeaders>
-                    </httpToMqttMapping>
-                    <httpToMqttMapping>
-                        <tagName>tag2</tagName>
-                        <mqttTopic>my/destination2</mqttTopic>
-                        <mqttQos>0</mqttQos>
-                        <mqttUserProperties>
-                            <mqttUserProperty>
-                                <name>name</name>
-                                <value>value1</value>
-                            </mqttUserProperty>
-                            <mqttUserProperty>
-                                <name>name</name>
-                                <value>value2</value>
-                            </mqttUserProperty>
-                        </mqttUserProperties>
-                        <httpRequestMethod>GET</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
-                        <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
-                        <httpRequestBody>my-body2</httpRequestBody>
-                        <httpHeaders>
-                            <httpHeader>
-                                <name>foo 1</name>
-                                <value>bar 1</value>
-                            </httpHeader>
-                            <httpHeader>
-                                <name>foo 2</name>
-                                <value>bar 2</value>
-                            </httpHeader>
-                        </httpHeaders>
-                    </httpToMqttMapping>
-                </httpToMqttMappings>
-            </httpToMqtt>
-            <mqttToHttp>
-                <mqttToHttpMappings>
-                    <mqttToHttpMapping>
-                        <tagName>tag3</tagName>
-                        <mqttTopicFilter>my/#</mqttTopicFilter>
-                        <mqttMaxQos>0</mqttMaxQos>
-                        <httpRequestMethod>POST</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>59</httpRequestTimeoutSeconds>
-                        <httpHeaders>
-                            <httpHeader>
-                                <name>foo 1</name>
-                                <value>bar 1</value>
-                            </httpHeader>
-                            <httpHeader>
-                                <name>foo 2</name>
-                                <value>bar 2</value>
-                            </httpHeader>
-                        </httpHeaders>
-                    </mqttToHttpMapping>
-                    <mqttToHttpMapping>
-                        <tagName>tag4</tagName>
-                        <mqttTopicFilter>my/#</mqttTopicFilter>
-                        <mqttMaxQos>1</mqttMaxQos>
-                        <httpRequestMethod>PUT</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>58</httpRequestTimeoutSeconds>
-                        <httpHeaders>
-                            <httpHeader>
-                                <name>foo 1</name>
-                                <value>bar 1</value>
-                            </httpHeader>
-                            <httpHeader>
-                                <name>foo 2</name>
-                                <value>bar 2</value>
-                            </httpHeader>
-                        </httpHeaders>
-                    </mqttToHttpMapping>
-                </mqttToHttpMappings>
-            </mqttToHttp>
+            <config>
+                <id>my-protocol-adapter</id>
+                <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
+                <allowUntrustedCertificates>true</allowUntrustedCertificates>
+                <httpToMqtt>
+                    <pollingIntervalMillis>1773</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
+                    <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
+                    <assertResponseIsJson>false</assertResponseIsJson>
+                    <httpToMqttMappings>
+                        <httpToMqttMapping>
+                            <tagName>tag1</tagName>
+                            <mqttTopic>my/destination</mqttTopic>
+                            <mqttQos>0</mqttQos>
+                            <mqttUserProperties>
+                                <mqttUserProperty>
+                                    <name>name</name>
+                                    <value>value1</value>
+                                </mqttUserProperty>
+                                <mqttUserProperty>
+                                    <name>name</name>
+                                    <value>value2</value>
+                                </mqttUserProperty>
+                            </mqttUserProperties>
+                            <httpRequestMethod>GET</httpRequestMethod>
+                            <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
+                            <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
+                            <httpRequestBody>my-body</httpRequestBody>
+                            <httpHeaders>
+                                <httpHeader>
+                                    <name>foo 1</name>
+                                    <value>bar 1</value>
+                                </httpHeader>
+                                <httpHeader>
+                                    <name>foo 2</name>
+                                    <value>bar 2</value>
+                                </httpHeader>
+                            </httpHeaders>
+                        </httpToMqttMapping>
+                        <httpToMqttMapping>
+                            <tagName>tag2</tagName>
+                            <mqttTopic>my/destination2</mqttTopic>
+                            <mqttQos>0</mqttQos>
+                            <mqttUserProperties>
+                                <mqttUserProperty>
+                                    <name>name</name>
+                                    <value>value1</value>
+                                </mqttUserProperty>
+                                <mqttUserProperty>
+                                    <name>name</name>
+                                    <value>value2</value>
+                                </mqttUserProperty>
+                            </mqttUserProperties>
+                            <httpRequestMethod>GET</httpRequestMethod>
+                            <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
+                            <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
+                            <httpRequestBody>my-body2</httpRequestBody>
+                            <httpHeaders>
+                                <httpHeader>
+                                    <name>foo 1</name>
+                                    <value>bar 1</value>
+                                </httpHeader>
+                                <httpHeader>
+                                    <name>foo 2</name>
+                                    <value>bar 2</value>
+                                </httpHeader>
+                            </httpHeaders>
+                        </httpToMqttMapping>
+                    </httpToMqttMappings>
+                </httpToMqtt>
+                <mqttToHttp>
+                    <mqttToHttpMappings>
+                        <mqttToHttpMapping>
+                            <tagName>tag3</tagName>
+                            <mqttTopicFilter>my/#</mqttTopicFilter>
+                            <mqttMaxQos>0</mqttMaxQos>
+                            <httpRequestMethod>POST</httpRequestMethod>
+                            <httpRequestTimeoutSeconds>59</httpRequestTimeoutSeconds>
+                            <httpHeaders>
+                                <httpHeader>
+                                    <name>foo 1</name>
+                                    <value>bar 1</value>
+                                </httpHeader>
+                                <httpHeader>
+                                    <name>foo 2</name>
+                                    <value>bar 2</value>
+                                </httpHeader>
+                            </httpHeaders>
+                        </mqttToHttpMapping>
+                        <mqttToHttpMapping>
+                            <tagName>tag4</tagName>
+                            <mqttTopicFilter>my/#</mqttTopicFilter>
+                            <mqttMaxQos>1</mqttMaxQos>
+                            <httpRequestMethod>PUT</httpRequestMethod>
+                            <httpRequestTimeoutSeconds>58</httpRequestTimeoutSeconds>
+                            <httpHeaders>
+                                <httpHeader>
+                                    <name>foo 1</name>
+                                    <value>bar 1</value>
+                                </httpHeader>
+                                <httpHeader>
+                                    <name>foo 2</name>
+                                    <value>bar 2</value>
+                                </httpHeader>
+                            </httpHeaders>
+                        </mqttToHttpMapping>
+                    </mqttToHttpMappings>
+                </mqttToHttp>
+            </config>
             <tags>
                 <tag>
                     <name>tag1</name>

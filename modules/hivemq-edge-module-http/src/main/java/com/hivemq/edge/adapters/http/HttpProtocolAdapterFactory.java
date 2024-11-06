@@ -18,12 +18,11 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
@@ -39,12 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.http.HttpProtocolAdapterInformation.PROTOCOL_ID;
-
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig> {
+public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig>, LegacyConfigConversion {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
@@ -67,35 +64,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config,
-            final boolean writingEnabled) {
-        try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-    }
-
-    private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
+    public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
@@ -124,10 +93,10 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
                         List.of(httpToMqttMapping));
 
-        return new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
+        return new ConfigTagsTuple(new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                 httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates(),
+                legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
                 tags);
     }
 }

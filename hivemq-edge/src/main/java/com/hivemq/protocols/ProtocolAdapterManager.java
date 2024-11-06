@@ -696,8 +696,8 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
 
             final ProtocolAdapterConfigPersistence persistence =
-                    ProtocolAdapterConfigPersistence.fromMaps(config,
-                            tagMaps,
+                    ProtocolAdapterConfigPersistence.fromAdapterConfigMap(
+                            Map.of("config", config, "tags", tagMaps), //FIXME nicer?
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory);

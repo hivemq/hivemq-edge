@@ -18,6 +18,8 @@ package com.hivemq.edge.adapters.etherip;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -35,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
+public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterFactory.class);
 
@@ -57,38 +59,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         return new EipPollingProtocolAdapter(adapterInformation, input);
     }
 
-    @Override
-    public @NotNull EipAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
-        EipAdapterConfig ret;
-        try {
-            ret = (EipAdapterConfig)ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn(
-                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        EipProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                ret = tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        EipProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-
-        return ret;
-    }
-
-    private @NotNull EipAdapterConfig tryConvertLegacyConfig(
+    public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         final LegacyEipAdapterConfig legacyEipAdapterConfig =
@@ -116,12 +87,13 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                 legacyEipAdapterConfig.getPublishChangedDataOnly(),
                 eipToMqttMappings);
 
-        return new EipAdapterConfig(legacyEipAdapterConfig.getId(),
-                legacyEipAdapterConfig.getPort(),
-                legacyEipAdapterConfig.getHost(),
-                legacyEipAdapterConfig.getBackplane(),
-                legacyEipAdapterConfig.getSlot(),
-                eipToMqttConfig);
-                //tags);// FIXME
+        return new ConfigTagsTuple(
+                new EipAdapterConfig(legacyEipAdapterConfig.getId(),
+                    legacyEipAdapterConfig.getPort(),
+                    legacyEipAdapterConfig.getHost(),
+                    legacyEipAdapterConfig.getBackplane(),
+                    legacyEipAdapterConfig.getSlot(),
+                    eipToMqttConfig),
+                tags);
     }
 }

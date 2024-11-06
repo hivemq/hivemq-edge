@@ -24,6 +24,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -57,9 +58,16 @@ class ADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
 
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+                        true,
+                        mapper,
+                        adsProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ADSAdapterConfig config = (ADSAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.ads-server.com");
@@ -115,8 +123,15 @@ class ADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final ADSAdapterConfig config =
-                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false);
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+                        true,
+                        mapper,
+                        adsProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ADSAdapterConfig config = (ADSAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -151,9 +166,16 @@ class ADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"), false))
-                .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag-name]")
-                .isInstanceOf(IllegalArgumentException.class);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+                        true,
+                        mapper,
+                        adsProtocolAdapterFactory);
+
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
 
     @Test
@@ -173,7 +195,7 @@ class ADSAdapterConfigTest {
                 16,
                 "1.2.3.4.5.6",
                 "1.2.3.4.5.7",
-                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)), List.of());
+                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

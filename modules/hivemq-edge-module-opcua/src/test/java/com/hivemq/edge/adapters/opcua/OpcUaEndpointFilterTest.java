@@ -56,8 +56,7 @@ class OpcUaEndpointFilterTest {
                 null,
                 new Tls(true, new Keystore("path", null, null), null),
                 null,
-                null,
-                List.of());
+                null);
 
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
@@ -78,8 +77,7 @@ class OpcUaEndpointFilterTest {
                         null,
                         null,
                         null,
-                        null,
-                        List.of());
+                        null);
 
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
@@ -100,8 +98,7 @@ class OpcUaEndpointFilterTest {
                         null,
                         null,
                         null,
-                        null,
-                        List.of());
+                        null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
 
         final Optional<EndpointDescription> result =
@@ -119,8 +116,7 @@ class OpcUaEndpointFilterTest {
                         null,
                         null,
                         null,
-                        null,
-                        List.of());
+                        null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(convertToUri(DEFAULT), config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));

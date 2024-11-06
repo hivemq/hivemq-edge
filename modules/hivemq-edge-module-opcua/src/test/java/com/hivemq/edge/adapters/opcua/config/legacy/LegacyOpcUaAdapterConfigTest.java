@@ -22,6 +22,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -54,8 +55,16 @@ class LegacyOpcUaAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(true);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mockInput);
-        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                        true,
+                        mapper,
+                        opcUaProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -88,14 +97,14 @@ class LegacyOpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).startsWith("simulation-server");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(1);
             assertThat(mapping.getPublishingInterval()).isEqualTo(12);
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
         }, mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
+            assertThat(mapping.getTagName()).startsWith("simulation-server");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/#");
             assertThat(mapping.getQos()).isEqualTo(2);
             assertThat(mapping.getPublishingInterval()).isEqualTo(13);
@@ -117,8 +126,16 @@ class LegacyOpcUaAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(true);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mockInput);
-        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                        true,
+                        mapper,
+                        opcUaProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -136,7 +153,7 @@ class LegacyOpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).startsWith("simulation-server");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(0);
             assertThat(mapping.getPublishingInterval()).isEqualTo(1000);

@@ -23,6 +23,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
+import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -56,9 +57,16 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        final ModbusAdapterConfig config =
-                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                        false,
+                        mapper,
+                        modbusProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -116,9 +124,16 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        final ModbusAdapterConfig config =
-                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"), false);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                        false,
+                        mapper,
+                        modbusProtocolAdapterFactory);
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isEmpty();
+
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -150,10 +165,16 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"), false))
-                .hasMessage("The following tags are used in mappings but not configured on the adapter: [tag1]")
-                .isInstanceOf(IllegalArgumentException.class);
+
+        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
+                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                        false,
+                        mapper,
+                        modbusProtocolAdapterFactory);
+
+        assertThat(protocolAdapterConfigPersistence.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
     }
 
     @Test
@@ -168,8 +189,12 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'id'");
+
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory))
+                .hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -184,8 +209,11 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'host'");
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory))
+                .hasMessageContaining("Missing required creator property 'host'");
     }
 
     @Test
@@ -200,8 +228,11 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'port'");
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory))
+                .hasMessageContaining("Missing required creator property 'port'");
     }
 
     @Test
@@ -216,8 +247,11 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory))
+                .hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test
@@ -232,8 +266,10 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false));
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory));
     }
 
     @Test
@@ -248,12 +284,15 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"), false)).hasMessageContaining("Missing required creator property 'tagName'");
+        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                false,
+                mapper,
+                modbusProtocolAdapterFactory))
+                .hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
-    public void unconvertConfigObject_full_valid() throws Exception {
+    public void unconvertConfigObject_full_valid() {
         final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("my/destination",
                 1, "tag1",
                 MQTTMessagePerSubscription,
@@ -264,8 +303,7 @@ public class ModbusAdapterConfigTest {
                 14,
                 "my.host.com",
                 15,
-                new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)),
-                List.of());
+                new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -299,7 +337,7 @@ public class ModbusAdapterConfigTest {
     }
 
     @Test
-    public void unconvertConfigObject_defaults() throws ProtocolAdapterException {
+    public void unconvertConfigObject_defaults() {
         final ModbusToMqttMapping pollingContext =
                 new ModbusToMqttMapping("my/destination", null, "tag1", null, null, null, null);
 
@@ -311,8 +349,7 @@ public class ModbusAdapterConfigTest {
                 13,
                 "my.host.com",
                 null,
-                new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)),
-                List.of());
+                new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

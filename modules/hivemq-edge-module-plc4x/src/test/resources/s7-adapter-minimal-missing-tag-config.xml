@@ -18,19 +18,21 @@
 <hivemq>
     <protocol-adapters>
         <s7>
-            <id>my-s7-protocol-adapter</id>
-            <port>1234</port>
-            <host>my.s7-server.com</host>
-            <controllerType>S7_400</controllerType>
-            <s7ToMqtt>
-                <s7ToMqttMappings>
-                    <s7ToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag-name</tagName>
-                        <dataType>BOOL</dataType>
-                    </s7ToMqttMapping>
-                </s7ToMqttMappings>
-            </s7ToMqtt>
+            <config>
+                <id>my-s7-protocol-adapter</id>
+                <port>1234</port>
+                <host>my.s7-server.com</host>
+                <controllerType>S7_400</controllerType>
+                <s7ToMqtt>
+                    <s7ToMqttMappings>
+                        <s7ToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <tagName>tag-name</tagName>
+                            <dataType>BOOL</dataType>
+                        </s7ToMqttMapping>
+                    </s7ToMqttMappings>
+                </s7ToMqtt>
+            </config>
             <tags>
                 <tag>
                     <name>wrong-tag-name</name>

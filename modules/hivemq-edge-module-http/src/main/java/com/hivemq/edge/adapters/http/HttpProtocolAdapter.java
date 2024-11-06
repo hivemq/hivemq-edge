@@ -46,7 +46,6 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
-import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -92,6 +91,7 @@ public class HttpProtocolAdapter
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpAdapterConfig adapterConfig;
+    private final @NotNull List<Tag> tags;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -105,6 +105,7 @@ public class HttpProtocolAdapter
             final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.tags = input.getTags();
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
@@ -161,11 +162,11 @@ public class HttpProtocolAdapter
 
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> pollHttp(pollingOutput, def, httpToMqttMapping),
+                        def -> pollHttp(pollingOutput, (HttpTag) def, httpToMqttMapping),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")
@@ -304,11 +305,11 @@ public class HttpProtocolAdapter
 
         final String tagName = mqttToHttpMapping.getTagName();
         final HttpTag httpTag;
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> writeHttp(writingInput, writingOutput, def, mqttToHttpMapping),
+                        def -> writeHttp(writingInput, writingOutput, (HttpTag) def, mqttToHttpMapping),
                         () -> writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
                                 mqttToHttpMapping.getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")

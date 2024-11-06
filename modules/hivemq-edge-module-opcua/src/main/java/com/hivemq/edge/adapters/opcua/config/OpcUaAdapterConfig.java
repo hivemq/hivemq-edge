@@ -122,12 +122,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     public @NotNull Boolean getOverrideUri() {
         return overrideUri;
     }
-
-    @Override
-    public List<OpcuaTag> getTags() {
-        return Collections.unmodifiableList(tags);
-    }
-
+    
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
         return opcuaToMqttConfig.getOpcuaToMqttMappings().stream().map(OpcUaToMqttMapping::getTagName).collect(Collectors.toSet());

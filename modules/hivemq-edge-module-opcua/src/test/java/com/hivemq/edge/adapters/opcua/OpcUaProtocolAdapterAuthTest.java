@@ -71,8 +71,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(List.of()),
-                null,
-                List.of());
+                null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
@@ -96,8 +95,7 @@ class OpcUaProtocolAdapterAuthTest {
                 auth,
                 null,
                 null,
-                null,
-                List.of());
+                null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =
@@ -121,8 +119,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 tls,
                 null,
-                security,
-                List.of());
+                security);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
@@ -146,8 +143,7 @@ class OpcUaProtocolAdapterAuthTest {
                 auth,
                 null,
                 null,
-                null,
-                List.of());
+                null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 

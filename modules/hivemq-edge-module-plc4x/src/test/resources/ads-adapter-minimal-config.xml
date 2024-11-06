@@ -18,22 +18,24 @@
 <hivemq>
     <protocol-adapters>
         <ads>
-            <id>my-ads-protocol-adapter</id>
-            <port>1234</port>
-            <host>my.ads-server.com</host>
-            <targetAmsPort>123</targetAmsPort>
-            <sourceAmsPort>124</sourceAmsPort>
-            <targetAmsNetId>1.2.3.4.5.6</targetAmsNetId>
-            <sourceAmsNetId>1.2.3.4.5.7</sourceAmsNetId>
-            <adsToMqtt>
-                <adsToMqttMappings>
-                    <adsToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag-name</tagName>
-                        <dataType>BOOL</dataType>
-                    </adsToMqttMapping>
-                </adsToMqttMappings>
-            </adsToMqtt>
+            <config>
+                <id>my-ads-protocol-adapter</id>
+                <port>1234</port>
+                <host>my.ads-server.com</host>
+                <targetAmsPort>123</targetAmsPort>
+                <sourceAmsPort>124</sourceAmsPort>
+                <targetAmsNetId>1.2.3.4.5.6</targetAmsNetId>
+                <sourceAmsNetId>1.2.3.4.5.7</sourceAmsNetId>
+                <adsToMqtt>
+                    <adsToMqttMappings>
+                        <adsToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <tagName>tag-name</tagName>
+                            <dataType>BOOL</dataType>
+                        </adsToMqttMapping>
+                    </adsToMqttMappings>
+                </adsToMqtt>
+            </config>
             <tags>
                 <tag>
                     <name>tag-name</name>

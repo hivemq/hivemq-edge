@@ -25,6 +25,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
@@ -46,12 +47,14 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull List<FileToMqttMapping> pollingContext;
+    private final @NotNull List<Tag> tags;
 
     public FilePollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<FileAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.tags = input.getTags();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
     }
@@ -89,11 +92,11 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     @Override
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> pollFile(pollingInput, pollingOutput, def),
+                        def -> pollFile(pollingInput, pollingOutput, (FileTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")

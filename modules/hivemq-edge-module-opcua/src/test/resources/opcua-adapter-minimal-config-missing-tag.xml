@@ -18,24 +18,26 @@
 <hivemq>
     <protocol-adapters>
         <opcua>
-            <id>simulation-server-2</id>
-            <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
-            <opcuaToMqtt>
-                <opcuaToMqttMappings>
-                    <opcuaToMqttMapping>
-                        <tagName>ns=1;i=1004</tagName>
-                        <mqttTopic>test/blubb/#</mqttTopic>
-                    </opcuaToMqttMapping>
-                </opcuaToMqttMappings>
-            </opcuaToMqtt>
-            <mqttToOpcua>
-                <mqttToOpcuaMappings>
-                    <mqttToOpcuaMapping>
-                        <tagName>ns=1;i=1004</tagName>
-                        <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
-                    </mqttToOpcuaMapping>
-                </mqttToOpcuaMappings>
-            </mqttToOpcua>
+            <config>
+                <id>simulation-server-2</id>
+                <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
+                <opcuaToMqtt>
+                    <opcuaToMqttMappings>
+                        <opcuaToMqttMapping>
+                            <tagName>ns=1;i=1004</tagName>
+                            <mqttTopic>test/blubb/#</mqttTopic>
+                        </opcuaToMqttMapping>
+                    </opcuaToMqttMappings>
+                </opcuaToMqtt>
+                <mqttToOpcua>
+                    <mqttToOpcuaMappings>
+                        <mqttToOpcuaMapping>
+                            <tagName>ns=1;i=1004</tagName>
+                            <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
+                        </mqttToOpcuaMapping>
+                    </mqttToOpcuaMappings>
+                </mqttToOpcua>
+            </config>
             <tags>
                 <tag>
                     <name>wrong-ns=1;i=1004</name>

@@ -31,6 +31,7 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -56,6 +57,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
@@ -67,6 +69,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
+        this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
     }
@@ -85,6 +88,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 if(opcUaClientWrapper == null) {
                     try {
                         OpcUaClientWrapper.createAndConnect(adapterConfig,
+                                tags,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),
@@ -158,7 +162,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) input.getWritingContext();
         if(opcUaClientWrapperTemp != null) {
-        adapterConfig.getTags().stream()
+        tags.stream()
                 .filter(tag -> tag.getName().equals(writeContext.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(

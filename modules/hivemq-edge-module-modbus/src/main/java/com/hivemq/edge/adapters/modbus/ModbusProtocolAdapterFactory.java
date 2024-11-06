@@ -18,12 +18,11 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
-import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
@@ -42,9 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterInformation.PROTOCOL_ID;
-
-public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig> {
+public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig>,
+        LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
@@ -63,38 +61,11 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<ModbusAdapterConfig> input) {
-        return new ModbusProtocolAdapter(adapterInformation, input.getConfig(), input);
+        return new ModbusProtocolAdapter(adapterInformation, input);
     }
 
-    @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
-        try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn(
-                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        ModbusProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        ModbusProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-    }
-
-    private @NotNull ModbusAdapterConfig tryConvertLegacyConfig(
+    @NotNull
+    public ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyModbusAdapterConfig legacyModbusAdapterConfig =
                 objectMapper.convertValue(config, LegacyModbusAdapterConfig.class);
@@ -130,11 +101,11 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                         modbusToMqttMappings);
 
 
-        return new ModbusAdapterConfig(legacyModbusAdapterConfig.getId(),
+        return new ConfigTagsTuple(new ModbusAdapterConfig(legacyModbusAdapterConfig.getId(),
                 legacyModbusAdapterConfig.getPort(),
                 legacyModbusAdapterConfig.getHost(),
                 legacyModbusAdapterConfig.getTimeout(),
-                modbusToMqttConfig,
+                modbusToMqttConfig),
                 modbusTags);
     }
 }

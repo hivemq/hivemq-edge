@@ -71,6 +71,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
+    protected final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     protected final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
@@ -88,6 +89,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
+        this.tags = input.getTags();
         this.protocolAdapterTagService = input.moduleServices().protocolAdapterTagService();
     }
 
@@ -103,7 +105,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
                             def -> tempConnection.read(plc4xToMqttMapping)
                                     .thenApply(response -> processReadResponse((Plc4xToMqttMapping) pollingInput.getPollingContext(),
                                             response))
-                                    .thenApply(data -> captureDataSample(data, def))
+                                    .thenApply(data -> captureDataSample(data, (Plc4xTag) def))
                                     .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput)),
                             () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                     tagName +
@@ -113,7 +115,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     }
 
     private @NotNull Optional<? extends Tag> findTag(String tagName) {
-        return adapterConfig.getTags().stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
+        return tags.stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
     }
 
     protected void handleDataAndExceptions(
@@ -214,7 +216,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
             @Override
             protected @NotNull String getTagAddressForSubscription(final Plc4xToMqttMapping context) {
                 return findTag(context.getTagName())
-                        .map(tag -> createTagAddressForSubscription(context, tag))
+                        .map(tag -> createTagAddressForSubscription(context, (Plc4xTag) tag))
                         .orElseThrow(); //TODO this sucks
             }
         };

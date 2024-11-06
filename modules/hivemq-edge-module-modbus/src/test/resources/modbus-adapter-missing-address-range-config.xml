@@ -18,16 +18,18 @@
 <hivemq>
     <protocol-adapters>
         <modbus>
-            <id>my-modbus-protocol-adapter</id>
-            <port>1234</port>
-            <host>my.modbus-server.com</host>
-            <modbusToMqtt>
-                <modbusToMqttMappings>
-                    <modbusToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                    </modbusToMqttMapping>
-                </modbusToMqttMappings>
-            </modbusToMqtt>
+            <config>
+                <id>my-modbus-protocol-adapter</id>
+                <port>1234</port>
+                <host>my.modbus-server.com</host>
+                <modbusToMqtt>
+                    <modbusToMqttMappings>
+                        <modbusToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                        </modbusToMqttMapping>
+                    </modbusToMqttMappings>
+                </modbusToMqtt>
+            </config>
         </modbus>
     </protocol-adapters>
 </hivemq>
