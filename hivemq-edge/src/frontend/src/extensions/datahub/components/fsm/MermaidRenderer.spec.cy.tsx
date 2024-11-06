@@ -13,8 +13,8 @@ describe('MermaidRenderer', () => {
   it('should render the Mermaid diagram of the FSM', () => {
     cy.mountWithProviders(<MermaidRenderer {...MOCK_FSM.metadata} />)
 
-    cy.get('svg').find('g[data-node]').as('nodes')
-    cy.get('@nodes').should('have.length', 7)
+    cy.get('svg').find('g.nodes > g').as('nodes')
+    cy.get('@nodes').should('have.length', 9)
     cy.get('@nodes').eq(1).should('have.text', 'Initial')
     cy.get('@nodes').eq(4).should('have.text', 'Violated')
   })

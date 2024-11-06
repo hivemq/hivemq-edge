@@ -63,6 +63,9 @@
     },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
+    },
+    "rjsf": {
+      "validation": "Some validation errors in the form"
     }
   },
   "login": {
@@ -551,9 +554,9 @@
       },
       "formats": {
         "label_CONFIGURATION": "Full configuration",
-        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file.",
-        "label_SUBSCRIPTIONS": "Subscriptions",
-        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing.",
+        "description_CONFIGURATION": "Export the complete configuration of the adapter, as a standalone JSON file.",
+        "label_MAPPINGS": "Mappings",
+        "description_MAPPINGS": "Export all the mappings of the adapter in a batch-processing format.",
         "notAvailable": "The format is not available for this adapter."
       },
       "mimeTypes": {
@@ -567,12 +570,67 @@
         "status_success": "Adapter {{ name }} successfully downloaded "
       },
       "error": {
-        "noSubscription": "No subscription could be detected in the adapter configuration",
-        "noSchema": "There are no valid schema defining the extracted subscriptions",
+        "noAdapterConfig": "No adapter configuration exists",
+        "noMapping": "No mapping could be found in the adapter configuration",
+        "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"
+      }
+    },
+    "mapping": {
+      "manager": {
+        "header_INWARD": "Manage inward mappings",
+        "header_OUTWARD": "Manage outward mappings"
+      },
+      "actions": {
+        "submit": "Submit"
       }
     }
   },
+  "device": {
+    "drawer": {
+      "metadataPanel": {
+        "cta": {
+          "load": "Load Metadata"
+        }
+      },
+      "tagList": {
+        "title": "List of Device Tags",
+        "cta": {
+          "edit": "Edit tags"
+        },
+        "formatter": {
+          "unknownFormat": "< unknown format >"
+        },
+        "toast": {
+          "description_loading": "Processing the request",
+          "delete": {
+            "title": "Delete Tag",
+            "description_success": "The tag has been deleted from the device",
+            "description_error": "The tag could not be deleted"
+          },
+          "updateCollection": {
+            "title": "Edit the tags",
+            "description_success": "The tags has been modified on the device",
+            "description_error": "The list of tags could not be updated on the device"
+          }
+        }
+      },
+      "tagEditor": {
+        "title": "Edit the tags",
+        "cta": {
+          "edit": "Edit tags"
+        }
+      }
+    },
+    "errors": {
+      "noFormSchema": "The form cannot be created, due to internal errors",
+      "noAdapter": "The protocol adapter for this device cannot be found",
+      "noMetadataLoaded": "No metadata loaded for the device",
+      "noTagLoaded": "Cannot load the tags",
+      "noTagCreated": "There is no tag created yet"
+    }
+  },
+
   "articles": {
     "title": "Articles",
     "description": "Some reading for your understanding of HiveMQ Edge",
@@ -662,8 +720,7 @@
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
-      "toggleInteractivity": "Lock the canvas",
-      "group": "Group the selected entities"
+      "toggleInteractivity": "Lock the canvas"
     },
     "configuration": {
       "header": "Workspace configuration",
@@ -673,7 +730,6 @@
         "showTopics": "Topics",
         "showStatus": "Status indicators",
         "showMonitoringOnEdge": "Observability from the links",
-        "showHosts": "Hosts",
         "showGateway": "Gateways"
       },
       "layout": {
@@ -699,11 +755,30 @@
     },
     "device": {
       "type_ADAPTER_NODE": "adapter",
-      "type_BRIDGE_NODE": "bridge"
+      "type_BRIDGE_NODE": "bridge",
+      "type_EDGE_NODE": "edge"
     },
     "layout": {
       "HORIZONTAL": "Horizontal",
       "CIRCLE_PACKING": "Circle Packing"
+    },
+    "toolbar": {
+      "container": {
+        "left": "First Toolbar",
+        "right": "Second Toolbar"
+      },
+      "command": {
+        "overview": "Open the overview panel",
+        "group": "Group the selected adapters",
+        "device": {
+          "metadata": "Edit device tags"
+        },
+        "mappings": {
+          "common": "Manage mappings of the device",
+          "inward": "Edit inward mappings",
+          "outward": "Edit outward mappings"
+        }
+      }
     },
     "grouping": {
       "toolbar": {
@@ -735,6 +810,8 @@
       "header_ADAPTER_NODE": "Adapter Overview",
       "header_BRIDGE_NODE": "Bridge Overview",
       "header_CLUSTER_NODE": "Group Overview",
+      "header_EDGE_NODE": "Edge Overview",
+      "header_DEVICE_NODE": "Device Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
@@ -751,6 +828,31 @@
     "datahub": {
       "aria-label": "Open the Data Hub policy",
       "list": "Show all the policies"
+    },
+    "topicWheel": {
+      "control": {
+        "treeview": "Topic Tree View",
+        "sunburst": "Topic Wheel",
+        "uns": "UNS",
+        "origin": "Adapter"
+      },
+      "topicSampler": {
+        "title": "The device is using a wildcard to subscribe to topics, they are therefore not known during it's configuration.",
+        "description": "You can trigger a short monitoring of the relevant MQTT traffic in order to extract a snapshot of the MQTT topics involved. They will be temporarily added to the Topic Wheel.",
+        "sampler": {
+          "cta": "Get Topic Samples",
+          "loader": "Monitoring MQTT traffic"
+        }
+      },
+      "topicFilter": {
+        "title": "This topic has been discovered from traffic. You can add it to a topic filter in the workspace.",
+        "filter": {
+          "cta": "Add Topic Filter"
+        }
+      },
+      "metadata": {
+        "sample": "Load samples"
+      }
     }
   },
   "modals": {
@@ -765,10 +867,6 @@
     },
     "deleteProtocolAdapterDialog": {
       "header": "Delete Adapter"
-    },
-    "SubscriptionEditor": {
-      "header": "Define the subscription pattern",
-      "submit": "Add Subscription"
     }
   },
   "validation": {
@@ -871,6 +969,17 @@
     "releases": {
       "title": "A new version of $t(branding.appName) is available",
       "description": "Visit the GitHub repository to learn more about the latest version of $t(branding.appName)"
+    }
+  },
+  "warnings": {
+    "featureFlag": {
+      "splitSchema": "The mappings are now available through the workspace"
+    }
+  },
+  "domainMapping": {
+    "error": {
+      "noSampleForTopic": "No sample could be observed for the topic filter {{ topicFilter }}",
+      "noSchemaForTopic": "There are no valid schema for the topic filter {{ topicFilter }}"
     }
   }
 }

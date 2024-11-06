@@ -1,3 +1,3 @@
 export const CustomFormat = {
-  MQTT_TOPIC: 'mqttTopic',
+  MQTT_TOPIC: 'mqtt-topic',
 }

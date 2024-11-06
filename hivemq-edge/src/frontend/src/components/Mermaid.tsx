@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react'
-import mermaid from 'mermaid'
+import mermaid, { MermaidConfig } from 'mermaid'
 import { Card, CardBody } from '@chakra-ui/react'
 
 export interface MermaidProps {
   text: string
 }
 
-const DEFAULT_CONFIG = {
+const DEFAULT_CONFIG: MermaidConfig = {
   startOnLoad: true,
-  theme: 'base',
+  theme: 'neutral',
   logLevel: 'fatal',
   securityLevel: 'strict',
   arrowMarkerAbsolute: false,
@@ -40,7 +40,6 @@ const DEFAULT_CONFIG = {
     leftPadding: 75,
     gridLineStartPadding: 35,
     fontSize: 11,
-    fontFamily: '"Open-Sans", "sans-serif"',
     numberSectionStyles: 4,
     axisFormat: '%Y-%m-%d',
   },

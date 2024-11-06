@@ -20,7 +20,7 @@ import WarningMessage from '@/components/WarningMessage.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
-import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
+import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
@@ -93,7 +93,7 @@ const ProtocolAdapters: FC = () => {
     }
 
     const handleViewWorkspace = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
+      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type } } })
     }
 
     const handleExport = (adapterId: string, type: string) => {

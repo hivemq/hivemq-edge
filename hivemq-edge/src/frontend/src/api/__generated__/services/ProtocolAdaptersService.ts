@@ -4,6 +4,8 @@
 /* eslint-disable */
 import type { Adapter } from '../models/Adapter';
 import type { AdaptersList } from '../models/AdaptersList';
+import type { DomainTag } from '../models/DomainTag';
+import type { DomainTagList } from '../models/DomainTagList';
 import type { ProtocolAdaptersList } from '../models/ProtocolAdaptersList';
 import type { Status } from '../models/Status';
 import type { StatusList } from '../models/StatusList';
@@ -231,5 +233,124 @@ export class ProtocolAdaptersService {
             },
         });
     }
+
+    /**
+     * Get the domain tags for the device connected through this adapter
+     * Get the domain tags for the device connected through this adapter
+     * @param adapterId The name of the adapter to query.
+     * @param adapterType The name of the adapter to query. (DEV ONLY - will be regenerated)
+     * @returns DomainTagList Success
+     * @throws ApiError
+     */
+    public getAdapterDomainTags(
+        adapterId: string,
+        adapterType?: string
+    ): CancelablePromise<DomainTagList> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+            path: {
+                'adapterId': adapterId,
+            },
+            query: {
+                'type': adapterType,
+          },
+        });
+    }
+
+    /**
+     * Add a new  domain tag
+     * Add a new domain tag to the specified adapter
+     * @param adapterId The adapter type.
+     * @param requestBody The new domain tag.
+     * @returns any Success
+     * @throws ApiError
+     */
+    public addAdapterDomainTags(
+        adapterId: string,
+        requestBody: DomainTag,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+            path: {
+                'adapterId': adapterId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Delete a domain tag
+     * Delete the specified domain tag on the given adapter.
+     * @param adapterId The adapter Id.
+     * @param tagId The tag id.
+     * @returns any Success
+     * @throws ApiError
+     */
+    public deleteAdapterDomainTags(
+        adapterId: string,
+        tagId: string,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}',
+            path: {
+                'adapterId': adapterId,
+                'tagId': tagId,
+            },
+        });
+    }
+
+    /**
+     * Update a domain tag
+     * Update the domain tag of an adapter
+     * @param adapterId The adapter Id.
+     * @param tagId The tag id.
+     * @param requestBody
+     * @returns any Success
+     * @throws ApiError
+     */
+    public updateAdapterDomainTags(
+        adapterId: string,
+        tagId: string,
+        requestBody?: DomainTag,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}',
+            path: {
+                'adapterId': adapterId,
+                'tagId': tagId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+  /**
+   * Update a domain tag
+   * Update the domain tag of an adapter
+   * @param adapterId The adapter Id.
+   * @param tagId The tag id.
+   * @param requestBody
+   * @returns any Success
+   * @throws ApiError
+   */
+  public updateAdapterAllDomainTags(
+      adapterId: string,
+      requestBody?: DomainTagList,
+  ): CancelablePromise<any> {
+    return this.httpRequest.request({
+      method: 'PUT',
+      url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+      path: {
+        'adapterId': adapterId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+    });
+  }
 
 }

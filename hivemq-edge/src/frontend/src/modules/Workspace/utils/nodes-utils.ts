@@ -3,25 +3,32 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { GenericObjectType } from '@rjsf/utils'
 
-import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, Bridge, Status, Listener, ProtocolAdapter, ClientFilter } from '@/api/__generated__'
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
+import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
-const POS_SEPARATOR = 8
+const POS_SEPARATOR = 80
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
-const POS_NODE_INC: XYPosition = { x: 245 + POS_SEPARATOR, y: 300 }
+const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 400 }
 const MAX_ADAPTERS = 10
+
+export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
+  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, 200, 'target'],
+  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -125, 'target'],
+  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, -200, 'source'],
+  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 125, 'source'],
+}
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
   const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
     id: IdStubs.EDGE_NODE,
     type: NodeTypes.EDGE_NODE,
     data: { label: label },
-    draggable: false,
     position: positionStorage?.[IdStubs.EDGE_NODE] ?? POS_EDGE,
   }
   return nodeEdge
@@ -67,7 +74,7 @@ export const createBridgeNode = (
     },
     animated: isConnected && !!remote.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, bridge.status),
     },
   }
@@ -99,7 +106,7 @@ export const createBridgeNode = (
     },
     animated: isConnected && !!local.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, bridge.status),
     },
   }
@@ -186,12 +193,91 @@ export const createAdapterNode = (
     },
     animated: isConnected && !!topics.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, adapter.status),
     },
   }
 
-  return { nodeAdapter, edgeConnector }
+  let nodeDevice: Node<ProtocolAdapter, NodeTypes.DEVICE_NODE> | undefined = undefined
+  let deviceConnector: Edge | undefined = undefined
+
+  if (isBidirectional(type)) {
+    const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
+    nodeDevice = {
+      id: idBAdapterDevice,
+      type: NodeTypes.DEVICE_NODE,
+      targetPosition: Position.Top,
+      data: type,
+      position: positionStorage?.[idBAdapterDevice] ?? {
+        x: nodeAdapter.position.x,
+        y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
+      },
+    }
+
+    deviceConnector = {
+      id: `${IdStubs.CONNECTOR}-${IdStubs.DEVICE_NODE}@${idAdapter}`,
+      target: idBAdapterDevice,
+      sourceHandle: 'Top',
+      source: idAdapter,
+      focusable: false,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: getThemeForStatus(theme, adapter.status),
+      },
+      animated: isConnected && !!topics.length,
+      style: {
+        strokeWidth: 1.5,
+        stroke: getThemeForStatus(theme, adapter.status),
+      },
+    }
+  }
+
+  return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
+}
+
+export const createClientNode = (
+  client: ClientFilter,
+  nbClient: number,
+  maxClient: number,
+  theme: Partial<WithCSSVar<Dict>>,
+  positionStorage?: Record<string, XYPosition>
+) => {
+  const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
+  const isConnected = Boolean(client.topicFilters.length)
+
+  const nodeClient: Node<ClientFilter, NodeTypes.CLIENT_NODE> = {
+    id: idClient,
+    type: NodeTypes.CLIENT_NODE,
+    sourcePosition: Position.Bottom,
+    data: client,
+    position: positionStorage?.[idClient] ?? {
+      x: POS_EDGE.x + POS_NODE_INC.x * (nbClient - (maxClient - 1) / 2),
+      y: POS_EDGE.y + POS_NODE_INC.y,
+    },
+  }
+
+  const clientConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idClient}`,
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Bottom',
+    source: idClient,
+    focusable: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: theme.colors.status.connected[500],
+    },
+    animated: isConnected,
+    style: {
+      strokeWidth: 1.5,
+      stroke: theme.colors.status.connected[500],
+    },
+  }
+
+  return { nodeClient, clientConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

@@ -6,11 +6,13 @@ import { useDisclosure } from '@chakra-ui/react'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import { EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
+import { DeviceMetadata, EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
+const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
 const GroupPropertyDrawer = lazy(() => import('../drawers/GroupPropertyDrawer.tsx'))
+const EdgePropertyDrawer = lazy(() => import('../drawers/EdgePropertyDrawer.tsx'))
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
@@ -25,6 +27,11 @@ const NodePanelController: FC = () => {
     (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
 
+  const selectedEdge = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.EDGE_NODE)
+  const selectedDevice = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.DEVICE_NODE) as
+    | Node<DeviceMetadata>
+    | undefined
+
   const selectedLinkSource = nodes.find((e) => {
     const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
     if (!link) return undefined
@@ -38,7 +45,7 @@ const NodePanelController: FC = () => {
   useEffect(() => {
     if (!nodes.length) return
     // if (!selectedNode || !nodeId) {
-    //   navigate('/edge-flow', { replace: true })
+    //   navigate('/workspace', { replace: true })
     //   return
     // }
     onOpen()
@@ -46,7 +53,7 @@ const NodePanelController: FC = () => {
 
   const handleClose = () => {
     onClose()
-    navigate('/edge-flow')
+    navigate('/workspace')
   }
 
   const handleEditEntity = () => {
@@ -89,10 +96,28 @@ const NodePanelController: FC = () => {
           onEditEntity={handleEditEntity}
         />
       )}
+      {selectedEdge && (
+        <EdgePropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedEdge}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
       {selectedNode && (
         <NodePropertyDrawer
           nodeId={nodeId}
           selectedNode={selectedNode}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedDevice && (
+        <DevicePropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedDevice}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}

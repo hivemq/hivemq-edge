@@ -8,7 +8,7 @@ import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
-import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
+import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 
 import config from '@/config'
 
@@ -22,7 +22,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
     ? [
         {
           icon: <WorkspaceIcon boxSize={4} />,
-          href: '/edge-flow',
+          href: '/workspace',
           label: t('translation:navigation.gateway.routes.workspace'),
         },
       ]

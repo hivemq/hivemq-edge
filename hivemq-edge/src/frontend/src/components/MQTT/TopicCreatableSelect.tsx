@@ -9,12 +9,13 @@ import {
   CreatableProps,
   SelectInstance,
   chakraComponents,
+  Select,
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
-import TopicIcon from '@/components/Icons/TopicIcon.tsx'
-import Topic from '@/components/MQTT/Topic.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
+import { TopicIcon, PLCTagIcon } from '@/components/Icons/TopicIcon.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
@@ -22,18 +23,23 @@ interface TopicOption extends OptionBase {
   iconColor: string
 }
 
-const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption, never, GroupBase<TopicOption>> => ({
+const customComponents = (
+  isMulti: boolean,
+  isTag?: boolean
+): SelectComponentsConfig<TopicOption, never, GroupBase<TopicOption>> => ({
   DropdownIndicator: null,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
-      <TopicIcon mr={2} h={5} w={5} />
+      {!isTag && <TopicIcon mr={2} h={5} w={5} />}
+      {isTag && <PLCTagIcon mr={2} h={5} w={5} />}
       {children}
     </chakraComponents.Option>
   ),
 
   Control: ({ children, ...props }) => (
     <chakraComponents.Control {...props}>
-      {!isMulti && <TopicIcon mr={0} ml={3} />}
+      {!isMulti && !isTag && <TopicIcon mr={0} ml={3} />}
+      {!isMulti && isTag && <PLCTagIcon mr={0} ml={3} />}
       {children}
     </chakraComponents.Control>
   ),
@@ -42,7 +48,7 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
     // TODO[NVL] removing the default style might cause side effects
     return (
       <chakraComponents.MultiValueContainer {...props} sx={{}}>
-        <Topic topic={children} mr={3} />
+        <Topic tagTitle={children} mr={3} />
       </chakraComponents.MultiValueContainer>
     )
   },
@@ -56,6 +62,8 @@ interface TopicCreatableSelectProps<IsMulti extends boolean>
   extends Partial<Omit<TopicCreatableSelect<IsMulti>, 'options'>> {
   id: string
   options: string[]
+  isCreatable?: boolean
+  isTag?: boolean
 }
 
 const AbstractTopicCreatableSelect = <T extends boolean>({
@@ -63,6 +71,8 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
   options,
   isLoading,
   isMulti,
+  isTag = false,
+  isCreatable = true,
   ...rest
 }: TopicCreatableSelectProps<T>) => {
   const topicOptions = Array.from(new Set([...options]))
@@ -74,8 +84,10 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
     trim: false,
   }
 
+  const SelectComponent = isCreatable ? CreatableSelect : Select
+
   return (
-    <CreatableSelect<TopicOption, T, GroupBase<TopicOption>>
+    <SelectComponent<TopicOption, T, GroupBase<TopicOption>>
       aria-label={t('topicCreate.label')}
       placeholder={t('topicCreate.placeholder')}
       noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
@@ -86,7 +98,8 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
       isSearchable
       isMulti={isMulti}
       options={topicOptions}
-      components={isMulti === undefined ? undefined : customComponents(isMulti)}
+      // @ts-ignore Need to check the type
+      components={isMulti === undefined ? undefined : customComponents(isMulti, isTag)}
       filterOption={createFilter(filterConfig)}
       selectedOptionStyle="check"
       {...rest}
@@ -99,10 +112,11 @@ interface SingleTopicCreatableSelectProps extends Omit<TopicCreatableSelectProps
   onChange: (value: string | undefined) => void
 }
 
-export const SingleTopicCreatableSelect = ({ value, onChange, ...props }: SingleTopicCreatableSelectProps) => (
+export const SingleTopicCreatableSelect = ({ value, onChange, isTag, ...props }: SingleTopicCreatableSelectProps) => (
   <AbstractTopicCreatableSelect<false>
     {...props}
     isMulti={false}
+    isTag={isTag}
     value={value ? { label: value, value: value, iconColor: 'brand.200' } : undefined}
     onChange={(value) => {
       const newValue = value as SingleValue<TopicOption>
@@ -115,17 +129,20 @@ interface MultiTopicsCreatableSelectProps
   extends Omit<TopicCreatableSelectProps<true>, 'value' | 'onChange' | 'options'> {
   value: string[]
   onChange: (value: string[] | undefined) => void
+  isCreatable?: boolean
 }
 
-export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiTopicsCreatableSelectProps) => {
+export const MultiTopicsCreatableSelect = ({ value, onChange, isTag, ...props }: MultiTopicsCreatableSelectProps) => {
   const { data, isSuccess } = useGetEdgeTopics({ publishOnly: false })
+
   return (
     <AbstractTopicCreatableSelect<true>
       {...props}
       options={data}
       isLoading={!isSuccess}
       isMulti={true}
-      value={value.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
+      isTag={isTag}
+      value={value?.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
       onChange={(m) => onChange(m.map<string>((e) => e.value))}
     />
   )

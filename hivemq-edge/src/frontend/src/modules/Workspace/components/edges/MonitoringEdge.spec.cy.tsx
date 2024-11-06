@@ -55,7 +55,7 @@ describe('MonitoringEdge', () => {
     cy.getByTestId('observability-panel-trigger').should('have.attr', 'aria-label', 'Open the Observability panel')
     cy.getByTestId('test-navigate-pathname').should('have.text', '/')
     cy.getByTestId('observability-panel-trigger').click()
-    cy.getByTestId('test-navigate-pathname').should('have.text', `/edge-flow/link/${MOCK_EDGE_ID}`)
+    cy.getByTestId('test-navigate-pathname').should('have.text', `/workspace/link/${MOCK_EDGE_ID}`)
   })
 
   it('should be accessible', () => {

@@ -1,10 +1,9 @@
-import { FC, useMemo, useState } from 'react'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
-import { IdSchema, RJSFSchema } from '@rjsf/utils'
-import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
-import Form from '@rjsf/chakra-ui'
+import { RJSFSchema } from '@rjsf/utils'
+
 import {
   Button,
   Drawer,
@@ -19,26 +18,23 @@ import {
   Image,
   Text,
 } from '@chakra-ui/react'
-import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
-import validator from '@rjsf/validator-ajv8'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
-import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
-import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
-import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
-import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import { customFormatsValidator, customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
-import {
-  adapterJSFFields,
-  adapterJSFWidgets,
-  getRequiredUiSchema,
-} from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import {
+  getInwardMappingRootProperty,
+  getOutwardMappingRootProperty,
+  isBidirectional,
+} from '@/modules/Workspace/utils/adapter.utils.ts'
+import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
+
+import config from '@/config'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -51,8 +47,6 @@ interface AdapterInstanceDrawerProps {
   onDelete?: () => void
 }
 
-const FLAG_POST_VALIDATE = false
-
 const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   adapterType,
   isNewAdapter = false,
@@ -64,36 +58,36 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data } = useGetAdapterTypes()
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
-  const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
 
   const { schema, uiSchema, name, logo, isDiscoverable } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
+
+    // If the config schema is split across entities, replace the fields by a warning
+    const hideProperties = []
+    if (config.features.ADAPTER_MAPPINGS_IN_WORKSPACE && adapter?.id) {
+      hideProperties.push(getInwardMappingRootProperty(adapter?.id))
+      if (isBidirectional(adapter)) hideProperties.push(getOutwardMappingRootProperty(adapter?.id))
+    }
+
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hideProperties),
     }
   }, [data?.items, isNewAdapter, adapterType])
 
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
     const { config } = allAdapters?.find((adapter) => adapter.id === adapterId) || {}
-    if (batchData) {
-      return immutableJSONPatch(config, batchData)
-    }
+
     return config
-  }, [isNewAdapter, adapterId, allAdapters, batchData])
+  }, [isNewAdapter, adapterId, allAdapters])
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
     if (data.formData) onSubmit(data.formData)
-  }
-
-  const filterUnboundErrors = (errors: RJSFValidationError[]) => {
-    // Hide the AJV8 validation error from the view. It has no other identifier so matching the text
-    return errors.filter((error) => !error.stack.startsWith('no schema with key or ref'))
   }
 
   const context: AdapterContext = {
@@ -101,19 +95,6 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     isDiscoverable: isDiscoverable,
     adapterType: adapterType,
     adapterId: adapterId,
-    onBatchUpload: (idSchema: IdSchema<unknown>, batch) => {
-      const path = idSchema.$id.replace('root_', '/').replaceAll('_', '/') + '/-'
-      const operations: JSONPatchDocument = batch.map<JSONPatchAdd>((value) => ({ op: 'add', path, value }))
-
-      if (schema && FLAG_POST_VALIDATE) {
-        const updatedDocument = immutableJSONPatch(defaultValues, operations)
-        const { $schema, ...rest } = schema
-        const validate = validator.ajv.compile(rest)
-        validate(updatedDocument)
-      }
-
-      setBatchData(operations)
-    },
   }
 
   return (
@@ -137,28 +118,16 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
             </DrawerHeader>
             <DrawerBody>
               {schema && (
-                <Form
+                <ChakraRJSForm
                   id="adapter-instance-form"
                   schema={schema}
                   uiSchema={uiSchema}
-                  templates={{
-                    ObjectFieldTemplate,
-                    FieldTemplate,
-                    BaseInputTemplate,
-                    ArrayFieldTemplate,
-                    ArrayFieldItemTemplate,
-                  }}
-                  liveValidate
-                  onSubmit={onValidate}
-                  validator={customFormatsValidator}
-                  showErrorList="bottom"
-                  onError={(errors) => console.log('XXXXXXX', errors)}
                   formData={defaultValues}
-                  customValidate={customValidate(schema, allAdapters, t)}
-                  transformErrors={filterUnboundErrors}
                   formContext={context}
-                  widgets={adapterJSFWidgets}
-                  fields={adapterJSFFields}
+                  onSubmit={onValidate}
+                  // TODO[NVL] Types need fixing
+                  // @ts-ignore
+                  customValidate={customValidate(schema, allAdapters, t)}
                 />
               )}
             </DrawerBody>

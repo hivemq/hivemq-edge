@@ -173,7 +173,7 @@ describe('getEdgeStatus', () => {
     isConnected: true,
   }
   edge.style = {
-    strokeWidth: 0.5,
+    strokeWidth: 1.5,
     stroke: color,
   }
   edge.animated = true

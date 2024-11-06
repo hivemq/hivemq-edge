@@ -17,8 +17,10 @@ const UnifiedNamespacePage = lazy(() => import('@/modules/UnifiedNamespace/Unifi
 const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
+const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
+import { MappingType } from '@/modules/Mappings/types.ts'
 
 export const routes = createBrowserRouter(
   [
@@ -66,12 +68,20 @@ export const routes = createBrowserRouter(
           ],
         },
         {
-          path: 'edge-flow/',
+          path: 'workspace/',
           element: <EdgeFlowPage />,
           children: [
             {
               path: ':nodeType/:device?/:adapter?/:nodeId',
               element: <NodePanelController />,
+            },
+            {
+              path: ':nodeType/:device?/:adapter?/:nodeId/inward',
+              element: <AdapterSubscriptionManager type={MappingType.INWARD} />,
+            },
+            {
+              path: ':nodeType/:device?/:adapter?/:nodeId/outward',
+              element: <AdapterSubscriptionManager type={MappingType.OUTWARD} />,
             },
           ],
         },

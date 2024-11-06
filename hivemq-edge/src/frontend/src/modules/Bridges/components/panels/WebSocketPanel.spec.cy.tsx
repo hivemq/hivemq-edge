@@ -35,7 +35,7 @@ describe('WebSocketPanel', () => {
     cy.viewport(800, 800)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const mockOnSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(<TestingComponent onSubmit={mockOnSubmit} defaultValues={mockBridge} />)
 

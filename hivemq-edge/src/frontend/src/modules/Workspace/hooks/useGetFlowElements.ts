@@ -8,8 +8,15 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 
-import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
+import {
+  createEdgeNode,
+  createBridgeNode,
+  createAdapterNode,
+  createListenerNode,
+  createClientNode,
+} from '../utils/nodes-utils.ts'
 import { applyLayout } from '../utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 
@@ -21,15 +28,13 @@ const useGetFlowElements = () => {
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
   const { data: listenerList } = useGetListeners()
+  const { data: clients } = useListClientSubscriptions()
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const { items: listeners } = listenerList || {}
 
   useEffect(() => {
-    if (!bridges) return
-    if (!adapters) return
-
     const nodes: Node[] = []
     const edges: Edge[] = []
 
@@ -44,25 +49,24 @@ const useGetFlowElements = () => {
       }
     })
 
-    bridges.forEach((bridge, incBridgeNb) => {
+    bridges?.forEach((bridge, incBridgeNb) => {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
-        bridges.length,
+        bridges.length + (clients?.length || 0),
         theme
       )
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
-      if (options.showHosts) {
-        nodes.push(nodeHost)
-        edges.push(hostConnector)
-      }
+
+      nodes.push(nodeHost)
+      edges.push(hostConnector)
     })
 
-    adapters.forEach((adapter, incAdapterNb) => {
+    adapters?.forEach((adapter, incAdapterNb) => {
       const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
 
-      const { nodeAdapter, edgeConnector } = createAdapterNode(
+      const { nodeAdapter, edgeConnector, nodeDevice, deviceConnector } = createAdapterNode(
         type as ProtocolAdapter,
         adapter,
         incAdapterNb,
@@ -71,11 +75,27 @@ const useGetFlowElements = () => {
       )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
+
+      if (nodeDevice && deviceConnector) {
+        nodes.push(nodeDevice)
+        edges.push(deviceConnector)
+      }
+    })
+
+    clients?.forEach((client, incClient) => {
+      const { nodeClient, clientConnector } = createClientNode(
+        client,
+        (bridges?.length || 0) + incClient,
+        (bridges?.length || 0) + clients.length,
+        theme
+      )
+      nodes.push(nodeClient)
+      edges.push(clientConnector)
     })
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
-  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme, adapterTypes?.items])
+  }, [bridges, adapters, listeners, groups, clients, setNodes, setEdges, t, options, theme, adapterTypes?.items])
 
   return { nodes, edges, onNodesChange, onEdgesChange }
 }

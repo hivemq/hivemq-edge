@@ -25,11 +25,11 @@ const MonitoringEdge: FC<EdgeProps> = (props) => {
   const policyRoutes = useMemo(() => {
     if (!policies) return undefined
 
-    return policies.map((e) => `/datahub/${DataHubNodeType.DATA_POLICY}/${e.id}`)
+    return policies.map((policy) => `/datahub/${DataHubNodeType.DATA_POLICY}/${policy.id}`)
   }, [policies])
 
   const handleOpenObservability = () => {
-    navigate(`/edge-flow/link/${id}`)
+    navigate(`/workspace/link/${id}`)
   }
 
   const handleShowPolicy = (route: string) => {
