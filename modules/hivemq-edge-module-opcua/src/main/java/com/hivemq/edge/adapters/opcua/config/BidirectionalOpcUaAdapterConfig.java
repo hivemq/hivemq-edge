@@ -33,7 +33,7 @@ public class BidirectionalOpcUaAdapterConfig extends OpcUaAdapterConfig {
 
     @JsonProperty(value = "mqttToOpcua")
     @ModuleConfigField(title = "Mqtt to OpcUA Config",
-                       description = "The configuration for a data stream from MQTT to OpcUa")
+                       description = "The configuration for a data stream from MQTT to OPC UA")
     private final @NotNull MqttToOpcUaConfig mqttToOpcUaConfig;
 
     @JsonCreator
