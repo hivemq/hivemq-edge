@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -190,7 +191,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         return new Adapter(value.getId(),
                 value.getAdapterInformation().getProtocolId(),
-                configObject,
+                objectMapper.valueToTree(configObject),
                 getStatusInternal(value.getId()));
     }
 
@@ -265,7 +266,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
-            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), adapter.getConfig());
+            final Map<String, Object> config =
+                    objectMapper.convertValue(adapter.getConfig(), new TypeReference<Map<String, Object>>() {
+                    });
+            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -295,7 +299,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
-        protocolAdapterManager.updateAdapter(adapterId, adapter.getConfig());
+        final Map<String, Object> config =
+                objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
+                });
+        protocolAdapterManager.updateAdapter(adapterId, config);
         return Response.ok().build();
     }
 
