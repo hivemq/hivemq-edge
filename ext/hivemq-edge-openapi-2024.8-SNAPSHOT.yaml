@@ -4240,11 +4240,7 @@ components:
       type: object
       properties:
         config:
-          type: object
-          additionalProperties:
-            type: object
-            description: The adapter configuration associated with this instance
-          description: The adapter configuration associated with this instance
+          $ref: '#/components/schemas/JsonNode'
         id:
           type: string
           format: string
