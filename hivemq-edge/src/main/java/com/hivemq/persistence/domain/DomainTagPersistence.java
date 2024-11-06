@@ -15,12 +15,16 @@
  */
 package com.hivemq.persistence.domain;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 import java.util.Set;
 
 public interface DomainTagPersistence {
+
+    @NotNull
+    void addProtocolAdapterInformation( @NotNull ProtocolAdapterInformation protocolAdapterInformation );
 
     @NotNull
     DomainTagAddResult addDomainTag( @NotNull DomainTag domainTag);

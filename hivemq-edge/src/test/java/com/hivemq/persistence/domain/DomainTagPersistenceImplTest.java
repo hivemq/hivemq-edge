@@ -15,10 +15,13 @@
  */
 package com.hivemq.persistence.domain;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,14 +29,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class DomainTagPersistenceImplTest {
 
-    private final @NotNull DomainTagPersistenceImpl domainTagPersistence = new DomainTagPersistenceImpl(mock());
+    private @NotNull DomainTagPersistenceImpl domainTagPersistence;
+
+    @BeforeEach
+    public void setUp() {
+        domainTagPersistence = new DomainTagPersistenceImpl();
+        final ProtocolAdapterInformation mockInfo = mock(ProtocolAdapterInformation.class);
+        when(mockInfo.getProtocolId()).thenReturn("s7");
+        domainTagPersistence.addProtocolAdapterInformation(mockInfo);
+    }
 
     @Test
     void addDomainTag_whenNewTag_thenAddTag() {
-        final DomainTag domainTag = DomainTag.simpleAddress("someTagName", "someAddress");
+        final DomainTag domainTag = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
 
@@ -45,8 +57,8 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void addDomainTag_wheDuplicateTag_thenAddTag() {
-        final DomainTag domainTag = DomainTag.simpleAddress("someTagName", "someAddress");
-        final DomainTag duplicate = DomainTag.simpleAddress("someTagName", "someAddress2");
+        final DomainTag domainTag = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag duplicate = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress2"));
 
         domainTagPersistence.addDomainTag(domainTag);
         final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(duplicate);
@@ -59,7 +71,7 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void updateDomainTag_whenTagExists_thenUpdate() {
-        final DomainTag domainTag = DomainTag.simpleAddress("someTagName", "someAddress");
+        final DomainTag domainTag = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
         assertSame(domainTagAddResult.getDomainTagPutStatus(), DomainTagAddResult.DomainTagPutStatus.SUCCESS);
@@ -76,7 +88,7 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void updateDomainTag_whenAdapterDoesNotExist_thenReturnNotFound() {
-        final DomainTag domainTag = DomainTag.simpleAddress("someTagName", "someAddress");
+        final DomainTag domainTag = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTag(domainTag.getTagName(), domainTag);
@@ -90,8 +102,8 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void updateDomainTag_whenTagDoesNotExist_thenReturnNotFound() {
-        final DomainTag domainTag = DomainTag.simpleAddress("otherTag", "someAddress");
-        final DomainTag updatedDomainTag = DomainTag.simpleAddress("someTagName", "someAddress");
+        final DomainTag domainTag = new DomainTag("otherTag", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag updatedDomainTag = new DomainTag("someTagName", "adapter2", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
         assertSame(domainTagAddResult.getDomainTagPutStatus(), DomainTagAddResult.DomainTagPutStatus.SUCCESS);
@@ -110,16 +122,16 @@ class DomainTagPersistenceImplTest {
     @Test
     void updateDomainTag_whenTagNameDoesExistForAnotherAdapter_thenReturnError() {
 
-        final DomainTag domainTag = DomainTag.simpleAddress("tag1", "someAddress");
-        final DomainTag domainTag2 = DomainTag.simpleAddress("tag2", "someAddress");
-        final DomainTag domainTagForAnotherAdapter = DomainTag.simpleAddress("tag3", "otherAdapter", "someAddress");
+        final DomainTag domainTag = new DomainTag("tag1", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTag2 = new DomainTag("tag2", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTagForAnotherAdapter = new DomainTag("tag3", "otherAdapter", "s7", "description", Map.of("address", "someAddress"));
 
         domainTagPersistence.addDomainTag(domainTag);
         domainTagPersistence.addDomainTag(domainTag2);
         // this is for another adapter, tag3 should not be able to be used by the adapter as it would be a duplicate
         domainTagPersistence.addDomainTag(domainTagForAnotherAdapter);
         // this tag has a duplicate tag id and should not be able to be put into the persistence
-        final DomainTag domainTag3 = DomainTag.simpleAddress("tag3", "someAddress");
+        final DomainTag domainTag3 = new DomainTag("tag3", "otherAdapter", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTags("adapter", Set.of(domainTag, domainTag2, domainTag3));
@@ -134,9 +146,9 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void updateDomainTag_whenLessTagsThanBeforeAreAdded_thenOnlyPersistTheNewTags() {
-        final DomainTag domainTag = DomainTag.simpleAddress("tag1", "someAddress");
-        final DomainTag domainTag2 = DomainTag.simpleAddress("tag2", "someAddress");
-        final DomainTag domainTag3 = DomainTag.simpleAddress("tag3", "someAddress");
+        final DomainTag domainTag = new DomainTag("tag1", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTag2 = new DomainTag("tag2", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTag3 = new DomainTag("tag3", "adapter2", "s7", "description", Map.of("address", "someAddress"));
 
 
         domainTagPersistence.addDomainTag(domainTag);
@@ -157,16 +169,16 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void updateDomainTag_whenMoreTagsThanBeforeAreAdded_thenPersistTheNewTags() {
-        final DomainTag domainTag = DomainTag.simpleAddress("tag1", "someAddress");
-        final DomainTag domainTag2 = DomainTag.simpleAddress("tag2", "someAddress");
-        final DomainTag domainTag3 = DomainTag.simpleAddress("tag3", "someAddress");
+        final DomainTag domainTag = new DomainTag("tag1", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTag2 = new DomainTag("tag2", "adapter", "s7", "description", Map.of("address", "someAddress"));
+        final DomainTag domainTag3 = new DomainTag("tag3", "adapter", "s7", "description", Map.of("address", "someAddress"));
 
         domainTagPersistence.addDomainTag(domainTag);
 
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTags("adapter", Set.of(domainTag, domainTag2));
-        assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
-                DomainTagUpdateResult.DomainTagUpdateStatus.SUCCESS);
+        assertSame(DomainTagUpdateResult.DomainTagUpdateStatus.SUCCESS,
+                domainTagUpdateResult.getDomainTagUpdateStatus());
 
         final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
         assertEquals(2, tagsForAdapter.size());
@@ -178,7 +190,7 @@ class DomainTagPersistenceImplTest {
 
     @Test
     void deleteDomainTag_whenTagExists_thenTagGetsDeleted() {
-        final DomainTag domainTag = DomainTag.simpleAddress("someTagName", "someAddress");
+        final DomainTag domainTag = new DomainTag("someTagName", "adapter", "s7", "description", Map.of("address", "someAddress"));
 
         final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
         assertSame(domainTagAddResult.getDomainTagPutStatus(), DomainTagAddResult.DomainTagPutStatus.SUCCESS);
@@ -204,7 +216,7 @@ class DomainTagPersistenceImplTest {
     @Test
     void getDomainTags() {
         for (int i = 1; i < 10; i++) {
-            final DomainTag domainTag = DomainTag.simpleAddress("tag" + i, "address" + i);
+            final DomainTag domainTag = new DomainTag("tag"+i, "adapter", "s7", "description", Map.of("address", "address"+i));
             final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
             assertEquals(domainTagAddResult.getDomainTagPutStatus(), DomainTagAddResult.DomainTagPutStatus.SUCCESS);
 
@@ -217,7 +229,7 @@ class DomainTagPersistenceImplTest {
     @Test
     void getTagsForAdapter() {
         for (int i = 1; i < 10; i++) {
-            final DomainTag domainTag = DomainTag.simpleAddress("tag" + i, "address" + i);
+            final DomainTag domainTag = new DomainTag("tag"+i, "adapter", "s7", "description", Map.of("address", "address"+i));
             final DomainTagAddResult domainTagAddResult = domainTagPersistence.addDomainTag(domainTag);
             assertEquals(domainTagAddResult.getDomainTagPutStatus(), DomainTagAddResult.DomainTagPutStatus.SUCCESS);
 

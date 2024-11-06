@@ -17,6 +17,7 @@ package com.hivemq.persistence.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -27,7 +28,9 @@ import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -35,14 +38,19 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(DomainTagPersistenceImpl.class);
 
-    private final @NotNull HashMap<String, Set<DomainTag>> adapterToDomainTag = new HashMap<>();
-    private final @NotNull HashMap<String, DomainTag> tagNameToDomainTag = new HashMap<>();
-//    private final @NotNull Map<String, ProtocolAdapterInformation> allAvailableAdapterTypes;
+    private final @NotNull Map<String, Set<DomainTag>> adapterToDomainTag = new HashMap<>();
+    private final @NotNull Map<String, DomainTag> tagNameToDomainTag = new HashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterInformation> allAvailableAdapterTypes = new HashMap<>();
     private final @NotNull ObjectMapper mapper;
 
     @Inject
     public DomainTagPersistenceImpl() {
         this.mapper = new ObjectMapper();
+    }
+
+    @Override
+    public void addProtocolAdapterInformation(final ProtocolAdapterInformation protocolAdapterInformation) {
+        allAvailableAdapterTypes.put(protocolAdapterInformation.getProtocolId(), protocolAdapterInformation);
     }
 
     @Override

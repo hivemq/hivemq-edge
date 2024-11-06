@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -29,6 +30,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
@@ -44,6 +46,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
+import com.hivemq.persistence.domain.DomainTagPersistence;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,6 +82,7 @@ class ProtocolAdapterManagerTest {
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private final @NotNull DomainTagPersistence domainTagPersistence = mock();
 
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -86,7 +90,8 @@ class ProtocolAdapterManagerTest {
 
     @BeforeEach
     void setUp() {
-        protocolAdapterManager = new ProtocolAdapterManager(configurationService,
+        protocolAdapterManager = new ProtocolAdapterManager(
+                configurationService,
                 metricRegistry,
                 moduleServices,
                 objectMapper,
@@ -97,7 +102,10 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
-                protocolAdapterWritingService, executorService, protocolAdapterTagService);
+                protocolAdapterWritingService,
+                executorService,
+                protocolAdapterTagService,
+                domainTagPersistence);
     }
 
     @AfterEach
@@ -115,12 +123,14 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(
+                mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -141,7 +151,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -165,7 +176,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
@@ -188,7 +200,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
@@ -211,7 +224,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
@@ -234,7 +248,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
-                mock());
+                mock(),
+                List.of());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
@@ -293,6 +308,21 @@ class ProtocolAdapterManagerTest {
         @Override
         public @Nullable List<ProtocolAdapterTag> getTags() {
             return List.of();
+        }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull Class<? extends Tag> tagConfigurationClass() {
+            return null;
+        }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+            return null;
+        }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+            return null;
         }
     }
 
