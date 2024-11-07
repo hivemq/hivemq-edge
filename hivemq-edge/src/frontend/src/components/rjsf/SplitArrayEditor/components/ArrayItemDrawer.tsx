@@ -20,7 +20,8 @@ import { ManagerContextType } from '@/modules/Mappings/types.ts'
 
 interface DeviceTagDrawerProps {
   context: ManagerContextType
-  onSubmit?: (data: DomainTagList | undefined) => void
+  // TODO[NVL] Make the component generic and pass the type
+  onSubmit?: (data: unknown) => void
   trigger: (disclosureProps: UseDisclosureProps) => JSX.Element
   header: string
   submitLabel?: string
