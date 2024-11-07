@@ -48,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -200,7 +199,7 @@ public class JsonToOpcUAConverter {
             case Boolean:
                 return extractBoolean(jsonNode);
             case Byte:
-                return extractByte(jsonNode);
+                return extractUnsignedByte(jsonNode);
             case SByte:
                 return extractSByte(jsonNode);
             case UInt16:
@@ -258,8 +257,7 @@ public class JsonToOpcUAConverter {
     }
 
     private @NotNull Struct extractExtensionObject(
-            @NotNull final JsonNode jsonNode,
-            @Nullable final NodeId binaryEncodingId) {
+            @NotNull final JsonNode jsonNode, @Nullable final NodeId binaryEncodingId) {
         if (binaryEncodingId == null) {
             throw new RuntimeException("Binary encoding id was null for nested struct. ");
         }
@@ -422,28 +420,52 @@ public class JsonToOpcUAConverter {
 
     static short extractSignedShort(final JsonNode jsonNode) {
         if (jsonNode.isInt()) {
+            final int value = jsonNode.intValue();
+            if (value > UShort.MAX_VALUE) {
+                throw createOverflowException(value, Int16.name());
+            } else if (value < UShort.MIN_VALUE) {
+                throw createUnderflowException(value, Int16.name());
+            }
             return jsonNode.shortValue();
         }
         throw createException(jsonNode, Int16.name());
     }
 
     static byte extractSByte(final JsonNode jsonNode) {
-       if(jsonNode.isInt()){
-           return (byte) jsonNode.asInt();
-       }
+        if (jsonNode.isInt()) {
+            final int value = jsonNode.intValue();
+            if (value > Byte.MAX_VALUE) {
+                throw createOverflowException(value, SByte.name());
+            } else if (value < Byte.MIN_VALUE) {
+                throw createUnderflowException(value, SByte.name());
+            }
+            return (byte) value;
+        }
         throw createException(jsonNode, SByte.name());
     }
 
-    static @NotNull UByte extractByte(final JsonNode jsonNode) {
-        if(jsonNode.isInt()){
-            return UByte.valueOf((byte) jsonNode.asInt());
+    static @NotNull UByte extractUnsignedByte(final JsonNode jsonNode) {
+        if (jsonNode.isInt()) {
+            final int value = jsonNode.intValue();
+            if (value > UByte.MAX_VALUE) {
+                throw createOverflowException(value, BuiltinDataType.Byte.name());
+            } else if (value < UByte.MIN_VALUE) {
+                throw createUnderflowException(value, BuiltinDataType.Byte.name());
+            }
+            return UByte.valueOf((byte) value);
         }
         throw createException(jsonNode, BuiltinDataType.Byte.name());
     }
 
     @NotNull
     static UInteger extractUInteger(final JsonNode jsonNode) {
-        if (jsonNode.isInt()) {
+        if (jsonNode.isInt() || jsonNode.isLong()) {
+            final long value = jsonNode.longValue();
+            if (value > UInteger.MAX_VALUE) {
+                throw createOverflowException(value, BuiltinDataType.UInt32.name());
+            } else if (value < UInteger.MIN_VALUE) {
+                throw createUnderflowException(value, BuiltinDataType.UInt32.name());
+            }
             return UInteger.valueOf(jsonNode.intValue());
         }
         throw createException(jsonNode, UInt32.name());
@@ -451,7 +473,13 @@ public class JsonToOpcUAConverter {
 
     static UShort extractUShort(final JsonNode jsonNode) {
         if (jsonNode.isInt()) {
-            return UShort.valueOf(jsonNode.intValue());
+            final int value = jsonNode.intValue();
+            if (value > UShort.MAX_VALUE) {
+                throw createOverflowException(value, UInt16.name());
+            } else if (value < UShort.MIN_VALUE) {
+                throw createUnderflowException(value, UInt16.name());
+            }
+            return UShort.valueOf(value);
         }
         throw createException(jsonNode, UInt16.name());
     }
@@ -498,12 +526,27 @@ public class JsonToOpcUAConverter {
                 value,
                 value.getClass().getSimpleName(),
                 intendedClass);
-        throw new IllegalArgumentException("Can not convert '" +
+        throw new IllegalArgumentException("Conversion error: The value '" +
                 value +
-                "' of class '" +
+                "' of type '" +
                 value.getClass().getSimpleName() +
-                "' to " +
+                "' cannot be concerted to " +
                 intendedClass +
-                ", because an overflow would happen.");
+                "due to overflow.");
+    }
+
+    static @NotNull IllegalArgumentException createUnderflowException(
+            @NotNull final Object value, final @NotNull String intendedClass) {
+        log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to underflow.",
+                value,
+                value.getClass().getSimpleName(),
+                intendedClass);
+        throw new IllegalArgumentException("Conversion error: The value '" +
+                value +
+                "' of type '" +
+                value.getClass().getSimpleName() +
+                "' cannot be concerted to " +
+                intendedClass +
+                "due to underflow.");
     }
 }

@@ -14,11 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonToOpcUAConverterTest {
 
-
     @Test
     void extractUShort() {
         final UShort value = JsonToOpcUAConverter.extractUShort(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
+    }
+
+    @Test
+    void extractUShort_overflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUShort(IntNode.valueOf(Integer.MAX_VALUE)));
+    }
+
+    @Test
+    void extractUShort_underflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUShort(IntNode.valueOf(Integer.MIN_VALUE)));
     }
 
     @Test
@@ -27,12 +36,32 @@ class JsonToOpcUAConverterTest {
         assertEquals(12, value);
     }
 
+    @Test
+    void extractSignedShort_overflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractSignedShort(IntNode.valueOf(Integer.MAX_VALUE)));
+    }
+
+    @Test
+    void extractSignedShort_underflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractSignedShort(IntNode.valueOf(Integer.MIN_VALUE)));
+    }
 
     @Test
     void extractUInteger() {
         final UInteger value = JsonToOpcUAConverter.extractUInteger(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
     }
+
+    @Test
+    void extractUInteger_overflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUInteger(LongNode.valueOf(Long.MAX_VALUE)));
+    }
+
+    @Test
+    void extractUInteger_underflow() {
+        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUInteger(LongNode.valueOf(Long.MIN_VALUE)));
+    }
+
 
     @Test
     void extractSignedInteger() {
@@ -54,8 +83,8 @@ class JsonToOpcUAConverterTest {
     }
 
     @Test
-    void extractByte() {
-        final @NotNull UByte value = JsonToOpcUAConverter.extractByte(IntNode.valueOf(12));
+    void extractUnsignedByte() {
+        final @NotNull UByte value = JsonToOpcUAConverter.extractUnsignedByte(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
     }
 
