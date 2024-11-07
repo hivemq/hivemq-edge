@@ -27,7 +27,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
@@ -74,7 +73,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     protected final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
-    protected final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
     protected volatile @Nullable Plc4xConnection<T> connection;
     private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
 
@@ -90,7 +88,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.tags = input.getTags();
-        this.protocolAdapterTagService = input.moduleServices().protocolAdapterTagService();
     }
 
     @Override

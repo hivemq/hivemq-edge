@@ -41,7 +41,7 @@ public class DomainTagModel {
     @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
 
-    @JsonProperty("description")
+    @JsonProperty("definition")
     @Schema(description = "A user created description for this tag.")
     private final @NotNull Map<String, Object> definition;
 
