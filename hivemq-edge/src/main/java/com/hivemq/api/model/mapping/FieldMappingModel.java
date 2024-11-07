@@ -1,4 +1,4 @@
-package com.hivemq.api.mapping;
+package com.hivemq.api.model.mapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class FieldMapping {
+public class FieldMappingModel {
 
     @JsonProperty("source")
     @Schema(description = "The field name in the incoming data.")
@@ -23,7 +23,7 @@ public class FieldMapping {
     private final @NotNull JsonNode transformation;
 
     @JsonCreator
-    public FieldMapping(
+    public FieldMappingModel(
             @JsonProperty("source") final @NotNull String sourceFieldName,
             @JsonProperty("destination") final @NotNull String destinationFieldName,
             @JsonProperty("transformation") final @NotNull JsonNode transformation) {

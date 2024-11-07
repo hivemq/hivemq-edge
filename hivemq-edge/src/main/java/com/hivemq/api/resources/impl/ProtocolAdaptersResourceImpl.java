@@ -36,6 +36,7 @@ import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
+import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -636,5 +637,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getAdapter().getId());
         }
         return Response.ok().build();
+    }
+
+    @Override
+    public @NotNull Response addFieldMapping(
+            @NotNull final String adapterId,
+            @NotNull final FieldMappingsModel fieldMappingsModel) {
+
+
+
+
+        return null;
     }
 }

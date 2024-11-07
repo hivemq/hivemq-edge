@@ -16,6 +16,7 @@
 package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
@@ -525,5 +526,37 @@ public interface ProtocolAdaptersApi {
                                 description = "The tag name (base64 encoded) for which the Json Schema for writing to a PLC gets created.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+
+
+
+
+    @POST
+    @Path("/adapters/{adapterId}/fieldmappings")
+    @Operation(summary = "Add a new domain tag to the specified adapter",
+               operationId = "add-adapter-domainTags",
+               description = "Add a new domain tag to the specified adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Already Present",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Errors.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example response in case an tag is already present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case an tag is already present for this tagId.",
+                                                                              value = TagResourceExamples.EXAMPLE_ALREADY_PRESENT)}))}
+
+    )
+    @NotNull
+    Response addFieldMapping(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
+            @NotNull @Parameter(name = "fieldMappings",
+                                description = "The field mappings for incoming and outgoing data",
+                                required = true,
+                                in = ParameterIn.DEFAULT) FieldMappingsModel fieldMappingsModel);
 
 }

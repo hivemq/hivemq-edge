@@ -1,4 +1,4 @@
-package com.hivemq.api.mapping;
+package com.hivemq.api.model.mapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class FieldMappingMetaData {
+public class FieldMappingMetaDataModel {
 
 
     @JsonProperty("source")
@@ -20,7 +20,7 @@ public class FieldMappingMetaData {
 
 
     @JsonCreator
-    public FieldMappingMetaData(
+    public FieldMappingMetaDataModel(
             @JsonProperty("source") final @NotNull JsonNode sourceJsonSchema,
             @JsonProperty("destination") final @NotNull JsonNode destintionJsonSchema) {
         this.sourceJsonSchema = sourceJsonSchema;
