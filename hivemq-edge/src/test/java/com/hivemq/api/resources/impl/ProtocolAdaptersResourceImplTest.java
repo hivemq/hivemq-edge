@@ -26,7 +26,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
-import com.hivemq.persistence.domain.DomainTagPersistence;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.junit.jupiter.api.Test;
@@ -36,11 +35,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +52,6 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull VersionProvider versionProvider = mock();
-    private final @NotNull DomainTagPersistence domainTagPersistence = mock();
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource =
             new ProtocolAdaptersResourceImpl(remoteService,
@@ -60,8 +59,7 @@ class ProtocolAdaptersResourceImplTest {
                     protocolAdapterManager,
                     protocolAdapterWritingService,
                     objectMapper,
-                    versionProvider,
-                    domainTagPersistence);
+                    versionProvider);
 
     @Test
     void getDomainTagsForAdapter() {
@@ -72,23 +70,25 @@ class ProtocolAdaptersResourceImplTest {
             domainTags.add(new DomainTag("tag"+i, "1", "s7", "description", Map.of("address", "addressy")));
         }
 
-        when(domainTagPersistence.getTagsForAdapter(any())).thenReturn(domainTags);
+        when(protocolAdapterManager.getTagsForAdapter("adapter")).thenReturn(Optional.of(domainTags));
 
         final Response response = protocolAdaptersResource.getDomainTagsForAdapter("adapter");
 
         final Object entity = response.getEntity();
+
         assertInstanceOf(DomainTagModelList.class, entity);
         final DomainTagModelList domainTagModelList = (DomainTagModelList) entity;
         assertEquals(domainTags.size(), domainTagModelList.getItems().size());
-        for (final DomainTag domainTag : domainTags) {
-            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(0));
+        for (int i = 0; i < domainTags.size(); i++) {
+            final DomainTag domainTag = domainTags.get(i);
+            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(i));
         }
     }
 
     @Test
     void addAdapterDomainTag_whenAddingSucceeds_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.addDomainTag(any())).thenReturn(DomainTagAddResult.success());
+        when(protocolAdapterManager.addDomainTag(eq("adapter"), any())).thenReturn(DomainTagAddResult.success());
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
                  DomainTagModel.fromDomainTag(new DomainTag("tag", "1", "s7", "description", Map.of("address", "addressy"))));
@@ -99,8 +99,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void addAdapterDomainTag_whenAlreadyExists_thenReturn403() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.addDomainTag(
-                any())).thenReturn(DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS, "it exists"));
+        when(protocolAdapterManager.addDomainTag(eq("adapter"), any())).thenReturn(DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS, "it exists"));
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
                 DomainTagModel.fromDomainTag(new DomainTag("tag", "1", "s7", "description", Map.of("address", "addressy"))));
@@ -111,8 +110,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void deleteDomainTag_whenTagExists_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.deleteDomainTag(any(), any())).thenReturn(DomainTagDeleteResult.failed(
-                DomainTagDeleteResult.DomainTagDeleteStatus.SUCCESS));
+        when(protocolAdapterManager.deleteDomainTag("adapter", "tag")).thenReturn(DomainTagDeleteResult.success());
 
         final Response response = protocolAdaptersResource.deleteDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)));
@@ -124,8 +122,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void deleteDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.deleteDomainTag(any(), any())).thenReturn(DomainTagDeleteResult.failed(
-                DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND));
+        when(protocolAdapterManager.deleteDomainTag("adapter", "tag")).thenReturn(DomainTagDeleteResult.failed(DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND));
 
         final Response response = protocolAdaptersResource.deleteDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)));
@@ -137,8 +134,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagExists_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.updateDomainTag(any(),
-                any())).thenReturn(DomainTagUpdateResult.success());
+        when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.success());
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
@@ -150,8 +146,8 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(domainTagPersistence.updateDomainTag(any(),
-                any())).thenReturn(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND));
+        when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.failed(
+                DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND));
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
@@ -168,16 +164,18 @@ class ProtocolAdaptersResourceImplTest {
             domainTags.add(new DomainTag("tag"+i, "1", "s7", "description", Map.of("address", "addressy")));
         }
 
-        when(domainTagPersistence.getDomainTags()).thenReturn(domainTags);
+        when(protocolAdapterManager.getDomainTags()).thenReturn(domainTags);
 
         final Response response = protocolAdaptersResource.getDomainTags();
 
         final Object entity = response.getEntity();
+
         assertInstanceOf(DomainTagModelList.class, entity);
         final DomainTagModelList domainTagModelList = (DomainTagModelList) entity;
         assertEquals(domainTags.size(), domainTagModelList.getItems().size());
-        for (final DomainTag domainTag : domainTags) {
-            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(0));
+        for (int i = 0; i < domainTags.size(); i++) {
+            final DomainTag domainTag = domainTags.get(i);
+            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(i));
         }
     }
 }

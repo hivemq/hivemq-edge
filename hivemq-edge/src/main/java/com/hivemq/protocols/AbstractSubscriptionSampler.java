@@ -29,7 +29,6 @@ import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -69,7 +68,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
     protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter;
-    protected final @NotNull ProtocolAdapterTagService tagService;
     protected final @NotNull EventService eventService;
 
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
@@ -79,8 +77,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
-            final @NotNull ProtocolAdapterTagService tagService) {
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
         this.initialDelay = Math.max(protocolAdapter.getAdapter().getPollingIntervalMillis(), 100);
@@ -90,7 +87,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.maxErrorsBeforeRemoval = protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval();
-        this.tagService = tagService;
         this.uuid = UUID.randomUUID();
         this.created = new Date();
         this.protocolAdapterMetricsService = protocolAdapter.getProtocolAdapterMetricsService();

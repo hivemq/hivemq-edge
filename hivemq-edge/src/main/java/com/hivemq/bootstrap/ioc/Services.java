@@ -15,7 +15,6 @@
  */
 package com.hivemq.bootstrap.ioc;
 
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
@@ -32,7 +31,6 @@ public class Services {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull HandlerService handlerService;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
-    private final @NotNull ProtocolAdapterTagService tagService;
 
 
     @Inject
@@ -41,14 +39,12 @@ public class Services {
             final @NotNull BridgeService bridgeService,
             final @NotNull SingleWriterService singleWriterService,
             final @NotNull HandlerService handlerService,
-            final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
-            final @NotNull ProtocolAdapterTagService tagService) {
+            final @NotNull ModulesAndExtensionsService modulesAndExtensionsService) {
         this.capabilityService = capabilityService;
         this.bridgeService = bridgeService;
         this.singleWriterService = singleWriterService;
         this.handlerService = handlerService;
         this.modulesAndExtensionsService = modulesAndExtensionsService;
-        this.tagService = tagService;
     }
 
     public @NotNull HiveMQCapabilityService capabilityService() {
@@ -69,9 +65,5 @@ public class Services {
 
     public @NotNull ModulesAndExtensionsService modulesAndExtensionsService() {
         return modulesAndExtensionsService;
-    }
-
-    public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-        return tagService;
     }
 }

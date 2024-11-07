@@ -28,7 +28,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
@@ -46,7 +45,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
-import com.hivemq.persistence.domain.DomainTagPersistence;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,8 +79,6 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics = mock();
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull DomainTagPersistence domainTagPersistence = mock();
 
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -103,9 +99,7 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
                 protocolAdapterWritingService,
-                executorService,
-                protocolAdapterTagService,
-                domainTagPersistence);
+                executorService);
     }
 
     @AfterEach

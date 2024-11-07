@@ -74,6 +74,10 @@ public class DomainTag {
         return definition;
     }
 
+    public @NotNull Map<String, Object> toTagMap() {
+        return Map.of("name", tagName, "description", description, "definition", definition);
+    }
+
     // only tag is used as duplicates based on this field are not allowed.
     @Override
     public boolean equals(final @Nullable Object o) {

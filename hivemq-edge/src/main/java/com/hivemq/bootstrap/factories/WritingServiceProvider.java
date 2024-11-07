@@ -17,7 +17,6 @@ package com.hivemq.bootstrap.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
@@ -39,20 +38,17 @@ public class WritingServiceProvider {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
     @Inject
     public WritingServiceProvider(
             final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull SingleWriterService singleWriterService,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
+            final @NotNull SingleWriterService singleWriterService) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
         this.objectMapper = objectMapper;
         this.localTopicTree = localTopicTree;
         this.singleWriterService = singleWriterService;
-        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     public @NotNull ProtocolAdapterWritingService get() {
@@ -62,8 +58,7 @@ public class WritingServiceProvider {
         }
         return writingServiceFactory.build(objectMapper,
                 localTopicTree,
-                singleWriterService,
-                protocolAdapterTagService);
+                singleWriterService);
     }
 
 
