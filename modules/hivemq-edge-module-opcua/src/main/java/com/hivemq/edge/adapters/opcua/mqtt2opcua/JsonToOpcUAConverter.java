@@ -191,7 +191,7 @@ public class JsonToOpcUAConverter {
         return parsetoOpcUAObject(builtinDataType, jsonNode, null);
     }
 
-    private @Nullable Object parsetoOpcUAObject(
+    private @NotNull Object parsetoOpcUAObject(
             final @NotNull BuiltinDataType builtinDataType,
             final @NotNull JsonNode jsonNode,
             final @Nullable NodeId binaryEncodingId) {
@@ -251,16 +251,18 @@ public class JsonToOpcUAConverter {
                 // DiagnosticInfo is too complex for now
                 throw new NotImplementedException();
             case ExtensionObject:
+                // in case we try to parse an ExtensionObject the binaryEncodingId of it must be set.
+                if (binaryEncodingId == null) {
+                    throw new IllegalStateException("Binary encoding id was null for nested struct.");
+                }
                 return extractExtensionObject(jsonNode, binaryEncodingId);
         }
         throw createException(jsonNode, builtinDataType.name());
     }
 
     private @NotNull Struct extractExtensionObject(
-            @NotNull final JsonNode jsonNode, @Nullable final NodeId binaryEncodingId) {
-        if (binaryEncodingId == null) {
-            throw new RuntimeException("Binary encoding id was null for nested struct. ");
-        }
+            @NotNull final JsonNode jsonNode, @NotNull final NodeId binaryEncodingId) {
+
 
         final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
         final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
