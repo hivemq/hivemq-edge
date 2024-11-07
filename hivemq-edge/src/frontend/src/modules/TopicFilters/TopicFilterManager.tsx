@@ -14,6 +14,7 @@ import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
+import SchemaValidationMark from '@/modules/TopicFilters/components/SchemaValidationMark.tsx'
 
 const TopicFilterManager: FC = () => {
   const { t } = useTranslation()
@@ -44,6 +45,13 @@ const TopicFilterManager: FC = () => {
         header: t('topicFilter.listing.column.description'),
         cell: (info) => {
           return <Text as="span">{info.getValue<string>()}</Text>
+        },
+      },
+      {
+        id: 'hasSchema',
+        header: t('topicFilter.listing.column.hasSchema'),
+        cell: (info) => {
+          return <SchemaValidationMark topicFilter={info.row.original} />
         },
       },
       {
