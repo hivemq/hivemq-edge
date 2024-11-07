@@ -36,7 +36,8 @@ export const useTopicFilterOperations = () => {
       schema: {
         // $schema: 'https://json-schema.org/draft/2020-12/schema',
         definitions: {
-          TopicFilter: $TopicFilter,
+          // TODO[24980] Required is missing
+          TopicFilter: { ...$TopicFilter, required: ['topicFilter'] },
         },
         properties: {
           items: {
@@ -86,7 +87,17 @@ export const useTopicFilterOperations = () => {
 
   const context: ManagerContextType = {
     schema: topicFilterSchemas.schema,
-    uiSchema: {},
+    uiSchema: {
+      'ui:submitButtonOptions': {
+        norender: true,
+      },
+      items: {
+        'ui:title': 'Topic Filters',
+        items: {
+          'ui:order': ['topicFilter', '*'],
+        },
+      },
+    },
     formData: topicFilterList,
   }
 
