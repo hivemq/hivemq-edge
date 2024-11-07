@@ -994,9 +994,13 @@
       "column": {
         "topicFilter": "Topic Filter",
         "description": "Description",
+        "hasSchema": "Schema defined",
         "action": "Actions"
       },
       "action": {
+        "view": {
+          "aria-label": "Manage Schemas"
+        },
         "edit": {
           "aria-label": "Edit Topic Filter"
         },
@@ -1008,8 +1012,15 @@
         }
       }
     },
+    "schema": {
+      "header": "Manage the schemas of the topic filter",
+      "submit": {
+        "label": "OK"
+      }
+    },
     "error": {
-      "loading": "We cannot load the topic filters. Please try again later."
+      "loading": "We cannot load the topic filters. Please try again later.",
+      "noSchemaSampled": "No schema could be inferred from the traffic on this topic filter. Please try again later."
     },
     "toast": {
       "description_loading": "Processing the request",
@@ -1017,6 +1028,11 @@
         "title": "Delete Topic Filter",
         "description_success": "The Topic Filter has been deleted from the Edge",
         "description_error": "The Topic Filter could not be deleted"
+      },
+      "updateCollection": {
+        "title": "Edit the Topic Filters",
+        "description_success": "The Topic Filters have been modified on the Edge",
+        "description_error": "The list of Topic Filters could not be updated on the Edge"
       }
     }
   }
