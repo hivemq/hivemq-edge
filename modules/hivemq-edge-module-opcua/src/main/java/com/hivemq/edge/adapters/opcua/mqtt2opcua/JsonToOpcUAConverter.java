@@ -401,7 +401,7 @@ public class JsonToOpcUAConverter {
     private static @NotNull IllegalArgumentException createException(
             final Object value,
             final @NotNull String intendedClass) {
-        log.warn("Can not convert '{}' of class '{}}' to '{}'..",
+        log.warn("Can not convert '{}' of class '{}' to '{}'..",
                 value,
                 value.getClass().getSimpleName(),
                 intendedClass);
