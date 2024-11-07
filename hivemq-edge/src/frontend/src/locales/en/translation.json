@@ -994,7 +994,7 @@
       "column": {
         "topicFilter": "Topic Filter",
         "description": "Description",
-        "hasSchema": "Schema defined",
+        "hasSchema": "Schema",
         "action": "Actions"
       },
       "action": {
