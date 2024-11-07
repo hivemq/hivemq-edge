@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $TopicFilter = {
+    description: `List of result items that are returned by this endpoint`,
     properties: {
         description: {
             type: 'string',
@@ -11,6 +12,7 @@ export const $TopicFilter = {
         topicFilter: {
             type: 'string',
             description: `The topic filter according to the MQTT specification.`,
+            format: 'mqtt-topic-filter',
         },
     },
 } as const;

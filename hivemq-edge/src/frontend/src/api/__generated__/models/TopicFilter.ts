@@ -3,6 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 
+/**
+ * List of result items that are returned by this endpoint
+ */
 export type TopicFilter = {
     /**
      * The name for this topic filter.
