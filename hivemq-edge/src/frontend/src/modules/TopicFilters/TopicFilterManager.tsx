@@ -14,6 +14,7 @@ import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
+import TopicSchemaDrawer from '@/modules/TopicFilters/components/TopicSchemaDrawer.tsx'
 import SchemaValidationMark from '@/modules/TopicFilters/components/SchemaValidationMark.tsx'
 
 const TopicFilterManager: FC = () => {
@@ -61,14 +62,20 @@ const TopicFilterManager: FC = () => {
         cell: (info) => {
           return (
             <ButtonGroup role="toolbar">
-              <ButtonGroup size="sm">
-                <IconButton
-                  aria-label={t('topicFilter.listing.action.edit.aria-label')}
-                  icon={<LuView />}
-                  onClick={() => console.log(info.row.index)}
-                />
-              </ButtonGroup>
-              <ButtonGroup isAttached size="sm">
+              <TopicSchemaDrawer
+                topicFilter={info.row.original}
+                trigger={({ onOpen: onOpenArrayDrawer }) => (
+                  <ButtonGroup size="sm">
+                    <IconButton
+                      aria-label={t('topicFilter.listing.action.view.aria-label')}
+                      icon={<LuView />}
+                      onClick={onOpenArrayDrawer}
+                    />
+                  </ButtonGroup>
+                )}
+              />
+
+              <ButtonGroup isAttached size="sm" isDisabled>
                 <IconButton
                   aria-label={t('topicFilter.listing.action.edit.aria-label')}
                   icon={<LuPencil />}
