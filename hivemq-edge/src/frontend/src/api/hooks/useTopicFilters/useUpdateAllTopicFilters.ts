@@ -14,7 +14,7 @@ export const useUpdateAllTopicFilter = () => {
 
   return useMutation<UpdateAllTopicFiltersProps, ApiError, UpdateAllTopicFiltersProps>({
     mutationFn: ({ requestBody }: UpdateAllTopicFiltersProps) => {
-      return appClient.topicFilters.updateAllTopicFilters(requestBody)
+      return appClient.topicFilters.updateTopicFilters(requestBody)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DISCOVERY_TOPIC_FILTERS] })
