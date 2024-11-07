@@ -14,6 +14,6 @@ export type TopicFilter = {
     /**
      * The topic filter according to the MQTT specification.
      */
-    topicFilter?: string;
+    topicFilter: string;
 };
 
