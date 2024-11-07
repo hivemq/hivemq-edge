@@ -42,7 +42,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.opcfoundation.opcua.binaryschema.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +108,7 @@ public class JsonToOpcUAConverter {
                     rootNode);
 
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                return parsetoOpcUAObject(builtinType, rootNode, null);
+                return parsetoOpcUAObject(builtinType, rootNode);
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
@@ -148,7 +147,7 @@ public class JsonToOpcUAConverter {
         }
     }
 
-    private @Nullable Object parseToOpcUACompatibleObject(
+    private @NotNull Object parseToOpcUACompatibleObject(
             final @NotNull JsonNode jsonNode, final @NotNull FieldType fieldType) {
         final BuiltinDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
 
@@ -186,15 +185,17 @@ public class JsonToOpcUAConverter {
                     binaryEncodingId,
                     builtinDataType,
                     jsonNode);
-            return parsetoOpcUAObject(builtinDataType, jsonNode, binaryEncodingId);
+
+            if (binaryEncodingId == null) {
+                throw new IllegalStateException("Binary encoding id was null for nested struct.");
+            }
+            return extractExtensionObject(jsonNode, binaryEncodingId);
         }
-        return parsetoOpcUAObject(builtinDataType, jsonNode, null);
+        return parsetoOpcUAObject(builtinDataType, jsonNode);
     }
 
     private @NotNull Object parsetoOpcUAObject(
-            final @NotNull BuiltinDataType builtinDataType,
-            final @NotNull JsonNode jsonNode,
-            final @Nullable NodeId binaryEncodingId) {
+            final @NotNull BuiltinDataType builtinDataType, final @NotNull JsonNode jsonNode) {
         switch (builtinDataType) {
             case Boolean:
                 return extractBoolean(jsonNode);
@@ -250,12 +251,6 @@ public class JsonToOpcUAConverter {
                 // TODO implement
                 // DiagnosticInfo is too complex for now
                 throw new NotImplementedException();
-            case ExtensionObject:
-                // in case we try to parse an ExtensionObject the binaryEncodingId of it must be set.
-                if (binaryEncodingId == null) {
-                    throw new IllegalStateException("Binary encoding id was null for nested struct.");
-                }
-                return extractExtensionObject(jsonNode, binaryEncodingId);
         }
         throw createException(jsonNode, builtinDataType.name());
     }
