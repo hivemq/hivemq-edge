@@ -5,7 +5,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Button, ButtonGroup, Card, CardBody, Text, useDisclosure } from '@chakra-ui/react'
 import { LuPencil, LuPlus, LuTrash, LuView } from 'react-icons/lu'
 
-import type { TopicFilter } from '@/api/__generated__'
+import { TopicFilter, TopicFilterList } from '@/api/__generated__'
 import { useTopicFilterOperations } from '@/api/hooks/useTopicFilters/useTopicFilterOperations.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -20,7 +20,7 @@ const TopicFilterManager: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { data, context, isLoading, isError } = useTopicFilterOperations()
+  const { data, context, isLoading, isError, onUpdateCollection } = useTopicFilterOperations()
 
   const handleClose = () => {
     onClose()
@@ -86,9 +86,11 @@ const TopicFilterManager: FC = () => {
         footer: () => {
           return (
             <ArrayItemDrawer
-              header={t('topicFilter.listing.title')}
+              header={t('topicFilter.listing.aria-label')}
               context={context}
-              onSubmit={() => console.log('XXXXXXX')}
+              onSubmit={(w) => {
+                onUpdateCollection(w as TopicFilterList)
+              }}
               trigger={({ onOpen: onOpenArrayDrawer }) => (
                 <ButtonGroup isAttached size="sm">
                   <Button leftIcon={<LuPlus />} onClick={onOpenArrayDrawer}>
@@ -101,7 +103,7 @@ const TopicFilterManager: FC = () => {
         },
       },
     ]
-  }, [context, t])
+  }, [context, onUpdateCollection, t])
 
   return (
     <ExpandableDrawer
