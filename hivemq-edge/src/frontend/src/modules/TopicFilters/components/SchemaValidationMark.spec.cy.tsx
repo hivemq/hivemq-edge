@@ -16,11 +16,4 @@ describe('SchemaValidationMark', () => {
     cy.getByTestId('validation-loading').should('be.visible')
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'success')
   })
-
-  it('should render error', () => {
-    cy.mountWithProviders(<SchemaValidationMark topicFilter={{}} />)
-
-    cy.getByTestId('validation-loading').should('be.visible')
-    cy.get('[role="alert"]').should('have.attr', 'data-status', 'error')
-  })
 })

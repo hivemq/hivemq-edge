@@ -20,8 +20,8 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
   const { data, isLoading, isError, context, onupdateCollection } = useTagManager(adapter?.id)
 
-  const onHandleSubmit = (data: DomainTagList | undefined) => {
-    if (data) onupdateCollection(data)
+  const onHandleSubmit = (data: unknown) => {
+    if (data) onupdateCollection(data as DomainTagList)
   }
 
   return (
