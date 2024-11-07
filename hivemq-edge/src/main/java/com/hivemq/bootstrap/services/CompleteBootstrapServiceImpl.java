@@ -24,6 +24,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import org.jetbrains.annotations.NotNull;
+import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
@@ -38,6 +39,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull RestComponentsService restComponentsService;
     private final @NotNull HandlerService handlerService;
     private final @NotNull EventService eventService;
+    private final @NotNull PublishService publishService;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -46,12 +48,14 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull Persistences persistences,
             final @NotNull RestComponentsService restComponentsService,
             final @NotNull HandlerService handlerService,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull PublishService publishService) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
         this.handlerService = handlerService;
         this.eventService = eventService;
+        this.publishService = publishService;
     }
 
     @Override
@@ -107,6 +111,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull EventService eventService() {
         return eventService;
+    }
+
+    @Override
+    public @NotNull PublishService publishService() {
+        return publishService;
     }
 
     @Override
