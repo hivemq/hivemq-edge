@@ -47,42 +47,59 @@ export class TopicFiltersService {
     }
 
     /**
+     * Update all topic filters.
+     * Update all topic filters
+     * @param requestBody
+     * @returns any Success
+     * @throws ApiError
+     */
+    public updateTopicFilters(
+        requestBody?: TopicFilterList,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/api/v1/management/topic-filters',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Delete an topic filter
      * Delete the specified topic filter.
-     * @param name The topic filter name.
+     * @param filter The URL-encoded  filter of the topic filter that should be deleted.
      * @returns any Success
      * @throws ApiError
      */
     public deleteTopicFilter(
-        name: string,
+        filter: string,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/management/topic-filters/{name}',
+            url: '/api/v1/management/topic-filters/{filter}',
             path: {
-                'name': name,
+                'filter': filter,
             },
         });
     }
 
     /**
-     * TODO[27517] Fixing a bug with specs, https://hivemq.kanbanize.com/ctrl_board/57/cards/27517/details/
      * Update a topic filter.
      * Update a topic filter
-     * @param name The filter of the topic filter that will be updated.
+     * @param filter The URL-encoded filter of the topic filter that will be updated.
      * @param requestBody
      * @returns any Success
      * @throws ApiError
      */
     public updateTopicFilter(
-        name: string,
+        filter: string,
         requestBody?: TopicFilter,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/topic-filters/{name}',
+            url: '/api/v1/management/topic-filters/{filter}',
             path: {
-                'name': name,
+                'filter': filter,
             },
             body: requestBody,
             mediaType: 'application/json',
@@ -91,27 +108,5 @@ export class TopicFiltersService {
             },
         });
     }
-
-  /**
-   * TODO[27517] Fixing a bug with specs, https://hivemq.kanbanize.com/ctrl_board/57/cards/27517/details/
-   * Update a topic filter.
-   * Update a topic filter
-   * @param requestBody
-   * @returns any Success
-   * @throws ApiError
-   */
-  public updateAllTopicFilters(
-      requestBody?: TopicFilterList,
-  ): CancelablePromise<any> {
-    return this.httpRequest.request({
-      method: 'PUT',
-      url: '/api/v1/management/topic-filters',
-      body: requestBody,
-      mediaType: 'application/json',
-      errors: {
-        403: `Not Found`,
-      },
-    });
-  }
 
 }

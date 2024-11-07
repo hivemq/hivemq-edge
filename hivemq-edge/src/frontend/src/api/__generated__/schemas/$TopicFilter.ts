@@ -12,6 +12,7 @@ export const $TopicFilter = {
         topicFilter: {
             type: 'string',
             description: `The topic filter according to the MQTT specification.`,
+            isRequired: true,
             format: 'mqtt-topic-filter',
         },
     },
