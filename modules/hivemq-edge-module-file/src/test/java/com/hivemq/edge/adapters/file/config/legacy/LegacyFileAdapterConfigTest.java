@@ -24,7 +24,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.config.ContentType;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
-import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +98,7 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
                 .isEmpty();
     }
 
@@ -132,7 +132,7 @@ class LegacyFileAdapterConfigTest {
             assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
 
-        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
                 .isEmpty();
     }
 

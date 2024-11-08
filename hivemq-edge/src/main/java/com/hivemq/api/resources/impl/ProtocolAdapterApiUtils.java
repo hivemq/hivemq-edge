@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.components.Module;
@@ -86,11 +85,9 @@ public class ProtocolAdapterApiUtils {
             // so we should trust but validate and at least log.
             LOG.warn("Logo url for adapter '{}' was null. ", info.getDisplayName());
         }
-        final ProtocolAdapterFactory<?> protocolAdapterFactory =
-                adapterManager.getProtocolAdapterFactory(info.getProtocolId());
-        if (protocolAdapterFactory == null) {
+        if (!adapterManager.protocolAdapterFactoryExists(info.getProtocolId())) {
             // this can only happen if the adapter somehow got removed from the manager concurrently, which is not possible right now
-            LOG.warn("Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
+            LOG.error("Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
                     info.getDisplayName());
             return null;
         }

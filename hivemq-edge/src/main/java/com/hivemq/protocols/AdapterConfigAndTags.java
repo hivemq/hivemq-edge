@@ -32,53 +32,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class ProtocolAdapterConfigPersistence {
+public class AdapterConfigAndTags {
 
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterConfigPersistence.class);
+    private static final Logger log = LoggerFactory.getLogger(AdapterConfigAndTags.class);
 
     private @NotNull final ProtocolAdapterConfig adapterConfig;
     private @NotNull final List<? extends Tag> tags;
 
-    public ProtocolAdapterConfigPersistence(
+    public AdapterConfigAndTags(
             @NotNull final ProtocolAdapterConfig adapterConfig,
             @NotNull final List<? extends Tag> tags) {
         Objects.requireNonNull(adapterConfig);
         Objects.requireNonNull(tags);
         this.adapterConfig = adapterConfig;
         this.tags = tags;
-    }
-
-    public static ProtocolAdapterConfigPersistence fromAdapterConfigMap(@NotNull final Map<String, Object> adapterConfig,
-                                                                        final boolean writingEnabled,
-                                                                        @NotNull final ObjectMapper mapper,
-                                                                        @NotNull final ProtocolAdapterFactory protocolAdapterFactory) {
-        Map<String, Object> adapterConfigMap = (Map<String, Object>)adapterConfig.get("config");
-        List<Map<String, Object>> tagMaps = Objects.requireNonNullElse((List<Map<String, Object>>)adapterConfig.get("tags"), List.of());
-
-        if(adapterConfigMap != null) {
-            final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterFactory.convertConfigObject(
-                    mapper,
-                    adapterConfigMap,
-                    writingEnabled);
-            final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
-            return new ProtocolAdapterConfigPersistence(protocolAdapterConfig,tags);
-        } else if(protocolAdapterFactory instanceof LegacyConfigConversion) {
-            log.warn(
-                    "Trying to load {} as legacy configuration. Support for the legacy configuration will be removed in the beginning of 2025.",
-                    protocolAdapterFactory.getInformation().getDisplayName());
-
-            final ConfigTagsTuple configTagsTuple = ((LegacyConfigConversion) protocolAdapterFactory)
-                            .tryConvertLegacyConfig(mapper, adapterConfig);
-            return new ProtocolAdapterConfigPersistence(
-                    configTagsTuple.getConfig(),
-                    configTagsTuple.getTags());
-        } else {
-            log.error(
-                    "No <config>-tag in configuration file for {}",
-                    protocolAdapterFactory.getInformation().getDisplayName());
-            throw new IllegalArgumentException("No <config>-tag in configuration file for " + protocolAdapterFactory.getInformation().getDisplayName());
-        }
-
     }
 
     public @NotNull ProtocolAdapterConfig getAdapterConfig() {
@@ -97,5 +64,38 @@ public class ProtocolAdapterConfigPersistence {
         } else {
             return Optional.of(names);
         }
+    }
+
+    public static AdapterConfigAndTags fromAdapterConfigMap(@NotNull final Map<String, Object> adapterConfig,
+                                                            final boolean writingEnabled,
+                                                            @NotNull final ObjectMapper mapper,
+                                                            @NotNull final ProtocolAdapterFactory protocolAdapterFactory) {
+        final Map<String, Object> adapterConfigMap = (Map<String, Object>)adapterConfig.get("config");
+        final List<Map<String, Object>> tagMaps = Objects.requireNonNullElse((List<Map<String, Object>>)adapterConfig.get("tags"), List.of());
+
+        if(adapterConfigMap != null) {
+            final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterFactory.convertConfigObject(
+                    mapper,
+                    adapterConfigMap,
+                    writingEnabled);
+            final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
+            return new AdapterConfigAndTags(protocolAdapterConfig,tags);
+        } else if(protocolAdapterFactory instanceof LegacyConfigConversion) {
+            log.warn(
+                    "Trying to load {} as legacy configuration. Support for the legacy configuration will be removed in the beginning of 2025.",
+                    protocolAdapterFactory.getInformation().getDisplayName());
+
+            final ConfigTagsTuple configTagsTuple = ((LegacyConfigConversion) protocolAdapterFactory)
+                            .tryConvertLegacyConfig(mapper, adapterConfig);
+            return new AdapterConfigAndTags(
+                    configTagsTuple.getConfig(),
+                    configTagsTuple.getTags());
+        } else {
+            log.error(
+                    "No <config>-tag in configuration file for {}",
+                    protocolAdapterFactory.getInformation().getDisplayName());
+            throw new IllegalArgumentException("No <config>-tag in configuration file for " + protocolAdapterFactory.getInformation().getDisplayName());
+        }
+
     }
 }

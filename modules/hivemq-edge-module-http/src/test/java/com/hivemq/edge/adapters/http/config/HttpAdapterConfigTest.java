@@ -26,7 +26,7 @@ import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
-import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +64,7 @@ public class HttpAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                 false,
                 mapper,
                 httpProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
@@ -82,7 +82,7 @@ public class HttpAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                 false,
                 mapper,
                 httpProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'id'");
@@ -101,15 +101,15 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
-                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         true,
                         mapper,
                         httpProtocolAdapterFactory);
-        assertThat(protocolAdapterConfigPersistence.missingTags())
+        assertThat(adapterConfigAndTags.missingTags())
                 .isEmpty();
 
-        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -151,13 +151,13 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
-                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         true,
                         mapper,
                         httpProtocolAdapterFactory);
 
-        assertThat(protocolAdapterConfigPersistence.missingTags())
+        assertThat(adapterConfigAndTags.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
     }
@@ -174,15 +174,15 @@ public class HttpAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
-        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
-                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         true,
                         mapper,
                         httpProtocolAdapterFactory);
-        assertThat(protocolAdapterConfigPersistence.missingTags())
+        assertThat(adapterConfigAndTags.missingTags())
                 .isEmpty();
 
-        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
@@ -216,15 +216,15 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final ProtocolAdapterConfigPersistence protocolAdapterConfigPersistence =
-                ProtocolAdapterConfigPersistence.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         true,
                         mapper,
                         httpProtocolAdapterFactory);
-        assertThat(protocolAdapterConfigPersistence.missingTags())
+        assertThat(adapterConfigAndTags.missingTags())
                 .isEmpty();
 
-        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) protocolAdapterConfigPersistence.getAdapterConfig();
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();

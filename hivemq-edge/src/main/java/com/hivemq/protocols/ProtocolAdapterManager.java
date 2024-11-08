@@ -31,11 +31,11 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
@@ -50,14 +50,11 @@ import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
-import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -66,10 +63,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -92,13 +85,12 @@ import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdat
 @Singleton
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
-    private final @NotNull Map<String, ProtocolAdapterFactory<?>> factoryMap = new ConcurrentHashMap<>();
+
     private final @NotNull Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> protocolAdapters =
             new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull ObjectMapper objectMapper;
-    private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull EventService eventService;
     private final @NotNull VersionProvider versionProvider;
@@ -108,6 +100,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ConfigPersistence configPersistence;
+    private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager;
 
     private final @NotNull Object lock = new Object();
 
@@ -130,7 +123,6 @@ public class ProtocolAdapterManager {
         this.moduleServices = moduleServices;
         this.configPersistence = new ConfigPersistence(configurationService);
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
-        this.moduleLoader = moduleLoader;
         this.remoteService = remoteService;
         this.eventService = eventService;
         this.versionProvider = versionProvider;
@@ -139,6 +131,7 @@ public class ProtocolAdapterManager {
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
+        protocolAdapterFactoryManager = new ProtocolAdapterFactoryManager(moduleLoader, eventService, protocolAdapterWritingService.writingEnabled());
     }
 
 
@@ -146,14 +139,17 @@ public class ProtocolAdapterManager {
     public @NotNull ListenableFuture<Void> start() {
 
         log.info("Starting adapters");
-        protocolAdapterWritingService.addWritingChangedCallback(this::findAllAdapters);
-        findAllAdapters();
+        protocolAdapterWritingService.addWritingChangedCallback(() -> {
+            protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled());
+        });
 
         final ImmutableList.Builder<CompletableFuture<Void>> adapterFutures = ImmutableList.builder();
 
         for (final Map.Entry<String, Object> configSection : configPersistence.allAdapters().entrySet()) {
             final String adapterType = getKey(configSection.getKey());
-            final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
+            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
+                    .get(adapterType).get();
+
             if (protocolAdapterFactory == null) {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found."));
             }
@@ -169,7 +165,7 @@ public class ProtocolAdapterManager {
 
 
             adapterConfigs.stream()
-                    .map(persistenceMap -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap(persistenceMap,
+                    .map(persistenceMap -> AdapterConfigAndTags.fromAdapterConfigMap(persistenceMap,
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory))
@@ -182,7 +178,7 @@ public class ProtocolAdapterManager {
                                 });
 
                         final ProtocolAdapterWrapper instance =
-                                createAdapterInstance(protocolAdapterFactory, persistence.getAdapterConfig(), persistence.getTags(), versionProvider.getVersion());
+                                createAdapterInstance(protocolAdapterFactory, persistence, versionProvider.getVersion());
                         protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                                 .getProtocolAdapterInformation()
                                 .getProtocolId());
@@ -239,64 +235,9 @@ public class ProtocolAdapterManager {
         return key;
     }
 
-    @SuppressWarnings("rawtypes")
-    private void findAllAdapters() {
-        final List<Class<? extends ProtocolAdapterFactory>> implementations =
-                moduleLoader.findImplementations(ProtocolAdapterFactory.class);
-
-        implementations.add(SimulationProtocolAdapterFactory.class);
-
-        for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
-            try {
-                final ProtocolAdapterFactory<?> protocolAdapterFactory = findConstructorAndInitialize(factoryClass);
-                if (log.isDebugEnabled()) {
-                    log.debug("Discovered protocol adapter implementation {}.", factoryClass.getName());
-                }
-                final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
-                factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
-            } catch (final InvocationTargetException | InstantiationException | IllegalAccessException |
-                           NoSuchMethodException e) {
-                log.error("Not able to load module, reason: {}.", e.getMessage());
-            }
-        }
-
-        log.info("Discovered {} protocol adapter-type(s): [{}].",
-                factoryMap.size(),
-                factoryMap.values()
-                        .stream()
-                        .map(protocolAdapterFactory -> "'" +
-                                protocolAdapterFactory.getInformation().getProtocolName() +
-                                "'")
-                        .collect(Collectors.joining(", ")));
-    }
-
-    private ProtocolAdapterFactory<?> findConstructorAndInitialize(final @NotNull Class<? extends ProtocolAdapterFactory> factoryClass)
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        final Constructor<?>[] declaredConstructors = factoryClass.getDeclaredConstructors();
-        // check all possible constructors to enable backwards compatibility
-        for (final Constructor<?> declaredConstructor : declaredConstructors) {
-            final Parameter[] parameters = declaredConstructor.getParameters();
-            // likely custom protocol adapter implementations still have the old default no-arg constructor.
-            if (parameters.length == 0) {
-                return factoryClass.getDeclaredConstructor().newInstance();
-            }
-
-            // current format: ProtocolAdapterFactoryInput expandable interface that will be backwards co patible if methods get added.
-            if (parameters.length == 1 && parameters[0].getType().equals(ProtocolAdapterFactoryInput.class)) {
-                final ProtocolAdapterFactoryInput protocolAdapterFactoryInput =
-                        new ProtocolAdapterFactoryInputImpl(writingEnabled(), eventService);
-                return factoryClass.getDeclaredConstructor(ProtocolAdapterFactoryInput.class)
-                        .newInstance(protocolAdapterFactoryInput);
-            }
-
-            log.warn("No fitting constructor was found to initialize adapter factory class '{}'.", factoryClass);
-        }
-        throw new IllegalAccessException();
-    }
-
-    public @Nullable ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
+    public @NotNull boolean protocolAdapterFactoryExists(final @NotNull String protocolAdapterType) {
         Preconditions.checkNotNull(protocolAdapterType);
-        return factoryMap.get(protocolAdapterType);
+        return protocolAdapterFactoryManager.get(protocolAdapterType).isPresent();
     }
 
     public @NotNull CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
@@ -628,10 +569,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull Map<String, ProtocolAdapterInformation> getAllAvailableAdapterTypes() {
-        return factoryMap.values()
-                .stream()
-                .map(ProtocolAdapterFactory::getInformation)
-                .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
+        return protocolAdapterFactoryManager.getAllAvailableAdapterTypes();
     }
 
 
@@ -641,8 +579,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull ProtocolAdapterWrapper createAdapterInstance(
             final @NotNull ProtocolAdapterFactory<?> protocolAdapterFactory,
-            final @NotNull ProtocolAdapterConfig config,
-            final @NotNull List<? extends Tag> tags,
+            final @NotNull AdapterConfigAndTags config,
             final @NotNull String version) {
 
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -651,13 +588,13 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapterMetricsService protocolAdapterMetricsService = new ProtocolAdapterMetricsServiceImpl(
                     protocolAdapterFactory.getInformation().getProtocolId(),
-                    config.getId(),
+                    config.getAdapterConfig().getId(),
                     metricRegistry);
 
 
             final ProtocolAdapterStateImpl protocolAdapterState =
                     new ProtocolAdapterStateImpl(moduleServices.eventService(),
-                            config.getId(),
+                            config.getAdapterConfig().getId(),
                             protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
@@ -667,8 +604,8 @@ public class ProtocolAdapterManager {
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(
-                                    config,
-                                    tags,
+                                    config.getAdapterConfig(),
+                                    config.getTags(),
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,
@@ -682,8 +619,8 @@ public class ProtocolAdapterManager {
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     protocolAdapterState,
-                    config,
-                    tags);
+                    config.getAdapterConfig(),
+                    config.getTags());
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -697,10 +634,12 @@ public class ProtocolAdapterManager {
 
         synchronized (lock) {
 
-            final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
+            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
+                    .get(adapterType)
+                    .orElseThrow(() -> new IllegalArgumentException("No factory found for adapter type " + adapterType));
 
-            final ProtocolAdapterConfigPersistence persistence =
-                    ProtocolAdapterConfigPersistence.fromAdapterConfigMap(
+            final AdapterConfigAndTags persistence =
+                    AdapterConfigAndTags.fromAdapterConfigMap(
                             Map.of("config", config, "tags", tagMaps),
                             writingEnabled(),
                             objectMapper,
@@ -713,7 +652,7 @@ public class ProtocolAdapterManager {
                     });
 
             final ProtocolAdapterWrapper instance =
-                    createAdapterInstance(protocolAdapterFactory, persistence.getAdapterConfig(), persistence.getTags(), versionProvider.getVersion());
+                    createAdapterInstance(protocolAdapterFactory, persistence, versionProvider.getVersion());
 
             return start(instance);
         }

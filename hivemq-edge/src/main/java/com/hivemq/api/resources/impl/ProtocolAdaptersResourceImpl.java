@@ -388,8 +388,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        final ProtocolAdapterFactory<?> protocolAdapterFactory =
-                protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
                 new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterWritingService.writingEnabled() ? information.configurationClassWriting() : information.configurationClassReading());
         final ProtocolAdapterValidator validator =

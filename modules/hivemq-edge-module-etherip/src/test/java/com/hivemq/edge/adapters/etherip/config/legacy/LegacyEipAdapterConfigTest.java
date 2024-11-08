@@ -24,7 +24,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
-import com.hivemq.protocols.ProtocolAdapterConfigPersistence;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -103,7 +103,7 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
                 .isEmpty();
     }
 
@@ -142,7 +142,7 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
 
-        assertThat(new ProtocolAdapterConfigPersistence(tuple.getConfig(), tuple.getTags()).missingTags())
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
                 .isEmpty();
     }
 
