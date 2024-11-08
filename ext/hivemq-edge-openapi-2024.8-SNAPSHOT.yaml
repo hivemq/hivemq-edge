@@ -5627,6 +5627,8 @@ components:
           type: string
           format: mqtt-topic-filter
           description: The topic filter according to the MQTT specification.
+      required:
+      - topicFilter
     TopicFilterList:
       type: object
       properties:
