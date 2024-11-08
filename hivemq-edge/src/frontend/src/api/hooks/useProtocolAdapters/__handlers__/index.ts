@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { GenericObjectType, UiSchema } from '@rjsf/utils'
+import { JSONSchema7 } from 'json-schema'
 
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
@@ -9,7 +10,6 @@ import {
   type DeviceDataPoint,
   type DomainTag,
   type DomainTagList,
-  JsonNode,
   ObjectNode,
   ProtocolAdapter,
   ProtocolAdaptersList,
@@ -57,10 +57,10 @@ export const mockUISchema: UiSchema = {
   },
 }
 
-export const mockJSONSchema: JsonNode = {
+export const mockJSONSchema: JSONSchema7 = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   type: 'object',
-  properties: {
+  $defs: {
     minValue: {
       type: 'integer',
       title: 'Min. Generated Value',
@@ -68,12 +68,22 @@ export const mockJSONSchema: JsonNode = {
       default: 0,
       minimum: 0,
     },
+  },
+  definitions: {
     maxValue: {
       type: 'integer',
       title: 'Max. Generated Value (Excl.)',
       description: 'Maximum value of the generated decimal number (excluded)',
       default: 1000,
       maximum: 1000,
+    },
+  },
+  properties: {
+    minValue: {
+      $ref: '#/$defs/minValue',
+    },
+    maxValue: {
+      $ref: '#/definitions/maxValue',
     },
     simulationToMqtt: {
       type: 'object',
@@ -119,6 +129,7 @@ export const mockJSONSchema: JsonNode = {
                 description:
                   'This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample',
                 default: 'MQTTMessagePerTag',
+                // @ts-ignore TODO[NVL] enumNames not officially supported
                 enumNames: [
                   'MQTT Message Per Device Tag',
                   'MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)',
