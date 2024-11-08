@@ -166,7 +166,6 @@ public class ProtocolAdapterManager {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Found invalid configuration element for adapter " + adapterType));
             }
 
-
             adapterConfigs.stream()
                     .map(persistenceMap -> AdapterConfigAndTags.fromAdapterConfigMap(persistenceMap,
                             writingEnabled(),
@@ -190,7 +189,9 @@ public class ProtocolAdapterManager {
                     });
         }
 
-        configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
+        if(!protocolAdapters.isEmpty()) {
+            configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
+        }
 
         return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
                 .toArray(new CompletableFuture[]{})));
