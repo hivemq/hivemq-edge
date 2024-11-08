@@ -149,7 +149,7 @@ public class ProtocolAdapterManager {
             final String adapterType = getKey(configSection.getKey());
 
             final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional = protocolAdapterFactoryManager
-                    .get(adapterType); //FIXME should be used as actual optional
+                    .get(adapterType);
 
             if (protocolAdapterFactoryOptional.isEmpty()) {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found."));
