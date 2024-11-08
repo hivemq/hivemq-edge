@@ -23,7 +23,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class PayloadSample {
 
     @JsonProperty("payload")
-    @Schema(description = "The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.")
+    @Schema(description = "The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String payload;
 
     @JsonCreator
