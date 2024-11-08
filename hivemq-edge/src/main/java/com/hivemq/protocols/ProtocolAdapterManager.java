@@ -199,21 +199,28 @@ public class ProtocolAdapterManager {
     private @NotNull Map<String, Object> rewriteAdapterConfigurations(Collection<? extends ProtocolAdapterWrapper> protocolAdapterWrappers) {
         final Map<String, Object> allAdapterConfigs = new HashMap<>();
         for (final ProtocolAdapterWrapper value : protocolAdapterWrappers) {
-            final ProtocolAdapterConfig configObject = value.getConfigObject();
+            AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(value.getConfigObject(), value.getTags());
             final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 Thread.currentThread().setContextClassLoader(adapterFactory.getClass().getClassLoader());
                 allAdapterConfigs.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(),
                         (s, o) -> {
+                            List<Map<String, Object>> tagMaps = adapterConfigAndTags.getTags().stream()
+                                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {}))
+                                    .collect(Collectors.toList());
+                            final Map<String, Object> configMap = adapterFactory.unconvertConfigObject(
+                                    objectMapper,
+                                    adapterConfigAndTags.getAdapterConfig());
+
+                            Map<String, Object> combined = Map.of("config", configMap, "tags", tagMaps);
                             if (o == null) {
                                 final List<Map<String, Object>> list = new ArrayList<>();
-                                list.add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
+                                list.add(combined);
                                 return list;
                             }
                             //noinspection unchecked
-                            ((List<Map<String, Object>>) o).add(adapterFactory.unconvertConfigObject(objectMapper,
-                                    configObject));
+                            ((List<Map<String, Object>>) o).add(combined);
                             return o;
                         });
             } finally {
