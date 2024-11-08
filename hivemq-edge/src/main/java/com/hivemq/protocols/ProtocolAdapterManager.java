@@ -545,7 +545,7 @@ public class ProtocolAdapterManager {
                             .collect(Collectors.toList());
                     deleteAdapterInternal(adapterId);
                     addAdapterInternal(protocolId, config, tags);
-                    configPersistence.updateAdapter(adapterId, config, tags);
+                    configPersistence.updateAdapter(protocolId, config, tags);
                     return true;
                 })
                 .orElse(false);
