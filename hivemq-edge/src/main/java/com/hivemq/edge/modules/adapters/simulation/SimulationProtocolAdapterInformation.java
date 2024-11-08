@@ -116,7 +116,7 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     @Override
     public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return null; //TODO what would be correct here?
+        return null; //We never produce tags for this adapter
     }
 
     @Override

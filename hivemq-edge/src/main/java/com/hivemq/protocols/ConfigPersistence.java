@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,21 +27,21 @@ public class ConfigPersistence {
     }
 
     public @NotNull Map<String, Object> allAdapters() {
-        return configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        return new HashMap<>(configurationService.protocolAdapterConfigurationService().getAllConfigs());
     }
 
-    public void updateAllAdapters(final @NotNull Map<String, Object> adapterConfigs) {
+    public synchronized void updateAllAdapters(final @NotNull Map<String, Object> adapterConfigs) {
         configurationService.protocolAdapterConfigurationService().setAllConfigs(adapterConfigs);
     }
 
-    public void addAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+    public synchronized void addAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
         adapterList.add(combine(config, tagMaps));
         updateAllAdapters(mainMap);
     }
 
-    public void updateAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+    public synchronized void updateAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
         final Map<String, Object> mainMap = allAdapters();
         final String adapterId = (String)config.get("id");
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
@@ -52,7 +53,7 @@ public class ConfigPersistence {
         updateAllAdapters(mainMap);
     }
 
-    public void deleteAdapter(final @NotNull String adapterId, final @NotNull String protocolId) {
+    public synchronized void deleteAdapter(final @NotNull String adapterId, final @NotNull String protocolId) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
         if (adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>)instance.get("config")).get("id")))) {
