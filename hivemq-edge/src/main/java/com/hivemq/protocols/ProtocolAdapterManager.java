@@ -147,12 +147,15 @@ public class ProtocolAdapterManager {
 
         for (final Map.Entry<String, Object> configSection : configPersistence.allAdapters().entrySet()) {
             final String adapterType = getKey(configSection.getKey());
-            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
-                    .get(adapterType).get();
 
-            if (protocolAdapterFactory == null) {
+            final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional = protocolAdapterFactoryManager
+                    .get(adapterType); //FIXME should be used as actual optional
+
+            if (protocolAdapterFactoryOptional.isEmpty()) {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found."));
             }
+            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
+                    .get(adapterType).get();
             final Object adapterXmlElement = configSection.getValue();
             final List<Map<String, Object>> adapterConfigs;
             if (adapterXmlElement instanceof List) {
