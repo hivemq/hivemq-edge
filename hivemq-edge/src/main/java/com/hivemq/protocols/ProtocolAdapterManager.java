@@ -145,6 +145,7 @@ public class ProtocolAdapterManager {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public @NotNull ListenableFuture<Void> start() {
 
+        log.info("Starting adapters");
         protocolAdapterWritingService.addWritingChangedCallback(this::findAllAdapters);
         findAllAdapters();
 
@@ -160,17 +161,24 @@ public class ProtocolAdapterManager {
             final List<Map<String, Object>> adapterConfigs;
             if (adapterXmlElement instanceof List) {
                 adapterConfigs = (List<Map<String, Object>>) adapterXmlElement;
+            } else if (adapterXmlElement instanceof Map) {
+                adapterConfigs = List.of((Map<String, Object>) adapterXmlElement);
             } else {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Found invalid configuration element for adapter " + adapterType));
             }
 
+
             adapterConfigs.stream()
-                    .map(persistenceMap -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap(persistenceMap, writingEnabled(), objectMapper, protocolAdapterFactory))
+                    .map(persistenceMap -> ProtocolAdapterConfigPersistence.fromAdapterConfigMap(persistenceMap,
+                            writingEnabled(),
+                            objectMapper,
+                            protocolAdapterFactory))
                     .forEach(persistence -> {
+                        log.info("Found configuration for adapter {} / {}", persistence.getAdapterConfig().getId(), adapterType);
                         persistence
                                 .missingTags()
                                 .ifPresent(missing -> {
-                                    throw new IllegalArgumentException("Tags used in mappings but used in adapter " + persistence.getAdapterConfig().getId() +": "+ missing);
+                                    throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " + persistence.getAdapterConfig().getId() +": "+ missing);
                                 });
 
                         final ProtocolAdapterWrapper instance =
@@ -305,34 +313,6 @@ public class ProtocolAdapterManager {
     @NotNull
     CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
-
-        final Map<String, String> tagNamesToAdapterId = getTagNamesToAdapterId();
-        Map<String, String> duplications = new HashMap<>();
-
-        protocolAdapterWrapper.getTags().forEach(tag -> {
-           if(tagNamesToAdapterId.containsKey(tag.getName())) {
-               duplications.put(tag.getName(), tagNamesToAdapterId.get(tag.getName()));
-            }
-        });
-
-        if(!duplications.isEmpty()) {
-            final List<String> tagIdToOwningAdapter = duplications.entrySet().stream()
-                    .map(entry -> entry.getKey() + " => " + entry.getValue())
-                    .collect(Collectors.toList());
-
-            log.error("The adapter {} contains tags already provided by other adapters: {}", protocolAdapterWrapper.getId(), tagIdToOwningAdapter);
-
-            eventService
-                    .createAdapterEvent(protocolAdapterWrapper.getId(), protocolAdapterWrapper.getAdapterInformation().getProtocolId())
-                    .withMessage(
-                            "Starting the adapter failed because it tried to register tag names owned by another adapter: " +
-                                    tagIdToOwningAdapter)
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
-
-            return CompletableFuture.failedFuture(
-                    new ProtocolAdapterException("Tried to register tags owned by another adapter: " + tagIdToOwningAdapter));
-        }
 
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
@@ -551,8 +531,9 @@ public class ProtocolAdapterManager {
 
     public boolean deleteAdapter(final @NotNull String id) {
         Preconditions.checkNotNull(id);
+        String protocolId = protocolAdapters.get(id).getProtocolAdapterInformation().getProtocolId();
         boolean result = deleteAdapterInternal(id);
-        configPersistence.deleteAdapter(id, protocolAdapters.get(id).getProtocolAdapterInformation().getProtocolId());
+        configPersistence.deleteAdapter(id, protocolId);
         return result;
     }
 
@@ -720,7 +701,7 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapterConfigPersistence persistence =
                     ProtocolAdapterConfigPersistence.fromAdapterConfigMap(
-                            Map.of("config", config, "tags", tagMaps), //FIXME nicer?
+                            Map.of("config", config, "tags", tagMaps),
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory);
@@ -817,14 +798,6 @@ public class ProtocolAdapterManager {
                         return DomainTagDeleteResult.failed(NOT_FOUND, adapterId);
                     }
                 }).orElse(DomainTagDeleteResult.failed(NOT_FOUND, adapterId));
-    }
-
-
-    public Map<String, String> getTagNamesToAdapterId() {
-        return protocolAdapters.values().stream()
-                .flatMap(pa -> pa.getTags().stream()
-                    .map(tag -> new AbstractMap.SimpleEntry<>(tag.getName(), pa.getId())))
-                    .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
     }
 
     public List<DomainTag> getDomainTags() {
