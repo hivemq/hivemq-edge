@@ -56,12 +56,12 @@ export const getMainRootFromPath = (paths: string[]): string | undefined => {
   return root
 }
 
-export const getTopicPaths = (configSchema: RJSFSchema) => {
+export const getTopicPaths = (configSchema: RJSFSchema, format = CustomFormat.MQTT_TOPIC) => {
   const flattenSchema = flattenObject(configSchema)
   return (
     Object.entries(flattenSchema)
       // Only interested in topics, internally defined by the string format `format: 'mqtt-topic'`
-      .filter(([k, v]) => k.endsWith('format') && v === CustomFormat.MQTT_TOPIC)
+      .filter(([k, v]) => k.endsWith('format') && v === format)
       .map(([path]) =>
         path
           // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
@@ -117,9 +117,13 @@ const getTopicsFromPath = (path: string, instance: GenericObjectType): string[] 
   return getTopicsFromPath(rest.join('.'), instance?.[property])
 }
 
-export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: GenericObjectType): string[] => {
+export const discoverAdapterTopics = (
+  protocol: ProtocolAdapter,
+  instance: GenericObjectType,
+  format = CustomFormat.MQTT_TOPIC
+): string[] => {
   // TODO[138] review nullable for protocol
-  const paths = getTopicPaths(protocol?.configSchema || {})
+  const paths = getTopicPaths(protocol?.configSchema || {}, format)
   const topics: string[] = []
 
   paths.forEach((path) => {
