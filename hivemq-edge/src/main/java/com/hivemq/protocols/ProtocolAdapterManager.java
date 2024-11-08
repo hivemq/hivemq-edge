@@ -297,7 +297,7 @@ public class ProtocolAdapterManager {
                         "'not found.")));
     }
 
-    private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+    private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
         if (writingEnabled() && protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
@@ -312,7 +312,7 @@ public class ProtocolAdapterManager {
         return startWritingFuture;
     }
 
-    private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+    private void schedulePolling(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
         if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Schedule polling for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
