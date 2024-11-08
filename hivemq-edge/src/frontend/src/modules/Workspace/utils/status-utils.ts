@@ -4,6 +4,7 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
 import { Adapter, Bridge, ProtocolAdapter, Status } from '@/api/__generated__'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 
 import { Group, NodeTypes } from '../types.ts'
 import { discoverAdapterTopics, getBridgeTopics } from './topics-utils.ts'
@@ -118,15 +119,30 @@ export const updateEdgesStatus = (
     }
 
     const source = getNode(edge.source)
+    const target = getNode(edge.target)
     const isConnected =
-      status?.connection === Status.connection.CONNECTED ||
-      (status?.runtime === Status.runtime.STARTED && status?.connection === Status.connection.STATELESS)
+      (status?.connection === Status.connection.CONNECTED || status?.connection === Status.connection.STATELESS) &&
+      status?.runtime === Status.runtime.STARTED
 
     if (source && source.type === NodeTypes.ADAPTER_NODE) {
       const type = adapterTypes?.find((e) => e.id === (source.data as Adapter).type)
-      const topics = type ? discoverAdapterTopics(type, (source.data as Adapter).config as GenericObjectType) : []
+      if (target?.type === NodeTypes.DEVICE_NODE) {
+        const topicFilters = type
+          ? discoverAdapterTopics(
+              type,
+              (source.data as Adapter).config as GenericObjectType,
+              CustomFormat.MQTT_TOPIC_FILTER
+            )
+          : []
+        newEdges.push({
+          ...edge,
+          ...getEdgeStatus(isConnected, !!topicFilters.length, getThemeForStatus(theme, status)),
+        })
+      } else {
+        const topics = type ? discoverAdapterTopics(type, (source.data as Adapter).config as GenericObjectType) : []
+        newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) })
+      }
 
-      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) })
       return
     }
 
