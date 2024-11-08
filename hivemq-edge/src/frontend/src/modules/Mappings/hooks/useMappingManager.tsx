@@ -53,7 +53,7 @@ export const useMappingManager = (adapterId: string) => {
     if (!adapterInfo) return undefined
     const { selectedProtocol, selectedAdapter } = adapterInfo
 
-    const { properties } = selectedProtocol?.configSchema as RJSFSchema
+    const { properties, $defs, definitions } = selectedProtocol?.configSchema as RJSFSchema
     if (!properties) return undefined
 
     if (!selectedProtocol?.id) return undefined
@@ -67,11 +67,14 @@ export const useMappingManager = (adapterId: string) => {
 
     const schema: RJSFSchema = {
       type: 'object',
+      $defs: $defs,
+      definitions: definitions,
       properties: {
         [mappingPropName]: mappingProperties,
       },
     }
     const { ['ui:tabs']: tabs, ...rest } = selectedProtocol.uiSchema as UiSchema
+
     return {
       schema,
       formData: { [mappingPropName]: formData },
