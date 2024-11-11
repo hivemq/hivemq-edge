@@ -96,7 +96,7 @@ public class OpcUaClientWrapper {
                             } else {
                                 output.finish(jsonNode);
                             }}),
-                        () -> output.fail(new IllegalArgumentException("Missing JSON Schema generator"), null);
+                        () -> output.fail(new IllegalArgumentException("Missing JSON Schema generator"), null)
                 );
     }
 
@@ -136,7 +136,7 @@ public class OpcUaClientWrapper {
         });
     }
 
-    public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput, final @NotNull Tag<OpcuaTagDefinition> opcuaTag) {
+    public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput, final @NotNull OpcuaTag opcuaTag) {
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) writingInput.getWritingPayload();
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) writingInput.getWritingContext();
         log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);

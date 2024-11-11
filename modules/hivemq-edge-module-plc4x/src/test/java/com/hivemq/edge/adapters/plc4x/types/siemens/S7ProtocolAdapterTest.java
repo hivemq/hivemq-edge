@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -37,13 +36,11 @@ public class S7ProtocolAdapterTest {
 
     private final @NotNull ProtocolAdapterInput protocolAdapterInput = mock();
     private final @NotNull ModuleServices moduleServices = mock();
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
     private @NotNull TestS7ProtocolAdapter adapter;
 
     @BeforeEach
     void setUp() {
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
-        when(moduleServices.protocolAdapterTagService()).thenReturn(protocolAdapterTagService);
         adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
     }
 

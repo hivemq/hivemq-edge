@@ -55,6 +55,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
+import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -290,7 +291,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         validateAdapterSchema(errorMessages, adapter);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
@@ -301,7 +302,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Map<String, Object> config =
                 objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
                 });
-        protocolAdapterManager.updateAdapter(adapterId, config, List.of()); //FIXME not correct
+        protocolAdapterManager.updateAdapterConfig(adapterId, config);
         return Response.ok().build();
     }
 

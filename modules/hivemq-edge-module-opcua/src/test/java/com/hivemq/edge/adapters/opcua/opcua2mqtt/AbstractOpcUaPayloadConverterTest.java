@@ -27,8 +27,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
@@ -75,7 +73,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
 
 
     @BeforeEach
@@ -90,7 +87,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
-        when(moduleServices.protocolAdapterTagService()).thenReturn(protocolAdapterTagService);
     }
 
     @NotNull

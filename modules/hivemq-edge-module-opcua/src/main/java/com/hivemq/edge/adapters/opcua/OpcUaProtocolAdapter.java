@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -48,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
@@ -166,7 +164,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 .filter(tag -> tag.getName().equals(writeContext.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> opcUaClientWrapperTemp.write(input, output, def),
+                        def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
                         () -> output.fail("Polling for protocol adapter failed because the used tag '" +
                                 writeContext.getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI.")
@@ -188,11 +186,11 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
         if(opcUaClientWrapperTemp != null) {
-            adapterConfig.getTags().stream()
-                .filter(tag -> tag.getTagName().equals(input.getTagName()))
+            tags.stream()
+                .filter(tag -> tag.getName().equals(input.getTagName()))
                 .findFirst()
                 .ifPresentOrElse(
-                        def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema(def, output),
+                        def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
                         () -> {
                             //FIXME needs logging
                             output.adapterNotStarted();
