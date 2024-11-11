@@ -51,7 +51,7 @@ public class BuiltinJsonSchema {
         try {
             classToJsonSchema.put(BuiltinDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", BuiltinDataType.Boolean));
-            final JsonNode byteJsonSchema = createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.String);
+            final JsonNode byteJsonSchema = createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.Byte);
             classToJsonSchema.put(BuiltinDataType.SByte, byteJsonSchema);
             classToJsonSchema.put(BuiltinDataType.Byte, byteJsonSchema);
 
