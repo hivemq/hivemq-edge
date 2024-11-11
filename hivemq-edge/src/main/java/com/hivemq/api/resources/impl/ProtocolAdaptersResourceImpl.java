@@ -269,7 +269,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final Map<String, Object> config =
                     objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
                     });
-            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), config, List.of()); //FIXME not correct
+            protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -440,6 +440,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return ErrorResponseUtil.alreadyExists("The tag '" +
                         tagId +
                         "' cannot be created since another item already exists with the same id.");
+            case ADAPTER_MISSING:
+                return ErrorResponseUtil.genericError("The adapter named '" +
+                        domainTag.getProtocolId() +
+                        "' does not exist.");
+            default:
+                log.error("Unhandled PUT-statud: {}", domainTagAddResult.getDomainTagPutStatus());
         }
         return Response.serverError().build();
     }

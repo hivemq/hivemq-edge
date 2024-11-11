@@ -41,7 +41,7 @@ public class DomainTagModel {
     @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
 
-    @JsonProperty("definition")
+    @JsonProperty("tagDefinition")
     @Schema(description = "A user created description for this tag.")
     private final @NotNull Map<String, Object> definition;
 
@@ -50,7 +50,7 @@ public class DomainTagModel {
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @NotNull String description,
-            @JsonProperty("definition") final @NotNull Map<String, Object> definition) {
+            @JsonProperty("tagDefinition") final @NotNull Map<String, Object> definition) {
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = description;

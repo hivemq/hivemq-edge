@@ -98,17 +98,22 @@ public class DomainTag {
     }
 
     @Override
-    public @NotNull String toString() {
+    public String toString() {
         return "DomainTag{" +
-                "description='" +
-                description +
-                '\'' +
-                ", tag='" +
+                "tagName='" +
                 tagName +
+                '\'' +
+                ", adapterId='" +
+                adapterId +
                 '\'' +
                 ", protocolId='" +
                 protocolId +
                 '\'' +
+                ", description='" +
+                description +
+                '\'' +
+                ", definition=" +
+                definition +
                 '}';
     }
 }
