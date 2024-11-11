@@ -141,10 +141,12 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Byte.MIN_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(Byte.MAX_VALUE));
+                return;
             case Byte:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(UByte.MIN_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(UByte.MAX_VALUE));
+                return;
             case String:
             case Guid:
             case ByteString:
