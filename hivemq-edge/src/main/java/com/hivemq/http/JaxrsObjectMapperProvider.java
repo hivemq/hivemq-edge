@@ -49,6 +49,7 @@ public class JaxrsObjectMapperProvider extends JacksonJaxbJsonProvider {
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
+                .configure(MapperFeature.AUTO_DETECT_GETTERS, false)
                 .build();
         setMapper(mapper);
     }
