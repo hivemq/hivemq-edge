@@ -1,15 +1,27 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
@@ -45,7 +57,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull ModuleServices moduleServices;
+    private final @NotNull List<Tag> opcuaTags;
 
     public OpcUaSubscriptionLifecycle(
             final @NotNull OpcUaClient opcUaClient,
@@ -54,14 +66,14 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull ModuleServices moduleServices) {
+            final @NotNull List<Tag> opcuaTags) {
         this.opcUaClient = opcUaClient;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterPublishService = adapterPublishService;
-        this.moduleServices = moduleServices;
+        this.opcuaTags = opcuaTags;
     }
 
     @Override
@@ -113,25 +125,28 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         }
     }
 
+    public Optional<Tag> findTag(String tagName) {
+        return opcuaTags.stream()
+                .filter(tag -> tag.getName().equals(tagName))
+                .findFirst();
+    }
+
     public CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
         final @NotNull String tagName = subscription.getTagName();
-        // first resolve the tag
-        final Tag<OpcuaTagDefinition> opcuaTag;
-        try {
-            opcuaTag = moduleServices.protocolAdapterTagService()
-                    .resolveTag(tagName, OpcuaTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
-        } catch (final TagDefinitionParseException e) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Opcua subscription for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol."));
-        }
 
+        return findTag(subscription.getTagName())
+                .map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
+                .orElseGet(() ->
+                        CompletableFuture.failedFuture(
+                                new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
+                                    tagName +
+                                    "' was not found. For the polling to work the tag must be created via REST API or the UI.")));
+    }
 
-        final String nodeId = opcuaTag.getTagDefinition().getNode();
+    private CompletableFuture<Void> subscribeToOpcua(
+            final @NotNull OpcUaToMqttMapping subscription,
+            final @NotNull OpcuaTag opcuaTag) {
+        final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);

@@ -19,11 +19,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @SuppressWarnings("FieldCanBeLocal")
@@ -91,9 +95,8 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        // TODO
-        return List.of();
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return modbusToMQTTConfig.getMappings().stream().map(ModbusToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {

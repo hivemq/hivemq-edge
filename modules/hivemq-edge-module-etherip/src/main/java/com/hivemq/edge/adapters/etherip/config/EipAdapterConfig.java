@@ -19,11 +19,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EipAdapterConfig implements ProtocolAdapterConfig {
@@ -67,7 +70,6 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
     private final int slot;
 
-
     @JsonProperty(value = "eipToMqtt", required = true)
     @ModuleConfigField(title = "Ethernet IP To MQTT Config",
                        description = "The configuration for a data stream from Ethernet IP to MQTT",
@@ -88,7 +90,6 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.eipToMqttConfig = eipToMqttConfig;
-
     }
 
     public @NotNull String getId() {
@@ -96,8 +97,8 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toList());
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {

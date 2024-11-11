@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -31,6 +30,7 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -38,6 +38,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
@@ -55,6 +55,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
@@ -66,6 +67,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
+        this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
     }
@@ -84,8 +86,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 if(opcUaClientWrapper == null) {
                     try {
                         OpcUaClientWrapper.createAndConnect(adapterConfig,
+                                tags,
                                 protocolAdapterState,
-                                moduleServices,
+                                moduleServices.eventService(),
+                                moduleServices.adapterPublishService(),
                                 adapterConfig.getId(),
                                 adapterInformation.getProtocolId(),
                                 protocolAdapterMetricsService, output).thenApply(wrapper -> {
@@ -122,6 +126,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                             protocolAdapterState.setErrorConnectionStatus(t, null);
                             output.failStop(t, null);
                         } else {
+                            opcUaClientWrapper = null;
                             protocolAdapterState.setConnectionStatus(DISCONNECTED);
                             output.stoppedSuccessfully();
                         }
@@ -153,8 +158,17 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
+        final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) input.getWritingContext();
         if(opcUaClientWrapperTemp != null) {
-            opcUaClientWrapperTemp.write(input, output);
+        tags.stream()
+                .filter(tag -> tag.getName().equals(writeContext.getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
+                        () -> output.fail("Polling for protocol adapter failed because the used tag '" +
+                                writeContext.getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
         } else {
             log.warn("Tried executing write while client wasn't started");
         }
@@ -172,7 +186,16 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
         if(opcUaClientWrapperTemp != null) {
-            opcUaClientWrapperTemp.createMqttPayloadJsonSchema(input.getTagName(), output);
+            tags.stream()
+                .filter(tag -> tag.getName().equals(input.getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
+                        () -> {
+                            //FIXME needs logging
+                            output.adapterNotStarted();
+                        }
+                );
         } else {
             output.adapterNotStarted();
         }

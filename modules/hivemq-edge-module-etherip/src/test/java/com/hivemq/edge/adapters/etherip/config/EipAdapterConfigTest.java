@@ -17,13 +17,15 @@ package com.hivemq.edge.adapters.etherip.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -38,28 +40,11 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class EipAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -69,10 +54,19 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                new EipProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
+                        false,
+                        mapper,
+                        eipProtocolAdapterFactory);
+        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -115,6 +109,17 @@ class EipAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
         });
+
+        final List<? extends Tag> tags = eipProtocolAdapterFactory.convertTagDefinitionObjects(mapper,
+                (List<Map<String, Object>>) ((Map<String, Object>) adapters.get("eip")).get("tags"));
+
+        assertThat(tags)
+                .allSatisfy(t -> {
+                    assertThat(t)
+                            .isInstanceOf(EipTag.class)
+                            .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
+                            .contains("tag-name", "description", new EipTagDefinition("addressy"));
+                });
     }
 
     @Test
@@ -125,10 +130,18 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                new EipProtocolAdapterFactory(mockInput);
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
+                        false,
+                        mapper,
+                        eipProtocolAdapterFactory);
+        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -147,6 +160,17 @@ class EipAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
+
+        final List<? extends Tag> tags = eipProtocolAdapterFactory.convertTagDefinitionObjects(mapper,
+                (List<Map<String, Object>>) ((Map<String, Object>) adapters.get("eip")).get("tags"));
+
+        assertThat(tags)
+                .allSatisfy(t -> {
+                    assertThat(t)
+                            .isInstanceOf(EipTag.class)
+                            .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
+                            .contains("tag-name", "description", new EipTagDefinition("addressy"));
+                });
     }
 
     @Test
@@ -167,8 +191,10 @@ class EipAdapterConfigTest {
                 16,
                 new EipToMqttConfig(12, 13, true, List.of(pollingContext)));
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(protocolAdapterFactoryInput);
+                new EipProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = eipProtocolAdapterFactory.unconvertConfigObject(mapper, eipAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-eip-adapter");

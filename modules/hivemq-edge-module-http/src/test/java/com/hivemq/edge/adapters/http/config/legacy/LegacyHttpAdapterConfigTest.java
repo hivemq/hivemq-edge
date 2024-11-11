@@ -16,15 +16,14 @@
 package com.hivemq.edge.adapters.http.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -38,33 +37,13 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContent
 import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.GET;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class LegacyHttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_defaults() throws Exception {
@@ -74,10 +53,20 @@ public class LegacyHttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                new HttpProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        true,
+                        mapper,
+                        httpProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -93,8 +82,6 @@ public class LegacyHttpAdapterConfigTest {
         assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
         assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
         assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
-
-        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
     }
 
     @Test
@@ -107,10 +94,19 @@ public class LegacyHttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                new HttpProtocolAdapterFactory(mockInput);
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        false,
+                        mapper,
+                        httpProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
@@ -126,8 +122,6 @@ public class LegacyHttpAdapterConfigTest {
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
         });
-
-        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

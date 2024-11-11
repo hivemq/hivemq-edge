@@ -45,8 +45,8 @@
                     </userProperties>
                 </subscription>
                 <subscription>
-                    <tagName>tag-name</tagName>
-                    <tagAddress>tag-address</tagAddress>
+                    <tagName>tag-name2</tagName>
+                    <tagAddress>tag-address2</tagAddress>
                     <destination>my/topic/2</destination>
                     <dataType>BOOL</dataType>
                     <qos>1</qos>

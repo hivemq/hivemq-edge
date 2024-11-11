@@ -15,14 +15,12 @@
  */
 package com.hivemq.persistence.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 @Immutable
 public class DomainTag {
@@ -31,20 +29,19 @@ public class DomainTag {
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull String description;
-    private final @NotNull JsonNode tagDefinition;
+    private final @NotNull Map<String, Object> definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull String description,
-            final @NotNull JsonNode tagDefinition) {
+            final @NotNull Map<String, Object> definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.description = description;
-        this.tagDefinition = tagDefinition;
-
+        this.definition = definition;
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(
@@ -54,22 +51,7 @@ public class DomainTag {
                 adapterId,
                 domainTag.getProtocolId(),
                 domainTag.getDescription(),
-                domainTag.getTagDefinition());
-    }
-
-
-
-    public static @NotNull DomainTag simpleAddress(final @NotNull String tag, final @NotNull String tagDefinition) {
-        return simpleAddress(tag, "adapter", tagDefinition);
-    }
-
-    public static @NotNull DomainTag simpleAddress(
-            final @NotNull String tagName,
-            final @NotNull String adapterId,
-            final @NotNull String tagDefinition) {
-        final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-        objectNode.set("address", new TextNode(tagDefinition));
-        return new DomainTag(tagName, adapterId,"someProtocolId", "someDescription", objectNode);
+                domainTag.getDefinition());
     }
 
     public @NotNull String getTagName() {
@@ -80,16 +62,20 @@ public class DomainTag {
         return adapterId;
     }
 
-    public @NotNull JsonNode getTagDefinition() {
-        return tagDefinition;
-    }
-
     public @NotNull String getDescription() {
         return description;
     }
 
     public @NotNull String getProtocolId() {
         return protocolId;
+    }
+
+    public @NotNull Map<String, Object> getDefinition() {
+        return definition;
+    }
+
+    public @NotNull Map<String, Object> toTagMap() {
+        return Map.of("name", tagName, "description", description, "definition", definition);
     }
 
     // only tag is used as duplicates based on this field are not allowed.
@@ -112,19 +98,22 @@ public class DomainTag {
     }
 
     @Override
-    public @NotNull String toString() {
+    public String toString() {
         return "DomainTag{" +
-                "description='" +
-                description +
-                '\'' +
-                ", tagDefinition=" +
-                tagDefinition +
-                ", tag='" +
+                "tagName='" +
                 tagName +
+                '\'' +
+                ", adapterId='" +
+                adapterId +
                 '\'' +
                 ", protocolId='" +
                 protocolId +
                 '\'' +
+                ", description='" +
+                description +
+                '\'' +
+                ", definition=" +
+                definition +
                 '}';
     }
 }

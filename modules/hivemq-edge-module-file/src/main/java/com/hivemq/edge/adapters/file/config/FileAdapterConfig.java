@@ -18,9 +18,15 @@ package com.hivemq.edge.adapters.file.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.file.tag.FileTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileAdapterConfig implements ProtocolAdapterConfig {
@@ -56,9 +62,8 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        //TODO
-        return List.of();
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return fileToMqttConfig.getMappings().stream().map(FileToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

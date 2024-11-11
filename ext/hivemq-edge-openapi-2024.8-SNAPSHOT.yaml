@@ -4702,7 +4702,11 @@ components:
           type: string
           description: The protocol id of the protocol for which this tag was created.
         tagDefinition:
-          $ref: '#/components/schemas/JsonNode'
+          type: object
+          additionalProperties:
+            type: object
+            description: A user created description for this tag.
+          description: A user created description for this tag.
         tagName:
           type: string
           description: The name of the tag that identifies it within this edge instance.

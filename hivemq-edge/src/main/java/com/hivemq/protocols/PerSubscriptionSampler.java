@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -44,14 +43,12 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull T pollingContext,
             final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
-            final @NotNull ProtocolAdapterTagService tagService) {
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         super(protocolAdapter,
                 objectMapper,
                 adapterPublishService,
                 eventService,
-                jsonPayloadDefaultCreator,
-                tagService);
+                jsonPayloadDefaultCreator);
         this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
         this.pollingContext = pollingContext;
     }
@@ -65,7 +62,7 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         final PollingOutputImpl pollingOutput =
                 new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
         try {
-            perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext, tagService), pollingOutput);
+            perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
         } catch (Throwable t) {
             pollingOutput.fail(t, null);
             throw t;

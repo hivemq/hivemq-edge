@@ -27,8 +27,11 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
@@ -38,6 +41,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterConfig configObject;
+    private final @NotNull List<Tag> tags;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -46,13 +50,15 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
-            final @NotNull ProtocolAdapterConfig configObject) {
+            final @NotNull ProtocolAdapterConfig configObject,
+            final @NotNull List<Tag> tags) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
+        this.tags = tags;
     }
 
     public void start(
@@ -100,6 +106,10 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     public @NotNull ProtocolAdapterConfig getConfigObject() {
         return configObject;
+    }
+
+    public @NotNull List<Tag> getTags() {
+        return tags;
     }
 
     public @NotNull Long getTimeOfLastStartAttempt() {

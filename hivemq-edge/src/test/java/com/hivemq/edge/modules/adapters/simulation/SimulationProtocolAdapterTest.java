@@ -16,7 +16,6 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
@@ -46,11 +45,10 @@ class SimulationProtocolAdapterTest {
 
     private final @NotNull ProtocolAdapterInput input = mock();
     private final @NotNull SimulationAdapterConfig protocolAdapterConfig = mock();
-    private final ProtocolAdapterTagService tagService = mock();
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
     private final @NotNull SimulationToMqttMapping simulationPollingContext =
             new SimulationToMqttMapping("test", 1, null, null, null, null);
-    private final @NotNull PollingInputImpl pollingInput = new PollingInputImpl(simulationPollingContext, tagService);
+    private final @NotNull PollingInputImpl pollingInput = new PollingInputImpl(simulationPollingContext);
     private final @NotNull PollingOutputImpl pollingOutput =
             new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(simulationPollingContext));
     private final @NotNull TimeWaiter timeWaiter = mock();

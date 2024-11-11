@@ -19,6 +19,11 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -114,5 +119,20 @@ public class ADSProtocolAdapterInformation
             log.warn("The UISchema for the ADS Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
+        return Plc4xTag.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+        return ADSAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+        return ADSAdapterConfig.class;
     }
 }

@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -27,6 +26,7 @@ import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -42,12 +42,12 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class OpcUaAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
     private final @NotNull EventService eventService = mock();
 
     @Test
@@ -59,10 +59,16 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        final BidirectionalOpcUaAdapterConfig config =
-                (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("opcua"));
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                        true,
+                        mapper,
+                        oopcUaProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final BidirectionalOpcUaAdapterConfig config = (BidirectionalOpcUaAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -131,10 +137,16 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        final BidirectionalOpcUaAdapterConfig config =
-                (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("opcua"));
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                        true,
+                        mapper,
+                        oopcUaProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final BidirectionalOpcUaAdapterConfig config = (BidirectionalOpcUaAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -169,6 +181,27 @@ class OpcUaAdapterConfigTest {
     }
 
     @Test
+    public void convertConfigObject_defaults_missing_tag() throws Exception {
+        final URL resource = getClass().getResource("/opcua-adapter-minimal-config-missing-tag.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory =
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+
+        AdapterConfigAndTags adapterConfigAndTags = AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                true,
+                mapper,
+                oopcUaProtocolAdapterFactory);
+
+        assertThat(adapterConfigAndTags.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("ns=1;i=1004"));
+    }
+
+    @Test
     public void convertConfigObject_opcuaIdMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/opcua-adapter-missing-id.xml");
         final File path = Path.of(resource.toURI()).toFile();
@@ -176,10 +209,14 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'id'");
+                new OpcUaProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                false,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -190,10 +227,14 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                new OpcUaProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                false,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test
@@ -204,10 +245,14 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
+                new OpcUaProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                false,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -218,10 +263,14 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'uri'");
+                new OpcUaProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                false,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'uri'");
     }
 
     @Test
@@ -233,9 +282,11 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                true,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -247,9 +298,11 @@ class OpcUaAdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+                true,
+                mapper,
+                opcUaProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
     }
 
     @Test
@@ -274,7 +327,7 @@ class OpcUaAdapterConfigTest {
                 new Security(BASIC128RSA15));
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -339,7 +392,7 @@ class OpcUaAdapterConfigTest {
                 null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
-                new OpcUaProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -388,31 +441,5 @@ class OpcUaAdapterConfigTest {
                 mock(),
                 mock());
         return readerWriter.applyConfig();
-    }
-
-    private class ProtocolAdapterFactoryTestInput implements ProtocolAdapterFactoryInput {
-
-        private final Boolean writingEnabled;
-
-        private ProtocolAdapterFactoryTestInput(final Boolean writingEnabled) {
-            this.writingEnabled = writingEnabled;
-        }
-
-        @Override
-        public boolean isWritingEnabled() {
-            return writingEnabled;
-        }
-
-
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
     }
 }

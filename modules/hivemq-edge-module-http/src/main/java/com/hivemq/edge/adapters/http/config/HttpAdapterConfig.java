@@ -20,11 +20,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
@@ -70,7 +74,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        description = "The configuration for a data stream from HTTP to MQTT")
     private final @NotNull HttpToMqttConfig httpToMqttConfig;
 
-
     @JsonCreator
     public HttpAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -94,9 +97,8 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        // TODO
-        return List.of();
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return httpToMqttConfig.getMappings().stream().map(HttpToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public int getHttpConnectTimeoutSeconds() {

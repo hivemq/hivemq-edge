@@ -19,15 +19,17 @@
 <hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <protocol-adapters>
         <http>
-            <id>my-protocol-adapter</id>
-            <httpToMqtt>
-                <httpToMqttMappings>
-                    <httpToMqttMapping>
-                        <mqttTopic>my/destination</mqttTopic>
-                        <mqttQos>1</mqttQos>
-                    </httpToMqttMapping>
-                </httpToMqttMappings>
-            </httpToMqtt>
+            <config>
+                <id>my-protocol-adapter</id>
+                <httpToMqtt>
+                    <httpToMqttMappings>
+                        <httpToMqttMapping>
+                            <mqttTopic>my/destination</mqttTopic>
+                            <mqttQos>1</mqttQos>
+                        </httpToMqttMapping>
+                    </httpToMqttMappings>
+                </httpToMqtt>
+            </config>
         </http>
     </protocol-adapters>
 </hivemq>

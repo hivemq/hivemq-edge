@@ -1,17 +1,22 @@
-package com.hivemq.edge.adapters.etherip.tag;
+package com.hivemq.edge.adapters.etherip.config.tag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class EipTagDefinition {
+public class EipTagDefinition implements TagDefinition {
 
-    @JsonProperty("address")
+    @JsonProperty(value = "address", required = true)
+    @ModuleConfigField(title = "address",
+                       description = "Address of the tag on the device",
+                       required = true)
     private final @NotNull String address;
 
     @JsonCreator
-    public EipTagDefinition(@JsonProperty("address") final @NotNull String address) {
+    public EipTagDefinition(@JsonProperty(value = "address", required = true) final @NotNull String address) {
         this.address = address;
     }
 

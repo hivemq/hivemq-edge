@@ -18,16 +18,27 @@
 <hivemq>
     <protocol-adapters>
         <file>
-            <id>my-file-protocol-adapter</id>
-            <fileToMqtt>
-                <fileToMqttMappings>
-                    <fileToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag1</tagName>
-                        <contentType>BINARY</contentType>
-                    </fileToMqttMapping>
-                </fileToMqttMappings>
-            </fileToMqtt>
+            <config>
+                <id>my-file-protocol-adapter</id>
+                <fileToMqtt>
+                    <fileToMqttMappings>
+                        <fileToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <tagName>tag1</tagName>
+                            <contentType>BINARY</contentType>
+                        </fileToMqttMapping>
+                    </fileToMqttMappings>
+                </fileToMqtt>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>decsription</description>
+                    <definition>
+                        <filePath>pathy</filePath>
+                    </definition>
+                </tag>
+            </tags>
         </file>
     </protocol-adapters>
 </hivemq>

@@ -15,11 +15,9 @@
  */
 package com.hivemq.bootstrap.ioc;
 
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterTagServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -34,11 +32,5 @@ public abstract class AdapterModule {
     static @NotNull ProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
         return writingServiceProvider.get();
     }
-
-    @Binds
-    abstract @NotNull ProtocolAdapterTagService ProtocolAdapterTagService(@NotNull ProtocolAdapterTagServiceImpl protocolAdapterTagService);
-
-
-
 
 }

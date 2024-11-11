@@ -19,16 +19,18 @@
 <hivemq>
     <protocol-adapters>
         <http>
-            <destination>my/destination</destination>
-            <httpToMqtt>
-                <httpToMqttMappings>
-                    <httpToMqttMapping>
-                        <tagName>tag1</tagName>
-                        <mqttTopic>my/destination</mqttTopic>
-                        <mqttQos>1</mqttQos>
-                    </httpToMqttMapping>
-                </httpToMqttMappings>
-            </httpToMqtt>
+            <config>
+                <destination>my/destination</destination>
+                <httpToMqtt>
+                    <httpToMqttMappings>
+                        <httpToMqttMapping>
+                            <tagName>tag1</tagName>
+                            <mqttTopic>my/destination</mqttTopic>
+                            <mqttQos>1</mqttQos>
+                        </httpToMqttMapping>
+                    </httpToMqttMappings>
+                </httpToMqtt>
+            </config>
         </http>
     </protocol-adapters>
 </hivemq>

@@ -21,7 +21,6 @@ import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.persistence.domain.DomainTagPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
@@ -43,7 +42,6 @@ public class Persistences {
     private final @NotNull ConnectionPersistence connectionPersistence;
     private final @NotNull ScheduledCleanUpService scheduledCleanUpService;
     private final @NotNull MessageDroppedService messageDroppedService;
-    private final @NotNull DomainTagPersistence domainTagPersistence;
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
     @Inject
@@ -58,7 +56,6 @@ public class Persistences {
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull ScheduledCleanUpService scheduledCleanUpService,
             final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull DomainTagPersistence domainTagPersistence,
             final @NotNull TopicFilterPersistence topicFilterPersistence) {
         this.clientQueueLocalPersistence = clientQueueLocalPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
@@ -70,7 +67,6 @@ public class Persistences {
         this.connectionPersistence = connectionPersistence;
         this.scheduledCleanUpService = scheduledCleanUpService;
         this.messageDroppedService = messageDroppedService;
-        this.domainTagPersistence = domainTagPersistence;
         this.topicFilterPersistence = topicFilterPersistence;
     }
 
@@ -108,10 +104,6 @@ public class Persistences {
 
     public @NotNull ClientQueuePersistence clientQueuePersistence() {
         return clientQueuePersistence;
-    }
-
-    public @NotNull DomainTagPersistence domainTagPersistence() {
-        return domainTagPersistence;
     }
 
     public @NotNull TopicFilterPersistence topicFilterPersistence() {
