@@ -418,9 +418,9 @@ public class JsonToOpcUAConverter {
     static short extractSignedShort(final JsonNode jsonNode) {
         if (jsonNode.isInt()) {
             final int value = jsonNode.intValue();
-            if (value > UShort.MAX_VALUE) {
+            if (value > Short.MAX_VALUE) {
                 throw createOverflowException(value, Int16.name());
-            } else if (value < UShort.MIN_VALUE) {
+            } else if (value < Short.MIN_VALUE) {
                 throw createUnderflowException(value, Int16.name());
             }
             return jsonNode.shortValue();
