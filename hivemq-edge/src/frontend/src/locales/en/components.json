@@ -1,6 +1,7 @@
 {
   "iconLabel": {
     "topic": "Topic",
+    "topic-filter": "Topic Filter",
     "tag": "Tag",
     "client": "Client",
     "workspace": "Workspace"
@@ -25,12 +26,20 @@
     "goPage": "Go to page",
     "perPage": "Items per page"
   },
-  "topicCreate": {
-    "label": "Add a topic",
-    "placeholder": "Type or select ...",
+  "EntityCreatableSelect": {
+    "aria-label_TAG": "Add a tag",
+    "aria-label_TOPIC": "Add a topic",
+    "aria-label_TOPIC_FILTER": "Add a topic filter",
+    "placeholder_TAG": "Type or select a tag ...",
+    "placeholder_TOPIC": "Type or select a topic ...",
+    "placeholder_TOPIC_FILTER": "Type or select a topic filter ...",
     "options": {
-      "noOptionsMessage": "No topic loaded",
-      "createLabel": "Add the topic ... {{topic}}"
+      "noOptionsMessage_TAG": "No matching tags",
+      "noOptionsMessage_TOPIC": "No matching topics",
+      "noOptionsMessage_TOPIC_FILTER": "No matching topic filters",
+      "createLabel_TAG": "Create a new tag ... {{entity}}",
+      "createLabel_TOPIC": "Create a new topic ... {{entity}}",
+      "createLabel_TOPIC_FILTER": "Create a new topic filter ... {{entity}}"
     }
   },
   "DateTimeRenderer": {
