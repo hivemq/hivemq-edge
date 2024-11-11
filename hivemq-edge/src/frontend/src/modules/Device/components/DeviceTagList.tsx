@@ -1,12 +1,14 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody, CardHeader, Code, Flex, Heading, HStack, List, ListItem } from '@chakra-ui/react'
+import { LuFileCog } from 'react-icons/lu'
 
 import { Adapter, DomainTagList } from '@/api/__generated__'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
-import DeviceTagDrawer from '@/modules/Device/components/DeviceTagDrawer.tsx'
+import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
 import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
 
@@ -18,8 +20,8 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
   const { data, isLoading, isError, context, onupdateCollection } = useTagManager(adapter?.id)
 
-  const onHandleSubmit = (data: DomainTagList | undefined) => {
-    if (data) onupdateCollection(data)
+  const onHandleSubmit = (data: unknown) => {
+    if (data) onupdateCollection(data as DomainTagList)
   }
 
   return (
@@ -29,7 +31,20 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
           <Flex flex="1" alignItems="center" flexWrap="wrap">
             <Heading size="sm">{t('device.drawer.tagList.title')}</Heading>
           </Flex>
-          <DeviceTagDrawer isDisabled={isLoading || isError} context={context} onSubmit={onHandleSubmit} />
+          <ArrayItemDrawer
+            header={t('device.drawer.tagEditor.title')}
+            context={context}
+            onSubmit={onHandleSubmit}
+            trigger={({ onOpen: onOpenArrayDrawer }) => (
+              <IconButton
+                variant="primary"
+                aria-label={t('device.drawer.tagList.cta.edit')}
+                icon={<LuFileCog />}
+                isDisabled={isLoading || isError}
+                onClick={onOpenArrayDrawer}
+              />
+            )}
+          />
         </Flex>
       </CardHeader>
       <CardBody>

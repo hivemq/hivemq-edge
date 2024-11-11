@@ -4,6 +4,7 @@ import { handlers as ConnectionStatusHandlers } from '@/api/hooks/useConnection/
 import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
+import { handlers as TopicFilterHandlers } from '@/api/hooks/useTopicFilters/__handlers__'
 
 import { handlers as DataHubDataPoliciesService } from '@/extensions/datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { handlers as DataHubBehaviorPoliciesService } from '@/extensions/datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
@@ -35,6 +36,7 @@ export const createHandlersWithMQTTClient = (
   return [
     ...ClientFilterHandlers,
     ...DeviceHandlers,
+    ...TopicFilterHandlers,
     // Domain & Schemas
     ...schemaHandlers(onSampling),
   ]

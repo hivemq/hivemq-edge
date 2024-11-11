@@ -81,6 +81,11 @@
     }
   },
   "rjsf": {
+    "actions": {
+      "submit": {
+        "label": "Submit"
+      }
+    },
     "CompactArrayField": {
       "action": {
         "add": "Add item",

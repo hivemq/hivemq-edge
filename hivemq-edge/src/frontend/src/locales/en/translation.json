@@ -777,6 +777,9 @@
           "common": "Manage mappings of the device",
           "inward": "Edit inward mappings",
           "outward": "Edit outward mappings"
+        },
+        "edge": {
+          "topicFilter": "Manage topic filters"
         }
       }
     },
@@ -980,6 +983,57 @@
     "error": {
       "noSampleForTopic": "No sample could be observed for the topic filter {{ topicFilter }}",
       "noSchemaForTopic": "There are no valid schema for the topic filter {{ topicFilter }}"
+    }
+  },
+  "topicFilter": {
+    "manager": {
+      "header": "Manage topic filters"
+    },
+    "listing": {
+      "aria-label": "List of topic filters",
+      "column": {
+        "topicFilter": "Topic Filter",
+        "description": "Description",
+        "hasSchema": "Schema",
+        "action": "Actions"
+      },
+      "action": {
+        "view": {
+          "aria-label": "Manage Schemas"
+        },
+        "edit": {
+          "aria-label": "Edit Topic Filter"
+        },
+        "delete": {
+          "aria-label": "Delete Topic Filter"
+        },
+        "add": {
+          "aria-label": "Add a new Topic Filter"
+        }
+      }
+    },
+    "schema": {
+      "header": "Manage the schemas of the topic filter",
+      "submit": {
+        "label": "OK"
+      }
+    },
+    "error": {
+      "loading": "We cannot load the topic filters. Please try again later.",
+      "noSchemaSampled": "No schema could be inferred from the traffic on this topic filter. Please try again later."
+    },
+    "toast": {
+      "description_loading": "Processing the request",
+      "delete": {
+        "title": "Delete Topic Filter",
+        "description_success": "The Topic Filter has been deleted from the Edge",
+        "description_error": "The Topic Filter could not be deleted"
+      },
+      "updateCollection": {
+        "title": "Edit the Topic Filters",
+        "description_success": "The Topic Filters have been modified on the Edge",
+        "description_error": "The list of Topic Filters could not be updated on the Edge"
+      }
     }
   }
 }
