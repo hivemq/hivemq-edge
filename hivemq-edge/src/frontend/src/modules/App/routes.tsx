@@ -18,6 +18,7 @@ const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
+const TopicFilterManager = lazy(() => import('@/modules/TopicFilters/TopicFilterManager.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
@@ -71,6 +72,10 @@ export const routes = createBrowserRouter(
           path: 'workspace/',
           element: <EdgeFlowPage />,
           children: [
+            {
+              path: 'topic-filters/',
+              element: <TopicFilterManager />,
+            },
             {
               path: ':nodeType/:device?/:adapter?/:nodeId',
               element: <NodePanelController />,
