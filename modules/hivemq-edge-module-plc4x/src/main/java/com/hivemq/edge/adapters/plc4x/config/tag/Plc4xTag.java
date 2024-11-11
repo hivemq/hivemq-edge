@@ -25,7 +25,7 @@ public class Plc4xTag implements Tag {
     @ModuleConfigField(title = "definition",
                        description = "The actual definition of the tag on the device",
                        required = true)
-    private final @NotNull Plc4xTagDefinition definition;;;
+    private final @NotNull Plc4xTagDefinition definition;
 
     public Plc4xTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
