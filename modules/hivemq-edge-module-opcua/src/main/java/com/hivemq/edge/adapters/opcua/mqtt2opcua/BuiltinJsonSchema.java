@@ -190,7 +190,7 @@ public class BuiltinJsonSchema {
                 return;
             case Float:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new FloatNode(Float.MIN_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new FloatNode(-Float.MAX_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new FloatNode(Float.MAX_VALUE));
                 return;
             case Double:
