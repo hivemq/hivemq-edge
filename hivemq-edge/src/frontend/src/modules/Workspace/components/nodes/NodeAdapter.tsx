@@ -6,7 +6,7 @@ import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui
 
 import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -25,6 +25,12 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
   const { options } = useEdgeFlowContext()
+
+  const topicFilters = useMemo<string[]>(() => {
+    if (!adapterProtocol) return []
+    if (!adapter.config) return []
+    return discoverAdapterTopics(adapterProtocol, adapter.config, CustomFormat.MQTT_TOPIC_FILTER)
+  }, [adapter.config, adapterProtocol])
   const topics = useMemo<string[]>(() => {
     if (!adapterProtocol) return []
     if (!adapter.config) return []
@@ -33,7 +39,6 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
   const navigate = useNavigate()
   const showSkeleton = useStore(selectorIsSkeletonZoom)
-  const { data } = useGetDomainTags(adapter.id)
 
   const bidirectional = isBidirectional(adapterProtocol)
   const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
@@ -65,7 +70,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {bidirectional && <MappingBadge destinations={data?.items?.map((e) => e.tag) || []} isTag />}
+            {bidirectional && <MappingBadge destinations={topicFilters} isTag />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
