@@ -147,12 +147,13 @@ public class ProtocolAdapterManager {
 
         for (final Map.Entry<String, Object> configSection : configPersistence.allAdapters().entrySet()) {
             final String adapterType = getKey(configSection.getKey());
-            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
-                    .get(adapterType).get();
+            final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional = protocolAdapterFactoryManager
+                    .get(adapterType);
 
-            if (protocolAdapterFactory == null) {
+            if (protocolAdapterFactoryOptional.isEmpty()) {
                 return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found."));
             }
+            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryOptional.get();
             final Object adapterXmlElement = configSection.getValue();
             final List<Map<String, Object>> adapterConfigs;
             if (adapterXmlElement instanceof List) {
@@ -187,7 +188,9 @@ public class ProtocolAdapterManager {
                     });
         }
 
-        configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
+        if(!protocolAdapters.isEmpty()) {
+            configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
+        }
 
         return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
                 .toArray(new CompletableFuture[]{})));
@@ -195,23 +198,27 @@ public class ProtocolAdapterManager {
 
     private @NotNull Map<String, Object> rewriteAdapterConfigurations(Collection<? extends ProtocolAdapterWrapper> protocolAdapterWrappers) {
         final Map<String, Object> allAdapterConfigs = new HashMap<>();
-        for (final ProtocolAdapterWrapper value : protocolAdapterWrappers) {
+        for (final ProtocolAdapterWrapper<?> value : protocolAdapterWrappers) {
             final ProtocolAdapterConfig configObject = value.getConfigObject();
+            final List<Tag> tags = value.getTags();
             final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 Thread.currentThread().setContextClassLoader(adapterFactory.getClass().getClassLoader());
                 allAdapterConfigs.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(),
                         (s, o) -> {
+                            final List<Map<String, Object>> list;
                             if (o == null) {
-                                final List<Map<String, Object>> list = new ArrayList<>();
-                                list.add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
+                                list = new ArrayList<>();
                                 return list;
+                            } else {
+                                //noinspection unchecked
+                                list = (List<Map<String, Object>>) o;
                             }
-                            //noinspection unchecked
-                            ((List<Map<String, Object>>) o).add(adapterFactory.unconvertConfigObject(objectMapper,
-                                    configObject));
-                            return o;
+                            list.add(Map.of(
+                                    "config", adapterFactory.unconvertConfigObject(objectMapper, configObject),
+                                    "tags", tags));
+                            return list;
                         });
             } finally {
                 Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -519,7 +526,7 @@ public class ProtocolAdapterManager {
                     final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
                     deleteAdapterInternal(adapterId);
                     addAdapterInternal(protocolId, config, tagMaps);
-                    configPersistence.updateAdapter(adapterId, config, tagMaps);
+                    configPersistence.updateAdapter(protocolId, adapterId, config, tagMaps);
                     return true;
                 })
                 .orElse(false);
@@ -535,7 +542,7 @@ public class ProtocolAdapterManager {
                             .collect(Collectors.toList());
                     deleteAdapterInternal(adapterId);
                     addAdapterInternal(protocolId, config, tags);
-                    configPersistence.updateAdapter(adapterId, config, tags);
+                    configPersistence.updateAdapter(protocolId, adapterId, config, tags);
                     return true;
                 })
                 .orElse(false);
@@ -550,7 +557,7 @@ public class ProtocolAdapterManager {
                             objectMapper.convertValue(oldInstance, new TypeReference<>() {});
                     deleteAdapterInternal(adapterId);
                     addAdapterInternal(protocolId, config, tags);
-                    configPersistence.updateAdapter(adapterId, config, tags);
+                    configPersistence.updateAdapter(protocolId, adapterId, config, tags);
                     return true;
                 })
                 .orElse(false);

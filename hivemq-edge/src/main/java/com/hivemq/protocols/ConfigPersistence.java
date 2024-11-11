@@ -46,6 +46,13 @@ public class ConfigPersistence {
     }
 
     public synchronized void updateAllAdapters(final @NotNull Map<String, Object> adapterConfigs) {
+        adapterConfigs.entrySet().stream()
+                .flatMap(e -> ((List<Map<String,Object>>) e.getValue()).stream())
+                .forEach(v -> {
+                    if(!v.containsKey("config")) {
+                        throw new IllegalArgumentException("Missing config");
+                    }
+                });
         configurationService.protocolAdapterConfigurationService().setAllConfigs(adapterConfigs);
     }
 
@@ -56,9 +63,8 @@ public class ConfigPersistence {
         updateAllAdapters(mainMap);
     }
 
-    public synchronized void updateAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+    public synchronized void updateAdapter(final @NotNull String protocolId, final @NotNull String adapterId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
         final Map<String, Object> mainMap = allAdapters();
-        final String adapterId = (String)config.get("id");
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
         if(adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>)instance.get("config")).get("id")))) {
             adapterList.add(combine(config, tagMaps));
