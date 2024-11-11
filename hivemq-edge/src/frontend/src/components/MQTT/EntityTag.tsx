@@ -2,7 +2,7 @@ import { FC, ReactNode } from 'react'
 import { Tag, TagLabel, TagProps } from '@chakra-ui/react'
 
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
-import { ClientIcon, PLCTagIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
+import { ClientIcon, PLCTagIcon, TopicFilterIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 
 // TODO[NVL] Not sure adding ReactNode as possible children is a good move.
 interface CustomTagProps extends TagProps {
@@ -34,4 +34,8 @@ export const ClientTag: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
 
 export const Topic: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
   <EntityTag tagIcon={TopicIcon} tagTitle={tagTitle} {...rest} colorScheme="gray" />
+)
+
+export const TopicFilter: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
+  <EntityTag tagIcon={TopicFilterIcon} tagTitle={tagTitle} {...rest} colorScheme="cyan" />
 )
