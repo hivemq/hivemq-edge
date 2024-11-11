@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ShortNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
@@ -137,7 +138,13 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("type", new TextNode("boolean"));
                 return;
             case SByte:
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Byte.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(Byte.MAX_VALUE));
             case Byte:
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(UByte.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(UByte.MAX_VALUE));
             case String:
             case Guid:
             case ByteString:
