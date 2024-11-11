@@ -20,8 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -47,7 +45,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
-import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -93,6 +91,7 @@ public class HttpProtocolAdapter
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpAdapterConfig adapterConfig;
+    private final @NotNull List<Tag> tags;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -106,6 +105,7 @@ public class HttpProtocolAdapter
             final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.tags = input.getTags();
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
@@ -162,25 +162,24 @@ public class HttpProtocolAdapter
 
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
-        final Tag<HttpTagDefinition> httpTag;
-        try {
-            httpTag= pollingInput.protocolAdapterTagService().resolveTag(pollingInput.getPollingContext().getTagName(),
-                    HttpTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the polling to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            pollingOutput.fail("Polling for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
+        tags.stream()
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> pollHttp(pollingOutput, (HttpTag) def, httpToMqttMapping),
+                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
 
+    }
 
+    private void pollHttp(
+            @NotNull PollingOutput pollingOutput,
+            HttpTag httpTag,
+            HttpToMqttMapping httpToMqttMapping) {
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = httpTag.getTagDefinition().getUrl();
+        final String url = httpTag.getDefinition().getUrl();
         builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
@@ -304,26 +303,25 @@ public class HttpProtocolAdapter
         }
         final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
 
-        // first resolve the tag
-
         final String tagName = mqttToHttpMapping.getTagName();
-        final Tag<HttpTagDefinition> httpTag;
-        try {
-            httpTag= writingInput.protocolAdapterTagService().resolveTag(mqttToHttpMapping.getTagName(),
-                    HttpTagDefinition.class);
-        } catch (final TagNotFoundException e) {
-            writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
-                    tagName +
-                    "' was not found. For the writing to work the tag must be created via REST API or the UI.");
-            return;
-        } catch (final TagDefinitionParseException e) {
-            writingOutput.fail("Writing for protocol adapter failed because the definition for the used tag '" +
-                    tagName +
-                    "' could not be parsed. This could be caused by the tag being edited in an incompatible way or the tag definition being designed for another protocol.");
-            return;
-        }
+        final HttpTag httpTag;
+        tags.stream()
+                .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        def -> writeHttp(writingInput, writingOutput, (HttpTag) def, mqttToHttpMapping),
+                        () -> writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
+                                mqttToHttpMapping.getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
+                );
+    }
 
-        final String url = httpTag.getTagDefinition().getUrl();
+    private void writeHttp(
+            @NotNull WritingInput writingInput,
+            @NotNull WritingOutput writingOutput,
+            @NotNull HttpTag httpTag,
+            @NotNull MqttToHttpMapping mqttToHttpMapping) {
+        final String url = httpTag.getDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(url));

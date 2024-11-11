@@ -26,32 +26,42 @@
     </mqtt-listeners>
     <protocol-adapters>
         <s7>
-            <id>my-s7-id</id>
-            <host>172.16.10.51</host>
-            <port>102</port>
-            <controllerType>S7_1500</controllerType>
-            <remoteRack>0</remoteRack>
-            <remoteRack2>0</remoteRack2>
-            <remoteSlot>0</remoteSlot>
-            <remoteSlot2>0</remoteSlot2>
-            <remoteTsap>0</remoteTsap>
-            <s7ToMqtt>
-                <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
-                <pollingIntervalMillis>1000</pollingIntervalMillis>
-                <publishChangedDataOnly>true</publishChangedDataOnly>
-                <s7ToMqttMappings>
-                    <s7ToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <mqttQos>1</mqttQos>
-                        <includeTagNames>false</includeTagNames>
-                        <includeTimestamp>true</includeTimestamp>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
-                        <tagName>my-tag-name-1</tagName>
-                        <tagDefinition>tag1</tagDefinition>
-                        <dataType>BOOL</dataType>
-                    </s7ToMqttMapping>
-                </s7ToMqttMappings>
-            </s7ToMqtt>
+            <config>
+                <id>my-s7-id</id>
+                <host>172.16.10.51</host>
+                <port>102</port>
+                <controllerType>S7_1500</controllerType>
+                <remoteRack>0</remoteRack>
+                <remoteRack2>0</remoteRack2>
+                <remoteSlot>0</remoteSlot>
+                <remoteSlot2>0</remoteSlot2>
+                <remoteTsap>0</remoteTsap>
+                <s7ToMqtt>
+                    <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+                    <pollingIntervalMillis>1000</pollingIntervalMillis>
+                    <publishChangedDataOnly>true</publishChangedDataOnly>
+                    <s7ToMqttMappings>
+                        <s7ToMqttMapping>
+                            <mqttTopic>my/topic</mqttTopic>
+                            <mqttQos>1</mqttQos>
+                            <includeTagNames>false</includeTagNames>
+                            <includeTimestamp>true</includeTimestamp>
+                            <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                            <tagName>my-tag-name-1</tagName>
+                            <dataType>BOOL</dataType>
+                        </s7ToMqttMapping>
+                    </s7ToMqttMappings>
+                </s7ToMqtt>
+            </config>
+            <tags>
+                <tag>
+                    <name>my-tag-name-1</name>
+                    <description></description>
+                    <definition>
+                        <tagAddress>tag1</tagAddress>
+                    </definition>
+                </tag>
+            </tags>
         </s7>
     </protocol-adapters>
 </hivemq>

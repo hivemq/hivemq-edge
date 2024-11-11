@@ -45,24 +45,24 @@
             <security>
                 <policy>BASIC128RSA15</policy>
             </security>
-                <subscriptions>
-                    <subscription>
-                        <node>ns=1;i=1004</node>
-                        <mqtt-topic>test/blubb/#</mqtt-topic>
-                        <publishing-interval>12</publishing-interval>
-                        <server-queue-size>13</server-queue-size>
-                        <qos>1</qos>
-                        <message-expiry-interval>15</message-expiry-interval>
-                    </subscription>
-                    <subscription>
-                        <node>ns=2;i=1004</node>
-                        <mqtt-topic>test/blubbb/#</mqtt-topic>
-                        <publishing-interval>13</publishing-interval>
-                        <server-queue-size>14</server-queue-size>
-                        <qos>2</qos>
-                        <message-expiry-interval>16</message-expiry-interval>
-                    </subscription>
-                </subscriptions>
+            <subscriptions>
+                <subscription>
+                    <node>ns=1;i=1004</node>
+                    <mqtt-topic>test/blubb/#</mqtt-topic>
+                    <publishing-interval>12</publishing-interval>
+                    <server-queue-size>13</server-queue-size>
+                    <qos>1</qos>
+                    <message-expiry-interval>15</message-expiry-interval>
+                </subscription>
+                <subscription>
+                    <node>ns=2;i=1004</node>
+                    <mqtt-topic>test/blubbb/#</mqtt-topic>
+                    <publishing-interval>13</publishing-interval>
+                    <server-queue-size>14</server-queue-size>
+                    <qos>2</qos>
+                    <message-expiry-interval>16</message-expiry-interval>
+                </subscription>
+            </subscriptions>
         </opcua>
     </protocol-adapters>
 </hivemq>

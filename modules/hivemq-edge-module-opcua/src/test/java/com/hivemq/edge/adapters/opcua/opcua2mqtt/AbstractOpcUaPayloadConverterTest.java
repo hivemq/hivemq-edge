@@ -20,8 +20,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -29,7 +27,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
@@ -60,7 +57,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +73,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
 
 
     @BeforeEach
@@ -92,14 +87,11 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
-        when(moduleServices.protocolAdapterTagService()).thenReturn(protocolAdapterTagService);
     }
 
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
-            throws Exception, TagNotFoundException, TagDefinitionParseException {
-        when(protocolAdapterTagService.resolveTag(any(), eq(OpcuaTagDefinition.class))).thenReturn(new OpcuaTag("",
-                new OpcuaTagDefinition(subcribedNodeId)));
+            throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
                 new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId,
@@ -117,6 +109,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
+        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 

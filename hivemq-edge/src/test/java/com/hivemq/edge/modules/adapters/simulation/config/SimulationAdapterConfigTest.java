@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -44,17 +43,11 @@ import static org.mockito.Mockito.mock;
 class SimulationAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
     private final @NotNull EventService eventService = mock();
     final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
         @Override
         public boolean isWritingEnabled() {
             return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
         }
 
         @Override
@@ -74,7 +67,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
@@ -118,7 +111,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
+                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
@@ -144,7 +137,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'id'");
+                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -158,7 +151,7 @@ class SimulationAdapterConfigTest {
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
+                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test

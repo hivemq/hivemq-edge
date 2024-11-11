@@ -16,15 +16,15 @@
 package com.hivemq.edge.adapters.file.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.config.ContentType;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -37,33 +37,13 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class LegacyFileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -73,10 +53,14 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                new FileProtocolAdapterFactory(mockInput);
+        final ConfigTagsTuple tuple =
+                fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
+
+        FileAdapterConfig config = (FileAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -103,6 +87,7 @@ class LegacyFileAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
+            assertThat(mapping.getTagName()).startsWith(config.getId());
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -113,8 +98,8 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
-
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
+                .isEmpty();
     }
 
     @Test
@@ -125,10 +110,15 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final FileAdapterConfig config =
-                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                new FileProtocolAdapterFactory(mockInput);
+        final ConfigTagsTuple tuple =
+                fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
+
+        FileAdapterConfig config = (FileAdapterConfig) tuple.getConfig();
+
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -142,9 +132,8 @@ class LegacyFileAdapterConfigTest {
             assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
 
-
-        // assertThat(subscription.getFilePath()).isEqualTo("path/to/file1");
-
+        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
+                .isEmpty();
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

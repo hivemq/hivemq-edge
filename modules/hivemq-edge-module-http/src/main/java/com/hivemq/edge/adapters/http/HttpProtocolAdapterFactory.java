@@ -18,12 +18,11 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
@@ -34,25 +33,22 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.http.HttpProtocolAdapterInformation.PROTOCOL_ID;
-
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig> {
+public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig>, LegacyConfigConversion {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public HttpProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
-        this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
-        this.protocolAdapterTagService = protocolAdapterFactoryInput.protocolAdapterTagService();
+    public HttpProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+        this.writingEnabled = input.isWritingEnabled();
     }
 
     @Override
@@ -68,52 +64,16 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
+    public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
-        try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                return tryConvertLegacyConfig(objectMapper, config, protocolAdapterTagService);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-    }
-
-    @Override
-    public @NotNull Class<? extends HttpAdapterConfig> getConfigClass() {
-        if (writingEnabled) {
-            return BidirectionalHttpAdapterConfig.class;
-        }
-        return HttpAdapterConfig.class;
-    }
-
-    private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
         // create tag first
-        final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
-        protocolAdapterTagService.addTag(legacyHttpAdapterConfig.getId(),
-                PROTOCOL_ID, new HttpTag(newTagName, new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
+        final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
+        ArrayList<HttpTag> tags = new ArrayList<>();
+        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
@@ -133,9 +93,10 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
                         List.of(httpToMqttMapping));
 
-        return new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
+        return new ConfigTagsTuple(new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                 httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates());
+                legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
+                tags);
     }
 }

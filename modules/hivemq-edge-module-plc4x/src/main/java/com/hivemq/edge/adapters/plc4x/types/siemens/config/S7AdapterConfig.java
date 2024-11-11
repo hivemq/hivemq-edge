@@ -20,22 +20,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
-
-    @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        // TODO
-        return List.of();
-    }
 
     public enum ControllerType {
         S7_300,
@@ -153,5 +151,10 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     @Override
     public @NotNull Plc4xToMqttConfig getPlc4xToMqttConfig() {
         return s7ToMqttConfig;
+    }
+
+    @Override
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return s7ToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 }

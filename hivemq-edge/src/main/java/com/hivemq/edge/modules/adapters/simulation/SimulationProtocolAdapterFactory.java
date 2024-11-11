@@ -58,15 +58,10 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     @Override
-    public @NotNull Class<SimulationAdapterConfig> getConfigClass() {
-        return SimulationAdapterConfig.class;
-    }
-
-    @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(

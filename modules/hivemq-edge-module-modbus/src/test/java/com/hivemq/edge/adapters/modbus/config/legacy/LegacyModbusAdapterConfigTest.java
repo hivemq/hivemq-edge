@@ -16,14 +16,13 @@
 package com.hivemq.edge.adapters.modbus.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -35,33 +34,13 @@ import java.util.Map;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LegacyModbusAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -71,11 +50,20 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final ModbusAdapterConfig config =
-                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                new ModbusProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                        false,
+                        mapper,
+                        modbusProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-full");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -115,8 +103,6 @@ public class LegacyModbusAdapterConfigTest {
             });
 
         });
-
-        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
     }
 
     @Test
@@ -127,11 +113,20 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final ModbusAdapterConfig config =
-                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("modbus"));
+                new ModbusProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+                        false,
+                        mapper,
+                        modbusProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-min");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -148,8 +143,6 @@ public class LegacyModbusAdapterConfigTest {
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
         });
-
-        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
 
     }
 

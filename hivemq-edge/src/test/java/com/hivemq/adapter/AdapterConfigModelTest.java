@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -105,8 +106,8 @@ public class AdapterConfigModelTest {
         }
 
         @Override
-        public @NotNull List<String> calculateAllUsedTags() {
-            return List.of();
+        public @NotNull Set<String> calculateAllUsedTags() {
+            return Set.of();
         }
     }
 

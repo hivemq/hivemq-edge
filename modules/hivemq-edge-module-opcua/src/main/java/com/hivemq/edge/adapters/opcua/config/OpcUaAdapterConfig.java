@@ -20,11 +20,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -94,12 +99,6 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return id;
     }
 
-    @Override
-    public @NotNull List<String> calculateAllUsedTags() {
-        // TODO
-        return List.of();
-    }
-
     public @NotNull String getUri() {
         return uri;
     }
@@ -122,5 +121,10 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull Boolean getOverrideUri() {
         return overrideUri;
+    }
+    
+    @Override
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return opcuaToMqttConfig.getOpcuaToMqttMappings().stream().map(OpcUaToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 }

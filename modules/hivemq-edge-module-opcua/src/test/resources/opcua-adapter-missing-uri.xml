@@ -18,15 +18,17 @@
 <hivemq>
     <protocol-adapters>
         <opcua>
-            <id>simulation-server-2</id>
-            <opcuaToMqtt>
-                <opcuaToMqttMappings>
-                    <opcuaToMqttMapping>
-                        <tagName>ns=1;i=1004</tagName>
-                        <mqttTopic>test/blubb/#</mqttTopic>
-                    </opcuaToMqttMapping>
-                </opcuaToMqttMappings>
-            </opcuaToMqtt>
+            <config>
+                <id>simulation-server-2</id>
+                <opcuaToMqtt>
+                    <opcuaToMqttMappings>
+                        <opcuaToMqttMapping>
+                            <tagName>ns=1;i=1004</tagName>
+                            <mqttTopic>test/blubb/#</mqttTopic>
+                        </opcuaToMqttMapping>
+                    </opcuaToMqttMappings>
+                </opcuaToMqtt>
+            </config>
         </opcua>
     </protocol-adapters>
 </hivemq>

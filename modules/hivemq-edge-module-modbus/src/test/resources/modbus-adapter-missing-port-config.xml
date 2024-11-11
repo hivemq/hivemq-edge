@@ -18,20 +18,22 @@
 <hivemq>
     <protocol-adapters>
         <modbus>
-            <id>my-modbus-protocol-adapter</id>
-            <host>my.modbus-server.com</host>
-            <subscriptions>
-                <subscription>
-                    <destination>my/topic</destination>
-                    <addressRange>
-                        <startIdx>11</startIdx>
-                        <endIdx>13</endIdx>
-                        <readType>HOLDING_REGISTERS</readType>
-                        <unitId>0</unitId>
-                    </addressRange>
-                    <dataType>INT_32</dataType>
-                </subscription>
-            </subscriptions>
+            <config>
+                <id>my-modbus-protocol-adapter</id>
+                <host>my.modbus-server.com</host>
+                <subscriptions>
+                    <subscription>
+                        <destination>my/topic</destination>
+                        <addressRange>
+                            <startIdx>11</startIdx>
+                            <endIdx>13</endIdx>
+                            <readType>HOLDING_REGISTERS</readType>
+                            <unitId>0</unitId>
+                        </addressRange>
+                        <dataType>INT_32</dataType>
+                    </subscription>
+                </subscriptions>
+            </config>
         </modbus>
     </protocol-adapters>
 </hivemq>

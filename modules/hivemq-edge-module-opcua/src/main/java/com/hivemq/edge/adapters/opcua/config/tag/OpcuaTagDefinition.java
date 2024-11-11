@@ -3,10 +3,11 @@ package com.hivemq.edge.adapters.opcua.config.tag;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class OpcuaTagDefinition {
+public class OpcuaTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "node", required = true)
     @ModuleConfigField(title = "Destination Node ID",

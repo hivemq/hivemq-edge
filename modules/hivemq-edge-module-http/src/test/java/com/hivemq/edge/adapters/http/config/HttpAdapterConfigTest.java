@@ -16,9 +16,7 @@
 package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -28,6 +26,7 @@ import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -46,14 +45,12 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class HttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
-    private final @NotNull EventService eventService = mock();
-
 
     @Test
     public void convertConfigObject_urlNull_exception() throws Exception {
@@ -63,10 +60,14 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'tagName'");
+                new HttpProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                false,
+                mapper,
+                httpProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -77,10 +78,14 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'id'");
+                new HttpProtocolAdapterFactory(mockInput);
+        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                false,
+                mapper,
+                httpProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'id'");
     }
 
     @Test
@@ -91,11 +96,20 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        final BidirectionalHttpAdapterConfig config =
-                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("http"));
+                new HttpProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        true,
+                        mapper,
+                        httpProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -125,6 +139,30 @@ public class HttpAdapterConfigTest {
     }
 
     @Test
+    public void convertConfigObject_missingTag() throws Exception {
+        final URL resource = getClass().getResource("/http-config-defaults-missing-tag.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        true,
+                        mapper,
+                        httpProtocolAdapterFactory);
+
+        assertThat(adapterConfigAndTags.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+    }
+
+    @Test
     public void convertConfigObject_emptyHeaders() throws Exception {
         final URL resource = getClass().getResource("/http-config-empty-header.xml");
         final File path = Path.of(resource.toURI()).toFile();
@@ -132,10 +170,19 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
-        final HttpAdapterConfig config =
-                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                new HttpProtocolAdapterFactory(mockInput);
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        true,
+                        mapper,
+                        httpProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
@@ -164,11 +211,20 @@ public class HttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(true));
-        final BidirectionalHttpAdapterConfig config =
-                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
-                        (Map) adapters.get("http"));
+                new HttpProtocolAdapterFactory(mockInput);
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+                        true,
+                        mapper,
+                        httpProtocolAdapterFactory);
+        assertThat(adapterConfigAndTags.missingTags())
+                .isEmpty();
+
+        BidirectionalHttpAdapterConfig config = (BidirectionalHttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
@@ -292,8 +348,10 @@ public class HttpAdapterConfigTest {
         final BidirectionalHttpAdapterConfig httpAdapterConfig =
                 new BidirectionalHttpAdapterConfig("my-protocol-adapter", 50, httpToMqttConfig, mqttToHttpConfig, true);
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
+                new HttpProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
@@ -301,7 +359,8 @@ public class HttpAdapterConfigTest {
                 (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
                 (it) -> assertThat(it.getKey()).isEqualTo("mqttToHttp"),
                 (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
-                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt")
+        );
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(50);
@@ -406,8 +465,10 @@ public class HttpAdapterConfigTest {
                 mqttToHttpConfig,
                 null);
 
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(new ProtocolAdapterFactoryTestInput(false));
+                new HttpProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
@@ -415,7 +476,8 @@ public class HttpAdapterConfigTest {
                 (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
                 (it) -> assertThat(it.getKey()).isEqualTo("id"),
                 (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
-                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt")
+        );
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(5);
@@ -467,32 +529,5 @@ public class HttpAdapterConfigTest {
                 mock(),
                 mock());
         return readerWriter.applyConfig();
-    }
-
-
-    private class ProtocolAdapterFactoryTestInput implements ProtocolAdapterFactoryInput {
-
-        private final Boolean writingEnabled;
-
-        private ProtocolAdapterFactoryTestInput(final Boolean writingEnabled) {
-            this.writingEnabled = writingEnabled;
-        }
-
-        @Override
-        public boolean isWritingEnabled() {
-            return writingEnabled;
-        }
-
-
-
-        @Override
-        public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
-            return protocolAdapterTagService;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
     }
 }

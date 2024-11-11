@@ -17,9 +17,8 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -54,11 +53,8 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription) {
-        // resolve the tag
-        final Tag<Plc4xTagDefinition> tag =
-                protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagDefinition.class);
-        return tag.getTagDefinition().getTagAddress();
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Plc4xTag tag) {
+        return tag.getDefinition().getTagAddress();
     }
 
     @Override
