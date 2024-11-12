@@ -31,4 +31,16 @@ public class FieldMappingModel {
         this.destinationFieldName = destinationFieldName;
         this.transformation = transformation;
     }
+
+    public @NotNull String getDestinationFieldName() {
+        return destinationFieldName;
+    }
+
+    public @NotNull String getSourceFieldName() {
+        return sourceFieldName;
+    }
+
+    public @NotNull JsonNode getTransformation() {
+        return transformation;
+    }
 }

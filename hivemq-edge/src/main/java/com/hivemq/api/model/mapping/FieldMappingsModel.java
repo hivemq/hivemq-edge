@@ -21,19 +21,34 @@ public class FieldMappingsModel {
     @Schema(description = "")
     private final @NotNull List<FieldMappingModel> fieldMappingModels;
 
-
     @JsonProperty("metadata")
     @Schema(description = "")
-    private final @NotNull MetaData metaData;
+    private final @NotNull FieldMappingMetaDataModel metaData;
 
     public FieldMappingsModel(
             @JsonProperty("topicFilter") final @NotNull String topicFilter,
             @JsonProperty("tag") final @NotNull String tagName,
             @JsonProperty("fieldMapping") final @NotNull List<FieldMappingModel> fieldMappingModels,
-            @JsonProperty("metadata") final @NotNull MetaData metaData) {
+            @JsonProperty("metadata") final @NotNull FieldMappingMetaDataModel metaData) {
         this.topicFilter = topicFilter;
         this.tagName = tagName;
         this.fieldMappingModels = fieldMappingModels;
         this.metaData = metaData;
+    }
+
+    public @NotNull List<FieldMappingModel> getFieldMappingModels() {
+        return fieldMappingModels;
+    }
+
+    public @NotNull FieldMappingMetaDataModel getMetaData() {
+        return metaData;
+    }
+
+    public @NotNull String getTagName() {
+        return tagName;
+    }
+
+    public @NotNull String getTopicFilter() {
+        return topicFilter;
     }
 }

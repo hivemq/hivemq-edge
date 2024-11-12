@@ -60,6 +60,7 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -643,6 +644,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response addFieldMapping(
             @NotNull final String adapterId,
             @NotNull final FieldMappingsModel fieldMappingsModel) {
+        final FieldMappings fieldMappings = FieldMappings.fromModel(fieldMappingsModel);
 
 
 

@@ -10,20 +10,30 @@ public class FieldMappingMetaDataModel {
 
 
     @JsonProperty("source")
-    @Schema(description = "The json schema validating the incoming data for the transformation")
+    @Schema(description = "The json schema validating the incoming data for the transformation",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode sourceJsonSchema;
 
 
     @JsonProperty("destination")
-    @Schema(description = "The json schema validating the outgoing data for the transformation")
-    private final @NotNull JsonNode destintionJsonSchema;
+    @Schema(description = "The json schema validating the outgoing data for the transformation",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    private final @NotNull JsonNode destinationJsonSchema;
 
 
     @JsonCreator
     public FieldMappingMetaDataModel(
             @JsonProperty("source") final @NotNull JsonNode sourceJsonSchema,
-            @JsonProperty("destination") final @NotNull JsonNode destintionJsonSchema) {
+            @JsonProperty("destination") final @NotNull JsonNode destinationJsonSchema) {
         this.sourceJsonSchema = sourceJsonSchema;
-        this.destintionJsonSchema = destintionJsonSchema;
+        this.destinationJsonSchema = destinationJsonSchema;
+    }
+
+    public @NotNull JsonNode getDestinationJsonSchema() {
+        return destinationJsonSchema;
+    }
+
+    public @NotNull JsonNode getSourceJsonSchema() {
+        return sourceJsonSchema;
     }
 }
