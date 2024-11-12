@@ -45,9 +45,9 @@ const customComponents = (
     return (
       <chakraComponents.Option {...props}>
         <HStack>
-          {type === SelectEntityType.TOPIC && <TopicIcon mr={2} h={5} w={5} />}
-          {type === SelectEntityType.TAG && <PLCTagIcon mr={2} h={5} w={5} />}
-          {type === SelectEntityType.TOPIC_FILTER && <TopicFilterIcon mr={2} h={5} w={5} />}
+          {type === SelectEntityType.TOPIC && <TopicIcon mr={2} h={5} w={5} data-option-type={type} />}
+          {type === SelectEntityType.TAG && <PLCTagIcon mr={2} h={5} w={5} data-option-type={type} />}
+          {type === SelectEntityType.TOPIC_FILTER && <TopicFilterIcon mr={2} h={5} w={5} data-option-type={type} />}
           <VStack gap={0} alignItems="flex-start">
             {!__isNew__ && <code>{props.data.label}</code>}
             {__isNew__ && <Text>{props.data.label}</Text>}
@@ -60,9 +60,9 @@ const customComponents = (
 
   Control: ({ children, ...props }) => (
     <chakraComponents.Control {...props}>
-      {!isMulti && type === SelectEntityType.TOPIC && <TopicIcon mr={0} ml={3} />}
-      {!isMulti && type === SelectEntityType.TAG && <PLCTagIcon mr={0} ml={3} />}
-      {!isMulti && type === SelectEntityType.TOPIC_FILTER && <TopicFilterIcon mr={0} ml={3} />}
+      {!isMulti && type === SelectEntityType.TOPIC && <TopicIcon mr={0} ml={3} data-option-type={type} />}
+      {!isMulti && type === SelectEntityType.TAG && <PLCTagIcon mr={0} ml={3} data-option-type={type} />}
+      {!isMulti && type === SelectEntityType.TOPIC_FILTER && <TopicFilterIcon mr={0} ml={3} data-option-type={type} />}
       {children}
     </chakraComponents.Control>
   ),
@@ -139,6 +139,8 @@ const EntityCreatableSelect: FC<EntitySelectProps> = ({
       noOptionsMessage={() => t('EntityCreatableSelect.options.noOptionsMessage', { context: type })}
       formatCreateLabel={(entity) => t('EntityCreatableSelect.options.createLabel', { context: type, entity: entity })}
       id={id}
+      instanceId={type}
+      inputId={`react-select-${type}-input`}
       isClearable
       isSearchable
       selectedOptionStyle="check"
