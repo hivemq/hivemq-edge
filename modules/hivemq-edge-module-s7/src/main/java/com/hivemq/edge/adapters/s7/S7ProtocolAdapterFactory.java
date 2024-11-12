@@ -33,8 +33,6 @@ import java.util.Map;
  */
 public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7AdapterConfig> {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
-
     final boolean writingEnabled;
 
     public S7ProtocolAdapterFactory(final boolean writingEnabled) {
@@ -51,19 +49,6 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
         return new S7ProtocolAdapter(adapterInformation, input);
-    }
-
-
-    @Override
-    public @NotNull Class<S7AdapterConfig> getConfigClass() {
-        return S7AdapterConfig.class;
-    }
-
-
-    @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
     }
 
 }

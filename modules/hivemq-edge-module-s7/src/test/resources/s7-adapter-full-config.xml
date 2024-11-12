@@ -18,6 +18,7 @@
 <hivemq>
     <protocol-adapters>
         <s7-new>
+            <config>
             <id>my-s7-protocol-adapter</id>
             <host>my.s7-server.com</host>
             <port>1234</port>
@@ -35,8 +36,6 @@
                     <includeTimestamp>true</includeTimestamp>
                     <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
-                    <tagAddress>tag-address</tagAddress>
-                    <dataType>INT32</dataType>
                     <mqttUserProperties>
                         <mqttUserProperty>
                             <name>name</name>
@@ -55,8 +54,6 @@
                     <includeTimestamp>true</includeTimestamp>
                     <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
-                    <tagAddress>tag-address</tagAddress>
-                    <dataType>INT32</dataType>
                     <mqttUserProperties>
                         <mqttUserProperty>
                             <name>name</name>
@@ -69,6 +66,17 @@
                     </mqttUserProperties>
                 </s7ToMqttMapping>
             </s7ToMqttMappings>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <address>%IB1</address>
+                        <dataType>INT32</dataType>
+                    </definition>
+                </tag>
+            </tags>
         </s7-new>
     </protocol-adapters>
 </hivemq>

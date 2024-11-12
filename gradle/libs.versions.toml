@@ -30,6 +30,7 @@ jctools = "4.0.5"
 jersey = "2.46"
 jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.5"
+jsonSchemaInferrer = "0.2.1"
 junit-jupiter = "5.11.4"
 junit = "4.13.2"
 logback = "1.5.16"
@@ -94,6 +95,7 @@ javax-annotation-api = { module = "javax.annotation:javax.annotation-api", versi
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+jsonSchemaInferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "jsonSchemaInferrer" }
 jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit = { module = "junit:junit", version.ref = "junit" }

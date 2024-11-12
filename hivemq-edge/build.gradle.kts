@@ -115,6 +115,7 @@ repositories {
         }
         filter {
             includeGroup("com.github.simon622.mqtt-sn")
+            includeGroup("com.github.saasquatch")
         }
     }
 }
@@ -210,6 +211,7 @@ dependencies {
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
     implementation(libs.jsonSchemaInferrer)
+
 }
 
 /* ******************** test ******************** */

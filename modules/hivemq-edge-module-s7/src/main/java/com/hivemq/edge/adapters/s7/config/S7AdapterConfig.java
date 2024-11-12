@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class S7AdapterConfig implements ProtocolAdapterConfig {
 
@@ -206,5 +208,10 @@ public class S7AdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull List<S7ToMqttConfig> getS7ToMqttMappings() {
         return s7ToMqttConfig;
+    }
+
+    @Override
+    public @NotNull Set<String> calculateAllUsedTags() {
+        return s7ToMqttConfig.stream().map(S7ToMqttConfig::getTagName).collect(Collectors.toSet());
     }
 }

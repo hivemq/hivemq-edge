@@ -2,10 +2,12 @@ package com.hivemq.edge.adapters.s7.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.s7.S7ProtocolAdapterFactory;
+import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +19,7 @@ import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.edge.adapters.s7.S7ProtocolAdapterInformation.PROTOCOL_ID;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -34,8 +37,14 @@ class S7AdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
-        final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7-new"));
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get(PROTOCOL_ID),
+                        false,
+                        mapper,
+                        s7ProtocolAdapterFactory);
+
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -50,7 +59,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
         }, mapping -> {
@@ -59,9 +67,19 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
+
+
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+
+        assertThat(adapterConfigAndTags.getTags())
+                .allSatisfy(t -> {
+                    assertThat(t)
+                            .isInstanceOf(S7Tag.class)
+                            .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
+                            .contains("tag-name", "description", new S7TagDefinition("%IB1", S7DataType.INT32));
+                });
     }
 
     @Test
@@ -73,8 +91,14 @@ class S7AdapterConfigTest {
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
-        final S7AdapterConfig config =
-                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7-new"));
+
+        final AdapterConfigAndTags adapterConfigAndTags =
+                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get(PROTOCOL_ID),
+                        false,
+                        mapper,
+                        s7ProtocolAdapterFactory);
+
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
 
         assertThat(config).isNotNull();
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
@@ -90,10 +114,19 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(S7DataType.BOOL);
         });
+
+
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+
+        assertThat(adapterConfigAndTags.getTags())
+                .allSatisfy(t -> {
+                    assertThat(t)
+                            .isInstanceOf(S7Tag.class)
+                            .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
+                            .contains("tag-name", "description", new S7TagDefinition("tag-address", S7DataType.BOOL));
+                });
     }
 
     @Test
@@ -104,8 +137,6 @@ class S7AdapterConfigTest {
                 false,
                 true,
                 "tag-name",
-                "tag-address",
-                S7DataType.BOOL,
                 List.of(new MqttUserProperty("my-name", "my-value"))
         );
 
@@ -129,8 +160,8 @@ class S7AdapterConfigTest {
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
         assertThat(config.get("controllerType")).isEqualTo("S7_1500");
-        assertThat(config.get("remoteRack")).isEqualTo(2);
-        assertThat(config.get("remoteSlot")).isEqualTo(1);
+        assertThat(config.get("remoteRack")).isEqualTo(1);
+        assertThat(config.get("remoteSlot")).isEqualTo(2);
         assertThat(config.get("pollingIntervalMillis")).isEqualTo(4);
         assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(5);
         assertThat(config.get("publishChangedDataOnly")).isEqualTo(false);
@@ -143,7 +174,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
             assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("tagAddress")).isEqualTo("tag-address");
             assertThat(mapping.get("jsonPayloadCreator")).isNull();
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
