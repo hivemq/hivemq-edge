@@ -5,7 +5,7 @@ import { GenericObjectType } from '@rjsf/utils'
 
 import { Adapter, Bridge, Status, Listener, ProtocolAdapter, ClientFilter } from '@/api/__generated__'
 
-import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
+import { DeviceMetadata, EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
@@ -197,7 +197,7 @@ export const createAdapterNode = (
     },
   }
 
-  let nodeDevice: Node<ProtocolAdapter, NodeTypes.DEVICE_NODE> | undefined = undefined
+  let nodeDevice: Node<DeviceMetadata, NodeTypes.DEVICE_NODE> | undefined = undefined
   let deviceConnector: Edge | undefined = undefined
 
   const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
@@ -205,7 +205,7 @@ export const createAdapterNode = (
     id: idBAdapterDevice,
     type: NodeTypes.DEVICE_NODE,
     targetPosition: Position.Top,
-    data: type,
+    data: { ...type, sourceAdapterId: adapter.id },
     position: positionStorage?.[idBAdapterDevice] ?? {
       x: nodeAdapter.position.x,
       y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
