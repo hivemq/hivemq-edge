@@ -104,6 +104,7 @@ repositories {
         }
         filter {
             includeGroup("com.github.simon622.mqtt-sn")
+            includeGroup("com.github.saasquatch")
         }
     }
 }
@@ -196,8 +197,7 @@ dependencies {
     implementation(libs.jsonSchemaValidator)
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
-    // TODO add to toml after changes are merged.
-    implementation("com.github.saasquatch:json-schema-inferrer:0.2.1")
+    implementation(libs.jsonSchemaInferrer)
 
 }
 

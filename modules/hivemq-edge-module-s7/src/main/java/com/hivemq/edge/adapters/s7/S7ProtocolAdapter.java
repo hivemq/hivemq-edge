@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.s7;
 import com.github.xingshuangs.iot.protocol.s7.enums.EPlcType;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -27,8 +28,11 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.s7.config.S7AdapterConfig;
 import com.hivemq.edge.adapters.s7.config.S7DataType;
+import com.hivemq.edge.adapters.s7.config.S7Tag;
+import com.hivemq.edge.adapters.s7.config.S7TagDefinition;
 import com.hivemq.edge.adapters.s7.config.S7ToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -38,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -50,6 +56,7 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
     private final S7AdapterConfig adapterConfig;
     private final ProtocolAdapterState protocolAdapterState;
     private final S7Client s7Client;
+    private final Map<String, S7Tag> tags;
 
     private final Map<String, DataPoint> dataPoints;
 
@@ -58,6 +65,7 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
             final @NotNull ProtocolAdapterInput<S7AdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.tags = input.getTags().stream().map(t -> (S7Tag)t).collect(Collectors.toMap(S7Tag::getName, Function.identity()));
         this.protocolAdapterState = input.getProtocolAdapterState();
         final EPlcType eplcType = S7Client.getEplcType(adapterConfig.getControllerType());
         s7Client = new S7Client(
@@ -127,14 +135,15 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
             @NotNull final PollingOutput pollingOutput) {
         final S7ToMqttConfig s7ToMqtt = pollingInput.getPollingContext();
 
+        S7Tag tagToRead = tags.get(pollingInput.getPollingContext().getTagName());
+        S7TagDefinition tagDefinition = tagToRead.getDefinition();
         //Every S7 address starts with a % but the iot-communications lib doesn't like it, so we are stripping it.
-        final String tagAddress = s7ToMqtt.getTagAddress().replace("%","");
+        final String tagAddress = tagDefinition.getAddress().replace("%","");
         final DataPoint dataPoint;
-
-        if(s7ToMqtt.getDataType() == S7DataType.BYTE) {
+        if(tagDefinition.getDataType() == S7DataType.BYTE) {
             dataPoint = s7Client.readByte(tagAddress);
         } else {
-            dataPoint = s7Client.read(s7ToMqtt.getDataType(), List.of(tagAddress)).get(0);
+            dataPoint = s7Client.read(tagDefinition.getDataType(), List.of(tagAddress)).get(0);
         }
 
         if(adapterConfig.getPublishChangedDataOnly()) {
