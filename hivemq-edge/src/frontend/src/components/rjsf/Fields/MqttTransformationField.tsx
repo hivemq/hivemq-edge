@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react'
-import { FieldProps } from '@rjsf/utils'
+import { FieldProps, getTemplate, getUiOptions } from '@rjsf/utils'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
 import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMappings.tsx'
@@ -60,9 +60,37 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   }
 
   if (!subsData) return null
+  const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', OutwardMapping[]>(
+    'ArrayFieldDescriptionTemplate',
+    props.registry,
+    props.uiOptions
+  )
+
+  const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', OutwardMapping[]>(
+    'ArrayFieldTitleTemplate',
+    props.registry,
+    props.uiOptions
+  )
+  const uiOptions = getUiOptions(props.uiSchema)
 
   return (
     <>
+      <ArrayFieldTitleTemplate
+        idSchema={props.idSchema}
+        title={uiOptions.title || props.schema.title}
+        schema={props.schema}
+        uiSchema={props.uiSchema}
+        required={props.required}
+        registry={props.registry}
+      />
+      <ArrayFieldDescriptionTemplate
+        idSchema={props.idSchema}
+        description={uiOptions.description || props.schema.description}
+        schema={props.schema}
+        uiSchema={props.uiSchema}
+        registry={props.registry}
+      />
+
       <ListMappings items={subsData} onEdit={handleEdit} onAdd={handleAdd} onDelete={handleDelete} />
       {selectedItem != undefined && (
         <MappingDrawer
