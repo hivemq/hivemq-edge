@@ -8,7 +8,6 @@ import { Adapter, Bridge, Status, Listener, ProtocolAdapter, ClientFilter } from
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
-import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -201,37 +200,35 @@ export const createAdapterNode = (
   let nodeDevice: Node<ProtocolAdapter, NodeTypes.DEVICE_NODE> | undefined = undefined
   let deviceConnector: Edge | undefined = undefined
 
-  if (isBidirectional(type)) {
-    const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
-    nodeDevice = {
-      id: idBAdapterDevice,
-      type: NodeTypes.DEVICE_NODE,
-      targetPosition: Position.Top,
-      data: type,
-      position: positionStorage?.[idBAdapterDevice] ?? {
-        x: nodeAdapter.position.x,
-        y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
-      },
-    }
+  const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
+  nodeDevice = {
+    id: idBAdapterDevice,
+    type: NodeTypes.DEVICE_NODE,
+    targetPosition: Position.Top,
+    data: type,
+    position: positionStorage?.[idBAdapterDevice] ?? {
+      x: nodeAdapter.position.x,
+      y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
+    },
+  }
 
-    deviceConnector = {
-      id: `${IdStubs.CONNECTOR}-${IdStubs.DEVICE_NODE}@${idAdapter}`,
-      target: idBAdapterDevice,
-      sourceHandle: 'Top',
-      source: idAdapter,
-      focusable: false,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: getThemeForStatus(theme, adapter.status),
-      },
-      animated: isConnected && !!topics.length,
-      style: {
-        strokeWidth: 1.5,
-        stroke: getThemeForStatus(theme, adapter.status),
-      },
-    }
+  deviceConnector = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.DEVICE_NODE}@${idAdapter}`,
+    target: idBAdapterDevice,
+    sourceHandle: 'Top',
+    source: idAdapter,
+    focusable: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: getThemeForStatus(theme, adapter.status),
+    },
+    animated: isConnected && !!topics.length,
+    style: {
+      strokeWidth: 1.5,
+      stroke: getThemeForStatus(theme, adapter.status),
+    },
   }
 
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
