@@ -155,7 +155,7 @@ public class OpcUaClientWrapper {
                                     throwable);
                             writingOutput.fail(throwable, null);
                         } else {
-                            log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                            log.trace("Wrote '{}' to nodeId={}", variant, nodeId);
                             writingOutput.finish();
                         }
                     });
@@ -272,7 +272,7 @@ public class OpcUaClientWrapper {
                     .createAdapterEvent(adapterConfig.getId(), protocolId)
                     .withSeverity(Event.SEVERITY.ERROR)
                     .withPayload(serviceFault.getResponseHeader().getServiceResult())
-                    .withMessage("A Service Fault was Detected.")
+                    .withMessage("A service fault was detected.")
                     .fire();
         });
 
