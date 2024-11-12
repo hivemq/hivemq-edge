@@ -111,8 +111,7 @@ export const useMappingManager = (adapterId: string) => {
     const mappingProperties = properties?.[mappingPropName]
     if (!mappingProperties) return undefined
 
-    const formData = selectedAdapter.config?.[mappingPropName]
-    if (!formData) return undefined
+    const formData = selectedAdapter.config?.[mappingPropName] || {}
 
     const schema: RJSFSchema = {
       type: 'object',
