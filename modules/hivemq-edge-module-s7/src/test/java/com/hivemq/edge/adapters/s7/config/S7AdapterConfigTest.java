@@ -2,6 +2,7 @@ package com.hivemq.edge.adapters.s7.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -23,6 +24,7 @@ import static com.hivemq.edge.adapters.s7.S7ProtocolAdapterInformation.PROTOCOL_
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class S7AdapterConfigTest {
 
@@ -36,7 +38,9 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(mockInput);
 
         final AdapterConfigAndTags adapterConfigAndTags =
                 AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get(PROTOCOL_ID),
@@ -90,7 +94,9 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(mockInput);
 
         final AdapterConfigAndTags adapterConfigAndTags =
                 AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get(PROTOCOL_ID),
@@ -152,7 +158,9 @@ class S7AdapterConfigTest {
                 false,
                 List.of(pollingContext));
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(mockInput);
         final Map<String, Object> config =
                 s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 

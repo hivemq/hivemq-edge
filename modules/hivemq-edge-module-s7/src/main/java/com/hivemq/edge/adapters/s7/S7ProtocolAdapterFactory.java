@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.s7.config.S7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -33,11 +34,7 @@ import java.util.Map;
  */
 public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7AdapterConfig> {
 
-    final boolean writingEnabled;
-
-    public S7ProtocolAdapterFactory(final boolean writingEnabled) {
-        this.writingEnabled = writingEnabled;
-    }
+    public S7ProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {}
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
