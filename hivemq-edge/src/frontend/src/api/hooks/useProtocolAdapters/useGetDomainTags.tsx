@@ -15,6 +15,6 @@ export const useGetDomainTags = (adapterId: string | undefined, adapterType?: st
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: [QUERY_KEYS.ADAPTERS, adapterId, QUERY_KEYS.DISCOVERY_TAGS],
     queryFn: () => appClient.protocolAdapters.getAdapterDomainTags(adapterId || '', adapterType),
-    enabled: Boolean(adapterId && adapterType),
+    enabled: Boolean(adapterId),
   })
 }
