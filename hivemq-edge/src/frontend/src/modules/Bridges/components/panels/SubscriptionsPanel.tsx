@@ -35,7 +35,7 @@ import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 import { $BridgeSubscription, $LocalBridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
-import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
+import { SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
 
 import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
@@ -80,12 +80,12 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         render={({ field }) => {
                           const { value, onChange, ...rest } = field
                           return (
-                            <MultiTopicsCreatableSelect
-                              {...rest}
+                            <SelectTopicFilter
+                              isMulti
+                              isCreatable
+                              onChange={(values) => onChange((values as string[])?.map((item) => item))}
                               value={value}
-                              onChange={(values) => onChange(values?.map((item) => item))}
-                              inputId={`${type}.${index}.filters`}
-                              id={`${type}.${index}.container`}
+                              {...rest}
                             />
                           )
                         }}

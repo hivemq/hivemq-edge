@@ -24,7 +24,7 @@ interface SubscriptionContainerProps {
   adapterId?: string
   onClose: () => void
   onSubmit: (newItem: OutwardMapping) => void
-  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
+  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void
 }
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
