@@ -24,7 +24,10 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.config.ContentType;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import com.hivemq.protocols.AdapterConfigAndTags;
+import org.assertj.core.groups.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -70,8 +73,7 @@ class LegacyFileAdapterConfigTest {
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getContentType()).isEqualTo(ContentType.BINARY);
+            assertThat(mapping.getIncludeTagNames()).isTrue();;
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -86,7 +88,6 @@ class LegacyFileAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
             assertThat(mapping.getTagName()).startsWith(config.getId());
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -98,8 +99,13 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
-                .isEmpty();
+        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+                .extracting(FileTag::getDescription, FileTag::getDefinition)
+                .contains(
+                        new Tuple("not set", new FileTagDefinition("path/to/file2", ContentType.TEXT_CSV)),
+                        new Tuple("not set", new FileTagDefinition("path/to/file1", ContentType.BINARY)));
     }
 
     @Test
@@ -129,11 +135,13 @@ class LegacyFileAdapterConfigTest {
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
-            assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
 
-        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
-                .isEmpty();
+        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+                .extracting(FileTag::getDescription, FileTag::getDefinition)
+                .contains(new Tuple("not set", new FileTagDefinition("path/to/file1", ContentType.BINARY)));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

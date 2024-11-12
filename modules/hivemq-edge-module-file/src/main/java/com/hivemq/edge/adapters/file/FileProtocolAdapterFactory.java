@@ -73,7 +73,8 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
             final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID();
-            tags.add(new FileTag(newTagName, "not set", new FileTagDefinition(context.getFilePath())));
+            tags.add(new FileTag(newTagName, "not set",
+                    new FileTagDefinition(context.getFilePath(), context.getContentType())));
             final FileToMqttMapping fileToMqttMapping =
                     new FileToMqttMapping(context.getDestinationMqttTopic(),
                             //TODO why nullable??
@@ -82,8 +83,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                             context.getIncludeTimestamp(),
                             context.getIncludeTagNames(),
                             context.getUserProperties(),
-                            newTagName,
-                            context.getContentType());
+                            newTagName);
             fileToMqttMappings.add(fileToMqttMapping);
         }
 

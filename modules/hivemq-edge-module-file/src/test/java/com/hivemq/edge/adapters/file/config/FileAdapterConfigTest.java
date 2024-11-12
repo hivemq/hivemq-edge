@@ -22,6 +22,8 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
+import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -76,7 +78,6 @@ class FileAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag1");
-            assertThat(mapping.getContentType()).isEqualTo(ContentType.BINARY);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -92,7 +93,6 @@ class FileAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag2");
-            assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -135,8 +135,11 @@ class FileAdapterConfigTest {
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getTagName()).isEqualTo("tag1");
-            assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
+
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+                .contains(new FileTag("1", "2", new FileTagDefinition("123", ContentType.BINARY)));
     }
 
     @Test
@@ -160,6 +163,7 @@ class FileAdapterConfigTest {
         assertThat(adapterConfigAndTags.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+
     }
 
     @Test
@@ -226,8 +230,7 @@ class FileAdapterConfigTest {
                 MQTTMessagePerTag,
                 false,
                 true,
-                List.of(new MqttUserProperty("my-name", "my-value")), "tag",
-                ContentType.BINARY);
+                List.of(new MqttUserProperty("my-name", "my-value")), "tag");
 
         final FileAdapterConfig modbusAdapterConfig =
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
@@ -265,8 +268,7 @@ class FileAdapterConfigTest {
                 null,
                 null,
                 null,
-                null, "tag",
-                ContentType.BINARY);
+                null, "tag");
 
         final FileAdapterConfig modbusAdapterConfig =
                 new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
@@ -292,6 +294,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("tagName")).isEqualTo("tag");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
+
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

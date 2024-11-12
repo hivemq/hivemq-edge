@@ -80,18 +80,6 @@ public class FileToMqttMapping implements PollingContext {
     @JsonProperty(value = "tagName")
     private final @NotNull String tagName;
 
-    @JsonProperty(value = "contentType", required = true)
-    @ModuleConfigField(title = "Content Type",
-                       description = "The type of the content within the file.",
-                       enumDisplayValues = {
-                               "application/octet-stream",
-                               "text/plain",
-                               "application/json",
-                               "application/xml",
-                               "text/csv"},
-                       required = true)
-    private final @NotNull ContentType contentType;
-
     @JsonCreator
     public FileToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
@@ -100,14 +88,12 @@ public class FileToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "contentType", required = true) final @NotNull ContentType contentType) {
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
-        this.contentType = contentType;
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.tagName = tagName;
     }
@@ -150,9 +136,5 @@ public class FileToMqttMapping implements PollingContext {
     @JsonIgnore
     public @Nullable JsonPayloadCreator getJsonPayloadCreator() {
         return FileJsonPayloadCreator.INSTANCE;
-    }
-
-    public @NotNull ContentType getContentType() {
-        return contentType;
     }
 }

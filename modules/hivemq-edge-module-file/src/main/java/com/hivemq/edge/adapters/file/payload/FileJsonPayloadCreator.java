@@ -40,11 +40,12 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
         List<byte[]> payloads = new ArrayList<>();
         for (DataPoint dataPoint : sample.getDataPoints()) {
             try {
+                FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
                 final FilePayload value = new FilePayload(System.currentTimeMillis(),
                         sample.getPollingContext().getUserProperties(),
                         dataPoint.getTagValue(),
                         dataPoint.getTagName(),
-                        ((FileToMqttMapping) sample.getPollingContext()).getContentType());
+                        fileDataPoint.getTag().getDefinition().getContentType());
 
                 payloads.add(objectMapper.writeValueAsBytes(value));
             } catch (JsonProcessingException e) {
