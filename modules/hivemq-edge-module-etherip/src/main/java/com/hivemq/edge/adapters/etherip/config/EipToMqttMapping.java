@@ -74,25 +74,6 @@ public class EipToMqttMapping implements PollingContext {
                        defaultValue = "false")
     private final boolean includeTagNames;
 
-
-    @JsonProperty(value = "dataType", required = true)
-    @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
-            "Bool",
-            "DInt",
-            "Int",
-            "LInt",
-            "LReal",
-            "LTime",
-            "Real",
-            "SInt",
-            "String",
-            "Time",
-            "UDInt",
-            "UInt",
-            "ULInt",
-            "USInt"}, required = true)
-    private final @NotNull EipDataType dataType;
-
     @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
@@ -107,7 +88,6 @@ public class EipToMqttMapping implements PollingContext {
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "dataType", required = true) final @NotNull EipDataType dataType,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
@@ -115,16 +95,11 @@ public class EipToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
-        this.dataType = dataType;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    public @NotNull EipDataType getDataType() {
-        return dataType;
     }
 
     @Override

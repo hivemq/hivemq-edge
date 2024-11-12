@@ -36,7 +36,6 @@
                             <includeTimestamp>true</includeTimestamp>
                             <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                             <tagName>tag-name</tagName>
-                            <dataType>BOOL</dataType>
                             <mqttUserProperties>
                                 <mqttUserProperty>
                                     <name>name</name>
@@ -55,7 +54,6 @@
                             <includeTimestamp>true</includeTimestamp>
                             <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                             <tagName>tag-name</tagName>
-                            <dataType>BOOL</dataType>
                             <mqttUserProperties>
                                 <mqttUserProperty>
                                     <name>name</name>
@@ -76,6 +74,7 @@
                     <description>description</description>
                     <definition>
                         <address>addressy</address>
+                        <dataType>BOOL</dataType>
                     </definition>
                 </tag>
             </tags>

@@ -28,9 +28,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
@@ -144,8 +144,10 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             @NotNull PollingInput<EipToMqttMapping> pollingInput,
             @NotNull PollingOutput pollingOutput,
             EipTag eipAddressTag) {
-        final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
-                eipAddressTag.getDefinition().getAddress());
+        final String tagAddress = createTagAddressForSubscription(
+                pollingInput.getPollingContext(),
+                eipAddressTag.getDefinition().getAddress(),
+                eipAddressTag.getDefinition().getDataType());
         try {
             final CIPData evt = etherNetIP.readTag(eipAddressTag.getDefinition().getAddress());
 
@@ -205,8 +207,8 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(
-            @NotNull final EipToMqttMapping eipToMqttMapping, final @NotNull String address) {
-        return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, eipToMqttMapping.getDataType());
+            @NotNull final EipToMqttMapping eipToMqttMapping, final @NotNull String address, final @NotNull EipDataType dataType) {
+        return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, dataType);
     }
 
 }
