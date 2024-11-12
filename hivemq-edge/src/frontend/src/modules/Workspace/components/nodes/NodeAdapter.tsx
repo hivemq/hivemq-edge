@@ -105,7 +105,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
         )}
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
-      {bidirectional && <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />}
+      <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />
     </>
   )
 }
