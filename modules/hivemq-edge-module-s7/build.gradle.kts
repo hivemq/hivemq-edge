@@ -21,6 +21,7 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
     exclusiveContent {
         forRepository {
             maven {
@@ -37,17 +38,21 @@ repositories {
 dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
-    compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
+    compileOnly(libs.jackson.databind)
     implementation(libs.iot.communication)
 
-    testImplementation(libs.jackson.databind)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.assertj)
-    testImplementation(libs.mockito.junitJupiter)
-    testImplementation(libs.iot.communication)
-    testImplementation("com.hivemq:hivemq-edge")
+}
 
+dependencies {
+    testImplementation("com.hivemq:hivemq-edge")
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.junit.jupiter)
+
+    testImplementation(libs.assertj)
+    testImplementation(libs.awaitility)
 }
 
 tasks.test {

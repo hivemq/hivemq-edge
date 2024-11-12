@@ -39,8 +39,6 @@ public class S7ToMqttConfig implements PollingContext {
     public static final String PROPERTY_INCLUDE_TIMESTAMP = "includeTimestamp";
     public static final String PROPERTY_INCLUDE_TAG_NAMES = "includeTagNames";
     public static final String PROPERTY_TAG_NAME = "tagName";
-    public static final String PROPERTY_TAG_ADDRESS = "tagAddress";
-    public static final String PROPERTY_DATA_TYPE = "dataType";
     public static final String PROPERTY_MQTT_USER_PROPERTIES = "mqttUserProperties";
 
     @JsonProperty(value = PROPERTY_MQTT_TOPIC, required = true)
@@ -92,29 +90,6 @@ public class S7ToMqttConfig implements PollingContext {
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
 
-    @JsonProperty(value = PROPERTY_TAG_ADDRESS, required = true)
-    @ModuleConfigField(title = "Tag Address",
-                       description = "The well formed address of the tag to read",
-                       required = true)
-    private final @NotNull String tagAddress;
-
-    @JsonProperty(value = PROPERTY_DATA_TYPE, required = true)
-    @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
-            "Boolean",
-            "Byte",
-            "Int16",
-            "UInt16",
-            "Int32",
-            "UInt32",
-            "Int64",
-            "Real (float 32)",
-            "LReal (double 64)",
-            "String",
-            "Date (DateStamp)",
-            "Time Of Day (TimeStamp)",
-            "Date Time (DateTimeStamp)",
-            "Timing (Duration ms)"}, required = true)
-    private final @NotNull S7DataType dataType;
 
     @JsonCreator
     public S7ToMqttConfig(
@@ -124,8 +99,6 @@ public class S7ToMqttConfig implements PollingContext {
             @JsonProperty(value = PROPERTY_INCLUDE_TIMESTAMP) final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = PROPERTY_INCLUDE_TAG_NAMES) final @Nullable Boolean includeTagNames,
             @JsonProperty(value = PROPERTY_TAG_NAME) final @NotNull String tagName,
-            @JsonProperty(value = PROPERTY_TAG_ADDRESS, required = true) final @NotNull String tagAddress,
-            @JsonProperty(value = PROPERTY_DATA_TYPE, required = true) final @NotNull S7DataType dataType,
             @JsonProperty(value = PROPERTY_MQTT_USER_PROPERTIES) final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
@@ -134,8 +107,6 @@ public class S7ToMqttConfig implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.tagName = tagName;
-        this.tagAddress = tagAddress;
-        this.dataType = dataType;
     }
 
     @Override
@@ -170,13 +141,5 @@ public class S7ToMqttConfig implements PollingContext {
 
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    public @NotNull String getTagAddress() {
-        return tagAddress;
-    }
-
-    public @NotNull S7DataType getDataType() {
-        return dataType;
     }
 }
