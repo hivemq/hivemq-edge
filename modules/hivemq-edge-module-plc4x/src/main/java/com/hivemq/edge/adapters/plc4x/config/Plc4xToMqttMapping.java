@@ -32,7 +32,7 @@ import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-@JsonPropertyOrder({"tagName", "dataType", "mqttTopic", "mqttQos"})
+@JsonPropertyOrder({"tagName", "mqttTopic", "mqttQos"})
 public class Plc4xToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
@@ -41,39 +41,6 @@ public class Plc4xToMqttMapping implements PollingContext {
                        required = true,
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
-
-    @JsonProperty(value = "dataType", required = true)
-    @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
-            "Null",
-            "Boolean",
-            "Byte",
-            "Word (unit 16)",
-            "DWord (uint 32)",
-            "LWord (uint 64)",
-            "USint (uint 8)",
-            "Uint (uint 16)",
-            "UDint (uint 32)",
-            "ULint (uint 64)",
-            "Sint (int 8)",
-            "Int (int 16)",
-            "Dint (int 32)",
-            "Lint (int 64)",
-            "Real (float 32)",
-            "LReal (double 64)",
-            "Char (1 byte char)",
-            "WChar (2 byte char)",
-            "String",
-            "WString",
-            "Timing (Duration ms)",
-            "Long Timing (Duration ns)",
-            "Date (DateStamp)",
-            "Long Date (DateStamp)",
-            "Time Of Day (TimeStamp)",
-            "Long Time Of Day (TimeStamp)",
-            "Date Time (DateTimeStamp)",
-            "Long Date Time (DateTimeStamp)",
-            "Raw Byte Array"}, required = true)
-    private final @NotNull DATA_TYPE dataType;
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT Topic",
@@ -125,7 +92,6 @@ public class Plc4xToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "dataType", required = true) final @NotNull DATA_TYPE dataType,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
@@ -133,16 +99,11 @@ public class Plc4xToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
-        this.dataType = dataType;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    public @NotNull DATA_TYPE getDataType() {
-        return dataType;
     }
 
     @Override

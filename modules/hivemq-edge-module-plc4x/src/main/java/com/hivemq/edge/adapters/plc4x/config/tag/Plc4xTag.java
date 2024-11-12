@@ -3,6 +3,7 @@ package com.hivemq.edge.adapters.plc4x.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;

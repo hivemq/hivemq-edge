@@ -46,65 +46,74 @@ public class S7ProtocolAdapterTest {
 
     @Test
     public void whenTagSpecialDataType_thenModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IW200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%IX200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenTagNormalDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IW200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.WORD));
         assertEquals("%IW200:WORD",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WORD), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenTagBitDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%IX200.2"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%IX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockSpecialDataType_thenModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23.DBW200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB23.DBW200", Plc4xDataType.DATA_TYPE.WCHAR));
         assertEquals("%DB23.DBX200:WCHAR",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WCHAR), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockNormalDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23.DBD200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23.DBD200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockShortSpecialDataType_thenModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23:200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%DB23:200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockBitDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB100:DBX200.2"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB100:DBX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:DBX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockShortNormalDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB23:200"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23:200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     @Test
     public void whenBlockShortBitDataType_thenDoNotModifyAddress() {
-        final Plc4xTag tag = new Plc4xTag("tag", "not set", new Plc4xTagDefinition("%DB100:200.2"));
+        final Plc4xTag tag = new Plc4xTag("tag", "not set",
+                new Plc4xTagDefinition("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL), tag));
+                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
     }
 
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
@@ -121,9 +130,8 @@ public class S7ProtocolAdapterTest {
 
     private static class S7TestSub extends Plc4xToMqttMapping {
 
-        public S7TestSub(
-                final Plc4xDataType.@NotNull DATA_TYPE dataType) {
-            super("mqttTopic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, "tag", dataType, List.of());
+        public S7TestSub() {
+            super("mqttTopic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, "tag", List.of());
         }
     }
 }
