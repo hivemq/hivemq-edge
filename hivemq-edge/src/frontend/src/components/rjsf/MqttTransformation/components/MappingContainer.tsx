@@ -44,7 +44,7 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
           <SelectSourceTopics value={item.mqttTopicFilter} onChange={(v) => onChange('mqttTopicFilter', v)} />
           <DataModelSources flex={1} topics={item.mqttTopicFilter ? [item.mqttTopicFilter] : []} minH={250} />
         </VStack>
-        <VStack justifyContent="flex-start">
+        <VStack justifyContent="center">
           <HStack height={38}>
             <Icon as={FaRightFromBracket} />
           </HStack>
