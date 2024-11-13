@@ -29,6 +29,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
+import com.hivemq.edge.adapters.file.payload.FileDataPoint;
 import com.hivemq.edge.adapters.file.tag.FileTag;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
@@ -120,8 +121,8 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
                 return;
             }
             final byte[] fileContent = Files.readAllBytes(path);
-            final Object value = pollingInput.getPollingContext().getContentType().map(fileContent);
-            pollingOutput.addDataPoint("value", value);
+            final Object value = fileTag.getDefinition().getContentType().map(fileContent);
+            pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             pollingOutput.finish();
         } catch (IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
