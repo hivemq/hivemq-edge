@@ -37,7 +37,7 @@ public class ErrorResponseUtil {
     }
 
     public static @NotNull Response notFound(final @NotNull String type, final @NotNull String id) {
-        return errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", type + " with id '" + id + "' not found");
+            return errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", type + " with id '" + id + "' not found");
     }
 
     public static @NotNull Response urlParameterRequired(final @NotNull String parameterName) {

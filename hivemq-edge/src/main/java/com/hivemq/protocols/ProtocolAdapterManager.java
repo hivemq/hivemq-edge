@@ -761,6 +761,20 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toList());
     }
 
+    public Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
+        return getProtocolAdapters().values().stream()
+                .flatMap(adapter ->
+                        adapter.getTags().stream()
+                                .filter(t -> t.getName().equals(tagName)
+                        ).map(tag -> new DomainTag(
+                                tag.getName(),
+                                adapter.getId(),
+                                adapter.getProtocolAdapterInformation().getProtocolId(),
+                                tag.getDescription(),
+                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {}))))
+                .findFirst();
+    }
+
     public Optional<List<DomainTag>> getTagsForAdapter(final String adapterId) {
         return getAdapterById(adapterId)
                 .map(adapter ->

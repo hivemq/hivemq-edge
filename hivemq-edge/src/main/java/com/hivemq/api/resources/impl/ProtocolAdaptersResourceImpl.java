@@ -53,6 +53,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
@@ -442,7 +443,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         tagId +
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
-                return ErrorResponseUtil.genericError("The adapter named '" +
+                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,"Adapter not found", "The adapter named '" +
                         domainTag.getProtocolId() +
                         "' does not exist.");
             default:
@@ -519,6 +520,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<DomainTagModel> domainTagModels =
                 domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
         return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
+    }
+
+    @Override
+    public Response getDomainTag(final String tagName) {
+        return protocolAdapterManager
+                .getDomainTagByName(tagName)
+                .map(tag -> Response.ok().entity(DomainTagModel.fromDomainTag(tag)).build())
+                .orElse(ErrorResponseUtil.notFound("Tag", tagName));
     }
 
     @Override
