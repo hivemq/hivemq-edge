@@ -1,11 +1,12 @@
 package com.hivemq.configuration.entity.adapter;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.Transformation;
 
 public class TransformationEntity {
 
-    // default constructor needed for JaxB
+    @JsonCreator
     TransformationEntity(){}
 
     @SuppressWarnings("InstantiationOfUtilityClass")

@@ -16,6 +16,7 @@
 package com.hivemq.protocols;
 
 import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
@@ -30,15 +31,15 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 public class ProtocolAdapterUtils {
 
     public static @NotNull ObjectMapper createProtocolAdapterMapper(@NotNull final ObjectMapper objectMapper){
-        ObjectMapper copyObjectMapper = objectMapper.copy();
+        final ObjectMapper copyObjectMapper = objectMapper.copy();
         copyObjectMapper.coercionConfigFor(LogicalType.POJO).
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         copyObjectMapper.coercionConfigFor(LogicalType.Collection).
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+        copyObjectMapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
 
-
-        SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
-        SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
+        final SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
+        final SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
 
         module.setAbstractTypes(resolver);
         copyObjectMapper.registerModule(module);

@@ -1,31 +1,24 @@
 package com.hivemq.configuration.entity.adapter;
 
-import com.hivemq.persistence.fieldmapping.FieldMapping;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.fieldmapping.FieldMapping;
 
-import javax.xml.bind.annotation.XmlElement;
-
-@SuppressWarnings("unused")
 public class FieldMappingEntity {
 
-    @XmlElement(name = "source")
+    @JsonProperty("source")
     private final @NotNull String sourceFieldName;
-    @XmlElement(name = "destination")
+    @JsonProperty("destination")
     private final @NotNull String destinationFieldName;
-    @XmlElement(name = "transformation")
+    @JsonProperty("transformation")
     private final @NotNull TransformationEntity transformation;
 
-    // default constructor needed for JaxB
-    public FieldMappingEntity() {
-        sourceFieldName = "";
-        destinationFieldName = "";
-        transformation = new TransformationEntity();
-    }
-
+    @JsonCreator
     public FieldMappingEntity(
-            final @NotNull String sourceFieldName,
-            final @NotNull String destinationFieldName,
-            final @NotNull TransformationEntity transformation) {
+            @JsonProperty("source") final @NotNull String sourceFieldName,
+            @JsonProperty("destination") final @NotNull String destinationFieldName,
+            @JsonProperty("transformation") final @NotNull TransformationEntity transformation) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
         this.transformation = transformation;

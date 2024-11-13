@@ -83,6 +83,7 @@ import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatu
 import static com.hivemq.persistence.domain.DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND;
 import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND;
 import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.TAG_NOT_FOUND;
+import static com.hivemq.protocols.ConfigPersistence.TAG_MAPPING_KEY;
 
 @SuppressWarnings("unchecked")
 @Singleton
@@ -144,7 +145,8 @@ public class ProtocolAdapterManager {
     public @NotNull ListenableFuture<Void> start() {
 
         log.info("Starting adapters");
-        protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
+        protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
+                protocolAdapterWritingService.writingEnabled()));
 
         final ImmutableList.Builder<CompletableFuture<Void>> adapterFutures = ImmutableList.builder();
 
@@ -239,7 +241,7 @@ public class ProtocolAdapterManager {
                                     adapterFactory.unconvertConfigObject(objectMapper, configObject),
                                     "tags",
                                     convertedTags,
-                                    "fieldMappings",
+                                    TAG_MAPPING_KEY,
                                     fieldMappingsEntities));
                             return list;
                         });
@@ -477,8 +479,13 @@ public class ProtocolAdapterManager {
         }
         protocolAdapterMetrics.increaseProtocolAdapterMetric(adapterType);
         final CompletableFuture<Void> ret = addAdapterInternal(adapterType, config, tagMaps, fieldMappings);
-        final List<FieldMappingsEntity> fieldMappingsEntities =
-                fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+        final List<Map<String, Object>> fieldMappingsEntities = fieldMappings.stream()
+                .map(FieldMappingsEntity::from)
+                .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                }))
+                .collect(Collectors.toList());
+
+
         configPersistence.addAdapter(adapterType, config, tagMaps, fieldMappingsEntities);
         return ret;
     }
@@ -555,8 +562,11 @@ public class ProtocolAdapterManager {
                     }))
                     .collect(Collectors.toList());
             final List<FieldMappings> fieldMappings = oldInstance.getFieldMappings();
-            final List<FieldMappingsEntity> fieldMappingsEntities =
-                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+            final List<Map<String, Object>> fieldMappingsEntities = fieldMappings.stream()
+                    .map(FieldMappingsEntity::from)
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolId, config, tags, fieldMappings);
@@ -573,8 +583,11 @@ public class ProtocolAdapterManager {
                     objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {
                     });
             final List<FieldMappings> fieldMappings = oldInstance.getFieldMappings();
-            final List<FieldMappingsEntity> fieldMappingsEntities =
-                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+            final List<Map<String, Object>> fieldMappingsEntities = fieldMappings.stream()
+                    .map(FieldMappingsEntity::from)
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolId, config, tags, fieldMappings);
             configPersistence.updateAdapter(protocolId, adapterId, config, tags, fieldMappingsEntities);
@@ -583,8 +596,7 @@ public class ProtocolAdapterManager {
     }
 
     public boolean updateAdapterFieldMappings(
-            final @NotNull String adapterId,
-            final @NotNull List<FieldMappings> fieldMappings) {
+            final @NotNull String adapterId, final @NotNull List<FieldMappings> fieldMappings) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
@@ -596,8 +608,11 @@ public class ProtocolAdapterManager {
                     .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
                     }))
                     .collect(Collectors.toList());
-            final List<FieldMappingsEntity> fieldMappingsEntities =
-                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+            final List<Map<String, Object>> fieldMappingsEntities = fieldMappings.stream()
+                    .map(FieldMappingsEntity::from)
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolId, config, tagsAsMaps, fieldMappings);
@@ -691,10 +706,12 @@ public class ProtocolAdapterManager {
                             adapterType));
 
             final AdapterConfigAndTagsAndFieldMappings persistence =
-                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(Map.of("config", config, "tags", tagMaps, "fieldMappings", fieldMappings),
-                            writingEnabled(),
-                            objectMapper,
-                            protocolAdapterFactory);
+                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(Map.of("config",
+                            config,
+                            "tags",
+                            tagMaps,
+                            TAG_MAPPING_KEY,
+                            fieldMappings), writingEnabled(), objectMapper, protocolAdapterFactory);
 
             persistence.missingTags().ifPresent(missing -> {
                 throw new IllegalArgumentException("Tags used in mappings but used in adapter " +
@@ -716,8 +733,7 @@ public class ProtocolAdapterManager {
 
 
     public @NotNull DomainTagAddResult addDomainTag(
-            final @NotNull String adapterId,
-            final @NotNull DomainTag domainTag) {
+            final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
             final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
@@ -845,8 +861,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull DomainTagAddResult addFieldMappings(
-            final @NotNull String adapterId,
-            final @NotNull FieldMappings fieldMappings) {
+            final @NotNull String adapterId, final @NotNull FieldMappings fieldMappings) {
         return getAdapterById(adapterId).map(adapter -> {
             final @NotNull List<FieldMappings> presentMappings = adapter.getFieldMappings();
             final boolean alreadyExists =

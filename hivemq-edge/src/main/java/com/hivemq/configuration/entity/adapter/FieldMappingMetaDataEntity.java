@@ -1,27 +1,22 @@
 package com.hivemq.configuration.entity.adapter;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappingMetaData;
 
-import javax.xml.bind.annotation.XmlElement;
-
-@SuppressWarnings("unused")
 public class FieldMappingMetaDataEntity {
 
-    @XmlElement(name = "sourceSchema")
+    @JsonProperty("source-schema")
     private final @NotNull String sourceJsonSchema;
 
-    @XmlElement(name = "destinationSchema")
+    @JsonProperty("destination-schema")
     private final @NotNull String destinationJsonSchema;
 
-    // default constructor needed for JaxB
-    public FieldMappingMetaDataEntity() {
-        this.sourceJsonSchema = "";
-        this.destinationJsonSchema = "";
-    }
-
+    @JsonCreator
     public FieldMappingMetaDataEntity(
-            final @NotNull String sourceJsonSchema, final @NotNull String destinationJsonSchema) {
+            @JsonProperty("source-schema") final @NotNull String sourceJsonSchema,
+            @JsonProperty("destination-schema") final @NotNull String destinationJsonSchema) {
         this.sourceJsonSchema = sourceJsonSchema;
         this.destinationJsonSchema = destinationJsonSchema;
     }

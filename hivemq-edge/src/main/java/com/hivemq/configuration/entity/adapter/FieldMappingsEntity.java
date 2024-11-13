@@ -1,48 +1,34 @@
 package com.hivemq.configuration.entity.adapter;
 
-import com.hivemq.api.model.mapping.FieldMappingsModel;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-@XmlAccessorType(XmlAccessType.FIELD)
 public class FieldMappingsEntity {
 
-    @XmlElement(name = "topic-filter")
+    @JsonProperty("topic-filter")
     private final @NotNull String topicFilter;
 
-    @XmlElement(name = "tagName")
+    @JsonProperty("tag-name")
     private final @NotNull String tagName;
 
-    @XmlElementWrapper(name = "field-mappings")
-    @XmlElement(name = "field-mapping")
+    @JsonProperty("field-mappings")
     private final @NotNull List<FieldMappingEntity> fieldMappingEntities;
 
-    @XmlElement(name = "metadata")
+    @JsonProperty("metadata")
     private final @NotNull FieldMappingMetaDataEntity metaData;
 
-    // default constructor needed for JaxB
-    public FieldMappingsEntity(){
-        topicFilter = "";
-        tagName = "";
-        fieldMappingEntities = new ArrayList<>();
-        metaData = new FieldMappingMetaDataEntity();
-    }
-
+    @JsonCreator
     public FieldMappingsEntity(
-            final @NotNull String topicFilter,
-            final @NotNull String tagName,
-            final @NotNull List<FieldMappingEntity> fieldMappingEntities,
-            final @NotNull FieldMappingMetaDataEntity metaData) {
+            @JsonProperty("topic-filter") final @NotNull String topicFilter,
+            @JsonProperty("tag-name") final @NotNull String tagName,
+            @JsonProperty("field-mappings") final @NotNull List<FieldMappingEntity> fieldMappingEntities,
+            @JsonProperty("metadata") final @NotNull FieldMappingMetaDataEntity metaData) {
         this.topicFilter = topicFilter;
         this.tagName = tagName;
         this.fieldMappingEntities = fieldMappingEntities;
@@ -74,10 +60,5 @@ public class FieldMappingsEntity {
 
     public @NotNull String getTopicFilter() {
         return topicFilter;
-    }
-
-    @Override
-    public String toString() {
-        return "IM SO FUCKED";
     }
 }

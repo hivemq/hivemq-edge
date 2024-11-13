@@ -35,6 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.hivemq.protocols.ConfigPersistence.TAG_MAPPING_KEY;
+
 public class AdapterConfigAndTagsAndFieldMappings {
 
     private static final Logger log = LoggerFactory.getLogger(AdapterConfigAndTagsAndFieldMappings.class);
@@ -81,7 +83,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
         final List<Map<String, Object>> tagMaps =
                 Objects.requireNonNullElse((List<Map<String, Object>>) adapterConfig.get("tags"), List.of());
         final List<FieldMappings> fieldMappings =
-                Objects.requireNonNullElse((List<FieldMappings>) adapterConfig.get("fieldMappings"), List.of());
+                Objects.requireNonNullElse((List<FieldMappings>) adapterConfig.get(TAG_MAPPING_KEY), List.of());
 
 
         if (adapterConfigMap != null) {

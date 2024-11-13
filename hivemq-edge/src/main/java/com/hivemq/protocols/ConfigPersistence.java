@@ -15,7 +15,6 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -26,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * This class doesn't make use of caching in any way.
  * Config is kept in memory so reading operations are fast.
@@ -35,10 +35,12 @@ import java.util.Map;
 public class ConfigPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigPersistence.class);
+    public static final String TAG_MAPPING_KEY = "tag-mappings";
+
 
     private final @NotNull ConfigurationService configurationService;
 
-    public ConfigPersistence(final ConfigurationService configurationService) {
+    public ConfigPersistence(final @NotNull ConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
@@ -62,7 +64,7 @@ public class ConfigPersistence {
             final @NotNull String protocolId,
             final @NotNull Map<String, Object> config,
             final @NotNull List<Map<String, Object>> tagMaps,
-            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
+            final @NotNull List<Map<String, Object>> fieldMappingsEntities) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
         adapterList.add(combine(config, tagMaps, fieldMappingsEntities));
@@ -74,7 +76,7 @@ public class ConfigPersistence {
             final @NotNull String adapterId,
             final @NotNull Map<String, Object> config,
             final @NotNull List<Map<String, Object>> tagMaps,
-            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
+            final @NotNull List<Map<String, Object>> fieldMappingsEntities) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
         if (adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>) instance.get("config")).get("id")))) {
@@ -95,11 +97,11 @@ public class ConfigPersistence {
         }
     }
 
-    public Map<String, Object> combine(
+    public @NotNull Map<String, Object> combine(
             final @NotNull Map<String, Object> config,
             final @NotNull List<Map<String, Object>> tagMaps,
-            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
-        return Map.of("config", config, "tags", tagMaps, "fieldMappings", fieldMappingsEntities);
+            final @NotNull List<Map<String, Object>> fieldMappingsEntities) {
+        return Map.of("config", config, "tags", tagMaps, TAG_MAPPING_KEY, fieldMappingsEntities);
     }
 
     private @NotNull List<Map<String, Object>> getAdapterListForType(
