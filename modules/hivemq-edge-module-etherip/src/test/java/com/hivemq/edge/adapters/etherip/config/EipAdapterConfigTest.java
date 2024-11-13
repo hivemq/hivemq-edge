@@ -83,7 +83,6 @@ class EipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -99,7 +98,6 @@ class EipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -118,7 +116,7 @@ class EipAdapterConfigTest {
                     assertThat(t)
                             .isInstanceOf(EipTag.class)
                             .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
-                            .contains("tag-name", "description", new EipTagDefinition("addressy"));
+                            .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
                 });
     }
 
@@ -158,7 +156,6 @@ class EipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
 
         final List<? extends Tag> tags = eipProtocolAdapterFactory.convertTagDefinitionObjects(mapper,
@@ -169,7 +166,7 @@ class EipAdapterConfigTest {
                     assertThat(t)
                             .isInstanceOf(EipTag.class)
                             .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
-                            .contains("tag-name", "description", new EipTagDefinition("addressy"));
+                            .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
                 });
     }
 
@@ -181,7 +178,6 @@ class EipAdapterConfigTest {
                 false,
                 true,
                 "tag-name",
-                EipDataType.BOOL,
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
         final EipAdapterConfig eipAdapterConfig = new EipAdapterConfig("my-eip-adapter",

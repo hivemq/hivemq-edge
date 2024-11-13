@@ -71,14 +71,16 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         final List<EipTag> tags = new ArrayList<>();
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
-            tags.add(new EipTag(context.getTagName(), "not available", new EipTagDefinition(context.getTagAddress())));
-            eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
+            tags.add(new EipTag(context.getTagName(), "not available", new EipTagDefinition(
+                    context.getTagAddress(),
+                    context.getDataType())));
+            eipToMqttMappings.add(new EipToMqttMapping(
+                    context.getDestinationMqttTopic(),
                     context.getQos(),
                     context.getMessageHandlingOptions(),
                     context.getIncludeTimestamp(),
                     context.getIncludeTagNames(),
                     context.getTagName(),
-                    context.getDataType(),
                     context.getUserProperties()));
         }
 

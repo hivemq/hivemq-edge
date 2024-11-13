@@ -18,12 +18,15 @@ package com.hivemq.edge.adapters.etherip.config.legacy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -76,7 +79,6 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -92,7 +94,6 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name2");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -103,8 +104,14 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
-                .isEmpty();
+        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (EipTag)t))
+                .contains(
+                        new EipTag("tag-name", "no available", new EipTagDefinition("tag-address", EipDataType.BOOL)),
+                        new EipTag("tag-name2", "no available", new EipTagDefinition("tag-address2", EipDataType.BOOL))
+                );
     }
 
     @Test
@@ -139,7 +146,6 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
 
         assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())

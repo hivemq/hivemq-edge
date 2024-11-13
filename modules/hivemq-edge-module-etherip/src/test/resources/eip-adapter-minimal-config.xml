@@ -27,7 +27,6 @@
                         <eipToMqttMapping>
                             <mqttTopic>my/topic</mqttTopic>
                             <tagName>tag-name</tagName>
-                            <dataType>BOOL</dataType>
                         </eipToMqttMapping>
                     </eipToMqttMappings>
                 </eipToMqtt>
@@ -38,6 +37,7 @@
                     <description>description</description>
                     <definition>
                         <address>addressy</address>
+                        <dataType>BOOL</dataType>
                     </definition>
                 </tag>
             </tags>
