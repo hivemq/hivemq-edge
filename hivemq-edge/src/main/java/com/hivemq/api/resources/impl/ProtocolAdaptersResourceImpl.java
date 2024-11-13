@@ -62,6 +62,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -96,7 +97,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
-    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
@@ -106,7 +107,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
-            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull VersionProvider versionProvider) {
         this.remoteService = remoteService;

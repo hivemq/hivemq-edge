@@ -101,7 +101,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
-    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ConfigPersistence configPersistence;
     private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager;
@@ -121,7 +121,7 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
-            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ExecutorService executorService) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -178,19 +178,19 @@ public class ProtocolAdapterManager {
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory))
-                    .forEach(persistence -> {
+                    .forEach(config -> {
                         log.info("Found configuration for adapter {} / {}",
-                                persistence.getAdapterConfig().getId(),
+                                config.getAdapterConfig().getId(),
                                 adapterType);
-                        persistence.missingTags().ifPresent(missing -> {
+                        config.missingTags().ifPresent(missing -> {
                             throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " +
-                                    persistence.getAdapterConfig().getId() +
+                                    config.getAdapterConfig().getId() +
                                     ": " +
                                     missing);
                         });
 
                         final ProtocolAdapterWrapper instance = createAdapterInstance(protocolAdapterFactory,
-                                persistence,
+                                config,
                                 versionProvider.getVersion());
                         protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                                 .getProtocolAdapterInformation()
@@ -337,7 +337,8 @@ public class ProtocolAdapterManager {
             }
             startWritingFuture =
                     protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter(),
-                            protocolAdapterWrapper.getProtocolAdapterMetricsService());
+                            protocolAdapterWrapper.getProtocolAdapterMetricsService(),
+                            protocolAdapterWrapper.getFieldMappings());
         } else {
             startWritingFuture = CompletableFuture.completedFuture(null);
         }

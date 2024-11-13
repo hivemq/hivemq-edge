@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
 import javax.inject.Inject;
 
@@ -33,7 +34,7 @@ public class ModuleServicesImpl implements ModuleServices {
     public ModuleServicesImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
-            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService) {
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.protocolAdapterWritingService = protocolAdapterWritingService;

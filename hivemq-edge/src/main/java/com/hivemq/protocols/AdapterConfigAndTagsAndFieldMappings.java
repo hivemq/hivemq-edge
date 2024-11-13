@@ -82,16 +82,18 @@ public class AdapterConfigAndTagsAndFieldMappings {
         final Map<String, Object> adapterConfigMap = (Map<String, Object>) adapterConfig.get("config");
         final List<Map<String, Object>> tagMaps =
                 Objects.requireNonNullElse((List<Map<String, Object>>) adapterConfig.get("tags"), List.of());
-        final List<FieldMappings> fieldMappings =
-                Objects.requireNonNullElse((List<FieldMappings>) adapterConfig.get(TAG_MAPPING_KEY), List.of());
+        final List<Map<String, Object>> fieldMappingsMaps =
+                Objects.requireNonNullElse((List<Map<String, Object>>) adapterConfig.get(TAG_MAPPING_KEY), List.of());
 
 
         if (adapterConfigMap != null) {
             final ProtocolAdapterConfig protocolAdapterConfig =
                     protocolAdapterFactory.convertConfigObject(mapper, adapterConfigMap, writingEnabled);
             final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
-
-
+            final List<FieldMappings> fieldMappings = fieldMappingsMaps.stream()
+                    .map(tagMap -> mapper.convertValue(tagMap, FieldMappingsEntity.class))
+                    .map(entity -> FieldMappings.fromEntity(entity, mapper))
+                    .collect(Collectors.toList());
             return new AdapterConfigAndTagsAndFieldMappings(protocolAdapterConfig, tags, fieldMappings);
         } else if (protocolAdapterFactory instanceof LegacyConfigConversion) {
             log.warn(

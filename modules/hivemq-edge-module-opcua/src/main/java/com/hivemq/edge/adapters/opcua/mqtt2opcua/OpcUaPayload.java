@@ -33,4 +33,10 @@ public class OpcUaPayload implements WritingPayload {
     public @NotNull JsonNode getValue() {
         return value;
     }
+
+
+    @Override
+    public @NotNull String toString() {
+        return "OpcUaPayload{" + "value=" + value + '}';
+    }
 }

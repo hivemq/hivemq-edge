@@ -27,6 +27,7 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +50,7 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull HiveMQEdgeRemoteService remoteService = mock();
     private final @NotNull ConfigurationService configurationService = mock();
     private final @NotNull ProtocolAdapterManager protocolAdapterManager = mock();
-    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
+    private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull VersionProvider versionProvider = mock();
 

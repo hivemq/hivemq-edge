@@ -18,6 +18,7 @@ package com.hivemq.bootstrap.ioc;
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -29,7 +30,7 @@ public abstract class AdapterModule {
 
     @Provides
     @Singleton
-    static @NotNull ProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
+    static @NotNull InternalProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
         return writingServiceProvider.get();
     }
 

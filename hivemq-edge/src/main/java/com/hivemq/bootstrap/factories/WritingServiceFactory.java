@@ -20,11 +20,12 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
 public interface WritingServiceFactory {
 
     @NotNull
-    ProtocolAdapterWritingService build(
+    InternalProtocolAdapterWritingService build(
             @NotNull ObjectMapper objectMapper,
             @NotNull LocalTopicTree localTopicTree,
             @NotNull SingleWriterService singleWriterService);
