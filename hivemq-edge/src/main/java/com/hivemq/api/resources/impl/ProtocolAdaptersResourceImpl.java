@@ -23,10 +23,10 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.adapters.Adapter;
@@ -41,6 +41,7 @@ import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
+import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -78,7 +79,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -94,6 +94,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
+    private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
 
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -518,6 +519,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<DomainTagModel> domainTagModels =
                 domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
         return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
+    }
+
+    @Override
+    public Response getTagSchema(String protocolId) {
+        return protocolAdapterManager
+                .getAdapterTypeById(protocolId)
+                .map(info -> Response
+                                .status(200)
+                                .entity(new TagSchema(protocolId, customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
+                                .build())
+                .orElseGet(() -> ErrorResponseUtil
+                        .errorResponse(404,
+                                "Missing protocol adapter with id: " + protocolId,
+                                "No protocol adapter with id " + protocolId +" exists"));
     }
 
     @Override

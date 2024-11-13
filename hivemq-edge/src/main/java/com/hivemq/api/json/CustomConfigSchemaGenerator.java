@@ -43,7 +43,7 @@ public class CustomConfigSchemaGenerator {
 
     public static final String ENUM_NAMES_ATTRIBUTE = "enumNames";
 
-    public @NotNull JsonNode generateJsonSchema(final @NotNull Class<? extends ProtocolAdapterConfig> clazz) {
+    public @NotNull JsonNode generateJsonSchema(final @NotNull Class clazz) {
         SchemaGeneratorConfigBuilder configBuilder =
                 new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON).
                     with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,

@@ -26,6 +26,7 @@ import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
+import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.api.resources.examples.TagResourceExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -77,6 +78,24 @@ public interface ProtocolAdaptersApi {
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
     Response getAdapterTypes();
+
+    @GET
+    @Path("/tagschemas/{protocolId}")
+    @Operation(summary = "Obtain the JSON schema for a tag for a specific protocol adapter.",
+               operationId = "getTagSchema",
+               description = "Obtain the tag schema for a specific portocol adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = TagSchema.class)))})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull
+    Response getTagSchema(
+            @NotNull @Parameter(name = "protocolId",
+                                description = "The protocol id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("protocolId") String protocolId);
 
     @POST
     @Path("/adapters/{adapterType: ([a-zA-Z_0-9\\-])*}")
