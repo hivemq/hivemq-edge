@@ -130,7 +130,7 @@ public class ConfigFileReaderWriter {
         this.defaultBackupConfig = defaultBackupConfig;
     }
 
-    public void writeConfig(@NotNull final ConfigurationFile file, boolean rollConfig) {
+    public void writeConfig(@NotNull final ConfigurationFile file, final boolean rollConfig) {
         writeConfigToXML(file, rollConfig);
     }
 
@@ -160,7 +160,7 @@ public class ConfigFileReaderWriter {
         return context;
     }
 
-    private void writeConfigToXML(@NotNull final ConfigurationFile outputFile, boolean rollConfig) {
+    private void writeConfigToXML(@NotNull final ConfigurationFile outputFile, final boolean rollConfig) {
 
         synchronized (lock) {
 
@@ -180,26 +180,26 @@ public class ConfigFileReaderWriter {
             }
 
             try {
-                File configFile = outputFile.file().get();
+                final File configFile = outputFile.file().get();
                 log.debug("Writing configuration file {}", configFile.getAbsolutePath());
                 //write the backup of the file before rewriting
                 if (rollConfig) {
                     backupConfig(configFile, 5);
                 }
-                FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8);
+                final FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8);
                 writeConfigToXML(fileWriter);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 log.error("Error writing file:", e);
                 throw new UnrecoverableException(false);
             }
         }
     }
 
-    protected void backupConfig(@NotNull File configFile, int maxBackFiles) throws IOException {
+    protected void backupConfig(@NotNull final File configFile, final int maxBackFiles) throws IOException {
         int idx = 0;
-        String fileNameExclExt = com.hivemq.util.Files.getFileNameExcludingExtension(configFile.getName());
-        String fileExtension = com.hivemq.util.Files.getFileExtension(configFile.getName());
-        String copyPath = com.hivemq.util.Files.getFilePathExcludingFile(configFile.getAbsolutePath());
+        final String fileNameExclExt = com.hivemq.util.Files.getFileNameExcludingExtension(configFile.getName());
+        final String fileExtension = com.hivemq.util.Files.getFileExtension(configFile.getName());
+        final String copyPath = com.hivemq.util.Files.getFilePathExcludingFile(configFile.getAbsolutePath());
 
         String copyFilename = null;
         File copyFile = null;
@@ -211,7 +211,7 @@ public class ConfigFileReaderWriter {
         if(copyFile.exists()){
 
             //-- use the oldest available backup index
-            File[] backupFiles = new File(copyPath).listFiles(child -> child.isFile() &&
+            final File[] backupFiles = new File(copyPath).listFiles(child -> child.isFile() &&
                     child.getName().startsWith(fileNameExclExt) &&
                     child.getName().endsWith(fileExtension));
             Arrays.sort(backupFiles, Comparator.comparingLong(File::lastModified));
@@ -226,8 +226,8 @@ public class ConfigFileReaderWriter {
     public void writeConfigToXML(@NotNull final Writer writer) {
         synchronized (lock) {
             try {
-                JAXBContext context = createContext();
-                Marshaller marshaller = context.createMarshaller();
+                final JAXBContext context = createContext();
+                final Marshaller marshaller = context.createMarshaller();
                 final Schema schema = loadSchema();
                 if (schema != null) {
                     marshaller.setSchema(schema);
@@ -235,7 +235,7 @@ public class ConfigFileReaderWriter {
                 }
                 marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
                 marshaller.marshal(configEntity, writer);
-            } catch (JAXBException | IOException | SAXException e) {
+            } catch (final JAXBException | IOException | SAXException e) {
                 log.error("Original error message:", e);
                 throw new UnrecoverableException(false);
             }

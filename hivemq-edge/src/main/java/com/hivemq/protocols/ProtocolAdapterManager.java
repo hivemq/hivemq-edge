@@ -201,6 +201,9 @@ public class ProtocolAdapterManager {
         for (final ProtocolAdapterWrapper<?> value : protocolAdapterWrappers) {
             final ProtocolAdapterConfig configObject = value.getConfigObject();
             final List<Tag> tags = value.getTags();
+            final List<Map<String, Object>> convertedTags = tags.stream()
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {}))
+                    .collect(Collectors.toList());
             final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
@@ -217,7 +220,7 @@ public class ProtocolAdapterManager {
                             }
                             list.add(Map.of(
                                     "config", adapterFactory.unconvertConfigObject(objectMapper, configObject),
-                                    "tags", tags));
+                                    "tags", convertedTags));
                             return list;
                         });
             } finally {
@@ -554,7 +557,7 @@ public class ProtocolAdapterManager {
                 .map(oldInstance -> {
                     final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
                     final Map<String, Object> config =
-                            objectMapper.convertValue(oldInstance, new TypeReference<>() {});
+                            objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {});
                     deleteAdapterInternal(adapterId);
                     addAdapterInternal(protocolId, config, tags);
                     configPersistence.updateAdapter(protocolId, adapterId, config, tags);
