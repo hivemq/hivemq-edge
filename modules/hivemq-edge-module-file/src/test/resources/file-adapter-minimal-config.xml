@@ -25,7 +25,6 @@
                         <fileToMqttMapping>
                             <mqttTopic>my/topic</mqttTopic>
                             <tagName>tag1</tagName>
-                            <contentType>BINARY</contentType>
                         </fileToMqttMapping>
                     </fileToMqttMappings>
                 </fileToMqtt>
@@ -36,6 +35,7 @@
                     <description>decsription</description>
                     <definition>
                         <filePath>pathy</filePath>
+                        <contentType>BINARY</contentType>
                     </definition>
                 </tag>
             </tags>

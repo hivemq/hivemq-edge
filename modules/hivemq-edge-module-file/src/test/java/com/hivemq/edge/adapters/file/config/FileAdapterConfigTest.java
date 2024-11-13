@@ -139,7 +139,7 @@ class FileAdapterConfigTest {
 
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
-                .contains(new FileTag("1", "2", new FileTagDefinition("123", ContentType.BINARY)));
+                .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
     @Test
@@ -164,25 +164,6 @@ class FileAdapterConfigTest {
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
 
-    }
-
-    @Test
-    public void convertConfigObject_contentTypeMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/file-adapter-content-type-missing.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(mockInput);
-
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
-                false,
-                mapper,
-                fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'contentType'");
     }
 
     @Test
@@ -257,7 +238,6 @@ class FileAdapterConfigTest {
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
             assertThat(mapping.get("tagName")).isEqualTo("tag");
-            assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
     }
 
@@ -292,7 +272,6 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat(mapping.get("tagName")).isEqualTo("tag");
-            assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
 
     }
