@@ -532,9 +532,9 @@ public interface ProtocolAdaptersApi {
 
     @POST
     @Path("/adapters/{adapterId}/fieldmappings")
-    @Operation(summary = "Add a new domain tag to the specified adapter",
-               operationId = "add-adapter-domainTags",
-               description = "Add a new domain tag to the specified adapter.",
+    @Operation(summary = "Add new field mappings to the specified adapter",
+               operationId = "add-adapter-fieldMappings",
+               description = "Add new field mappings to the specified adapter.",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
                        @ApiResponse(responseCode = "403",

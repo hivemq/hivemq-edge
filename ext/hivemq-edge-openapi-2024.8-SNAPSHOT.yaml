@@ -3343,36 +3343,6 @@ paths:
       summary: List most recent events in the system
       tags:
       - Events
-  /api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}:
-    put:
-      description: Add an adapter and all related parts like e.g. tags to the system.
-      operationId: create-complete-adapter
-      parameters:
-      - description: The adapter type.
-        in: path
-        name: adaptertype
-        required: true
-        schema:
-          type: string
-      - description: The adapter name.
-        in: path
-        name: adaptername
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdapterConfigModel'
-        description: The new adapter.
-        required: true
-      responses:
-        "200":
-          description: Success
-      summary: Add a new Adapter and all related parts like e.g. tags
-      tags:
-      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters:
     get:
       description: Obtain a list of configured adapters.
@@ -3546,6 +3516,47 @@ paths:
         "400":
           description: Protocol adapter does not support discovery
       summary: Discover a list of available data points
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings:
+    post:
+      description: Add new field mappings to the specified adapter.
+      operationId: add-adapter-fieldMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldMappingsModel'
+        description: The field mappings for incoming and outgoing data
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case an tag is already present
+                    for this tagId.
+                  summary: An example response in case an tag is already present for
+                    this tagId.
+                  value:
+                    errors:
+                    - title: The resource already exists
+                      detail: The tag 'tag' cannot be created since another item already
+                        exists with the same id.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Already Present
+      summary: Add new field mappings to the specified adapter
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
@@ -3858,39 +3869,6 @@ paths:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
       summary: Get the list of all domain tags created in this Edge instance
-      tags:
-      - Protocol Adapters
-  /api/v1/management/protocol-adapters/tags/{tagName}:
-    get:
-      description: Get a domain tag created in this Edge instance
-      operationId: get-domain-tag
-      parameters:
-      - description: The tag name (base64 encoded).
-        in: path
-        name: tagName
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              examples:
-                opc ua domain tags example:
-                  description: An example for domain tags in opc ua
-                  summary: 'Example for domain tags for opc ua '
-                  value:
-                    items:
-                    - tagDefinition:
-                        node: ns=2;i=test
-                      tagName: tag1
-                    - tagDefinition:
-                        node: ns=2;i=test2
-                      tagName: tag2
-              schema:
-                $ref: '#/components/schemas/DomainTag'
-          description: Success
-      summary: Get the domain tag with the given name in this Edge instance
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/tagschemas/{protocolId}:
@@ -4340,16 +4318,6 @@ components:
           description: The adapter type associated with this instance
       required:
       - id
-    AdapterConfigModel:
-      type: object
-      properties:
-        config:
-          $ref: '#/components/schemas/Adapter'
-        tags:
-          type: array
-          description: The tags defined for this adapter
-          items:
-            $ref: '#/components/schemas/DomainTag'
     AdaptersList:
       type: object
       properties:
@@ -4358,8 +4326,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Adapter'
-      required:
-      - items
     ApiBearerToken:
       type: object
       properties:
@@ -4625,8 +4591,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Bridge'
-      required:
-      - items
     BridgeSubscription:
       type: object
       description: remoteSubscriptions associated with the bridge
@@ -4688,8 +4652,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Capability'
-      required:
-      - items
     DataPoint:
       type: object
       properties:
@@ -4810,10 +4772,6 @@ components:
         tagName:
           type: string
           description: The name of the tag that identifies it within this edge instance.
-      required:
-      - protocolId
-      - tagDefinition
-      - tagName
     DomainTagList:
       type: object
       properties:
@@ -4822,8 +4780,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DomainTag'
-      required:
-      - items
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -4897,8 +4853,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Event'
-      required:
-      - items
     Extension:
       type: object
       description: List of result items that are returned by this endpoint
@@ -4938,8 +4892,42 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Extension'
+    FieldMappingMetaDataModel:
+      type: object
+      properties:
+        destination:
+          $ref: '#/components/schemas/JsonNode'
+        source:
+          $ref: '#/components/schemas/JsonNode'
       required:
-      - items
+      - destination
+      - source
+    FieldMappingModel:
+      type: object
+      properties:
+        destination:
+          type: string
+          description: The field name in the outgoing data
+        source:
+          type: string
+          description: The field name in the incoming data.
+        transformation:
+          $ref: '#/components/schemas/JsonNode'
+    FieldMappingsModel:
+      type: object
+      properties:
+        fieldMapping:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldMappingModel'
+        metadata:
+          $ref: '#/components/schemas/FieldMappingMetaDataModel'
+        tag:
+          type: string
+        topicFilter:
+          type: string
+          format: mqtt-topic-filter
+          description: The topic filter according to the MQTT specification.
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5003,8 +4991,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/FsmStateInformationItem'
-      required:
-      - items
     GatewayConfiguration:
       type: object
       properties:
@@ -5113,8 +5099,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Link'
-      required:
-      - items
     Listener:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5160,8 +5144,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Listener'
-      required:
-      - items
     LocalBridgeSubscription:
       type: object
       description: localSubscriptions associated with the bridge
@@ -5229,8 +5211,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Metric'
-      required:
-      - items
     Module:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5278,8 +5258,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Module'
-      required:
-      - items
     Notification:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5308,8 +5286,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Notification'
-      required:
-      - items
     ObjectNode:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5366,8 +5342,6 @@ components:
           type: string
           description: The payload of the sample. The bytes are base64 encoded to
             ensure compatibility even if the payload is a arbitrary byte sequence.
-      required:
-      - payload
     PayloadSampleList:
       type: object
       properties:
@@ -5376,8 +5350,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PayloadSample'
-      required:
-      - items
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations
@@ -5489,8 +5461,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/ProtocolAdapter'
-      required:
-      - items
     Schema:
       type: object
       properties:
@@ -5632,8 +5602,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Status'
-      required:
-      - items
     StatusTransitionCommand:
       type: object
       properties:
@@ -5666,14 +5634,6 @@ components:
         type:
           type: string
           description: The type of the object in transition
-    TagSchema:
-      type: object
-      properties:
-        configSchema:
-          $ref: '#/components/schemas/JsonNode'
-        protocolId:
-          type: string
-          description: The id assigned to the protocol adapter type
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
@@ -5736,8 +5696,6 @@ components:
           type: string
           format: mqtt-topic-filter
           description: The topic filter according to the MQTT specification.
-      required:
-      - topicFilter
     TopicFilterList:
       type: object
       properties:
@@ -5746,8 +5704,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/TopicFilter'
-      required:
-      - items
     TypeIdentifier:
       type: object
       description: The unique id of the event object
@@ -5786,8 +5742,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/ObjectNode'
-      required:
-      - items
     WebsocketConfiguration:
       type: object
       description: websocketConfiguration associated with the bridge

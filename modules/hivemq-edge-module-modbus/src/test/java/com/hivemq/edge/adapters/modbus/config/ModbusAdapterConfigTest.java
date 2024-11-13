@@ -22,7 +22,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -57,15 +57,15 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                         false,
                         mapper,
                         modbusProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -124,15 +124,15 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                         false,
                         mapper,
                         modbusProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -165,13 +165,13 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                         false,
                         mapper,
                         modbusProtocolAdapterFactory);
 
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
     }
@@ -189,7 +189,7 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory))
@@ -208,7 +208,7 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory))
@@ -227,7 +227,7 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory))
@@ -246,7 +246,7 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory))
@@ -265,7 +265,7 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory));
@@ -283,7 +283,7 @@ public class ModbusAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                 false,
                 mapper,
                 modbusProtocolAdapterFactory))

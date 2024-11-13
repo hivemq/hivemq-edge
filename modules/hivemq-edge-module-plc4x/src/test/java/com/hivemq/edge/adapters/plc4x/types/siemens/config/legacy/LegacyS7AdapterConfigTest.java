@@ -25,7 +25,7 @@ import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -58,15 +58,15 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
@@ -116,15 +116,15 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);

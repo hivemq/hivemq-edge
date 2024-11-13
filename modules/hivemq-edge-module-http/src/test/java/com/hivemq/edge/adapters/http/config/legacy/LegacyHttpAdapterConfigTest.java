@@ -23,7 +23,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -58,15 +58,15 @@ public class LegacyHttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         true,
                         mapper,
                         httpProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -98,15 +98,15 @@ public class LegacyHttpAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
                         false,
                         mapper,
                         httpProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final HttpAdapterConfig config = (HttpAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);

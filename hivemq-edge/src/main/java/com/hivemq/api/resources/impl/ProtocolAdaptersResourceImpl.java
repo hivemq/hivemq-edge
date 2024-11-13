@@ -46,6 +46,7 @@ import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -307,6 +308,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Map<String, Object> config =
                 objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
                 });
+
         protocolAdapterManager.updateAdapterConfig(adapterId, config);
         return Response.ok().build();
     }
@@ -645,10 +647,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             @NotNull final String adapterId,
             @NotNull final FieldMappingsModel fieldMappingsModel) {
         final FieldMappings fieldMappings = FieldMappings.fromModel(fieldMappingsModel);
-
-
-
-
-        return null;
+        final DomainTagAddResult domainTagAddResult =
+                protocolAdapterManager.addFieldMappings(adapterId, fieldMappings);
+        System.err.println(domainTagAddResult.getDomainTagPutStatus());
+        return Response.ok().build();
     }
 }

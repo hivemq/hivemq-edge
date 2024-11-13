@@ -40,6 +40,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -56,6 +57,7 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -82,6 +84,7 @@ import static com.hivemq.persistence.domain.DomainTagDeleteResult.DomainTagDelet
 import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND;
 import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.TAG_NOT_FOUND;
 
+@SuppressWarnings("unchecked")
 @Singleton
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
@@ -131,7 +134,9 @@ public class ProtocolAdapterManager {
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
-        protocolAdapterFactoryManager = new ProtocolAdapterFactoryManager(moduleLoader, eventService, protocolAdapterWritingService.writingEnabled());
+        protocolAdapterFactoryManager = new ProtocolAdapterFactoryManager(moduleLoader,
+                eventService,
+                protocolAdapterWritingService.writingEnabled());
     }
 
 
@@ -139,19 +144,19 @@ public class ProtocolAdapterManager {
     public @NotNull ListenableFuture<Void> start() {
 
         log.info("Starting adapters");
-        protocolAdapterWritingService.addWritingChangedCallback(() -> {
-            protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled());
-        });
+        protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
 
         final ImmutableList.Builder<CompletableFuture<Void>> adapterFutures = ImmutableList.builder();
 
         for (final Map.Entry<String, Object> configSection : configPersistence.allAdapters().entrySet()) {
             final String adapterType = getKey(configSection.getKey());
-            final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional = protocolAdapterFactoryManager
-                    .get(adapterType);
+            final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional =
+                    protocolAdapterFactoryManager.get(adapterType);
 
             if (protocolAdapterFactoryOptional.isEmpty()) {
-                return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found."));
+                return Futures.immediateFailedFuture(new IllegalArgumentException("Protocol adapter for config " +
+                        adapterType +
+                        " not found."));
             }
             final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryOptional.get();
             final Object adapterXmlElement = configSection.getValue();
@@ -161,25 +166,30 @@ public class ProtocolAdapterManager {
             } else if (adapterXmlElement instanceof Map) {
                 adapterConfigs = List.of((Map<String, Object>) adapterXmlElement);
             } else {
-                return Futures.immediateFailedFuture(new IllegalArgumentException("Found invalid configuration element for adapter " + adapterType));
+                return Futures.immediateFailedFuture(new IllegalArgumentException(
+                        "Found invalid configuration element for adapter " + adapterType));
             }
 
 
             adapterConfigs.stream()
-                    .map(persistenceMap -> AdapterConfigAndTags.fromAdapterConfigMap(persistenceMap,
+                    .map(persistenceMap -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(persistenceMap,
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory))
                     .forEach(persistence -> {
-                        log.info("Found configuration for adapter {} / {}", persistence.getAdapterConfig().getId(), adapterType);
-                        persistence
-                                .missingTags()
-                                .ifPresent(missing -> {
-                                    throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " + persistence.getAdapterConfig().getId() +": "+ missing);
-                                });
+                        log.info("Found configuration for adapter {} / {}",
+                                persistence.getAdapterConfig().getId(),
+                                adapterType);
+                        persistence.missingTags().ifPresent(missing -> {
+                            throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " +
+                                    persistence.getAdapterConfig().getId() +
+                                    ": " +
+                                    missing);
+                        });
 
-                        final ProtocolAdapterWrapper instance =
-                                createAdapterInstance(protocolAdapterFactory, persistence, versionProvider.getVersion());
+                        final ProtocolAdapterWrapper instance = createAdapterInstance(protocolAdapterFactory,
+                                persistence,
+                                versionProvider.getVersion());
                         protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                                 .getProtocolAdapterInformation()
                                 .getProtocolId());
@@ -188,7 +198,7 @@ public class ProtocolAdapterManager {
                     });
         }
 
-        if(!protocolAdapters.isEmpty()) {
+        if (!protocolAdapters.isEmpty()) {
             configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
         }
 
@@ -201,9 +211,16 @@ public class ProtocolAdapterManager {
         for (final ProtocolAdapterWrapper<?> value : protocolAdapterWrappers) {
             final ProtocolAdapterConfig configObject = value.getConfigObject();
             final List<Tag> tags = value.getTags();
-            final List<Map<String, Object>> convertedTags = tags.stream()
-                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {}))
-                    .collect(Collectors.toList());
+            final List<Map<String, Object>> convertedTags =
+                    tags.stream().map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    })).collect(Collectors.toList());
+
+            final @NotNull List<FieldMappings> fieldMappings = value.getFieldMappings();
+
+            final List<FieldMappingsEntity> fieldMappingsEntities =
+                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+
+
             final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
@@ -218,9 +235,12 @@ public class ProtocolAdapterManager {
                                 //noinspection unchecked
                                 list = (List<Map<String, Object>>) o;
                             }
-                            list.add(Map.of(
-                                    "config", adapterFactory.unconvertConfigObject(objectMapper, configObject),
-                                    "tags", convertedTags));
+                            list.add(Map.of("config",
+                                    adapterFactory.unconvertConfigObject(objectMapper, configObject),
+                                    "tags",
+                                    convertedTags,
+                                    "fieldMappings",
+                                    fieldMappingsEntities));
                             return list;
                         });
             } finally {
@@ -245,7 +265,7 @@ public class ProtocolAdapterManager {
         return key;
     }
 
-    public @NotNull boolean protocolAdapterFactoryExists(final @NotNull String protocolAdapterType) {
+    public boolean protocolAdapterFactoryExists(final @NotNull String protocolAdapterType) {
         Preconditions.checkNotNull(protocolAdapterType);
         return protocolAdapterFactoryManager.get(protocolAdapterType).isPresent();
     }
@@ -442,7 +462,8 @@ public class ProtocolAdapterManager {
             final @NotNull String adapterType,
             final @NotNull String adapterId,
             final @NotNull Map<String, Object> config,
-            final @NotNull List<Map<String, Object>> tagMaps) {
+            final @NotNull List<Map<String, Object>> tagMaps,
+            final @NotNull List<FieldMappings> fieldMappings) {
         Preconditions.checkNotNull(adapterType);
         Preconditions.checkNotNull(adapterId);
         Preconditions.checkNotNull(config);
@@ -455,8 +476,10 @@ public class ProtocolAdapterManager {
             throw new IllegalArgumentException("adapter already exists by id '" + adapterId + "'");
         }
         protocolAdapterMetrics.increaseProtocolAdapterMetric(adapterType);
-        final CompletableFuture<Void> ret = addAdapterInternal(adapterType, config, tagMaps);
-        configPersistence.addAdapter(adapterType, config, tagMaps);
+        final CompletableFuture<Void> ret = addAdapterInternal(adapterType, config, tagMaps, fieldMappings);
+        final List<FieldMappingsEntity> fieldMappingsEntities =
+                fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+        configPersistence.addAdapter(adapterType, config, tagMaps, fieldMappingsEntities);
         return ret;
     }
 
@@ -475,8 +498,8 @@ public class ProtocolAdapterManager {
             throw new IllegalArgumentException("adapter already exists by id '" + adapterId + "'");
         }
         protocolAdapterMetrics.increaseProtocolAdapterMetric(adapterType);
-        final CompletableFuture<Void> ret = addAdapterInternal(adapterType, config, List.of());
-        configPersistence.addAdapter(adapterType, config, List.of());
+        final CompletableFuture<Void> ret = addAdapterInternal(adapterType, config, List.of(), List.of());
+        configPersistence.addAdapter(adapterType, config, List.of(), List.of());
         return ret;
     }
 
@@ -522,48 +545,65 @@ public class ProtocolAdapterManager {
         return false;
     }
 
-    public boolean updateAdapterConfigAndTags(final @NotNull String adapterId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
-        Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId)
-                .map(oldInstance -> {
-                    final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-                    deleteAdapterInternal(adapterId);
-                    addAdapterInternal(protocolId, config, tagMaps);
-                    configPersistence.updateAdapter(protocolId, adapterId, config, tagMaps);
-                    return true;
-                })
-                .orElse(false);
-    }
-
     public boolean updateAdapterConfig(final @NotNull String adapterId, final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId)
-                .map(oldInstance -> {
-                    final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-                    List<Map<String, Object>> tags = oldInstance.getTags().stream()
-                            .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {}))
-                            .collect(Collectors.toList());
-                    deleteAdapterInternal(adapterId);
-                    addAdapterInternal(protocolId, config, tags);
-                    configPersistence.updateAdapter(protocolId, adapterId, config, tags);
-                    return true;
-                })
-                .orElse(false);
+        return getAdapterById(adapterId).map(oldInstance -> {
+            final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
+            List<Map<String, Object>> tags = oldInstance.getTags()
+                    .stream()
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
+            final List<FieldMappings> fieldMappings = oldInstance.getFieldMappings();
+            final List<FieldMappingsEntity> fieldMappingsEntities =
+                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+
+            deleteAdapterInternal(adapterId);
+            addAdapterInternal(protocolId, config, tags, fieldMappings);
+            configPersistence.updateAdapter(protocolId, adapterId, config, tags, fieldMappingsEntities);
+            return true;
+        }).orElse(false);
     }
 
     public boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<Map<String, Object>> tags) {
         Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId)
-                .map(oldInstance -> {
-                    final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-                    final Map<String, Object> config =
-                            objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {});
-                    deleteAdapterInternal(adapterId);
-                    addAdapterInternal(protocolId, config, tags);
-                    configPersistence.updateAdapter(protocolId, adapterId, config, tags);
-                    return true;
-                })
-                .orElse(false);
+        return getAdapterById(adapterId).map(oldInstance -> {
+            final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
+            final Map<String, Object> config =
+                    objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {
+                    });
+            final List<FieldMappings> fieldMappings = oldInstance.getFieldMappings();
+            final List<FieldMappingsEntity> fieldMappingsEntities =
+                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+            deleteAdapterInternal(adapterId);
+            addAdapterInternal(protocolId, config, tags, fieldMappings);
+            configPersistence.updateAdapter(protocolId, adapterId, config, tags, fieldMappingsEntities);
+            return true;
+        }).orElse(false);
+    }
+
+    public boolean updateAdapterFieldMappings(
+            final @NotNull String adapterId,
+            final @NotNull List<FieldMappings> fieldMappings) {
+        Preconditions.checkNotNull(adapterId);
+        return getAdapterById(adapterId).map(oldInstance -> {
+            final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
+            final Map<String, Object> config =
+                    objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {
+                    });
+            final List<Map<String, Object>> tagsAsMaps = oldInstance.getTags()
+                    .stream()
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
+            final List<FieldMappingsEntity> fieldMappingsEntities =
+                    fieldMappings.stream().map(FieldMappingsEntity::from).collect(Collectors.toList());
+
+            deleteAdapterInternal(adapterId);
+            addAdapterInternal(protocolId, config, tagsAsMaps, fieldMappings);
+            configPersistence.updateAdapter(protocolId, adapterId, config, tagsAsMaps, fieldMappingsEntities);
+            return true;
+        }).orElse(false);
     }
 
     public @NotNull Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> getAdapterById(final @NotNull String id) {
@@ -589,7 +629,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull ProtocolAdapterWrapper createAdapterInstance(
             final @NotNull ProtocolAdapterFactory<?> protocolAdapterFactory,
-            final @NotNull AdapterConfigAndTags config,
+            final @NotNull AdapterConfigAndTagsAndFieldMappings config,
             final @NotNull String version) {
 
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -613,8 +653,7 @@ public class ProtocolAdapterManager {
                             protocolAdapterWritingService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(
-                                    config.getAdapterConfig(),
+                            new ProtocolAdapterInputImpl(config.getAdapterConfig(),
                                     config.getTags(),
                                     version,
                                     protocolAdapterState,
@@ -623,14 +662,14 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
-                    protocolAdapterMetricsService,
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapterMetricsService,
                     protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     protocolAdapterState,
                     config.getAdapterConfig(),
-                    config.getTags());
+                    config.getTags(),
+                    config.getFieldMappings());
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -640,26 +679,29 @@ public class ProtocolAdapterManager {
     }
 
     private @NotNull CompletableFuture<Void> addAdapterInternal(
-            final @NotNull String adapterType, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+            final @NotNull String adapterType,
+            final @NotNull Map<String, Object> config,
+            final @NotNull List<Map<String, Object>> tagMaps,
+            final @NotNull List<FieldMappings> fieldMappings) {
 
         synchronized (lock) {
 
-            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager
-                    .get(adapterType)
-                    .orElseThrow(() -> new IllegalArgumentException("No factory found for adapter type " + adapterType));
+            final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryManager.get(adapterType)
+                    .orElseThrow(() -> new IllegalArgumentException("No factory found for adapter type " +
+                            adapterType));
 
-            final AdapterConfigAndTags persistence =
-                    AdapterConfigAndTags.fromAdapterConfigMap(
-                            Map.of("config", config, "tags", tagMaps),
+            final AdapterConfigAndTagsAndFieldMappings persistence =
+                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(Map.of("config", config, "tags", tagMaps, "fieldMappings", fieldMappings),
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory);
 
-            persistence
-                    .missingTags()
-                    .ifPresent(missing -> {
-                        throw new IllegalArgumentException("Tags used in mappings but used in adapter " + persistence.getAdapterConfig().getId() +": "+ missing);
-                    });
+            persistence.missingTags().ifPresent(missing -> {
+                throw new IllegalArgumentException("Tags used in mappings but used in adapter " +
+                        persistence.getAdapterConfig().getId() +
+                        ": " +
+                        missing);
+            });
 
             final ProtocolAdapterWrapper instance =
                     createAdapterInstance(protocolAdapterFactory, persistence, versionProvider.getVersion());
@@ -673,91 +715,88 @@ public class ProtocolAdapterManager {
     }
 
 
-    public @NotNull DomainTagAddResult addDomainTag(final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
-        return getAdapterById(adapterId)
-                .map(adapter -> {
-                    final List<Tag> tags = adapter.getTags();
-                    final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
-                    if(!alreadyExists) {
-                        final List<Map<String, Object>> tagMaps = tags.stream()
-                                .map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                                }))
-                                .collect(Collectors.toList());
-                        tagMaps.add(domainTag.toTagMap());
-                        updateAdapterTags(adapterId, tagMaps);
-                        return DomainTagAddResult.success();
-                    } else {
-                        return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
-                    }
-                }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
+    public @NotNull DomainTagAddResult addDomainTag(
+            final @NotNull String adapterId,
+            final @NotNull DomainTag domainTag) {
+        return getAdapterById(adapterId).map(adapter -> {
+            final List<Tag> tags = adapter.getTags();
+            final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
+            if (!alreadyExists) {
+                final List<Map<String, Object>> tagMaps =
+                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                        })).collect(Collectors.toList());
+                tagMaps.add(domainTag.toTagMap());
+                updateAdapterTags(adapterId, tagMaps);
+                return DomainTagAddResult.success();
+            } else {
+                return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
+            }
+        }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
     }
 
     public @NotNull DomainTagUpdateResult updateDomainTag(final @NotNull DomainTag domainTag) {
         String adapterId = domainTag.getAdapterId();
-        return getAdapterById(adapterId)
-                .map(adapter -> {
-                    final List<Tag> tags = adapter.getTags();
-                    final boolean alreadyExists = tags.removeIf(t -> t.getName().equals(domainTag.getTagName()));
-                    if(alreadyExists) {
-                        final List<Map<String, Object>> tagMaps = tags.stream()
-                                .map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                                }))
-                                .collect(Collectors.toList());
-                        tagMaps.add(domainTag.toTagMap());
-                        updateAdapterTags(adapterId, tagMaps);
-                        return DomainTagUpdateResult.success();
-                    } else {
-                        return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
-                    }
-                }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
+        return getAdapterById(adapterId).map(adapter -> {
+            final List<Tag> tags = adapter.getTags();
+            final boolean alreadyExists = tags.removeIf(t -> t.getName().equals(domainTag.getTagName()));
+            if (alreadyExists) {
+                final List<Map<String, Object>> tagMaps =
+                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                        })).collect(Collectors.toList());
+                tagMaps.add(domainTag.toTagMap());
+                updateAdapterTags(adapterId, tagMaps);
+                return DomainTagUpdateResult.success();
+            } else {
+                return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
+            }
+        }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
     public DomainTagUpdateResult updateDomainTags(final String adapterId, final Set<DomainTag> domainTags) {
         Set<String> tagNames = domainTags.stream().map(t -> t.getTagName()).collect(Collectors.toSet());
-        return getAdapterById(adapterId)
-                .map(adapter -> {
-                    final List<Tag> tags = adapter.getTags();
-                    final boolean alreadyExists = tags.removeIf(t -> tagNames.contains(t.getName()));
-                    if(alreadyExists) {
-                        final List<Map<String, Object>> tagMaps = tags.stream()
-                                .map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                                }))
-                                .collect(Collectors.toList());
-                        domainTags.forEach(dt -> tagMaps.add(dt.toTagMap()));
-                        updateAdapterTags(adapterId, tagMaps);
-                        return DomainTagUpdateResult.success();
-                    } else {
-                        return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
-                    }
-                }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
+        return getAdapterById(adapterId).map(adapter -> {
+            final List<Tag> tags = adapter.getTags();
+            final boolean alreadyExists = tags.removeIf(t -> tagNames.contains(t.getName()));
+            if (alreadyExists) {
+                final List<Map<String, Object>> tagMaps =
+                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                        })).collect(Collectors.toList());
+                domainTags.forEach(dt -> tagMaps.add(dt.toTagMap()));
+                updateAdapterTags(adapterId, tagMaps);
+                return DomainTagUpdateResult.success();
+            } else {
+                return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
+            }
+        }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
     public DomainTagDeleteResult deleteDomainTag(final String adapterId, final String tagName) {
-        return getAdapterById(adapterId)
-                .map(adapter -> {
-                    final List<Tag> tags = adapter.getTags();
-                    final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
-                    if(exists) {
-                        final List<Map<String, Object>> tagMaps = tags.stream()
-                                .map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {}))
-                                .collect(Collectors.toList());
-                        updateAdapterTags(adapterId, tagMaps);
-                        return DomainTagDeleteResult.success();
-                    } else {
-                        return DomainTagDeleteResult.failed(NOT_FOUND, adapterId);
-                    }
-                }).orElse(DomainTagDeleteResult.failed(NOT_FOUND, adapterId));
+        return getAdapterById(adapterId).map(adapter -> {
+            final List<Tag> tags = adapter.getTags();
+            final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
+            if (exists) {
+                final List<Map<String, Object>> tagMaps =
+                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                        })).collect(Collectors.toList());
+                updateAdapterTags(adapterId, tagMaps);
+                return DomainTagDeleteResult.success();
+            } else {
+                return DomainTagDeleteResult.failed(NOT_FOUND, adapterId);
+            }
+        }).orElse(DomainTagDeleteResult.failed(NOT_FOUND, adapterId));
     }
 
     public List<DomainTag> getDomainTags() {
-        return getProtocolAdapters().values().stream()
-                .flatMap(adapter ->
-                        adapter.getTags().stream().map(tag -> new DomainTag(
-                                tag.getName(),
+        return getProtocolAdapters().values()
+                .stream()
+                .flatMap(adapter -> adapter.getTags()
+                        .stream()
+                        .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {}))))
+                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                                }))))
                 .collect(Collectors.toList());
     }
 
@@ -776,34 +815,53 @@ public class ProtocolAdapterManager {
     }
 
     public Optional<List<DomainTag>> getTagsForAdapter(final String adapterId) {
-        return getAdapterById(adapterId)
-                .map(adapter ->
-                        adapter.getTags().stream().map(tag -> new DomainTag(
-                                tag.getName(),
-                                adapter.getId(),
-                                adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {})))
-                                .collect(Collectors.toList()));
+        return getAdapterById(adapterId).map(adapter -> adapter.getTags()
+                .stream()
+                .map(tag -> new DomainTag(tag.getName(),
+                        adapter.getId(),
+                        adapter.getProtocolAdapterInformation().getProtocolId(),
+                        tag.getDescription(),
+                        objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                        })))
+                .collect(Collectors.toList()));
     }
 
     public Optional<DomainTag> getTag(final String tagName) {
-        return getProtocolAdapters().values().stream()
+        return getProtocolAdapters().values()
+                .stream()
                 .map(adapter -> adapter.getTags()
-                                        .stream()
-                                        .filter(t -> t.getName().equals(tagName))
-                                        .map(tag -> new DomainTag(tag.getName(),
-                                                adapter.getId(),
-                                                adapter.getProtocolAdapterInformation().getProtocolId(),
-                                                tag.getDescription(),
-                                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                                                })))
-                                        .findFirst()
-                )
+                        .stream()
+                        .filter(t -> t.getName().equals(tagName))
+                        .map(tag -> new DomainTag(tag.getName(),
+                                adapter.getId(),
+                                adapter.getProtocolAdapterInformation().getProtocolId(),
+                                tag.getDescription(),
+                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                                })))
+                        .findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
     }
+
+    public @NotNull DomainTagAddResult addFieldMappings(
+            final @NotNull String adapterId,
+            final @NotNull FieldMappings fieldMappings) {
+        return getAdapterById(adapterId).map(adapter -> {
+            final @NotNull List<FieldMappings> presentMappings = adapter.getFieldMappings();
+            final boolean alreadyExists =
+                    presentMappings.stream().anyMatch(t -> t.getTopicFilter().equals(fieldMappings.getTopicFilter()));
+            if (!alreadyExists) {
+                final ArrayList<FieldMappings> newFieldMappings = new ArrayList<>(presentMappings);
+                newFieldMappings.add(fieldMappings);
+                updateAdapterFieldMappings(adapterId, newFieldMappings);
+                return DomainTagAddResult.success();
+            } else {
+                return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
+            }
+        }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
+    }
+
 
     public static class ProtocolAdapterInputImpl<T extends ProtocolAdapterConfig> implements ProtocolAdapterInput<T> {
         public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();

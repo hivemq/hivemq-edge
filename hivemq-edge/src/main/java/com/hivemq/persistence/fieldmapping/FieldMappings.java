@@ -1,6 +1,8 @@
 package com.hivemq.persistence.fieldmapping;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.mapping.FieldMappingsModel;
+import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -47,5 +49,18 @@ public class FieldMappings {
 
     public @NotNull String getTopicFilter() {
         return topicFilter;
+    }
+
+    public static FieldMappings fromEntity(final @NotNull FieldMappingsEntity fieldMappingsEntity, final @NotNull
+                                           ObjectMapper objectMapper) {
+
+        final List<FieldMapping> fieldMappingList = fieldMappingsEntity.getFieldMappingModels()
+                .stream()
+                .map(FieldMapping::from)
+                .collect(Collectors.toList());
+
+        return new FieldMappings(fieldMappingsEntity.getTopicFilter(), fieldMappingsEntity.getTagName(), fieldMappingList, FieldMappingMetaData.fromEntity(fieldMappingsEntity.getMetaData(), objectMapper));
+
+
     }
 }

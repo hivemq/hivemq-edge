@@ -15,6 +15,7 @@
  */
 package com.hivemq.protocols;
 
+import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ import java.util.Map;
 /**
  * This class doesn't make use of caching in any way.
  * Config is kept in memory so reading operations are fast.
- *
+ * <p>
  * Beyond that this class is used to get all config interactions into one place for easier reqorks in the future.
  */
 public class ConfigPersistence {
@@ -46,28 +47,38 @@ public class ConfigPersistence {
     }
 
     public synchronized void updateAllAdapters(final @NotNull Map<String, Object> adapterConfigs) {
-        adapterConfigs.entrySet().stream()
-                .flatMap(e -> ((List<Map<String,Object>>) e.getValue()).stream())
+        adapterConfigs.entrySet()
+                .stream()
+                .flatMap(e -> ((List<Map<String, Object>>) e.getValue()).stream())
                 .forEach(v -> {
-                    if(!v.containsKey("config")) {
+                    if (!v.containsKey("config")) {
                         throw new IllegalArgumentException("Missing config");
                     }
                 });
         configurationService.protocolAdapterConfigurationService().setAllConfigs(adapterConfigs);
     }
 
-    public synchronized void addAdapter(final @NotNull String protocolId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+    public synchronized void addAdapter(
+            final @NotNull String protocolId,
+            final @NotNull Map<String, Object> config,
+            final @NotNull List<Map<String, Object>> tagMaps,
+            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
-        adapterList.add(combine(config, tagMaps));
+        adapterList.add(combine(config, tagMaps, fieldMappingsEntities));
         updateAllAdapters(mainMap);
     }
 
-    public synchronized void updateAdapter(final @NotNull String protocolId, final @NotNull String adapterId, final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
+    public synchronized void updateAdapter(
+            final @NotNull String protocolId,
+            final @NotNull String adapterId,
+            final @NotNull Map<String, Object> config,
+            final @NotNull List<Map<String, Object>> tagMaps,
+            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
-        if(adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>)instance.get("config")).get("id")))) {
-            adapterList.add(combine(config, tagMaps));
+        if (adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>) instance.get("config")).get("id")))) {
+            adapterList.add(combine(config, tagMaps, fieldMappingsEntities));
         } else {
             log.error("Tried updating non existing adapter {} of type {}", adapterId, protocolId);
         }
@@ -77,18 +88,22 @@ public class ConfigPersistence {
     public synchronized void deleteAdapter(final @NotNull String adapterId, final @NotNull String protocolId) {
         final Map<String, Object> mainMap = allAdapters();
         final List<Map<String, Object>> adapterList = getAdapterListForType(mainMap, protocolId);
-        if (adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>)instance.get("config")).get("id")))) {
+        if (adapterList.removeIf(instance -> adapterId.equals(((Map<String, Object>) instance.get("config")).get("id")))) {
             updateAllAdapters(mainMap);
         } else {
             log.error("Tried deleting non existing adapter {} of type {}", adapterId, protocolId);
         }
     }
 
-    public Map<String, Object> combine(final @NotNull Map<String, Object> config, final @NotNull List<Map<String, Object>> tagMaps) {
-        return Map.of("config", config, "tags", tagMaps);
+    public Map<String, Object> combine(
+            final @NotNull Map<String, Object> config,
+            final @NotNull List<Map<String, Object>> tagMaps,
+            final @NotNull List<FieldMappingsEntity> fieldMappingsEntities) {
+        return Map.of("config", config, "tags", tagMaps, "fieldMappings", fieldMappingsEntities);
     }
 
-    private @NotNull List<Map<String, Object>> getAdapterListForType(final @NotNull Map<String, Object> mainMap, final @NotNull String adapterType) {
+    private @NotNull List<Map<String, Object>> getAdapterListForType(
+            final @NotNull Map<String, Object> mainMap, final @NotNull String adapterType) {
 
         final List<Map<String, Object>> adapterList;
         final Object o = mainMap.get(adapterType);
