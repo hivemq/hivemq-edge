@@ -21,6 +21,8 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import com.hivemq.protocols.AdapterConfigAndTags;
@@ -81,7 +83,6 @@ class LegacyS7AdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.BOOL);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
@@ -90,12 +91,16 @@ class LegacyS7AdapterConfigTest {
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
-            assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.BOOL);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
         });
+
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(
+                        new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.BOOL)),
+                        new Plc4xTag("my-tag-name-2", "not set", new Plc4xTagDefinition("%I205.0", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
@@ -136,13 +141,14 @@ class LegacyS7AdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.SINT);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
         });
 
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.SINT)));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

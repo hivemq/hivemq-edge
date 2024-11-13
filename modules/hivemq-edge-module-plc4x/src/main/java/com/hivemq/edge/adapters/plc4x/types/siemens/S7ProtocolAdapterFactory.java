@@ -73,14 +73,13 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),"not set",
-                    new Plc4xTagDefinition(subscription.getTagAddress())));
+                    new Plc4xTagDefinition(subscription.getTagAddress(), subscription.getDataType())));
                     plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
                             subscription.getMqttQos(),
                             subscription.getMessageHandlingOptions(),
                             subscription.getIncludeTimestamp(),
                             subscription.getIncludeTagNames(),
                             subscription.getTagName(),
-                            subscription.getDataType(),
                             subscription.getUserProperties()));
         }
 

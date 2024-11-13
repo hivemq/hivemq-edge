@@ -21,6 +21,8 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.protocols.AdapterConfigAndTags;
@@ -134,8 +136,10 @@ class LegacyADSAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.STRING);
         });
+
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(new Plc4xTag("my-tag-name", "not set", new Plc4xTagDefinition("MYPROGRAM.MyStringVar", Plc4xDataType.DATA_TYPE.STRING)));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

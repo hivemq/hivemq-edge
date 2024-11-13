@@ -23,6 +23,8 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
 import com.hivemq.protocols.AdapterConfigAndTags;
 import org.jetbrains.annotations.NotNull;
@@ -150,8 +152,12 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-            assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.BOOL);
         });
+
+        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+
+        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+            .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
@@ -186,7 +192,7 @@ class ADSAdapterConfigTest {
                 false,
                 true,
                 "tag-name",
-                Plc4xDataType.DATA_TYPE.BOOL, List.of(new MqttUserProperty("my-name", "my-value")));
+                List.of(new MqttUserProperty("my-name", "my-value")));
 
         final ADSAdapterConfig adsAdapterConfig = new ADSAdapterConfig("my-ads-adapter",
                 14,

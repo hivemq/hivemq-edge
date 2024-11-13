@@ -31,7 +31,6 @@
                         <adsToMqttMapping>
                             <mqttTopic>my/topic</mqttTopic>
                             <tagName>tag-name</tagName>
-                            <dataType>BOOL</dataType>
                         </adsToMqttMapping>
                     </adsToMqttMappings>
                 </adsToMqtt>
@@ -42,6 +41,7 @@
                     <description>description</description>
                     <definition>
                         <tagAddress>123</tagAddress>
+                        <dataType>BOOL</dataType>
                     </definition>
                 </tag>
             </tags>
