@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ShortNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
@@ -50,9 +51,9 @@ public class BuiltinJsonSchema {
         try {
             classToJsonSchema.put(BuiltinDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", BuiltinDataType.Boolean));
-            final JsonNode byteJsonSchema = createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.String);
-            classToJsonSchema.put(BuiltinDataType.SByte, byteJsonSchema);
-            classToJsonSchema.put(BuiltinDataType.Byte, byteJsonSchema);
+
+            classToJsonSchema.put(BuiltinDataType.SByte, createJsonSchemaForBuiltinType(" SByte JsonSchema", BuiltinDataType.SByte));
+            classToJsonSchema.put(BuiltinDataType.Byte, createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.Byte));
 
             classToJsonSchema.put(BuiltinDataType.UInt64,
                     createJsonSchemaForBuiltinType("UInt64 JsonSchema", BuiltinDataType.UInt64));
@@ -137,7 +138,15 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("type", new TextNode("boolean"));
                 return;
             case SByte:
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Byte.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(Byte.MAX_VALUE));
+                return;
             case Byte:
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(UByte.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(UByte.MAX_VALUE));
+                return;
             case String:
             case Guid:
             case ByteString:
@@ -181,7 +190,7 @@ public class BuiltinJsonSchema {
                 return;
             case Float:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new FloatNode(Float.MIN_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new FloatNode(-Float.MAX_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new FloatNode(Float.MAX_VALUE));
                 return;
             case Double:

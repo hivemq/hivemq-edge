@@ -7,11 +7,8 @@ import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.exceptions.TagDefinitionParseException;
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -23,7 +20,6 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
@@ -88,16 +84,14 @@ public class OpcUaClientWrapper {
             final @NotNull OpcuaTag tag, final @NotNull TagSchemaCreationOutput output) {
 
         final String nodeId = tag.getDefinition().getNode();
-        jsonSchemaGenerator
-                .ifPresentOrElse(
-                        gen -> gen.createJsonSchema(NodeId.parse(nodeId)).whenComplete((jsonNode, throwable) -> {
-                            if (throwable != null) {
-                                output.fail(throwable, null);
-                            } else {
-                                output.finish(jsonNode);
-                            }}),
-                        () -> output.fail(new IllegalArgumentException("Missing JSON Schema generator"), null)
-                );
+        jsonSchemaGenerator.ifPresentOrElse(gen -> gen.createJsonSchema(NodeId.parse(nodeId))
+                .whenComplete((jsonNode, throwable) -> {
+                    if (throwable != null) {
+                        output.fail(throwable, null);
+                    } else {
+                        output.finish(jsonNode);
+                    }
+                }), () -> output.fail(new IllegalArgumentException("Missing JSON Schema generator"), null));
     }
 
     public void discoverValues(
@@ -136,31 +130,37 @@ public class OpcUaClientWrapper {
         });
     }
 
-    public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput, final @NotNull OpcuaTag opcuaTag) {
+    public void write(
+            final @NotNull WritingInput writingInput,
+            final @NotNull WritingOutput writingOutput,
+            final @NotNull OpcuaTag opcuaTag) {
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) writingInput.getWritingPayload();
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) writingInput.getWritingContext();
         log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
 
         final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
 
-        jsonToOpcUAConverter.map(conv -> conv.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId))
-                .ifPresentOrElse(opcUaObject -> {
-                    final Variant variant = new Variant(opcUaObject);
-                    final DataValue dataValue = new DataValue(variant, null, null);
-                    final CompletableFuture<StatusCode> writeFuture = client.writeValue(nodeId, dataValue);
-                    writeFuture.whenComplete((statusCode, throwable) -> {
-                        if (throwable != null) {
-                            log.error("Exception while writing to opcua node '{}'",
-                                    writeContext.getTagName(),
-                                    throwable);
-                            writingOutput.fail(throwable, null);
-                        } else {
-                            log.info("Wrote '{}' to nodeId={}", variant, nodeId);
-                            writingOutput.finish();
-                        }
-                    });
-                }, () -> writingOutput.fail("JsonToOpcUaConverter not available"));
-
+        try {
+            jsonToOpcUAConverter.map(conv -> conv.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId))
+                    .ifPresentOrElse(opcUaObject -> {
+                        final Variant variant = new Variant(opcUaObject);
+                        final DataValue dataValue = new DataValue(variant, null, null);
+                        final CompletableFuture<StatusCode> writeFuture = client.writeValue(nodeId, dataValue);
+                        writeFuture.whenComplete((statusCode, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Exception while writing to opcua node '{}'",
+                                        writeContext.getTagName(),
+                                        throwable);
+                                writingOutput.fail(throwable, null);
+                            } else {
+                                log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                                writingOutput.finish();
+                            }
+                        });
+                    }, () -> writingOutput.fail("JsonToOpcUaConverter not available"));
+        } catch (final Exception e) {
+            writingOutput.fail(e, null);
+        }
     }
 
     private static @NotNull CompletableFuture<Void> browse(
@@ -268,8 +268,7 @@ public class OpcUaClientWrapper {
         });
         opcUaClient.addFaultListener(serviceFault -> {
             log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", id, serviceFault);
-            eventService
-                    .createAdapterEvent(adapterConfig.getId(), protocolId)
+            eventService.createAdapterEvent(adapterConfig.getId(), protocolId)
                     .withSeverity(Event.SEVERITY.ERROR)
                     .withPayload(serviceFault.getResponseHeader().getServiceResult())
                     .withMessage("A Service Fault was Detected.")
