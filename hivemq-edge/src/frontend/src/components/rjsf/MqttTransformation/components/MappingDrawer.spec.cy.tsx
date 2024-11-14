@@ -80,7 +80,13 @@ describe('MappingDrawer', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(
-      <MappingDrawer onClose={cy.stub()} onSubmit={cy.stub()} onChange={cy.stub()} item={MOCK_SUBS} />
+      <MappingDrawer
+        adapterId="testid"
+        onClose={cy.stub()}
+        onSubmit={cy.stub()}
+        onChange={cy.stub()}
+        item={MOCK_SUBS}
+      />
     )
 
     cy.wait('@getTags')
