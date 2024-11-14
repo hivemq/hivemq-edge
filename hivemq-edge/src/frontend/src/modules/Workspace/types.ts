@@ -78,7 +78,6 @@ export interface TopicTreeMetadata {
   count: number
 }
 
-/**
- * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
- */
-export type DeviceMetadata = ProtocolAdapter
+export interface DeviceMetadata extends ProtocolAdapter {
+  sourceAdapterId?: string
+}

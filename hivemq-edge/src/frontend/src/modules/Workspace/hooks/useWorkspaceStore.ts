@@ -9,7 +9,7 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow'
-import { Group, NodeTypes, WorkspaceState, WorkspaceAction } from '@/modules/Workspace/types.ts'
+import { Group, NodeTypes, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Adapter } from '@/api/__generated__'
 
@@ -81,8 +81,12 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
       },
       onDeleteNode: (type: NodeTypes, adapterId: string) => {
         set({
-          nodes: get().nodes.filter((e) => {
-            return !(e.type === type && (e.data as Adapter).id === adapterId)
+          nodes: get().nodes.filter((node) => {
+            const isThisTheAdapter = node.type === type && (node.data as Adapter).id === adapterId
+            const isThisTheDevice =
+              node.type === NodeTypes.DEVICE_NODE && (node.data as DeviceMetadata).sourceAdapterId == adapterId
+
+            return !isThisTheAdapter && !isThisTheDevice
           }),
         })
       },
