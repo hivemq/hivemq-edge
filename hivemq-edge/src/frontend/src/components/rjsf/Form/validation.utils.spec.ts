@@ -15,9 +15,9 @@ enum Messages {
   noWildCards = 'Wildcards + and # are not allowed',
   noWildCardsSharedName = 'Wildcards + and # are not allowed in a shared name',
   noEmptySharedName = 'Shared name cannot be empty',
-  noMultiLevelString = 'Wildcard # must not be followed or preceded by any string',
-  noSingleLevelString = 'Wildcard + must not used inside a string',
-  noSingleLevelFinal = 'Wildcard + must be followed by the segment end character `/`',
+  noMultiLevelString = 'Wildcard # must not be followed or preceded by any character',
+  noSingleLevelString = 'Wildcard + must not be followed or preceded by any character',
+  noSingleLevelFinal = 'Wildcard + must be followed by the end-of-segment `/`',
 }
 
 interface ValidationTestSuite {
@@ -129,9 +129,9 @@ describe('customLocalizer', () => {
     customLocalizer(errors)
     expect(errors).toStrictEqual([
       expect.objectContaining({ message: "must have required property 'tag'" }),
-      expect.objectContaining({ message: 'Wildcards + and # are not allowed' }),
-      expect.objectContaining({ message: 'Wildcards + and # are not allowed' }),
-      expect.objectContaining({ message: 'Wildcard + must not used inside a string' }),
+      expect.objectContaining({ message: Messages.noWildCards }),
+      expect.objectContaining({ message: Messages.noWildCards }),
+      expect.objectContaining({ message: Messages.noSingleLevelString }),
     ])
   })
 })
