@@ -646,8 +646,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             @NotNull final String adapterId, @NotNull final FieldMappingsModel fieldMappingsModel) {
         final FieldMappings fieldMappings = FieldMappings.fromModel(fieldMappingsModel);
         final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addFieldMappings(adapterId, fieldMappings);
-        System.err.println(domainTagAddResult.getDomainTagPutStatus());
-        return Response.ok().build();
+        switch (domainTagAddResult.getDomainTagPutStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case ALREADY_EXISTS:
+                return ErrorResponseUtil.alreadyExists("The field mappings for topic filter'" +
+                        fieldMappingsModel.getTopicFilter() +
+                        "' cannot be created since another item already exists for the same topic filter.");
+            case ADAPTER_MISSING:
+                return ErrorResponseUtil.notFound("adapter", adapterId);
+        }
+        return Response.serverError().build();
     }
 
     @Override
