@@ -2,10 +2,11 @@ package com.hivemq.api.model.mapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.bouncycastle.asn1.cms.MetaData;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FieldMappingsModel {
 
@@ -34,6 +35,15 @@ public class FieldMappingsModel {
         this.tagName = tagName;
         this.fieldMappingModels = fieldMappingModels;
         this.metaData = metaData;
+    }
+
+    public static @NotNull FieldMappingsModel from(final @NotNull FieldMappings fieldMappings) {
+        final List<FieldMappingModel> fieldMappingModels =
+                fieldMappings.getFieldMappings().stream().map(FieldMappingModel::from).collect(Collectors.toList());
+        return new FieldMappingsModel(fieldMappings.getTopicFilter(),
+                fieldMappings.getTagName(),
+                fieldMappingModels,
+                FieldMappingMetaDataModel.from(fieldMappings.getMetaData()));
     }
 
     public @NotNull List<FieldMappingModel> getFieldMappingModels() {

@@ -35,7 +35,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
@@ -189,9 +188,8 @@ public class ProtocolAdapterManager {
                                     missing);
                         });
 
-                        final ProtocolAdapterWrapper instance = createAdapterInstance(protocolAdapterFactory,
-                                config,
-                                versionProvider.getVersion());
+                        final ProtocolAdapterWrapper instance =
+                                createAdapterInstance(protocolAdapterFactory, config, versionProvider.getVersion());
                         protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                                 .getProtocolAdapterInformation()
                                 .getProtocolId());
@@ -707,12 +705,10 @@ public class ProtocolAdapterManager {
                             adapterType));
 
             final AdapterConfigAndTagsAndFieldMappings persistence =
-                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(Map.of("config",
+                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMapAndFieldMappings(Map.of("config",
                             config,
                             "tags",
-                            tagMaps,
-                            TAG_MAPPING_KEY,
-                            fieldMappings), writingEnabled(), objectMapper, protocolAdapterFactory);
+                            tagMaps), writingEnabled(), objectMapper, protocolAdapterFactory, fieldMappings);
 
             persistence.missingTags().ifPresent(missing -> {
                 throw new IllegalArgumentException("Tags used in mappings but used in adapter " +
@@ -769,7 +765,9 @@ public class ProtocolAdapterManager {
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
-    public DomainTagUpdateResult updateDomainTags(final String adapterId, final Set<DomainTag> domainTags) {
+    public @NotNull DomainTagUpdateResult updateDomainTags(
+            final @NotNull String adapterId,
+            final Set<DomainTag> domainTags) {
         Set<String> tagNames = domainTags.stream().map(t -> t.getTagName()).collect(Collectors.toSet());
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
@@ -787,7 +785,9 @@ public class ProtocolAdapterManager {
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
-    public DomainTagDeleteResult deleteDomainTag(final String adapterId, final String tagName) {
+    public @NotNull DomainTagDeleteResult deleteDomainTag(
+            final @NotNull String adapterId,
+            final @NotNull String tagName) {
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
             final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
@@ -803,7 +803,7 @@ public class ProtocolAdapterManager {
         }).orElse(DomainTagDeleteResult.failed(NOT_FOUND, adapterId));
     }
 
-    public List<DomainTag> getDomainTags() {
+    public @NotNull List<DomainTag> getDomainTags() {
         return getProtocolAdapters().values()
                 .stream()
                 .flatMap(adapter -> adapter.getTags()
@@ -831,7 +831,7 @@ public class ProtocolAdapterManager {
                 .findFirst();
     }
 
-    public Optional<List<DomainTag>> getTagsForAdapter(final String adapterId) {
+    public @NotNull Optional<List<DomainTag>> getTagsForAdapter(final @NotNull String adapterId) {
         return getAdapterById(adapterId).map(adapter -> adapter.getTags()
                 .stream()
                 .map(tag -> new DomainTag(tag.getName(),
@@ -843,7 +843,7 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toList()));
     }
 
-    public Optional<DomainTag> getTag(final String tagName) {
+    public @NotNull Optional<DomainTag> getTag(final @NotNull String tagName) {
         return getProtocolAdapters().values()
                 .stream()
                 .map(adapter -> adapter.getTags()
@@ -876,6 +876,19 @@ public class ProtocolAdapterManager {
                 return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
             }
         }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
+    }
+
+
+    public @NotNull Optional<List<FieldMappings>> getFieldMappingsForAdapter(final @NotNull String adapterId) {
+        return getAdapterById(adapterId).map(adapter -> new ArrayList<>(adapter.getFieldMappings()));
+    }
+
+
+    public @NotNull List<FieldMappings> getFieldMappings() {
+        return getProtocolAdapters().values()
+                .stream()
+                .flatMap(adapter -> adapter.getFieldMappings().stream())
+                .collect(Collectors.toList());
     }
 
 

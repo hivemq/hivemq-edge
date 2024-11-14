@@ -35,7 +35,7 @@ public class FieldMappings {
                 FieldMappingMetaData.fromModel(model.getMetaData()));
     }
 
-    public @NotNull List<FieldMapping> getFieldMappingModels() {
+    public @NotNull List<FieldMapping> getFieldMappings() {
         return fieldMappings;
     }
 

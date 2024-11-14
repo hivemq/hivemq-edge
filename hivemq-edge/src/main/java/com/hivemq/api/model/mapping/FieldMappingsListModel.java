@@ -7,10 +7,10 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 
-public class FieldMappingListModel extends ItemsResponse<FieldMappingsModel> {
+public class FieldMappingsListModel extends ItemsResponse<FieldMappingsModel> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public FieldMappingListModel(
+    public FieldMappingsListModel(
             @JsonProperty("items") final @NotNull List<FieldMappingsModel> items) {
         super(items);
     }

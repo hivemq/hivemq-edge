@@ -1,6 +1,7 @@
 package com.hivemq.persistence.fieldmapping;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.api.model.mapping.TransformationModel;
 import com.hivemq.configuration.entity.adapter.TransformationEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -13,7 +14,7 @@ public class Transformation {
         return new Transformation();
     }
 
-    public static Transformation fromModel(final @NotNull JsonNode transformation) {
+    public static Transformation fromModel(final @NotNull TransformationModel transformation) {
         return new Transformation();
     }
 }

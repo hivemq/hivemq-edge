@@ -37,10 +37,7 @@ public class FieldMappingsEntity {
 
     public static @NotNull FieldMappingsEntity from(final @NotNull FieldMappings model) {
         final List<FieldMappingEntity> fieldMappingEntityList =
-                model.getFieldMappingModels().stream().map(FieldMappingEntity::from).collect(Collectors.toList());
-
-
-
+                model.getFieldMappings().stream().map(FieldMappingEntity::from).collect(Collectors.toList());
         return new FieldMappingsEntity(model.getTopicFilter(),
                 model.getTagName(), fieldMappingEntityList,
                 FieldMappingMetaDataEntity.from(model.getMetaData()));

@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
@@ -36,6 +37,7 @@ import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
+import com.hivemq.api.model.mapping.FieldMappingsListModel;
 import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
@@ -46,7 +48,6 @@ import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
-import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -273,9 +274,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
-            final Map<String, Object> config =
-                    objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
-                    });
+            final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
+            });
             protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
@@ -306,9 +306,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
-        final Map<String, Object> config =
-                objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
-                });
+        final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
+        });
 
         protocolAdapterManager.updateAdapterConfig(adapterId, config);
         return Response.ok().build();
@@ -397,8 +396,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
-                new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterWritingService.writingEnabled() ? information.configurationClassWriting() : information.configurationClassReading());
+        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager = new ProtocolAdapterSchemaManager(objectMapper,
+                protocolAdapterWritingService.writingEnabled() ?
+                        information.configurationClassWriting() :
+                        information.configurationClassReading());
         final ProtocolAdapterValidator validator =
                 (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =
@@ -420,19 +421,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getDomainTagsForAdapter(@NotNull final String adapterId) {
-        return protocolAdapterManager
-                .getTagsForAdapter(adapterId)
-                .map(tags -> {
-                    if(tags.isEmpty()) {
-                        return Response.ok().build();
-                    } else {
-                        final List<DomainTagModel> domainTagModels =
-                                tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
-                        final DomainTagModelList domainTagModelList = new DomainTagModelList(domainTagModels);
-                        return Response.ok().entity(domainTagModelList).build();
-                    }
-                })
-                .orElse(Response.status(Response.Status.NOT_FOUND).build());
+        return protocolAdapterManager.getTagsForAdapter(adapterId).map(tags -> {
+            if (tags.isEmpty()) {
+                return Response.ok().build();
+            } else {
+                final List<DomainTagModel> domainTagModels =
+                        tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
+                final DomainTagModelList domainTagModelList = new DomainTagModelList(domainTagModels);
+                return Response.ok().entity(domainTagModelList).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @Override
@@ -580,9 +578,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             log.debug("Original exception: ", e);
             return Response.serverError().build();
         } catch (final ExecutionException e) {
-            if(e.getCause() instanceof UnsupportedOperationException){
+            if (e.getCause() instanceof UnsupportedOperationException) {
                 return ErrorResponseUtil.errorResponse(404, "Operation not supported", e.getCause().getMessage());
-            } else if(e.getCause() instanceof IllegalStateException){
+            } else if (e.getCause() instanceof IllegalStateException) {
                 return ErrorResponseUtil.errorResponse(404, "Adapter not started", e.getCause().getMessage());
             } else {
                 log.warn("Exception was raised during creation of json schema for writing to PLCs.");
@@ -645,12 +643,37 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response addFieldMapping(
-            @NotNull final String adapterId,
-            @NotNull final FieldMappingsModel fieldMappingsModel) {
+            @NotNull final String adapterId, @NotNull final FieldMappingsModel fieldMappingsModel) {
         final FieldMappings fieldMappings = FieldMappings.fromModel(fieldMappingsModel);
-        final DomainTagAddResult domainTagAddResult =
-                protocolAdapterManager.addFieldMappings(adapterId, fieldMappings);
+        final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addFieldMappings(adapterId, fieldMappings);
         System.err.println(domainTagAddResult.getDomainTagPutStatus());
         return Response.ok().build();
+    }
+
+    @Override
+    public @NotNull Response getFieldMappingsForAdapter(@NotNull final String adapterId) {
+        return protocolAdapterManager.getFieldMappingsForAdapter(adapterId).map(fieldMappings -> {
+            if (fieldMappings.isEmpty()) {
+                return Response.ok().build();
+            } else {
+                final List<FieldMappingsModel> fieldMappingsModels =
+                        fieldMappings.stream().map(FieldMappingsModel::from).collect(Collectors.toList());
+                final FieldMappingsListModel fieldMappingsListModel = new FieldMappingsListModel(fieldMappingsModels);
+                return Response.ok().entity(fieldMappingsListModel).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @Override
+    public @NotNull Response updateFieldMappingsTags(
+            final @NotNull String adapterId, final @NotNull FieldMappingsListModel fieldMappingsListModel) {
+        final List<FieldMappings> fieldMappings =
+                fieldMappingsListModel.getItems().stream().map(FieldMappings::fromModel).collect(Collectors.toList());
+        final boolean updated = protocolAdapterManager.updateAdapterFieldMappings(adapterId, fieldMappings);
+        if (updated) {
+            return Response.ok().build();
+        } else {
+            return ErrorResponseUtil.notFound("adapter", adapterId);
+        }
     }
 }
