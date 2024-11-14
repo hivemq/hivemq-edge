@@ -24,7 +24,8 @@ import java.util.List;
 public abstract class ItemsResponse<T> {
 
     @JsonProperty("items")
-    @Schema(description = "List of result items that are returned by this endpoint")
+    @Schema(description = "List of result items that are returned by this endpoint",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull List<@NotNull T> items;
 
     protected ItemsResponse(final @NotNull List<@NotNull T> items) {

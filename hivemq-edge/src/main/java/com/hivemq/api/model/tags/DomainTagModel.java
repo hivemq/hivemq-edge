@@ -17,7 +17,6 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -30,11 +29,13 @@ import java.util.Objects;
 public class DomainTagModel {
 
     @JsonProperty("tagName")
-    @Schema(description = "The name of the tag that identifies it within this edge instance.")
+    @Schema(description = "The name of the tag that identifies it within this edge instance.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String tag;
 
     @JsonProperty("protocolId")
-    @Schema(description = "The protocol id of the protocol for which this tag was created.")
+    @Schema(description = "The protocol id of the protocol for which this tag was created.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String protocolId;
 
     @JsonProperty("description")
@@ -42,18 +43,18 @@ public class DomainTagModel {
     private final @NotNull String description;
 
     @JsonProperty("tagDefinition")
-    @Schema(description = "A user created description for this tag.")
+    @Schema(description = "A user created description for this tag.", requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull Map<String, Object> definition;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
-            @JsonProperty("description") final @NotNull String description,
+            @JsonProperty("description") final @Nullable String description,
             @JsonProperty("tagDefinition") final @NotNull Map<String, Object> definition) {
         this.tag = tag;
         this.protocolId = protocolId;
-        this.description = description;
+        this.description = Objects.requireNonNullElse(description, "");
         this.definition = definition;
     }
 
@@ -74,8 +75,7 @@ public class DomainTagModel {
     }
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(
-                domainTag.getTagName(),
+        return new DomainTagModel(domainTag.getTagName(),
                 domainTag.getProtocolId(),
                 domainTag.getDescription(),
                 domainTag.getDefinition());
@@ -98,8 +98,12 @@ public class DomainTagModel {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final DomainTagModel that = (DomainTagModel) o;
         return Objects.equals(tag, that.tag) &&
                 Objects.equals(protocolId, that.protocolId) &&
