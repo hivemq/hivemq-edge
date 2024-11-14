@@ -1,4 +1,5 @@
 import { customizeValidator } from '@rjsf/validator-ajv8'
+
 // No exposed from '@rjsf/validator-ajv8'
 export interface ErrorObject<K extends string = string, P = Record<string, unknown>, S = unknown> {
   keyword: K
@@ -15,7 +16,7 @@ export interface ErrorObject<K extends string = string, P = Record<string, unkno
 import i18n from '@/config/i18n.config.ts'
 
 // TODO[NVL] Initially crafted as /^[^+#$]*$/; is $ allowed?
-const validationTopic = (data: string): string | undefined => {
+export const validationTopic = (data: string): string | undefined => {
   if (data.length === 0) return i18n.t('rjsf.customFormats.validation.noEmptyString', { ns: 'components' })
   if (data.includes('\u0000')) return i18n.t('rjsf.customFormats.validation.noNullChar', { ns: 'components' })
   if (data.includes('#') || data.includes('+'))
@@ -23,7 +24,7 @@ const validationTopic = (data: string): string | undefined => {
   return undefined
 }
 
-const validationTopicFilter = (topic: string): string | undefined => {
+export const validationTopicFilter = (topic: string): string | undefined => {
   if (topic.length === 0) return i18n.t('rjsf.customFormats.validation.noEmptyString', { ns: 'components' })
   if (topic.includes('\u0000')) return i18n.t('rjsf.customFormats.validation.noNullChar', { ns: 'components' })
 
@@ -103,9 +104,9 @@ const validationTopicFilter = (topic: string): string | undefined => {
 }
 
 // TODO[NVL] Currently like topic but what about the + and # chars?
-const validationTag = validationTopic
+export const validationTag = validationTopic
 
-const customLocalizer = (errors?: null | ErrorObject[]) => {
+export const customLocalizer = (errors?: null | ErrorObject[]) => {
   if (!errors) return
 
   for (const aa of errors) {
