@@ -5,6 +5,7 @@ import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { DeviceMetadata, Group, NodeTypes } from '@/modules/Workspace/types.ts'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_DEFAULT_NODE = {
   selected: false,
@@ -58,7 +59,7 @@ export const MOCK_NODE_GROUP: NodeProps<Group> = {
 export const MOCK_NODE_DEVICE: NodeProps<DeviceMetadata> = {
   id: 'idDevice',
   type: NodeTypes.DEVICE_NODE,
-  data: mockProtocolAdapter,
+  data: { ...mockProtocolAdapter, sourceAdapterId: MOCK_ADAPTER_ID },
   ...MOCK_DEFAULT_NODE,
 }
 

@@ -8,7 +8,7 @@ import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-import { IdStubs, NodeTypes } from '../types.ts'
+import { DeviceMetadata, IdStubs, NodeTypes } from '../types.ts'
 import {
   createAdapterNode,
   createBridgeNode,
@@ -160,7 +160,9 @@ describe('createAdapterNode', () => {
     const actual = createAdapterNode(mockProtocolAdapter, mockAdapter, 1, 2, MOCK_THEME)
     const expected: {
       nodeAdapter: Node<Bridge, NodeTypes.ADAPTER_NODE>
+      nodeDevice: Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
       edgeConnector: Edge
+      deviceConnector: Edge
     } = {
       nodeAdapter: expect.objectContaining({
         id: `adapter@${MOCK_ADAPTER_ID}`,
@@ -172,6 +174,17 @@ describe('createAdapterNode', () => {
         source: `adapter@${MOCK_ADAPTER_ID}`,
         animated: true,
         target: 'edge',
+      }),
+      nodeDevice: expect.objectContaining({
+        id: 'device@adapter@my-adapter',
+        targetPosition: Position.Top,
+        type: NodeTypes.DEVICE_NODE,
+      }),
+      deviceConnector: expect.objectContaining({
+        id: 'connect-device@adapter@my-adapter',
+        source: 'adapter@my-adapter',
+        animated: true,
+        target: 'device@adapter@my-adapter',
       }),
     }
 

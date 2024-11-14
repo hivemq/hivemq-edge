@@ -7,6 +7,7 @@ import useWorkspaceStore from './useWorkspaceStore.ts'
 import {
   MOCK_NODE_ADAPTER,
   MOCK_NODE_BRIDGE,
+  MOCK_NODE_DEVICE,
   MOCK_NODE_EDGE,
   MOCK_NODE_GROUP,
 } from '@/__test-utils__/react-flow/nodes.ts'
@@ -140,13 +141,20 @@ describe('useWorkspaceStore', () => {
     expect(result.current.edges).toHaveLength(0)
 
     act(() => {
-      const { onNodesChange } = result.current
+      const { onNodesChange, onAddEdges } = result.current
       const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
-      onNodesChange([{ item, type: 'add' }])
+      const device: Node = { ...MOCK_NODE_DEVICE, position: { x: 0, y: 0 } }
+      const link: Edge = { id: '1-2', source: 'idAdapter', target: 'idDevice' }
+
+      onNodesChange([
+        { item, type: 'add' },
+        { item: device, type: 'add' },
+      ])
+      onAddEdges([{ item: link, type: 'add' } as EdgeAddChange])
     })
 
-    expect(result.current.nodes).toHaveLength(1)
-    expect(result.current.edges).toHaveLength(0)
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.edges).toHaveLength(1)
 
     act(() => {
       const { onDeleteNode } = result.current
@@ -154,7 +162,7 @@ describe('useWorkspaceStore', () => {
     })
 
     expect(result.current.nodes).toHaveLength(0)
-    expect(result.current.edges).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(1)
   })
 
   it('should toggle a group', async () => {
