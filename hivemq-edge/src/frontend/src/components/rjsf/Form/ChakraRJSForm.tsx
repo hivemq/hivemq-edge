@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import debug from 'debug'
 import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
@@ -13,11 +13,12 @@ import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/Descriptio
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
 import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
+import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
+import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -71,6 +72,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
 
       setBatchData(operations)
     },
+    focusOnError: customFocusError(ref, uiSchema),
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
