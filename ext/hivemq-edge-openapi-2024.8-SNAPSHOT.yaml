@@ -4383,6 +4383,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Adapter'
+      required:
+      - items
     ApiBearerToken:
       type: object
       properties:
@@ -4648,6 +4650,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Bridge'
+      required:
+      - items
     BridgeSubscription:
       type: object
       description: remoteSubscriptions associated with the bridge
@@ -4709,6 +4713,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Capability'
+      required:
+      - items
     DataPoint:
       type: object
       properties:
@@ -4829,6 +4835,10 @@ components:
         tagName:
           type: string
           description: The name of the tag that identifies it within this edge instance.
+      required:
+      - protocolId
+      - tagDefinition
+      - tagName
     DomainTagList:
       type: object
       properties:
@@ -4837,6 +4847,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DomainTag'
+      required:
+      - items
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -4910,6 +4922,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Event'
+      required:
+      - items
     Extension:
       type: object
       description: List of result items that are returned by this endpoint
@@ -4949,6 +4963,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Extension'
+      required:
+      - items
     FieldMappingMetaDataModel:
       type: object
       properties:
@@ -4978,6 +4994,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/FieldMappingsModel'
+      required:
+      - items
     FieldMappingsModel:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5057,6 +5075,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/FsmStateInformationItem'
+      required:
+      - items
     GatewayConfiguration:
       type: object
       properties:
@@ -5165,6 +5185,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Link'
+      required:
+      - items
     Listener:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5210,6 +5232,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Listener'
+      required:
+      - items
     LocalBridgeSubscription:
       type: object
       description: localSubscriptions associated with the bridge
@@ -5277,6 +5301,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Metric'
+      required:
+      - items
     Module:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5324,6 +5350,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Module'
+      required:
+      - items
     Notification:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5352,6 +5380,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Notification'
+      required:
+      - items
     ObjectNode:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5408,6 +5438,8 @@ components:
           type: string
           description: The payload of the sample. The bytes are base64 encoded to
             ensure compatibility even if the payload is a arbitrary byte sequence.
+      required:
+      - payload
     PayloadSampleList:
       type: object
       properties:
@@ -5416,6 +5448,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PayloadSample'
+      required:
+      - items
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations
@@ -5527,6 +5561,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/ProtocolAdapter'
+      required:
+      - items
     Schema:
       type: object
       properties:
@@ -5668,6 +5704,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Status'
+      required:
+      - items
     StatusTransitionCommand:
       type: object
       properties:
@@ -5700,6 +5738,14 @@ components:
         type:
           type: string
           description: The type of the object in transition
+    TagSchema:
+      type: object
+      properties:
+        configSchema:
+          $ref: '#/components/schemas/JsonNode'
+        protocolId:
+          type: string
+          description: The id assigned to the protocol adapter type
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
@@ -5762,6 +5808,8 @@ components:
           type: string
           format: mqtt-topic-filter
           description: The topic filter according to the MQTT specification.
+      required:
+      - topicFilter
     TopicFilterList:
       type: object
       properties:
@@ -5770,6 +5818,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/TopicFilter'
+      required:
+      - items
     TransformationModel:
       type: object
       description: The kind of transformation that is performed on the data
@@ -5811,6 +5861,8 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/ObjectNode'
+      required:
+      - items
     WebsocketConfiguration:
       type: object
       description: websocketConfiguration associated with the bridge
