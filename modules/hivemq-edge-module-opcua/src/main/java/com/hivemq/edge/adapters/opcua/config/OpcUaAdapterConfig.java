@@ -73,7 +73,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty(value = "opcuaToMqtt")
     @ModuleConfigField(title = "OPC UA To MQTT Config",
                        description = "The configuration for a data stream from OPC UA to MQTT")
-    private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
+    private final @Nullable OpcUaToMqttConfig opcuaToMqttConfig;
 
     @JsonCreator
     public OpcUaAdapterConfig(
@@ -115,7 +115,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return security;
     }
 
-    public @NotNull OpcUaToMqttConfig getOpcuaToMqttConfig() {
+    public @Nullable OpcUaToMqttConfig getOpcuaToMqttConfig() {
         return opcuaToMqttConfig;
     }
 
@@ -125,6 +125,10 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return opcuaToMqttConfig.getOpcuaToMqttMappings().stream().map(OpcUaToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(opcuaToMqttConfig != null) {
+            return opcuaToMqttConfig.getOpcuaToMqttMappings().stream().map(OpcUaToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 }

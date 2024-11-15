@@ -282,7 +282,11 @@ public class HttpProtocolAdapter
 
     @Override
     public @NotNull List<HttpToMqttMapping> getPollingContexts() {
-        return List.copyOf(adapterConfig.getHttpToMqttConfig().getMappings());
+        if(adapterConfig.getHttpToMqttConfig() != null){
+            return List.copyOf(adapterConfig.getHttpToMqttConfig().getMappings());
+        } else {
+            return List.of();
+        }
     }
 
     @Override

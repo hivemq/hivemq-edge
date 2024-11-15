@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -584,5 +585,56 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return Response.serverError().build();
             }
         }
+    }
+
+    @Override
+    public Response addCompleteAdapter(
+            final String adapterType,
+            final String adapterName,
+            final AdapterConfigModel adapter) {
+        final Optional<ProtocolAdapterInformation> protocolAdapterType =
+                protocolAdapterManager.getAdapterTypeById(adapterType);
+        if (protocolAdapterType.isEmpty()) {
+            return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
+        }
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final String adapterId = adapter.getAdapter().getId();
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapterId);
+        if (instance.isPresent()) {
+            ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
+            return ApiErrorUtils.badRequest(errorMessages);
+        }
+        validateAdapterSchema(errorMessages, adapter.getAdapter());
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
+            return ApiErrorUtils.badRequest(errorMessages);
+        }
+        try {
+
+            //TODO: we need to move all these conversions into a common place
+            final Map<String, Object> config =
+                    objectMapper.convertValue(adapter.getAdapter(), new TypeReference<>() {
+                    });
+
+            final List<Map<String, Object>> domainTags = adapter.getDomainTagModels()
+                    .stream()
+                    .map(dtm -> DomainTag.fromDomainTagEntity(dtm, adapterId))
+                    .map(DomainTag::toTagMap)
+                    .collect(Collectors.toList());
+            protocolAdapterManager.addAdapter(adapterType, adapterId, config, domainTags);
+        } catch (final IllegalArgumentException e) {
+            if (e.getCause() instanceof UnrecognizedPropertyException) {
+                ApiErrorUtils.addValidationError(errorMessages,
+                        ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
+                        "Unknown field on adapter configuration");
+            } else {
+                log.error("Error processing incoming request", e);
+            }
+            return ApiErrorUtils.badRequest(errorMessages);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getAdapter().getId());
+        }
+        return Response.ok().build();
     }
 }

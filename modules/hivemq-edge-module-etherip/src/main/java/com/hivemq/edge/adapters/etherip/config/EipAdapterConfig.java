@@ -74,7 +74,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Ethernet IP To MQTT Config",
                        description = "The configuration for a data stream from Ethernet IP to MQTT",
                        required = true)
-    private final @NotNull EipToMqttConfig eipToMqttConfig;
+    private final @Nullable EipToMqttConfig eipToMqttConfig;
 
     @JsonCreator
     public EipAdapterConfig(
@@ -83,7 +83,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
-            @JsonProperty(value = "eipToMqtt", required = true) final @NotNull EipToMqttConfig eipToMqttConfig) {
+            @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -98,7 +98,11 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(eipToMqttConfig != null) {
+            return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 
     public @NotNull String getHost() {
@@ -117,7 +121,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
         return slot;
     }
 
-    public @NotNull EipToMqttConfig getEipToMqttConfig() {
+    public @Nullable EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
     }
 }

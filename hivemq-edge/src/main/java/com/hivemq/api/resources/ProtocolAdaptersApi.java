@@ -16,6 +16,7 @@
 package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
@@ -114,6 +115,28 @@ public interface ProtocolAdaptersApi {
                                 description = "The new adapter.",
                                 required = true,
                                 in = ParameterIn.DEFAULT) Adapter adapter);
+
+    @PUT
+    @Path("/adapterconfigs/{adaptertype}/{adaptername}")
+    @Operation(summary = "Add a new Adapter and all related parts like e.g. tags",
+               operationId = "create-complete-adapter",
+               description = "Add an adapter and all related parts like e.g. tags to the system.",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @NotNull
+    Response addCompleteAdapter(
+            @NotNull @Parameter(name = "adaptertype",
+                                description = "The adapter type.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adaptertype") String adapterType,
+            @NotNull @Parameter(name = "adaptername",
+                                description = "The adapter name.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adaptername") String adapterName,
+            @NotNull @Parameter(name = "adapter",
+                                description = "The new adapter.",
+                                required = true,
+                                in = ParameterIn.DEFAULT) AdapterConfigModel adapter);
 
     @GET
     @Path("/adapters/")

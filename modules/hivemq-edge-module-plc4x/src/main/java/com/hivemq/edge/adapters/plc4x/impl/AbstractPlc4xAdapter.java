@@ -132,7 +132,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     @Override
     public @NotNull List<C> getPollingContexts() {
         if (getReadType() == ReadType.Read) {
-            return (List<C>) adapterConfig.getPlc4xToMqttConfig().getMappings();
+            if(adapterConfig.getPlc4xToMqttConfig() != null) {
+                return (List<C>) adapterConfig.getPlc4xToMqttConfig().getMappings();
+            } else {
+                return List.of();
+            }
         } else {
             return List.of();
         }
@@ -220,11 +224,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     }
 
     protected void subscribeAllInternal(@NotNull final Plc4xConnection<T> connection) throws RuntimeException {
-        for (final Plc4xToMqttMapping mapping : adapterConfig.getPlc4xToMqttConfig().getMappings()) {
-            try {
-                subscribeInternal(connection, mapping);
-            } catch (final Plc4xException e) {
-                throw new RuntimeException(e);
+        if(adapterConfig.getPlc4xToMqttConfig() != null) {
+            for (final Plc4xToMqttMapping mapping : adapterConfig.getPlc4xToMqttConfig().getMappings()) {
+                try {
+                    subscribeInternal(connection, mapping);
+                } catch (final Plc4xException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -251,7 +257,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         boolean publishData = true;
         final String tagAddress = plc4xTag.getDefinition().getTagAddress();
 
-        if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
+        if (adapterConfig.getPlc4xToMqttConfig() != null && adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
             final ProtocolAdapterDataSample previousSample = lastSamples.put(tagAddress, data);
             if (previousSample != null) {
                 final List<DataPoint> dataPoints = previousSample.getDataPoints();
@@ -341,11 +347,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPlc4xToMqttConfig().getPollingIntervalMillis();
+        if (adapterConfig.getPlc4xToMqttConfig() != null) {
+            return adapterConfig.getPlc4xToMqttConfig().getPollingIntervalMillis();
+        } else {
+            return 1000;
+        }
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+        if (adapterConfig.getPlc4xToMqttConfig() != null) {
+            return adapterConfig.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+        } else {
+            return 5;
+        }
     }
 }

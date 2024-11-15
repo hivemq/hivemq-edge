@@ -129,7 +129,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     @Override
     public @NotNull List<ModbusToMqttMapping> getPollingContexts() {
-        return new ArrayList<>(adapterConfig.getModbusToMQTTConfig().getMappings());
+        if (adapterConfig.getModbusToMQTTConfig() != null) {
+            return List.copyOf(adapterConfig.getModbusToMQTTConfig().getMappings());
+        } else {
+            return List.of();
+        }
     }
 
     @Override

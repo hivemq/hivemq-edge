@@ -47,11 +47,11 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "File To MQTT Config",
                        description = "The configuration for a data stream from File to MQTT",
                        required = true)
-    private final @NotNull FileToMqttConfig fileToMqttConfig;
+    private final @Nullable FileToMqttConfig fileToMqttConfig;
 
     public FileAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig) {
+            @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
         this.id = id;
         this.fileToMqttConfig = fileToMqttConfig;
     }
@@ -63,7 +63,11 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return fileToMqttConfig.getMappings().stream().map(FileToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(fileToMqttConfig != null && fileToMqttConfig.getMappings() != null) {
+            return fileToMqttConfig.getMappings().stream().map(FileToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

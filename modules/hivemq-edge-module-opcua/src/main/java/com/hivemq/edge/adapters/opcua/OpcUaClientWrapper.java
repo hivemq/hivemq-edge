@@ -291,12 +291,16 @@ public class OpcUaClientWrapper {
                         Optional.of(new JsonToOpcUAConverter(opcUaClient));
                 final Optional<JsonSchemaGenerator> jsonSchemaGeneratorOpt =
                         Optional.of(new JsonSchemaGenerator(opcUaClient, new ObjectMapper()));
-                return opcUaSubscriptionLifecycle.subscribeAll(adapterConfig.getOpcuaToMqttConfig()
-                                .getOpcuaToMqttMappings())
-                        .thenApply(ignored -> new OpcUaClientWrapper(opcUaClient,
-                                opcUaSubscriptionLifecycle,
-                                jsonToOpcUAConverterOpt,
-                                jsonSchemaGeneratorOpt));
+                if (adapterConfig.getOpcuaToMqttConfig() != null) {
+                    return opcUaSubscriptionLifecycle.subscribeAll(adapterConfig.getOpcuaToMqttConfig()
+                                    .getOpcuaToMqttMappings())
+                            .thenApply(ignored -> new OpcUaClientWrapper(opcUaClient,
+                                    opcUaSubscriptionLifecycle,
+                                    jsonToOpcUAConverterOpt,
+                                    jsonSchemaGeneratorOpt));
+                } else {
+                    return CompletableFuture.completedFuture(null);
+                }
             } catch (final UaException e) {
                 log.error("Unable to create the converters for writing.", e);
                 output.failStart(e, "Unable to create the converters for writing.");

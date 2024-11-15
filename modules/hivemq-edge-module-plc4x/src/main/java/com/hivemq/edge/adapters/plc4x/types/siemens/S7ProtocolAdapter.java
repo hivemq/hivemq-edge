@@ -116,7 +116,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
         map.put(REMOTE_TSAP, nullSafe(config.getRemoteTsap()));
 
         //ping if polling interval greater than default read timeout - 1s grace
-        if (config.getPlc4xToMqttConfig().getPollingIntervalMillis() >= 7000) {
+        if (config.getPlc4xToMqttConfig() != null && config.getPlc4xToMqttConfig().getPollingIntervalMillis() >= 7000) {
             map.put(PING, "true");
             map.put(PING_TIME, "4");
         }

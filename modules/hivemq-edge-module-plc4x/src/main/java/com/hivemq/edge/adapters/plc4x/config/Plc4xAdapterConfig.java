@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements ProtocolAdapterConfig {
 
@@ -75,7 +76,7 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
         return host;
     }
 
-    @NotNull
+    @Nullable
     @JsonIgnore
     public abstract T getPlc4xToMqttConfig();
 }
