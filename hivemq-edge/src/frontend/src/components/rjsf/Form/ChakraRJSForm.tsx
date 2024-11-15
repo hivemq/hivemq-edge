@@ -100,7 +100,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       liveValidate
       // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation
       noHtml5Validate
-      focusOnFirstError
+      focusOnFirstError={customFocusError(ref, uiSchema)}
       onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
