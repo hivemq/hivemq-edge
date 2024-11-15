@@ -1,6 +1,6 @@
 import { MutableRefObject } from 'react'
 import Form from '@rjsf/core'
-import { RJSFValidationError, UiSchema } from '@rjsf/utils'
+import { RJSFValidationError } from '@rjsf/utils'
 
 // From RJSF
 const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) => {
@@ -38,7 +38,6 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
   if (field instanceof HTMLDivElement) {
     // if the field is a select or other wrapper, find the nested input
     field = formElement.querySelector<HTMLDivElement>(`#${elementId} input`) as HTMLElement
-    console.log('XXX', field)
   }
 
   if (field) {
@@ -46,12 +45,10 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
   }
 }
 
-export const customFocusError =
-  (wrapperRef: MutableRefObject<null>, uiSchema?: UiSchema) => (error: RJSFValidationError) => {
-    if (!wrapperRef.current) return
+export const customFocusError = (wrapperRef: MutableRefObject<null>) => (error: RJSFValidationError) => {
+  if (!wrapperRef.current) return
 
-    const rjsForm = wrapperRef.current as Form
+  const rjsForm = wrapperRef.current as Form
 
-    console.log('I need to handle focusing on this error', rjsForm, uiSchema, error)
-    focusOnError(rjsForm.formElement.current, error)
-  }
+  focusOnError(rjsForm.formElement.current, error)
+}

@@ -16,8 +16,8 @@ import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate
 import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
+import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
 import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
 
 interface CustomFormProps<T>
@@ -72,7 +72,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
 
       setBatchData(operations)
     },
-    focusOnError: customFocusError(ref, uiSchema),
+    focusOnError: customFocusError(ref),
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
@@ -102,7 +102,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       liveValidate
       // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation
       noHtml5Validate
-      focusOnFirstError={customFocusError(ref, uiSchema)}
+      focusOnFirstError={customFocusError(ref)}
       onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
