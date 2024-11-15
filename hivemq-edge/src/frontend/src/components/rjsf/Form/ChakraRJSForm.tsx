@@ -40,6 +40,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   readonly,
 }) => {
   const { t } = useTranslation()
+  const ref = useRef(null)
   const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
   const defaultValues = useMemo(() => {
     if (batchData) {
@@ -79,6 +80,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
 
   return (
     <Form
+      ref={ref}
       id={id}
       readonly={readonly}
       schema={unspecifiedSchema}
