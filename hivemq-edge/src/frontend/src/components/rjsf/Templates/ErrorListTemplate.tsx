@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 import { ErrorListProps, RJSFSchema, TranslatableString, UiSchema } from '@rjsf/utils'
 import {
   Alert,
@@ -20,14 +20,19 @@ import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 import { AdapterConfig, UITab } from '@/modules/ProtocolAdapters/types.ts'
 import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { useTranslation } from 'react-i18next'
+import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
+interface UITabIndexed extends UITab {
+  index: number
+}
 interface RJSFValidationErrorRef extends RJSFValidationError {
-  tab?: UITab
+  tab?: UITabIndexed
 }
 
 export const ErrorListTemplate: FC<ErrorListProps<unknown, RJSFSchema, ChakraRJSFormContext>> = (props) => {
-  const { t } = useTranslation('components')
   const { uiSchema, errors, registry, formContext } = props
+  const { t } = useTranslation('components')
+  const { setTabIndex } = useFormControlStore()
 
   const linkedErrors = useMemo(() => {
     return errors.map<RJSFValidationErrorRef>((error) => {
@@ -37,16 +42,24 @@ export const ErrorListTemplate: FC<ErrorListProps<unknown, RJSFSchema, ChakraRJS
 
       const root = property?.split('.')[1] || property
 
-      let inTab: UITab | null = null
-      for (const tab of tabs) {
+      let inTab: UITabIndexed | null = null
+      for (const [index, tab] of tabs.entries()) {
         const { properties } = tab as UITab
-        if (properties && root && properties.includes(root)) inTab = tab
+        if (properties && root && properties.includes(root)) inTab = { ...tab, index }
       }
 
       if (inTab) return { ...error, tab: inTab }
       return error
     })
   }, [errors, uiSchema])
+
+  const handleShiftFocus = useCallback(
+    (error: RJSFValidationErrorRef) => () => {
+      if (error.tab?.index !== undefined) setTabIndex(error.tab.index)
+      formContext?.focusOnError?.(error)
+    },
+    [setTabIndex, formContext]
+  )
 
   const { translateString } = registry
 
@@ -61,12 +74,7 @@ export const ErrorListTemplate: FC<ErrorListProps<unknown, RJSFSchema, ChakraRJS
               <Box>
                 {error.tab && (
                   <>
-                    <Button
-                      colorScheme="red"
-                      variant="link"
-                      color="red.700"
-                      onClick={() => formContext?.focusOnError?.(error)}
-                    >
+                    <Button colorScheme="red" variant="link" color="red.700" onClick={handleShiftFocus(error)}>
                       {error.tab?.title}
                     </Button>{' '}
                   </>
@@ -78,7 +86,7 @@ export const ErrorListTemplate: FC<ErrorListProps<unknown, RJSFSchema, ChakraRJS
                   aria-label={t('rjsf.ErrorListTemplate.focusOnError.aria-label')}
                   color="red.700"
                   size="sm"
-                  onClick={() => formContext?.focusOnError?.(error)}
+                  onClick={handleShiftFocus(error)}
                 />
               </Box>
             </HStack>
