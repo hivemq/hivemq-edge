@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import debug from 'debug'
 import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
@@ -19,6 +19,7 @@ import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
 import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
+import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -41,6 +42,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   readonly,
 }) => {
   const { t } = useTranslation()
+  const { setTabIndex } = useFormControlStore()
   const ref = useRef(null)
   const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
   const defaultValues = useMemo(() => {
@@ -55,6 +57,15 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       onSubmit?.(data)
     },
     [onSubmit]
+  )
+
+  useEffect(
+    () => {
+      setTabIndex(0)
+      return () => setTabIndex(0)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   )
 
   const context: ChakraRJSFormContext = {
@@ -99,17 +110,17 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
         ErrorListTemplate,
         TitleFieldTemplate,
       }}
+      widgets={adapterJSFWidgets}
+      fields={adapterJSFFields}
+      onSubmit={onValidate}
       liveValidate
       // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation
       noHtml5Validate
-      focusOnFirstError={customFocusError(ref)}
-      onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
-      widgets={adapterJSFWidgets}
-      fields={adapterJSFFields}
       onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
       showErrorList="bottom"
+      focusOnFirstError={context.focusOnError}
     />
   )
 }
