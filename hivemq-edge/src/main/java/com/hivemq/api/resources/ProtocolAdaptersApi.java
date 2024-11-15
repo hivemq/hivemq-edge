@@ -434,8 +434,6 @@ public interface ProtocolAdaptersApi {
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
             final @NotNull DomainTagModelList domainTagList);
 
-
-
     @GET
     @Path("/tags")
     @Operation(summary = "Get the list of all domain tags created in this Edge instance",
@@ -454,6 +452,28 @@ public interface ProtocolAdaptersApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTags();
+
+    @GET
+    @Path("/tags/{tagName}")
+    @Operation(summary = "Get the domain tag with the given name in this Edge instance",
+               operationId = "get-domain-tag",
+               description = "Get a domain tag created in this Edge instance",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = DomainTagModel.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for domain tags in opc ua",
+                                                                              name = "opc ua domain tags example",
+                                                                              summary = "Example for domain tags for opc ua ",
+                                                                              value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getDomainTag(@NotNull @Parameter(name = "tagName",
+                                              description = "The tag name (base64 encoded).",
+                                              required = true,
+                                              in = ParameterIn.PATH) @PathParam("tagName") String tagName);
 
     @GET
     @Path("/writing-schema/{adapterId}/{tagName}")
