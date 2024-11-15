@@ -93,7 +93,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
                        required = true)
-    private final @NotNull S7ToMqttConfig s7ToMqttConfig;
+    private final @Nullable S7ToMqttConfig s7ToMqttConfig;
 
     @JsonCreator
     public S7AdapterConfig(
@@ -106,7 +106,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
             @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
-            @JsonProperty(value = "s7ToMqtt", required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
+            @JsonProperty(value = "s7ToMqtt") final @Nullable S7ToMqttConfig s7ToMqttConfig) {
         super(id, port, host);
         this.port = port;
         this.controllerType = controllerType;
@@ -149,12 +149,16 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     }
 
     @Override
-    public @NotNull Plc4xToMqttConfig getPlc4xToMqttConfig() {
+    public @Nullable Plc4xToMqttConfig getPlc4xToMqttConfig() {
         return s7ToMqttConfig;
     }
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return s7ToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(s7ToMqttConfig != null) {
+            return s7ToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 }

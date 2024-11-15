@@ -79,7 +79,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     @ModuleConfigField(title = "ADS To MQTT Config",
                        description = "The configuration for a data stream from ADS to MQTT",
                        required = true)
-    private final @NotNull ADSToMqttConfig adsToMqttConfig;
+    private final @Nullable ADSToMqttConfig adsToMqttConfig;
 
     @JsonCreator
     public ADSAdapterConfig(
@@ -90,7 +90,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
             @JsonProperty(value = "sourceAmsPort", required = true) final int sourceAmsPort,
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
-            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig) {
+            @JsonProperty(value = "adsToMqtt") final @Nullable ADSToMqttConfig adsToMqttConfig) {
         super(id, port, host);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
@@ -123,12 +123,16 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     }
 
     @Override
-    public @NotNull ADSToMqttConfig getPlc4xToMqttConfig() {
+    public @Nullable ADSToMqttConfig getPlc4xToMqttConfig() {
         return adsToMqttConfig;
     }
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return adsToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(adsToMqttConfig != null) {
+            return adsToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 }

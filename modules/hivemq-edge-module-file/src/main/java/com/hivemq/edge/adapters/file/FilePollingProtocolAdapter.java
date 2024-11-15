@@ -57,7 +57,11 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
+        if(adapterConfig.getFileToMqttConfig() != null) {
+            this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
+        } else {
+            this.pollingContext = List.of();
+        }
     }
 
     @Override
