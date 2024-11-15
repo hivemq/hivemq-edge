@@ -602,13 +602,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isPresent()) {
-            System.out.println("FU1");
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
             return ApiErrorUtils.badRequest(errorMessages);
         }
         validateAdapterSchema(errorMessages, adapter.getAdapter());
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            System.out.println("FU2");
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
@@ -623,19 +621,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     .map(dtm -> DomainTag.fromDomainTagEntity(dtm, adapterId))
                     .map(DomainTag::toTagMap)
                     .collect(Collectors.toList());
-
-            System.out.println(config);
-            System.out.println(domainTags);
             protocolAdapterManager.addAdapter(adapterType, adapterId, config, domainTags);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
-                e.printStackTrace();
                 ApiErrorUtils.addValidationError(errorMessages,
                         ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
                         "Unknown field on adapter configuration");
+            } else {
+                log.error("Error processing incoming request", e);
             }
-            e.printStackTrace();
-            System.out.println("FU3");
             return ApiErrorUtils.badRequest(errorMessages);
         }
         if (logger.isDebugEnabled()) {

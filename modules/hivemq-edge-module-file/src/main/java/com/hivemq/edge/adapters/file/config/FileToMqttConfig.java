@@ -65,7 +65,6 @@ public class FileToMqttConfig {
     }
 
     public @NotNull List<FileToMqttMapping> getMappings() {
-        System.out.println("MAPPING2 " + mappings);
         return mappings;
     }
 }
