@@ -22,7 +22,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -55,15 +55,15 @@ public class LegacyModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                         false,
                         mapper,
                         modbusProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-full");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -118,15 +118,15 @@ public class LegacyModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
                         false,
                         mapper,
                         modbusProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final ModbusAdapterConfig config = (ModbusAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-min");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);

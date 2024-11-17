@@ -27,6 +27,8 @@ import java.util.List;
  */
 public abstract class AbstractProtocolAdapterJsonPayload {
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("timestamp")
     private final @Nullable Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

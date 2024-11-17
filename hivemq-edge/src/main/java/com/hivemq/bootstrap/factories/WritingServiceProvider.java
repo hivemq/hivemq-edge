@@ -24,11 +24,14 @@ import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Singleton
@@ -51,7 +54,7 @@ public class WritingServiceProvider {
         this.singleWriterService = singleWriterService;
     }
 
-    public @NotNull ProtocolAdapterWritingService get() {
+    public @NotNull InternalProtocolAdapterWritingService get() {
         final WritingServiceFactory writingServiceFactory = edgeCoreFactoryService.getWritingServiceFactory();
         if (writingServiceFactory == null) {
             return new WritingServiceNoop();
@@ -62,12 +65,12 @@ public class WritingServiceProvider {
     }
 
 
-    public static class WritingServiceNoop implements ProtocolAdapterWritingService {
+    public static class WritingServiceNoop implements InternalProtocolAdapterWritingService {
 
         private static final @NotNull Logger log = LoggerFactory.getLogger(WritingServiceNoop.class);
 
         @Override
-        public void addWritingChangedCallback(final @NotNull ProtocolAdapterWritingService.WritingChangedCallback callback) {
+        public void addWritingChangedCallback(final @NotNull InternalProtocolAdapterWritingService.WritingChangedCallback callback) {
 
         }
 
@@ -76,12 +79,14 @@ public class WritingServiceProvider {
             return false;
         }
 
+
         @Override
-        public @NotNull CompletableFuture<Void> startWriting(@NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
-                                                             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
+        public @NotNull CompletableFuture<Void> startWriting(
+                @NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+                @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+                @NotNull final List<FieldMappings> fieldMappings) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
-            return CompletableFuture.completedFuture(null);
-        }
+            return CompletableFuture.completedFuture(null);        }
 
         @Override
         public @NotNull CompletableFuture<Void> stopWriting(@NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter) {

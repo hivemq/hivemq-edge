@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.factories;
+package com.hivemq.api.model.mapping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
-public interface WritingServiceFactory {
+import java.util.List;
 
-    @NotNull
-    InternalProtocolAdapterWritingService build(
-            @NotNull ObjectMapper objectMapper,
-            @NotNull LocalTopicTree localTopicTree,
-            @NotNull SingleWriterService singleWriterService);
+public class FieldMappingsListModel extends ItemsResponse<FieldMappingsModel> {
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public FieldMappingsListModel(
+            @JsonProperty("items") final @NotNull List<FieldMappingsModel> items) {
+        super(items);
+    }
 }

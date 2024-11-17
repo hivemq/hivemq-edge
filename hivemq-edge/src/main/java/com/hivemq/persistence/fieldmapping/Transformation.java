@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.factories;
+package com.hivemq.persistence.fieldmapping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.api.model.mapping.TransformationModel;
+import com.hivemq.configuration.entity.adapter.TransformationEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
-public interface WritingServiceFactory {
+@SuppressWarnings("InstantiationOfUtilityClass")
+public class Transformation {
 
-    @NotNull
-    InternalProtocolAdapterWritingService build(
-            @NotNull ObjectMapper objectMapper,
-            @NotNull LocalTopicTree localTopicTree,
-            @NotNull SingleWriterService singleWriterService);
+    // currently there is no transformation present at all
+
+    public static Transformation from(final @NotNull TransformationEntity transformation) {
+        return new Transformation();
+    }
+
+    public static Transformation fromModel(final @NotNull TransformationModel transformation) {
+        return new Transformation();
+    }
 }

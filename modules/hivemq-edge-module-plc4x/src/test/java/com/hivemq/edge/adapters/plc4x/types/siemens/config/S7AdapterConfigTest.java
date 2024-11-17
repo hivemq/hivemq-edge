@@ -26,7 +26,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -63,15 +63,15 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -116,15 +116,15 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
         
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -147,7 +147,7 @@ class S7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
@@ -163,13 +163,13 @@ class S7AdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
 
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }

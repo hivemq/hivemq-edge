@@ -26,7 +26,7 @@ import com.hivemq.edge.adapters.file.config.ContentType;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.tag.FileTag;
 import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.assertj.core.groups.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
@@ -99,7 +100,7 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(), List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
                 .extracting(FileTag::getDescription, FileTag::getDefinition)
@@ -137,7 +138,8 @@ class LegacyFileAdapterConfigTest {
             assertThat(subscription.getIncludeTagNames()).isFalse();
         });
 
-        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(),
+                List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
                 .extracting(FileTag::getDescription, FileTag::getDefinition)

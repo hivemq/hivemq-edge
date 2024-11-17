@@ -30,6 +30,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 
 import java.util.List;
 
@@ -42,6 +43,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterConfig configObject;
     private final @NotNull List<Tag> tags;
+    private final @NotNull List<FieldMappings> fieldMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -51,7 +53,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolAdapterConfig configObject,
-            final @NotNull List<Tag> tags) {
+            final @NotNull List<Tag> tags,
+            final @NotNull List<FieldMappings> fieldMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -59,6 +62,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
         this.tags = tags;
+        this.fieldMappings = fieldMappings;
     }
 
     public void start(
@@ -110,6 +114,10 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     public @NotNull List<Tag> getTags() {
         return tags;
+    }
+
+    public @NotNull List<FieldMappings> getFieldMappings() {
+        return fieldMappings;
     }
 
     public @NotNull Long getTimeOfLastStartAttempt() {

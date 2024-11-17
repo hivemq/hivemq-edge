@@ -3548,6 +3548,104 @@ paths:
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings:
+    get:
+      description: Get the field mappings for this adapter.
+      operationId: get-adapter-fieldMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                field mappings example:
+                  description: An example for field mappings in opc ua
+                  summary: 'Example for field mappings '
+              schema:
+                $ref: '#/components/schemas/FieldMappingsListModel'
+          description: Success
+      summary: Get the field mappings for this adapter.
+      tags:
+      - Protocol Adapters
+    post:
+      description: Add new field mappings to the specified adapter.
+      operationId: add-adapter-fieldMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldMappingsModel'
+        description: The field mappings for incoming and outgoing data
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case an tag is already present
+                    for this tagId.
+                  summary: An example response in case an tag is already present for
+                    this tagId.
+                  value:
+                    errors:
+                    - title: The resource already exists
+                      detail: The tag 'tag' cannot be created since another item already
+                        exists with the same id.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Already Present
+      summary: Add new field mappings to the specified adapter
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all field mappings of an adapter.
+      operationId: update-adapter-fieldMappings
+      parameters:
+      - description: The id of the adapter whose domain tags will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldMappingsListModel'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no field mappings are present
+                    for this tagId.
+                  summary: An example response in case no field mappings is present
+                    for this tagId.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the field mappings of an adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
     get:
       description: Get the up to date status an adapter.
@@ -4940,6 +5038,53 @@ components:
             $ref: '#/components/schemas/Extension'
       required:
       - items
+    FieldMappingMetaDataModel:
+      type: object
+      properties:
+        destination:
+          $ref: '#/components/schemas/JsonNode'
+        source:
+          $ref: '#/components/schemas/JsonNode'
+      required:
+      - destination
+      - source
+    FieldMappingModel:
+      type: object
+      properties:
+        destination:
+          type: string
+          description: The field name in the outgoing data
+        source:
+          type: string
+          description: The field name in the incoming data.
+        transformation:
+          $ref: '#/components/schemas/TransformationModel'
+    FieldMappingsListModel:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/FieldMappingsModel'
+      required:
+      - items
+    FieldMappingsModel:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        fieldMapping:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldMappingModel'
+        metadata:
+          $ref: '#/components/schemas/FieldMappingMetaDataModel'
+        tag:
+          type: string
+        topicFilter:
+          type: string
+          format: mqtt-topic-filter
+          description: The topic filter according to the MQTT specification.
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5748,6 +5893,9 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
+    TransformationModel:
+      type: object
+      description: The kind of transformation that is performed on the data
     TypeIdentifier:
       type: object
       description: The unique id of the event object

@@ -33,25 +33,26 @@ import java.util.Map;
 
 
 /**
- * WARNING - this mapper will attempt to create assume wrapper elements where there are lists of Maps and the attribute name
+ * WARNING - this mapper will attempt to create assume wrapper elements where there are lists of Maps and the attribute
+ * name
  * ends with an 's'. NB: This only happens at level > 1 (the first level objects will not be considered).
- *
+ * <p>
  * For example; An entry like:
- *
+ * <p>
  * object -> subscriptions[] -> Map{attributes}
- *
+ * <p>
  * will yield
  * <object>
- *     <subscriptions>
- *         <subscription>
- *             <!-- attributes -->
- *         </subscription>
- *         <subscription>
- *  *             <!-- attributes -->
- *  *         </subscription>
- *     </subscriptions>
+ * <subscriptions>
+ * <subscription>
+ * <!-- attributes -->
+ * </subscription>
+ * <subscription>
+ * *             <!-- attributes -->
+ * *         </subscription>
+ * </subscriptions>
  * </object>
- *
+ * <p>
  * Tested in {@see ConfigFileReaderTest}
  */
 public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdapter.ElementMap, Map<String, Object>> {
@@ -64,7 +65,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
     @Override
     public ElementMap marshal(final @NotNull Map<String, Object> v) {
-       return marshalInternal(v, null);
+        return marshalInternal(v, null);
     }
 
     public ElementMap marshalInternal(final @NotNull Map<String, Object> v, final String parentName) {
@@ -78,21 +79,26 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         return el;
     }
 
-    protected void readChildren(final @NotNull String currentKeyName, final @NotNull Object value, final @NotNull List<JAXBElement> currentEl, final String parentName){
+    protected void readChildren(
+            final @NotNull String currentKeyName,
+            final @NotNull Object value,
+            final @NotNull List<JAXBElement> currentEl,
+            final String parentName) {
 
 //        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" + parentName);
 
         if (value instanceof Map) {
-            currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, marshalInternal((Map) value, currentKeyName)));
-        }
-        else if (value instanceof List) {
+            currentEl.add(new JAXBElement<>(new QName(currentKeyName),
+                    ElementMap.class,
+                    marshalInternal((Map) value, currentKeyName)));
+        } else if (value instanceof List) {
             List list = (List) value;
             if ("mqttUserProperties".equals(currentKeyName)) {
                 final List children = new ArrayList();
                 readChildren("mqttUserProperty", list, children, currentKeyName);
                 final ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
-                if (!children.isEmpty()){
+                if (!children.isEmpty()) {
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
@@ -101,7 +107,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                 readChildren("userProperty", list, children, currentKeyName);
                 final ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
-                if (!children.isEmpty()){
+                if (!children.isEmpty()) {
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
@@ -110,26 +116,24 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
                 ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
-                if(!children.isEmpty()){
+                if (!children.isEmpty()) {
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
-            }
-            else {
-                for(Object listElement : list) {
+            } else {
+                for (Object listElement : list) {
                     //-- Recurse point
                     readChildren(currentKeyName, listElement, currentEl, currentKeyName);
                 }
             }
-        }
-        else {
-            if(value != null) {
+        } else {
+            if (value != null) {
                 currentEl.add(new JAXBElement<>(new QName(currentKeyName), String.class, value.toString()));
             }
         }
     }
 
-    public static final String shortName(final @NotNull String name){
+    public static final String shortName(final @NotNull String name) {
         return name.substring(0, name.length() - 1);
     }
 
@@ -172,7 +176,9 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
         //if child name is plural of parent name, we expect the value to be a list
         //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
-        if ((node.getLocalName() + "s").equals(parentName) || "mqttUserProperties".equals(parentName) || "userProperties".equals(parentName)) {
+        if ((node.getLocalName() + "s").equals(parentName) ||
+                "mqttUserProperties".equals(parentName) ||
+                "userProperties".equals(parentName)) {
             replaceWithList(map, value, parentName);
             return;
         }

@@ -24,7 +24,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.tag.FileTag;
 import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -59,13 +59,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
-        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTags.getAdapterConfig();
-        assertThat(adapterConfigAndTags.missingTags())
+        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
@@ -116,13 +116,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
-        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTags.getAdapterConfig();
-        assertThat(adapterConfigAndTags.missingTags())
+        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
@@ -137,8 +137,8 @@ class FileAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (FileTag)t))
                 .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
@@ -154,13 +154,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
 ;
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
 
@@ -179,7 +179,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
 
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                 false,
                 mapper,
                 fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
@@ -198,7 +198,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
 
-        assertThatThrownBy(() -> AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                 false,
                 mapper,
                 fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'mqttTopic'");

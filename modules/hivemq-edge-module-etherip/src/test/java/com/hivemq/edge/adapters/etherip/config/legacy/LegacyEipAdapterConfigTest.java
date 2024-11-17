@@ -27,13 +27,14 @@ import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
@@ -104,7 +105,8 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        final AdapterConfigAndTags adapterConfigAndTags = new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags());
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(),
+                List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
 
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (EipTag)t))
@@ -148,7 +150,7 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(new AdapterConfigAndTags(tuple.getConfig(), tuple.getTags()).missingTags())
+        assertThat(new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(), List.of()).missingTags())
                 .isEmpty();
     }
 

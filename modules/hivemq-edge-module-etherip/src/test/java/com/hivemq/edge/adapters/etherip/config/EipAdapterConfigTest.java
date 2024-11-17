@@ -25,7 +25,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -59,13 +59,13 @@ class EipAdapterConfigTest {
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
                         false,
                         mapper,
                         eipProtocolAdapterFactory);
-        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTags.getAdapterConfig();
-        assertThat(adapterConfigAndTags.missingTags())
+        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
@@ -132,13 +132,13 @@ class EipAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("eip"),
                         false,
                         mapper,
                         eipProtocolAdapterFactory);
-        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTags.getAdapterConfig();
-        assertThat(adapterConfigAndTags.missingTags())
+        final EipAdapterConfig config = (EipAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");

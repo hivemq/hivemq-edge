@@ -18,6 +18,7 @@ package com.hivemq.configuration.reader;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
@@ -153,6 +154,7 @@ public class ConfigFileReaderWriter {
         final Class<?>[] classes = ImmutableList.<Class<?>>builder()
                 .add(getConfigEntityClass())
                 .addAll(getInheritedEntityClasses())
+                .add(FieldMappingsEntity.class)
                 .build()
                 .toArray(new Class<?>[0]);
 

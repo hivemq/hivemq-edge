@@ -22,7 +22,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.protocols.AdapterConfigAndTags;
+import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -56,15 +56,15 @@ class LegacyOpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
                         true,
                         mapper,
                         opcUaProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -127,15 +127,15 @@ class LegacyOpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTags adapterConfigAndTags =
-                AdapterConfigAndTags.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
+        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
+                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("opcua"),
                         true,
                         mapper,
                         opcUaProtocolAdapterFactory);
-        assertThat(adapterConfigAndTags.missingTags())
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
                 .isEmpty();
 
-        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) adapterConfigAndTags.getAdapterConfig();
+        final OpcUaAdapterConfig config = (OpcUaAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
