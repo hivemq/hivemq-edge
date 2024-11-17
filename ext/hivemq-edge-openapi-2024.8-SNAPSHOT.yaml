@@ -3343,6 +3343,36 @@ paths:
       summary: List most recent events in the system
       tags:
       - Events
+  /api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}:
+    put:
+      description: Add an adapter and all related parts like e.g. tags to the system.
+      operationId: create-complete-adapter
+      parameters:
+      - description: The adapter type.
+        in: path
+        name: adaptertype
+        required: true
+        schema:
+          type: string
+      - description: The adapter name.
+        in: path
+        name: adaptername
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdapterConfigModel'
+        description: The new adapter.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Add a new Adapter and all related parts like e.g. tags
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters:
     get:
       description: Obtain a list of configured adapters.
@@ -3928,6 +3958,39 @@ paths:
       summary: Get the list of all domain tags created in this Edge instance
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/tags/{tagName}:
+    get:
+      description: Get a domain tag created in this Edge instance
+      operationId: get-domain-tag
+      parameters:
+      - description: The tag name (base64 encoded).
+        in: path
+        name: tagName
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value:
+                    items:
+                    - tagDefinition:
+                        node: ns=2;i=test
+                      tagName: tag1
+                    - tagDefinition:
+                        node: ns=2;i=test2
+                      tagName: tag2
+              schema:
+                $ref: '#/components/schemas/DomainTag'
+          description: Success
+      summary: Get the domain tag with the given name in this Edge instance
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/tagschemas/{protocolId}:
     get:
       description: Obtain the tag schema for a specific portocol adapter.
@@ -4375,6 +4438,16 @@ components:
           description: The adapter type associated with this instance
       required:
       - id
+    AdapterConfigModel:
+      type: object
+      properties:
+        config:
+          $ref: '#/components/schemas/Adapter'
+        tags:
+          type: array
+          description: The tags defined for this adapter
+          items:
+            $ref: '#/components/schemas/DomainTag'
     AdaptersList:
       type: object
       properties:

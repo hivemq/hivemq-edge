@@ -624,7 +624,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     .map(dtm -> DomainTag.fromDomainTagEntity(dtm, adapterId))
                     .map(DomainTag::toTagMap)
                     .collect(Collectors.toList());
-            protocolAdapterManager.addAdapter(adapterType, adapterId, config, domainTags);
+            // TODO fieldmappings should also be part I guess
+            protocolAdapterManager.addAdapter(adapterType, adapterId, config, domainTags, List.of());
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
