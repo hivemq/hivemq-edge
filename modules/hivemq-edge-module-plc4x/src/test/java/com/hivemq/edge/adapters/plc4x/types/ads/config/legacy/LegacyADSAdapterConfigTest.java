@@ -138,7 +138,7 @@ class LegacyADSAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
         });
 
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("my-tag-name", "not set", new Plc4xTagDefinition("MYPROGRAM.MyStringVar", Plc4xDataType.DATA_TYPE.STRING)));
     }
 

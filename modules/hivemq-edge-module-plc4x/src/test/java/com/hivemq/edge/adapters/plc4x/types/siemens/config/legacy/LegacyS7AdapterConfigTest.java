@@ -97,7 +97,7 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
         });
 
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(
                         new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.BOOL)),
                         new Plc4xTag("my-tag-name-2", "not set", new Plc4xTagDefinition("%I205.0", Plc4xDataType.DATA_TYPE.BOOL)));
@@ -147,7 +147,7 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
         });
 
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.SINT)));
     }
 

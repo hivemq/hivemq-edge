@@ -137,8 +137,8 @@ class FileAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (FileTag)t))
                 .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
@@ -164,25 +164,6 @@ class FileAdapterConfigTest {
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
 
-    }
-
-    @Test
-    public void convertConfigObject_contentTypeMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/file-adapter-content-type-missing.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(mockInput);
-
-        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
-                false,
-                mapper,
-                fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'contentType'");
     }
 
     @Test

@@ -154,9 +154,9 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags()).isEmpty();
 
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
             .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
