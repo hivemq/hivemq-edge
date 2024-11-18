@@ -8,7 +8,7 @@ import {
   titleId,
 } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
-import { UITab } from '@/modules/ProtocolAdapters/types.ts'
+import { UITab } from '@/components/rjsf/Form/types.ts'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 export const ObjectFieldTemplate = <

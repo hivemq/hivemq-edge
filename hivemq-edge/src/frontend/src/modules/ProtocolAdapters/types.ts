@@ -20,12 +20,6 @@ export interface ProtocolFacetType {
   filter?: { key: keyof ProtocolAdapter; value: string } | null
 }
 
-export interface UITab {
-  id: string
-  title: string
-  properties: string[]
-}
-
 export enum ProtocolAdapterTabIndex {
   PROTOCOLS,
   ADAPTERS,
