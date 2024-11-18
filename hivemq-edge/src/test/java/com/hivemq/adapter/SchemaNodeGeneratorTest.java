@@ -25,8 +25,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -60,7 +59,7 @@ public class SchemaNodeGeneratorTest {
     public void testPropertyOrdering() {
 
         CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-        JsonNode node = generator.generateJsonSchema(TestOrderingConfig.class);
+        JsonNode node = generator.generateJsonSchema(TestOrderingConfigSpecific.class);
         JsonNode firstNode = node.get("properties");
         Iterator<JsonNode> nodes = firstNode.iterator();
         Assertions.assertEquals("Start Index", nodes.next().get("title").textValue(), "Start Index Should be First");
@@ -114,7 +113,7 @@ public class SchemaNodeGeneratorTest {
     }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
-    static class TestOrderingConfig implements ProtocolAdapterConfig {
+    static class TestOrderingConfigSpecific implements ProtocolSpecificAdapterConfig {
 
         @JsonProperty(value = "id", required = true)
         @ModuleConfigField(title = "Identifier",
@@ -145,7 +144,7 @@ public class SchemaNodeGeneratorTest {
         }
     }
 
-    static class TestNestedEntity implements ProtocolAdapterConfig {
+    static class TestNestedEntity implements ProtocolSpecificAdapterConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",

@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaAdapterConfig>, LegacyConfigConversion {
+public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
 
@@ -56,7 +56,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
         return new OpcUaProtocolAdapter(adapterInformation, input);
     }
 
@@ -84,7 +84,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
         }
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
 
-        return new ConfigTagsTuple(new OpcUaAdapterConfig(legacyOpcUaAdapterConfig.getId(),
+        return new ConfigTagsTuple(new OpcUaSpecificAdapterConfig(legacyOpcUaAdapterConfig.getId(),
                 legacyOpcUaAdapterConfig.getUri(),
                 legacyOpcUaAdapterConfig.getOverrideUri(),
                 legacyOpcUaAdapterConfig.getAuth(),

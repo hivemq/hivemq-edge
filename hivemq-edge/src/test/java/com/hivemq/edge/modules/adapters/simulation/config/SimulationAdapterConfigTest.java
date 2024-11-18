@@ -66,8 +66,8 @@ class SimulationAdapterConfigTest {
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
+        final SimulationSpecificAdapterConfig config =
+                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
@@ -110,8 +110,8 @@ class SimulationAdapterConfigTest {
 
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final SimulationAdapterConfig config =
-                (SimulationAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
+        final SimulationSpecificAdapterConfig config =
+                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
@@ -163,8 +163,8 @@ class SimulationAdapterConfigTest {
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final SimulationAdapterConfig simulationAdapterConfig =
-                new SimulationAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
+        final SimulationSpecificAdapterConfig simulationAdapterConfig =
+                new SimulationSpecificAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
                         "my-simulation-adapter",
                         12,
                         13,
@@ -203,8 +203,8 @@ class SimulationAdapterConfigTest {
         final SimulationToMqttMapping pollingContext =
                 new SimulationToMqttMapping("my/destination", null, null, null, null, null);
 
-        final SimulationAdapterConfig simulationAdapterConfig =
-                new SimulationAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), null, null),
+        final SimulationSpecificAdapterConfig simulationAdapterConfig =
+                new SimulationSpecificAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), null, null),
                         "my-simulation-adapter",
                         null,
                         null,

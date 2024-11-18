@@ -24,8 +24,8 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
-import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -58,15 +58,15 @@ class LegacyADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
                         true,
                         mapper,
                         adsProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSAdapterConfig config = (ADSAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("asd");
         assertThat(config.getHost()).isEqualTo("172.16.10.54");
@@ -109,15 +109,15 @@ class LegacyADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
                         true,
                         mapper,
                         adsProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSAdapterConfig config = (ADSAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-ads-id");
         assertThat(config.getPort()).isEqualTo(48898);
@@ -138,7 +138,7 @@ class LegacyADSAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("my-tag-name", "not set", new Plc4xTagDefinition("MYPROGRAM.MyStringVar", Plc4xDataType.DATA_TYPE.STRING)));
     }
 

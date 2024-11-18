@@ -17,7 +17,7 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -41,7 +41,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull ProtocolAdapterConfig configObject;
+    private final @NotNull ProtocolSpecificAdapterConfig configObject;
     private final @NotNull List<Tag> tags;
     private final @NotNull List<FieldMappings> fieldMappings;
     protected @Nullable Long lastStartAttemptTime;
@@ -52,7 +52,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
-            final @NotNull ProtocolAdapterConfig configObject,
+            final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<Tag> tags,
             final @NotNull List<FieldMappings> fieldMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -108,7 +108,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return adapterInformation;
     }
 
-    public @NotNull ProtocolAdapterConfig getConfigObject() {
+    public @NotNull ProtocolSpecificAdapterConfig getConfigObject() {
         return configObject;
     }
 

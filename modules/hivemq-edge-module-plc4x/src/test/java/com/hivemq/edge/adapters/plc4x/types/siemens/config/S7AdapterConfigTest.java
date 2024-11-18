@@ -26,7 +26,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -38,8 +38,8 @@ import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig.ControllerType.S7_1500;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig.ControllerType.S7_400;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,15 +63,15 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -116,15 +116,15 @@ class S7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
         
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -147,7 +147,7 @@ class S7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
@@ -163,13 +163,13 @@ class S7AdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
@@ -184,7 +184,7 @@ class S7AdapterConfigTest {
                 "tag-name",
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final S7AdapterConfig s7AdapterConfig = new S7AdapterConfig("my-s7-adapter",
+        final S7SpecificAdapterConfig s7AdapterConfig = new S7SpecificAdapterConfig("my-s7-adapter",
                 14,
                 "my.host.com",
                 S7_1500,

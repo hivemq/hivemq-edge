@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.modbus.config;
+package com.hivemq.edge.adapters.etherip.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
-@SuppressWarnings("FieldCanBeLocal")
-public class ModbusAdapterConfig implements ProtocolAdapterConfig {
+public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-    public static final int PORT_MIN = 1;
-    public static final int PORT_MAX = 65535;
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
@@ -54,40 +49,44 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
+
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device you wish to connect to",
                        required = true,
                        numberMin = PORT_MIN,
-                       numberMax = PORT_MAX)
+                       numberMax = PORT_MAX,
+                       defaultValue = "44818")
     private final int port;
 
-    @JsonProperty("timeoutMillis")
-    @ModuleConfigField(title = "Timeout",
-                       description = "Time (in milliseconds) to await a connection before the client gives up",
-                       numberMin = 1000,
-                       numberMax = 15000,
-                       defaultValue = "5000")
-    private final int timeoutMillis;
+    @JsonProperty("backplane")
+    @ModuleConfigField(title = "Backplane", description = "Backplane device value", defaultValue = "1")
+    private final int backplane;
 
-    @JsonProperty(value = "modbusToMqtt", required = true)
-    @ModuleConfigField(title = "Modbus To MQTT Config",
-                       description = "The configuration for a data stream from Modbus to MQTT",
+    @JsonProperty("slot")
+    @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
+    private final int slot;
+
+    @JsonProperty(value = "eipToMqtt", required = true)
+    @ModuleConfigField(title = "Ethernet IP To MQTT Config",
+                       description = "The configuration for a data stream from Ethernet IP to MQTT",
                        required = true)
-    private final @Nullable ModbusToMqttConfig modbusToMQTTConfig;
+    private final @Nullable EipToMqttConfig eipToMqttConfig;
 
     @JsonCreator
-    public ModbusAdapterConfig(
+    public EipSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
-            @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
-            @JsonProperty(value = "modbusToMqtt") final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
+            @JsonProperty(value = "backplane") final @Nullable Integer backplane,
+            @JsonProperty(value = "slot") final @Nullable Integer slot,
+            @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
         this.id = id;
-        this.port = port;
         this.host = host;
-        this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
-        this.modbusToMQTTConfig = modbusToMQTTConfig;
+        this.port = port;
+        this.backplane = Objects.requireNonNullElse(backplane, 1);
+        this.slot = Objects.requireNonNullElse(slot, 0);
+        this.eipToMqttConfig = eipToMqttConfig;
     }
 
     public @NotNull String getId() {
@@ -96,7 +95,11 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return modbusToMQTTConfig.getMappings().stream().map(ModbusToMqttMapping::getTagName).collect(Collectors.toSet());
+        if(eipToMqttConfig != null) {
+            return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
+        } else {
+            return Set.of();
+        }
     }
 
     public @NotNull String getHost() {
@@ -107,11 +110,15 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return port;
     }
 
-    public int getTimeoutMillis() {
-        return timeoutMillis;
+    public int getBackplane() {
+        return backplane;
     }
 
-    public @Nullable ModbusToMqttConfig getModbusToMQTTConfig() {
-        return modbusToMQTTConfig;
+    public int getSlot() {
+        return slot;
+    }
+
+    public @Nullable EipToMqttConfig getEipToMqttConfig() {
+        return eipToMqttConfig;
     }
 }

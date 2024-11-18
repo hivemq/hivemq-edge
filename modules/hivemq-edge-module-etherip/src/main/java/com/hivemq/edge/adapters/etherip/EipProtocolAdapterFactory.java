@@ -23,10 +23,10 @@ import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
-import com.hivemq.edge.adapters.etherip.config.legacy.LegacyEipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.legacy.LegacyEipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig>, LegacyConfigConversion {
+public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterFactory.class);
 
@@ -55,21 +55,21 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<EipAdapterConfig> input) {
+            @NotNull final ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
         return new EipPollingProtocolAdapter(adapterInformation, input);
     }
 
     public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
-        final LegacyEipAdapterConfig legacyEipAdapterConfig =
-                objectMapper.convertValue(config, LegacyEipAdapterConfig.class);
+        final LegacyEipSpecificAdapterConfig legacyEipAdapterConfig =
+                objectMapper.convertValue(config, LegacyEipSpecificAdapterConfig.class);
 
         // reference tag in the config
 
         final List<EipToMqttMapping> eipToMqttMappings = new ArrayList<>();
         final List<EipTag> tags = new ArrayList<>();
-        for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
+        for (final LegacyEipSpecificAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
             tags.add(new EipTag(context.getTagName(), "not available", new EipTagDefinition(
                     context.getTagAddress(),
@@ -90,7 +90,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                 eipToMqttMappings);
 
         return new ConfigTagsTuple(
-                new EipAdapterConfig(legacyEipAdapterConfig.getId(),
+                new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
                     legacyEipAdapterConfig.getPort(),
                     legacyEipAdapterConfig.getHost(),
                     legacyEipAdapterConfig.getBackplane(),

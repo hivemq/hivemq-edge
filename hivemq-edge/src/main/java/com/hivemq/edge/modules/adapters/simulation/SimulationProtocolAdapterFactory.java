@@ -18,11 +18,11 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import com.hivemq.edge.modules.adapters.simulation.config.legacy.LegacySimulationAdapterConfig;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationAdapterConfig> {
+public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterFactory.class);
 
@@ -53,12 +53,12 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
+            @NotNull final ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
+    public @NotNull ProtocolSpecificAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
@@ -85,7 +85,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
         }
     }
 
-    private static @NotNull SimulationAdapterConfig tryConvertLegacyConfig(
+    private static @NotNull SimulationSpecificAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacySimulationAdapterConfig legacySimulationAdapterConfig =
                 objectMapper.convertValue(config, LegacySimulationAdapterConfig.class);
@@ -106,7 +106,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
                 legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
 
-        return new SimulationAdapterConfig(simulationToMqttConfig,
+        return new SimulationSpecificAdapterConfig(simulationToMqttConfig,
                 legacySimulationAdapterConfig.getId(),
                 legacySimulationAdapterConfig.getMinValue(),
                 legacySimulationAdapterConfig.getMaxValue(),

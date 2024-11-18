@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
+public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
     private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
     private static final int MAX_UINT16 = 65535;

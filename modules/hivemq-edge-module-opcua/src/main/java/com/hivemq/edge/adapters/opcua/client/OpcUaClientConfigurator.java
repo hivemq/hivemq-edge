@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
@@ -47,9 +47,9 @@ import java.util.function.Function;
 
 public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilder, OpcUaClientConfig> {
 
-    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
 
-    public OpcUaClientConfigurator(final @NotNull OpcUaAdapterConfig adapterConfig) {
+    public OpcUaClientConfigurator(final @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
         this.adapterConfig = adapterConfig;
     }
 

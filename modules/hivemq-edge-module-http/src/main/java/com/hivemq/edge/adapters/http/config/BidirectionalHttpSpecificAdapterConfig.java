@@ -18,12 +18,9 @@ package com.hivemq.edge.adapters.http.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
-import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,9 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.*;
-
-public class BidirectionalHttpAdapterConfig extends HttpAdapterConfig {
+public class BidirectionalHttpSpecificAdapterConfig extends HttpSpecificAdapterConfig {
 
     @JsonProperty(value = "mqttToHttp")
     @ModuleConfigField(title = "MQTT to HTTP Config",
@@ -43,7 +38,7 @@ public class BidirectionalHttpAdapterConfig extends HttpAdapterConfig {
     private final @NotNull MqttToHttpConfig mqttToHttpConfig;
 
     @JsonCreator
-    public BidirectionalHttpAdapterConfig(
+    public BidirectionalHttpSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,

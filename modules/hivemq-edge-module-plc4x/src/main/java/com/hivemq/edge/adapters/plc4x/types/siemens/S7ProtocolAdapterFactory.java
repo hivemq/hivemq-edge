@@ -27,7 +27,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy.LegacyS7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7AdapterConfig>, LegacyConfigConversion {
+public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7SpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
 
@@ -59,7 +59,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
+            @NotNull final ProtocolAdapterInput<S7SpecificAdapterConfig> input) {
         return new S7ProtocolAdapter(adapterInformation, input);
     }
 
@@ -88,7 +88,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                 legacyS7AdapterConfig.getPublishChangedDataOnly(),
                 plc4xToMqttMappings);
 
-        return new ConfigTagsTuple(new S7AdapterConfig(legacyS7AdapterConfig.getId(),
+        return new ConfigTagsTuple(new S7SpecificAdapterConfig(legacyS7AdapterConfig.getId(),
                 legacyS7AdapterConfig.getPort(),
                 legacyS7AdapterConfig.getHost(),
                 legacyS7AdapterConfig.getControllerType(),

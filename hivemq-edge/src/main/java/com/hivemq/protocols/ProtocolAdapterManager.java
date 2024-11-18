@@ -25,7 +25,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
@@ -173,7 +173,7 @@ public class ProtocolAdapterManager {
 
 
             adapterConfigs.stream()
-                    .map(persistenceMap -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap(persistenceMap,
+                    .map(persistenceMap -> AdapterConfig.fromAdapterConfigMap(persistenceMap,
                             writingEnabled(),
                             objectMapper,
                             protocolAdapterFactory))
@@ -209,7 +209,7 @@ public class ProtocolAdapterManager {
     private @NotNull Map<String, Object> rewriteAdapterConfigurations(Collection<? extends ProtocolAdapterWrapper> protocolAdapterWrappers) {
         final Map<String, Object> allAdapterConfigs = new HashMap<>();
         for (final ProtocolAdapterWrapper<?> value : protocolAdapterWrappers) {
-            final ProtocolAdapterConfig configObject = value.getConfigObject();
+            final ProtocolSpecificAdapterConfig configObject = value.getConfigObject();
             final List<Tag> tags = value.getTags();
             final List<Map<String, Object>> convertedTags =
                     tags.stream().map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
@@ -643,7 +643,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull ProtocolAdapterWrapper createAdapterInstance(
             final @NotNull ProtocolAdapterFactory<?> protocolAdapterFactory,
-            final @NotNull AdapterConfigAndTagsAndFieldMappings config,
+            final @NotNull AdapterConfig config,
             final @NotNull String version) {
 
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -704,8 +704,8 @@ public class ProtocolAdapterManager {
                     .orElseThrow(() -> new IllegalArgumentException("No factory found for adapter type " +
                             adapterType));
 
-            final AdapterConfigAndTagsAndFieldMappings persistence =
-                    AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMapAndFieldMappings(Map.of("config",
+            final AdapterConfig persistence =
+                    AdapterConfig.fromAdapterConfigMapAndFieldMappings(Map.of("config",
                             config,
                             "tags",
                             tagMaps), writingEnabled(), objectMapper, protocolAdapterFactory, fieldMappings);
@@ -892,7 +892,7 @@ public class ProtocolAdapterManager {
     }
 
 
-    public static class ProtocolAdapterInputImpl<T extends ProtocolAdapterConfig> implements ProtocolAdapterInput<T> {
+    public static class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
         public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
         private final @NotNull T configObject;
         private final @NotNull String version;

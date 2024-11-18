@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.http.config.legacy;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,13 +40,13 @@ public class LegacyHttpAdapterConfig {
     private final int qos;
 
     @JsonProperty("httpRequestMethod")
-    private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
+    private final @NotNull HttpSpecificAdapterConfig.HttpMethod httpRequestMethod;
 
     @JsonProperty("httpConnectTimeout")
     private final int httpConnectTimeoutSeconds;
 
     @JsonProperty("httpRequestBodyContentType")
-    private final @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType;
+    private final @NotNull HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType;
 
     @JsonProperty("httpRequestBody")
     private final @Nullable String httpRequestBody;
@@ -58,7 +58,7 @@ public class LegacyHttpAdapterConfig {
     private final boolean httpPublishSuccessStatusCodeOnly;
 
     @JsonProperty("httpHeaders")
-    private final @NotNull List<HttpAdapterConfig.HttpHeader> httpHeaders;
+    private final @NotNull List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders;
 
     @JsonProperty(value = "id")
     private final @NotNull String id;
@@ -78,13 +78,13 @@ public class LegacyHttpAdapterConfig {
             @JsonProperty(value = "url", required = true) final @NotNull String url,
             @JsonProperty(value = "destination", required = true) final @NotNull String destination,
             @JsonProperty("qos") final @Nullable Integer qos,
-            @JsonProperty("httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
+            @JsonProperty("httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty("httpConnectTimeout") final @Nullable Integer httpConnectTimeoutSeconds,
-            @JsonProperty("httpRequestBodyContentType") final @Nullable HttpAdapterConfig.HttpContentType httpRequestBodyContentType,
+            @JsonProperty("httpRequestBodyContentType") final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
             @JsonProperty("httpRequestBody") final @Nullable String httpRequestBody,
             @JsonProperty("assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
             @JsonProperty("httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
-            @JsonProperty("httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders,
+            @JsonProperty("httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders,
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty("allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
@@ -99,8 +99,8 @@ public class LegacyHttpAdapterConfig {
         this.url = url;
         this.destination = destination;
         this.qos = Objects.requireNonNullElse(qos, 0);
-        this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, HttpAdapterConfig.HttpMethod.GET);
-        this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, HttpAdapterConfig.HttpContentType.JSON);
+        this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, HttpSpecificAdapterConfig.HttpMethod.GET);
+        this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, HttpSpecificAdapterConfig.HttpContentType.JSON);
         this.httpRequestBody = httpRequestBody;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
@@ -122,15 +122,15 @@ public class LegacyHttpAdapterConfig {
         return assertResponseIsJson;
     }
 
-    public @NotNull HttpAdapterConfig.HttpMethod getHttpRequestMethod() {
+    public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }
 
-    public @NotNull List<HttpAdapterConfig.HttpHeader> getHttpHeaders() {
+    public @NotNull List<HttpSpecificAdapterConfig.HttpHeader> getHttpHeaders() {
         return httpHeaders;
     }
 
-    public @NotNull HttpAdapterConfig.HttpContentType getHttpRequestBodyContentType() {
+    public @NotNull HttpSpecificAdapterConfig.HttpContentType getHttpRequestBodyContentType() {
         return httpRequestBodyContentType;
     }
 

@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -28,7 +27,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.legacy.LegacyADSAdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdapterConfig>, LegacyConfigConversion {
+public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
@@ -60,7 +59,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<ADSAdapterConfig> input) {
+            @NotNull final ProtocolAdapterInput<ADSSpecificAdapterConfig> input) {
         return new ADSProtocolAdapter(adapterInformation, input);
     }
 
@@ -93,7 +92,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
                         plc4xToMqttMappings);
 
 
-        return new ConfigTagsTuple(new ADSAdapterConfig(legacyAdsAdapterConfig.getId(),
+        return new ConfigTagsTuple(new ADSSpecificAdapterConfig(legacyAdsAdapterConfig.getId(),
                 legacyAdsAdapterConfig.getPort(),
                 legacyAdsAdapterConfig.getHost(),
                 legacyAdsAdapterConfig.getTargetAmsPort(),

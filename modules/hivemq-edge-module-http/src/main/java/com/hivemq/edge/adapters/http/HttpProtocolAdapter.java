@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.http;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -38,8 +37,8 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.BidirectionalHttpSpecificAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
@@ -73,8 +72,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.JSON_MIME_TYPE;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.PLAIN_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSON_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -90,7 +89,7 @@ public class HttpProtocolAdapter
     private static final @NotNull String RESPONSE_DATA = "httpResponseData";
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull HttpAdapterConfig adapterConfig;
+    private final @NotNull HttpSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -102,7 +101,7 @@ public class HttpProtocolAdapter
 
     public HttpProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<HttpSpecificAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
@@ -369,8 +368,8 @@ public class HttpProtocolAdapter
 
     @Override
     public @NotNull List<MqttToHttpMapping> getWritingContexts() {
-        if (adapterConfig instanceof BidirectionalHttpAdapterConfig) {
-            return ((BidirectionalHttpAdapterConfig) adapterConfig).getMqttToHttpConfig().getMappings();
+        if (adapterConfig instanceof BidirectionalHttpSpecificAdapterConfig) {
+            return ((BidirectionalHttpSpecificAdapterConfig) adapterConfig).getMqttToHttpConfig().getMappings();
         }
         return Collections.emptyList();
     }

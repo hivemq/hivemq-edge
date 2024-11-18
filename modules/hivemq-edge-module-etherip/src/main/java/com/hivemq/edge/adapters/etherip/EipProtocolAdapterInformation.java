@@ -20,9 +20,9 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -124,12 +124,12 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
-        return EipAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+        return EipSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
-        return EipAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+        return EipSpecificAdapterConfig.class;
     }
 }

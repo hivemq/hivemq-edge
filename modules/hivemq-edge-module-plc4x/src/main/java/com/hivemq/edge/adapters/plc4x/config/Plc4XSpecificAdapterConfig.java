@@ -19,11 +19,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements ProtocolAdapterConfig {
+public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
@@ -55,7 +55,7 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
     private final @NotNull String host;
 
     @JsonCreator
-    public Plc4xAdapterConfig(
+    public Plc4XSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host) {

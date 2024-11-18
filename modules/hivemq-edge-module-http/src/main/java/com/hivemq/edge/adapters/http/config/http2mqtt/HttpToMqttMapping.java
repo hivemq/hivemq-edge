@@ -22,7 +22,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,8 +33,8 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContentType.JSON;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.GET;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpContentType.JSON;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpMethod.GET;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -78,7 +78,7 @@ public class HttpToMqttMapping implements PollingContext {
     @ModuleConfigField(title = "Http Method",
                        description = "Http method associated with the request",
                        defaultValue = "GET")
-    private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
+    private final @NotNull HttpSpecificAdapterConfig.HttpMethod httpRequestMethod;
 
     @JsonProperty(value = "httpRequestTimeoutSeconds")
     @ModuleConfigField(title = "Http Request Timeout",
@@ -92,7 +92,7 @@ public class HttpToMqttMapping implements PollingContext {
     @ModuleConfigField(title = "Http Request Content Type",
                        description = "Content Type associated with the request",
                        defaultValue = "JSON")
-    private final @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType;
+    private final @NotNull HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType;
 
     @JsonProperty(value = "httpRequestBody")
     @ModuleConfigField(title = "Http Request Body", description = "The body to include in the HTTP request")
@@ -101,7 +101,7 @@ public class HttpToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "httpHeaders")
     @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
-    private final @NotNull List<HttpAdapterConfig.HttpHeader> httpHeaders;
+    private final @NotNull List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders;
 
     @JsonCreator
     public HttpToMqttMapping(
@@ -110,11 +110,11 @@ public class HttpToMqttMapping implements PollingContext {
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
-            @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
+            @JsonProperty(value = "httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
-            @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpAdapterConfig.HttpContentType httpRequestBodyContentType,
+            @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
             @JsonProperty(value = "httpRequestBody") final @Nullable String httpRequestBody,
-            @JsonProperty(value = "httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders) {
+            @JsonProperty(value = "httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders) {
         this.tagName = tagName;
         this.mqttTopic = mqttTopic;
         this.mqttQos = requireNonNullElse(mqttQos, 0);
@@ -168,7 +168,7 @@ public class HttpToMqttMapping implements PollingContext {
         return userProperties;
     }
 
-    public @NotNull HttpAdapterConfig.HttpMethod getHttpRequestMethod() {
+    public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }
 
@@ -176,7 +176,7 @@ public class HttpToMqttMapping implements PollingContext {
         return httpRequestTimeoutSeconds;
     }
 
-    public @NotNull HttpAdapterConfig.HttpContentType getHttpRequestBodyContentType() {
+    public @NotNull HttpSpecificAdapterConfig.HttpContentType getHttpRequestBodyContentType() {
         return httpRequestBodyContentType;
     }
 
@@ -184,7 +184,7 @@ public class HttpToMqttMapping implements PollingContext {
         return httpRequestBody;
     }
 
-    public @NotNull List<HttpAdapterConfig.HttpHeader> getHttpHeaders() {
+    public @NotNull List<HttpSpecificAdapterConfig.HttpHeader> getHttpHeaders() {
         return httpHeaders;
     }
 }

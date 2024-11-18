@@ -18,18 +18,16 @@ package com.hivemq.edge.adapters.plc4x.types.ads.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
+public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -82,7 +80,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     private final @Nullable ADSToMqttConfig adsToMqttConfig;
 
     @JsonCreator
-    public ADSAdapterConfig(
+    public ADSSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,

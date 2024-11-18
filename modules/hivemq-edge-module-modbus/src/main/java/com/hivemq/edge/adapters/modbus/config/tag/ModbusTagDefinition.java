@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
-import com.hivemq.edge.adapters.modbus.config.AddressRange;
-import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +20,7 @@ public class ModbusTagDefinition implements TagDefinition {
     @ModuleConfigField(title = "Start Index",
                        description = "The Starting Index (Incl.) of the Address Range",
                        numberMin = 0,
-                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
                        required = true)
     public final int startIdx;
 

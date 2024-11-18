@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
@@ -32,9 +32,9 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
     private static final Logger log = LoggerFactory.getLogger(OpcUaEndpointFilter.class);
 
     private final @NotNull String configPolicyUri;
-    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
 
-    public OpcUaEndpointFilter(@NotNull String configPolicyUri, @NotNull OpcUaAdapterConfig adapterConfig) {
+    public OpcUaEndpointFilter(@NotNull String configPolicyUri, @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
         this.configPolicyUri = configPolicyUri;
         this.adapterConfig = adapterConfig;
     }

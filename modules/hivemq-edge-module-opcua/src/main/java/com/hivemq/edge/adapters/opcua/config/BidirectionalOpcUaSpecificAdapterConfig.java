@@ -18,11 +18,9 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,9 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNullElse;
-
-public class BidirectionalOpcUaAdapterConfig extends OpcUaAdapterConfig {
+public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapterConfig {
 
     @JsonProperty(value = "mqttToOpcua")
     @ModuleConfigField(title = "Mqtt to OpcUA Config",
@@ -42,7 +38,7 @@ public class BidirectionalOpcUaAdapterConfig extends OpcUaAdapterConfig {
     private final @NotNull MqttToOpcUaConfig mqttToOpcUaConfig;
 
     @JsonCreator
-    public BidirectionalOpcUaAdapterConfig(
+    public BidirectionalOpcUaSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,

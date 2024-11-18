@@ -18,16 +18,15 @@ package com.hivemq.edge.adapters.etherip.config.legacy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
-import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +62,7 @@ class LegacyEipAdapterConfigTest {
         final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
                 (Map) adapters.get("ethernet-ip"));
 
-        final EipAdapterConfig config = (EipAdapterConfig) tuple.getConfig();
+        final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -105,7 +104,7 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(),
+        final AdapterConfig adapterConfigAndTags = new AdapterConfig(tuple.getConfig(), tuple.getTags(),
                 List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
 
@@ -131,7 +130,7 @@ class LegacyEipAdapterConfigTest {
         final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
                 (Map) adapters.get("ethernet-ip"));
 
-        final EipAdapterConfig config = (EipAdapterConfig) tuple.getConfig();
+        final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -150,7 +149,7 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(), List.of()).missingTags())
+        assertThat(new AdapterConfig(tuple.getConfig(), tuple.getTags(), List.of()).missingTags())
                 .isEmpty();
     }
 

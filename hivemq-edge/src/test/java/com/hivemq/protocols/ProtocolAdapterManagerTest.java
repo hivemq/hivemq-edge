@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -315,12 +315,12 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
             return null;
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
             return null;
         }
     }

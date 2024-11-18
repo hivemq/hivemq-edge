@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,14 +38,14 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationToMqttMapping> {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull SimulationAdapterConfig adapterConfig;
+    private final @NotNull SimulationSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull TimeWaiter timeWaiter;
     private static final @NotNull Random RANDOM = new Random();
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput,
+            final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> protocolAdapterInput,
             final @NotNull TimeWaiter timeWaiter) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();

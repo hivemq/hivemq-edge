@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.POST;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpMethod.POST;
 import static java.util.Objects.requireNonNullElse;
 
 public class MqttToHttpMapping implements WritingContext {
@@ -45,7 +45,7 @@ public class MqttToHttpMapping implements WritingContext {
     @ModuleConfigField(title = "Http Method",
                        description = "Http method associated with the request",
                        defaultValue = "POST")
-    private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
+    private final @NotNull HttpSpecificAdapterConfig.HttpMethod httpRequestMethod;
 
     @JsonProperty(value = "httpRequestTimeoutSeconds")
     @ModuleConfigField(title = "Http Request Timeout",
@@ -57,16 +57,16 @@ public class MqttToHttpMapping implements WritingContext {
 
     @JsonProperty(value = "httpHeaders")
     @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
-    private final @NotNull List<HttpAdapterConfig.HttpHeader> httpHeaders;
+    private final @NotNull List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders;
 
     @JsonCreator
     public MqttToHttpMapping(
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopicFilter", required = true) final @NotNull String mqttTopicFilter,
             @JsonProperty(value = "mqttMaxQos") final @Nullable Integer mqttMaxQos,
-            @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
+            @JsonProperty(value = "httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
-            @JsonProperty(value = "httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders) {
+            @JsonProperty(value = "httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders) {
         this.tagName = tagName;
         this.mqttTopicFilter = mqttTopicFilter;
         this.mqttMaxQos = requireNonNullElse(mqttMaxQos, 1);
@@ -94,7 +94,7 @@ public class MqttToHttpMapping implements WritingContext {
         return mqttMaxQos;
     }
 
-    public @NotNull HttpAdapterConfig.HttpMethod getHttpRequestMethod() {
+    public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }
 
@@ -102,7 +102,7 @@ public class MqttToHttpMapping implements WritingContext {
         return httpRequestTimeoutSeconds;
     }
 
-    public @NotNull List<HttpAdapterConfig.HttpHeader> getHttpHeaders() {
+    public @NotNull List<HttpSpecificAdapterConfig.HttpHeader> getHttpHeaders() {
         return httpHeaders;
     }
 }

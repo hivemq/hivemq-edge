@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
@@ -41,7 +41,7 @@ import java.util.UUID;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig>, LegacyConfigConversion {
+public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
@@ -59,7 +59,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<HttpSpecificAdapterConfig> input) {
         return new HttpProtocolAdapter(adapterInformation, input);
     }
 
@@ -93,7 +93,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
                         List.of(httpToMqttMapping));
 
-        return new ConfigTagsTuple(new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
+        return new ConfigTagsTuple(new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getId(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                 httpToMqttConfig,
                 legacyHttpAdapterConfig.isAllowUntrustedCertificates()),

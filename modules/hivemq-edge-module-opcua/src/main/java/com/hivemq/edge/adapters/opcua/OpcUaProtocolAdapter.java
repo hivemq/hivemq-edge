@@ -35,8 +35,8 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
@@ -54,7 +54,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
@@ -63,7 +63,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -176,8 +176,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public @NotNull List<MqttToOpcUaMapping> getWritingContexts() {
-        if(adapterConfig instanceof BidirectionalOpcUaAdapterConfig) {
-            return ((BidirectionalOpcUaAdapterConfig) adapterConfig).getMqttToOpcUaConfig().getMqttToOpcUaMappings();
+        if(adapterConfig instanceof BidirectionalOpcUaSpecificAdapterConfig) {
+            return ((BidirectionalOpcUaSpecificAdapterConfig) adapterConfig).getMqttToOpcUaConfig().getMqttToOpcUaMappings();
         }
         return Collections.emptyList();
     }

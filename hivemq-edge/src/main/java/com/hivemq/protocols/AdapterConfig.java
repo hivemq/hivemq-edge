@@ -16,7 +16,7 @@
 package com.hivemq.protocols;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -37,26 +37,26 @@ import java.util.stream.Collectors;
 
 import static com.hivemq.protocols.ConfigPersistence.TAG_MAPPING_KEY;
 
-public class AdapterConfigAndTagsAndFieldMappings {
+public class AdapterConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(AdapterConfigAndTagsAndFieldMappings.class);
+    private static final Logger log = LoggerFactory.getLogger(AdapterConfig.class);
 
-    private final @NotNull ProtocolAdapterConfig adapterConfig;
+    private final @NotNull ProtocolSpecificAdapterConfig adapterConfig;
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull List<FieldMappings> fieldMappings;
 
-    public AdapterConfigAndTagsAndFieldMappings(
-            final @NotNull ProtocolAdapterConfig adapterConfig,
+    public AdapterConfig(
+            final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
             final @NotNull List<? extends Tag> tags,
             final @NotNull List<FieldMappings> fieldMappings) {
-        Objects.requireNonNull(adapterConfig);
+        Objects.requireNonNull(protocolSpecificConfig);
         Objects.requireNonNull(tags);
-        this.adapterConfig = adapterConfig;
+        this.adapterConfig = protocolSpecificConfig;
         this.tags = tags;
         this.fieldMappings = fieldMappings;
     }
 
-    public @NotNull ProtocolAdapterConfig getAdapterConfig() {
+    public @NotNull ProtocolSpecificAdapterConfig getAdapterConfig() {
         return adapterConfig;
     }
 
@@ -74,7 +74,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
         }
     }
 
-    public static AdapterConfigAndTagsAndFieldMappings fromAdapterConfigMap(
+    public static AdapterConfig fromAdapterConfigMap(
             final @NotNull Map<String, Object> adapterConfig,
             final boolean writingEnabled,
             final @NotNull ObjectMapper mapper,
@@ -85,7 +85,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
         final List<Map<String, Object>> fieldMappingsMaps =
                 Objects.requireNonNullElse((List<Map<String, Object>>) adapterConfig.get(TAG_MAPPING_KEY), List.of());
         if (adapterConfigMap != null) {
-            final ProtocolAdapterConfig protocolAdapterConfig =
+            final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     protocolAdapterFactory.convertConfigObject(mapper, adapterConfigMap, writingEnabled);
             final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
             final List<FieldMappings> fieldMappings = fieldMappingsMaps.stream()
@@ -93,7 +93,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
                     .map(entity -> FieldMappings.fromEntity(entity, mapper))
                     .collect(Collectors.toList());
 
-            return new AdapterConfigAndTagsAndFieldMappings(protocolAdapterConfig, tags, fieldMappings);
+            return new AdapterConfig(protocolSpecificAdapterConfig, tags, fieldMappings);
         } else if (protocolAdapterFactory instanceof LegacyConfigConversion) {
             log.warn(
                     "Trying to load {} as legacy configuration. Support for the legacy configuration will be removed in the beginning of 2025.",
@@ -102,7 +102,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
             final ConfigTagsTuple configTagsTuple =
                     ((LegacyConfigConversion) protocolAdapterFactory).tryConvertLegacyConfig(mapper, adapterConfig);
             // currently legacy configs wont have a fieldmappings
-            return new AdapterConfigAndTagsAndFieldMappings(configTagsTuple.getConfig(),
+            return new AdapterConfig(configTagsTuple.getConfig(),
                     configTagsTuple.getTags(),
                     List.of());
         } else {
@@ -113,7 +113,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
         }
     }
 
-    public static AdapterConfigAndTagsAndFieldMappings fromAdapterConfigMapAndFieldMappings(
+    public static AdapterConfig fromAdapterConfigMapAndFieldMappings(
             final @NotNull Map<String, Object> adapterConfig,
             final boolean writingEnabled,
             final @NotNull ObjectMapper mapper,
@@ -124,10 +124,10 @@ public class AdapterConfigAndTagsAndFieldMappings {
                 Objects.requireNonNullElse((List<Map<String, Object>>) adapterConfig.get("tags"), List.of());
 
         if (adapterConfigMap != null) {
-            final ProtocolAdapterConfig protocolAdapterConfig =
+            final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     protocolAdapterFactory.convertConfigObject(mapper, adapterConfigMap, writingEnabled);
             final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
-            return new AdapterConfigAndTagsAndFieldMappings(protocolAdapterConfig, tags, fieldMappings);
+            return new AdapterConfig(protocolSpecificAdapterConfig, tags, fieldMappings);
         } else if (protocolAdapterFactory instanceof LegacyConfigConversion) {
             log.warn(
                     "Trying to load {} as legacy configuration. Support for the legacy configuration will be removed in the beginning of 2025.",
@@ -136,7 +136,7 @@ public class AdapterConfigAndTagsAndFieldMappings {
             final ConfigTagsTuple configTagsTuple =
                     ((LegacyConfigConversion) protocolAdapterFactory).tryConvertLegacyConfig(mapper, adapterConfig);
             // currently legacy configs wont have a fieldmappings
-            return new AdapterConfigAndTagsAndFieldMappings(configTagsTuple.getConfig(),
+            return new AdapterConfig(configTagsTuple.getConfig(),
                     configTagsTuple.getTags(),
                     List.of());
         } else {

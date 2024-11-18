@@ -24,8 +24,8 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
-import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig.ControllerType.S7_1500;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -58,15 +58,15 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
@@ -97,7 +97,7 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(
                         new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.BOOL)),
                         new Plc4xTag("my-tag-name-2", "not set", new Plc4xTagDefinition("%I205.0", Plc4xDataType.DATA_TYPE.BOOL)));
@@ -116,15 +116,15 @@ class LegacyS7AdapterConfigTest {
         final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
                 new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
                         s7ProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final S7AdapterConfig config = (S7AdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
@@ -147,7 +147,7 @@ class LegacyS7AdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
                 .containsExactly(new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.SINT)));
     }
 

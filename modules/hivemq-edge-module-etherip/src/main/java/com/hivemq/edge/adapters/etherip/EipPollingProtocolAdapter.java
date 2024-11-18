@@ -27,7 +27,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
@@ -51,7 +51,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
 
     private static final @NotNull String TAG_ADDRESS_TYPE_SEP = ":";
 
-    private final @NotNull EipAdapterConfig adapterConfig;
+    private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
@@ -62,7 +62,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
 
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<EipAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();

@@ -23,10 +23,10 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.config.ContentType;
-import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.tag.FileTag;
 import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.protocols.AdapterConfig;
 import org.assertj.core.groups.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ class LegacyFileAdapterConfigTest {
         final ConfigTagsTuple tuple =
                 fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
 
-        FileAdapterConfig config = (FileAdapterConfig) tuple.getConfig();
+        FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) tuple.getConfig();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -100,7 +100,7 @@ class LegacyFileAdapterConfigTest {
             });
         });
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(), List.of());
+        final AdapterConfig adapterConfigAndTags = new AdapterConfig(tuple.getConfig(), tuple.getTags(), List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
                 .extracting(FileTag::getDescription, FileTag::getDefinition)
@@ -124,7 +124,7 @@ class LegacyFileAdapterConfigTest {
         final ConfigTagsTuple tuple =
                 fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
 
-        FileAdapterConfig config = (FileAdapterConfig) tuple.getConfig();
+        FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) tuple.getConfig();
 
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
@@ -138,7 +138,7 @@ class LegacyFileAdapterConfigTest {
             assertThat(subscription.getIncludeTagNames()).isFalse();
         });
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTags = new AdapterConfigAndTagsAndFieldMappings(tuple.getConfig(), tuple.getTags(),
+        final AdapterConfig adapterConfigAndTags = new AdapterConfig(tuple.getConfig(), tuple.getTags(),
                 List.of());
         assertThat(adapterConfigAndTags.missingTags()).isEmpty();
         assertThat(adapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))

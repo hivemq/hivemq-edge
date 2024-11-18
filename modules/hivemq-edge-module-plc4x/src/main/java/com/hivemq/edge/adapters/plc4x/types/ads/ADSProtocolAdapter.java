@@ -20,7 +20,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xToMqttMapping> {
+public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterConfig, Plc4xToMqttMapping> {
 
     private static final @NotNull String SOURCE_AMS_NET_ID = "sourceAmsNetId";
     private static final @NotNull String SOURCE_AMS_PORT = "sourceAmsPort";
@@ -38,7 +38,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
 
     public ADSProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<ADSAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<ADSSpecificAdapterConfig> input) {
         super(adapterInformation, input);
     }
 
@@ -58,7 +58,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
     }
 
     @Override
-    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull ADSAdapterConfig config) {
+    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull ADSSpecificAdapterConfig config) {
         Map<String, String> map = new HashMap<>();
         map.put(SOURCE_AMS_PORT, nullSafe(config.getSourceAmsPort()));
         map.put(SOURCE_AMS_NET_ID, nullSafe(config.getSourceAmsNetId()));

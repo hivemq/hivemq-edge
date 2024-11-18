@@ -18,9 +18,9 @@ package com.hivemq.edge.adapters.modbus;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -113,12 +113,12 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
-        return ModbusAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+        return ModbusSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
-        return ModbusAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+        return ModbusSpecificAdapterConfig.class;
     }
 }

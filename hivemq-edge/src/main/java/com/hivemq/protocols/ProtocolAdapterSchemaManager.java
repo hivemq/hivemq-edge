@@ -18,7 +18,7 @@ package com.hivemq.protocols;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * @author Simon L Johnson
  */
 public class ProtocolAdapterSchemaManager {
-    private final @NotNull Class<? extends ProtocolAdapterConfig> configBean;
+    private final @NotNull Class<? extends ProtocolSpecificAdapterConfig> configBean;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
     private @Nullable JsonNode schemaNode;
@@ -47,7 +47,7 @@ public class ProtocolAdapterSchemaManager {
 
     public ProtocolAdapterSchemaManager(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull Class<? extends ProtocolAdapterConfig> configBean) {
+            final @NotNull Class<? extends ProtocolSpecificAdapterConfig> configBean) {
         this.objectMapper = objectMapper;
         this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();

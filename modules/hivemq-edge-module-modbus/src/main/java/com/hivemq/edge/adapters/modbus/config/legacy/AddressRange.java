@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.modbus.config.legacy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 
 @JsonPropertyOrder({"startIdx", "endIdx"})
 public class AddressRange {
@@ -27,7 +27,7 @@ public class AddressRange {
     @ModuleConfigField(title = "Start Index",
                        description = "The Starting Index (Incl.) of the Address Range",
                        numberMin = 0,
-                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
                        required = true)
     public final int startIdx;
 
@@ -35,7 +35,7 @@ public class AddressRange {
     @ModuleConfigField(title = "End Index",
                        description = "The Finishing Index (Excl.) of the Address Range",
                        numberMin = 1,
-                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
                        required = true)
     public final int endIdx;
 

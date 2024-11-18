@@ -17,19 +17,15 @@ package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public class FileAdapterConfig implements ProtocolAdapterConfig {
+public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -49,7 +45,7 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @Nullable FileToMqttConfig fileToMqttConfig;
 
-    public FileAdapterConfig(
+    public FileSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
         this.id = id;

@@ -24,7 +24,7 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
 import com.hivemq.edge.adapters.file.tag.FileTag;
 import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -59,13 +59,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
-        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) adapterConfig.getAdapterConfig();
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
@@ -116,13 +116,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
-        final FileAdapterConfig config = (FileAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) adapterConfig.getAdapterConfig();
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
@@ -137,8 +137,8 @@ class FileAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags()).isEmpty();
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (FileTag)t))
+        assertThat(adapterConfig.missingTags()).isEmpty();
+        assertThat(adapterConfig.getTags().stream().map(t -> (FileTag)t))
                 .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
@@ -154,13 +154,13 @@ class FileAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                         false,
                         mapper,
                         fileProtocolAdapterFactory);
 ;
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
 
@@ -179,7 +179,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
 
-        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        assertThatThrownBy(() -> AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                 false,
                 mapper,
                 fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'tagName'");
@@ -198,7 +198,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
 
-        assertThatThrownBy(() -> AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
+        assertThatThrownBy(() -> AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("file"),
                 false,
                 mapper,
                 fileProtocolAdapterFactory)).hasMessageContaining("Missing required creator property 'mqttTopic'");
@@ -213,8 +213,8 @@ class FileAdapterConfigTest {
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")), "tag");
 
-        final FileAdapterConfig modbusAdapterConfig =
-                new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
+        final FileSpecificAdapterConfig modbusAdapterConfig =
+                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -250,8 +250,8 @@ class FileAdapterConfigTest {
                 null,
                 null, "tag");
 
-        final FileAdapterConfig modbusAdapterConfig =
-                new FileAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
+        final FileSpecificAdapterConfig modbusAdapterConfig =
+                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

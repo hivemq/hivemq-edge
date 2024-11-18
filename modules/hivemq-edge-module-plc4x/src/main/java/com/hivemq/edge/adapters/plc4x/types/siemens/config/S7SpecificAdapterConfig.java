@@ -18,19 +18,17 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
+public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -57,7 +55,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
                        description = "The type of the S7 Controller",
                        required = true,
                        defaultValue = "S7_300")
-    private final @NotNull S7AdapterConfig.ControllerType controllerType;
+    private final @NotNull S7SpecificAdapterConfig.ControllerType controllerType;
 
     @JsonProperty("remoteRack")
     @ModuleConfigField(title = "Remote Rack",
@@ -96,7 +94,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     private final @Nullable S7ToMqttConfig s7ToMqttConfig;
 
     @JsonCreator
-    public S7AdapterConfig(
+    public S7SpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,

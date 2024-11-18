@@ -26,7 +26,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.payload.FileDataPoint;
@@ -44,7 +44,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
-    private final @NotNull FileAdapterConfig adapterConfig;
+    private final @NotNull FileSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull List<FileToMqttMapping> pollingContext;
@@ -52,7 +52,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
 
     public FilePollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<FileAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();

@@ -26,7 +26,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
-import com.hivemq.protocols.AdapterConfigAndTagsAndFieldMappings;
+import com.hivemq.protocols.AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -61,15 +61,15 @@ class ADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
                         true,
                         mapper,
                         adsProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSAdapterConfig config = (ADSAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.ads-server.com");
@@ -125,15 +125,15 @@ class ADSAdapterConfigTest {
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
                         true,
                         mapper,
                         adsProtocolAdapterFactory);
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSAdapterConfig config = (ADSAdapterConfig) adapterConfigAndTagsAndFieldMappings.getAdapterConfig();
+        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -154,9 +154,9 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags()).isEmpty();
+        assertThat(adapterConfig.missingTags()).isEmpty();
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.getTags().stream().map(t -> (Plc4xTag)t))
+        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
             .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
@@ -173,13 +173,13 @@ class ADSAdapterConfigTest {
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
 
-        final AdapterConfigAndTagsAndFieldMappings adapterConfigAndTagsAndFieldMappings =
-                AdapterConfigAndTagsAndFieldMappings.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final AdapterConfig adapterConfig =
+                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
                         true,
                         mapper,
                         adsProtocolAdapterFactory);
 
-        assertThat(adapterConfigAndTagsAndFieldMappings.missingTags())
+        assertThat(adapterConfig.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
@@ -194,7 +194,7 @@ class ADSAdapterConfigTest {
                 "tag-name",
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final ADSAdapterConfig adsAdapterConfig = new ADSAdapterConfig("my-ads-adapter",
+        final ADSSpecificAdapterConfig adsAdapterConfig = new ADSSpecificAdapterConfig("my-ads-adapter",
                 14,
                 "my.host.com",
                 15,

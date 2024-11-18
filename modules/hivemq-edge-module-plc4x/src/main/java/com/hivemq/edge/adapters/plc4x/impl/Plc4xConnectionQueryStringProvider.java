@@ -15,13 +15,13 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
-public interface Plc4xConnectionQueryStringProvider<T extends Plc4xAdapterConfig> {
+public interface Plc4xConnectionQueryStringProvider<T extends Plc4XSpecificAdapterConfig> {
 
     String getConnectionQueryString(@NotNull final T plc4xAdapterConfig);
 

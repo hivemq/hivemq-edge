@@ -28,7 +28,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -59,7 +59,7 @@ public class AdapterConfigModelTest {
     @Test
     public void testUserPropertiesAppearOnSubscription() throws JsonProcessingException {
 
-        AdapterConfiguration entity = new AdapterConfiguration();
+        SpecificAdapterConfiguration entity = new SpecificAdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
         entity.subscriptions.add(new TestToMqttMapping("some/path",1,List.of(new MqttUserProperty("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
@@ -92,7 +92,7 @@ public class AdapterConfigModelTest {
         return parent.get(nodeName) != null;
     }
 
-    static class AdapterConfiguration implements ProtocolAdapterConfig {
+    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",

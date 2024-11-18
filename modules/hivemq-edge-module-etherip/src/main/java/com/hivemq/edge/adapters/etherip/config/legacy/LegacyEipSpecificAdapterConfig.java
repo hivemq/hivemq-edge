@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
+public class LegacyEipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty("port")
     private int port = 44818;
@@ -41,7 +41,7 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
     private @NotNull Integer slot;
 
     @JsonProperty("subscriptions")
-    private @NotNull List<LegacyEipAdapterConfig.PollingContextImpl> subscriptions = new ArrayList<>();
+    private @NotNull List<LegacyEipSpecificAdapterConfig.PollingContextImpl> subscriptions = new ArrayList<>();
 
     @JsonProperty("pollingIntervalMillis")
     @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
@@ -59,7 +59,7 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty(value = "id", required = true)
     protected @NotNull String id;
 
-    public LegacyEipAdapterConfig() {
+    public LegacyEipSpecificAdapterConfig() {
     }
 
     public @NotNull Integer getBackplane() {
@@ -92,7 +92,7 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<LegacyEipAdapterConfig.PollingContextImpl> getSubscriptions() {
+    public @NotNull List<LegacyEipSpecificAdapterConfig.PollingContextImpl> getSubscriptions() {
         return subscriptions;
     }
 

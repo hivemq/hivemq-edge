@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +28,7 @@ import java.util.Set;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
-public class SimulationAdapterConfig implements ProtocolAdapterConfig {
+public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -77,7 +77,7 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
     private final int maxDelay;
 
     @JsonCreator
-    public SimulationAdapterConfig(
+    public SimulationSpecificAdapterConfig(
             @JsonProperty(value = "simulationToMqtt",
                           required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty(value = "id", required = true) final @NotNull String id,

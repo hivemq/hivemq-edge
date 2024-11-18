@@ -18,14 +18,12 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -33,7 +31,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 
-public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
+public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -76,7 +74,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     private final @Nullable OpcUaToMqttConfig opcuaToMqttConfig;
 
     @JsonCreator
-    public OpcUaAdapterConfig(
+    public OpcUaSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,

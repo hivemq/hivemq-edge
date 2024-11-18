@@ -17,7 +17,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
@@ -235,7 +235,7 @@ public class OpcUaClientWrapper {
     }
 
     public static @NotNull CompletableFuture<OpcUaClientWrapper> createAndConnect(
-            final @NotNull OpcUaAdapterConfig adapterConfig,
+            final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
             final @NotNull List<Tag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,

@@ -18,8 +18,7 @@ package com.hivemq.edge.adapters.modbus.config.legacy;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +28,7 @@ import java.util.Set;
 
 
 @SuppressWarnings("FieldCanBeLocal")
-public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
+public class LegacyModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty(value = "id", required = true)
     private final @NotNull String id;
@@ -57,7 +56,7 @@ public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
     private final @NotNull List<LegacyModbusPollingContext> subscriptions;
 
     @JsonCreator
-    public LegacyModbusAdapterConfig(
+    public LegacyModbusSpecificAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,

@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
@@ -50,7 +50,7 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSet_thenPickCorrectEndpoint() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("id",
                 "opc.tcp://127.0.0.1:49320",
                 false,
                 null,
@@ -69,8 +69,8 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig(
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig(
                         "id",
                         "opc.tcp://127.0.0.1:49320",
                         false,
@@ -90,8 +90,8 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig(
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig(
                         "id",
                         "opc.tcp://127.0.0.1:49320",
                         false,
@@ -109,8 +109,8 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig("id",
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig("id",
                         "opc.tcp://127.0.0.1:49320",
                         false,
                         null,
