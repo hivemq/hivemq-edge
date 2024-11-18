@@ -1,8 +1,12 @@
 import { MutableRefObject } from 'react'
 import Form from '@rjsf/core'
-import { RJSFValidationError } from '@rjsf/utils'
+import { RJSFSchema, RJSFValidationError, UiSchema } from '@rjsf/utils'
+import { ChakraRJSFormContext, UITab, UITabIndexed } from '@/components/rjsf/Form/types.ts'
+
+export const _toPath = (path: string) => path?.match(/([^[.\]])+/g)
 
 // From RJSF
+/* istanbul ignore next -- @preserve */
 const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) => {
   // const { idPrefix = 'root', idSeparator = '_' } = props;
   const idPrefix = 'root',
@@ -10,10 +14,6 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
 
   const { property } = error
   if (!property) return
-
-  // WARNING: This is not a drop in replacement solution and
-  // it might not work for some edge cases. Test your code!
-  const _toPath = (path: string) => path?.match(/([^[.\]])+/g)
 
   const path = _toPath(property)
   if (!path) return
@@ -25,7 +25,6 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
     path.unshift(idPrefix)
   }
 
-  //
   const elementId = path.join(idSeparator)
   // let field = formElement.elements[elementId]
   let field = formElement.querySelector(`#${elementId}`) as HTMLElement
@@ -45,10 +44,64 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
   }
 }
 
+/* istanbul ignore next -- @preserve */
 export const customFocusError = (wrapperRef: MutableRefObject<null>) => (error: RJSFValidationError) => {
   if (!wrapperRef.current) return
 
   const rjsForm = wrapperRef.current as Form
 
   focusOnError(rjsForm.formElement.current, error)
+}
+
+export const isNumeric = (element: string) => /^\d+$/.test(element)
+export const deepGet = (obj: object, keys: (string | number)[]) => {
+  if (!keys.length) return null
+
+  return keys.reduce((xs, x) => xs?.[x as keyof typeof xs] ?? null, obj)
+}
+
+export const isPropertyBehindCollapsedElement = (
+  property: string,
+  uiSchema: UiSchema<unknown, RJSFSchema, ChakraRJSFormContext>
+) => {
+  const path = property.split('.')
+  path?.shift()
+  if (path.length) {
+    // assume only the first array matters. Might need to check nested arrays
+    const foundIndex = path.findIndex(isNumeric)
+    if (foundIndex != -1) {
+      const root = path.slice(0, foundIndex)
+      root.push('items')
+      const item = deepGet(uiSchema, root)
+      if (item) {
+        // @ts-ignore Type will need to be corrected
+        const { 'ui:collapsable': isCollapsible } = item
+        if (isCollapsible) {
+          return ['root', ...path.slice(0, foundIndex + 1)]
+        }
+      }
+    }
+  }
+  return undefined
+}
+
+export const isPropertyBehindTab = (
+  property: string,
+  uiSchema: UiSchema<unknown, RJSFSchema, ChakraRJSFormContext>
+) => {
+  const { 'ui:tabs': tabs } = uiSchema
+  if (!tabs) return undefined
+  if (!Array.isArray(tabs)) return undefined
+
+  const root = property.split('.')[1] || property
+  if (!root) return undefined
+
+  let inTab: UITabIndexed | null = null
+  for (const [index, tab] of (tabs as UITab[]).entries()) {
+    const { properties } = tab
+    if (properties && properties.includes(root)) inTab = { ...tab, index }
+  }
+
+  if (inTab) return inTab
+  return undefined
 }

@@ -1,5 +1,5 @@
 import { FC, useCallback, useMemo } from 'react'
-import { ErrorListProps, RJSFSchema, TranslatableString, UiSchema } from '@rjsf/utils'
+import { ErrorListProps, RJSFSchema, TranslatableString } from '@rjsf/utils'
 import {
   Alert,
   AlertTitle,
@@ -17,48 +17,58 @@ import { WarningIcon } from '@chakra-ui/icons'
 import { IoLink } from 'react-icons/io5'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 
-import { AdapterConfig, UITab } from '@/modules/ProtocolAdapters/types.ts'
-import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
+import { ChakraRJSFormContext, UITabIndexed } from '@/components/rjsf/Form/types.ts'
 import { useTranslation } from 'react-i18next'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
+import { isPropertyBehindCollapsedElement, isPropertyBehindTab } from '@/components/rjsf/Form/error-focus.utils.ts'
 
-interface UITabIndexed extends UITab {
-  index: number
-}
 interface RJSFValidationErrorRef extends RJSFValidationError {
   tab?: UITabIndexed
+  collapsed?: string[]
 }
 
 export const ErrorListTemplate: FC<ErrorListProps<unknown, RJSFSchema, ChakraRJSFormContext>> = (props) => {
   const { uiSchema, errors, registry, formContext } = props
   const { t } = useTranslation('components')
-  const { setTabIndex } = useFormControlStore()
+  const { setTabIndex, setExpandItems } = useFormControlStore()
 
   const linkedErrors = useMemo(() => {
+    if (!uiSchema) return errors as RJSFValidationErrorRef[]
     return errors.map<RJSFValidationErrorRef>((error) => {
-      const { 'ui:tabs': tabs } = uiSchema as UiSchema<AdapterConfig>
       const { property } = error
-      if (!tabs) return error
+      if (!property) return error
 
-      const root = property?.split('.')[1] || property
+      let newError: RJSFValidationErrorRef = { ...error }
 
-      let inTab: UITabIndexed | null = null
-      for (const [index, tab] of tabs.entries()) {
-        const { properties } = tab as UITab
-        if (properties && root && properties.includes(root)) inTab = { ...tab, index }
+      const collapsedPath = isPropertyBehindCollapsedElement(property, uiSchema)
+      if (collapsedPath) {
+        newError = { ...newError, collapsed: collapsedPath }
       }
 
-      if (inTab) return { ...error, tab: inTab }
-      return error
+      const tabbedItem = isPropertyBehindTab(property, uiSchema)
+      if (tabbedItem) newError = { ...newError, tab: tabbedItem }
+
+      return newError
     })
   }, [errors, uiSchema])
 
   const handleShiftFocus = useCallback(
     (error: RJSFValidationErrorRef) => () => {
-      if (error.tab?.index !== undefined) setTabIndex(error.tab.index)
-      formContext?.focusOnError?.(error)
+      const isTab = Boolean(error.tab?.index !== undefined)
+      const isAccordion = Boolean(error.collapsed)
+
+      // must be done in order of DOM nesting: tab, collapse, focus
+      if (error.tab && isTab) setTabIndex(error.tab.index)
+      if (error.collapsed) setExpandItems(error.collapsed)
+      // TODO[NVL] Scroll animation would be much better
+      setTimeout(
+        () => {
+          formContext?.focusOnError?.(error)
+        },
+        isTab || isAccordion ? 100 : 0
+      )
     },
-    [setTabIndex, formContext]
+    [setTabIndex, setExpandItems, formContext]
   )
 
   const { translateString } = registry
