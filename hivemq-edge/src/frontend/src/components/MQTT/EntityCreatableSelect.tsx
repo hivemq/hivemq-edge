@@ -104,7 +104,7 @@ const EntityCreatableSelect: FC<EntitySelectProps> = ({
   const { t } = useTranslation('components')
   const safeValue = useMemo(() => {
     if (value === null) return null
-    if (isMulti) return (value as MultiValue<string>).map((w: string) => ({ label: w, value: w }))
+    if (isMulti) return (value as MultiValue<string>).map((value: string) => ({ label: value, value }))
     return { label: value as string, value: value as string }
   }, [isMulti, value])
   const safeOnChange = useCallback(
@@ -114,7 +114,7 @@ const EntityCreatableSelect: FC<EntitySelectProps> = ({
         return
       }
       if (isMulti) {
-        onChange((value as MultiValue<EntityOption>).map((w) => w.value))
+        onChange((value as MultiValue<EntityOption>).map((option) => option.value))
         return
       }
 
@@ -165,9 +165,9 @@ interface CreateSelectableProps {
 export const SelectTopic: FC<CreateSelectableProps> = (props) => {
   const { data, isLoading } = useGetEdgeTopics({ publishOnly: false })
   const options =
-    data.map<EntityOption>((e) => ({
-      label: e,
-      value: e,
+    data.map<EntityOption>((topic) => ({
+      label: topic,
+      value: topic,
     })) || []
 
   return (
@@ -184,10 +184,10 @@ export const SelectTopic: FC<CreateSelectableProps> = (props) => {
 export const SelectTopicFilter: FC<CreateSelectableProps> = (props) => {
   const { data, isLoading } = useListTopicFilters()
   const options =
-    data?.items?.map<EntityOption>((e) => ({
-      label: e.topicFilter,
-      value: e.topicFilter,
-      description: e.description,
+    data?.items?.map<EntityOption>((filter) => ({
+      label: filter.topicFilter,
+      value: filter.topicFilter,
+      description: filter.description,
     })) || []
 
   return (
@@ -207,7 +207,7 @@ interface TagSelectProps extends CreateSelectableProps {
 
 export const SelectTag: FC<TagSelectProps> = ({ adapterId, ...rest }) => {
   const { data, isLoading } = useGetDomainTags(adapterId)
-  const options = data?.items?.map<EntityOption>((e) => ({ label: e.tag, value: e.tag })) || []
+  const options = data?.items?.map<EntityOption>((tag) => ({ label: tag.tag, value: tag.tag })) || []
 
   return (
     <EntityCreatableSelect
