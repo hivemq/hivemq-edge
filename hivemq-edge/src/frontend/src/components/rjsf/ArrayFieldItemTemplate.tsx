@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrayFieldTemplateItemType, getTemplate, getUiOptions } from '@rjsf/utils'
 import { Box, ButtonGroup, FormControl, HStack, useDisclosure, VStack } from '@chakra-ui/react'
@@ -6,6 +6,7 @@ import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
+import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 // TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
 interface ArrayFieldItemCollapsableUISchema {
@@ -32,10 +33,13 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   } = props
   const { t } = useTranslation('components')
   const uiOptions = getUiOptions(uiSchema)
+  const { expandItems } = useFormControlStore()
+
   const collapsableItems: ArrayFieldItemCollapsableUISchema | undefined = useMemo(() => {
     return uiOptions.collapsable as ArrayFieldItemCollapsableUISchema | undefined
   }, [uiOptions.collapsable])
-  const { isOpen, onToggle, getButtonProps, getDisclosureProps } = useDisclosure({
+
+  const { isOpen, onToggle, getButtonProps, getDisclosureProps, onOpen } = useDisclosure({
     defaultIsOpen:
       !collapsableItems ||
       !collapsableItems?.titleKey ||
@@ -48,6 +52,10 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     if (childrenFormData) return `${children.props.name} - ${childrenFormData}`
     return children.props.name
   }, [children.props.formData, children.props.name, collapsableItems?.titleKey])
+
+  useEffect(() => {
+    if (props.children.props.idSchema.$id === expandItems.join('_')) onOpen()
+  }, [expandItems, onOpen, props.children.props.idSchema.$id])
 
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
   const onRemoveClick = useMemo(() => onDropIndexClick(index), [index, onDropIndexClick])
