@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -31,7 +32,11 @@ public class ProtocolAdapterConfigurator {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull Map<String, Object> protocolAdapterConfig) {
+    public void setConfigs(final @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig) {
+
+
+        
+
         //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
         Map<String, Object> configMap = new HashMap<>();
         for (final String key : protocolAdapterConfig.keySet()) {

@@ -20,20 +20,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMapping;
 
+import javax.xml.bind.annotation.XmlElement;
+
 public class FieldMappingEntity {
 
-    @JsonProperty("source")
+    @XmlElement(name = "source")
     private final @NotNull String sourceFieldName;
-    @JsonProperty("destination")
+    @XmlElement(name = "destination")
     private final @NotNull String destinationFieldName;
-    @JsonProperty("transformation")
+    @XmlElement(name = "transformation")
+
     private final @NotNull TransformationEntity transformation;
 
-    @JsonCreator
     public FieldMappingEntity(
-            @JsonProperty("source") final @NotNull String sourceFieldName,
-            @JsonProperty("destination") final @NotNull String destinationFieldName,
-            @JsonProperty("transformation") final @NotNull TransformationEntity transformation) {
+            final @NotNull String sourceFieldName,
+            final @NotNull String destinationFieldName,
+            final @NotNull TransformationEntity transformation) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
         this.transformation = transformation;

@@ -20,18 +20,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappingMetaData;
 
+import javax.xml.bind.annotation.XmlElement;
+
 public class FieldMappingMetaDataEntity {
 
-    @JsonProperty("source-schema")
+    @XmlElement(name = "source-schema")
     private final @NotNull String sourceJsonSchema;
 
-    @JsonProperty("destination-schema")
+    @XmlElement(name = "destination-schema")
     private final @NotNull String destinationJsonSchema;
 
-    @JsonCreator
     public FieldMappingMetaDataEntity(
-            @JsonProperty("source-schema") final @NotNull String sourceJsonSchema,
-            @JsonProperty("destination-schema") final @NotNull String destinationJsonSchema) {
+            final @NotNull String sourceJsonSchema,
+            final @NotNull String destinationJsonSchema) {
         this.sourceJsonSchema = sourceJsonSchema;
         this.destinationJsonSchema = destinationJsonSchema;
     }

@@ -21,7 +21,6 @@ import com.hivemq.persistence.fieldmapping.Transformation;
 
 public class TransformationEntity {
 
-    @JsonCreator
     TransformationEntity(){}
 
     @SuppressWarnings("InstantiationOfUtilityClass")

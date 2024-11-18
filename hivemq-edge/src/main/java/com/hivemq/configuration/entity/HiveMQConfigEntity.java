@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.entity;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
@@ -82,9 +83,9 @@ public class HiveMQConfigEntity {
     @XmlElementRef(required = false)
     private @NotNull UsageTrackingConfigEntity usageTracking = new UsageTrackingConfigEntity();
 
-    @XmlElement(name = "protocol-adapters")
-    @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
-    private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
+    @XmlElementWrapper(name = "protocol-adapters")
+    @XmlElement(name = "protocol-adapter")
+    private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -129,7 +130,7 @@ public class HiveMQConfigEntity {
         return api;
     }
 
-    public @NotNull Map<String, Object> getProtocolAdapterConfig() {
+    public @NotNull List<ProtocolAdapterEntity> getProtocolAdapterConfig() {
         return protocolAdapterConfig;
     }
 

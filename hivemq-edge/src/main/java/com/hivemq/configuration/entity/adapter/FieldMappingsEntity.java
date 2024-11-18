@@ -15,35 +15,33 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 
+import javax.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class FieldMappingsEntity {
 
-    @JsonProperty("topic-filter")
+    @XmlElement(name = "topic-filter")
     private final @NotNull String topicFilter;
 
-    @JsonProperty("tag-name")
+    @XmlElement(name = "tag-name")
     private final @NotNull String tagName;
 
-    @JsonProperty("field-mappings")
+    @XmlElement(name = "field-mappings")
     private final @NotNull List<FieldMappingEntity> fieldMappingEntities;
 
-    @JsonProperty("metadata")
+    @XmlElement(name = "metadata")
     private final @NotNull FieldMappingMetaDataEntity metaData;
 
-    @JsonCreator
     public FieldMappingsEntity(
-            @JsonProperty("topic-filter") final @NotNull String topicFilter,
-            @JsonProperty("tag-name") final @NotNull String tagName,
-            @JsonProperty("field-mappings") final @NotNull List<FieldMappingEntity> fieldMappingEntities,
-            @JsonProperty("metadata") final @NotNull FieldMappingMetaDataEntity metaData) {
+            final @NotNull String topicFilter,
+            final @NotNull String tagName,
+            final @NotNull List<FieldMappingEntity> fieldMappingEntities,
+            final @NotNull FieldMappingMetaDataEntity metaData) {
         this.topicFilter = topicFilter;
         this.tagName = tagName;
         this.fieldMappingEntities = fieldMappingEntities;
@@ -54,7 +52,8 @@ public class FieldMappingsEntity {
         final List<FieldMappingEntity> fieldMappingEntityList =
                 model.getFieldMappings().stream().map(FieldMappingEntity::from).collect(Collectors.toList());
         return new FieldMappingsEntity(model.getTopicFilter(),
-                model.getTagName(), fieldMappingEntityList,
+                model.getTagName(),
+                fieldMappingEntityList,
                 FieldMappingMetaDataEntity.from(model.getMetaData()));
     }
 
