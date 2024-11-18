@@ -1,8 +1,16 @@
 import { create } from 'zustand'
-import { FormControlStore } from '@/components/rjsf/Form/types.ts'
+import { FormControlState, FormControlStore } from '@/components/rjsf/Form/types.ts'
+
+const initialState: FormControlState = {
+  tabIndex: 0,
+  expandItems: [],
+}
 
 export const useFormControlStore = create<FormControlStore>()((set) => ({
-  tabIndex: 0,
+  ...initialState,
+  reset: () => {
+    set(initialState)
+  },
   setTabIndex: (n: number) => set(() => ({ tabIndex: n })),
-  clearController: () => set(() => ({ tabIndex: 0 })),
+  setExpandItems: (items: string[]) => set(() => ({ expandItems: items })),
 }))

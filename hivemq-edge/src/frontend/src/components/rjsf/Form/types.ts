@@ -1,10 +1,17 @@
 import { FormContextType, IdSchema, RJSFValidationError } from '@rjsf/utils'
 
-export type FormControlStore = {
+export type FormControlState = {
   tabIndex: number
-  setTabIndex: (n: number) => void
-  clearController: () => void
+  expandItems: string[]
 }
+
+export type FormControlAction = {
+  reset: () => void
+  setTabIndex: (n: number) => void
+  setExpandItems: (items: string[]) => void
+}
+
+export type FormControlStore = FormControlState & FormControlAction
 
 export interface ChakraRJSFormContext extends FormContextType {
   onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
