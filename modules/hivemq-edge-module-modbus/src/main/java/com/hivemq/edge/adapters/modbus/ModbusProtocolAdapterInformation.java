@@ -118,7 +118,7 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
         return ModbusSpecificAdapterConfig.class;
     }
 }

@@ -15,13 +15,15 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 
 public interface ProtocolAdapterConfigurationService {
 
-    @NotNull Map<String, Object> getAllConfigs();
+    @NotNull List<ProtocolAdapterEntity> getAllConfigs();
 
-    void setAllConfigs(@NotNull Map<String, Object> allConfigs);
+    void setAllConfigs(@NotNull List<ProtocolAdapterEntity> allConfigs);
 }

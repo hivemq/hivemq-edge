@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * @author Simon L Johnson
  */
-public class AdapterConfigFormatTest {
+public class ProtocolAdapterConfigFormatTest {
 
     @Test
     void testIdentifierRegex() {

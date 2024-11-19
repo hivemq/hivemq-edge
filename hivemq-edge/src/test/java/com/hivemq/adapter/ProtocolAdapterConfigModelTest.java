@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @author Simon L Johnson
  */
-public class AdapterConfigModelTest {
+public class ProtocolAdapterConfigModelTest {
 
     private static ObjectMapper mapper = new ObjectMapper();
 

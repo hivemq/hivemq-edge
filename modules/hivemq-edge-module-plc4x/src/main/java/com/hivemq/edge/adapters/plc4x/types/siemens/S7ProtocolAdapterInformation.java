@@ -132,7 +132,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
         return S7SpecificAdapterConfig.class;
     }
 }

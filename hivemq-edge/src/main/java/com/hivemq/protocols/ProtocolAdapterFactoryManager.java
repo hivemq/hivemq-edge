@@ -19,12 +19,15 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Singleton
 public class ProtocolAdapterFactoryManager {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterFactoryManager.class);
@@ -41,13 +45,17 @@ public class ProtocolAdapterFactoryManager {
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull EventService eventService;
 
-    public ProtocolAdapterFactoryManager(final @NotNull ModuleLoader moduleLoader, final @NotNull EventService eventService, final boolean writingEnabled) {
+    @Inject
+    public ProtocolAdapterFactoryManager(
+            final @NotNull ModuleLoader moduleLoader,
+            final @NotNull EventService eventService,
+            final @NotNull InternalProtocolAdapterWritingService writingService) {
         this.moduleLoader = moduleLoader;
         this.eventService = eventService;
-        factoryMap = findAllAdapters(moduleLoader, eventService, writingEnabled);
+        factoryMap = findAllAdapters(moduleLoader, eventService, writingService.writingEnabled());
     }
 
-    public @NotNull Optional<ProtocolAdapterFactory<?> > get(final @NotNull String protocolAdapterType) {
+    public @NotNull Optional<ProtocolAdapterFactory<?>> get(final @NotNull String protocolAdapterType) {
         return Optional.ofNullable(factoryMap.get(protocolAdapterType));
     }
 
@@ -63,7 +71,10 @@ public class ProtocolAdapterFactoryManager {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Map<String, ProtocolAdapterFactory<?>> findAllAdapters(final @NotNull ModuleLoader moduleLoader, final @NotNull EventService eventService, final boolean writingEnabled) {
+    private static Map<String, ProtocolAdapterFactory<?>> findAllAdapters(
+            final @NotNull ModuleLoader moduleLoader,
+            final @NotNull EventService eventService,
+            final boolean writingEnabled) {
         Map<String, ProtocolAdapterFactory<?>> factoryMap = new HashMap<>();
         final List<Class<? extends ProtocolAdapterFactory>> implementations =
                 moduleLoader.findImplementations(ProtocolAdapterFactory.class);
@@ -72,7 +83,8 @@ public class ProtocolAdapterFactoryManager {
 
         for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
             try {
-                final ProtocolAdapterFactory<?> protocolAdapterFactory = findConstructorAndInitialize(factoryClass, eventService, writingEnabled);
+                final ProtocolAdapterFactory<?> protocolAdapterFactory =
+                        findConstructorAndInitialize(factoryClass, eventService, writingEnabled);
                 if (log.isDebugEnabled()) {
                     log.debug("Discovered protocol adapter implementation {}.", factoryClass.getName());
                 }
@@ -95,7 +107,10 @@ public class ProtocolAdapterFactoryManager {
         return factoryMap;
     }
 
-    private static ProtocolAdapterFactory<?> findConstructorAndInitialize(final @NotNull Class<? extends ProtocolAdapterFactory> factoryClass, final @NotNull EventService eventService, final boolean writingEnabled)
+    private static ProtocolAdapterFactory<?> findConstructorAndInitialize(
+            final @NotNull Class<? extends ProtocolAdapterFactory> factoryClass,
+            final @NotNull EventService eventService,
+            final boolean writingEnabled)
             throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         final Constructor<?>[] declaredConstructors = factoryClass.getDeclaredConstructors();
         // check all possible constructors to enable backwards compatibility

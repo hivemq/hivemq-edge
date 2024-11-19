@@ -93,7 +93,7 @@ public class ProtocolAdapterApiUtils {
         }
 
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
-                new ProtocolAdapterSchemaManager(objectMapper, adapterManager.writingEnabled() ? info.configurationClassWriting() : info.configurationClassReading());
+                new ProtocolAdapterSchemaManager(objectMapper, adapterManager.writingEnabled() ? info.configurationClassWritingAndReading() : info.configurationClassReading());
 
 
         final String rawVersion = info.getVersion();

@@ -128,7 +128,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
         return BidirectionalOpcUaSpecificAdapterConfig.class;
     }
 }

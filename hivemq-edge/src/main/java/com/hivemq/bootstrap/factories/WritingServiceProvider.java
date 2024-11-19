@@ -17,15 +17,14 @@ package com.hivemq.bootstrap.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.InternalWritingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,14 +81,14 @@ public class WritingServiceProvider {
 
         @Override
         public @NotNull CompletableFuture<Void> startWriting(
-                @NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
-                @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
-                @NotNull final List<FieldMappings> fieldMappings) {
+                final @NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+                final @NotNull List<InternalWritingContext> toEdgeMappings) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
             return CompletableFuture.completedFuture(null);        }
 
         @Override
-        public @NotNull CompletableFuture<Void> stopWriting(@NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter) {
+        public @NotNull CompletableFuture<Void> stopWriting(final @NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter) {
             // NOOP as nothing was started.
             return CompletableFuture.completedFuture(null);
         }

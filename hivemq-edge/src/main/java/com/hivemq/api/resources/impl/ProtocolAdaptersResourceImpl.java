@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.adapters.AdapterConfigModel;
@@ -64,6 +64,8 @@ import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.ProtocolAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -99,6 +101,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull ProtocolAdapterConfigConverter configConverter;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
@@ -110,13 +113,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull VersionProvider versionProvider) {
+            final @NotNull VersionProvider versionProvider,
+            final @NotNull ProtocolAdapterConfigConverter configConverter) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.versionProvider = versionProvider;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
+        this.configConverter = configConverter;
     }
 
     @Override
@@ -309,7 +314,19 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
         });
 
-        protocolAdapterManager.updateAdapterConfig(adapterId, config);
+
+        // TODO we need to extract the mappings from the adapter object
+        // TODO we need to extract the adapter config
+        // TODO we need to extract the tags
+        final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
+                configConverter.convertAdapterConfig(adapter.getProtocolAdapterType(), config);
+        protocolAdapterManager.updateAdapterConfig(adapterId,
+                new ProtocolAdapterConfig(adapterId,
+                        adapter.getProtocolAdapterType(),
+                        protocolSpecificAdapterConfig,
+                        List.of(),
+                        List.of(),
+                        List.of()));
         return Response.ok().build();
     }
 
@@ -398,7 +415,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager = new ProtocolAdapterSchemaManager(objectMapper,
                 protocolAdapterWritingService.writingEnabled() ?
-                        information.configurationClassWriting() :
+                        information.configurationClassWritingAndReading() :
                         information.configurationClassReading());
         final ProtocolAdapterValidator validator =
                 (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
@@ -447,9 +464,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         tagId +
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,"Adapter not found", "The adapter named '" +
-                        domainTag.getProtocolId() +
-                        "' does not exist.");
+                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,
+                        "Adapter not found",
+                        "The adapter named '" + domainTag.getProtocolId() + "' does not exist.");
             default:
                 log.error("Unhandled PUT-statud: {}", domainTagAddResult.getDomainTagPutStatus());
         }
@@ -528,24 +545,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public Response getDomainTag(final String tagName) {
-        return protocolAdapterManager
-                .getDomainTagByName(tagName)
+        return protocolAdapterManager.getDomainTagByName(tagName)
                 .map(tag -> Response.ok().entity(DomainTagModel.fromDomainTag(tag)).build())
                 .orElse(ErrorResponseUtil.notFound("Tag", tagName));
     }
 
     @Override
     public Response getTagSchema(String protocolId) {
-        return protocolAdapterManager
-                .getAdapterTypeById(protocolId)
-                .map(info -> Response
-                                .status(200)
-                                .entity(new TagSchema(protocolId, customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
-                                .build())
-                .orElseGet(() -> ErrorResponseUtil
-                        .errorResponse(404,
-                                "Missing protocol adapter with id: " + protocolId,
-                                "No protocol adapter with id " + protocolId +" exists"));
+        return protocolAdapterManager.getAdapterTypeById(protocolId)
+                .map(info -> Response.status(200)
+                        .entity(new TagSchema(protocolId,
+                                customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
+                        .build())
+                .orElseGet(() -> ErrorResponseUtil.errorResponse(404,
+                        "Missing protocol adapter with id: " + protocolId,
+                        "No protocol adapter with id " + protocolId + " exists"));
     }
 
     @Override
@@ -592,12 +606,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public Response addCompleteAdapter(
-            final String adapterType,
-            final String adapterName,
-            final AdapterConfigModel adapter) {
-        final Optional<ProtocolAdapterInformation> protocolAdapterType =
+            final String adapterType, final String adapterName, final AdapterConfigModel adapter) {
+        final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
-        if (protocolAdapterType.isEmpty()) {
+        if (protocolAdapterInformation.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
@@ -615,17 +627,28 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         try {
 
             //TODO: we need to move all these conversions into a common place
-            final Map<String, Object> config =
-                    objectMapper.convertValue(adapter.getAdapter(), new TypeReference<>() {
-                    });
+            // TODO the map is not the correct map
+            final Map<String, Object> config = objectMapper.convertValue(adapter.getAdapter(), new TypeReference<>() {
+            });
+
+            final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
+                    configConverter.convertAdapterConfig(adapterType, config);
 
             final List<Map<String, Object>> domainTags = adapter.getDomainTagModels()
                     .stream()
                     .map(dtm -> DomainTag.fromDomainTagEntity(dtm, adapterId))
                     .map(DomainTag::toTagMap)
                     .collect(Collectors.toList());
-            // TODO fieldmappings should also be part I guess
-            protocolAdapterManager.addAdapter(adapterType, adapterId, config, domainTags, List.of());
+
+            final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
+
+            // TODO we need to extract the mappings from the config
+            protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
+                    adapterType,
+                    protocolSpecificAdapterConfig,
+                    List.of(),
+                    List.of(),
+                    tags));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,

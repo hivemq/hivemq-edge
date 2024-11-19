@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.etherip.config.legacy;
+package com.hivemq.edge.adapters.file.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
@@ -21,12 +21,13 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
-import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
-import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
-import com.hivemq.edge.adapters.etherip.config.EipDataType;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
-import com.hivemq.protocols.AdapterConfig;
+import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
+import com.hivemq.edge.adapters.file.config.ContentType;
+import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
+import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
+import com.hivemq.protocols.ProtocolAdapterConfig;
+import org.assertj.core.groups.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -43,13 +44,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class LegacyEipAdapterConfigTest {
+@SuppressWarnings("unchecked")
+class LegacyFileProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
-        final URL resource = getClass().getResource("/legacy-eip-adapter-full-config.xml");
+        final URL resource = getClass().getResource("/legacy-file-adapter-full-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -57,28 +59,22 @@ class LegacyEipAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(mockInput);
-        final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
-                (Map) adapters.get("ethernet-ip"));
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(mockInput);
+        final ConfigTagsTuple tuple =
+                fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
 
-        final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) tuple.getConfig();
+        FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) tuple.getConfig();
 
-        assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
-        assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.eip-server.com");
-        assertThat(config.getBackplane()).isEqualTo(4);
-        assertThat(config.getSlot()).isEqualTo(5);
-        assertThat(config.getEipToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(config.getEipToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+        assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
+        assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
+        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
+        assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name");
+            assertThat(mapping.getIncludeTimestamp()).isFalse();
+            assertThat(mapping.getIncludeTagNames()).isTrue();;
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -91,9 +87,9 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
+            assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name2");
+            assertThat(mapping.getTagName()).startsWith(config.getId());
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("name");
@@ -104,20 +100,19 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        final AdapterConfig adapterConfigAndTags = new AdapterConfig(tuple.getConfig(), tuple.getTags(),
-                List.of());
-        assertThat(adapterConfigAndTags.missingTags()).isEmpty();
-
-        assertThat(adapterConfigAndTags.getTags().stream().map(t -> (EipTag)t))
+        final ProtocolAdapterConfig
+                protocolAdapterConfigAndTags = new ProtocolAdapterConfig(tuple.getConfig(), tuple.getTags(), List.of());
+        assertThat(protocolAdapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(protocolAdapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+                .extracting(FileTag::getDescription, FileTag::getDefinition)
                 .contains(
-                        new EipTag("tag-name", "no available", new EipTagDefinition("tag-address", EipDataType.BOOL)),
-                        new EipTag("tag-name2", "no available", new EipTagDefinition("tag-address2", EipDataType.BOOL))
-                );
+                        new Tuple("not set", new FileTagDefinition("path/to/file2", ContentType.TEXT_CSV)),
+                        new Tuple("not set", new FileTagDefinition("path/to/file1", ContentType.BINARY)));
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
-        final URL resource = getClass().getResource("/legacy-eip-adapter-minimal-config.xml");
+        final URL resource = getClass().getResource("/legacy-file-adapter-minimal-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -125,32 +120,31 @@ class LegacyEipAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(mockInput);
-        final ConfigTagsTuple tuple = eipProtocolAdapterFactory.tryConvertLegacyConfig(mapper,
-                (Map) adapters.get("ethernet-ip"));
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(mockInput);
+        final ConfigTagsTuple tuple =
+                fileProtocolAdapterFactory.tryConvertLegacyConfig(mapper, (Map) adapters.get("file"));
 
-        final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) tuple.getConfig();
+        FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) tuple.getConfig();
 
-        assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
-        assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.eip-server.com");
-        assertThat(config.getBackplane()).isEqualTo(1);
-        assertThat(config.getSlot()).isEqualTo(0);
-        assertThat(config.getEipToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(config.getEipToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(0);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name");
+
+        assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
+        assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
+        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
+        assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
+            assertThat(subscription.getMqttQos()).isEqualTo(0);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(subscription.getIncludeTimestamp()).isTrue();
+            assertThat(subscription.getIncludeTagNames()).isFalse();
         });
 
-        assertThat(new AdapterConfig(tuple.getConfig(), tuple.getTags(), List.of()).missingTags())
-                .isEmpty();
+        final ProtocolAdapterConfig protocolAdapterConfigAndTags = new ProtocolAdapterConfig(tuple.getConfig(), tuple.getTags(),
+                List.of());
+        assertThat(protocolAdapterConfigAndTags.missingTags()).isEmpty();
+        assertThat(protocolAdapterConfigAndTags.getTags().stream().map(t -> (FileTag)t))
+                .extracting(FileTag::getDescription, FileTag::getDefinition)
+                .contains(new Tuple("not set", new FileTagDefinition("path/to/file1", ContentType.BINARY)));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
@@ -171,5 +165,4 @@ class LegacyEipAdapterConfigTest {
                 mock());
         return readerWriter.applyConfig();
     }
-
 }

@@ -32,7 +32,9 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
@@ -43,7 +45,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolSpecificAdapterConfig configObject;
     private final @NotNull List<Tag> tags;
-    private final @NotNull List<FieldMappings> fieldMappings;
+    private final @NotNull List<ToEdgeMapping> toEdgeMappings;
+    private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -54,7 +57,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<Tag> tags,
-            final @NotNull List<FieldMappings> fieldMappings) {
+            final @NotNull List<ToEdgeMapping> toEdgeMappings,
+            final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -62,7 +66,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
         this.tags = tags;
-        this.fieldMappings = fieldMappings;
+        this.toEdgeMappings = toEdgeMappings;
+        this.fromEdgeMappings = fromEdgeMappings;
     }
 
     public void start(
@@ -116,10 +121,6 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return tags;
     }
 
-    public @NotNull List<FieldMappings> getFieldMappings() {
-        return fieldMappings;
-    }
-
     public @NotNull Long getTimeOfLastStartAttempt() {
         return lastStartAttemptTime;
     }
@@ -132,6 +133,14 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return adapter;
     }
 
+    public @NotNull List<FromEdgeMapping> getFromEdgeMappings() {
+        return fromEdgeMappings;
+    }
+
+    public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
+        return toEdgeMappings;
+    }
+
     public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {
         return protocolAdapterMetricsService;
     }
@@ -142,5 +151,9 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
         protocolAdapterState.setRuntimeStatus(runtimeStatus);
+    }
+
+    public @NotNull List<FieldMappings> getFieldMappings() {
+        return toEdgeMappings.stream().map(ToEdgeMapping::getFieldMappings).collect(Collectors.toList());
     }
 }

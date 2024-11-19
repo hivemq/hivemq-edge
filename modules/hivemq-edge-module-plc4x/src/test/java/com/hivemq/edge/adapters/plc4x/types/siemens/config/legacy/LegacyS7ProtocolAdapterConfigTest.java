@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.types.ads.config.legacy;
+package com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
@@ -23,9 +23,9 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
-import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
-import com.hivemq.protocols.AdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -36,69 +36,76 @@ import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class LegacyADSAdapterConfigTest {
+class LegacyS7ProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
-        final URL resource = getClass().getResource("/legacy-ads-adapter-full-config.xml");
+        final URL resource = getClass().getResource("/legacy-s7-adapter-full-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfig adapterConfig =
-                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final ProtocolAdapterConfig protocolAdapterConfig =
+                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
-                        adsProtocolAdapterFactory);
-        assertThat(adapterConfig.missingTags())
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
-        assertThat(config.getId()).isEqualTo("asd");
-        assertThat(config.getHost()).isEqualTo("172.16.10.54");
-        assertThat(config.getPort()).isEqualTo(48898);
-        assertThat(config.getTargetAmsPort()).isEqualTo(850);
-        assertThat(config.getSourceAmsPort()).isEqualTo(49999);
-        assertThat(config.getTargetAmsNetId()).isEqualTo("2.3.4.5.1.1");
-        assertThat(config.getSourceAmsNetId()).isEqualTo("5.4.3.2.1.1");
+        assertThat(config.getId()).isEqualTo("my-s7-id");
+        assertThat(config.getPort()).isEqualTo(102);
+        assertThat(config.getHost()).isEqualTo("my-ip-addr-or-host");
+        assertThat(config.getControllerType()).isEqualTo(S7_1500);
+        assertThat(config.getRemoteRack()).isEqualTo(1);
+        assertThat(config.getRemoteRack2()).isEqualTo(2);
+        assertThat(config.getRemoteSlot()).isEqualTo(3);
+        assertThat(config.getRemoteSlot2()).isEqualTo(4);
+        assertThat(config.getRemoteTsap()).isEqualTo(5);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/mqtt/topic");
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
+            assertThat(mapping.getIncludeTagNames()).isFalse();
+            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
 
-            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
+        }, mapping -> {
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(mapping.getIncludeTimestamp()).isTrue();
+            assertThat(mapping.getIncludeTagNames()).isTrue();
+            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
         });
+
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(
+                        new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.BOOL)),
+                        new Plc4xTag("my-tag-name-2", "not set", new Plc4xTagDefinition("%I205.0", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
-        final URL resource = getClass().getResource("/legacy-ads-adapter-minimal-config.xml");
+        final URL resource = getClass().getResource("/legacy-s7-adapter-minimal-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -106,40 +113,42 @@ class LegacyADSAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfig adapterConfig =
-                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final ProtocolAdapterConfig protocolAdapterConfig =
+                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
-                        adsProtocolAdapterFactory);
-        assertThat(adapterConfig.missingTags())
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
-        assertThat(config.getId()).isEqualTo("my-ads-id");
-        assertThat(config.getPort()).isEqualTo(48898);
-        assertThat(config.getHost()).isEqualTo("172.16.10.53");
-        assertThat(config.getTargetAmsPort()).isEqualTo(850);
-        assertThat(config.getSourceAmsPort()).isEqualTo(49999);
-        assertThat(config.getTargetAmsNetId()).isEqualTo("2.3.4.5.1.1");
-        assertThat(config.getSourceAmsNetId()).isEqualTo("5.4.3.2.1.1");
+        assertThat(config.getId()).isEqualTo("my-s7-id");
+        assertThat(config.getPort()).isEqualTo(102);
+        assertThat(config.getHost()).isEqualTo("my-ip-address-or-host");
+        assertThat(config.getControllerType()).isEqualTo(S7_1500);
+        assertThat(config.getRemoteRack()).isEqualTo(0);
+        assertThat(config.getRemoteRack2()).isEqualTo(0);
+        assertThat(config.getRemoteSlot()).isEqualTo(0);
+        assertThat(config.getRemoteSlot2()).isEqualTo(0);
+        assertThat(config.getRemoteTsap()).isEqualTo(0);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/mqtt/topic");
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
+            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
         });
 
-        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
-                .containsExactly(new Plc4xTag("my-tag-name", "not set", new Plc4xTagDefinition("MYPROGRAM.MyStringVar", Plc4xDataType.DATA_TYPE.STRING)));
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.SINT)));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

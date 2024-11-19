@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.types.ads.config;
+package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
@@ -25,8 +25,8 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
-import com.hivemq.protocols.AdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
+import com.hivemq.protocols.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -38,19 +38,21 @@ import java.util.Map;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ADSAdapterConfigTest {
+class S7ProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
-        final URL resource = getClass().getResource("/ads-adapter-full-config.xml");
+        final URL resource = getClass().getResource("/s7-adapter-full-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -58,25 +60,28 @@ class ADSAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
 
-        final AdapterConfig adapterConfig =
-                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final ProtocolAdapterConfig protocolAdapterConfig =
+                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
-                        adsProtocolAdapterFactory);
-        assertThat(adapterConfig.missingTags())
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
-        assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+
+        assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.ads-server.com");
-        assertThat(config.getTargetAmsPort()).isEqualTo(1234);
-        assertThat(config.getSourceAmsPort()).isEqualTo(12345);
-        assertThat(config.getTargetAmsNetId()).isEqualTo("1.2.3.4.5.6");
-        assertThat(config.getSourceAmsNetId()).isEqualTo("1.2.3.4.5.7");
+        assertThat(config.getHost()).isEqualTo("my.s7-server.com");
+        assertThat(config.getControllerType()).isEqualTo(S7_400);
+        assertThat(config.getRemoteRack()).isEqualTo(1);
+        assertThat(config.getRemoteRack2()).isEqualTo(2);
+        assertThat(config.getRemoteSlot()).isEqualTo(3);
+        assertThat(config.getRemoteSlot2()).isEqualTo(4);
+        assertThat(config.getRemoteTsap()).isEqualTo(5);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
@@ -88,13 +93,6 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
-            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
@@ -102,20 +100,12 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
-
-            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
         });
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
-        final URL resource = getClass().getResource("/ads-adapter-minimal-config.xml");
+        final URL resource = getClass().getResource("/s7-adapter-minimal-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -123,25 +113,28 @@ class ADSAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-        final AdapterConfig adapterConfig =
-                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
+        
+        final ProtocolAdapterConfig protocolAdapterConfig =
+                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
-                        adsProtocolAdapterFactory);
-        assertThat(adapterConfig.missingTags())
+                        s7ProtocolAdapterFactory);
+        assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) adapterConfig.getAdapterConfig();
+        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
-        assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
+        assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.ads-server.com");
-        assertThat(config.getTargetAmsPort()).isEqualTo(123);
-        assertThat(config.getSourceAmsPort()).isEqualTo(124);
-        assertThat(config.getTargetAmsNetId()).isEqualTo("1.2.3.4.5.6");
-        assertThat(config.getSourceAmsNetId()).isEqualTo("1.2.3.4.5.7");
+        assertThat(config.getHost()).isEqualTo("my.s7-server.com");
+        assertThat(config.getControllerType()).isEqualTo(S7_400);
+        assertThat(config.getRemoteRack()).isEqualTo(0);
+        assertThat(config.getRemoteRack2()).isEqualTo(0);
+        assertThat(config.getRemoteSlot()).isEqualTo(0);
+        assertThat(config.getRemoteSlot2()).isEqualTo(0);
+        assertThat(config.getRemoteTsap()).isEqualTo(0);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
@@ -154,15 +147,13 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(adapterConfig.missingTags()).isEmpty();
-
-        assertThat(adapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
-            .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
+                .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
-        final URL resource = getClass().getResource("/ads-adapter-minimal-missing-tag-config.xml");
+        final URL resource = getClass().getResource("/s7-adapter-minimal-missing-tag-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -170,16 +161,15 @@ class ADSAdapterConfigTest {
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-
-        final AdapterConfig adapterConfig =
-                AdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
+        final ProtocolAdapterConfig protocolAdapterConfig =
+                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
                         true,
                         mapper,
-                        adsProtocolAdapterFactory);
+                        s7ProtocolAdapterFactory);
 
-        assertThat(adapterConfig.missingTags())
+        assertThat(protocolAdapterConfig.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
@@ -194,34 +184,39 @@ class ADSAdapterConfigTest {
                 "tag-name",
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final ADSSpecificAdapterConfig adsAdapterConfig = new ADSSpecificAdapterConfig("my-ads-adapter",
+        final S7SpecificAdapterConfig s7AdapterConfig = new S7SpecificAdapterConfig("my-s7-adapter",
                 14,
                 "my.host.com",
-                15,
-                16,
-                "1.2.3.4.5.6",
-                "1.2.3.4.5.7",
-                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
+                S7_1500,
+                1,
+                2,
+                3,
+                4,
+                5,
+                new S7ToMqttConfig(12, 13, true, List.of(pollingContext))
+        );
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-        final Map<String, Object> config = adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
+                new S7ProtocolAdapterFactory(mockInput);
+        final Map<String, Object> config = s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-ads-adapter");
+        assertThat(config.get("id")).isEqualTo("my-s7-adapter");
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
-        assertThat(config.get("targetAmsPort")).isEqualTo(15);
-        assertThat(config.get("sourceAmsPort")).isEqualTo(16);
-        assertThat(config.get("targetAmsNetId")).isEqualTo("1.2.3.4.5.6");
-        assertThat(config.get("sourceAmsNetId")).isEqualTo("1.2.3.4.5.7");
-        final Map<String, Object> adsToMqtt = (Map<String, Object>) config.get("adsToMqtt");
-        assertThat(adsToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
-        assertThat(adsToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
-        assertThat(adsToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
+        assertThat(config.get("controllerType")).isEqualTo("S7_1500");
+        assertThat(config.get("remoteRack")).isEqualTo(1);
+        assertThat(config.get("remoteRack2")).isEqualTo(2);
+        assertThat(config.get("remoteSlot")).isEqualTo(3);
+        assertThat(config.get("remoteSlot2")).isEqualTo(4);
+        assertThat(config.get("remoteTsap")).isEqualTo(5);
+        final Map<String, Object> s7ToMqtt = (Map<String, Object>) config.get("s7ToMqtt");
+        assertThat(s7ToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
+        assertThat(s7ToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
+        assertThat(s7ToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) adsToMqtt.get("adsToMqttMappings")).satisfiesExactly((mapping) -> {
+        assertThat((List<Map<String, Object>>) s7ToMqtt.get("s7ToMqttMappings")).satisfiesExactly((mapping) -> {
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);

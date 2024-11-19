@@ -131,7 +131,7 @@ public class ADSProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWriting() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
         return ADSSpecificAdapterConfig.class;
     }
 }

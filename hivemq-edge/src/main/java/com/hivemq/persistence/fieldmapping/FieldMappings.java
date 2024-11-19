@@ -66,15 +66,18 @@ public class FieldMappings {
         return topicFilter;
     }
 
-    public static FieldMappings fromEntity(final @NotNull FieldMappingsEntity fieldMappingsEntity, final @NotNull
-                                           ObjectMapper objectMapper) {
+    public static FieldMappings fromEntity(
+            final @NotNull FieldMappingsEntity fieldMappingsEntity, final @NotNull ObjectMapper objectMapper) {
 
         final List<FieldMapping> fieldMappingList = fieldMappingsEntity.getFieldMappingModels()
                 .stream()
                 .map(FieldMapping::from)
                 .collect(Collectors.toList());
 
-        return new FieldMappings(fieldMappingsEntity.getTopicFilter(), fieldMappingsEntity.getTagName(), fieldMappingList, FieldMappingMetaData.fromEntity(fieldMappingsEntity.getMetaData(), objectMapper));
+        return new FieldMappings(fieldMappingsEntity.getTopicFilter(),
+                fieldMappingsEntity.getTagName(),
+                fieldMappingList,
+                FieldMappingMetaData.fromEntity(fieldMappingsEntity.getMetaData(), objectMapper));
 
 
     }
