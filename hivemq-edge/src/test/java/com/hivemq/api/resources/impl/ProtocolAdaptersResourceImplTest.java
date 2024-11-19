@@ -28,6 +28,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,7 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull VersionProvider versionProvider = mock();
+    private final @NotNull ProtocolAdapterConfigConverter configConverter = mock();
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource =
             new ProtocolAdaptersResourceImpl(remoteService,
@@ -60,7 +62,8 @@ class ProtocolAdaptersResourceImplTest {
                     protocolAdapterManager,
                     protocolAdapterWritingService,
                     objectMapper,
-                    versionProvider);
+                    versionProvider,
+                    configConverter);
 
     @Test
     void getDomainTagsForAdapter() {

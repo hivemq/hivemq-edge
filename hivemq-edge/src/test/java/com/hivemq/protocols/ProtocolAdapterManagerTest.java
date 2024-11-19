@@ -77,6 +77,10 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics = mock();
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
+    private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager = mock();
+    private final @NotNull ConfigPersistence configPersistence = mock();
+    private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
+
 
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -91,11 +95,14 @@ class ProtocolAdapterManagerTest {
                 moduleLoader,
                 remoteService,
                 eventService,
+                configPersistence,
+                protocolAdapterConfigConverter,
                 versionProvider,
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
                 protocolAdapterWritingService,
+                protocolAdapterFactoryManager,
                 executorService);
     }
 
@@ -122,7 +129,8 @@ class ProtocolAdapterManagerTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
                 List.of(),
-                mock());
+                List.of(),
+                List.of());
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -144,6 +152,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
+                List.of(),
                 List.of(),
                 List.of());
 
@@ -172,6 +181,7 @@ class ProtocolAdapterManagerTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
                 List.of(),
+                List.of(),
                 List.of());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
@@ -198,6 +208,7 @@ class ProtocolAdapterManagerTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
                 List.of(),
+                List.of(),
                 List.of());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
@@ -223,6 +234,7 @@ class ProtocolAdapterManagerTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
                 List.of(),
+                List.of(),
                 List.of());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -247,6 +259,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
                 mock(),
+                List.of(),
                 List.of(),
                 List.of());
 
