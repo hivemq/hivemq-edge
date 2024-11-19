@@ -24,7 +24,7 @@ interface SubscriptionContainerProps {
   adapterId?: string
   onClose: () => void
   onSubmit: (newItem: OutwardMapping) => void
-  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
+  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void
 }
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
@@ -44,7 +44,7 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
           <SelectSourceTopics value={item.mqttTopicFilter} onChange={(v) => onChange('mqttTopicFilter', v)} />
           <DataModelSources flex={1} topics={item.mqttTopicFilter ? [item.mqttTopicFilter] : []} minH={250} />
         </VStack>
-        <VStack justifyContent="flex-start">
+        <VStack justifyContent="center">
           <HStack height={38}>
             <Icon as={FaRightFromBracket} />
           </HStack>

@@ -2,10 +2,10 @@ import {
   SelectDestinationTag,
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
-import { MOCK_DEVICE_TAGS, mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
+import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
 import { DomainTagList } from '@/api/__generated__'
+import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
 describe('SelectSourceTopics', () => {
   beforeEach(() => {
@@ -14,18 +14,20 @@ describe('SelectSourceTopics', () => {
 
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
-      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('types')
-      cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('adapters')
-      cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('bridges')
-      cy.intercept('/api/v1/management/client/filters', [mockClientSubscription]).as('clients')
+      cy.intercept('/api/v1/management/topic-filters', {
+        items: [
+          MOCK_TOPIC_FILTER,
+          {
+            topicFilter: 'another/filter',
+            description: 'This is a topic filter',
+          },
+        ],
+      }).as('getTopicFilters')
 
       cy.mountWithProviders(<SelectSourceTopics value="topic/test1" onChange={cy.stub()} />)
 
       cy.get('#mapping-select-source').should('contain.text', 'Loading...')
-      cy.wait('@types')
-      cy.wait('@adapters')
-      cy.wait('@bridges')
-      cy.wait('@clients')
+      cy.wait('@getTopicFilters')
       cy.get('#mapping-select-source').should('not.contain.text', 'Loading...')
 
       cy.get('#mapping-select-source').should('contain.text', 'topic/test1')

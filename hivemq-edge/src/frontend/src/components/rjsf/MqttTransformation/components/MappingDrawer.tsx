@@ -23,7 +23,7 @@ interface MappingDrawerProps {
   adapterType?: string
   item: OutwardMapping
   onSubmit: (newItem: OutwardMapping) => void
-  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
+  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void
   onClose: () => void
 }
 
