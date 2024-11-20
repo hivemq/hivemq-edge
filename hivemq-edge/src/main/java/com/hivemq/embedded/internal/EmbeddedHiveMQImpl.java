@@ -22,6 +22,7 @@ import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
@@ -29,6 +30,7 @@ import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import com.hivemq.util.ThreadFactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,6 +194,10 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     @NotNull ConfigurationService bootstrapConfig() {
+        // TODO migration here?
+        final ConfigurationMigrator configurationMigrator = new ConfigurationMigrator(systemInformation, moduleLoaderFactory.apply(systemInformation));
+        configurationMigrator.migrate();
+
         if (configurationService == null) {
             configurationService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }

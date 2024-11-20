@@ -71,7 +71,7 @@ public class ProtocolAdapterFactoryManager {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Map<String, ProtocolAdapterFactory<?>> findAllAdapters(
+    public static Map<String, ProtocolAdapterFactory<?>> findAllAdapters(
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull EventService eventService,
             final boolean writingEnabled) {
