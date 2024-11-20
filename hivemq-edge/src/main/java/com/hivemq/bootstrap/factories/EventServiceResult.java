@@ -15,6 +15,7 @@
  */
 package com.hivemq.bootstrap.factories;
 
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
@@ -23,10 +24,20 @@ public class EventServiceResult {
     private final boolean preventPublish;
     private final @Nullable PUBLISH createdPublish;
 
-    public EventServiceResult(boolean preventPublish, @Nullable PUBLISH createdPublish) {
+    private EventServiceResult(final boolean preventPublish, @Nullable final PUBLISH createdPublish) {
         this.preventPublish = preventPublish;
         this.createdPublish = createdPublish;
     }
+
+
+    public static @NotNull EventServiceResult preventPublishing() {
+        return new EventServiceResult(true, null);
+    }
+
+    public static @NotNull EventServiceResult allowPublishing(final @NotNull PUBLISH createdPublish) {
+        return new EventServiceResult(false, createdPublish);
+    }
+
 
     public boolean isPreventPublish() {
         return preventPublish;

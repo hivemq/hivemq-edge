@@ -17,6 +17,7 @@ package com.hivemq.extensions.services.builder;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -33,13 +34,16 @@ import com.hivemq.extension.sdk.api.services.publish.Publish;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.publish.PublishImpl;
+import com.hivemq.mqtt.InternalPublishBuilder;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
 
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
@@ -47,7 +51,7 @@ import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NO
 /**
  * @author Lukas Brandl
  */
-public class PublishBuilderImpl implements PublishBuilder {
+public class PublishBuilderImpl implements InternalPublishBuilder {
 
     @NotNull
     private Qos qos = Qos.AT_MOST_ONCE;
@@ -93,6 +97,43 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
+    public PublishBuilder fromPublish(@NotNull final PUBLISH publish) {
+
+        Preconditions.checkNotNull(publish, "publish must not be null");
+
+        final Mqtt5PayloadFormatIndicator formatIndicator = publish.getPayloadFormatIndicator();
+        if (formatIndicator == null) {
+            final PayloadFormatIndicator payloadFormatIndicator = formatIndicator.toPayloadFormatIndicator();
+        }
+
+        final List<MqttUserProperty> mqttUserProperties = publish.getUserProperties()
+                .asList()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserProperty(mqttUserProperty.getName(), mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+        final ImmutableList<MqttUserProperty> immutableMqttUserProperties =
+                ImmutableList.<MqttUserProperty>builder().addAll(mqttUserProperties).build();
+
+        final UserProperties userProperties = UserPropertiesImpl.of(immutableMqttUserProperties);
+
+        return fromComplete(publish.getQoS().toQos(),
+                publish.isRetain(),
+                publish.getTopic(),
+                Optional.ofNullable(publish.getPayloadFormatIndicator() != null ?
+                        publish.getPayloadFormatIndicator().toPayloadFormatIndicator() :
+                        null),
+                Optional.ofNullable(publish.getMessageExpiryInterval()),
+                Optional.ofNullable(publish.getResponseTopic()),
+                Optional.ofNullable(publish.getCorrelationData() != null ?
+                        ByteBuffer.wrap(publish.getCorrelationData()) :
+                        null),
+                Optional.ofNullable(publish.getContentType()),
+                Optional.ofNullable(publish.getPayload() != null ? ByteBuffer.wrap(publish.getPayload()) : null),
+                userProperties);
+    }
+
+    @NotNull
+    @Override
     public PublishBuilder fromPublish(@NotNull final PublishPacket publish) {
 
         Preconditions.checkNotNull(publish, "publish must not be null");
@@ -101,9 +142,16 @@ public class PublishBuilderImpl implements PublishBuilder {
             throw new DoNotImplementException(PublishPacket.class.getSimpleName());
         }
 
-        return fromComplete(publish.getQos(), publish.getRetain(), publish.getTopic(), publish.getPayloadFormatIndicator(),
-                publish.getMessageExpiryInterval(), publish.getResponseTopic(), publish.getCorrelationData(),
-                publish.getContentType(), publish.getPayload(), publish.getUserProperties());
+        return fromComplete(publish.getQos(),
+                publish.getRetain(),
+                publish.getTopic(),
+                publish.getPayloadFormatIndicator(),
+                publish.getMessageExpiryInterval(),
+                publish.getResponseTopic(),
+                publish.getCorrelationData(),
+                publish.getContentType(),
+                publish.getPayload(),
+                publish.getUserProperties());
     }
 
     @NotNull
@@ -116,22 +164,30 @@ public class PublishBuilderImpl implements PublishBuilder {
             throw new DoNotImplementException(Publish.class.getSimpleName());
         }
 
-        return fromComplete(publish.getQos(), publish.getRetain(), publish.getTopic(), publish.getPayloadFormatIndicator(),
-                publish.getMessageExpiryInterval(), publish.getResponseTopic(), publish.getCorrelationData(),
-                publish.getContentType(), publish.getPayload(), publish.getUserProperties());
+        return fromComplete(publish.getQos(),
+                publish.getRetain(),
+                publish.getTopic(),
+                publish.getPayloadFormatIndicator(),
+                publish.getMessageExpiryInterval(),
+                publish.getResponseTopic(),
+                publish.getCorrelationData(),
+                publish.getContentType(),
+                publish.getPayload(),
+                publish.getUserProperties());
     }
 
     @NotNull
-    private PublishBuilder fromComplete(@NotNull final Qos qos,
-                                        final boolean retain,
-                                        @NotNull final String topic,
-                                        @NotNull final Optional<PayloadFormatIndicator> payloadFormatIndicator,
-                                        @NotNull final Optional<Long> messageExpiryInterval,
-                                        @NotNull final Optional<String> responseTopic,
-                                        @NotNull final Optional<ByteBuffer> correlationData,
-                                        @NotNull final Optional<String> contentType,
-                                        @NotNull final Optional<ByteBuffer> payload,
-                                        @NotNull final UserProperties userProperties) {
+    private PublishBuilder fromComplete(
+            @NotNull final Qos qos,
+            final boolean retain,
+            @NotNull final String topic,
+            @NotNull final Optional<PayloadFormatIndicator> payloadFormatIndicator,
+            @NotNull final Optional<Long> messageExpiryInterval,
+            @NotNull final Optional<String> responseTopic,
+            @NotNull final Optional<ByteBuffer> correlationData,
+            @NotNull final Optional<String> contentType,
+            @NotNull final Optional<ByteBuffer> payload,
+            @NotNull final UserProperties userProperties) {
         this.qos(qos);
         this.retain(retain);
         this.topic(topic);
@@ -192,7 +248,8 @@ public class PublishBuilderImpl implements PublishBuilder {
     @NotNull
     @Override
     public PublishBuilder messageExpiryInterval(final long messageExpiryInterval) {
-        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval, mqttConfigurationService.maxMessageExpiryInterval());
+        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval,
+                mqttConfigurationService.maxMessageExpiryInterval());
         this.messageExpiryInterval = messageExpiryInterval;
         return this;
     }
@@ -247,7 +304,15 @@ public class PublishBuilderImpl implements PublishBuilder {
             messageExpiryInterval = mqttConfigurationService.maxMessageExpiryInterval();
         }
 
-        return new PublishImpl(qos, retain, topic, payloadFormatIndicator, messageExpiryInterval, responseTopic,
-                correlationData, contentType, payload, UserPropertiesImpl.of(userPropertyBuilder.build()));
+        return new PublishImpl(qos,
+                retain,
+                topic,
+                payloadFormatIndicator,
+                messageExpiryInterval,
+                responseTopic,
+                correlationData,
+                contentType,
+                payload,
+                UserPropertiesImpl.of(userPropertyBuilder.build()));
     }
 }

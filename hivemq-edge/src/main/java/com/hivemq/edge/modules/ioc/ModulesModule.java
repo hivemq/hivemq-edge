@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.ioc;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.eventsv2.EventsService;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
@@ -54,6 +55,10 @@ public abstract class ModulesModule {
     @Binds
     @Singleton
     abstract @NotNull EventService eventService(@NotNull EventServiceDelegateImpl eventServiceDelegate);
+
+    @Binds
+    @Singleton
+    abstract @NotNull EventsService eventsService(@NotNull com.hivemq.edge.impl.events.v2.EventServiceDelegateImpl eventServiceDelegate);
 
     @Binds
     @Singleton

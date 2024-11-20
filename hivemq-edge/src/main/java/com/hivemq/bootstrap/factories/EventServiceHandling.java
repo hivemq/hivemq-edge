@@ -19,8 +19,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.eventsv2.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface EventServiceHandling {
 
-    @NotNull ListenableFuture<EventServiceResult> apply(final @NotNull Event coolEvent);
+    @NotNull
+    EventServiceResult apply(final @NotNull Event event);
 
 }

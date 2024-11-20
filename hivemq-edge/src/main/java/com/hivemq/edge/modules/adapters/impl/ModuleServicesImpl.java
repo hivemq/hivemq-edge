@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.eventsv2.EventsService;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
@@ -28,15 +29,18 @@ public class ModuleServicesImpl implements ModuleServices {
 
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
+    private final @NotNull EventsService eventServiceV2;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
 
     @Inject
     public ModuleServicesImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
+            final @NotNull EventsService eventServiceV2,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
+        this.eventServiceV2 = eventServiceV2;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
     }
 
@@ -48,6 +52,11 @@ public class ModuleServicesImpl implements ModuleServices {
     @Override
     public @NotNull EventService eventService() {
         return eventService;
+    }
+
+    @Override
+    public @NotNull EventsService eventServiceV2() {
+        return eventServiceV2;
     }
 
     @Override

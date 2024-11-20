@@ -28,6 +28,7 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.eventsv2.EventsService;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -96,6 +97,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull EventService eventService;
+    private final @NotNull EventsService eventsService;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
@@ -116,6 +118,7 @@ public class ProtocolAdapterManager {
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull EventService eventService,
+            final @NotNull EventsService eventsService,
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
@@ -128,6 +131,7 @@ public class ProtocolAdapterManager {
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.remoteService = remoteService;
         this.eventService = eventService;
+        this.eventsService = eventsService;
         this.versionProvider = versionProvider;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
@@ -287,7 +291,7 @@ public class ProtocolAdapterManager {
 
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-        protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(moduleServices, eventService), output);
+        protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(moduleServices, eventService, eventsService), output);
         return output.getStartFuture().thenComposeAsync(ignored -> {
             schedulePolling(protocolAdapterWrapper);
             return startWriting(protocolAdapterWrapper);
@@ -664,6 +668,7 @@ public class ProtocolAdapterManager {
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
                     new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
                             eventService,
+                            eventsService,
                             protocolAdapterWritingService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
@@ -766,8 +771,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull DomainTagUpdateResult updateDomainTags(
-            final @NotNull String adapterId,
-            final Set<DomainTag> domainTags) {
+            final @NotNull String adapterId, final Set<DomainTag> domainTags) {
         Set<String> tagNames = domainTags.stream().map(t -> t.getTagName()).collect(Collectors.toSet());
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
@@ -786,8 +790,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull DomainTagDeleteResult deleteDomainTag(
-            final @NotNull String adapterId,
-            final @NotNull String tagName) {
+            final @NotNull String adapterId, final @NotNull String tagName) {
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
             final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
@@ -818,16 +821,17 @@ public class ProtocolAdapterManager {
     }
 
     public Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
-        return getProtocolAdapters().values().stream()
-                .flatMap(adapter ->
-                        adapter.getTags().stream()
-                                .filter(t -> t.getName().equals(tagName)
-                        ).map(tag -> new DomainTag(
-                                tag.getName(),
+        return getProtocolAdapters().values()
+                .stream()
+                .flatMap(adapter -> adapter.getTags()
+                        .stream()
+                        .filter(t -> t.getName().equals(tagName))
+                        .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {}))))
+                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                                }))))
                 .findFirst();
     }
 
