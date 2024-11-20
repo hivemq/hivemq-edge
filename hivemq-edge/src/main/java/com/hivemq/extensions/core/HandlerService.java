@@ -16,6 +16,7 @@
 package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
+import com.hivemq.bootstrap.factories.EventServiceHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -24,7 +25,7 @@ public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
     private @Nullable AdapterHandlingFactory adapterHandlingFactory;
-
+    private @Nullable EventServiceHandlingFactory dataHubEventServiceHandlingFactory;
 
     public void supplyHandlerFactory(final @NotNull HandlerFactory handlerFactory) {
         this.handlerFactory = handlerFactory;
@@ -41,5 +42,13 @@ public class HandlerService {
 
     public @Nullable AdapterHandlingFactory getAdapterHandlerFactory() {
         return adapterHandlingFactory;
+    }
+
+    public @Nullable EventServiceHandlingFactory getDataHubEventServiceHandlingFactory() {
+        return dataHubEventServiceHandlingFactory;
+    }
+
+    public void supplyEventServiceHandlingFactory(final @NotNull EventServiceHandlingFactory dataHubEventServiceHandlingFactory) {
+        this.dataHubEventServiceHandlingFactory = dataHubEventServiceHandlingFactory;
     }
 }
