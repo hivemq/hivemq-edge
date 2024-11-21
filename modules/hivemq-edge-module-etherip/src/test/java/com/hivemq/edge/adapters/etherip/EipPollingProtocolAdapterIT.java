@@ -20,8 +20,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
@@ -59,37 +59,47 @@ public class EipPollingProtocolAdapterIT {
     private static final @NotNull String HOST = "172.16.10.60";
 
     public static Stream<Arguments> tagsToExpectedValues() {
-        return Stream.of(
-                Arguments.of(TAG_INT, EipDataType.INT, TAG_INT + ":INT", 3),
+        return Stream.of(Arguments.of(TAG_INT, EipDataType.INT, TAG_INT + ":INT", 3),
                 Arguments.of(TAG_BOOL, EipDataType.BOOL, TAG_BOOL + ":BOOL", false),
                 Arguments.of(TAG_PROGRAM_BOOL_TRUE, EipDataType.BOOL, TAG_PROGRAM_BOOL_TRUE + ":BOOL", true),
                 Arguments.of(TAG_PROGRAM_BOOL_FALSE, EipDataType.BOOL, TAG_PROGRAM_BOOL_FALSE + ":BOOL", false),
                 Arguments.of(TAG_STRING, EipDataType.STRING, TAG_STRING + ":STRING", "test"),
-                Arguments.of(TAG_REAL, EipDataType.REAL, TAG_REAL + ":REAL", 5.59)
-        );
+                Arguments.of(TAG_REAL, EipDataType.REAL, TAG_REAL + ":REAL", 5.59));
     }
 
     @ParameterizedTest
     @MethodSource("tagsToExpectedValues")
-    public void test_parameterized(@NotNull String tagAddress, @NotNull EipDataType tagType, @NotNull String expectedName, @NotNull Object expectedValue) {
-        final EipSpecificAdapterConfig config = new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0,
-                new EipToMqttConfig(1000, 10, true,
-                        List.of(
-                                new EipToMqttMapping("topic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, tagAddress, List.of())))
-        );
+    public void test_parameterized(
+            @NotNull final String tagAddress,
+            @NotNull final EipDataType tagType,
+            @NotNull final String expectedName,
+            @NotNull final Object expectedValue) {
+        final EipSpecificAdapterConfig config =
+                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
+
+
+        final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                true,
+                true,
+                tagAddress,
+                List.of());
+
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
-        when(inputMock.getTags()).thenReturn(List.of(new EipTag(tagAddress, tagAddress, new EipTagDefinition(tagAddress, tagType))));
+        when(inputMock.getTags()).thenReturn(List.of(new EipTag(tagAddress,
+                tagAddress,
+                new EipTagDefinition(tagAddress, tagType))));
 
-        final PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(config.getEipToMqttConfig().getMappings().get(0));
+        final PollingInput input = mock(PollingInput.class);
+        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 
-        final EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
-                EipProtocolAdapterInformation.INSTANCE,
-                inputMock);
+        final EipPollingProtocolAdapter adapter =
+                new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
 
         adapter.start(null, mock(ProtocolAdapterStartOutput.class));
 
@@ -101,36 +111,41 @@ public class EipPollingProtocolAdapterIT {
 
         assertThat(captorName.getAllValues()).first().isEqualTo(expectedName);
         if (expectedValue instanceof Double) {
-            assertThat(captorValue.getValue())
-                    .isInstanceOf(Double.class)
+            assertThat(captorValue.getValue()).isInstanceOf(Double.class)
                     .asInstanceOf(InstanceOfAssertFactories.DOUBLE)
                     .isEqualTo((Double) expectedValue, withPrecision(2d));
         } else {
-            assertThat(captorValue.getValue())
-                    .isEqualTo(expectedValue);
+            assertThat(captorValue.getValue()).isEqualTo(expectedValue);
         }
     }
 
     @Test
     public void test_PublishChangedDataOnly_False() {
-        final EipSpecificAdapterConfig config = new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0,
-                new EipToMqttConfig(1000, 10, false,
-                        List.of(
-                                new EipToMqttMapping("topic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, TAG_INT, List.of())))
-        );
+        final EipSpecificAdapterConfig config =
+                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false));
+
+        final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                true,
+                true,
+                TAG_INT,
+                List.of());
+
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
-        when(inputMock.getTags()).thenReturn(List.of(new EipTag(TAG_INT, TAG_INT, new EipTagDefinition(TAG_INT, EipDataType.INT))));
+        when(inputMock.getTags()).thenReturn(List.of(new EipTag(TAG_INT,
+                TAG_INT,
+                new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
-        final PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(config.getEipToMqttConfig().getMappings().get(0));
+        final PollingInput input = mock(PollingInput.class);
+        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 
-        final EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
-                EipProtocolAdapterInformation.INSTANCE,
-                inputMock);
+        final EipPollingProtocolAdapter adapter =
+                new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
 
         adapter.start(null, mock(ProtocolAdapterStartOutput.class));
 
@@ -147,24 +162,29 @@ public class EipPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_True() {
-        final EipSpecificAdapterConfig config = new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0,
-                new EipToMqttConfig(1000, 10, true,
-                        List.of(
-                                new EipToMqttMapping("topic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, TAG_INT, List.of())))
-        );
+         EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                true,
+                true,
+                TAG_INT,
+                List.of());
+        final EipSpecificAdapterConfig config =
+                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
-        when(inputMock.getTags()).thenReturn(List.of(new EipTag(TAG_INT, TAG_INT, new EipTagDefinition(TAG_INT, EipDataType.INT))));
+        when(inputMock.getTags()).thenReturn(List.of(new EipTag(TAG_INT,
+                TAG_INT,
+                new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
-        final PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(config.getEipToMqttConfig().getMappings().get(0));
+        final PollingInput input = mock(PollingInput.class);
+        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 
-        final EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
-                EipProtocolAdapterInformation.INSTANCE,
-                inputMock);
+        final EipPollingProtocolAdapter adapter =
+                new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
 
         adapter.start(mock(), mock(ProtocolAdapterStartOutput.class));
 
