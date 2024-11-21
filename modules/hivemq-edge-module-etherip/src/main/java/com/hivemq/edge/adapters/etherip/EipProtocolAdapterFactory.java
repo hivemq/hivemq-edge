@@ -89,12 +89,14 @@ public class EipProtocolAdapterFactory
                 legacyEipAdapterConfig.getPublishChangedDataOnly(),
                 eipToMqttMappings);
 
-        return new ConfigTagsTuple(new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
-                legacyEipAdapterConfig.getPort(),
-                legacyEipAdapterConfig.getHost(),
-                legacyEipAdapterConfig.getBackplane(),
-                legacyEipAdapterConfig.getSlot(),
-                eipToMqttConfig), tags, eipToMqttMappings
+        final EipSpecificAdapterConfig eipSpecificAdapterConfig =
+                new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
+                        legacyEipAdapterConfig.getPort(),
+                        legacyEipAdapterConfig.getHost(),
+                        legacyEipAdapterConfig.getBackplane(),
+                        legacyEipAdapterConfig.getSlot(),
+                        eipToMqttConfig);
+        return new ConfigTagsTuple(legacyEipAdapterConfig.getId(), eipSpecificAdapterConfig, tags, eipToMqttMappings
 
 
         );

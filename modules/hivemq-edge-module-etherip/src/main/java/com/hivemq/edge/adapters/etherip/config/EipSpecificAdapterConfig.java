@@ -94,15 +94,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         return id;
     }
 
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        if(eipToMqttConfig != null) {
-            return eipToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
-        } else {
-            return Set.of();
-        }
-    }
-
     public @NotNull String getHost() {
         return host;
     }

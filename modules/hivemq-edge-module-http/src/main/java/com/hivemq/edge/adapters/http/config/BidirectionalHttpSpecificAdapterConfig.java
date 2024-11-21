@@ -39,25 +39,16 @@ public class BidirectionalHttpSpecificAdapterConfig extends HttpSpecificAdapterC
 
     @JsonCreator
     public BidirectionalHttpSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
             @JsonProperty(value = "mqttToHttp") final @Nullable MqttToHttpConfig mqttToHttpConfig,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
-        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
+        super( httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
         this.mqttToHttpConfig = Objects.requireNonNullElseGet(mqttToHttpConfig, () -> new MqttToHttpConfig(List.of()));
     }
 
     public @NotNull MqttToHttpConfig getMqttToHttpConfig() {
         return mqttToHttpConfig;
-    }
-
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        final Set<String> distinct = new HashSet<>();
-        distinct.addAll(super.calculateAllUsedTags());
-        distinct.addAll(mqttToHttpConfig.getMappings().stream().map(MqttToHttpMapping::getTagName).collect(Collectors.toSet()));
-        return distinct;
     }
 
 }

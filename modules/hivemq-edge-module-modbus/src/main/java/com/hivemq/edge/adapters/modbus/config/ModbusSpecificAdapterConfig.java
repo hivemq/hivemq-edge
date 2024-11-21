@@ -30,20 +30,8 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
-
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     public static final int PORT_MIN = 1;
     public static final int PORT_MAX = 65535;
-
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
@@ -76,25 +64,14 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @JsonCreator
     public ModbusSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
             @JsonProperty(value = "modbusToMqtt") final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
-        this.id = id;
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
         this.modbusToMQTTConfig = modbusToMQTTConfig;
-    }
-
-    public @NotNull String getId() {
-        return id;
-    }
-
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        return modbusToMQTTConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {

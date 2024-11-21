@@ -95,13 +95,14 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull String adapterId;
 
     private volatile @Nullable HttpClient httpClient = null;
-    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public HttpProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<HttpSpecificAdapterConfig> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
@@ -113,7 +114,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override

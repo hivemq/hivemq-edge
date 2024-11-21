@@ -28,7 +28,7 @@ public class ProtocolAdapterEntity {
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> config = new HashMap<>();
 
-    @XmlElement(name = "tags")
+    @XmlElementWrapper(name = "tags")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull List<Map<String, Object>> tags = new ArrayList<>();
 

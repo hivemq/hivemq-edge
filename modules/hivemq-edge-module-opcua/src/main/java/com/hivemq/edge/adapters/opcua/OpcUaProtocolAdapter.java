@@ -59,11 +59,13 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
+    private final @NotNull String adapterId;
     private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper ;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -74,7 +76,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
@@ -85,12 +87,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             synchronized (this) {
                 if(opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(adapterConfig,
+                        OpcUaClientWrapper.createAndConnect(adapterId,
+                                adapterConfig,
                                 tags,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),
-                                adapterConfig.getId(),
                                 adapterInformation.getProtocolId(),
                                 protocolAdapterMetricsService, output).thenApply(wrapper -> {
                             output.startedSuccessfully();

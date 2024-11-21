@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.file;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -28,7 +27,6 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
-import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.payload.FileDataPoint;
 import com.hivemq.edge.adapters.file.tag.FileTag;
@@ -46,13 +44,16 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
     private final @NotNull FileSpecificAdapterConfig adapterConfig;
+    private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull List<Tag> tags;
 
     public FilePollingProtocolAdapter(
+            final @NotNull String adapterId,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
+        this.adapterId = adapterId;
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
@@ -61,7 +62,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override

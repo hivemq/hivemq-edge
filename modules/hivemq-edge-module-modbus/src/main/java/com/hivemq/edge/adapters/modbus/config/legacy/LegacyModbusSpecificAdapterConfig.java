@@ -80,11 +80,6 @@ public class LegacyModbusSpecificAdapterConfig implements ProtocolSpecificAdapte
         return id;
     }
 
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        return Set.of();
-    }
-
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;
     }

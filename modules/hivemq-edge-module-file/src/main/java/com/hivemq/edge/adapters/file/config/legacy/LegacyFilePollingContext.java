@@ -29,7 +29,7 @@ import java.util.List;
 
 public class LegacyFilePollingContext {
     @JsonProperty(value = "destination", required = true)
-    protected @Nullable String destination;
+    protected @NotNull String destination;
 
     @JsonProperty(value = "qos", required = true)
     protected int qos = 0;
@@ -56,7 +56,7 @@ public class LegacyFilePollingContext {
         return filePath;
     }
 
-    public @Nullable String getDestinationMqttTopic() {
+    public @NotNull String getDestinationMqttTopic() {
         return destination;
     }
 

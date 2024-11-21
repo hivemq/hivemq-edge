@@ -2,12 +2,14 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class FromEdgeMapping {
+public class FromEdgeMapping implements PollingContext {
 
     private final @NotNull String topic;
     private final @NotNull String tagName;
@@ -16,7 +18,6 @@ public class FromEdgeMapping {
     private final boolean includeTimestamp;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
-
 
     public FromEdgeMapping(
             @NotNull final String tagName,
@@ -36,12 +37,18 @@ public class FromEdgeMapping {
 
     }
 
+    @Override
+    public @NotNull String getMqttTopic() {
+        return topic;
+    }
+
     public @NotNull String getTagName() {
         return tagName;
     }
 
-    public @NotNull String getTopic() {
-        return topic;
+    @Override
+    public int getMqttQos() {
+        return 0;
     }
 
     public int getMaxQoS() {
@@ -65,13 +72,19 @@ public class FromEdgeMapping {
     }
 
     public static @NotNull FromEdgeMapping fromEntity(final @NotNull FromEdgeMappingEntity entity) {
+        final List<MqttUserProperty> mqttUserProperties = entity.getUserProperties()
+                .stream()
+                .map(mqttUserPropertyEntity -> new MqttUserProperty(mqttUserPropertyEntity.getName(),
+                        mqttUserPropertyEntity.getValue()))
+                .collect(Collectors.toList());
+
         return new FromEdgeMapping(entity.getTagName(),
                 entity.getTopic(),
                 entity.getMaxQoS(),
                 entity.getMessageHandlingOptions(),
                 entity.isIncludeTagNames(),
                 entity.isIncludeTimestamp(),
-                entity.getUserProperties());
+                mqttUserProperties);
     }
 
 

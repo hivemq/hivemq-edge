@@ -2,6 +2,7 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.FromEdgeMapping;
 
@@ -9,6 +10,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FromEdgeMappingEntity {
 
@@ -30,9 +32,9 @@ public class FromEdgeMappingEntity {
     @XmlElement(name = "includeTimestamp", required = true)
     private final boolean includeTimestamp;
 
-    @XmlElementWrapper(name = "includeTagNames", required = true)
-    @XmlElement(name = "mqttUserProperties")
-    private final @NotNull List<MqttUserProperty> userProperties;
+    @XmlElementWrapper(name = "mqttUserProperties", required = true)
+    @XmlElement(name = "mqttUserProperty")
+    private final @NotNull List<MqttUserPropertyEntity> userProperties;
 
     // no-arg constructor for JaxB
     public FromEdgeMappingEntity() {
@@ -52,7 +54,7 @@ public class FromEdgeMappingEntity {
             final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,
             final boolean includeTimestamp,
-            final @NotNull List<MqttUserProperty> userProperties) {
+            final @NotNull List<MqttUserPropertyEntity> userProperties) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -82,7 +84,7 @@ public class FromEdgeMappingEntity {
         return includeTimestamp;
     }
 
-    public @NotNull List<MqttUserProperty> getUserProperties() {
+    public @NotNull List<MqttUserPropertyEntity> getUserProperties() {
         return userProperties;
     }
 
@@ -90,13 +92,37 @@ public class FromEdgeMappingEntity {
         return maxQoS;
     }
 
+    // TODO might be removable
     public static @NotNull FromEdgeMappingEntity from(final @NotNull FromEdgeMapping fromEdgeMapping) {
+
+        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = fromEdgeMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
         return new FromEdgeMappingEntity(fromEdgeMapping.getTagName(),
-                fromEdgeMapping.getTopic(),
+                fromEdgeMapping.getMqttTopic(),
                 fromEdgeMapping.getMaxQoS(),
                 fromEdgeMapping.getMessageHandlingOptions(),
                 fromEdgeMapping.getIncludeTagNames(),
                 fromEdgeMapping.getIncludeTimestamp(),
-                fromEdgeMapping.getUserProperties());
+                mqttUserPropertyEntities);
+    }
+
+    public static @NotNull FromEdgeMappingEntity from(final @NotNull PollingContext fromEdgeMapping) {
+        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = fromEdgeMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
+        return new FromEdgeMappingEntity(fromEdgeMapping.getTagName(),
+                fromEdgeMapping.getMqttTopic(),
+                fromEdgeMapping.getMqttQos(),
+                fromEdgeMapping.getMessageHandlingOptions(),
+                fromEdgeMapping.getIncludeTagNames(),
+                fromEdgeMapping.getIncludeTimestamp(),
+                mqttUserPropertyEntities);
     }
 }

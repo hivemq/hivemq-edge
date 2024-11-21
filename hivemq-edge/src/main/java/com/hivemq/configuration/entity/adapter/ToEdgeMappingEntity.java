@@ -1,14 +1,9 @@
 package com.hivemq.configuration.entity.adapter;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ToEdgeMapping;
 
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import java.util.ArrayList;
-import java.util.List;
 
 @SuppressWarnings("unused")
 public class ToEdgeMappingEntity {
@@ -19,6 +14,9 @@ public class ToEdgeMappingEntity {
     @XmlElement(name = "tag-name", required = true)
     private final @NotNull String tagName;
 
+    @XmlElement(name = "max-qos", required = true)
+    private final int qos;
+
     @XmlElement(name = "fieldMappings", required = true)
     private final @NotNull FieldMappingsEntity fieldMappingsEntity;
 
@@ -26,17 +24,19 @@ public class ToEdgeMappingEntity {
     public ToEdgeMappingEntity() {
         topicFilter = "";
         tagName = "";
-
+        qos = 1;
         fieldMappingsEntity = null;
     }
 
     public ToEdgeMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
+            final int maxQoS,
             final @NotNull FieldMappingsEntity fieldMappingsEntity) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMappingsEntity = fieldMappingsEntity;
+        this.qos = maxQoS;
     }
 
     public @NotNull String getTagName() {
@@ -47,20 +47,18 @@ public class ToEdgeMappingEntity {
         return topicFilter;
     }
 
-    public int getMaxQoS() {
-        return maxQoS;
-    }
-
     public @NotNull FieldMappingsEntity getFieldMappingsEntity() {
         return fieldMappingsEntity;
     }
 
-
+    public int getMaxQos() {
+        return qos;
+    }
 
     public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
         return new ToEdgeMappingEntity(toEdgeMapping.getTagName(),
-                toEdgeMapping.getMqttTopic(),
-
+                toEdgeMapping.getTopicFilter(),
+                toEdgeMapping.getMaxQoS(),
                 FieldMappingsEntity.from(toEdgeMapping.getFieldMappings()));
     }
 }

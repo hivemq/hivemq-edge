@@ -18,16 +18,12 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig> {
 
@@ -96,7 +92,6 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
 
     @JsonCreator
     public S7SpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
@@ -106,7 +101,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
             @JsonProperty(value = "s7ToMqtt") final @Nullable S7ToMqttConfig s7ToMqttConfig) {
-        super(id, port, host);
+        super(port, host);
         this.port = port;
         this.controllerType = controllerType;
         this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);
@@ -150,14 +145,5 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
     @Override
     public @Nullable Plc4xToMqttConfig getPlc4xToMqttConfig() {
         return s7ToMqttConfig;
-    }
-
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        if(s7ToMqttConfig != null) {
-            return s7ToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
-        } else {
-            return Set.of();
-        }
     }
 }

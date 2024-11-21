@@ -1,11 +1,13 @@
 package com.hivemq.configuration.migration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -15,20 +17,26 @@ import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("deprecation")
 @Singleton
 public class ConfigurationMigrator {
 
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationMigrator.class);
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull ModuleLoader moduleLoader;
-    private final @NotNull LegacyConfigFileReaderWriter<LegacyHiveMQConfigEntity> legacyConfigFileReaderWriter;
+    private final @NotNull LegacyConfigFileReaderWriter<LegacyHiveMQConfigEntity, HiveMQConfigEntity>
+            legacyConfigFileReaderWriter;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
@@ -36,8 +44,9 @@ public class ConfigurationMigrator {
         this.systemInformation = systemInformation;
         this.moduleLoader = moduleLoader;
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
-        this.legacyConfigFileReaderWriter =
-                new LegacyConfigFileReaderWriter<>(configurationFile, LegacyHiveMQConfigEntity.class);
+        this.legacyConfigFileReaderWriter = new LegacyConfigFileReaderWriter<>(configurationFile,
+                LegacyHiveMQConfigEntity.class,
+                HiveMQConfigEntity.class);
     }
 
     public void migrate() {
@@ -49,73 +58,67 @@ public class ConfigurationMigrator {
                 return;
             }
 
-            System.err.println("DAFUQ");
-
-            /*
-
-            final List<Class<? extends ProtocolAdapterFactory>> implementations =
-                    moduleLoader.findImplementations(ProtocolAdapterFactory.class);
-
-            for (final Class<? extends ProtocolAdapterFactory> factory : implementations) {
-
-            }
-
-             */
-
             final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             moduleLoader.loadModules();
             final Map<String, ProtocolAdapterFactory<?>> factoryMap =
                     ProtocolAdapterFactoryManager.findAllAdapters(moduleLoader, eventService, true);
-
-
             final LegacyHiveMQConfigEntity legacyHiveMQConfigEntity = legacyConfigFileReaderWriter.readConfigFromXML();
             final Map<String, Object> protocolAdapterConfig = legacyHiveMQConfigEntity.getProtocolAdapterConfig();
+            final List<ProtocolAdapterEntity> protocolAdapterEntities = protocolAdapterConfig.entrySet()
+                    .stream()
+                    .map(entry -> parseProtocolAdapterEntity(entry, factoryMap))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
 
-
-            for (final Map.Entry<String, Object> stringObjectEntry : protocolAdapterConfig.entrySet()) {
-                final String protocolId = stringObjectEntry.getKey();
-                final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolId);
-                if (protocolAdapterFactory == null) {
-                    // not much we can do here. We do not have the factory to get the necessary information from
-                    //TODO log
-                    continue;
-                }
-
-                if (protocolAdapterFactory instanceof LegacyConfigConversion) {
-                    final LegacyConfigConversion adapterFactory = (LegacyConfigConversion) protocolAdapterFactory;
-                    final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
-                            (Map<String, Object>) stringObjectEntry.getValue());
-                    System.err.println(configTagsTuple);
-                    final Map<String, Object> newAdapterMap = new HashMap<>();
-                    newAdapterMap.put("protocolId", protocolId);
-                    newAdapterMap.put("config", configTagsTuple.getConfig());
-                    newAdapterMap.put("tags", configTagsTuple.getTags());
-                    final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
-                            .stream()
-                            .map(ConfigurationMigrator::convertToEntity)
-                            .collect(Collectors.toList());
-                    newAdapterMap.put("toEdgeMappings", fromEdgeMappingEntities);
-                } else {
-                    // we can not fix it
-                }
-            }
-
+            final HiveMQConfigEntity hiveMQConfigEntity = legacyHiveMQConfigEntity.to(protocolAdapterEntities);
+            legacyConfigFileReaderWriter.writeConfigToXML(hiveMQConfigEntity);
         } catch (final Exception e) {
             //TODO
             e.printStackTrace();
         }
     }
 
+    private Optional<ProtocolAdapterEntity> parseProtocolAdapterEntity(
+            final Map.Entry<String, Object> stringObjectEntry,
+            final Map<String, ProtocolAdapterFactory<?>> factoryMap) {
+        final String protocolId = stringObjectEntry.getKey();
+        final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolId);
+        if (protocolAdapterFactory == null) {
+            // not much we can do here. We do not have the factory to get the necessary information from
+            //TODO log
+            log.error("Fucked");
+            return Optional.empty();
+        }
 
-    static FromEdgeMappingEntity convertToEntity(final @NotNull PollingContext pollingContext) {
-        return new FromEdgeMappingEntity(pollingContext.getTagName(),
-                pollingContext.getMqttTopic(),
-                pollingContext.getMqttQos(),
-                pollingContext.getMessageHandlingOptions(),
-                pollingContext.getIncludeTagNames(),
-                pollingContext.getIncludeTimestamp(),
-                pollingContext.getUserProperties());
+        if (protocolAdapterFactory instanceof LegacyConfigConversion) {
+            final LegacyConfigConversion adapterFactory = (LegacyConfigConversion) protocolAdapterFactory;
+            final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
+                    (Map<String, Object>) stringObjectEntry.getValue());
+            System.err.println(configTagsTuple);
 
+            final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
+                    .stream()
+                    .map(FromEdgeMappingEntity::from)
+                    .collect(Collectors.toList());
+
+            final List<Map<String, Object>> tagsAsMaps = configTagsTuple.getTags()
+                    .stream()
+                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
+                    }))
+                    .collect(Collectors.toList());
+
+            return Optional.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
+                    protocolId,
+                    objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
+                    }),
+                    fromEdgeMappingEntities,
+                    List.of(),
+                    tagsAsMaps));
+        } else {
+            log.error("Fucked 2");
+            return Optional.empty();
+        }
     }
 
 

@@ -59,16 +59,19 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaClientWrapper {
     private static final Logger log = LoggerFactory.getLogger(OpcUaClientWrapper.class);
 
+    private final String adapterId;
     public final @NotNull OpcUaClient client;
     public final @NotNull Optional<JsonToOpcUAConverter> jsonToOpcUAConverter;
     public final @NotNull Optional<JsonSchemaGenerator> jsonSchemaGenerator;
     public final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle;
 
     public OpcUaClientWrapper(
+            final @NotNull String adapterId,
             final @NotNull OpcUaClient client,
             final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle,
             final @NotNull Optional<JsonToOpcUAConverter> jsonToOpcUAConverter,
             final @NotNull Optional<JsonSchemaGenerator> jsonSchemaGenerator) {
+        this.adapterId = adapterId;
         this.client = client;
         this.jsonToOpcUAConverter = jsonToOpcUAConverter;
         this.jsonSchemaGenerator = jsonSchemaGenerator;
@@ -235,20 +238,20 @@ public class OpcUaClientWrapper {
     }
 
     public static @NotNull CompletableFuture<OpcUaClientWrapper> createAndConnect(
+            final @NotNull String adapterId,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
             final @NotNull List<Tag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull String id,
             final @NotNull String protocolId,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull ProtocolAdapterStartOutput output) throws UaException {
         final String configPolicyUri = adapterConfig.getSecurity().getPolicy().getSecurityPolicy().getUri();
 
         final OpcUaClient opcUaClient = OpcUaClient.create(adapterConfig.getUri(),
-                new OpcUaEndpointFilter(configPolicyUri, adapterConfig),
-                new OpcUaClientConfigurator(adapterConfig));
+                new OpcUaEndpointFilter(adapterId, configPolicyUri, adapterConfig),
+                new OpcUaClientConfigurator(adapterConfig, adapterId));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
 
@@ -256,19 +259,19 @@ public class OpcUaClientWrapper {
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
-                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", id, session);
+                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);
             }
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
-                log.info("OPC UA client of protocol adapter '{}' connected: {}", id, session);
+                log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
-            log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", id, serviceFault);
-            eventService.createAdapterEvent(adapterConfig.getId(), protocolId)
+            log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", adapterId, serviceFault);
+            eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.ERROR)
                     .withPayload(serviceFault.getResponseHeader().getServiceResult())
                     .withMessage("A Service Fault was Detected.")
@@ -277,7 +280,7 @@ public class OpcUaClientWrapper {
 
         return opcUaClient.connect().thenCompose(uaClient -> {
             final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(opcUaClient,
-                    adapterConfig.getId(),
+                    adapterId,
                     protocolId,
                     protocolAdapterMetricsService,
                     eventService,
@@ -294,7 +297,8 @@ public class OpcUaClientWrapper {
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
                     return opcUaSubscriptionLifecycle.subscribeAll(adapterConfig.getOpcuaToMqttConfig()
                                     .getOpcuaToMqttMappings())
-                            .thenApply(ignored -> new OpcUaClientWrapper(opcUaClient,
+                            .thenApply(ignored -> new OpcUaClientWrapper(adapterId,
+                                    opcUaClient,
                                     opcUaSubscriptionLifecycle,
                                     jsonToOpcUAConverterOpt,
                                     jsonSchemaGeneratorOpt));

@@ -31,10 +31,15 @@ import java.util.function.Function;
 public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, Optional<EndpointDescription>> {
     private static final Logger log = LoggerFactory.getLogger(OpcUaEndpointFilter.class);
 
+    private final @NotNull String adapterId;
     private final @NotNull String configPolicyUri;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
 
-    public OpcUaEndpointFilter(@NotNull String configPolicyUri, @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
+    public OpcUaEndpointFilter(
+            final @NotNull String adapterId,
+            @NotNull String configPolicyUri,
+            @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
+        this.adapterId = adapterId;
         this.configPolicyUri = configPolicyUri;
         this.adapterConfig = adapterConfig;
     }
@@ -55,7 +60,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             }
             log.warn("OPC UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
                     policyUri,
-                    adapterConfig.getId());
+                    adapterId);
             return false;
         }).min((o1, o2) -> {
             final SecPolicy policy1 = SecPolicy.forUri(o1.getSecurityPolicyUri());

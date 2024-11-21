@@ -94,13 +94,15 @@ public class ADSProtocolAdapterFactory
                         plc4xToMqttMappings);
 
 
-        return new ConfigTagsTuple(new ADSSpecificAdapterConfig(legacyAdsAdapterConfig.getId(),
-                legacyAdsAdapterConfig.getPort(),
-                legacyAdsAdapterConfig.getHost(),
-                legacyAdsAdapterConfig.getTargetAmsPort(),
-                legacyAdsAdapterConfig.getSourceAmsPort(),
-                legacyAdsAdapterConfig.getTargetAmsNetId(),
-                legacyAdsAdapterConfig.getSourceAmsNetId(),
-                modbusToMqttConfig), tags, plc4xToMqttMappings);
+        return new ConfigTagsTuple(legacyAdsAdapterConfig.getId(),
+                new ADSSpecificAdapterConfig(legacyAdsAdapterConfig.getPort(),
+                        legacyAdsAdapterConfig.getHost(),
+                        legacyAdsAdapterConfig.getTargetAmsPort(),
+                        legacyAdsAdapterConfig.getSourceAmsPort(),
+                        legacyAdsAdapterConfig.getTargetAmsNetId(),
+                        legacyAdsAdapterConfig.getSourceAmsNetId(),
+                        modbusToMqttConfig),
+                tags,
+                plc4xToMqttMappings);
     }
 }

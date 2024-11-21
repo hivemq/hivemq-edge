@@ -101,10 +101,12 @@ public class ModbusProtocolAdapterFactory
                         modbusToMqttMappings);
 
 
-        return new ConfigTagsTuple(new ModbusSpecificAdapterConfig(legacyModbusAdapterConfig.getId(),
-                legacyModbusAdapterConfig.getPort(),
-                legacyModbusAdapterConfig.getHost(),
-                legacyModbusAdapterConfig.getTimeout(),
-                modbusToMqttConfig), modbusTags, modbusToMqttMappings);
+        return new ConfigTagsTuple(legacyModbusAdapterConfig.getId(),
+                new ModbusSpecificAdapterConfig(legacyModbusAdapterConfig.getPort(),
+                        legacyModbusAdapterConfig.getHost(),
+                        legacyModbusAdapterConfig.getTimeout(),
+                        modbusToMqttConfig),
+                modbusTags,
+                modbusToMqttMappings);
     }
 }

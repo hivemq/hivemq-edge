@@ -161,10 +161,10 @@ public class ProtocolAdapterManager {
             }
             final ProtocolAdapterFactory<?> protocolAdapterFactory = protocolAdapterFactoryOptional.get();
 
-            log.info("Found configuration for adapter {} / {}", adapterConfig.getAdapterConfig().getId(), adapterType);
+            log.info("Found configuration for adapter {} / {}", adapterConfig.getAdapterId(), adapterType);
             adapterConfig.missingTags().ifPresent(missing -> {
                 throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " +
-                        adapterConfig.getAdapterConfig().getId() +
+                        adapterConfig.getAdapterId() +
                         ": " +
                         missing);
             });
@@ -307,7 +307,7 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
             final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
                     .map(toEdgeMapping -> new WritingContextImpl(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getMqttTopic(),
+                            toEdgeMapping.getTopicFilter(),
                             toEdgeMapping.getMaxQoS(),
                             toEdgeMapping.getFieldMappings()))
                     .collect(Collectors.toList());
@@ -570,15 +570,11 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> newToEdgeMappings = oldInstance.getToEdgeMappings()
                     .stream()
                     .map(toEdgeMapping -> new ToEdgeMapping(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getMqttTopic(),
+                            toEdgeMapping.getTopicFilter(),
                             toEdgeMapping.getMaxQoS(),
                             findCorrespondingFieldMapping(fieldMappings,
-                                    toEdgeMapping.getMqttTopic(),
-                                    toEdgeMapping.getTagName()),
-                            toEdgeMapping.getMessageHandlingOptions(),
-                            toEdgeMapping.getIncludeTagNames(),
-                            toEdgeMapping.getIncludeTimestamp(),
-                            toEdgeMapping.getUserProperties()))
+                                    toEdgeMapping.getTopicFilter(),
+                                    toEdgeMapping.getTagName())))
                     .collect(Collectors.toList());
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
@@ -642,13 +638,13 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapterMetricsService protocolAdapterMetricsService = new ProtocolAdapterMetricsServiceImpl(
                     protocolAdapterFactory.getInformation().getProtocolId(),
-                    config.getAdapterConfig().getId(),
+                    config.getAdapterId(),
                     metricRegistry);
 
 
             final ProtocolAdapterStateImpl protocolAdapterState =
                     new ProtocolAdapterStateImpl(moduleServices.eventService(),
-                            config.getAdapterConfig().getId(),
+                            config.getAdapterId(),
                             protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
@@ -657,7 +653,8 @@ public class ProtocolAdapterManager {
                             protocolAdapterWritingService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(config.getAdapterConfig(),
+                            new ProtocolAdapterInputImpl(config.getAdapterId(),
+                                    config.getAdapterConfig(),
                                     config.getTags(),
                                     version,
                                     protocolAdapterState,
@@ -692,7 +689,7 @@ public class ProtocolAdapterManager {
                                     adapterConfig.getProtocolId()));
             adapterConfig.missingTags().ifPresent(missing -> {
                 throw new IllegalArgumentException("Tags used in mappings but used in adapter " +
-                        adapterConfig.getAdapterConfig().getId() +
+                        adapterConfig.getAdapterId() +
                         ": " +
                         missing);
             });
@@ -885,6 +882,7 @@ public class ProtocolAdapterManager {
     public static class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig>
             implements ProtocolAdapterInput<T> {
         public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
+        private final String adapterId;
         private final @NotNull T configObject;
         private final @NotNull String version;
         private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -893,18 +891,25 @@ public class ProtocolAdapterManager {
         private final @NotNull List<Tag> tags;
 
         public ProtocolAdapterInputImpl(
+                final @NotNull String adapterId,
                 final @NotNull T configObject,
                 final @NotNull List<Tag> tags,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
                 final @NotNull ModuleServices moduleServices,
                 final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
+            this.adapterId = adapterId;
             this.configObject = configObject;
             this.version = version;
             this.protocolAdapterState = protocolAdapterState;
             this.moduleServices = moduleServices;
             this.protocolAdapterMetricsService = protocolAdapterMetricsService;
             this.tags = tags;
+        }
+
+        @Override
+        public @NotNull String getAdapterId() {
+            return adapterId;
         }
 
         @Override

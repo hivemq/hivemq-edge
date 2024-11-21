@@ -93,9 +93,11 @@ public class HttpProtocolAdapterFactory
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
                         List.of(httpToMqttMapping));
 
-        return new ConfigTagsTuple(new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getId(),
-                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates()), tags, List.of(httpToMqttMapping));
+        return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
+                new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                        httpToMqttConfig,
+                        legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
+                tags,
+                List.of(httpToMqttMapping));
     }
 }

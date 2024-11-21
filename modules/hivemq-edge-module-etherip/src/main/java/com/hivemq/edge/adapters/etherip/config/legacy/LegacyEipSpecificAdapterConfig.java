@@ -74,12 +74,6 @@ public class LegacyEipSpecificAdapterConfig implements ProtocolSpecificAdapterCo
         return id;
     }
 
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        // TODO
-        return Set.of();
-    }
-
     public int getPort() {
         return port;
     }

@@ -25,19 +25,8 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> implements ProtocolSpecificAdapterConfig {
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
-
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
 
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
@@ -56,16 +45,10 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
 
     @JsonCreator
     public Plc4XSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host) {
-        this.id = id;
         this.port = port;
         this.host = host;
-    }
-
-    public @NotNull String getId() {
-        return id;
     }
 
     public int getPort() {

@@ -15,7 +15,16 @@
  */
 package com.hivemq.configuration.migration;
 
-import com.hivemq.configuration.entity.*;
+import com.hivemq.configuration.entity.DynamicConfigEntity;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
+import com.hivemq.configuration.entity.MqttConfigEntity;
+import com.hivemq.configuration.entity.MqttSnConfigEntity;
+import com.hivemq.configuration.entity.PersistenceEntity;
+import com.hivemq.configuration.entity.RestrictionsEntity;
+import com.hivemq.configuration.entity.SecurityConfigEntity;
+import com.hivemq.configuration.entity.UsageTrackingConfigEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
@@ -23,7 +32,12 @@ import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -133,9 +147,13 @@ public class LegacyHiveMQConfigEntity {
         return moduleConfigs;
     }
 
-    public @NotNull UnsConfigEntity getUns() { return uns; }
+    public @NotNull UnsConfigEntity getUns() {
+        return uns;
+    }
 
-    public @NotNull DynamicConfigEntity getGatewayConfig() { return gateway;}
+    public @NotNull DynamicConfigEntity getGatewayConfig() {
+        return gateway;
+    }
 
     public @NotNull UsageTrackingConfigEntity getUsageTracking() {
         return usageTracking;
@@ -143,5 +161,23 @@ public class LegacyHiveMQConfigEntity {
 
     public @NotNull InternalConfigEntity getInternal() {
         return internal;
+    }
+
+    final @NotNull HiveMQConfigEntity to(
+            final @NotNull List<ProtocolAdapterEntity> adapterEntities) {
+        return new HiveMQConfigEntity(this.getApiConfig(),
+                this.getGatewayConfig(),
+                this.getModuleConfigs(),
+                this.getMqttConfig(),
+                this.getBridgeConfig(),
+                this.getMqttListenerConfig(),
+                this.getMqttsnConfig(),
+                this.getMqttsnListenerConfig(),
+                this.getPersistenceConfig(),
+                adapterEntities,
+                this.getRestrictionsConfig(),
+                this.getSecurityConfig(),
+                this.getUns(),
+                this.getUsageTracking());
     }
 }

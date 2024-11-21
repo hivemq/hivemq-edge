@@ -27,8 +27,8 @@ import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
@@ -46,17 +46,21 @@ public class ModbusClient {
     public static final int DEFAULT_MAX_INPUT_REGISTERS = 125;
     public static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
 
+
+    private final @NotNull String adapterId;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ModbusTcpMaster modbusClient;
 
     public ModbusClient(
-            final @NotNull ModbusSpecificAdapterConfig adapterConfig, final @NotNull DataPointFactory dataPointFactory) {
+            final @NotNull String adapterId,
+            final @NotNull ModbusSpecificAdapterConfig adapterConfig,
+            final @NotNull DataPointFactory dataPointFactory) {
         this.dataPointFactory = dataPointFactory;
+        this.adapterId = adapterId;
         final ModbusTcpMasterConfig config =
                 new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
-                        .setInstanceId(adapterConfig.getId())
-                        .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis()))
-                        .build();
+                        .setInstanceId(adapterId)
+                        .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis())).build();
         modbusClient = new ModbusTcpMaster(config);
     }
 

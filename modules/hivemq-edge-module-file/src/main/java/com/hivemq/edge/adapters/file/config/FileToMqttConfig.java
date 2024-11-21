@@ -43,18 +43,14 @@ public class FileToMqttConfig {
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("fileToMqttMappings")
-    @ModuleConfigField(title = "File to MQTT Mappings", description = "Map your file to MQTT Topics")
-    private final @NotNull List<PollingContext> mappings;
 
     @JsonCreator
     public FileToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "fileToMqttMappings") final @Nullable List<PollingContext> mappings) {
+            @JsonProperty(value = "fileToMqttMappings") final @Nullable List<FileToMqttMapping> mappings) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
     public int getPollingIntervalMillis() {
@@ -63,9 +59,5 @@ public class FileToMqttConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<PollingContext> getMappings() {
-        return mappings;
     }
 }

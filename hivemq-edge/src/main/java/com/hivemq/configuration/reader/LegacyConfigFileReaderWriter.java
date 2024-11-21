@@ -49,16 +49,20 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNullElse;
 
-public class LegacyConfigFileReaderWriter<T> {
+public class LegacyConfigFileReaderWriter<LEGACY_CONFIG_CLASS, CURRENT_CONFIG_CLASS> {
 
     private static final Logger log = LoggerFactory.getLogger(LegacyConfigFileReaderWriter.class);
     private final @NotNull ConfigurationFile configurationFile;
-    private final @NotNull Class<T> legacyConfigClass;
+    private final @NotNull Class<LEGACY_CONFIG_CLASS> legacyConfigClass;
+    private final @NotNull Class<CURRENT_CONFIG_CLASS> currentConfigClassClass;
 
     public LegacyConfigFileReaderWriter(
-            final @NotNull ConfigurationFile configurationFile, final @NotNull Class<T> legacyConfigClass) {
+            final @NotNull ConfigurationFile configurationFile,
+            final @NotNull Class<LEGACY_CONFIG_CLASS> legacyConfigClass,
+            final @NotNull Class<CURRENT_CONFIG_CLASS> currentConfigClassClass) {
         this.configurationFile = configurationFile;
         this.legacyConfigClass = legacyConfigClass;
+        this.currentConfigClassClass = currentConfigClassClass;
     }
 
     @NotNull
@@ -76,6 +80,7 @@ public class LegacyConfigFileReaderWriter<T> {
     protected @NotNull JAXBContext createContext() throws JAXBException {
         final Class<?>[] classes = ImmutableList.<Class<?>>builder()
                 .add(legacyConfigClass)
+                .add(currentConfigClassClass)
                 .addAll(getInheritedEntityClasses())
                 .add(FieldMappingsEntity.class)
                 .build()
@@ -84,7 +89,7 @@ public class LegacyConfigFileReaderWriter<T> {
         return JAXBContext.newInstance(classes);
     }
 
-    public synchronized void writeConfigToXML(final @NotNull T config) {
+    public synchronized void writeConfigToXML(final @NotNull CURRENT_CONFIG_CLASS config) {
         try {
             final File configFile = configurationFile.file().get();
             log.debug("Writing configuration file {}", configFile.getAbsolutePath());
@@ -96,7 +101,9 @@ public class LegacyConfigFileReaderWriter<T> {
         }
     }
 
-    private synchronized void writeConfigToXML(@NotNull final Writer writer, final @NotNull T config) {
+    private synchronized void writeConfigToXML(
+            @NotNull final Writer writer,
+            final @NotNull CURRENT_CONFIG_CLASS config) {
         try {
             final JAXBContext context = createContext();
             final Marshaller marshaller = context.createMarshaller();
@@ -109,7 +116,7 @@ public class LegacyConfigFileReaderWriter<T> {
 
     }
 
-    public synchronized @NotNull T readConfigFromXML() {
+    public synchronized @NotNull LEGACY_CONFIG_CLASS readConfigFromXML() {
         if (configurationFile.file().isEmpty()) {
             log.error("No configuration file present. Shutting down HiveMQ Edge.");
             throw new UnrecoverableException(false);
@@ -135,7 +142,8 @@ public class LegacyConfigFileReaderWriter<T> {
                 return true;
             });
 
-            final JAXBElement<? extends T> result = unmarshaller.unmarshal(streamSource, legacyConfigClass);
+            final JAXBElement<? extends LEGACY_CONFIG_CLASS> result =
+                    unmarshaller.unmarshal(streamSource, legacyConfigClass);
 
             if (!validationErrors.isEmpty()) {
                 throw new JAXBException("Parsing failed");

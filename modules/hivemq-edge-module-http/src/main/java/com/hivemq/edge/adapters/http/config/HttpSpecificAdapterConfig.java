@@ -42,16 +42,6 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     public static final @NotNull String XML_MIME_TYPE = "application/xml";
     public static final @NotNull String YAML_MIME_TYPE = "application/yaml";
 
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
-
     @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
@@ -74,11 +64,9 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     @JsonCreator
     public HttpSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
-        this.id = id;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
             this.httpConnectTimeoutSeconds = Math.min(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
@@ -87,16 +75,6 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         }
         this.httpToMqttConfig = Objects.requireNonNullElse(httpToMqttConfig, HttpToMqttConfig.DEFAULT);
         this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return id;
-    }
-
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        return httpToMqttConfig.getMappings().stream().map(HttpToMqttMapping::getTagName).collect(Collectors.toSet());
     }
 
     public int getHttpConnectTimeoutSeconds() {

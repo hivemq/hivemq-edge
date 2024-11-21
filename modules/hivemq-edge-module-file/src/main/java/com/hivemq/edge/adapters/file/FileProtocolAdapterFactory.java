@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.file;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -60,7 +59,7 @@ public class FileProtocolAdapterFactory
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
-        return new FilePollingProtocolAdapter(adapterInformation, input);
+        return new FilePollingProtocolAdapter(input.getAdapterId(), adapterInformation, input);
     }
 
     @Override
@@ -70,7 +69,7 @@ public class FileProtocolAdapterFactory
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
-        final List<PollingContext> fileToMqttMappings = new ArrayList<>();
+        final List<FileToMqttMapping> fileToMqttMappings = new ArrayList<>();
         final List<FileTag> tags = new ArrayList<>();
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
@@ -79,7 +78,6 @@ public class FileProtocolAdapterFactory
                     "not set",
                     new FileTagDefinition(context.getFilePath(), context.getContentType())));
             final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
-                    //TODO why nullable??
                     context.getQos(),
                     context.getMessageHandlingOptions(),
                     context.getIncludeTimestamp(),
@@ -94,7 +92,8 @@ public class FileProtocolAdapterFactory
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         fileToMqttMappings);
 
-        return new ConfigTagsTuple(new FileSpecificAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig),
+        return new ConfigTagsTuple(legacyFileAdapterConfig.getId(),
+                new FileSpecificAdapterConfig(fileToMqttConfig),
                 tags,
                 fileToMqttMappings);
     }

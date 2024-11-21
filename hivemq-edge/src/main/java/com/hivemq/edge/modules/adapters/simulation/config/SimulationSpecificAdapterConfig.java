@@ -101,11 +101,6 @@ public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterC
         return id;
     }
 
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        return Set.of();
-    }
-
     public int getMinValue() {
         return minValue;
     }

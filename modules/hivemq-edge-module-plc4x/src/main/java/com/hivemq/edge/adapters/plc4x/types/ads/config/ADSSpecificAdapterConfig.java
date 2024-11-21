@@ -81,7 +81,6 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
 
     @JsonCreator
     public ADSSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "targetAmsPort", required = true) final int targetAmsPort,
@@ -89,7 +88,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
             @JsonProperty(value = "adsToMqtt") final @Nullable ADSToMqttConfig adsToMqttConfig) {
-        super(id, port, host);
+        super( port, host);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
         this.sourceAmsPort = sourceAmsPort;
@@ -125,12 +124,4 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         return adsToMqttConfig;
     }
 
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        if (adsToMqttConfig != null) {
-            return adsToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
-        } else {
-            return Set.of();
-        }
-    }
 }

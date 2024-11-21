@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ProtocolAdapterConfig {
 
@@ -53,8 +54,8 @@ public class ProtocolAdapterConfig {
     }
 
     public @NotNull Optional<Set<String>> missingTags() {
-        final Set<String> names = new HashSet<>(adapterConfig.calculateAllUsedTags());
-        tags.forEach(tag -> names.remove(tag.getName()));
+        final Set<String> names = this.tags.stream().map(Tag::getName).collect(Collectors.toSet());
+        this.tags.forEach(tag -> names.remove(tag.getName()));
         if (names.isEmpty()) {
             return Optional.empty();
         } else {

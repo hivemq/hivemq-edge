@@ -30,16 +30,6 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
-
     @JsonProperty(value = "fileToMqtt", required = true)
     @ModuleConfigField(title = "File To MQTT Config",
                        description = "The configuration for a data stream from File to MQTT",
@@ -47,24 +37,8 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     private final @Nullable FileToMqttConfig fileToMqttConfig;
 
     public FileSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
-        this.id = id;
         this.fileToMqttConfig = fileToMqttConfig;
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return id;
-    }
-
-    @Override
-    public @NotNull Set<String> calculateAllUsedTags() {
-        if(fileToMqttConfig != null && fileToMqttConfig.getMappings() != null) {
-            return fileToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
-        } else {
-            return Set.of();
-        }
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

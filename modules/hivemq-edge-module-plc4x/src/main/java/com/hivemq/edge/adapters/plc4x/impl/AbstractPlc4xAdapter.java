@@ -74,6 +74,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     protected final @NotNull List<Tag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull String adapterId;
     protected volatile @Nullable Plc4xConnection<T> connection;
     private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
 
@@ -84,6 +85,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     public AbstractPlc4xAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation, final ProtocolAdapterInput<T> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -129,7 +131,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
@@ -201,9 +203,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
             @Override
             protected @NotNull String getTagAddressForSubscription(final PollingContext context) {
-                return findTag(context.getTagName())
-                        .map(tag -> createTagAddressForSubscription(context, (Plc4xTag) tag))
-                        .orElseThrow(); //TODO this sucks
+                return findTag(context.getTagName()).map(tag -> createTagAddressForSubscription(context,
+                        (Plc4xTag) tag)).orElseThrow(); //TODO this sucks
             }
         };
     }
@@ -276,7 +277,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
+    protected @NotNull String createTagAddressForSubscription(
+            final @NotNull PollingContext subscription,
+            final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.getDefinition().getDataType());
     }

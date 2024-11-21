@@ -48,9 +48,12 @@ import java.util.function.Function;
 public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilder, OpcUaClientConfig> {
 
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
+    private final @NotNull String adapterId;
 
-    public OpcUaClientConfigurator(final @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
+    public OpcUaClientConfigurator(final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
+                                   final @NotNull String adapterId) {
         this.adapterConfig = adapterConfig;
+        this.adapterId = adapterId;
     }
 
     @Override
@@ -59,7 +62,7 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
         opcUaClientConfigBuilder.setApplicationName(LocalizedText.english("HiveMQ Edge"));
         opcUaClientConfigBuilder.setApplicationUri("urn:hivemq:edge:client");
         opcUaClientConfigBuilder.setProductUri("https://github.com/hivemq/hivemq-edge");
-        opcUaClientConfigBuilder.setSessionName(() -> "HiveMQ Edge " + adapterConfig.getId());
+        opcUaClientConfigBuilder.setSessionName(() -> "HiveMQ Edge " + adapterId);
 
         final Tls tlsConfig = adapterConfig.getTls();
         final boolean tlsEnabled = tlsConfig != null && tlsConfig.isEnabled();

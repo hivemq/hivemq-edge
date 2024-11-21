@@ -32,9 +32,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
@@ -62,21 +62,23 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ModbusClient modbusClient;
     private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
     private final @NotNull List<Tag> tags;
+    private final @NotNull String adapterId;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags = input.getTags();
-        this.modbusClient = new ModbusClient(adapterConfig, input.adapterFactories().dataPointFactory());
+        this.modbusClient =
+                new ModbusClient(input.getAdapterId(), adapterConfig, input.adapterFactories().dataPointFactory());
     }
 
     @Override
     public void start(
-            @NotNull final ProtocolAdapterStartInput input,
-            @NotNull final ProtocolAdapterStartOutput output) {
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         modbusClient.connect().whenComplete((unused, throwable) -> {
             if (throwable == null) {
                 output.startedSuccessfully();
@@ -105,20 +107,17 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
-                .ifPresentOrElse(
-                        def -> pollModbus(pollingInput, pollingOutput, (ModbusTag) def),
+                .ifPresentOrElse(def -> pollModbus(pollingInput, pollingOutput, (ModbusTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
     private void pollModbus(
-            @NotNull PollingInput pollingInput,
-            @NotNull PollingOutput pollingOutput,
-            @NotNull ModbusTag modbusTag) {
+            @NotNull PollingInput pollingInput, @NotNull PollingOutput pollingOutput, @NotNull ModbusTag modbusTag) {
         readRegisters(pollingInput.getPollingContext(),
-                modbusClient, modbusTag).whenComplete((modbusdata, throwable) -> {
+                modbusClient,
+                modbusTag).whenComplete((modbusdata, throwable) -> {
             if (throwable != null) {
                 pollingOutput.fail(throwable, null);
             } else {
@@ -139,7 +138,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
 
