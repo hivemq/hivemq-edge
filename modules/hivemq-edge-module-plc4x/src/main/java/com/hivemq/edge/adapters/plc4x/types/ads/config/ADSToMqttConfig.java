@@ -30,22 +30,13 @@ import java.util.Objects;
 
 public class ADSToMqttConfig extends Plc4xToMqttConfig {
 
-    @JsonProperty("adsToMqttMappings")
-    @ModuleConfigField(title = "ADS to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<PollingContext> mappings;
 
     @JsonCreator
     public ADSToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "adsToMqttMappings") final @Nullable List<PollingContext> mappings) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
-    @Override
-    public @NotNull List<PollingContext> getMappings() {
-        return List.of();
-    }
 }

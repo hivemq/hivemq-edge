@@ -49,17 +49,11 @@ public class EipToMqttConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
-    @JsonProperty("eipToMqttMappings")
-    @ModuleConfigField(title = "Eip to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<PollingContext> mappings;
-
     @JsonCreator
     public EipToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "eipToMqttMappings") final @Nullable List<PollingContext> mappings) {
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
@@ -75,9 +69,5 @@ public class EipToMqttConfig {
 
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
-    }
-
-    public @NotNull List<PollingContext> getMappings() {
-        return mappings;
     }
 }

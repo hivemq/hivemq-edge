@@ -138,7 +138,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
-            subscribeAllInternal(initConnection());
+            // we do not subscribe anymore as no current adapter type supports it anyway
             output.startedSuccessfully();
         } catch (final Exception e) {
             output.failStart(e, null);
@@ -208,35 +208,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             }
         };
     }
-
-    protected void subscribeAllInternal(@NotNull final Plc4xConnection<T> connection) throws RuntimeException {
-        if (adapterConfig.getPlc4xToMqttConfig() != null) {
-            for (final PollingContext mapping : adapterConfig.getPlc4xToMqttConfig().getMappings()) {
-                try {
-                    subscribeInternal(connection, mapping);
-                } catch (final Plc4xException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    protected @NotNull CompletableFuture<?> subscribeInternal(
-            final @NotNull Plc4xConnection<T> connection, final @NotNull PollingContext subscription)
-            throws Plc4xException {
-        switch (getReadType()) {
-            case Subscribe:
-                if (log.isTraceEnabled()) {
-                    log.trace("Subscribing to tag [{}] on connection.", subscription.getTagName());
-                }
-                return connection.subscribe(subscription,
-                        plcSubscriptionEvent -> processReadResponse(subscription, plcSubscriptionEvent));
-            case Read:
-                // NOOP, handled internally, see getSubscriptions();
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
 
     protected @Nullable ProtocolAdapterDataSample captureDataSample(
             final @NotNull ProtocolAdapterDataSample data, final @NotNull Plc4xTag plc4xTag) {

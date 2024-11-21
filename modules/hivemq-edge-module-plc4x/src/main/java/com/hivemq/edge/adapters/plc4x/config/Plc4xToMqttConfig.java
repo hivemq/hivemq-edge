@@ -70,5 +70,4 @@ public abstract class Plc4xToMqttConfig {
         return publishChangedDataOnly;
     }
 
-    public abstract @NotNull List<PollingContext> getMappings();
 }

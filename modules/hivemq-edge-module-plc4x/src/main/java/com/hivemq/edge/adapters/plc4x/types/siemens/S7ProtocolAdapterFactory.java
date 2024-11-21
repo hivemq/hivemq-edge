@@ -86,8 +86,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
                 legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyS7AdapterConfig.getPublishChangedDataOnly(),
-                plc4xToMqttMappings);
+                legacyS7AdapterConfig.getPublishChangedDataOnly());
 
         return new ConfigTagsTuple(legacyS7AdapterConfig.getId(), new S7SpecificAdapterConfig(
                 legacyS7AdapterConfig.getPort(),

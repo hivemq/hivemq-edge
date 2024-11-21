@@ -41,19 +41,12 @@ public class SimulationToMqttConfig {
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("simulationToMqttMappings")
-    @ModuleConfigField(title = "simulationToMqttMappings",
-                       description = "List of simulation to mqtt mappings for the simulation")
-    private final @NotNull List<SimulationToMqttMapping> simulationToMqttMappings;
-
     @JsonCreator
     public SimulationToMqttConfig(
-            @JsonProperty("simulationToMqttMappings") final @Nullable List<SimulationToMqttMapping> simulationToMqttMappings,
             @JsonProperty("pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.simulationToMqttMappings = Objects.requireNonNullElse(simulationToMqttMappings, List.of());
     }
 
     public int getPollingIntervalMillis() {
@@ -62,9 +55,5 @@ public class SimulationToMqttConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<SimulationToMqttMapping> getSimulationToMqttMappings() {
-        return simulationToMqttMappings;
     }
 }

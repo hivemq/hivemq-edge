@@ -59,7 +59,9 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
 
     @Override
     public @NotNull ProtocolSpecificAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config,
+            final boolean writingEnabled) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
         } catch (final Exception currentConfigFailedException) {
@@ -101,10 +103,9 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
                                 context.getUserProperties()))
                         .collect(Collectors.toList());
 
-        final SimulationToMqttConfig simulationToMqttConfig = new SimulationToMqttConfig(simulationToMqttMappings,
-                legacySimulationAdapterConfig.getPollingIntervalMillis(),
-                legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
-
+        final SimulationToMqttConfig simulationToMqttConfig =
+                new SimulationToMqttConfig(legacySimulationAdapterConfig.getPollingIntervalMillis(),
+                        legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
         return new SimulationSpecificAdapterConfig(simulationToMqttConfig,
                 legacySimulationAdapterConfig.getId(),

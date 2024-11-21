@@ -87,11 +87,9 @@ public class ADSProtocolAdapterFactory
         }
 
 
-        final ADSToMqttConfig modbusToMqttConfig =
-                new ADSToMqttConfig(legacyAdsAdapterConfig.getPollingIntervalMillis(),
-                        legacyAdsAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        legacyAdsAdapterConfig.getPublishChangedDataOnly(),
-                        plc4xToMqttMappings);
+        final ADSToMqttConfig adsToMqttConfig = new ADSToMqttConfig(legacyAdsAdapterConfig.getPollingIntervalMillis(),
+                legacyAdsAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
+                legacyAdsAdapterConfig.getPublishChangedDataOnly());
 
 
         return new ConfigTagsTuple(legacyAdsAdapterConfig.getId(),
@@ -101,7 +99,7 @@ public class ADSProtocolAdapterFactory
                         legacyAdsAdapterConfig.getSourceAmsPort(),
                         legacyAdsAdapterConfig.getTargetAmsNetId(),
                         legacyAdsAdapterConfig.getSourceAmsNetId(),
-                        modbusToMqttConfig),
+                        adsToMqttConfig),
                 tags,
                 plc4xToMqttMappings);
     }

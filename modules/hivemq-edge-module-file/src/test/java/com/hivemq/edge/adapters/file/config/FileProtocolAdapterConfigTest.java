@@ -214,7 +214,7 @@ class FileProtocolAdapterConfigTest {
                 List.of(new MqttUserProperty("my-name", "my-value")), "tag");
 
         final FileSpecificAdapterConfig modbusAdapterConfig =
-                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13, List.of(pollingContext)));
+                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -251,7 +251,7 @@ class FileProtocolAdapterConfigTest {
                 null, "tag");
 
         final FileSpecificAdapterConfig modbusAdapterConfig =
-                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null, List.of(pollingContext)));
+                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

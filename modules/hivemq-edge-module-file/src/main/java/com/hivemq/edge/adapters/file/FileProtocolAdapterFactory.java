@@ -89,8 +89,7 @@ public class FileProtocolAdapterFactory
 
         final FileToMqttConfig fileToMqttConfig =
                 new FileToMqttConfig(legacyFileAdapterConfig.getPollingIntervalMillis(),
-                        legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        fileToMqttMappings);
+                        legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
         return new ConfigTagsTuple(legacyFileAdapterConfig.getId(),
                 new FileSpecificAdapterConfig(fileToMqttConfig),

@@ -21,12 +21,11 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 public class HttpToMqttConfig {
 
-    public static final @NotNull HttpToMqttConfig DEFAULT = new HttpToMqttConfig(null, null, null, null, null);
+    public static final @NotNull HttpToMqttConfig DEFAULT = new HttpToMqttConfig(null, null, null, null);
 
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
@@ -56,18 +55,12 @@ public class HttpToMqttConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean httpPublishSuccessStatusCodeOnly;
 
-    @JsonProperty("httpToMqttMappings")
-    @ModuleConfigField(title = "HTTP to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<HttpToMqttMapping> mappings;
-
     @JsonCreator
     public HttpToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
-            @JsonProperty(value = "httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
-            @JsonProperty(value = "httpToMqttMappings") final @Nullable List<HttpToMqttMapping> mappings) {
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
+            @JsonProperty(value = "httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.assertResponseIsJson = Objects.requireNonNullElse(assertResponseIsJson, false);
@@ -88,9 +81,5 @@ public class HttpToMqttConfig {
 
     public boolean isHttpPublishSuccessStatusCodeOnly() {
         return httpPublishSuccessStatusCodeOnly;
-    }
-
-    public @NotNull List<HttpToMqttMapping> getMappings() {
-        return mappings;
     }
 }

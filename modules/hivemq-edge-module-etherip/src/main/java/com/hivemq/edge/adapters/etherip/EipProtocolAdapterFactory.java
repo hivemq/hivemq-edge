@@ -86,8 +86,7 @@ public class EipProtocolAdapterFactory
 
         final EipToMqttConfig eipToMqttConfig = new EipToMqttConfig(legacyEipAdapterConfig.getPollingIntervalMillis(),
                 legacyEipAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyEipAdapterConfig.getPublishChangedDataOnly(),
-                eipToMqttMappings);
+                legacyEipAdapterConfig.getPublishChangedDataOnly());
 
         final EipSpecificAdapterConfig eipSpecificAdapterConfig =
                 new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
