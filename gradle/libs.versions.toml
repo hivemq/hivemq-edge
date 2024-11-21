@@ -17,6 +17,7 @@ hivemq-edge-adapterSdk = "2024.5"
 hivemq-edge-extensionSdk = "2024.5"
 hivemq-extensionSdk = "4.30.0"
 hivemq-mqttClient = "1.3.3"
+iot-communication = "1.5.3"
 kotlin = "1.9.25"
 jackson = "2.18.0"
 jacoco = "0.8.11"
@@ -28,6 +29,7 @@ jctools = "4.0.5"
 jersey = "2.45"
 jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.2"
+jsonSchemaInferrer = "0.2.1"
 junit-jupiter = "5.11.2"
 junit = "4.13.2"
 logback = "1.5.11"
@@ -73,6 +75,7 @@ hivemq-edge-adapterSdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", versio
 hivemq-edge-extensionSdk = { module = "com.hivemq:hivemq-edge-extension-sdk", version.ref = "hivemq-edge-extensionSdk" }
 hivemq-extensionSdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref = "hivemq-extensionSdk" }
 hivemq-mqttClient = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqttClient" }
+iot-communication = { module = "com.github.xingshuangs:iot-communication", version.ref = "iot-communication" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
@@ -85,6 +88,7 @@ javax-annotation-api = { module = "javax.annotation:javax.annotation-api", versi
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+jsonSchemaInferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "jsonSchemaInferrer" }
 jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit = { module = "junit:junit", version.ref = "junit" }
