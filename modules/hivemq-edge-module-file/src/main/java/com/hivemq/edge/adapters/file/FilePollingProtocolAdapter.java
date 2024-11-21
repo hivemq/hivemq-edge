@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.file;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -40,14 +41,13 @@ import java.nio.file.Path;
 import java.util.List;
 
 
-public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileToMqttMapping> {
+public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
     private final @NotNull FileSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull List<FileToMqttMapping> pollingContext;
     private final @NotNull List<Tag> tags;
 
     public FilePollingProtocolAdapter(
@@ -57,11 +57,6 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        if(adapterConfig.getFileToMqttConfig() != null) {
-            this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
-        } else {
-            this.pollingContext = List.of();
-        }
     }
 
     @Override
@@ -96,22 +91,18 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
 
     @Override
     public void poll(
-            final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
-                .ifPresentOrElse(
-                        def -> pollFile(pollingInput, pollingOutput, (FileTag) def),
+                .ifPresentOrElse(def -> pollFile(pollingOutput, (FileTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
     private static void pollFile(
-            @NotNull PollingInput<FileToMqttMapping> pollingInput,
-            @NotNull PollingOutput pollingOutput,
-            @NotNull FileTag fileTag) {
+            @NotNull final PollingOutput pollingOutput, @NotNull final FileTag fileTag) {
         final String absolutePathToFle = fileTag.getDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
@@ -128,18 +119,15 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
             final Object value = fileTag.getDefinition().getContentType().map(fileContent);
             pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             pollingOutput.finish();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
-        } catch (MappingException e){
-            LOG.warn("An exception occurred while converting the data in file '{}' to a payload '{}'.", absolutePathToFle, e.getMessage());
+        } catch (final MappingException e) {
+            LOG.warn("An exception occurred while converting the data in file '{}' to a payload '{}'.",
+                    absolutePathToFle,
+                    e.getMessage());
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         }
-    }
-
-    @Override
-    public @NotNull List<FileToMqttMapping> getPollingContexts() {
-        return pollingContext;
     }
 
     @Override

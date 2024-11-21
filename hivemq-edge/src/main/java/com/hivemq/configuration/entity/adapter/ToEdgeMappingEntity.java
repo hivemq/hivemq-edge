@@ -1,11 +1,14 @@
 package com.hivemq.configuration.entity.adapter;
 
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ToEdgeMapping;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class ToEdgeMappingEntity {
@@ -16,9 +19,6 @@ public class ToEdgeMappingEntity {
     @XmlElement(name = "tag-name", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "max-qos", required = true)
-    private final int maxQoS;
-
     @XmlElement(name = "fieldMappings", required = true)
     private final @NotNull FieldMappingsEntity fieldMappingsEntity;
 
@@ -26,18 +26,16 @@ public class ToEdgeMappingEntity {
     public ToEdgeMappingEntity() {
         topicFilter = "";
         tagName = "";
-        maxQoS = 2;
+
         fieldMappingsEntity = null;
     }
 
     public ToEdgeMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final int maxQoS,
             final @NotNull FieldMappingsEntity fieldMappingsEntity) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
-        this.maxQoS = maxQoS;
         this.fieldMappingsEntity = fieldMappingsEntity;
     }
 
@@ -57,10 +55,12 @@ public class ToEdgeMappingEntity {
         return fieldMappingsEntity;
     }
 
+
+
     public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
         return new ToEdgeMappingEntity(toEdgeMapping.getTagName(),
-                toEdgeMapping.getTopicFilter(),
-                toEdgeMapping.getMaxQoS(),
+                toEdgeMapping.getMqttTopic(),
+
                 FieldMappingsEntity.from(toEdgeMapping.getFieldMappings()));
     }
 }

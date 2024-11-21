@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
@@ -154,7 +155,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
         if(s7ToMqttConfig != null) {
-            return s7ToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+            return s7ToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
         } else {
             return Set.of();
         }

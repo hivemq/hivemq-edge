@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,13 +45,13 @@ public class FileToMqttConfig {
 
     @JsonProperty("fileToMqttMappings")
     @ModuleConfigField(title = "File to MQTT Mappings", description = "Map your file to MQTT Topics")
-    private final @NotNull List<FileToMqttMapping> mappings;
+    private final @NotNull List<PollingContext> mappings;
 
     @JsonCreator
     public FileToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "fileToMqttMappings") final @Nullable List<FileToMqttMapping> mappings) {
+            @JsonProperty(value = "fileToMqttMappings") final @Nullable List<PollingContext> mappings) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
@@ -64,7 +65,7 @@ public class FileToMqttConfig {
         return maxPollingErrorsBeforeRemoval;
     }
 
-    public @NotNull List<FileToMqttMapping> getMappings() {
+    public @NotNull List<PollingContext> getMappings() {
         return mappings;
     }
 }

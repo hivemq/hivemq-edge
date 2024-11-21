@@ -18,8 +18,8 @@ package com.hivemq.edge.adapters.plc4x.types.ads.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,8 +127,8 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        if(adsToMqttConfig != null) {
-            return adsToMqttConfig.getMappings().stream().map(Plc4xToMqttMapping::getTagName).collect(Collectors.toSet());
+        if (adsToMqttConfig != null) {
+            return adsToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
         } else {
             return Set.of();
         }

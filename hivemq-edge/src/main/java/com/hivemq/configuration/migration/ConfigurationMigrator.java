@@ -1,9 +1,11 @@
 package com.hivemq.configuration.migration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -16,7 +18,10 @@ import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class ConfigurationMigrator {
@@ -37,7 +42,7 @@ public class ConfigurationMigrator {
 
     public void migrate() {
         try {
-            // check whether the migration is needed
+            // TODO check whether the migration is needed
             final boolean needsMigration = true;
 
             if (!needsMigration) {
@@ -65,6 +70,8 @@ public class ConfigurationMigrator {
 
             final LegacyHiveMQConfigEntity legacyHiveMQConfigEntity = legacyConfigFileReaderWriter.readConfigFromXML();
             final Map<String, Object> protocolAdapterConfig = legacyHiveMQConfigEntity.getProtocolAdapterConfig();
+
+
             for (final Map.Entry<String, Object> stringObjectEntry : protocolAdapterConfig.entrySet()) {
                 final String protocolId = stringObjectEntry.getKey();
                 final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolId);
@@ -79,9 +86,17 @@ public class ConfigurationMigrator {
                     final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
                             (Map<String, Object>) stringObjectEntry.getValue());
                     System.err.println(configTagsTuple);
+                    final Map<String, Object> newAdapterMap = new HashMap<>();
+                    newAdapterMap.put("protocolId", protocolId);
+                    newAdapterMap.put("config", configTagsTuple.getConfig());
+                    newAdapterMap.put("tags", configTagsTuple.getTags());
+                    final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
+                            .stream()
+                            .map(ConfigurationMigrator::convertToEntity)
+                            .collect(Collectors.toList());
+                    newAdapterMap.put("toEdgeMappings", fromEdgeMappingEntities);
                 } else {
                     // we can not fix it
-
                 }
             }
 
@@ -89,6 +104,18 @@ public class ConfigurationMigrator {
             //TODO
             e.printStackTrace();
         }
+    }
+
+
+    static FromEdgeMappingEntity convertToEntity(final @NotNull PollingContext pollingContext) {
+        return new FromEdgeMappingEntity(pollingContext.getTagName(),
+                pollingContext.getMqttTopic(),
+                pollingContext.getMqttQos(),
+                pollingContext.getMessageHandlingOptions(),
+                pollingContext.getIncludeTagNames(),
+                pollingContext.getIncludeTimestamp(),
+                pollingContext.getUserProperties());
+
     }
 
 

@@ -307,7 +307,7 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
             final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
                     .map(toEdgeMapping -> new WritingContextImpl(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(),
+                            toEdgeMapping.getMqttTopic(),
                             toEdgeMapping.getMaxQoS(),
                             toEdgeMapping.getFieldMappings()))
                     .collect(Collectors.toList());
@@ -327,12 +327,11 @@ public class ProtocolAdapterManager {
             if (log.isDebugEnabled()) {
                 log.debug("Schedule polling for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
-            final PollingProtocolAdapter<PollingContext> adapter =
-                    (PollingProtocolAdapter<PollingContext>) protocolAdapterWrapper.getAdapter();
-            adapter.getPollingContexts().forEach(adapterSubscription -> {
+            final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
+            final List<PollingContext> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
+            toEdgeMappings.forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
-                final PerSubscriptionSampler<PollingContext> sampler = new PerSubscriptionSampler<PollingContext>(
-                        protocolAdapterWrapper,
+                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
                         objectMapper,
                         moduleServices.adapterPublishService(),
                         adapterSubscription,
@@ -571,11 +570,15 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> newToEdgeMappings = oldInstance.getToEdgeMappings()
                     .stream()
                     .map(toEdgeMapping -> new ToEdgeMapping(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(),
+                            toEdgeMapping.getMqttTopic(),
                             toEdgeMapping.getMaxQoS(),
                             findCorrespondingFieldMapping(fieldMappings,
-                                    toEdgeMapping.getTopicFilter(),
-                                    toEdgeMapping.getTagName())))
+                                    toEdgeMapping.getMqttTopic(),
+                                    toEdgeMapping.getTagName()),
+                            toEdgeMapping.getMessageHandlingOptions(),
+                            toEdgeMapping.getIncludeTagNames(),
+                            toEdgeMapping.getIncludeTimestamp(),
+                            toEdgeMapping.getUserProperties()))
                     .collect(Collectors.toList());
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),

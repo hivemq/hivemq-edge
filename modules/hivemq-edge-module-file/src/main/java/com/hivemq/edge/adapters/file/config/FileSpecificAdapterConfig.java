@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +61,7 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
         if(fileToMqttConfig != null && fileToMqttConfig.getMappings() != null) {
-            return fileToMqttConfig.getMappings().stream().map(FileToMqttMapping::getTagName).collect(Collectors.toSet());
+            return fileToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
         } else {
             return Set.of();
         }

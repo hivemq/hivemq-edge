@@ -29,19 +29,19 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSubscriptionSampler {
+public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
     private static final Logger log = LoggerFactory.getLogger(PerSubscriptionSampler.class);
 
 
-    private final @NotNull PollingProtocolAdapter<PollingContext> perSubscriptionProtocolAdapter;
-    private final @NotNull T pollingContext;
+    private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
+    private final @NotNull PollingContext pollingContext;
 
     public PerSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull T pollingContext,
+            final @NotNull PollingContext pollingContext,
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         super(protocolAdapter,
@@ -62,7 +62,7 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         final PollingOutputImpl pollingOutput =
                 new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
         try {
-            perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
+            perSubscriptionProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
         } catch (Throwable t) {
             pollingOutput.fail(t, null);
             throw t;

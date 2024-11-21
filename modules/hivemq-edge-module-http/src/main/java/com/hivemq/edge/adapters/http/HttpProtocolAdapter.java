@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -78,8 +79,7 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLA
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter
-        implements PollingProtocolAdapter<HttpToMqttMapping>, WritingProtocolAdapter<MqttToHttpMapping> {
+public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProtocolAdapter<MqttToHttpMapping> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -150,33 +150,32 @@ public class HttpProtocolAdapter
 
     @Override
     public void poll(
-            final @NotNull PollingInput<HttpToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
 
-        final HttpToMqttMapping httpToMqttMapping = pollingInput.getPollingContext();
+        final PollingContext httpToMqttMapping = pollingInput.getPollingContext();
 
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
-                .ifPresentOrElse(
-                        def -> pollHttp(pollingOutput, (HttpTag) def, httpToMqttMapping),
+                .ifPresentOrElse(def -> pollHttp(pollingOutput, (HttpTag) def, httpToMqttMapping),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
 
     }
 
     private void pollHttp(
-            @NotNull PollingOutput pollingOutput,
-            HttpTag httpTag,
-            HttpToMqttMapping httpToMqttMapping) {
+            @NotNull final PollingOutput pollingOutput, final HttpTag httpTag, final PollingContext httpToMqttMapping) {
+
+        //TODO
+        /*
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
         builder.uri(URI.create(url));
@@ -203,6 +202,8 @@ public class HttpProtocolAdapter
                         "There was an unexpected value present in the request config: " +
                                 httpToMqttMapping.getHttpRequestMethod());
                 return;
+
+
         }
 
         final CompletableFuture<HttpResponse<String>> responseFuture =
@@ -248,7 +249,8 @@ public class HttpProtocolAdapter
                 }
             }
 
-            final HttpData data = new HttpData(httpToMqttMapping, url,
+            final HttpData data = new HttpData(httpToMqttMapping,
+                    url,
                     httpResponse.statusCode(),
                     responseContentType,
                     adapterFactories.dataPointFactory());
@@ -277,15 +279,8 @@ public class HttpProtocolAdapter
             }
             pollingOutput.finish();
         });
-    }
 
-    @Override
-    public @NotNull List<HttpToMqttMapping> getPollingContexts() {
-        if(adapterConfig.getHttpToMqttConfig() != null){
-            return List.copyOf(adapterConfig.getHttpToMqttConfig().getMappings());
-        } else {
-            return List.of();
-        }
+         */
     }
 
     @Override
@@ -311,19 +306,17 @@ public class HttpProtocolAdapter
         tags.stream()
                 .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
                 .findFirst()
-                .ifPresentOrElse(
-                        def -> writeHttp(writingInput, writingOutput, (HttpTag) def, mqttToHttpMapping),
+                .ifPresentOrElse(def -> writeHttp(writingInput, writingOutput, (HttpTag) def, mqttToHttpMapping),
                         () -> writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
                                 mqttToHttpMapping.getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
     private void writeHttp(
-            @NotNull WritingInput writingInput,
-            @NotNull WritingOutput writingOutput,
-            @NotNull HttpTag httpTag,
-            @NotNull MqttToHttpMapping mqttToHttpMapping) {
+            @NotNull final WritingInput writingInput,
+            @NotNull final WritingOutput writingOutput,
+            @NotNull final HttpTag httpTag,
+            @NotNull final MqttToHttpMapping mqttToHttpMapping) {
         final String url = httpTag.getDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
@@ -359,8 +352,8 @@ public class HttpProtocolAdapter
             if (isSuccessStatusCode(httpResponse.statusCode())) {
                 writingOutput.finish();
             } else {
-                writingOutput.fail(String.format(
-                        "Forwarding a message to url '%s' failed with status code '%d", url,
+                writingOutput.fail(String.format("Forwarding a message to url '%s' failed with status code '%d",
+                        url,
                         httpResponse.statusCode()));
             }
         });
@@ -375,7 +368,9 @@ public class HttpProtocolAdapter
     }
 
     @Override
-    public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input,
+            final @NotNull TagSchemaCreationOutput output) {
         output.finish(JsonSchema.createJsonSchema());
     }
 

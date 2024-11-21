@@ -27,9 +27,8 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
-import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
+import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
@@ -45,7 +44,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMqttMapping> {
+public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger log = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
@@ -123,7 +122,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
 
     @Override
     public void poll(
-            final @NotNull PollingInput<EipToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         if (etherNetIP == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
@@ -132,21 +131,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
-                .ifPresentOrElse(
-                        def -> pollWithAddress(pollingInput, pollingOutput, (EipTag) def),
+                .ifPresentOrElse(def -> pollWithAddress(pollingOutput, (EipTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
-    private void pollWithAddress(
-            @NotNull PollingInput<EipToMqttMapping> pollingInput,
-            @NotNull PollingOutput pollingOutput,
-            EipTag eipAddressTag) {
-        final String tagAddress = createTagAddressForSubscription(
-                pollingInput.getPollingContext(),
-                eipAddressTag.getDefinition().getAddress(),
+    private void pollWithAddress(final @NotNull PollingOutput pollingOutput, final EipTag eipAddressTag) {
+        final String tagAddress = createTagAddressForSubscription(eipAddressTag.getDefinition().getAddress(),
                 eipAddressTag.getDefinition().getDataType());
         try {
             final CIPData evt = etherNetIP.readTag(eipAddressTag.getDefinition().getAddress());
@@ -186,11 +178,6 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
     }
 
     @Override
-    public @NotNull List<EipToMqttMapping> getPollingContexts() {
-        return adapterConfig.getEipToMqttConfig().getMappings();
-    }
-
-    @Override
     public int getPollingIntervalMillis() {
         return adapterConfig.getEipToMqttConfig().getPollingIntervalMillis();
     }
@@ -207,7 +194,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(
-            @NotNull final EipToMqttMapping eipToMqttMapping, final @NotNull String address, final @NotNull EipDataType dataType) {
+            final @NotNull String address, final @NotNull EipDataType dataType) {
         return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, dataType);
     }
 

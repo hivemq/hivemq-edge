@@ -18,18 +18,19 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
-import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusPollingContext;
+import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -41,8 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig>,
-        LegacyConfigConversion {
+public class ModbusProtocolAdapterFactory
+        implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
@@ -71,13 +72,12 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                 objectMapper.convertValue(config, LegacyModbusSpecificAdapterConfig.class);
 
 
-        final List<ModbusToMqttMapping> modbusToMqttMappings = new ArrayList<>();
+        final List<PollingContext> modbusToMqttMappings = new ArrayList<>();
         final List<ModbusTag> modbusTags = new ArrayList<>();
         for (final LegacyModbusPollingContext context : legacyModbusAdapterConfig.getSubscriptions()) {
             // create tag first
             final String newTagName = legacyModbusAdapterConfig.getId() + "-" + UUID.randomUUID();
-            modbusTags.add(new ModbusTag(
-                    newTagName,
+            modbusTags.add(new ModbusTag(newTagName,
                     "not set",
                     new ModbusTagDefinition(context.getAddressRange().startIdx,
                             ModbusAdu.HOLDING_REGISTERS,
@@ -105,7 +105,6 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                 legacyModbusAdapterConfig.getPort(),
                 legacyModbusAdapterConfig.getHost(),
                 legacyModbusAdapterConfig.getTimeout(),
-                modbusToMqttConfig),
-                modbusTags);
+                modbusToMqttConfig), modbusTags, modbusToMqttMappings);
     }
 }

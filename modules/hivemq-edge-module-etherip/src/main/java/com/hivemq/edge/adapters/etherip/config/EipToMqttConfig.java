@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,14 +51,14 @@ public class EipToMqttConfig {
 
     @JsonProperty("eipToMqttMappings")
     @ModuleConfigField(title = "Eip to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<EipToMqttMapping> mappings;
+    private final @NotNull List<PollingContext> mappings;
 
     @JsonCreator
     public EipToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "eipToMqttMappings") final @Nullable List<EipToMqttMapping> mappings) {
+            @JsonProperty(value = "eipToMqttMappings") final @Nullable List<PollingContext> mappings) {
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
@@ -76,7 +77,7 @@ public class EipToMqttConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<EipToMqttMapping> getMappings() {
+    public @NotNull List<PollingContext> getMappings() {
         return mappings;
     }
 }

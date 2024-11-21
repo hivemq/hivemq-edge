@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
@@ -123,7 +124,7 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Plc4xTag tag) {
+        public @NotNull String createTagAddressForSubscription(final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
             return super.createTagAddressForSubscription(subscription, tag);
         }
     }

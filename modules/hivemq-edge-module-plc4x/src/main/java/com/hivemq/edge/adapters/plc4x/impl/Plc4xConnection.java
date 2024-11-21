@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
@@ -126,7 +126,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         return plcConnection != null && plcConnection.isConnected();
     }
 
-    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull Plc4xToMqttMapping plc4xPollingContext) {
+    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull PollingContext plc4xPollingContext) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().canRead()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
@@ -145,7 +145,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
 
     public @NotNull CompletableFuture<? extends PlcSubscriptionResponse> subscribe(
-            final @NotNull Plc4xToMqttMapping subscription,
+            final @NotNull PollingContext subscription,
             final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().canSubscribe()) {
@@ -188,5 +188,5 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     /**
      * Each adapter type will have its own address format. The implementation should provide the defaults
      */
-    protected abstract @NotNull String getTagAddressForSubscription(@NotNull Plc4xToMqttMapping subscription);
+    protected abstract @NotNull String getTagAddressForSubscription(@NotNull PollingContext subscription);
 }

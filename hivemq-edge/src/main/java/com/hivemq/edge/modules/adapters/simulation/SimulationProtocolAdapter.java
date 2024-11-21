@@ -35,7 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationToMqttMapping> {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationSpecificAdapterConfig adapterConfig;
@@ -77,7 +77,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
 
     @Override
     public void poll(
-            final @NotNull PollingInput<SimulationToMqttMapping> pollingInput,
+            final @NotNull PollingInput pollingInput,
             final @NotNull PollingOutput pollingOutput) {
 
         final int minDelay = adapterConfig.getMinDelay();
@@ -114,11 +114,6 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
                                     Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
             pollingOutput.finish();
         }).start();
-    }
-
-    @Override
-    public @NotNull List<SimulationToMqttMapping> getPollingContexts() {
-        return adapterConfig.getSimulationToMqttConfig().getSimulationToMqttMappings();
     }
 
     @Override

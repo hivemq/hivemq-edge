@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -41,7 +42,8 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSSpecificAdapterConfig>, LegacyConfigConversion {
+public class ADSProtocolAdapterFactory
+        implements ProtocolAdapterFactory<ADSSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
@@ -69,12 +71,12 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSSpec
         final LegacyADSAdapterConfig legacyAdsAdapterConfig =
                 objectMapper.convertValue(config, LegacyADSAdapterConfig.class);
 
-        final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
+        final List<PollingContext> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyAdsAdapterConfig.getSubscriptions()) {
-            tags.add(new Plc4xTag(subscription.getTagName(), "not set", new Plc4xTagDefinition(
-                    subscription.getTagAddress(),
-                    subscription.getDataType())));
+            tags.add(new Plc4xTag(subscription.getTagName(),
+                    "not set",
+                    new Plc4xTagDefinition(subscription.getTagAddress(), subscription.getDataType())));
             plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
                     subscription.getMqttQos(),
                     subscription.getMessageHandlingOptions(),
@@ -99,7 +101,6 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSSpec
                 legacyAdsAdapterConfig.getSourceAmsPort(),
                 legacyAdsAdapterConfig.getTargetAmsNetId(),
                 legacyAdsAdapterConfig.getSourceAmsNetId(),
-                modbusToMqttConfig),
-                tags);
+                modbusToMqttConfig), tags, plc4xToMqttMappings);
     }
 }

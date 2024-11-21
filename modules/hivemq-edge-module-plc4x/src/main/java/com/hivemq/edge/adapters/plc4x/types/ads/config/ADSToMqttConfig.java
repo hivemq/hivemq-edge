@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
@@ -31,19 +32,20 @@ public class ADSToMqttConfig extends Plc4xToMqttConfig {
 
     @JsonProperty("adsToMqttMappings")
     @ModuleConfigField(title = "ADS to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<Plc4xToMqttMapping> mappings;
+    private final @NotNull List<PollingContext> mappings;
 
     @JsonCreator
     public ADSToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "adsToMqttMappings") final @Nullable List<Plc4xToMqttMapping> mappings) {
+            @JsonProperty(value = "adsToMqttMappings") final @Nullable List<PollingContext> mappings) {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
-    public @NotNull List<Plc4xToMqttMapping> getMappings() {
-        return mappings;
+    @Override
+    public @NotNull List<PollingContext> getMappings() {
+        return List.of();
     }
 }

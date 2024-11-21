@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMapping;
 
@@ -29,7 +27,6 @@ public class FieldMappingEntity {
     @XmlElement(name = "destination")
     private final @NotNull String destinationFieldName;
     @XmlElement(name = "transformation")
-
     private final @NotNull TransformationEntity transformation;
 
     public FieldMappingEntity(

@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -93,7 +94,7 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
-        return modbusToMQTTConfig.getMappings().stream().map(ModbusToMqttMapping::getTagName).collect(Collectors.toSet());
+        return modbusToMQTTConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
     }
 
     public @NotNull String getHost() {

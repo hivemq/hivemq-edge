@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -53,7 +54,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterC
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription, final @NotNull Plc4xTag tag) {
+    protected @NotNull String createTagAddressForSubscription(final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
         return tag.getDefinition().getTagAddress();
     }
 

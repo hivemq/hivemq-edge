@@ -41,7 +41,8 @@ import java.util.UUID;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpSpecificAdapterConfig>, LegacyConfigConversion {
+public class HttpProtocolAdapterFactory
+        implements ProtocolAdapterFactory<HttpSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
@@ -65,8 +66,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpSp
 
     @Override
     public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
@@ -96,7 +96,6 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpSp
         return new ConfigTagsTuple(new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getId(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                 httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
-                tags);
+                legacyHttpAdapterConfig.isAllowUntrustedCertificates()), tags, List.of(httpToMqttMapping));
     }
 }

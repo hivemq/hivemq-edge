@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -69,7 +70,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
                 objectMapper.convertValue(config, LegacyS7AdapterConfig.class);
 
 
-        final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
+        final List<PollingContext> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),"not set",
@@ -98,6 +99,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
                 legacyS7AdapterConfig.getRemoteSlot2(),
                 legacyS7AdapterConfig.getRemoteTsap(),
                 s7ToMqttConfig),
-                tags);
+                tags,
+                plc4xToMqttMappings);
     }
 }

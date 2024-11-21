@@ -38,7 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig>, LegacyConfigConversion {
+public class OpcUaProtocolAdapterFactory
+        implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
 
@@ -84,13 +85,13 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
         }
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
 
+        //TODO not sure how to get opcua migrated as it is not polling
         return new ConfigTagsTuple(new OpcUaSpecificAdapterConfig(legacyOpcUaAdapterConfig.getId(),
                 legacyOpcUaAdapterConfig.getUri(),
                 legacyOpcUaAdapterConfig.getOverrideUri(),
                 legacyOpcUaAdapterConfig.getAuth(),
                 legacyOpcUaAdapterConfig.getTls(),
                 opcuaToMqttConfig,
-                legacyOpcUaAdapterConfig.getSecurity()),
-                tags);
+                legacyOpcUaAdapterConfig.getSecurity()), tags, List.of());
     }
 }

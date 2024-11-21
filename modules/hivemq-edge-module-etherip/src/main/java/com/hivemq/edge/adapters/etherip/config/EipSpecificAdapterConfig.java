@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.etherip.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -96,7 +97,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     @Override
     public @NotNull Set<String> calculateAllUsedTags() {
         if(eipToMqttConfig != null) {
-            return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toSet());
+            return eipToMqttConfig.getMappings().stream().map(PollingContext::getTagName).collect(Collectors.toSet());
         } else {
             return Set.of();
         }

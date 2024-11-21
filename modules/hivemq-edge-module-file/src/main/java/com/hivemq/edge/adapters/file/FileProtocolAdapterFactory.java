@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.file;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -39,7 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileSpecificAdapterConfig>, LegacyConfigConversion {
+public class FileProtocolAdapterFactory
+        implements ProtocolAdapterFactory<FileSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
@@ -68,22 +70,22 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileSp
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
-        final List<FileToMqttMapping> fileToMqttMappings = new ArrayList<>();
+        final List<PollingContext> fileToMqttMappings = new ArrayList<>();
         final List<FileTag> tags = new ArrayList<>();
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
             final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID();
-            tags.add(new FileTag(newTagName, "not set",
+            tags.add(new FileTag(newTagName,
+                    "not set",
                     new FileTagDefinition(context.getFilePath(), context.getContentType())));
-            final FileToMqttMapping fileToMqttMapping =
-                    new FileToMqttMapping(context.getDestinationMqttTopic(),
-                            //TODO why nullable??
-                            context.getQos(),
-                            context.getMessageHandlingOptions(),
-                            context.getIncludeTimestamp(),
-                            context.getIncludeTagNames(),
-                            context.getUserProperties(),
-                            newTagName);
+            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
+                    //TODO why nullable??
+                    context.getQos(),
+                    context.getMessageHandlingOptions(),
+                    context.getIncludeTimestamp(),
+                    context.getIncludeTagNames(),
+                    context.getUserProperties(),
+                    newTagName);
             fileToMqttMappings.add(fileToMqttMapping);
         }
 
@@ -92,6 +94,8 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileSp
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         fileToMqttMappings);
 
-        return new ConfigTagsTuple(new FileSpecificAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig), tags);
+        return new ConfigTagsTuple(new FileSpecificAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig),
+                tags,
+                fileToMqttMappings);
     }
 }

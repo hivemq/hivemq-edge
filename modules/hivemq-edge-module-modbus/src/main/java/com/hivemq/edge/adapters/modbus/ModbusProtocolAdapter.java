@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
@@ -52,7 +53,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqttMapping> {
+public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusSpecificAdapterConfig adapterConfig;
@@ -100,7 +101,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     @Override
     public void poll(
-            final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
                 .findFirst()
@@ -113,7 +114,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
     private void pollModbus(
-            @NotNull PollingInput<ModbusToMqttMapping> pollingInput,
+            @NotNull PollingInput pollingInput,
             @NotNull PollingOutput pollingOutput,
             @NotNull ModbusTag modbusTag) {
         readRegisters(pollingInput.getPollingContext(),
@@ -124,15 +125,6 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 this.captureDataSample(modbusdata, pollingOutput);
             }
         });
-    }
-
-    @Override
-    public @NotNull List<ModbusToMqttMapping> getPollingContexts() {
-        if (adapterConfig.getModbusToMQTTConfig() != null) {
-            return List.copyOf(adapterConfig.getModbusToMQTTConfig().getMappings());
-        } else {
-            return List.of();
-        }
     }
 
     @Override
@@ -211,7 +203,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
     protected @NotNull CompletableFuture<ModBusData> readRegisters(
-            final @NotNull ModbusToMqttMapping modbusToMqttMapping,
+            final @NotNull PollingContext pollingContext,
             final @NotNull ModbusClient modbusClient,
             final @NotNull ModbusTag modbusTag) {
         final ModbusTagDefinition modbusTagDefinition = modbusTag.getDefinition();
@@ -222,7 +214,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 modbusTag.getDefinition().getDataType(),
                 modbusTagDefinition.readType,
                 modbusClient).thenApply(dataPoint -> {
-            final ModBusData data = new ModBusData(modbusToMqttMapping);
+            final ModBusData data = new ModBusData(pollingContext);
             data.addDataPoint(dataPoint);
             return data;
         });

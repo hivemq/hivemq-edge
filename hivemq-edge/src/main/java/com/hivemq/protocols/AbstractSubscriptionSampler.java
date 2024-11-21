@@ -67,13 +67,13 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private volatile @Nullable ScheduledFuture<?> future;
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
-    protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter;
+    protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter;
     protected final @NotNull EventService eventService;
 
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
