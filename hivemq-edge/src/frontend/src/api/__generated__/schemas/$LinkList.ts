@@ -10,6 +10,7 @@ export const $LinkList = {
             contains: {
                 type: 'Link',
             },
+            isRequired: true,
         },
     },
 } as const;

@@ -12,6 +12,6 @@ export type LinkList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Link>;
+    items: Array<Link>;
 };
 

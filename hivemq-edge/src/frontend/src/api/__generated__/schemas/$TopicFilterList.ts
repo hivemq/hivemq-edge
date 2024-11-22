@@ -9,6 +9,7 @@ export const $TopicFilterList = {
             contains: {
                 type: 'TopicFilter',
             },
+            isRequired: true,
         },
     },
 } as const;

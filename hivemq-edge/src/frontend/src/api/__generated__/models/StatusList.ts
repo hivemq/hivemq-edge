@@ -9,6 +9,6 @@ export type StatusList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Status>;
+    items: Array<Status>;
 };
 

@@ -9,6 +9,7 @@ export const $ListenerList = {
             contains: {
                 type: 'Listener',
             },
+            isRequired: true,
         },
     },
 } as const;

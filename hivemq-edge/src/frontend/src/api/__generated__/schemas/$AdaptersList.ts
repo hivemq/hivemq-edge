@@ -9,6 +9,7 @@ export const $AdaptersList = {
             contains: {
                 type: 'Adapter',
             },
+            isRequired: true,
         },
     },
 } as const;

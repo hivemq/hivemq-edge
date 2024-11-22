@@ -9,6 +9,7 @@ export const $PayloadSampleList = {
             contains: {
                 type: 'PayloadSample',
             },
+            isRequired: true,
         },
     },
 } as const;

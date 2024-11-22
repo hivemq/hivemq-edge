@@ -9,6 +9,7 @@ export const $ProtocolAdaptersList = {
             contains: {
                 type: 'ProtocolAdapter',
             },
+            isRequired: true,
         },
     },
 } as const;

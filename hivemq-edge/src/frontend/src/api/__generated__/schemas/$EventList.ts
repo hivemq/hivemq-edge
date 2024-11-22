@@ -9,6 +9,7 @@ export const $EventList = {
             contains: {
                 type: 'Event',
             },
+            isRequired: true,
         },
     },
 } as const;

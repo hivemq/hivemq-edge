@@ -9,6 +9,7 @@ export const $DomainTagList = {
             contains: {
                 type: 'DomainTag',
             },
+            isRequired: true,
         },
     },
 } as const;

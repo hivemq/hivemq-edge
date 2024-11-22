@@ -10,6 +10,6 @@ export type PayloadSample = {
     /**
      * The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.
      */
-    payload?: string;
+    payload: string;
 };
 
