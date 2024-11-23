@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -100,6 +101,22 @@ public class FromEdgeMapping implements PollingContext {
                 entity.isIncludeTagNames(),
                 entity.isIncludeTimestamp(),
                 mqttUserProperties);
+    }
+
+    public static @NotNull FromEdgeMapping from(final @NotNull PollingContext fromEdgeMapping) {
+        final List<MqttUserProperty> mqttUserPropertyEntities = fromEdgeMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserProperty(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
+        return new FromEdgeMapping(fromEdgeMapping.getTagName(),
+                fromEdgeMapping.getMqttTopic(),
+                fromEdgeMapping.getMqttQos(),
+                fromEdgeMapping.getMessageHandlingOptions(),
+                fromEdgeMapping.getIncludeTagNames(),
+                fromEdgeMapping.getIncludeTimestamp(),
+                mqttUserPropertyEntities);
     }
 
 

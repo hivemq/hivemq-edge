@@ -17,16 +17,16 @@ package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
+public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -43,5 +43,10 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {
         return fileToMqttConfig;
+    }
+
+    @Override
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
+        return fileToMqttConfig.getMappings();
     }
 }

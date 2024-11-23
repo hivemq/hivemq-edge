@@ -97,7 +97,7 @@ public class SimulationToMqttMapping implements PollingContext {
 
     @Override
     public @NotNull String getTagName() {
-        throw new UnsupportedOperationException("Simulation adapter  does not have tags");
+        return "";
     }
 
     @Override

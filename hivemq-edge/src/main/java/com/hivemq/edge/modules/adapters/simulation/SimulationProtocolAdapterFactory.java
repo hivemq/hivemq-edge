@@ -103,9 +103,9 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
                                 context.getUserProperties()))
                         .collect(Collectors.toList());
 
-        final SimulationToMqttConfig simulationToMqttConfig =
-                new SimulationToMqttConfig(legacySimulationAdapterConfig.getPollingIntervalMillis(),
-                        legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
+        final SimulationToMqttConfig simulationToMqttConfig = new SimulationToMqttConfig(simulationToMqttMappings,
+                legacySimulationAdapterConfig.getPollingIntervalMillis(),
+                legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
         return new SimulationSpecificAdapterConfig(simulationToMqttConfig,
                 legacySimulationAdapterConfig.getId(),

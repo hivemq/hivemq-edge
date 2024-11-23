@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -327,10 +328,8 @@ public class ProtocolAdapterManager {
             if (log.isDebugEnabled()) {
                 log.debug("Schedule polling for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
-            final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-            final List<PollingContext> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
-            toEdgeMappings.forEach(adapterSubscription -> {
-                //noinspection unchecked this is safe as we literally make a check on the adapter class before
+            final List<PollingContext> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
+            pollingContexts.forEach(adapterSubscription -> {
                 final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
                         objectMapper,
                         moduleServices.adapterPublishService(),
@@ -469,11 +468,24 @@ public class ProtocolAdapterManager {
         protocolAdapterMetrics.increaseProtocolAdapterMetric(adapterType);
         final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                 configConverter.convertAdapterConfig(adapterType, config);
+
+        final List<FromEdgeMapping> fromEdgeMappings;
+        if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
+            final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
+                    (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
+            fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
+                    .stream()
+                    .map(FromEdgeMapping::from)
+                    .collect(Collectors.toList());
+        } else {
+            fromEdgeMappings = new ArrayList<>();
+        }
+
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                 adapterType,
                 protocolSpecificAdapterConfig,
                 List.of(),
-                List.of(),
+                fromEdgeMappings,
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
