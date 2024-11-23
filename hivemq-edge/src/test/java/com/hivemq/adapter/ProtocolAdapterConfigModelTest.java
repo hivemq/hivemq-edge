@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
@@ -92,7 +93,8 @@ public class ProtocolAdapterConfigModelTest {
         return parent.get(nodeName) != null;
     }
 
-    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig {
+    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig,
+            AdapterConfigWithPollingContexts {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",
@@ -101,13 +103,8 @@ public class ProtocolAdapterConfigModelTest {
         private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
 
         @Override
-        public @NotNull String getId() {
-            return "id";
-        }
-
-        @Override
-        public @NotNull Set<String> calculateAllUsedTags() {
-            return Set.of();
+        public @NotNull List<? extends PollingContext> getPollingContexts() {
+            return subscriptions;
         }
     }
 
@@ -171,6 +168,11 @@ public class ProtocolAdapterConfigModelTest {
         @Override
         public @Nullable String getMqttTopic() {
             return mqttTopic;
+        }
+
+        @Override
+        public @NotNull String getTagName() {
+            return "";
         }
 
         @Override

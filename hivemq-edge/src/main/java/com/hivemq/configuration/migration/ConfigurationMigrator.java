@@ -16,6 +16,7 @@
 package com.hivemq.configuration.migration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
@@ -62,6 +63,7 @@ public class ConfigurationMigrator {
         this.legacyConfigFileReaderWriter = new LegacyConfigFileReaderWriter<>(configurationFile,
                 LegacyHiveMQConfigEntity.class,
                 HiveMQConfigEntity.class);
+        objectMapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
     }
 
     public void migrate() {

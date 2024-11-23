@@ -40,7 +40,7 @@ public class FileToMqttConfig {
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("fileToMqttMappings")
+    @JsonProperty(value = "fileToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "File to MQTT Mappings", description = "Map your file to MQTT Topics")
     private final @NotNull List<FileToMqttMapping> mappings;
 

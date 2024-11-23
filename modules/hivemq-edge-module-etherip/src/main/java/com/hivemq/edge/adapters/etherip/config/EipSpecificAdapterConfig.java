@@ -18,16 +18,18 @@ package com.hivemq.edge.adapters.etherip.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
+public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig , AdapterConfigWithPollingContexts {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
@@ -112,5 +114,10 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public @Nullable EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
+    }
+
+    @Override
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
+        return eipToMqttConfig.getMappings();
     }
 }

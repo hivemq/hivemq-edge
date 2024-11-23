@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -71,7 +70,7 @@ public class ADSProtocolAdapterFactory
         final LegacyADSAdapterConfig legacyAdsAdapterConfig =
                 objectMapper.convertValue(config, LegacyADSAdapterConfig.class);
 
-        final List<PollingContext> plc4xToMqttMappings = new ArrayList<>();
+        final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyAdsAdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),
@@ -89,7 +88,8 @@ public class ADSProtocolAdapterFactory
 
         final ADSToMqttConfig adsToMqttConfig = new ADSToMqttConfig(legacyAdsAdapterConfig.getPollingIntervalMillis(),
                 legacyAdsAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyAdsAdapterConfig.getPublishChangedDataOnly());
+                legacyAdsAdapterConfig.getPublishChangedDataOnly(),
+                plc4xToMqttMappings);
 
 
         return new ConfigTagsTuple(legacyAdsAdapterConfig.getId(),

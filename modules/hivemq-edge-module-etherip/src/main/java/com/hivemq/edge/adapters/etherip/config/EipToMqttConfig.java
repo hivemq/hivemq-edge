@@ -15,12 +15,9 @@
  */
 package com.hivemq.edge.adapters.etherip.config;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,11 +46,17 @@ public class EipToMqttConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
+    @JsonProperty(value="eipToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Eip to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<EipToMqttMapping> mappings;
+
     @JsonCreator
     public EipToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = "eipToMqttMappings") final @Nullable List<EipToMqttMapping> mappings) {
+        this.mappings = Objects.requireNonNullElse(mappings, List.of());
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
@@ -69,5 +72,9 @@ public class EipToMqttConfig {
 
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
+    }
+
+    public @NotNull List<EipToMqttMapping> getMappings() {
+        return mappings;
     }
 }

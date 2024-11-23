@@ -43,6 +43,7 @@ import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 /**
  * @author Simon L Johnson
  */
+@SuppressWarnings("DataFlowIssue")
 public class SchemaNodeGeneratorTest {
 
     private static final @NotNull ObjectMapper mapper = new ObjectMapper();
@@ -58,10 +59,10 @@ public class SchemaNodeGeneratorTest {
     @Test
     public void testPropertyOrdering() {
 
-        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-        JsonNode node = generator.generateJsonSchema(TestOrderingConfigSpecific.class);
-        JsonNode firstNode = node.get("properties");
-        Iterator<JsonNode> nodes = firstNode.iterator();
+        final CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        final JsonNode node = generator.generateJsonSchema(TestOrderingConfigSpecific.class);
+        final JsonNode firstNode = node.get("properties");
+        final Iterator<JsonNode> nodes = firstNode.iterator();
         Assertions.assertEquals("Start Index", nodes.next().get("title").textValue(), "Start Index Should be First");
         Assertions.assertEquals("End Index", nodes.next().get("title").textValue(), "End Index Should be First");
         Assertions.assertEquals("Identifier", nodes.next().get("title").textValue(), "Identifier Should be Last");
@@ -70,12 +71,12 @@ public class SchemaNodeGeneratorTest {
     @Test
     public void testNestedEntitySchemaDuplication() {
 
-        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-        JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
+        final CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        final JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
 //        System.err.println(mapper.writeValueAsString(node));
-        JsonNode propertiesNode = node.get("properties");
-        JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
-        JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
+        final JsonNode propertiesNode = node.get("properties");
+        final JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
+        final JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
         Assertions.assertFalse(hasImmediateChild(subscriptionItems, "title"), "Wrapped typed should not have a duplicate title");
         Assertions.assertFalse(hasImmediateChild(subscriptionItems, "description"), "Wrapped typed should not have a duplicate description");
     }
@@ -83,11 +84,11 @@ public class SchemaNodeGeneratorTest {
     @Test
     public void testCustomAttributesAppearInSchema() {
 
-        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-        JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
-        JsonNode propertiesNode = node.get("properties");
-        JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
-        JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
+        final CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        final JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
+        final JsonNode propertiesNode = node.get("properties");
+        final JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
+        final JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
         Assertions.assertTrue(hasImmediateChild(subscriptionItems, "testAttributeName"), "Wrapped typed should have a test-attribute");
     }
 
@@ -97,7 +98,7 @@ public class SchemaNodeGeneratorTest {
         if(child != null){
             return child;
         } else {
-            Iterator<JsonNode> nodes = parent.iterator();
+            final Iterator<JsonNode> nodes = parent.iterator();
             while (nodes.hasNext()){
                 if((child = findFirstChild(nodes.next(), nodeName)) != null){
                     return child;
@@ -132,16 +133,6 @@ public class SchemaNodeGeneratorTest {
         @JsonProperty(value = "endIdx")
         @ModuleConfigField(title = "End Index")
         int endIdx;
-
-        @Override
-        public @NotNull String getId() {
-            return id;
-        }
-
-        @Override
-        public @NotNull Set<String> calculateAllUsedTags() {
-            return Set.of();
-        }
     }
 
     static class TestNestedEntity implements ProtocolSpecificAdapterConfig {
@@ -163,15 +154,5 @@ public class SchemaNodeGeneratorTest {
                            stringMinLength = 1,
                            stringMaxLength = 1024)
         protected @NotNull String id;
-
-        @Override
-        public @NotNull String getId() {
-            return id;
-        }
-
-        @Override
-        public @NotNull Set<String> calculateAllUsedTags() {
-            return Set.of();
-        }
     }
 }

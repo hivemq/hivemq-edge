@@ -17,11 +17,9 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,12 +28,21 @@ import java.util.Objects;
 
 public class S7ToMqttConfig extends Plc4xToMqttConfig {
 
+    @JsonProperty(value = "s7ToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "S7 to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<Plc4xToMqttMapping> mappings;
+
     @JsonCreator
     public S7ToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = "s7ToMqttMappings") final @Nullable List<Plc4xToMqttMapping> mappings) {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
+        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
+    public @NotNull List<Plc4xToMqttMapping> getMappings() {
+        return mappings;
+    }
 }

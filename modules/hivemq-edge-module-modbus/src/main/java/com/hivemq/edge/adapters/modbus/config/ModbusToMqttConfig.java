@@ -18,8 +18,10 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -47,14 +49,20 @@ public class ModbusToMqttConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
+    @JsonProperty(value = "modbusToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Modbus to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<ModbusToMqttMapping> mappings;
+
     @JsonCreator
     public ModbusToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = "modbusToMqttMappings") final @Nullable List<ModbusToMqttMapping> mappings) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
+        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
     public int getPollingIntervalMillis() {
@@ -67,5 +75,9 @@ public class ModbusToMqttConfig {
 
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
+    }
+
+    public @NotNull List<ModbusToMqttMapping> getMappings() {
+        return mappings;
     }
 }

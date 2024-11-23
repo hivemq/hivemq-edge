@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,4 +69,5 @@ public abstract class Plc4xToMqttConfig {
         return publishChangedDataOnly;
     }
 
+    public abstract @NotNull List<Plc4xToMqttMapping> getMappings();
 }

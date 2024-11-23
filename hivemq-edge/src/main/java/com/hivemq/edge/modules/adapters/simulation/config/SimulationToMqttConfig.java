@@ -41,7 +41,7 @@ public class SimulationToMqttConfig {
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("simulationToMqttMappings")
+    @JsonProperty(value = "simulationToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "simulationToMqttMappings",
                        description = "List of simulation to mqtt mappings for the simulation")
     private final @NotNull List<SimulationToMqttMapping> simulationToMqttMappings;
