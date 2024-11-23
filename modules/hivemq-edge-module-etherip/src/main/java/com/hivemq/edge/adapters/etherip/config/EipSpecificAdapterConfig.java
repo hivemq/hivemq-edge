@@ -118,6 +118,9 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig ,
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (eipToMqttConfig==null){
+            return  List.of();
+        }
         return eipToMqttConfig.getMappings();
     }
 }

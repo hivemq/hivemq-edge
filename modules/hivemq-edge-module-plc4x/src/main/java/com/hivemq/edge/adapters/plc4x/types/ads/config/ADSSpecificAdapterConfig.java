@@ -129,6 +129,9 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (adsToMqttConfig==null){
+            return  List.of();
+        }
         return adsToMqttConfig.getMappings();
     }
 }

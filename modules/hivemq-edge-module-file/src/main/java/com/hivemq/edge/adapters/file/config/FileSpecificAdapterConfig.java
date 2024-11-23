@@ -47,6 +47,9 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (fileToMqttConfig==null){
+            return  List.of();
+        }
         return fileToMqttConfig.getMappings();
     }
 }

@@ -94,6 +94,9 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (modbusToMQTTConfig==null){
+            return  List.of();
+        }
         return modbusToMQTTConfig.getMappings();
     }
 }
