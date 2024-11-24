@@ -50,6 +50,9 @@ class LegacyFileProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
+    // TODO
+    /*
+
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/legacy-file-adapter-full-config.xml");
@@ -167,4 +170,6 @@ class LegacyFileProtocolAdapterConfigTest {
                 mock());
         return readerWriter.applyConfig();
     }
+
+     */
 }

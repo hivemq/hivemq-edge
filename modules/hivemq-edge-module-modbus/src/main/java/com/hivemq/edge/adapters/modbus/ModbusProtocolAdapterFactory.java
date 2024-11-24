@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ModbusProtocolAdapterFactory
         implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig>, LegacyConfigConversion {
@@ -72,7 +73,7 @@ public class ModbusProtocolAdapterFactory
                 objectMapper.convertValue(config, LegacyModbusSpecificAdapterConfig.class);
 
 
-        final List<PollingContext> modbusToMqttMappings = new ArrayList<>();
+        final List<ModbusToMqttMapping> modbusToMqttMappings = new ArrayList<>();
         final List<ModbusTag> modbusTags = new ArrayList<>();
         for (final LegacyModbusPollingContext context : legacyModbusAdapterConfig.getSubscriptions()) {
             // create tag first
@@ -97,7 +98,8 @@ public class ModbusProtocolAdapterFactory
         final ModbusToMqttConfig modbusToMqttConfig =
                 new ModbusToMqttConfig(legacyModbusAdapterConfig.getPollingIntervalMillis(),
                         legacyModbusAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        legacyModbusAdapterConfig.getPublishChangedDataOnly());
+                        legacyModbusAdapterConfig.getPublishChangedDataOnly(),
+                        modbusToMqttMappings);
 
 
         return new ConfigTagsTuple(legacyModbusAdapterConfig.getId(),

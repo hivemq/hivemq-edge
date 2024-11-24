@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -70,7 +71,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
                 objectMapper.convertValue(config, LegacyS7AdapterConfig.class);
 
 
-        final List<PollingContext> plc4xToMqttMappings = new ArrayList<>();
+        final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),"not set",
@@ -86,7 +87,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
                 legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyS7AdapterConfig.getPublishChangedDataOnly());
+                legacyS7AdapterConfig.getPublishChangedDataOnly(), plc4xToMqttMappings);
 
         return new ConfigTagsTuple(legacyS7AdapterConfig.getId(), new S7SpecificAdapterConfig(
                 legacyS7AdapterConfig.getPort(),

@@ -74,8 +74,6 @@ public class EipPollingProtocolAdapterIT {
             @NotNull final EipDataType tagType,
             @NotNull final String expectedName,
             @NotNull final Object expectedValue) {
-        final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
 
 
         final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
@@ -85,6 +83,11 @@ public class EipPollingProtocolAdapterIT {
                 true,
                 tagAddress,
                 List.of());
+
+        final EipSpecificAdapterConfig config =
+                new EipSpecificAdapterConfig( "test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true, List.of(eipToMqttMapping)));
+
+
 
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
@@ -121,9 +124,6 @@ public class EipPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_False() {
-        final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false));
-
         final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
                 1,
                 MessageHandlingOptions.MQTTMessagePerTag,
@@ -131,6 +131,11 @@ public class EipPollingProtocolAdapterIT {
                 true,
                 TAG_INT,
                 List.of());
+
+        final EipSpecificAdapterConfig config =
+                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false, List.of(eipToMqttMapping)));
+
+
 
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
@@ -169,8 +174,10 @@ public class EipPollingProtocolAdapterIT {
                 true,
                 TAG_INT,
                 List.of());
+
         final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
+                new EipSpecificAdapterConfig("test", 44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true, List.of(eipToMqttMapping)));
+
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);

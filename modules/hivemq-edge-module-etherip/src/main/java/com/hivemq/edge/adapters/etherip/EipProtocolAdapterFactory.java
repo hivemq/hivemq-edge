@@ -68,7 +68,7 @@ public class EipProtocolAdapterFactory
 
         // reference tag in the config
 
-        final List<PollingContext> eipToMqttMappings = new ArrayList<>();
+        final List<EipToMqttMapping> eipToMqttMappings = new ArrayList<>();
         final List<EipTag> tags = new ArrayList<>();
         for (final LegacyEipSpecificAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
@@ -86,7 +86,8 @@ public class EipProtocolAdapterFactory
 
         final EipToMqttConfig eipToMqttConfig = new EipToMqttConfig(legacyEipAdapterConfig.getPollingIntervalMillis(),
                 legacyEipAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyEipAdapterConfig.getPublishChangedDataOnly());
+                legacyEipAdapterConfig.getPublishChangedDataOnly(),
+                eipToMqttMappings);
 
         final EipSpecificAdapterConfig eipSpecificAdapterConfig =
                 new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
