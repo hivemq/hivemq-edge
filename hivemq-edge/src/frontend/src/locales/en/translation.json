@@ -625,7 +625,7 @@
     "errors": {
       "noFormSchema": "The form cannot be created, due to internal errors",
       "noAdapter": "The protocol adapter for this device cannot be found",
-      "noMetadataLoaded": "No metadata loaded for the device",
+      "noMetadataLoaded": "Uploading device metadata is not yet supported",
       "noTagLoaded": "Cannot load the tags",
       "noTagCreated": "There is no tag created yet"
     }
