@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.ToEdgeMappingEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
@@ -112,8 +113,12 @@ public class HttpProtocolAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final HttpSpecificAdapterConfig config =
-                (HttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), false);
+        final BidirectionalHttpSpecificAdapterConfig config =
+                (BidirectionalHttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), true);
+
+        final List<Map<String, Object>> tagMaps =
+                adapter.getTags().stream().map(tagEntity -> tagEntity.toMap()).collect(Collectors.toList());
+        final List<? extends Tag> tags = httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
 
         assertThat(adapter.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(adapter.getProtocolId()).isEqualTo("http");
@@ -125,17 +130,12 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
         final FromEdgeMappingEntity httpToMqttMapping = adapter.getFromEdgeMappingEntities().get(0);
-
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
 
-        final List<Map<String, Object>> tagMaps =
-                adapter.getTags().stream().map(tagEntity -> tagEntity.toMap()).collect(Collectors.toList());
 
-        final List<? extends Tag> tags = httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
-
-        HttpTag tag = (HttpTag)tags.get(0);
+        final HttpTag tag = (HttpTag)tags.get(0);
         assertThat(tag.getName()).isEqualTo("tag1");
         assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
         assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(JSON);
@@ -143,13 +143,18 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(tag.getDefinition().getHttpHeaders()).isEmpty();
         assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
-//        final MqttToHttpMapping mqttToHttpMapping = config.getMqttToHttpConfig().getMappings().get(0);
-//        assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag1");
-//        assertThat(mqttToHttpMapping.getMqttTopicFilter()).isEqualTo("my/#");
-//        assertThat(mqttToHttpMapping.getMqttMaxQos()).isEqualTo(1);
-//        assertThat(mqttToHttpMapping.getHttpRequestMethod()).isEqualTo(POST);
-//        assertThat(mqttToHttpMapping.getHttpHeaders()).isEmpty();
-//        assertThat(mqttToHttpMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
+        final HttpTag tag2 = (HttpTag)tags.get(0);
+        assertThat(tag2.getName()).isEqualTo("tag1");
+        assertThat(tag2.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(tag2.getDefinition().getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(tag2.getDefinition().getHttpRequestBody()).isNull();
+        assertThat(tag2.getDefinition().getHttpHeaders()).isEmpty();
+        assertThat(tag2.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
+
+        final ToEdgeMappingEntity mqttToHttpMapping = adapter.getToEdgeMappingEntities().get(0);
+        assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag2");
+        assertThat(mqttToHttpMapping.getTopicFilter()).isEqualTo("my/#");
+        assertThat(mqttToHttpMapping.getMaxQos()).isEqualTo(1);
     }
 //
 //    @Test

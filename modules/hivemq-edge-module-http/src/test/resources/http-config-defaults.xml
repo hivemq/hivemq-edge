@@ -25,7 +25,7 @@
             </config>
             <toEdgeMappings>
                 <toEdgeMapping>
-                    <tag-name>tag1</tag-name>
+                    <tag-name>tag2</tag-name>
                     <topic-filter>my/#</topic-filter>
                 </toEdgeMapping>
             </toEdgeMappings>
