@@ -19,13 +19,14 @@ export type DomainTag = {
      */
     protocolId: string;
     /**
-     * TODO[28249] Fixed manually until backend fixed
+     * TODO[28249] Changed manually until backend fixed
      * A user created description for this tag.
      */
-    tagDefinition: JsonNode;
+    definition: JsonNode;
     /**
+     * TODO[28249] Changed manually until backend fixed
      * The name of the tag that identifies it within this edge instance.
      */
-    tagName: string;
+    name: string;
 };
 

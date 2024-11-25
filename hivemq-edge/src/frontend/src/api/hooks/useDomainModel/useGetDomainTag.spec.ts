@@ -28,11 +28,11 @@ describe('useGetDomainTag', () => {
     })
     expect(result.current.data).toStrictEqual<DomainTag>({
       protocolId: 'modbus',
-      tagDefinition: {
+      definition: {
         endIdx: 1,
         startIdx: 0,
       },
-      tagName: mockTag,
+      name: mockTag,
     })
   })
 

@@ -28,17 +28,17 @@ describe('useGetDomainTags', () => {
       items: [
         {
           protocolId: MockAdapterType.OPC_UA,
-          tagDefinition: {
+          definition: {
             node: 'ns=3;i=1002',
           },
-          tagName: `${MockAdapterType.OPC_UA}/power/off`,
+          name: `${MockAdapterType.OPC_UA}/power/off`,
         },
         {
           protocolId: MockAdapterType.OPC_UA,
-          tagDefinition: {
+          definition: {
             node: 'ns=3;i=1008',
           },
-          tagName: `${MockAdapterType.OPC_UA}/log/event`,
+          name: `${MockAdapterType.OPC_UA}/log/event`,
         },
       ],
     })
@@ -53,11 +53,11 @@ describe('useGetDomainTags', () => {
       items: [
         {
           protocolId: MockAdapterType.MODBUS,
-          tagDefinition: {
+          definition: {
             endIdx: 1,
             startIdx: 0,
           },
-          tagName: `${MockAdapterType.MODBUS}/alert`,
+          name: `${MockAdapterType.MODBUS}/alert`,
         },
       ],
     })
@@ -72,8 +72,8 @@ describe('useGetDomainTags', () => {
       items: [
         {
           protocolId: MockAdapterType.SIMULATION,
-          tagDefinition: {},
-          tagName: `${MockAdapterType.SIMULATION}/log/event`,
+          definition: {},
+          name: `${MockAdapterType.SIMULATION}/log/event`,
         },
       ],
     })

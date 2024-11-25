@@ -27,11 +27,11 @@ describe('useListDomainTags', () => {
       items: [
         {
           protocolId: 'modbus',
-          tagDefinition: {
+          definition: {
             endIdx: 1,
             startIdx: 0,
           },
-          tagName: 'test/tag1',
+          name: 'test/tag1',
         },
       ],
     })

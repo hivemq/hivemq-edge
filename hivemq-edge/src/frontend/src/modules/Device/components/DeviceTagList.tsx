@@ -56,12 +56,12 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
         {!isError && !isLoading && data && (
           // TODO[NVL] Too simple. Use a paginated table
           <List data-testid="device-tags-list">
-            {data.items?.map((e) => (
-              <ListItem key={e.tagName} m={1} display="flex" justifyContent="space-between">
+            {data.items?.map((domainTag) => (
+              <ListItem key={domainTag.name} m={1} display="flex" justifyContent="space-between">
                 <HStack w="100%" justifyContent="space-between">
-                  <PLCTag tagTitle={e.tagName} />{' '}
+                  <PLCTag tagTitle={domainTag.name} />{' '}
                   <Code size="xs" textAlign="end">
-                    {formatTagDataPoint(e.tagDefinition)}
+                    {formatTagDataPoint(domainTag.definition)}
                   </Code>
                 </HStack>
               </ListItem>
