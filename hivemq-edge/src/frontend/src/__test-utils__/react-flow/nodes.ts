@@ -1,8 +1,7 @@
 import { NodeProps, Position } from 'reactflow'
-import { ClientFilter, Listener } from '@/api/__generated__'
+import { Listener } from '@/api/__generated__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { DeviceMetadata, Group, NodeTypes } from '@/modules/Workspace/types.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
@@ -60,13 +59,5 @@ export const MOCK_NODE_DEVICE: NodeProps<DeviceMetadata> = {
   id: 'idDevice',
   type: NodeTypes.DEVICE_NODE,
   data: { ...mockProtocolAdapter, sourceAdapterId: MOCK_ADAPTER_ID },
-  ...MOCK_DEFAULT_NODE,
-}
-
-export const MOCK_NODE_CLIENT: NodeProps<ClientFilter> = {
-  id: 'idBridge',
-  type: NodeTypes.BRIDGE_NODE,
-  sourcePosition: Position.Bottom,
-  data: mockClientSubscription,
   ...MOCK_DEFAULT_NODE,
 }

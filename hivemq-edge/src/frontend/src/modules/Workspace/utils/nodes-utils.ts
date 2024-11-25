@@ -3,7 +3,7 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { GenericObjectType } from '@rjsf/utils'
 
-import { Adapter, Bridge, Status, Listener, ProtocolAdapter, ClientFilter } from '@/api/__generated__'
+import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
 
 import { DeviceMetadata, EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
@@ -232,49 +232,6 @@ export const createAdapterNode = (
   }
 
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
-}
-
-export const createClientNode = (
-  client: ClientFilter,
-  nbClient: number,
-  maxClient: number,
-  theme: Partial<WithCSSVar<Dict>>,
-  positionStorage?: Record<string, XYPosition>
-) => {
-  const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
-  const isConnected = Boolean(client.topicFilters.length)
-
-  const nodeClient: Node<ClientFilter, NodeTypes.CLIENT_NODE> = {
-    id: idClient,
-    type: NodeTypes.CLIENT_NODE,
-    sourcePosition: Position.Bottom,
-    data: client,
-    position: positionStorage?.[idClient] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbClient - (maxClient - 1) / 2),
-      y: POS_EDGE.y + POS_NODE_INC.y,
-    },
-  }
-
-  const clientConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idClient}`,
-    target: IdStubs.EDGE_NODE,
-    targetHandle: 'Bottom',
-    source: idClient,
-    focusable: false,
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      width: 20,
-      height: 20,
-      color: theme.colors.status.connected[500],
-    },
-    animated: isConnected,
-    style: {
-      strokeWidth: 1.5,
-      stroke: theme.colors.status.connected[500],
-    },
-  }
-
-  return { nodeClient, clientConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

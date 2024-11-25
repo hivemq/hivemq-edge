@@ -1,5 +1,4 @@
 import MetadataExplorer from '@/modules/Workspace/components/topics/MetadataExplorer.tsx'
-import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 describe('MetadataExplorer', () => {

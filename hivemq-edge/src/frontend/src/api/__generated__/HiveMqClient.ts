@@ -9,7 +9,6 @@ import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 import { AuthenticationService } from './services/AuthenticationService';
 import { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
 import { BridgesService } from './services/BridgesService';
-import { ClientService } from './services/ClientService';
 import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPoliciesService';
 import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
 import { DataHubFsmService } from './services/DataHubFsmService';
@@ -36,7 +35,6 @@ export class HiveMqClient {
     public readonly authentication: AuthenticationService;
     public readonly authenticationEndpoint: AuthenticationEndpointService;
     public readonly bridges: BridgesService;
-    public readonly client: ClientService;
     public readonly dataHubBehaviorPolicies: DataHubBehaviorPoliciesService;
     public readonly dataHubDataPolicies: DataHubDataPoliciesService;
     public readonly dataHubFsm: DataHubFsmService;
@@ -74,7 +72,6 @@ export class HiveMqClient {
         this.authentication = new AuthenticationService(this.request);
         this.authenticationEndpoint = new AuthenticationEndpointService(this.request);
         this.bridges = new BridgesService(this.request);
-        this.client = new ClientService(this.request);
         this.dataHubBehaviorPolicies = new DataHubBehaviorPoliciesService(this.request);
         this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
         this.dataHubFsm = new DataHubFsmService(this.request);

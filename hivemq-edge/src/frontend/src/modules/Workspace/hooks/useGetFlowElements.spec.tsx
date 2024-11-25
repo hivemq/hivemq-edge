@@ -4,7 +4,6 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
-import { handlers } from '@/__test-utils__/msw/handlers.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 import { SimpleWrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import queryClient from '@/api/queryClient.ts'
@@ -14,7 +13,6 @@ import '@/config/i18n.config.ts'
 import { EdgeFlowProvider } from './FlowContext.tsx'
 import useGetFlowElements from './useGetFlowElements.ts'
 import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
-import { handlers as ClientHandlers } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -33,7 +31,6 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = (
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    server.use(...handlers, ...ClientHandlers)
   })
 
   afterEach(() => {
