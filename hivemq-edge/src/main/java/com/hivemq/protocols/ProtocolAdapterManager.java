@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -305,12 +306,13 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
 
+            final List<FieldMappings> fieldMappings = protocolAdapterWrapper.getFieldMappings();
+
             final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
             final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
                     .map(toEdgeMapping -> new WritingContextImpl(toEdgeMapping.getTagName(),
                             toEdgeMapping.getTopicFilter(),
-                            toEdgeMapping.getMaxQoS(),
-                            toEdgeMapping.getFieldMappings()))
+                            toEdgeMapping.getMaxQoS(), findFieldMapping(fieldMappings, toEdgeMapping)))
                     .collect(Collectors.toList());
 
             startWritingFuture =
@@ -321,6 +323,18 @@ public class ProtocolAdapterManager {
             startWritingFuture = CompletableFuture.completedFuture(null);
         }
         return startWritingFuture;
+    }
+
+    private FieldMappings findFieldMapping(
+            final List<FieldMappings> fieldMappings, final @NotNull ToEdgeMapping toEdgeMapping) {
+
+        final Optional<FieldMappings> optionalFieldMappings = fieldMappings.stream()
+                .filter(f -> f.getTagName().equals(toEdgeMapping.getTagName()) &&
+                        f.getTopicFilter().equals(toEdgeMapping.getTopicFilter()))
+                .findFirst();
+
+        // TODO error handling if it is not present
+        return optionalFieldMappings.get();
     }
 
     private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
@@ -481,11 +495,13 @@ public class ProtocolAdapterManager {
             fromEdgeMappings = new ArrayList<>();
         }
 
+        // TODO we can not add toMappings as we do not have field mappings here yet.
+        // actually this is correct from the user workflow
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                 adapterType,
                 protocolSpecificAdapterConfig,
                 List.of(),
-                fromEdgeMappings,
+                fromEdgeMappings, List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
@@ -535,15 +551,44 @@ public class ProtocolAdapterManager {
     }
 
     public boolean updateAdapterConfig(
-            final @NotNull String adapterId, final @NotNull ProtocolAdapterConfig protocolAdapterConfig) {
+            final @NotNull String adapterType,
+            final @NotNull String adapterId,
+            final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
-            final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-            final List<Map<String, Object>> tags = oldInstance.getTags()
-                    .stream()
-                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
-                    }))
-                    .collect(Collectors.toList());
+            final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
+                    configConverter.convertAdapterConfig(adapterType, config);
+            final List<FromEdgeMapping> fromEdgeMappings;
+            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
+                final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
+                        (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
+                fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
+                        .stream()
+                        .map(FromEdgeMapping::from)
+                        .collect(Collectors.toList());
+            } else {
+                fromEdgeMappings = new ArrayList<>();
+            }
+
+            final List<ToEdgeMapping> toEdgeMappings;
+            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithWritingContexts) {
+                final AdapterConfigWithWritingContexts adapterConfigWithPollingContexts =
+                        (AdapterConfigWithWritingContexts) protocolSpecificAdapterConfig;
+                toEdgeMappings = adapterConfigWithPollingContexts.getWritingContexts()
+                        .stream()
+                        .map(ToEdgeMapping::from)
+                        .collect(Collectors.toList());
+            } else {
+                toEdgeMappings = new ArrayList<>();
+            }
+
+            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
+                    adapterType,
+                    protocolSpecificAdapterConfig,
+                    toEdgeMappings,
+                    fromEdgeMappings,
+                    oldInstance.getTags(),
+                    oldInstance.getFieldMappings());
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
@@ -561,7 +606,8 @@ public class ProtocolAdapterManager {
                     oldInstance.getConfigObject(),
                     oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
-                    configConverter.mapsToTags(protocolId, tags));
+                    configConverter.mapsToTags(protocolId, tags),
+                    oldInstance.getFieldMappings());
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
             configPersistence.updateAdapter(protocolAdapterConfig);
@@ -582,19 +628,14 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> newToEdgeMappings = oldInstance.getToEdgeMappings()
                     .stream()
                     .map(toEdgeMapping -> new ToEdgeMapping(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(),
-                            toEdgeMapping.getMaxQoS(),
-                            findCorrespondingFieldMapping(fieldMappings,
-                                    toEdgeMapping.getTopicFilter(),
-                                    toEdgeMapping.getTagName())))
+                            toEdgeMapping.getTopicFilter(), toEdgeMapping.getMaxQoS()))
                     .collect(Collectors.toList());
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
                     oldInstance.getConfigObject(),
                     newToEdgeMappings,
-                    oldInstance.getFromEdgeMappings(),
-                    oldInstance.getTags());
+                    oldInstance.getFromEdgeMappings(), oldInstance.getTags(), fieldMappings);
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
@@ -682,8 +723,7 @@ public class ProtocolAdapterManager {
                     protocolAdapterState,
                     config.getAdapterConfig(),
                     config.getTags(),
-                    config.getToEdgeMappings(),
-                    config.getFromEdgeMappings());
+                    config.getToEdgeMappings(), config.getFromEdgeMappings(), config.getFieldMappings());
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -876,10 +916,7 @@ public class ProtocolAdapterManager {
         final ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapterWrapper =
                 optionalProtocolAdapterWrapper.get();
 
-        final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
-        final List<FieldMappings> fieldMappings =
-                toEdgeMappings.stream().map(ToEdgeMapping::getFieldMappings).collect(Collectors.toList());
-        return Optional.of(fieldMappings);
+        return Optional.of(protocolAdapterWrapper.getFieldMappings());
     }
 
 

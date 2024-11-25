@@ -125,27 +125,24 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         }
     }
 
-    public Optional<Tag> findTag(String tagName) {
-        return opcuaTags.stream()
-                .filter(tag -> tag.getName().equals(tagName))
-                .findFirst();
+
+    public @NotNull Optional<Tag> findTag(final @NotNull String tagName) {
+        return opcuaTags.stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
     }
 
-    public CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
+
+    public @NotNull CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
         final @NotNull String tagName = subscription.getTagName();
 
-        return findTag(subscription.getTagName())
-                .map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
-                .orElseGet(() ->
-                        CompletableFuture.failedFuture(
-                                new IllegalArgumentException("Opcua subscription for protocol adapter failed because the used tag '" +
-                                    tagName +
-                                    "' was not found. For the polling to work the tag must be created via REST API or the UI.")));
+        return findTag(subscription.getTagName()).map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
+                .orElseGet(() -> CompletableFuture.failedFuture(new IllegalArgumentException(
+                        "Opcua subscription for protocol adapter failed because the used tag '" +
+                                tagName +
+                                "' was not found. For the subscription to work the tag must be created via REST API or the UI.")));
     }
 
-    private CompletableFuture<Void> subscribeToOpcua(
-            final @NotNull OpcUaToMqttMapping subscription,
-            final @NotNull OpcuaTag opcuaTag) {
+    private @NotNull CompletableFuture<Void> subscribeToOpcua(
+            final @NotNull OpcUaToMqttMapping subscription, final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
@@ -188,6 +185,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
 
+    @NotNull
     public CompletableFuture<Void> stop() {
         return CompletableFuture.completedFuture(null);
     }

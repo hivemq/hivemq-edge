@@ -314,19 +314,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
         });
 
-
-        // TODO we need to extract the mappings from the adapter object
-        // TODO we need to extract the adapter config
-        // TODO we need to extract the tags
-        final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                configConverter.convertAdapterConfig(adapter.getProtocolAdapterType(), config);
-        protocolAdapterManager.updateAdapterConfig(adapterId,
-                new ProtocolAdapterConfig(adapterId,
-                        adapter.getProtocolAdapterType(),
-                        protocolSpecificAdapterConfig,
-                        List.of(),
-                        List.of(),
-                        List.of()));
+        try {
+            protocolAdapterManager.updateAdapterConfig(adapter.getProtocolAdapterType(), adapterId, config);
+        } catch (final Exception e) {
+            log.error("Exception during update of adapter '{}'.", adapterId);
+            log.debug("Original Exception:", e);
+            return Response.serverError().build();
+        }
         return Response.ok().build();
     }
 
@@ -468,7 +462,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "Adapter not found",
                         "The adapter named '" + domainTag.getProtocolId() + "' does not exist.");
             default:
-                log.error("Unhandled PUT-statud: {}", domainTagAddResult.getDomainTagPutStatus());
+                log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
         }
         return Response.serverError().build();
     }
@@ -647,8 +641,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     adapterType,
                     protocolSpecificAdapterConfig,
                     List.of(),
-                    List.of(),
-                    tags));
+                    List.of(), tags, List.of()));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,

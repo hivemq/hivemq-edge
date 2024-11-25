@@ -83,8 +83,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final byte[] convertedPayload = convertPayload(dataValue, serializationContext);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(mapping.getMqttTopic())
-                    .withPayload(convertedPayload)
-                    .withQoS(mapping.getQos())
+                    .withPayload(convertedPayload).withQoS(mapping.getMqttMaxQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
             publishBuilder.withMessageExpiryInterval(mapping.getMessageExpiryInterval());

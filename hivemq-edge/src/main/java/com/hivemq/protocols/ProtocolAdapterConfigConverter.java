@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -62,12 +63,16 @@ public class ProtocolAdapterConfigConverter {
                 .stream()
                 .map(entity -> ToEdgeMapping.fromEntity(entity, mapper))
                 .collect(Collectors.toList());
+        final List<FieldMappings> fieldMappings = protocolAdapterEntity.getFieldMappings()
+                .stream()
+                .map(e -> FieldMappings.fromEntity(e, mapper))
+                .collect(Collectors.toList());
+
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
                 protocolSpecificAdapterConfig,
                 toEdgeMappingList,
-                fromEdgeMappingList,
-                tags);
+                fromEdgeMappingList, tags, fieldMappings);
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(

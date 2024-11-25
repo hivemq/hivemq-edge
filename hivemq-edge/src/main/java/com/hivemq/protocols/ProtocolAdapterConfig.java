@@ -17,11 +17,11 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +37,7 @@ public class ProtocolAdapterConfig {
     private final @NotNull String protocolId;
     private final @NotNull List<ToEdgeMapping> toEdgeMappings;
     private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+    private final @NotNull List<FieldMappings> fieldMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
@@ -44,13 +45,15 @@ public class ProtocolAdapterConfig {
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
             final @NotNull List<ToEdgeMapping> toEdgeMappings,
             final @NotNull List<FromEdgeMapping> fromEdgeMappings,
-            final @NotNull List<? extends Tag> tags) {
+            final @NotNull List<? extends Tag> tags,
+            final @NotNull List<FieldMappings> fieldMappings) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.toEdgeMappings = toEdgeMappings;
         this.fromEdgeMappings = fromEdgeMappings;
         this.adapterConfig = protocolSpecificConfig;
         this.tags = tags;
+        this.fieldMappings = fieldMappings;
     }
 
     public @NotNull Optional<Set<String>> missingTags() {
@@ -85,5 +88,9 @@ public class ProtocolAdapterConfig {
 
     public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
         return toEdgeMappings;
+    }
+
+    public @NotNull List<FieldMappings> getFieldMappings() {
+        return fieldMappings;
     }
 }

@@ -32,9 +32,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
@@ -47,6 +45,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     private final @NotNull List<Tag> tags;
     private final @NotNull List<ToEdgeMapping> toEdgeMappings;
     private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+    private final @NotNull List<FieldMappings> fieldMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -58,7 +57,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<Tag> tags,
             final @NotNull List<ToEdgeMapping> toEdgeMappings,
-            final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
+            final @NotNull List<FromEdgeMapping> fromEdgeMappings,
+            final @NotNull List<FieldMappings> fieldMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -68,6 +68,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         this.tags = tags;
         this.toEdgeMappings = toEdgeMappings;
         this.fromEdgeMappings = fromEdgeMappings;
+        this.fieldMappings = fieldMappings;
     }
 
     public void start(
@@ -154,6 +155,6 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     }
 
     public @NotNull List<FieldMappings> getFieldMappings() {
-        return toEdgeMappings.stream().map(ToEdgeMapping::getFieldMappings).collect(Collectors.toList());
+        return fieldMappings;
     }
 }

@@ -13,12 +13,12 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
@@ -138,7 +138,7 @@ public class OpcUaClientWrapper {
             final @NotNull WritingOutput writingOutput,
             final @NotNull OpcuaTag opcuaTag) {
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) writingInput.getWritingPayload();
-        final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) writingInput.getWritingContext();
+        final WritingContext writeContext = writingInput.getWritingContext();
         log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
 
         final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());

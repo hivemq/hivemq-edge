@@ -55,6 +55,11 @@ public class ProtocolAdapterEntity {
     @XmlElement(name = "fromEdgeMapping")
     private @NotNull List<FromEdgeMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
 
+    @XmlElementWrapper(name = "field-mappings")
+    @XmlElement(name = "field-mapping")
+    private @NotNull List<FieldMappingsEntity> fieldMappings = new ArrayList<>();
+
+
     // no-arg constructor for JaxB
     public ProtocolAdapterEntity() {
     }
@@ -65,13 +70,15 @@ public class ProtocolAdapterEntity {
             @NotNull final Map<String, Object> config,
             @NotNull final List<FromEdgeMappingEntity> fromEdgeMappingEntities,
             @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities,
-            @NotNull final List<Map<String, Object>> tags) {
+            @NotNull final List<Map<String, Object>> tags,
+            @NotNull final List<FieldMappingsEntity> fieldMappings) {
         this.adapterId = adapterId;
         this.config = config;
         this.fromEdgeMappingEntities = fromEdgeMappingEntities;
         this.protocolId = protocolId;
         this.tags = tags;
         this.toEdgeMappingEntities = toEdgeMappingEntities;
+        this.fieldMappings = fieldMappings;
     }
 
     public @NotNull Map<String, Object> getConfig() {
@@ -98,6 +105,10 @@ public class ProtocolAdapterEntity {
         return adapterId;
     }
 
+    public @NotNull List<FieldMappingsEntity> getFieldMappings() {
+        return fieldMappings;
+    }
+
     public static @NotNull ProtocolAdapterEntity from(
             final @NotNull ProtocolAdapterConfig protocolAdapterConfig, final @NotNull ObjectMapper objectMapper) {
 
@@ -117,6 +128,11 @@ public class ProtocolAdapterEntity {
                 }))
                 .collect(Collectors.toList());
 
+        final List<FieldMappingsEntity> fieldMappingsEntities = protocolAdapterConfig.getFieldMappings()
+                .stream()
+                .map(FieldMappingsEntity::from)
+                .collect(Collectors.toList());
+
 
         final Map<String, Object> configAsMaps =
                 objectMapper.convertValue(protocolAdapterConfig.getAdapterConfig(), new TypeReference<>() {
@@ -126,7 +142,8 @@ public class ProtocolAdapterEntity {
                 protocolAdapterConfig.getProtocolId(),
                 configAsMaps,
                 fromEdgeMappingEntities,
-                toEdgeMappingEntities,
-                tagsAsMaps);
+                toEdgeMappingEntities, tagsAsMaps, fieldMappingsEntities);
     }
+
+
 }

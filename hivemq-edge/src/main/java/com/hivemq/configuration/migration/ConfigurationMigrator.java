@@ -153,8 +153,9 @@ public class ConfigurationMigrator {
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
                     fromEdgeMappingEntities,
-                    List.of(),
-                    tagsAsMaps));
+                    List.of(), tagsAsMaps,
+                    // field mappings are always empty as they did not exist before.
+                    List.of()));
         } else {
             log.error("[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.", protocolId, LegacyConfigConversion.class.getSimpleName());
             return Optional.empty();

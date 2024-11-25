@@ -101,7 +101,7 @@ public class OpcUaToMqttMapping {
         return serverQueueSize;
     }
 
-    public int getQos() {
+    public int getMqttMaxQos() {
         return qos;
     }
 
