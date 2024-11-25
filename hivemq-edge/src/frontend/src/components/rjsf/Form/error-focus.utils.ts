@@ -26,12 +26,10 @@ const focusOnError = (formElement: HTMLFormElement, error: RJSFValidationError) 
   }
 
   const elementId = path.join(idSeparator)
-  // let field = formElement.elements[elementId]
   let field = formElement.querySelector(`#${elementId}`) as HTMLElement
 
   if (!field) {
     // if not an exact match, try finding an input starting with the element id (like radio buttons or checkboxes)
-    // field = this.formElement.current.querySelector(`input[id^="${elementId}"`)
     field = formElement.querySelector(`input[id^="${elementId}"`) as HTMLElement
   }
   if (field instanceof HTMLDivElement) {
@@ -90,7 +88,6 @@ export const isPropertyBehindTab = (
   uiSchema: UiSchema<unknown, RJSFSchema, ChakraRJSFormContext>
 ) => {
   const { 'ui:tabs': tabs } = uiSchema
-  if (!tabs) return undefined
   if (!Array.isArray(tabs)) return undefined
 
   const root = property.split('.')[1] || property
@@ -102,6 +99,5 @@ export const isPropertyBehindTab = (
     if (properties && properties.includes(root)) inTab = { ...tab, index }
   }
 
-  if (inTab) return inTab
-  return undefined
+  return inTab ? inTab : undefined
 }
