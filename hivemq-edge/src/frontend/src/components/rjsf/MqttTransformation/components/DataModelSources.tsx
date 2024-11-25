@@ -4,25 +4,25 @@ import { JSONSchema7 } from 'json-schema'
 import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 import { RxReload } from 'react-icons/rx'
 
+import { useSamplingForTopic } from '@/api/hooks/useDomainModel/useSamplingForTopic.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { useGetTopicSchema } from '@/api/hooks/_deprecated/useGetTagSchema.ts'
 
 interface DataModelSourcesProps extends CardProps {
-  topic: string | undefined
+  topic: string
 }
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topic, ...props }) => {
   const { t } = useTranslation()
 
-  const { data, isLoading, isError, error, isSuccess } = useGetTopicSchema(topic)
+  const { schema, isLoading, isError, error } = useSamplingForTopic(topic)
 
   const structuredSchema = useMemo(() => {
-    if (!data) return [] as JSONSchema7[]
-    return [{ ...data, title: topic }] as JSONSchema7[]
-  }, [data, topic])
+    if (!schema) return [] as JSONSchema7[]
+    return [{ ...schema, title: topic }] as JSONSchema7[]
+  }, [schema, topic])
 
   return (
     <Card {...props} size="sm">
@@ -41,10 +41,8 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topic, ...props }) => {
       <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isSuccess && !isError && !isLoading && (
-          <ErrorMessage message={t('components:rjsf.MqttTransformationField.sources.prompt')} status="info" />
-        )}
-        {isSuccess &&
+        {!isLoading &&
+          schema &&
           structuredSchema.map((schema) => (
             <JsonSchemaBrowser schema={schema} isDraggable hasExamples key={schema.title} />
           ))}
