@@ -459,8 +459,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
                 return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,
-                        "Adapter not found",
-                        "The adapter named '" + domainTag.getProtocolId() + "' does not exist.");
+                        "Adapter not found", "The adapter named '" + adapterId + "' does not exist.");
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
         }
