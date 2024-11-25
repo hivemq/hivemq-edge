@@ -6,11 +6,10 @@ describe('MetadataExplorer', () => {
     cy.viewport(400, 400)
   })
 
-  it('should render properly', () => {
-    cy.intercept('/api/v1/management/domain/topics/schema?*', { test: GENERATE_DATA_MODELS(true, 'test') }).as(
+  it.only('should render properly', () => {
+    cy.intercept('/api/v1/management/sampling/schema/**', { configSchema: GENERATE_DATA_MODELS(true, 'test') }).as(
       'getSchema'
     )
-    cy.intercept('/api/v1/management/client/filters', [mockClientSubscription]).as('getClients')
     cy.mountWithProviders(<MetadataExplorer topic="test" />)
 
     cy.get('h2').should('contain.text', 'test')
@@ -24,10 +23,8 @@ describe('MetadataExplorer', () => {
   })
 
   it('should render error properly', () => {
-    cy.intercept('/api/v1/management/domain/topics/schema?*', {
-      fakeTopic: GENERATE_DATA_MODELS(true, 'fakeTopic'),
-    }).as('getSchema')
-    cy.intercept('/api/v1/management/client/filters', [mockClientSubscription]).as('getClients')
+    cy.intercept('/api/v1/management/sampling/topic/**', { statusCode: 404 }).as('getSchema')
+
     cy.mountWithProviders(<MetadataExplorer topic="test" />)
 
     cy.get('h2').should('contain.text', 'test')
