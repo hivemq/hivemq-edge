@@ -118,6 +118,12 @@ public class ProtocolAdapterEntity {
         if (protocolId == null || protocolId.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
+        if (fromEdgeMappingEntities != null) {
+            fromEdgeMappingEntities.forEach(from -> from.validate(validationEvents));
+        }
+        if (toEdgeMappingEntities != null) {
+            toEdgeMappingEntities.forEach(to -> to.validate(validationEvents));
+        }
     }
 
     public static @NotNull ProtocolAdapterEntity from(

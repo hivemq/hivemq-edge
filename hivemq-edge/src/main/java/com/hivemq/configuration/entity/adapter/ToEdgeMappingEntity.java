@@ -18,7 +18,10 @@ package com.hivemq.configuration.entity.adapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ToEdgeMapping;
 
+import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.helpers.ValidationEventImpl;
+import java.util.List;
 
 @SuppressWarnings("unused")
 public class ToEdgeMappingEntity {
@@ -57,6 +60,15 @@ public class ToEdgeMappingEntity {
 
     public int getMaxQos() {
         return qos;
+    }
+
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        if (topicFilter == null || topicFilter.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "topicFilter is missing", null));
+        }
+        if (tagName == null || tagName.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
+        }
     }
 
     public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {

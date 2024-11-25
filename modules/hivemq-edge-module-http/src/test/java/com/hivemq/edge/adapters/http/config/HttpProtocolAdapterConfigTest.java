@@ -31,6 +31,7 @@ import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -60,21 +61,11 @@ public class HttpProtocolAdapterConfigTest {
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
     @Test
-    public void convertConfigObject_tagnameNull_exception() throws Exception {
+    public void convertConfigObject_tagNameNull_exception() throws Exception {
         final URL resource = getClass().getResource("/http-config-tagname-null.xml");
         final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-
-        final List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput protocolAdapterFactoryInput = mock(ProtocolAdapterFactoryInput.class);
-        when(protocolAdapterFactoryInput.isWritingEnabled()).thenReturn(false);
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
-
-        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper, adapters.get(0).getConfig(), false))
-                .hasMessageContaining("Missing required creator property 'tagName'");
+        assertThatThrownBy(() -> loadConfig(path))
+                .isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
@@ -82,26 +73,30 @@ public class HttpProtocolAdapterConfigTest {
         final URL resource = getClass().getResource("/http-config-id-null.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-
-        final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
-
-        final ProtocolAdapterFactoryInput protocolAdapterFactoryInput = mock(ProtocolAdapterFactoryInput.class);
-        when(protocolAdapterFactoryInput.isWritingEnabled()).thenReturn(false);
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-                new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
-
-        httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), false);
-        httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags());
-
-        System.out.println("(" + adapter.getAdapterId() + ")");
-
-        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags()))
-                .hasMessageContaining("Missing required creator property 'id'");
+        assertThatThrownBy(() -> loadConfig(path))
+                .isInstanceOf(UnrecoverableException.class);
     }
 //
 //    @Test
 //    public void convertConfigObject_defaults() throws Exception {
+
+
+//    final HiveMQConfigEntity configEntity = loadConfig(path);
+//    final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
+//
+//    final ProtocolAdapterFactoryInput protocolAdapterFactoryInput = mock(ProtocolAdapterFactoryInput.class);
+//    when(protocolAdapterFactoryInput.isWritingEnabled()).thenReturn(false);
+//    final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+//            new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
+//
+//        System.out.println("("+adapter.getFromEdgeMappingEntities().get(0).getTagName()+")");
+//
+//    assertThatThrownBy(() -> httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags()))
+//            .hasMessageContaining("Missing required creator property 'tagName'");
+
+
+
+
 //        final URL resource = getClass().getResource("/http-config-defaults.xml");
 //        final File path = Path.of(resource.toURI()).toFile();
 //

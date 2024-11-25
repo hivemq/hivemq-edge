@@ -21,8 +21,10 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.FromEdgeMapping;
 
+import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -105,6 +107,15 @@ public class FromEdgeMappingEntity {
 
     public int getMaxQoS() {
         return maxQoS;
+    }
+
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        if (topic == null || topic.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "topic is missing", null));
+        }
+        if (tagName == null || tagName.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
+        }
     }
 
     // TODO might be removable

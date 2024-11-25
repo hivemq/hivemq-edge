@@ -27,8 +27,8 @@
             </config>
             <fromEdgeMappings>
                 <fromEdgeMapping>
-                    <mqttTopic>my/destination</mqttTopic>
-                    <mqttQos>1</mqttQos>
+                    <topic>my/destination</topic>
+                    <maxQos>1</maxQos>
                 </fromEdgeMapping>
             </fromEdgeMappings>
         </protocol-adapter>
