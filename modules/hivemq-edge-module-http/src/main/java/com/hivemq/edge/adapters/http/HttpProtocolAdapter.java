@@ -40,7 +40,6 @@ import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.http.config.BidirectionalHttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
-import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
@@ -169,7 +168,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
         tags.stream()
                 .filter(tag -> tag.getName().equals(tagName))
                 .findFirst()
-                .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, (HttpToMqttMapping)httpToMqttMapping),
+                .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, httpToMqttMapping),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI."));
@@ -179,8 +178,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     private void pollHttp(
             final @NotNull HttpClient httpClient,
             final @NotNull PollingOutput pollingOutput,
-            final @NotNull HttpTag httpTag,
-            final @NotNull HttpToMqttMapping httpToMqttMapping) {
+            final @NotNull HttpTag httpTag, final @NotNull PollingContext httpToMqttMapping) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
