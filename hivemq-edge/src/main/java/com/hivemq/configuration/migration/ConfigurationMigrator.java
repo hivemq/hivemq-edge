@@ -33,12 +33,23 @@ import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.HashMap;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,8 +66,21 @@ public class ConfigurationMigrator {
             legacyConfigFileReaderWriter;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    public static final String XSLT_INPUT = "\n" +
+            "<xsl:stylesheet version=\"1.0\"\n" +
+            "                xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+            "    <xsl:template match=\"/\">\n" +
+            "            <xsl:for-each select=\"/hivemq/protocol-adapters/*[not(starts-with(local-name(),'protocol-adapter'))]\">\n" +
+            "                        <xsl:value-of select=\"name()\"/>" +
+            "            </xsl:for-each>\n" +
+            "    </xsl:template>\n" +
+            "</xsl:stylesheet>\n";
+
+
     @Inject
-    public ConfigurationMigrator(final @NotNull SystemInformation systemInformation, final ModuleLoader moduleLoader) {
+    public ConfigurationMigrator(
+            final @NotNull SystemInformation systemInformation,
+            final @NotNull ModuleLoader moduleLoader) {
         this.systemInformation = systemInformation;
         this.moduleLoader = moduleLoader;
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
@@ -69,9 +93,9 @@ public class ConfigurationMigrator {
     public void migrate() {
         try {
             // TODO check whether the migration is needed
-            final boolean needsMigration = true;
 
-            if (!needsMigration) {
+            final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
+            if (!needsMigration(configurationFile)) {
                 return;
             }
 
@@ -138,5 +162,29 @@ public class ConfigurationMigrator {
         }
     }
 
+
+    @VisibleForTesting
+    static boolean needsMigration(final @NotNull ConfigurationFile configurationFile) {
+        try {
+            final File configFile = configurationFile.file().get();
+
+            final Source xmlSource = new StreamSource(configFile);
+            final Source xsltSource =
+                    new StreamSource(new ByteArrayInputStream(XSLT_INPUT.getBytes(StandardCharsets.UTF_8)));
+            final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            final Transformer transformer = transformerFactory.newTransformer(xsltSource);
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            final StringWriter stringWriter = new StringWriter();
+            final StreamResult result = new StreamResult(stringWriter);
+            transformer.transform(xmlSource, result);
+            return !stringWriter.getBuffer().toString().isBlank();
+        } catch (final TransformerException e) {
+            log.error(
+                    "Exception while determining whether a config migration is needed. No automatic config migration will happen.");
+            log.debug("Original Exception:", e);
+            return false;
+        }
+    }
 
 }
