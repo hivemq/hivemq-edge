@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ProtocolAdapterConfigurator {
 
@@ -32,7 +31,7 @@ public class ProtocolAdapterConfigurator {
     }
 
     public void setConfigs(final @NotNull List<ProtocolAdapterEntity> protocolAdapterConfigs) {
-        configurationService.setAllConfigs(protocolAdapterConfigs);
+        configurationService.setAllConfigs(new ArrayList<>(protocolAdapterConfigs));
     }
 
     public void syncConfigs(final @NotNull List<ProtocolAdapterEntity> config) {

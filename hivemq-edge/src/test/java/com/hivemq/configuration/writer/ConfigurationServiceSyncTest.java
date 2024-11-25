@@ -32,10 +32,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
@@ -75,56 +72,23 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        final List<ProtocolAdapterEntity> entities = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-        Assert.assertEquals("Adapter type count should match", 2, entities.size());
-
-        //TODO it fails because of the missing migration
-/*
-        for (final ProtocolAdapterEntity entity : entities) {
-            if(entity.getAdapterId().equals("modbus-adapter")){
-
-            } else {
-
-            }
-        }
-
-
-        Assert.assertEquals("Modbus Adapter type value should match",
-                ArrayList.class,
-                config.get("modbus-adapter").getClass());
-        Assert.assertEquals("OPC-UA Adapter type value should match",
-                HashMap.class,
-                config.get("opc-ua-adapter").getClass());
-        Assert.assertEquals("Modbus instance count should match", 2, ((List) config.get("modbus-adapter")).size());
-        //-- Check the writes have been proxied onto the configuration model
+        final List<ProtocolAdapterEntity> entities =
+                configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        Assert.assertEquals("Adapter type count should match", 3, entities.size());
 
         //-- Remove first adapter
-        ((List<?>) config.get("modbus-adapter")).remove(0);
+        entities.remove(1);
 
         //-- Ensure the original config is NOT YET UPDATED
-        Assert.assertEquals("Modbus instance count should NOT be reflected in configuration",
+        Assert.assertEquals("instance count should NOT be reflected in configuration",
+                3,
+                hiveMQConfigEntity.getProtocolAdapterConfig().size());
+
+        configurationService.protocolAdapterConfigurationService().setAllConfigs(entities);
+
+        Assert.assertEquals("instance count be reflected in configuration",
                 2,
-                ((List) hiveMQConfigEntity.getProtocolAdapterConfig().get("modbus-adapter")).size());
-
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(config);
-
-        Assert.assertEquals("Modbus instance count be reflected in configuration",
-                1,
-                ((List) hiveMQConfigEntity.getProtocolAdapterConfig().get("modbus-adapter")).size());
-
-        //-- Change the value of an adapter
-        ((Map) config.get("opc-ua-adapter")).put("uri", "new-uri-in-here");
-
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(config);
-
-        //-- Check the writes have been written to disk
-        final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
-        final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
-        Assert.assertEquals("OPC-UA URI value should be updated",
-                "new-uri-in-here",
-                ((Map) updatedHiveMQConfigEntity.getProtocolAdapterConfig().get("opc-ua-adapter")).get("uri"));
-                */
-
+                hiveMQConfigEntity.getProtocolAdapterConfig().size());
     }
 
     @Test
