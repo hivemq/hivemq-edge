@@ -109,17 +109,17 @@ export const validationTag = validationTopic
 export const customLocalizer = (errors?: null | ErrorObject[]) => {
   if (!errors) return
 
-  for (const aa of errors) {
-    if (aa.keyword !== 'format') continue
-    if (aa.schema === 'mqtt-topic') {
-      aa.message = validationTopic(aa.data as string)
+  for (const error of errors) {
+    if (error.keyword !== 'format') continue
+    if (error.schema === 'mqtt-topic') {
+      error.message = validationTopic(error.data as string)
       continue
     }
-    if (aa.schema === 'mqtt-topic-filter') {
-      aa.message = validationTopicFilter(aa.data as string)
+    if (error.schema === 'mqtt-topic-filter') {
+      error.message = validationTopicFilter(error.data as string)
     }
-    if (aa.schema === 'mqtt-tag') {
-      aa.message = validationTag(aa.data as string)
+    if (error.schema === 'mqtt-tag') {
+      error.message = validationTag(error.data as string)
     }
   }
 }
