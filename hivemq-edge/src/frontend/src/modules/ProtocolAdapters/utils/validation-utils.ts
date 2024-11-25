@@ -3,7 +3,6 @@ import { Adapter } from '@/api/__generated__'
 import { TFunction } from 'i18next'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
-import { customizeValidator } from '@rjsf/validator-ajv8'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 import i18n from '@/config/i18n.config.ts'
@@ -71,11 +70,3 @@ export const customMappingValidate = (formData: Record<string, OutwardMapping[]>
     return errors
   }, errors)
 }
-
-export const customFormatsValidator = customizeValidator({
-  customFormats: {
-    // TODO[26559] This is a hack to remove the error; fix at source
-    ['boolean']: () => true,
-    'mqtt-topic': /^[^+#$]*$/,
-  },
-})

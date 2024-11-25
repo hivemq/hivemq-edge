@@ -39,7 +39,7 @@ export const createSchema = (items: RJSFSchema) => {
   if (!Object.keys(sourceProperties).length) throw new Error(i18n.t('device.errors.noFormSchema'))
 
   return {
-    // $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
     definitions: {
       DeviceDataPoint: {
         type: 'object',
@@ -48,18 +48,10 @@ export const createSchema = (items: RJSFSchema) => {
         properties: sourceProperties,
       },
       DomainTag: {
-        description: `A tag associated with a data point on a device connected to the adapter`,
-        required: ['tag'],
-        properties: {
-          tag: {
-            type: 'string',
-            title: 'Tag Name',
-            description: `The Tag associated with the data-point.`,
-          },
-          dataPoint: {
-            $ref: '#/definitions/DeviceDataPoint',
-          },
-        },
+        type: 'string',
+        title: 'Tag Name',
+        description: `The Tag associated with the data-point.`,
+        format: 'mqtt-tag',
       },
     },
     properties: {
@@ -68,7 +60,16 @@ export const createSchema = (items: RJSFSchema) => {
         title: 'List of tags',
         description: 'The list of all tags defined in the device',
         items: {
-          $ref: '#/definitions/DomainTag',
+          description: `A tag associated with a data point on a device connected to the adapter`,
+          required: ['tag'],
+          properties: {
+            tag: {
+              $ref: '#/definitions/DomainTag',
+            },
+            dataPoint: {
+              $ref: '#/definitions/DeviceDataPoint',
+            },
+          },
         },
       },
     },

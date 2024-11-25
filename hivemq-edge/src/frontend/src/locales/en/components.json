@@ -90,6 +90,18 @@
     }
   },
   "rjsf": {
+    "customFormats": {
+      "validation": {
+        "noEmptyString": "No empty string",
+        "noNullChar": "No null character",
+        "noWildCards": "Wildcards + and # are not allowed",
+        "noWildCardsSharedName": "Wildcards + and # are not allowed in a shared name",
+        "noEmptySharedName": "Shared name cannot be empty",
+        "noMultiLevelString": "Wildcard # must not be followed or preceded by any character",
+        "noSingleLevelString": "Wildcard + must not be followed or preceded by any character",
+        "noSingleLevelFinal": "Wildcard + must be followed by the end-of-segment `/`"
+      }
+    },
     "actions": {
       "submit": {
         "label": "Submit"
