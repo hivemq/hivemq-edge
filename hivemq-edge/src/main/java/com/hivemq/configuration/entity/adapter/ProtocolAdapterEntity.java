@@ -111,7 +111,7 @@ public class ProtocolAdapterEntity {
         return fieldMappings;
     }
 
-    public void validate(List<ValidationEvent> validationEvents) {
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         if (adapterId == null || adapterId.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "adapterId is missing", null));
         }
