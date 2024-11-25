@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +49,10 @@ public class ProtocolAdapterConfigConverter {
     public @NotNull ProtocolAdapterConfig fromEntity(
             final @NotNull ProtocolAdapterEntity protocolAdapterEntity) {
         final Map<String, Object> adapterConfigMap = protocolAdapterEntity.getConfig();
-        final List<Map<String, Object>> tagMaps = protocolAdapterEntity.getTags();
+        final List<TagEntity> tagEntities = protocolAdapterEntity.getTags();
+        final List<Map<String, Object>> tagMaps =
+                tagEntities.stream().map(TagEntity::toMap).collect(Collectors.toList());
+
         // we can assume that writing is enabled as the config for writing should always include the config for reading as well.
         final ProtocolAdapterFactory<?> protocolAdapterFactory =
                 getProtocolAdapterFactory(protocolAdapterEntity.getProtocolId());
@@ -71,8 +75,7 @@ public class ProtocolAdapterConfigConverter {
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
                 protocolSpecificAdapterConfig,
-                toEdgeMappingList,
-                fromEdgeMappingList, tags, fieldMappings);
+                toEdgeMappingList, fromEdgeMappingList, tags, fieldMappings);
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(

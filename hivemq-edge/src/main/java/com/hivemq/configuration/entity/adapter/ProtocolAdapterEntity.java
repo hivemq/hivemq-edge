@@ -46,8 +46,8 @@ public class ProtocolAdapterEntity {
     private @NotNull Map<String, Object> config = new HashMap<>();
 
     @XmlElementWrapper(name = "tags")
-    @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
-    private @NotNull List<Map<String, Object>> tags = new ArrayList<>();
+    @XmlElement(name = "tag")
+    private @NotNull List<TagEntity> tags = new ArrayList<>();
 
     @XmlElementWrapper(name = "toEdgeMappings")
     @XmlElement(name = "toEdgeMapping")
@@ -71,8 +71,7 @@ public class ProtocolAdapterEntity {
             @NotNull final String protocolId,
             @NotNull final Map<String, Object> config,
             @NotNull final List<FromEdgeMappingEntity> fromEdgeMappingEntities,
-            @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities,
-            @NotNull final List<Map<String, Object>> tags,
+            @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities, @NotNull final List<TagEntity> tags,
             @NotNull final List<FieldMappingsEntity> fieldMappings) {
         this.adapterId = adapterId;
         this.config = config;
@@ -91,7 +90,7 @@ public class ProtocolAdapterEntity {
         return fromEdgeMappingEntities;
     }
 
-    public @NotNull List<Map<String, Object>> getTags() {
+    public @NotNull List<TagEntity> getTags() {
         return tags;
     }
 
@@ -139,17 +138,14 @@ public class ProtocolAdapterEntity {
                 .map(ToEdgeMappingEntity::from)
                 .collect(Collectors.toList());
 
-        final List<Map<String, Object>> tagsAsMaps = protocolAdapterConfig.getTags()
-                .stream()
-                .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
-                }))
+        final List<TagEntity> tagEntities = protocolAdapterConfig.getTags()
+                .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                 .collect(Collectors.toList());
 
         final List<FieldMappingsEntity> fieldMappingsEntities = protocolAdapterConfig.getFieldMappings()
                 .stream()
                 .map(FieldMappingsEntity::from)
                 .collect(Collectors.toList());
-
 
         final Map<String, Object> configAsMaps =
                 objectMapper.convertValue(protocolAdapterConfig.getAdapterConfig(), new TypeReference<>() {
@@ -158,8 +154,7 @@ public class ProtocolAdapterEntity {
         return new ProtocolAdapterEntity(protocolAdapterConfig.getAdapterId(),
                 protocolAdapterConfig.getProtocolId(),
                 configAsMaps,
-                fromEdgeMappingEntities,
-                toEdgeMappingEntities, tagsAsMaps, fieldMappingsEntities);
+                fromEdgeMappingEntities, toEdgeMappingEntities, tagEntities, fieldMappingsEntities);
     }
 
 

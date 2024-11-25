@@ -25,7 +25,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.BidirectionalProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -571,9 +571,9 @@ public class ProtocolAdapterManager {
             }
 
             final List<ToEdgeMapping> toEdgeMappings;
-            if (protocolSpecificAdapterConfig instanceof BidirectionalProtocolSpecificAdapterConfig) {
-                final BidirectionalProtocolSpecificAdapterConfig adapterConfigWithPollingContexts =
-                        (BidirectionalProtocolSpecificAdapterConfig) protocolSpecificAdapterConfig;
+            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithWritingContexts) {
+                final AdapterConfigWithWritingContexts adapterConfigWithPollingContexts =
+                        (AdapterConfigWithWritingContexts) protocolSpecificAdapterConfig;
                 toEdgeMappings = adapterConfigWithPollingContexts.getWritingContexts()
                         .stream()
                         .map(ToEdgeMapping::from)

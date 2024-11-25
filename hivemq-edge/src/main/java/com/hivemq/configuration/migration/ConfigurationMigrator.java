@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -93,6 +94,7 @@ public class ConfigurationMigrator {
         try {
             final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
             if (!needsMigration(configurationFile)) {
+                log.info("No configuration migration needed.");
                 return;
             }
 
@@ -114,8 +116,6 @@ public class ConfigurationMigrator {
         } catch (final Exception e) {
             log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
             log.debug("Original Exception:", e);
-            //TODO
-            e.printStackTrace();
         }
     }
 
@@ -142,22 +142,22 @@ public class ConfigurationMigrator {
                     .map(FromEdgeMappingEntity::from)
                     .collect(Collectors.toList());
 
-            final List<Map<String, Object>> tagsAsMaps = configTagsTuple.getTags()
-                    .stream()
-                    .map(tag -> objectMapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
-                    }))
+            final List<TagEntity> tagEntities = configTagsTuple.getTags()
+                    .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                     .collect(Collectors.toList());
 
             return Optional.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
                     protocolId,
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
-                    fromEdgeMappingEntities,
-                    List.of(), tagsAsMaps,
+                    fromEdgeMappingEntities, List.of(), tagEntities,
                     // field mappings are always empty as they did not exist before.
                     List.of()));
         } else {
-            log.error("[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.", protocolId, LegacyConfigConversion.class.getSimpleName());
+            log.error(
+                    "[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.",
+                    protocolId,
+                    LegacyConfigConversion.class.getSimpleName());
             return Optional.empty();
         }
     }
