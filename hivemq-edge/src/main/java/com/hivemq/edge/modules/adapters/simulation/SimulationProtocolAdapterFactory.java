@@ -108,7 +108,6 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
                 legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
         return new SimulationSpecificAdapterConfig(simulationToMqttConfig,
-                legacySimulationAdapterConfig.getId(),
                 legacySimulationAdapterConfig.getMinValue(),
                 legacySimulationAdapterConfig.getMaxValue(),
                 legacySimulationAdapterConfig.getMinDelay(),

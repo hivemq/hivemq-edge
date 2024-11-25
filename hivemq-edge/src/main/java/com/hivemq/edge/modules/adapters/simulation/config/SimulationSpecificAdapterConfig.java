@@ -27,30 +27,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
-public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
-        AdapterConfigWithPollingContexts {
+public class SimulationSpecificAdapterConfig
+        implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-
-    @JsonProperty(value = "simulationToMqtt", required = true)
+    @JsonProperty(value = "simulationToMqtt")
     @ModuleConfigField(title = "simulationToMqtt",
                        description = "Define Simulations to create MQTT messages.",
                        required = true)
     private final @NotNull SimulationToMqttConfig simulationToMqttConfig;
-
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
 
     @JsonProperty("minValue")
     @ModuleConfigField(title = "Min. Generated Value",
@@ -82,15 +69,12 @@ public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterC
 
     @JsonCreator
     public SimulationSpecificAdapterConfig(
-            @JsonProperty(value = "simulationToMqtt",
-                          required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "simulationToMqtt", required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty("minValue") final @Nullable Integer minValue,
             @JsonProperty("maxValue") final @Nullable Integer maxValue,
             @JsonProperty("minDelay") final @Nullable Integer minDelay,
             @JsonProperty("maxDelay") final @Nullable Integer maxDelay) {
         this.simulationToMqttConfig = simulationToMqttConfig;
-        this.id = id;
         this.minValue = Objects.requireNonNullElse(minValue, 0);
         this.maxValue = Objects.requireNonNullElse(maxValue, 1000);
         this.minDelay = Objects.requireNonNullElse(minDelay, 0);
@@ -99,10 +83,6 @@ public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterC
 
     public @NotNull SimulationToMqttConfig getSimulationToMqttConfig() {
         return simulationToMqttConfig;
-    }
-
-    public @NotNull String getId() {
-        return id;
     }
 
     public int getMinValue() {

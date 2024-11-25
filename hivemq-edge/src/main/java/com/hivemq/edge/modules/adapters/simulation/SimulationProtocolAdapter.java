@@ -42,11 +42,13 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull TimeWaiter timeWaiter;
     private static final @NotNull Random RANDOM = new Random();
+    private final @NotNull String adapterId;
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> protocolAdapterInput,
             final @NotNull TimeWaiter timeWaiter) {
+        this.adapterId = protocolAdapterInput.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
@@ -56,7 +58,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
