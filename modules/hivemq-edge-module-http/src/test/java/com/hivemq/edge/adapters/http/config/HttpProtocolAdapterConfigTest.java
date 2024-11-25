@@ -76,9 +76,9 @@ public class HttpProtocolAdapterConfigTest {
         assertThatThrownBy(() -> loadConfig(path))
                 .isInstanceOf(UnrecoverableException.class);
     }
-//
-//    @Test
-//    public void convertConfigObject_defaults() throws Exception {
+
+    @Test
+    public void convertConfigObject_defaults() throws Exception {
 
 
 //    final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -97,45 +97,42 @@ public class HttpProtocolAdapterConfigTest {
 
 
 
-//        final URL resource = getClass().getResource("/http-config-defaults.xml");
-//        final File path = Path.of(resource.toURI()).toFile();
-//
-//        final HiveMQConfigEntity configEntity = loadConfig(path);
-//        final List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//
-//        final ProtocolAdapterConfig protocolAdapterConfig =
-//                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
-//                        true,
-//                        mapper,
-//                        httpProtocolAdapterFactory);
-//        assertThat(protocolAdapterConfig.missingTags())
-//                .isEmpty();
-//
-//        BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-//
-//        assertThat(config.getId()).isEqualTo("my-protocol-adapter");
-//        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
-//        assertThat(config.isAllowUntrustedCertificates()).isFalse();
-//
-//        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
-//        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
-//        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-//
-//        final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
-//        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
-//        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
-//        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
-//        assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
-//        assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
-//        assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
-//        assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
-//        assertThat(httpToMqttMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
-//
+        final URL resource = getClass().getResource("/http-config-defaults.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
+        final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
+
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(mockInput);
+
+        final HttpSpecificAdapterConfig config =
+                (HttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), false);
+
+        System.out.println(httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags()).get(0));
+
+        assertThat(adapter.getAdapterId()).isEqualTo("my-protocol-adapter");
+        assertThat(adapter.getProtocolId()).isEqualTo("http");
+        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
+        assertThat(config.isAllowUntrustedCertificates()).isFalse();
+
+        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
+        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
+        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
+
+        final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
+        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
+        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
+        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
+        assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
+        assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
+        assertThat(httpToMqttMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
+
 //        final MqttToHttpMapping mqttToHttpMapping = config.getMqttToHttpConfig().getMappings().get(0);
 //        assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag1");
 //        assertThat(mqttToHttpMapping.getMqttTopicFilter()).isEqualTo("my/#");
@@ -143,7 +140,7 @@ public class HttpProtocolAdapterConfigTest {
 //        assertThat(mqttToHttpMapping.getHttpRequestMethod()).isEqualTo(POST);
 //        assertThat(mqttToHttpMapping.getHttpHeaders()).isEmpty();
 //        assertThat(mqttToHttpMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
-//    }
+    }
 //
 //    @Test
 //    public void convertConfigObject_missingTag() throws Exception {
