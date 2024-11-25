@@ -111,6 +111,11 @@
         "expanded_false": "Expand Item"
       }
     },
+    "ErrorListTemplate": {
+      "focusOnError": {
+        "aria-label": "Jump to error"
+      }
+    },
     "batchUpload": {
       "button": "Upload",
       "modal": {

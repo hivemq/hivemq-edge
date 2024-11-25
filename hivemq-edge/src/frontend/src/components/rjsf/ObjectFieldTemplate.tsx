@@ -8,7 +8,8 @@ import {
   titleId,
 } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
-import { UITab } from '@/modules/ProtocolAdapters/types.ts'
+import { UITab } from '@/components/rjsf/Form/types.ts'
+import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 export const ObjectFieldTemplate = <
   T = never,
@@ -20,6 +21,7 @@ export const ObjectFieldTemplate = <
   const { registry, properties, title, description, uiSchema, required, schema, idSchema } = props
   const options = getUiOptions<T, S, F>(uiSchema)
   const TitleFieldTemplate = getTemplate<'TitleFieldTemplate', T, S, F>('TitleFieldTemplate', registry, options)
+  const { tabIndex, setTabIndex } = useFormControlStore()
 
   // @ts-ignore Type will need to be corrected
   const { tabs }: { tabs: UITab[] } = options
@@ -51,7 +53,7 @@ export const ObjectFieldTemplate = <
 
   return (
     <>
-      <Tabs>
+      <Tabs index={tabIndex} onChange={setTabIndex}>
         <TabList>
           {tabs.map((e) => {
             const filteredProps = properties.filter((property) => e.properties.includes(property.name))

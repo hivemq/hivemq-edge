@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import debug from 'debug'
 import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
@@ -13,11 +13,13 @@ import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/Descriptio
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
 import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
+import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
+import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -40,6 +42,8 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   readonly,
 }) => {
   const { t } = useTranslation()
+  const { setTabIndex } = useFormControlStore()
+  const ref = useRef(null)
   const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
   const defaultValues = useMemo(() => {
     if (batchData) {
@@ -53,6 +57,15 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       onSubmit?.(data)
     },
     [onSubmit]
+  )
+
+  useEffect(
+    () => {
+      setTabIndex(0)
+      return () => setTabIndex(0)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   )
 
   const context: ChakraRJSFormContext = {
@@ -70,6 +83,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
 
       setBatchData(operations)
     },
+    focusOnError: customFocusError(ref),
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
@@ -79,6 +93,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
 
   return (
     <Form
+      ref={ref}
       id={id}
       readonly={readonly}
       schema={unspecifiedSchema}
@@ -95,17 +110,17 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
         ErrorListTemplate,
         TitleFieldTemplate,
       }}
+      widgets={adapterJSFWidgets}
+      fields={adapterJSFFields}
+      onSubmit={onValidate}
       liveValidate
       // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation
       noHtml5Validate
-      focusOnFirstError
-      onSubmit={onValidate}
       validator={customFormatsValidator}
       customValidate={customValidate}
-      widgets={adapterJSFWidgets}
-      fields={adapterJSFFields}
       onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
       showErrorList="bottom"
+      focusOnFirstError={context.focusOnError}
     />
   )
 }
