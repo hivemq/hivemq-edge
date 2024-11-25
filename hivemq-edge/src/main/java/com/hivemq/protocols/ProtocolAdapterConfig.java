@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -57,7 +58,10 @@ public class ProtocolAdapterConfig {
     }
 
     public @NotNull Optional<Set<String>> missingTags() {
-        final Set<String> names = this.tags.stream().map(Tag::getName).collect(Collectors.toSet());
+        final Set<String> names = new HashSet<>();
+        toEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
+        fromEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
+
         this.tags.forEach(tag -> names.remove(tag.getName()));
         if (names.isEmpty()) {
             return Optional.empty();

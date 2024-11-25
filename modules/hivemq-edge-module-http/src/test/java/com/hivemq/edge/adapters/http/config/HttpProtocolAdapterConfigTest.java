@@ -35,6 +35,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.protocols.FromEdgeMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -42,10 +43,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpContentType.JSON;
@@ -83,29 +86,10 @@ public class HttpProtocolAdapterConfigTest {
 
     @Test
     public void convertConfigObject_defaults() throws Exception {
-
-
-//    final HiveMQConfigEntity configEntity = loadConfig(path);
-//    final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
-//
-//    final ProtocolAdapterFactoryInput protocolAdapterFactoryInput = mock(ProtocolAdapterFactoryInput.class);
-//    when(protocolAdapterFactoryInput.isWritingEnabled()).thenReturn(false);
-//    final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//            new HttpProtocolAdapterFactory(protocolAdapterFactoryInput);
-//
-//        System.out.println("("+adapter.getFromEdgeMappingEntities().get(0).getTagName()+")");
-//
-//    assertThatThrownBy(() -> httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags()))
-//            .hasMessageContaining("Missing required creator property 'tagName'");
-
-
-
-
         final URL resource = getClass().getResource("/http-config-defaults.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
         final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
@@ -134,7 +118,6 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
 
-
         final HttpTag tag = (HttpTag)tags.get(0);
         assertThat(tag.getName()).isEqualTo("tag1");
         assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
@@ -156,174 +139,153 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(mqttToHttpMapping.getTopicFilter()).isEqualTo("my/#");
         assertThat(mqttToHttpMapping.getMaxQos()).isEqualTo(1);
     }
-//
-//    @Test
-//    public void convertConfigObject_missingTag() throws Exception {
-//        final URL resource = getClass().getResource("/http-config-defaults-missing-tag.xml");
-//        final File path = Path.of(resource.toURI()).toFile();
-//
-//        final HiveMQConfigEntity configEntity = loadConfig(path);
-//        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//
-//        final ProtocolAdapterConfig protocolAdapterConfig =
-//                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
-//                        true,
-//                        mapper,
-//                        httpProtocolAdapterFactory);
-//
-//        assertThat(protocolAdapterConfig.missingTags())
-//                .isPresent()
-//                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
-//    }
-//
-//    @Test
-//    public void convertConfigObject_emptyHeaders() throws Exception {
-//        final URL resource = getClass().getResource("/http-config-empty-header.xml");
-//        final File path = Path.of(resource.toURI()).toFile();
-//
-//        final HiveMQConfigEntity configEntity = loadConfig(path);
-//        final List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//        final ProtocolAdapterConfig protocolAdapterConfig =
-//                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
-//                        true,
-//                        mapper,
-//                        httpProtocolAdapterFactory);
-//        assertThat(protocolAdapterConfig.missingTags())
-//                .isEmpty();
-//
-//        BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-//
-//        assertThat(config.getId()).isEqualTo("my-protocol-adapter");
-//        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
-//
-//        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
-//        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
-//        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
-//
-//        final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
-//        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
-//        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
-//        assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(POST);
-//        assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
-//        assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
-//        assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
-//        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
-//    }
-//
-//    @Test
-//    public void convertConfigObject_full() throws Exception {
-//        final URL resource = getClass().getResource("/http-config-with-headers.xml");
-//        final File path = Path.of(resource.toURI()).toFile();
-//
-//        final HiveMQConfigEntity configEntity = loadConfig(path);
-//        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-//
-//        assertThat(adapters.get("http")).isNotNull();
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//
-//        final ProtocolAdapterConfig protocolAdapterConfig =
-//                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("http"),
-//                        true,
-//                        mapper,
-//                        httpProtocolAdapterFactory);
-//        assertThat(protocolAdapterConfig.missingTags())
-//                .isEmpty();
-//
-//        BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-//
-//        assertThat(config.getId()).isEqualTo("my-protocol-adapter");
-//        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
-//        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
-//        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
-//        assertThat(config.isAllowUntrustedCertificates()).isTrue();
-//
-//        assertThat(config.getHttpToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-//            assertThat(mapping.getTagName()).isEqualTo("tag1");
-//            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
-//            assertThat(mapping.getMqttQos()).isEqualTo(0);
-//            assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-//            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(50);
-//            assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
-//            assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
-//            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
-//                assertThat(header1.getName()).isEqualTo("foo 1");
-//                assertThat(header1.getValue()).isEqualTo("bar 1");
-//            }, header2 -> {
-//                assertThat(header2.getName()).isEqualTo("foo 2");
-//                assertThat(header2.getValue()).isEqualTo("bar 2");
-//            });
-//            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("name");
-//                assertThat(userProperty.getValue()).isEqualTo("value1");
-//            }, userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("name");
-//                assertThat(userProperty.getValue()).isEqualTo("value2");
-//            });
-//        }, mapping -> {
-//            assertThat(mapping.getTagName()).isEqualTo("tag2");
-//            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
-//            assertThat(mapping.getMqttQos()).isEqualTo(0);
-//            assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-//            assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
-//            assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body2");
-//            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
-//                assertThat(header1.getName()).isEqualTo("foo 1");
-//                assertThat(header1.getValue()).isEqualTo("bar 1");
-//            }, header2 -> {
-//                assertThat(header2.getName()).isEqualTo("foo 2");
-//                assertThat(header2.getValue()).isEqualTo("bar 2");
-//            });
-//            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("name");
-//                assertThat(userProperty.getValue()).isEqualTo("value1");
-//            }, userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("name");
-//                assertThat(userProperty.getValue()).isEqualTo("value2");
-//            });
-//        });
-//
-//        assertThat(config.getMqttToHttpConfig().getMappings()).satisfiesExactly(mapping -> {
-//            assertThat(mapping.getTagName()).isEqualTo("tag3");
-//            assertThat(mapping.getMqttTopicFilter()).isEqualTo("my/#");
-//            assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
-//            assertThat(mapping.getHttpRequestMethod()).isEqualTo(POST);
-//            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(59);
-//            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
-//                assertThat(header1.getName()).isEqualTo("foo 1");
-//                assertThat(header1.getValue()).isEqualTo("bar 1");
-//            }, header2 -> {
-//                assertThat(header2.getName()).isEqualTo("foo 2");
-//                assertThat(header2.getValue()).isEqualTo("bar 2");
-//            });
-//        }, mapping -> {
-//            assertThat(mapping.getTagName()).isEqualTo("tag4");
-//            assertThat(mapping.getMqttTopicFilter()).isEqualTo("my/#");
-//            assertThat(mapping.getMqttMaxQos()).isEqualTo(1);
-//            assertThat(mapping.getHttpRequestMethod()).isEqualTo(PUT);
-//            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(58);
-//            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
-//                assertThat(header1.getName()).isEqualTo("foo 1");
-//                assertThat(header1.getValue()).isEqualTo("bar 1");
-//            }, header2 -> {
-//                assertThat(header2.getName()).isEqualTo("foo 2");
-//                assertThat(header2.getValue()).isEqualTo("bar 2");
-//            });
-//        });
-//    }
+
+    @Test
+    public void convertConfigObject_missingTag() throws Exception {
+        final URL resource = getClass().getResource("/http-config-defaults-missing-tag.xml");
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
+
+        assertThat(protocolAdapterConfig.missingTags())
+                .isPresent()
+                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+    }
+
+    @Test
+    public void convertConfigObject_emptyHeaders() throws Exception {
+        final URL resource = getClass().getResource("/http-config-empty-header.xml");
+
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
+        assertThat(protocolAdapterConfig.missingTags())
+                .isEmpty();
+
+        final BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+
+        assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-protocol-adapter");
+        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
+
+        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
+        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
+        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
+
+        final FromEdgeMapping httpToMqttMapping = protocolAdapterConfig.getFromEdgeMappings().get(0);
+        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
+        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
+
+        final HttpTag tag = (HttpTag) protocolAdapterConfig.getTags().get(0);
+        assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(POST);
+        assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(YAML);
+        assertThat(tag.getDefinition().getHttpRequestBody()).isNull();
+        assertThat(tag.getDefinition().getHttpHeaders()).isEmpty();
+        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
+    }
+
+    @Test
+    public void convertConfigObject_full() throws Exception {
+        final URL resource = getClass().getResource("/http-config-with-headers.xml");
+
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
+        assertThat(protocolAdapterConfig.missingTags())
+                .isEmpty();
+
+        final BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+        assertThat(protocolAdapterConfig.missingTags())
+                .isEmpty();
+
+        assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-protocol-adapter");
+        assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
+        assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
+        assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
+        assertThat(config.isAllowUntrustedCertificates()).isTrue();
+
+        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getTagName()).isEqualTo("tag1");
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
+        }, mapping -> {
+            assertThat(mapping.getTagName()).isEqualTo("tag2");
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
+        });
+
+        assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getTagName()).isEqualTo("tag3");
+            assertThat(mapping.getTopicFilter()).isEqualTo("my/#");
+            assertThat(mapping.getMaxQoS()).isEqualTo(0);
+        }, mapping -> {
+            assertThat(mapping.getTagName()).isEqualTo("tag4");
+            assertThat(mapping.getTopicFilter()).isEqualTo("my/#");
+            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+        });
+
+        assertThat(protocolAdapterConfig.getTags().stream().map(tag -> (HttpTag)tag).collect(Collectors.toList()))
+                .satisfiesExactly(
+                        tag -> {
+                            assertThat(tag.getName()).isEqualTo("tag1");
+                            assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
+                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(50);
+                            assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(YAML);
+                            assertThat(tag.getDefinition().getHttpRequestBody()).isEqualTo("my-body");
+                            assertThat(tag.getDefinition().getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                                assertThat(header1.getName()).isEqualTo("foo 1");
+                                assertThat(header1.getValue()).isEqualTo("bar 1");
+                            }, header2 -> {
+                                assertThat(header2.getName()).isEqualTo("foo 2");
+                                assertThat(header2.getValue()).isEqualTo("bar 2");
+                            });
+                        },
+                        tag -> {
+                            assertThat(tag.getName()).isEqualTo("tag2");
+                            assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
+                            assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(YAML);
+                            assertThat(tag.getDefinition().getHttpRequestBody()).isEqualTo("my-body2");
+                            assertThat(tag.getDefinition().getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                                assertThat(header1.getName()).isEqualTo("foo 1");
+                                assertThat(header1.getValue()).isEqualTo("bar 1");
+                            }, header2 -> {
+                                assertThat(header2.getName()).isEqualTo("foo 2");
+                                assertThat(header2.getValue()).isEqualTo("bar 2");
+                            });
+                        },
+                        tag -> {
+                            assertThat(tag.getName()).isEqualTo("tag3");
+                            assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(POST);
+                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(59);
+                            assertThat(tag.getDefinition().getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                                assertThat(header1.getName()).isEqualTo("foo 1");
+                                assertThat(header1.getValue()).isEqualTo("bar 1");
+                            }, header2 -> {
+                                assertThat(header2.getName()).isEqualTo("foo 2");
+                                assertThat(header2.getValue()).isEqualTo("bar 2");
+                            });
+                        },
+                        tag -> {
+                            assertThat(tag.getName()).isEqualTo("tag4");
+                            assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(PUT);
+                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(58);
+                            assertThat(tag.getDefinition().getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                                assertThat(header1.getName()).isEqualTo("foo 1");
+                                assertThat(header1.getValue()).isEqualTo("bar 1");
+                            }, header2 -> {
+                                assertThat(header2.getName()).isEqualTo("foo 2");
+                                assertThat(header2.getValue()).isEqualTo("bar 2");
+                            });
+
+                        });
+    }
 //
 //    @Test
 //    public void unconvertConfigObject_full() throws Exception {
@@ -530,6 +492,24 @@ public class HttpProtocolAdapterConfigTest {
 //        assertThat(mqttToHttpMapping.get("httpRequestTimeoutSeconds")).isEqualTo(5);
 //        assertThat((List<Map<String, String>>) mqttToHttpMapping.get("httpHeaders")).isEmpty();
 //    }
+
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(URL resource) throws URISyntaxException {
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
+
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
+
+        HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(mockInput);
+        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        when(manager.get("http")).thenReturn(Optional.of(httpProtocolAdapterFactory));
+        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
+
+        final ProtocolAdapterConfig protocolAdapterConfig = converter.fromEntity(adapterEntity);
+        return protocolAdapterConfig;
+    }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
         final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
