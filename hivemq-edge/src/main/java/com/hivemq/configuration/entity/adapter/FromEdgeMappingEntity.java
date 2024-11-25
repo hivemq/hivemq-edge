@@ -32,10 +32,10 @@ public class FromEdgeMappingEntity {
     @XmlElement(name = "topic", required = true)
     private final @NotNull String topic;
 
-    @XmlElement(name = "tag-name", required = true)
+    @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "max-qos", required = true)
+    @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
 
     @XmlElement(name = "messageHandlingOptions", required = true)

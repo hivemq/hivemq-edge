@@ -21,9 +21,11 @@ import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 
+import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +35,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class ProtocolAdapterEntity {
 
-    @XmlElement(name = "adapterId")
+    @XmlElement(name = "adapterId", required = true)
     private @NotNull String adapterId;
 
-    @XmlElement(name = "protocolId")
+    @XmlElement(name = "protocolId", required = true)
     private @NotNull String protocolId;
 
     @XmlElement(name = "config")
@@ -107,6 +109,15 @@ public class ProtocolAdapterEntity {
 
     public @NotNull List<FieldMappingsEntity> getFieldMappings() {
         return fieldMappings;
+    }
+
+    public void validate(List<ValidationEvent> validationEvents) {
+        if (adapterId == null || adapterId.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "adapterId is missing", null));
+        }
+        if (protocolId == null || protocolId.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
+        }
     }
 
     public static @NotNull ProtocolAdapterEntity from(

@@ -96,6 +96,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
+    private final @Nullable ObjectMapper objectMapper;
 
     private volatile @Nullable HttpClient httpClient = null;
 
@@ -110,6 +111,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -153,6 +155,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     public void poll(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
 
+        final HttpClient httpClient = this.httpClient;
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
@@ -163,9 +166,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
         // first resolve the tag
         final String tagName = pollingInput.getPollingContext().getTagName();
         tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(tagName))
                 .findFirst()
-                .ifPresentOrElse(def -> pollHttp(pollingOutput, (HttpTag) def, httpToMqttMapping),
+                .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, (HttpToMqttMapping)httpToMqttMapping),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                                 pollingInput.getPollingContext().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI."));
@@ -173,13 +176,15 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     }
 
     private void pollHttp(
-            @NotNull final PollingOutput pollingOutput, final HttpTag httpTag, final PollingContext httpToMqttMapping) {
+            final @NotNull HttpClient httpClient,
+            final @NotNull PollingOutput pollingOutput,
+            final @NotNull HttpTag httpTag,
+            final @NotNull HttpToMqttMapping httpToMqttMapping) {
 
-        //TODO
-        /*
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
         builder.uri(URI.create(url));
+
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
@@ -190,11 +195,19 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
                 builder.GET();
                 break;
             case POST:
-                builder.POST(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                if (httpToMqttMapping.getHttpRequestBody() != null) {
+                    builder.POST(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                } else {
+                    builder.POST(HttpRequest.BodyPublishers.ofString(""));
+                }
                 builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
                 break;
             case PUT:
-                builder.PUT(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                if (httpToMqttMapping.getHttpRequestBody() != null) {
+                    builder.PUT(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                } else {
+                    builder.PUT(HttpRequest.BodyPublishers.ofString(""));
+                }
                 builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
@@ -231,11 +244,11 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
                                 log.debug("Invalid JSON data was [{}]", bodyData);
                             }
                             moduleServices.eventService()
-                                    .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
+                                    .createAdapterEvent(adapterId, adapterInformation.getProtocolId())
                                     .withSeverity(Event.SEVERITY.WARN)
                                     .withMessage(String.format(
                                             "Http response on adapter '%s' could not be parsed as JSON data.",
-                                            adapterConfig.getId()))
+                                            adapterId))
                                     .fire();
                             throw new RuntimeException("unable to parse JSON data from HTTP response");
                         }
@@ -280,8 +293,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
             }
             pollingOutput.finish();
         });
-
-         */
     }
 
     @Override

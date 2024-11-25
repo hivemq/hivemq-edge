@@ -179,7 +179,6 @@ class SimulationProtocolAdapterConfigTest {
 
         final SimulationSpecificAdapterConfig simulationAdapterConfig =
                 new SimulationSpecificAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
-                        "my-simulation-adapter",
                         12,
                         13,
                         14,
@@ -219,7 +218,6 @@ class SimulationProtocolAdapterConfigTest {
 
         final SimulationSpecificAdapterConfig simulationAdapterConfig =
                 new SimulationSpecificAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), null, null),
-                        "my-simulation-adapter",
                         null,
                         null,
                         null,

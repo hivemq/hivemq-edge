@@ -271,7 +271,7 @@ public class ConfigFileReaderWriter {
                 final StreamSource streamSource = new StreamSource(is);
 
                 unmarshaller.setEventHandler(e -> {
-                    if (e.getSeverity() > ValidationEvent.ERROR) {
+                    if (e.getSeverity() >= ValidationEvent.ERROR) {
                         validationErrors.add(e);
                     }
                     return true;
@@ -288,6 +288,13 @@ public class ConfigFileReaderWriter {
                 if (configEntity == null) {
                     throw new JAXBException("Result is null");
                 }
+
+                configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
+
+                if (!validationErrors.isEmpty()) {
+                    throw new JAXBException("Parsing failed");
+                }
+
                 setConfiguration(configEntity);
                 return configEntity;
 
@@ -356,6 +363,7 @@ public class ConfigFileReaderWriter {
                 return schema;
             }
         }
+        log.warn("No schema loaded for validation of config xml.");
         return null;
     }
 
