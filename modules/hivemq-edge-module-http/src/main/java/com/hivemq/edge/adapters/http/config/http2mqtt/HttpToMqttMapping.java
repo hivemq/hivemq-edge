@@ -74,62 +74,18 @@ public class HttpToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean includeTimestamp;
 
-    @JsonProperty(value = "httpRequestMethod")
-    @ModuleConfigField(title = "Http Method",
-                       description = "Http method associated with the request",
-                       defaultValue = "GET")
-    private final @NotNull HttpSpecificAdapterConfig.HttpMethod httpRequestMethod;
-
-    @JsonProperty(value = "httpRequestTimeoutSeconds")
-    @ModuleConfigField(title = "Http Request Timeout",
-                       description = "Timeout (in seconds) to wait for the HTTP Request to complete",
-                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "",
-                       numberMin = MIN_TIMEOUT_SECONDS,
-                       numberMax = MAX_TIMEOUT_SECONDS)
-    private final int httpRequestTimeoutSeconds;
-
-    @JsonProperty(value = "httpRequestBodyContentType")
-    @ModuleConfigField(title = "Http Request Content Type",
-                       description = "Content Type associated with the request",
-                       defaultValue = "JSON")
-    private final @NotNull HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType;
-
-    @JsonProperty(value = "httpRequestBody")
-    @ModuleConfigField(title = "Http Request Body", description = "The body to include in the HTTP request")
-    private final @Nullable String httpRequestBody;
-
-
-    @JsonProperty(value = "httpHeaders")
-    @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
-    private final @NotNull List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders;
-
     @JsonCreator
     public HttpToMqttMapping(
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
-            @JsonProperty(value = "httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
-            @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
-            @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
-            @JsonProperty(value = "httpRequestBody") final @Nullable String httpRequestBody,
-            @JsonProperty(value = "httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders) {
+            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp) {
         this.tagName = tagName;
         this.mqttTopic = mqttTopic;
         this.mqttQos = requireNonNullElse(mqttQos, 0);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
-        this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, GET);
-        this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, JSON);
-        this.httpRequestBody = httpRequestBody;
-        if (httpRequestTimeoutSeconds != null) {
-            //-- Ensure we apply a reasonable timeout, so we don't hang threads
-            this.httpRequestTimeoutSeconds = Math.min(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS);
-        } else {
-            this.httpRequestTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-        }
-        this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
     }
 
     public @NotNull String getTagName() {
@@ -166,25 +122,5 @@ public class HttpToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
-    }
-
-    public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
-        return httpRequestMethod;
-    }
-
-    public int getHttpRequestTimeoutSeconds() {
-        return httpRequestTimeoutSeconds;
-    }
-
-    public @NotNull HttpSpecificAdapterConfig.HttpContentType getHttpRequestBodyContentType() {
-        return httpRequestBodyContentType;
-    }
-
-    public @Nullable String getHttpRequestBody() {
-        return httpRequestBody;
-    }
-
-    public @NotNull List<HttpSpecificAdapterConfig.HttpHeader> getHttpHeaders() {
-        return httpHeaders;
     }
 }

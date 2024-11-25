@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -43,6 +45,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpContentType.JSON;
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpContentType.YAML;
@@ -112,8 +115,6 @@ public class HttpProtocolAdapterConfigTest {
         final HttpSpecificAdapterConfig config =
                 (HttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), false);
 
-        System.out.println(httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, adapter.getTags()).get(0));
-
         assertThat(adapter.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(adapter.getProtocolId()).isEqualTo("http");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -123,15 +124,24 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
-        final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
+        final FromEdgeMappingEntity httpToMqttMapping = adapter.getFromEdgeMappingEntities().get(0);
+
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
-        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
-        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
-        assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
-        assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
-        assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
-        assertThat(httpToMqttMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
+        assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
+        assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
+
+        final List<Map<String, Object>> tagMaps =
+                adapter.getTags().stream().map(tagEntity -> tagEntity.toMap()).collect(Collectors.toList());
+
+        final List<? extends Tag> tags = httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
+
+        HttpTag tag = (HttpTag)tags.get(0);
+        assertThat(tag.getName()).isEqualTo("tag1");
+        assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(tag.getDefinition().getHttpRequestBody()).isNull();
+        assertThat(tag.getDefinition().getHttpHeaders()).isEmpty();
+        assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
 //        final MqttToHttpMapping mqttToHttpMapping = config.getMqttToHttpConfig().getMappings().get(0);
 //        assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag1");

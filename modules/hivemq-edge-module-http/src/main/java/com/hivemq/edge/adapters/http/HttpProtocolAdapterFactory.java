@@ -73,18 +73,19 @@ public class HttpProtocolAdapterFactory
         // create tag first
         final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
         ArrayList<HttpTag> tags = new ArrayList<>();
-        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
+        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(
+                legacyHttpAdapterConfig.getUrl(),
+                legacyHttpAdapterConfig.getHttpRequestMethod(),
+                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
+                legacyHttpAdapterConfig.getHttpRequestBody(),
+                legacyHttpAdapterConfig.getHttpHeaders())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
                 legacyHttpAdapterConfig.getQos(),
                 List.of(),
-                false,
-                legacyHttpAdapterConfig.getHttpRequestMethod(),
-                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
-                legacyHttpAdapterConfig.getHttpRequestBody(),
-                legacyHttpAdapterConfig.getHttpHeaders());
+                false);
 
         final HttpToMqttConfig httpToMqttConfig =
                 new HttpToMqttConfig(legacyHttpAdapterConfig.getPollingIntervalMillis(),

@@ -46,6 +46,7 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
+import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -183,38 +184,39 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
+        final HttpTagDefinition tagDef = httpTag.getDefinition();
         builder.uri(URI.create(url));
 
-        builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(httpTag.getDefinition().getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        httpToMqttMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
-        switch (httpToMqttMapping.getHttpRequestMethod()) {
+        switch (tagDef.getHttpRequestMethod()) {
             case GET:
                 builder.GET();
                 break;
             case POST:
-                if (httpToMqttMapping.getHttpRequestBody() != null) {
-                    builder.POST(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                if (tagDef.getHttpRequestBody() != null) {
+                    builder.POST(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.POST(HttpRequest.BodyPublishers.ofString(""));
                 }
-                builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
+                builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
                 break;
             case PUT:
-                if (httpToMqttMapping.getHttpRequestBody() != null) {
-                    builder.PUT(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                if (tagDef.getHttpRequestBody() != null) {
+                    builder.PUT(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(""));
                 }
-                builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
+                builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
                 pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                                httpToMqttMapping.getHttpRequestMethod()),
+                                tagDef.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
-                                httpToMqttMapping.getHttpRequestMethod());
+                                tagDef.getHttpRequestMethod());
                 return;
 
 
