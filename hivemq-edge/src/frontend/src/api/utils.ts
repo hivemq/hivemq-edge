@@ -8,6 +8,7 @@ export const QUERY_KEYS = {
   DISCOVERY_TOPICS: 'discovery.topics',
   DISCOVERY_TOPIC_FILTERS: 'discovery.topic-filters',
   DISCOVERY_TAGS: 'discovery.tags',
+  DISCOVERY_FIELD_MAPPINGS: 'discovery.field-mappings',
   DISCOVERY_PAYLOADS: 'discovery.payloads',
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
