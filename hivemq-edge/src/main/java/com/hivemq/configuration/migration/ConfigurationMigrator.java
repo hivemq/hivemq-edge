@@ -79,8 +79,7 @@ public class ConfigurationMigrator {
 
     @Inject
     public ConfigurationMigrator(
-            final @NotNull SystemInformation systemInformation,
-            final @NotNull ModuleLoader moduleLoader) {
+            final @NotNull SystemInformation systemInformation, final @NotNull ModuleLoader moduleLoader) {
         this.systemInformation = systemInformation;
         this.moduleLoader = moduleLoader;
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
@@ -92,8 +91,6 @@ public class ConfigurationMigrator {
 
     public void migrate() {
         try {
-            // TODO check whether the migration is needed
-
             final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
             if (!needsMigration(configurationFile)) {
                 return;
@@ -115,20 +112,23 @@ public class ConfigurationMigrator {
             final HiveMQConfigEntity hiveMQConfigEntity = legacyHiveMQConfigEntity.to(protocolAdapterEntities);
             legacyConfigFileReaderWriter.writeConfigToXML(hiveMQConfigEntity);
         } catch (final Exception e) {
+            log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
+            log.debug("Original Exception:", e);
             //TODO
             e.printStackTrace();
         }
     }
 
-    private Optional<ProtocolAdapterEntity> parseProtocolAdapterEntity(
+    private @NotNull Optional<ProtocolAdapterEntity> parseProtocolAdapterEntity(
             final Map.Entry<String, Object> stringObjectEntry,
             final Map<String, ProtocolAdapterFactory<?>> factoryMap) {
         final String protocolId = stringObjectEntry.getKey();
         final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolId);
         if (protocolAdapterFactory == null) {
             // not much we can do here. We do not have the factory to get the necessary information from
-            //TODO log
-            log.error("Fucked");
+            log.error(
+                    "[CONFIG MIGRATION] While migration the configuration, no protocol factory for protocolId '{}' was found. This adapter will be skipped and must be migrated by hand.",
+                    protocolId);
             return Optional.empty();
         }
 
@@ -136,7 +136,6 @@ public class ConfigurationMigrator {
             final LegacyConfigConversion adapterFactory = (LegacyConfigConversion) protocolAdapterFactory;
             final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
                     (Map<String, Object>) stringObjectEntry.getValue());
-            System.err.println(configTagsTuple);
 
             final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
                     .stream()
@@ -157,7 +156,7 @@ public class ConfigurationMigrator {
                     List.of(),
                     tagsAsMaps));
         } else {
-            log.error("Fucked 2");
+            log.error("[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.", protocolId, LegacyConfigConversion.class.getSimpleName());
             return Optional.empty();
         }
     }
@@ -167,7 +166,6 @@ public class ConfigurationMigrator {
     static boolean needsMigration(final @NotNull ConfigurationFile configurationFile) {
         try {
             final File configFile = configurationFile.file().get();
-
             final Source xmlSource = new StreamSource(configFile);
             final Source xsltSource =
                     new StreamSource(new ByteArrayInputStream(XSLT_INPUT.getBytes(StandardCharsets.UTF_8)));
@@ -181,7 +179,7 @@ public class ConfigurationMigrator {
             return !stringWriter.getBuffer().toString().isBlank();
         } catch (final TransformerException e) {
             log.error(
-                    "Exception while determining whether a config migration is needed. No automatic config migration will happen.");
+                    "[CONFIG MIGRATION] Exception while determining whether a config migration is needed. No automatic config migration will happen.");
             log.debug("Original Exception:", e);
             return false;
         }
