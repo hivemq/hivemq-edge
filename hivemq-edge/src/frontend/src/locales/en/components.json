@@ -266,7 +266,7 @@
       "destination": {
         "prompt": "Select a device tag as a destination for your mappings",
         "selector": {
-          "formLabel": "Source Topic Filter",
+          "formLabel": "Destination Device Tag",
           "placeholder": "Type or select a tag ...",
           "noOptionsMessage": "No tag matching the selection"
         },
