@@ -6,6 +6,7 @@ import {
   mockProtocolAdapter_OPCUA,
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import DeviceTagList from '@/modules/Device/components/DeviceTagList.tsx'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 describe('DeviceTagList', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('DeviceTagList', () => {
 
   it('should render properly', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', {
-      items: MOCK_DEVICE_TAGS('opcua-1', 'opcua'),
+      items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
@@ -55,7 +56,7 @@ describe('DeviceTagList', () => {
 
   it('should be accessible', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', {
-      items: MOCK_DEVICE_TAGS('opcua-1', 'opcua'),
+      items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)

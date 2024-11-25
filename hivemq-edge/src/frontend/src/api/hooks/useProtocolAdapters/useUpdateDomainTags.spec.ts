@@ -6,6 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { deviceHandlers, MOCK_DEVICE_TAGS } from './__handlers__'
 import { useUpdateDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateDomainTags.ts'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 describe('useUpdateDomainTags', () => {
   afterEach(() => {
@@ -22,7 +23,7 @@ describe('useUpdateDomainTags', () => {
       result.current.mutateAsync({
         adapterId: 'my-adapter',
         tagId: encodeURIComponent('test/segment2/topic1'),
-        requestBody: MOCK_DEVICE_TAGS('my-adapter')[0],
+        requestBody: MOCK_DEVICE_TAGS('my-adapter', MockAdapterType.SIMULATION)[0],
       })
     })
     await waitFor(() => {

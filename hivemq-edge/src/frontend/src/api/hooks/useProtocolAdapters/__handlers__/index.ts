@@ -7,7 +7,6 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import {
   Adapter,
   AdaptersList,
-  type DeviceDataPoint,
   type DomainTag,
   type DomainTagList,
   ObjectNode,
@@ -17,6 +16,7 @@ import {
   type ValuesTree,
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -710,20 +710,20 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
-export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DeviceDataPoint = { startIdx: 0, endIdx: 1 }
-export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DeviceDataPoint = { node: 'ns=3;i=1002' }
+export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DomainTag['tagDefinition'] = { startIdx: 0, endIdx: 1 }
+export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DomainTag['tagDefinition'] = { node: 'ns=3;i=1002' }
 
-export const MOCK_DEVICE_TAGS = (adapterId: string, type?: string | null): DomainTag[] => {
+export const MOCK_DEVICE_TAGS = (adapterId: string, type: string): DomainTag[] => {
   switch (type) {
     case MockAdapterType.MODBUS:
-      return [{ tag: `${adapterId}/alert`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
+      return [{ tagName: `${adapterId}/alert`, protocolId: type, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
     case MockAdapterType.OPC_UA:
       return [
-        { tag: `${adapterId}/power/off`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
-        { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
+        { tagName: `${adapterId}/power/off`, protocolId: type, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
+        { tagName: `${adapterId}/log/event`, protocolId: type, tagDefinition: { node: 'ns=3;i=1008' } },
       ]
     default:
-      return [{ tag: `${adapterId}/log/event`, dataPoint: {} }]
+      return [{ tagName: `${adapterId}/log/event`, protocolId: type, tagDefinition: {} }]
   }
 }
 
@@ -763,11 +763,11 @@ export const handlers = [
 ]
 
 export const deviceHandlers = [
-  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params, request }) => {
+  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
     const { adapterId } = params
-    const url = new URL(request.url)
-    const type = url.searchParams.get('type')
+    const type = enumFromStringValue(MockAdapterType, adapterId as string)
 
+    if (!type) return HttpResponse.json({}, { status: 400 })
     return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string, type) }, { status: 200 })
   }),
 

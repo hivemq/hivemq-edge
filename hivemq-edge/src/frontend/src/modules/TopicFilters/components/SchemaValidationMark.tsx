@@ -2,14 +2,14 @@ import { FC, useMemo } from 'react'
 import { Alert, AlertIcon, Spinner } from '@chakra-ui/react'
 
 import { TopicFilter } from '@/api/__generated__'
-import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
+import { useGetTopicSchema } from '@/api/hooks/_deprecated/useGetTagSchema.ts'
 
 interface SchemaValidationMarkProps {
   topicFilter: TopicFilter
 }
 
 const SchemaValidationMark: FC<SchemaValidationMarkProps> = ({ topicFilter }) => {
-  const { data, isLoading } = useGetTopicSchemas([topicFilter.topicFilter as string])
+  const { data, isLoading } = useGetTopicSchema(topicFilter.topicFilter)
 
   const isSchemaValid = useMemo(() => {
     return data && Object.keys(data).length !== 0 && data.constructor === Object

@@ -14,7 +14,7 @@ describe('DataModelSources', () => {
     cy.intercept('/api/v1/management/domain/topics/schema?*', { test: GENERATE_DATA_MODELS(false, 'test') }).as(
       'getSchema'
     )
-    cy.mountWithProviders(<DataModelSources topics={['test']} />)
+    cy.mountWithProviders(<DataModelSources topic="test" />)
     cy.get('h3').should('have.text', 'Sources')
     // loading
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -26,7 +26,7 @@ describe('DataModelSources', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
 
-    cy.mountWithProviders(<DataModelSources topics={['sssss']} />, { wrapper })
+    cy.mountWithProviders(<DataModelSources topic="sssss" />, { wrapper })
 
     cy.checkAccessibility()
   })

@@ -6,6 +6,7 @@ import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { DomainTagList } from '@/api/__generated__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 describe('SelectSourceTopics', () => {
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe('SelectSourceTopics', () => {
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
       const mockAdapterId = 'my-adapter'
-      const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId) }
+      const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId, MockAdapterType.SIMULATION) }
       cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('types')
 
       cy.mountWithProviders(<SelectDestinationTag adapterId={mockAdapterId} value="tag/test1" onChange={cy.stub()} />)

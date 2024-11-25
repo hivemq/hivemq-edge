@@ -8,25 +8,21 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
+import { useGetTopicSchema } from '@/api/hooks/_deprecated/useGetTagSchema.ts'
 
 interface DataModelSourcesProps extends CardProps {
-  topics: string[]
+  topic: string | undefined
 }
 
-const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
+const DataModelSources: FC<DataModelSourcesProps> = ({ topic, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error, isSuccess } = useGetTopicSchemas(topics)
+
+  const { data, isLoading, isError, error, isSuccess } = useGetTopicSchema(topic)
 
   const structuredSchema = useMemo(() => {
-    return Object.keys(data || {}).reduce<JSONSchema7[]>((acc, schemaId) => {
-      if (data?.[schemaId]) {
-        const newData: JSONSchema7 = { ...(data?.[schemaId] as JSONSchema7), title: schemaId }
-        acc.push(newData)
-      }
-      return acc
-    }, [])
-  }, [data])
+    if (!data) return [] as JSONSchema7[]
+    return [{ ...data, title: topic }] as JSONSchema7[]
+  }, [data, topic])
 
   return (
     <Card {...props} size="sm">

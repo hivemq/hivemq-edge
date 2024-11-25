@@ -86,7 +86,7 @@ export const handlers = [
   }),
 
   http.get('**/management/domain/tags/schema', () => {
-    return HttpResponse.json<TagSchema>([], { status: 200 })
+    return HttpResponse.json<TagSchema>({ configSchema: {}, protocolId: 'protocol' }, { status: 200 })
   }),
 
   http.get('**/management/domain/topics', () => {
@@ -94,7 +94,7 @@ export const handlers = [
   }),
 
   http.get('**/management/domain/topics/schema', () => {
-    return HttpResponse.json<TagSchema>([], { status: 200 })
+    return HttpResponse.json<TagSchema>({ configSchema: {}, protocolId: 'protocol' }, { status: 200 })
   }),
 ]
 
@@ -107,7 +107,10 @@ export const schemaHandlers = (onSampling?: (topicFilter: string) => Promise<MQT
     http.get('**/management/domain/tags/schema', ({ request }) => {
       const url = new URL(request.url)
       const tags = url.searchParams.getAll('tags')
-      return HttpResponse.json<TagSchema>(GENERATE_DATA_MODELS(true, tags[0]), { status: 200 })
+      return HttpResponse.json<TagSchema>(
+        { configSchema: GENERATE_DATA_MODELS(true, tags[0]), protocolId: 'protocol' },
+        { status: 200 }
+      )
     }),
 
     http.get('**/management/domain/topics', () => {

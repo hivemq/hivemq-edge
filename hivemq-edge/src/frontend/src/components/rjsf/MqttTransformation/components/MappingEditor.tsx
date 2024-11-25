@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
-import { useGetTagSchemas } from '@/api/hooks/useDomainModel/useGetTagSchemas.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { FieldMapping } from '@/modules/Mappings/types.ts'
+import { useGetTagSchema } from '@/api/hooks/_deprecated/useGetTagSchema.ts'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string | undefined
@@ -28,7 +28,7 @@ const MappingEditor: FC<MappingEditorProps> = ({
   ...props
 }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading, isError, error, isSuccess } = useGetTagSchemas(topic ? [topic] : [])
+  const { data, isLoading, isError, error, isSuccess } = useGetTagSchema(topic)
 
   const properties = useMemo(() => {
     const allProperties = data ? getPropertyListFrom(data) : []

@@ -3,6 +3,7 @@ import { MOCK_DEVICE_TAGS, mockProtocolAdapter } from '@/api/hooks/useProtocolAd
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 const MOCK_SUBS: OutwardMapping = {
   tag: 'my-tag',
@@ -30,7 +31,7 @@ describe('MappingDrawer', () => {
       ],
     })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
-      items: MOCK_DEVICE_TAGS('opcua-1', 'opcua'),
+      items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
   })
 

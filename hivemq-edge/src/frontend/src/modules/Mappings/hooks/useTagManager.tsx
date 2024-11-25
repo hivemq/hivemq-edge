@@ -20,7 +20,7 @@ interface TagManagerSchema {
   data?: RJSFSchema
 }
 
-export const useTagManager = (adapterId: string | undefined) => {
+export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()
   const toast = useToast()
 

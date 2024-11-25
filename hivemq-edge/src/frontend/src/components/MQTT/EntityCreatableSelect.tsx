@@ -207,7 +207,7 @@ interface TagSelectProps extends CreateSelectableProps {
 
 export const SelectTag: FC<TagSelectProps> = ({ adapterId, ...rest }) => {
   const { data, isLoading } = useGetDomainTags(adapterId)
-  const options = data?.items?.map<EntityOption>((tag) => ({ label: tag.tag, value: tag.tag })) || []
+  const options = data?.items?.map<EntityOption>((tag) => ({ label: tag.tagName, value: tag.tagName })) || []
 
   return (
     <EntityCreatableSelect
