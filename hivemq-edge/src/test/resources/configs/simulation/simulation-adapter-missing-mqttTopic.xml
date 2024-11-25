@@ -1,14 +1,14 @@
 <hivemq>
     <protocol-adapters>
-        <id>my-simulation-protocol-adapter</id>
-        <simulation>
-            <simulationToMqtt>
-                <simulationToMqttMappings>
-                    <simulationToMqttMapping>
-                        <mqttQos>0</mqttQos>
-                    </simulationToMqttMapping>
-                </simulationToMqttMappings>
-            </simulationToMqtt>
-        </simulation>
+        <protocol-adapter>
+            <adapterId>my-simulation-protocol-adapter</adapterId>
+            <protocolId>simulation</protocolId>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <maxQos>0</maxQos>
+                    <tagName>tag1</tagName>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

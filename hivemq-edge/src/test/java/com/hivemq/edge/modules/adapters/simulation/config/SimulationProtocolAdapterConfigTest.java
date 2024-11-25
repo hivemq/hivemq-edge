@@ -64,36 +64,40 @@ class SimulationProtocolAdapterConfigTest {
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-        //TODO
-        /*
+
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
+        final ProtocolAdapterEntity protocolAdapterEntity = adapters.get(0);
 
-        assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
+        final Map<String, Object> configAsMaps = protocolAdapterEntity.getConfig();
+        final SimulationSpecificAdapterConfig config =
+                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper,
+                        configAsMaps,
+                        false);
+
+        assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
         assertThat(config.getMaxValue()).isEqualTo(1000);
         assertThat(config.getMinDelay()).isEqualTo(0);
         assertThat(config.getMaxDelay()).isEqualTo(1000);
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
+        assertThat(protocolAdapterEntity.getFromEdgeMappingEntities()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getTopic()).isEqualTo("my/topic");
+            assertThat(subscription.getMaxQoS()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
+            assertThat(subscription.isIncludeTimestamp()).isFalse();
+            assertThat(subscription.isIncludeTagNames()).isTrue();
 
             assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("my-name");
                 assertThat(userProperty.getValue()).isEqualTo("my-value");
             });
         }, subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
+            assertThat(subscription.getTopic()).isEqualTo("my/topic/2");
+            assertThat(subscription.getMaxQoS()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
+            assertThat(subscription.isIncludeTimestamp()).isFalse();
+            assertThat(subscription.isIncludeTagNames()).isTrue();
 
             assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
                 assertThat(userProperty.getName()).isEqualTo("my-name");
@@ -101,7 +105,7 @@ class SimulationProtocolAdapterConfigTest {
             });
         });
 
-         */
+
     }
 
     @Test
@@ -112,60 +116,41 @@ class SimulationProtocolAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
 
-        //TODO
-        /*
         final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final ProtocolAdapterEntity protocolAdapterEntity = adapters.get(0);
+
+        final Map<String, Object> configAsMaps = protocolAdapterEntity.getConfig();
         final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
+                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper,
+                        configAsMaps,
+                        false);
 
-        assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
+
+        assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(0);
+        assertThat(protocolAdapterEntity.getFromEdgeMappingEntities()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getTopic()).isEqualTo("my/topic");
+            assertThat(subscription.getMaxQoS()).isEqualTo(0);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.getIncludeTimestamp()).isTrue();
-            assertThat(subscription.getIncludeTagNames()).isFalse();
-
+            assertThat(subscription.isIncludeTimestamp()).isTrue();
+            assertThat(subscription.isIncludeTagNames()).isTrue();
             assertThat(subscription.getUserProperties()).isEmpty();
         });
-
-         */
     }
 
     @Test
     public void convertConfigObject_idMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/configs/simulation/simulation-adapter-missing-id.xml");
         final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-        //TODO
-        /*
-        final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'id'");
-
-         */
+        assertThatThrownBy(() -> loadConfig(path));
     }
 
     @Test
     public void convertConfigObject_mqttTopicMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/configs/simulation/simulation-adapter-missing-mqttTopic.xml");
         final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-        //TODO
-        /*
-        final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"), false)).hasMessageContaining("Missing required creator property 'mqttTopic'");
-
-         */
+        assertThatThrownBy(() -> loadConfig(path));
     }
 
     @Test
@@ -184,10 +169,10 @@ class SimulationProtocolAdapterConfigTest {
                         14,
                         15);
 
-        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final SimulationProtocolAdapterFactory factory =
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config = factory.unconvertConfigObject(mapper, simulationAdapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-simulation-adapter");
         assertThat(config.get("minValue")).isEqualTo(12);
         assertThat(config.get("maxValue")).isEqualTo(13);
         assertThat(config.get("minDelay")).isEqualTo(14);
@@ -197,18 +182,6 @@ class SimulationProtocolAdapterConfigTest {
         final Map<String, Object> simulationToMqtt = (Map<String, Object>) config.get("simulationToMqtt");
         assertThat(simulationToMqtt.get("pollingIntervalMillis")).isEqualTo(11);
         assertThat(simulationToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(12);
-
-        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(1);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
-                assertThat(userProperty.get("name")).isEqualTo("my-name");
-                assertThat(userProperty.get("value")).isEqualTo("my-value");
-            });
-        });
     }
 
     @Test
@@ -223,10 +196,10 @@ class SimulationProtocolAdapterConfigTest {
                         null,
                         null);
 
-        final SimulationProtocolAdapterFactory factory = new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
+        final SimulationProtocolAdapterFactory factory =
+                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
         final Map<String, Object> config = factory.unconvertConfigObject(mapper, simulationAdapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-simulation-adapter");
         assertThat(config.get("minValue")).isEqualTo(0);
         assertThat(config.get("maxValue")).isEqualTo(1000);
         assertThat(config.get("minDelay")).isEqualTo(0);
@@ -235,15 +208,6 @@ class SimulationProtocolAdapterConfigTest {
         final Map<String, Object> simulationToMqtt = (Map<String, Object>) config.get("simulationToMqtt");
         assertThat(simulationToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
         assertThat(simulationToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-
-        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(0);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-        });
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

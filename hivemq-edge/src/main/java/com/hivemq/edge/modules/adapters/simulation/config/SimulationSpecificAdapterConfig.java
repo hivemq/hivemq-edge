@@ -69,12 +69,13 @@ public class SimulationSpecificAdapterConfig
 
     @JsonCreator
     public SimulationSpecificAdapterConfig(
-            @JsonProperty(value = "simulationToMqtt", required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
+            @JsonProperty(value = "simulationToMqtt") final @Nullable SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty("minValue") final @Nullable Integer minValue,
             @JsonProperty("maxValue") final @Nullable Integer maxValue,
             @JsonProperty("minDelay") final @Nullable Integer minDelay,
             @JsonProperty("maxDelay") final @Nullable Integer maxDelay) {
-        this.simulationToMqttConfig = simulationToMqttConfig;
+        this.simulationToMqttConfig =
+                Objects.requireNonNullElse(simulationToMqttConfig, SimulationToMqttConfig.DEFAULT);
         this.minValue = Objects.requireNonNullElse(minValue, 0);
         this.maxValue = Objects.requireNonNullElse(maxValue, 1000);
         this.minDelay = Objects.requireNonNullElse(minDelay, 0);

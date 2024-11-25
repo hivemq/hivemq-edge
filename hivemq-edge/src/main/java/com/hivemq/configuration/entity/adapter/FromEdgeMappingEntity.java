@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.FromEdgeMapping;
@@ -57,7 +56,7 @@ public class FromEdgeMappingEntity {
     public FromEdgeMappingEntity() {
         topic = "";
         tagName = "";
-        messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerSubscription;
+        messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
         includeTagNames = true;
         includeTimestamp = true;
         maxQoS = 2;

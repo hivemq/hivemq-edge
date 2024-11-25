@@ -17,7 +17,6 @@ package com.hivemq.edge.modules.adapters.simulation.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class SimulationToMqttConfig {
+
+    public static final SimulationToMqttConfig DEFAULT = new SimulationToMqttConfig(List.of(), null, null);
 
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
