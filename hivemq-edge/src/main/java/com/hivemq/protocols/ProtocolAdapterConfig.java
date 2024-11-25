@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ProtocolAdapterConfig {
 
@@ -58,6 +57,10 @@ public class ProtocolAdapterConfig {
     }
 
     public @NotNull Optional<Set<String>> missingTags() {
+        if (protocolId.equals("simulation")) {
+            return Optional.empty();
+        }
+
         final Set<String> names = new HashSet<>();
         toEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
         fromEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
