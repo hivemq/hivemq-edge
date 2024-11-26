@@ -58,8 +58,7 @@ class FileProtocolAdapterConfigTest {
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
         final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -104,8 +103,7 @@ class FileProtocolAdapterConfigTest {
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
         final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -121,16 +119,16 @@ class FileProtocolAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag)t))
-                .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag) t)).contains(new FileTag("tag1",
+                "decsription",
+                new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-minimal-config-missing-tag.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
+        assertThat(protocolAdapterConfig.missingTags()).isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
     }
 
@@ -138,41 +136,26 @@ class FileProtocolAdapterConfigTest {
     public void convertConfigObject_tagNameMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-tag-name-missing.xml");
 
-        assertThatThrownBy(() -> getProtocolAdapterConfig(resource))
-                .isInstanceOf(UnrecoverableException.class);
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
     public void convertConfigObject_mqttTopicMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-mqtt-topic-missing.xml");
 
-        assertThatThrownBy(() -> getProtocolAdapterConfig(resource))
-                .isInstanceOf(UnrecoverableException.class);
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
-                new FileToMqttConfig(
-                        12,
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig("id",
+                new FileToMqttConfig(12,
                         13,
-                        List.of(
-                                new FileToMqttMapping(
-                                        "my/destination",
-                                        1,
-                                        null,
-                                        false,
-                                        true,
-                                        null,
-                                        "tag1")
-                        )
-                )
-        );
+                        List.of(new FileToMqttMapping("my/destination", 1, null, false, true, null, "tag1"))));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(mockInput);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = fileProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
@@ -183,27 +166,13 @@ class FileProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
-                new FileToMqttConfig(
-                        null,
-                        null,
-                        List.of(
-                                new FileToMqttMapping(
-                                        "my/destination",
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        "tag1")
-                        )
-                )
-        );
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig("id",new FileToMqttConfig(null,
+                null,
+                List.of(new FileToMqttMapping("my/destination", null, null, null, null, null, "tag1"))));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
-                new FileProtocolAdapterFactory(mockInput);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = fileProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
@@ -213,8 +182,8 @@ class FileProtocolAdapterConfigTest {
 
     }
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
-            URISyntaxException {
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
+            throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);

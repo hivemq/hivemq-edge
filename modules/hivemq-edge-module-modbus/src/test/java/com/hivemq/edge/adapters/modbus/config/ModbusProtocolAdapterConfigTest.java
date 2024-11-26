@@ -142,7 +142,7 @@ public class ModbusProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final ModbusSpecificAdapterConfig adapterConfig = new ModbusSpecificAdapterConfig(
+        final ModbusSpecificAdapterConfig adapterConfig = new ModbusSpecificAdapterConfig("id",
                 14,
                 "my.host.com",
                 15,
@@ -183,7 +183,7 @@ public class ModbusProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults() {
-        final ModbusSpecificAdapterConfig adapterConfig = new ModbusSpecificAdapterConfig(
+        final ModbusSpecificAdapterConfig adapterConfig = new ModbusSpecificAdapterConfig("id",
                 13,
                 "my.host.com",
                 null,

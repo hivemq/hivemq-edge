@@ -50,7 +50,7 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSet_thenPickCorrectEndpoint() {
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("id","opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 new Tls(true, new Keystore("path", null, null), null),
@@ -69,7 +69,7 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("id","opc.tcp://127.0.0.1:49320", false, null, null, null, null);
 
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, config);
@@ -83,7 +83,7 @@ class OpcUaEndpointFilterTest {
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("id","opc.tcp://127.0.0.1:49320", false, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, config);
 
         final Optional<EndpointDescription> result =
@@ -95,7 +95,7 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("id","opc.tcp://127.0.0.1:49320", false, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(DEFAULT), config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));

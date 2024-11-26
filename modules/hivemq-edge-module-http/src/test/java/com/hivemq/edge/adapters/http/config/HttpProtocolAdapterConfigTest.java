@@ -285,7 +285,7 @@ public class HttpProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_full() throws Exception {
 
-        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig("id",
                 50,
                 new HttpToMqttConfig(
                         1337,
@@ -364,7 +364,7 @@ public class HttpProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_defaults() {
 
-        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig("id",
                 null,
                 new HttpToMqttConfig(
                         null,

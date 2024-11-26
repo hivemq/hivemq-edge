@@ -85,8 +85,8 @@ public class OpcUaProtocolAdapterFactory
         }
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
 
-        //TODO not sure how to get opcua migrated as it is not polling
         return new ConfigTagsTuple(legacyOpcUaAdapterConfig.getId(), new OpcUaSpecificAdapterConfig(
+                legacyOpcUaAdapterConfig.getId(),
                 legacyOpcUaAdapterConfig.getUri(),
                 legacyOpcUaAdapterConfig.getOverrideUri(),
                 legacyOpcUaAdapterConfig.getAuth(),

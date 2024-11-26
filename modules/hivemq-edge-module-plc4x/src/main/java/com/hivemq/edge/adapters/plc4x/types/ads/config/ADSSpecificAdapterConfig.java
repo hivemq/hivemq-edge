@@ -84,6 +84,9 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
 
     @JsonCreator
     public ADSSpecificAdapterConfig(
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "targetAmsPort", required = true) final int targetAmsPort,
@@ -91,7 +94,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
             @JsonProperty(value = "adsToMqtt") final @Nullable ADSToMqttConfig adsToMqttConfig) {
-        super( port, host);
+        super(id, port, host);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
         this.sourceAmsPort = sourceAmsPort;

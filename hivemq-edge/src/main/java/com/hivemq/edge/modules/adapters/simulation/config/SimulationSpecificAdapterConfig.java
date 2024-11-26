@@ -35,7 +35,7 @@ public class SimulationSpecificAdapterConfig
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
-    @JsonProperty(value = "id", required = true)
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
@@ -81,7 +81,9 @@ public class SimulationSpecificAdapterConfig
 
     @JsonCreator
     public SimulationSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "simulationToMqtt") final @Nullable SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty("minValue") final @Nullable Integer minValue,
             @JsonProperty("maxValue") final @Nullable Integer maxValue,

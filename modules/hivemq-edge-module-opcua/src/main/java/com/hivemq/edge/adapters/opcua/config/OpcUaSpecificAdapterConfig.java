@@ -30,6 +30,18 @@ import static java.util.Objects.requireNonNullElse;
 
 public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
+
     @JsonProperty(value = "uri", required = true)
     @ModuleConfigField(title = "OPC UA Server URI",
                        description = "URI of the OPC UA server to connect to",
@@ -60,12 +72,14 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
+            @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
+        this.id=id;
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.auth = requireNonNullElse(auth, new Auth(null, null));

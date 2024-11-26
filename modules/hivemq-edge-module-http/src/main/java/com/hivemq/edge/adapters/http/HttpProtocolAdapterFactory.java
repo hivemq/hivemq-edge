@@ -73,13 +73,14 @@ public class HttpProtocolAdapterFactory
         // create tag first
         final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
         ArrayList<HttpTag> tags = new ArrayList<>();
-        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(
-                legacyHttpAdapterConfig.getUrl(),
-                legacyHttpAdapterConfig.getHttpRequestMethod(),
-                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
-                legacyHttpAdapterConfig.getHttpRequestBody(),
-                legacyHttpAdapterConfig.getHttpHeaders())));
+        tags.add(new HttpTag(newTagName,
+                "not set",
+                new HttpTagDefinition(legacyHttpAdapterConfig.getUrl(),
+                        legacyHttpAdapterConfig.getHttpRequestMethod(),
+                        legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                        legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
+                        legacyHttpAdapterConfig.getHttpRequestBody(),
+                        legacyHttpAdapterConfig.getHttpHeaders())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
@@ -95,7 +96,8 @@ public class HttpProtocolAdapterFactory
                         List.of(httpToMqttMapping));
 
         return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
-                new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getId(),
+                        legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                         httpToMqttConfig,
                         legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
                 tags,

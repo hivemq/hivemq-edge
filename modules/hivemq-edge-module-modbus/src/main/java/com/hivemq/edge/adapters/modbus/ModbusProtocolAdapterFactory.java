@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -41,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ModbusProtocolAdapterFactory
         implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig>, LegacyConfigConversion {
@@ -103,7 +101,8 @@ public class ModbusProtocolAdapterFactory
 
 
         return new ConfigTagsTuple(legacyModbusAdapterConfig.getId(),
-                new ModbusSpecificAdapterConfig(legacyModbusAdapterConfig.getPort(),
+                new ModbusSpecificAdapterConfig(legacyModbusAdapterConfig.getId(),
+                        legacyModbusAdapterConfig.getPort(),
                         legacyModbusAdapterConfig.getHost(),
                         legacyModbusAdapterConfig.getTimeout(),
                         modbusToMqttConfig),

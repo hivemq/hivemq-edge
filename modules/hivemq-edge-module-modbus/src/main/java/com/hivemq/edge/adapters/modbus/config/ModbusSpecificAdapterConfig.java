@@ -26,14 +26,24 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 
 @SuppressWarnings("FieldCanBeLocal")
 public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
     public static final int PORT_MIN = 1;
     public static final int PORT_MAX = 65535;
+
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
@@ -66,15 +76,19 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @JsonCreator
     public ModbusSpecificAdapterConfig(
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
             @JsonProperty(value = "modbusToMqtt") final @Nullable ModbusToMqttConfig modbusToMQTTConfig) {
+        this.id = id;
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
 
-        if(modbusToMQTTConfig == null) {
+        if (modbusToMQTTConfig == null) {
             this.modbusToMQTTConfig = new ModbusToMqttConfig(null, null, null, null);
         } else {
             this.modbusToMQTTConfig = modbusToMQTTConfig;
@@ -99,8 +113,8 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
-        if (modbusToMQTTConfig==null){
-            return  List.of();
+        if (modbusToMQTTConfig == null) {
+            return List.of();
         }
         return modbusToMQTTConfig.getMappings();
     }

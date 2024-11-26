@@ -35,11 +35,13 @@ public class BidirectionalHttpSpecificAdapterConfig extends HttpSpecificAdapterC
 
     @JsonCreator
     public BidirectionalHttpSpecificAdapterConfig(
+            @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
-            @JsonProperty(value = "mqttToHttp", access = JsonProperty.Access.WRITE_ONLY) final @Nullable MqttToHttpConfig mqttToHttpConfig,
+            @JsonProperty(value = "mqttToHttp",
+                          access = JsonProperty.Access.WRITE_ONLY) final @Nullable MqttToHttpConfig mqttToHttpConfig,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
-        super( httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
+        super(id, httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
         this.mqttToHttpConfig = Objects.requireNonNullElseGet(mqttToHttpConfig, () -> new MqttToHttpConfig(List.of()));
     }
 

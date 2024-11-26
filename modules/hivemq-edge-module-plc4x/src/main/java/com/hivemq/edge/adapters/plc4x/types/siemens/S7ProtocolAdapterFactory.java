@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -38,12 +37,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7SpecificAdapterConfig>, LegacyConfigConversion {
+public class S7ProtocolAdapterFactory
+        implements ProtocolAdapterFactory<S7SpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
 
@@ -74,31 +73,34 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
         final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
         for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
-            tags.add(new Plc4xTag(subscription.getTagName(),"not set",
+            tags.add(new Plc4xTag(subscription.getTagName(),
+                    "not set",
                     new Plc4xTagDefinition(subscription.getTagAddress(), subscription.getDataType())));
-                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
-                            subscription.getMqttQos(),
-                            subscription.getMessageHandlingOptions(),
-                            subscription.getIncludeTimestamp(),
-                            subscription.getIncludeTagNames(),
-                            subscription.getTagName(),
-                            subscription.getUserProperties()));
+            plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
+                    subscription.getMqttQos(),
+                    subscription.getMessageHandlingOptions(),
+                    subscription.getIncludeTimestamp(),
+                    subscription.getIncludeTagNames(),
+                    subscription.getTagName(),
+                    subscription.getUserProperties()));
         }
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
                 legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyS7AdapterConfig.getPublishChangedDataOnly(), plc4xToMqttMappings);
+                legacyS7AdapterConfig.getPublishChangedDataOnly(),
+                plc4xToMqttMappings);
 
-        return new ConfigTagsTuple(legacyS7AdapterConfig.getId(), new S7SpecificAdapterConfig(
-                legacyS7AdapterConfig.getPort(),
-                legacyS7AdapterConfig.getHost(),
-                legacyS7AdapterConfig.getControllerType(),
-                legacyS7AdapterConfig.getRemoteRack(),
-                legacyS7AdapterConfig.getRemoteRack2(),
-                legacyS7AdapterConfig.getRemoteSlot(),
-                legacyS7AdapterConfig.getRemoteSlot2(),
-                legacyS7AdapterConfig.getRemoteTsap(),
-                s7ToMqttConfig),
+        return new ConfigTagsTuple(legacyS7AdapterConfig.getId(),
+                new S7SpecificAdapterConfig(legacyS7AdapterConfig.getId(),
+                        legacyS7AdapterConfig.getPort(),
+                        legacyS7AdapterConfig.getHost(),
+                        legacyS7AdapterConfig.getControllerType(),
+                        legacyS7AdapterConfig.getRemoteRack(),
+                        legacyS7AdapterConfig.getRemoteRack2(),
+                        legacyS7AdapterConfig.getRemoteSlot(),
+                        legacyS7AdapterConfig.getRemoteSlot2(),
+                        legacyS7AdapterConfig.getRemoteTsap(),
+                        s7ToMqttConfig),
                 tags,
                 plc4xToMqttMappings);
     }

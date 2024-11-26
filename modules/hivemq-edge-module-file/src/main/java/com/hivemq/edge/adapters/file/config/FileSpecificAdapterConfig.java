@@ -30,6 +30,16 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
+
     @JsonProperty(value = "fileToMqtt", required = true)
     @ModuleConfigField(title = "File To MQTT Config",
                        description = "The configuration for a data stream from File to MQTT",
@@ -37,9 +47,13 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
     private final @Nullable FileToMqttConfig fileToMqttConfig;
 
     public FileSpecificAdapterConfig(
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
+        this.id = id;
         if (fileToMqttConfig == null) {
-            this.fileToMqttConfig = new FileToMqttConfig(null ,null, null);
+            this.fileToMqttConfig = new FileToMqttConfig(null, null, null);
         } else {
             this.fileToMqttConfig = fileToMqttConfig;
         }
@@ -51,8 +65,8 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     @Override
     public @NotNull List<? extends PollingContext> getPollingContexts() {
-        if (fileToMqttConfig==null){
-            return  List.of();
+        if (fileToMqttConfig == null) {
+            return List.of();
         }
         return fileToMqttConfig.getMappings();
     }

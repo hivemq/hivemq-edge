@@ -88,7 +88,7 @@ public class EipProtocolAdapterFactory
                 legacyEipAdapterConfig.getPublishChangedDataOnly(),
                 eipToMqttMappings);
 
-        final EipSpecificAdapterConfig eipSpecificAdapterConfig = new EipSpecificAdapterConfig(
+        final EipSpecificAdapterConfig eipSpecificAdapterConfig = new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
                         legacyEipAdapterConfig.getPort(),
                         legacyEipAdapterConfig.getHost(),
                         legacyEipAdapterConfig.getBackplane(),

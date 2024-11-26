@@ -110,7 +110,7 @@ class EipProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final EipSpecificAdapterConfig adapterConfig = new EipSpecificAdapterConfig(
+        final EipSpecificAdapterConfig adapterConfig = new EipSpecificAdapterConfig("id",
                 14,
                 "my.host.com",
                 15,

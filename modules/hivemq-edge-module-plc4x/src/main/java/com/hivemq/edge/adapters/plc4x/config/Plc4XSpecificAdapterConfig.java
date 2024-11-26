@@ -28,6 +28,18 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
+
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",
@@ -45,8 +57,12 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
 
     @JsonCreator
     public Plc4XSpecificAdapterConfig(
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host) {
+        this.id = id;
         this.port = port;
         this.host = host;
     }

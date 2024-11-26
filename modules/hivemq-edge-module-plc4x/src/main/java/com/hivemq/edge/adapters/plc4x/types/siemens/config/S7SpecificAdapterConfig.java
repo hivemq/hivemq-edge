@@ -104,6 +104,9 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
 
     @JsonCreator
     public S7SpecificAdapterConfig(
+            @JsonProperty(value = "id",
+                          required = true,
+                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
@@ -113,7 +116,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
             @JsonProperty(value = "s7ToMqtt") final @Nullable S7ToMqttConfig s7ToMqttConfig) {
-        super(port, host);
+        super(id, port, host);
         this.port = port;
         this.controllerType = controllerType;
         this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);
@@ -121,7 +124,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
         this.remoteSlot = Objects.requireNonNullElse(remoteSlot, 0);
         this.remoteSlot2 = Objects.requireNonNullElse(remoteSlot2, 0);
         this.remoteTsap = Objects.requireNonNullElse(remoteTsap, 0);
-        if(s7ToMqttConfig == null) {
+        if (s7ToMqttConfig == null) {
             this.s7ToMqttConfig = new S7ToMqttConfig(null, null, null, null);
         } else {
             this.s7ToMqttConfig = s7ToMqttConfig;
