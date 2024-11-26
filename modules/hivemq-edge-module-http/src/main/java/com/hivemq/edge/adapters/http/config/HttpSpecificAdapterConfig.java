@@ -34,8 +34,6 @@ import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SEC
 
 public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-
     public static final @NotNull String HTML_MIME_TYPE = "text/html";
     public static final @NotNull String PLAIN_MIME_TYPE = "text/plain";
     public static final @NotNull String JSON_MIME_TYPE = "application/json";

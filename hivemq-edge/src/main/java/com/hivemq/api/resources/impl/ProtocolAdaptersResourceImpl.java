@@ -268,7 +268,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
-            return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
+            return ApiErrorUtils.notFound("No Adapter Type was found by the given adapterType '" + adapterType + "'.");
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         final Optional<ProtocolAdapterWrapper> instance =
@@ -606,7 +606,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterInformation.isEmpty()) {
-            return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
+            return ApiErrorUtils.notFound("No Adapter Type was found by the given adapterType '" + adapterType + "'.");
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         final String adapterId = adapter.getAdapter().getId();
