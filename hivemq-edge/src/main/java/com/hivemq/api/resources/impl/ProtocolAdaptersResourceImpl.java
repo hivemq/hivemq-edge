@@ -15,7 +15,6 @@
  */
 package com.hivemq.api.resources.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -188,7 +187,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
@@ -197,7 +196,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
-    private @NotNull Adapter convertToAdapter(final @NotNull ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> value) {
+    private @NotNull Adapter convertToAdapter(final @NotNull ProtocolAdapterWrapper value) {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Map<String, Object> configObject;
         try {
@@ -216,13 +215,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverValues(
             @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
-        final ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> adapterInstance =
+        final ProtocolAdapterWrapper adapterInstance =
                 instance.get();
         if (!adapterInstance.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
             return ApiErrorUtils.badRequest("Adapter does not support discovery");
@@ -272,7 +271,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
@@ -283,8 +282,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
-            final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
-            });
+            final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
             protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
@@ -302,7 +300,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
@@ -315,9 +313,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
-        final Map<String, Object> config = objectMapper.convertValue(adapter.getConfig(), new TypeReference<>() {
-        });
-
+        final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
         try {
             protocolAdapterManager.updateAdapterConfig(adapter.getProtocolAdapterType(), adapterId, config);
         } catch (final Exception e) {
@@ -330,7 +326,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
@@ -390,7 +386,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     protected @NotNull Status getStatusInternal(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>>
+        final Optional<ProtocolAdapterWrapper>
                 optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
                 .orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
@@ -425,9 +421,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response status() {
         final ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
-        final Map<String, ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> adapters =
+        final Map<String, ProtocolAdapterWrapper> adapters =
                 protocolAdapterManager.getProtocolAdapters();
-        for (final ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> instance : adapters.values()) {
+        for (final ProtocolAdapterWrapper instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();
@@ -549,7 +545,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getTagSchema(@NotNull String protocolId) {
+    public @NotNull Response getTagSchema(final @NotNull String protocolId) {
         return protocolAdapterManager.getAdapterTypeById(protocolId)
                 .map(info -> Response.status(200)
                         .entity(new TagSchema(protocolId,
@@ -562,7 +558,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getWritingSchema(@NotNull final String adapterId, @NotNull final String tagName) {
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>>
+        final Optional<ProtocolAdapterWrapper>
                 optionalProtocolAdapterWrapper = protocolAdapterManager.getAdapterById(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
             log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
@@ -614,7 +610,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         final String adapterId = adapter.getAdapter().getId();
-        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
@@ -625,13 +621,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
-
-            //TODO: we need to move all these conversions into a common place
-            // TODO the map is not the correct map
-            final Map<String, Object> config =
-                    objectMapper.convertValue(adapter.getAdapter().getConfig(), new TypeReference<>() {
-                    });
-
+            final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getAdapter().getConfig());
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     configConverter.convertAdapterConfig(adapterType, config, protocolAdapterManager.writingEnabled());
 
@@ -671,7 +661,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     adapter.getFieldMappings().stream().map(FieldMappings::fromModel).collect(Collectors.toList());
 
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
-                    adapterType, protocolSpecificAdapterConfig, toEdgeMappings, fromEdgeMappings, tags, fieldMappings));
+                    adapterType,
+                    protocolSpecificAdapterConfig,
+                    toEdgeMappings,
+                    fromEdgeMappings,
+                    tags,
+                    fieldMappings));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,

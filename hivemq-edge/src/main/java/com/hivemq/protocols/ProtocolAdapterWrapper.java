@@ -34,15 +34,15 @@ import com.hivemq.persistence.fieldmapping.FieldMappings;
 
 import java.util.List;
 
-public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
+public class ProtocolAdapterWrapper {
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private final @NotNull T adapter;
+    private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolSpecificAdapterConfig configObject;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull List<? extends Tag> tags;
     private final @NotNull List<ToEdgeMapping> toEdgeMappings;
     private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
     private final @NotNull List<FieldMappings> fieldMappings;
@@ -50,12 +50,12 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull T adapter,
+            final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolSpecificAdapterConfig configObject,
-            final @NotNull List<Tag> tags,
+            final @NotNull List<? extends Tag> tags,
             final @NotNull List<ToEdgeMapping> toEdgeMappings,
             final @NotNull List<FromEdgeMapping> fromEdgeMappings,
             final @NotNull List<FieldMappings> fieldMappings) {
@@ -118,7 +118,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return configObject;
     }
 
-    public @NotNull List<Tag> getTags() {
+    public @NotNull List<? extends Tag> getTags() {
         return tags;
     }
 
@@ -130,7 +130,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return adapter.getId();
     }
 
-    public @NotNull T getAdapter() {
+    public @NotNull ProtocolAdapter getAdapter() {
         return adapter;
     }
 

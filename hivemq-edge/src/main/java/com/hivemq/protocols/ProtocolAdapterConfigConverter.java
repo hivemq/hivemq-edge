@@ -15,10 +15,13 @@
  */
 package com.hivemq.protocols;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
@@ -34,8 +37,12 @@ import java.util.stream.Collectors;
 @Singleton
 public class ProtocolAdapterConfigConverter {
 
+    private static final @NotNull TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<>() {
+    };
+
     private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager;
     private final @NotNull ObjectMapper mapper;
+
 
     @Inject
     public ProtocolAdapterConfigConverter(
@@ -106,5 +113,17 @@ public class ProtocolAdapterConfigConverter {
     public @NotNull List<? extends Tag> mapsToTags(
             final @NotNull String protocolId, final @NotNull List<Map<String, Object>> domainTags) {
         return getProtocolAdapterFactory(protocolId).convertTagDefinitionObjects(mapper, domainTags);
+    }
+
+    public @NotNull Map<String, Object> convertConfigToMaps(final @NotNull JsonNode config) {
+        return mapper.convertValue(config, MAP_TYPE_REFERENCE);
+    }
+
+    public @NotNull Map<String, Object> convertagTagsToMaps(final @NotNull Tag tag) {
+        return mapper.convertValue(tag, MAP_TYPE_REFERENCE);
+    }
+
+    public @NotNull Map<String, Object> convertTagDefinitionToMaps(final @NotNull TagDefinition tagDefinition) {
+        return mapper.convertValue(tagDefinition, MAP_TYPE_REFERENCE);
     }
 }

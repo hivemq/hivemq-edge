@@ -67,26 +67,27 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private volatile @Nullable ScheduledFuture<?> future;
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
-    protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter;
+    protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
 
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper protocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        this.initialDelay = Math.max(protocolAdapter.getAdapter().getPollingIntervalMillis(), 100);
-        this.period = Math.max(protocolAdapter.getAdapter().getPollingIntervalMillis(), 10);
+        final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapter.getAdapter();
+        this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
+        this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
         this.objectMapper = objectMapper;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
-        this.maxErrorsBeforeRemoval = protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval();
+        this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
         this.protocolAdapterMetricsService = protocolAdapter.getProtocolAdapterMetricsService();

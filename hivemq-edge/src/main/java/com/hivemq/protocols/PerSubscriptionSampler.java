@@ -38,18 +38,19 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
     private final @NotNull PollingContext pollingContext;
 
     public PerSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
+            final @NotNull PollingProtocolAdapter pollingProtocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull PollingContext pollingContext,
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
-        super(protocolAdapter,
+        super(protocolAdapterWrapper,
                 objectMapper,
                 adapterPublishService,
                 eventService,
                 jsonPayloadDefaultCreator);
-        this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
+        this.perSubscriptionProtocolAdapter = pollingProtocolAdapter;
         this.pollingContext = pollingContext;
     }
 

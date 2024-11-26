@@ -16,7 +16,6 @@
 package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -26,7 +25,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -87,8 +85,7 @@ import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdat
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
-    private final @NotNull Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> protocolAdapters =
-            new ConcurrentHashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull ObjectMapper objectMapper;
@@ -202,8 +199,7 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        final Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterOptional =
-                getAdapterById(protocolAdapterId);
+        final Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
         return adapterOptional.map(this::start)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
@@ -212,7 +208,7 @@ public class ProtocolAdapterManager {
 
     @VisibleForTesting
     @NotNull
-    CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
+    CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
 
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
@@ -249,7 +245,7 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        final Optional<ProtocolAdapterWrapper<?>> adapterOptional = getAdapterById(protocolAdapterId);
+        final Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
         return adapterOptional.map(this::stop)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
@@ -304,13 +300,15 @@ public class ProtocolAdapterManager {
     }
 
     private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
-        if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
+        final ProtocolAdapter adapter = protocolAdapterWrapper.getAdapter();
+        if (adapter instanceof PollingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Schedule polling for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
-            final List<PollingContext> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
+            final List<FromEdgeMapping> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
             pollingContexts.forEach(adapterSubscription -> {
                 final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
+                        (PollingProtocolAdapter) adapter,
                         objectMapper,
                         moduleServices.adapterPublishService(),
                         adapterSubscription,
@@ -321,7 +319,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    public @NotNull CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
+    public @NotNull CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         log.info("Stopping protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
@@ -374,7 +372,7 @@ public class ProtocolAdapterManager {
         });
     }
 
-    private void startFailedStop(final @NotNull ProtocolAdapterWrapper<?> protocolAdapterWrapper) {
+    private void startFailedStop(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             protocolAdapterPollingService.stopPollingForAdapterInstance(protocolAdapterWrapper.getAdapter());
         }
@@ -464,8 +462,7 @@ public class ProtocolAdapterManager {
         // we can not add toMappings as we do not have field mappings here yet.
         // actually this is correct from the user workflow
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
-                adapterType,
-                protocolSpecificAdapterConfig, List.of(), fromEdgeMappings, List.of(),
+                adapterType, protocolSpecificAdapterConfig, List.of(), fromEdgeMappings, List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
@@ -585,8 +582,7 @@ public class ProtocolAdapterManager {
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
-                    protocolId,
-                    oldInstance.getConfigObject(), oldInstance.getToEdgeMappings(),
+                    protocolId, oldInstance.getConfigObject(), oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags(),
                     fieldMappings);
@@ -597,9 +593,9 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public @NotNull Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> getAdapterById(final @NotNull String id) {
+    public @NotNull Optional<ProtocolAdapterWrapper> getAdapterById(final @NotNull String id) {
         Preconditions.checkNotNull(id);
-        final Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapters = getProtocolAdapters();
+        final Map<String, ProtocolAdapterWrapper> adapters = getProtocolAdapters();
         return Optional.ofNullable(adapters.get(id));
     }
 
@@ -614,7 +610,7 @@ public class ProtocolAdapterManager {
     }
 
 
-    public @NotNull Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> getProtocolAdapters() {
+    public @NotNull Map<String, ProtocolAdapterWrapper> getProtocolAdapters() {
         return protocolAdapters;
     }
 
@@ -701,12 +697,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> tags = adapter.getTags();
+            final List<? extends Tag> tags = adapter.getTags();
             final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
             if (!alreadyExists) {
                 final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                        })).collect(Collectors.toList());
+                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
                 tagMaps.add(domainTag.toTagMap());
                 updateAdapterTags(adapterId, tagMaps);
                 return DomainTagAddResult.success();
@@ -719,12 +714,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagUpdateResult updateDomainTag(final @NotNull DomainTag domainTag) {
         final String adapterId = domainTag.getAdapterId();
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> tags = adapter.getTags();
+            final List<? extends Tag> tags = adapter.getTags();
             final boolean alreadyExists = tags.removeIf(t -> t.getName().equals(domainTag.getTagName()));
             if (alreadyExists) {
                 final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                        })).collect(Collectors.toList());
+                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
                 tagMaps.add(domainTag.toTagMap());
                 updateAdapterTags(adapterId, tagMaps);
                 return DomainTagUpdateResult.success();
@@ -736,14 +730,13 @@ public class ProtocolAdapterManager {
 
     public @NotNull DomainTagUpdateResult updateDomainTags(
             final @NotNull String adapterId, final Set<DomainTag> domainTags) {
-        final Set<String> tagNames = domainTags.stream().map(t -> t.getTagName()).collect(Collectors.toSet());
+        final Set<String> tagNames = domainTags.stream().map(DomainTag::getTagName).collect(Collectors.toSet());
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> tags = adapter.getTags();
+            final List<? extends Tag> tags = adapter.getTags();
             final boolean alreadyExists = tags.removeIf(t -> tagNames.contains(t.getName()));
             if (alreadyExists) {
                 final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                        })).collect(Collectors.toList());
+                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
                 domainTags.forEach(dt -> tagMaps.add(dt.toTagMap()));
                 updateAdapterTags(adapterId, tagMaps);
                 return DomainTagUpdateResult.success();
@@ -756,12 +749,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagDeleteResult deleteDomainTag(
             final @NotNull String adapterId, final @NotNull String tagName) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> tags = adapter.getTags();
+            final List<? extends Tag> tags = adapter.getTags();
             final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
             if (exists) {
                 final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                        })).collect(Collectors.toList());
+                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
                 updateAdapterTags(adapterId, tagMaps);
                 return DomainTagDeleteResult.success();
             } else {
@@ -778,13 +770,11 @@ public class ProtocolAdapterManager {
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                                }))))
+                                tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
                 .collect(Collectors.toList());
     }
 
-    public Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
+    public @NotNull Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
         return getProtocolAdapters().values()
                 .stream()
                 .flatMap(adapter -> adapter.getTags()
@@ -793,9 +783,7 @@ public class ProtocolAdapterManager {
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                                }))))
+                                tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
                 .findFirst();
     }
 
@@ -805,28 +793,8 @@ public class ProtocolAdapterManager {
                 .map(tag -> new DomainTag(tag.getName(),
                         adapter.getId(),
                         adapter.getProtocolAdapterInformation().getProtocolId(),
-                        tag.getDescription(),
-                        objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                        })))
+                        tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition())))
                 .collect(Collectors.toList()));
-    }
-
-    public @NotNull Optional<DomainTag> getTag(final @NotNull String tagName) {
-        return getProtocolAdapters().values()
-                .stream()
-                .map(adapter -> adapter.getTags()
-                        .stream()
-                        .filter(t -> t.getName().equals(tagName))
-                        .map(tag -> new DomainTag(tag.getName(),
-                                adapter.getId(),
-                                adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                                })))
-                        .findFirst())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst();
     }
 
     public @NotNull DomainTagAddResult addFieldMappings(
@@ -848,13 +816,11 @@ public class ProtocolAdapterManager {
 
 
     public @NotNull Optional<List<FieldMappings>> getFieldMappingsForAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> optionalProtocolAdapterWrapper =
-                getAdapterById(adapterId);
+        final Optional<ProtocolAdapterWrapper> optionalProtocolAdapterWrapper = getAdapterById(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
             return Optional.empty();
         }
-        final ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapterWrapper =
-                optionalProtocolAdapterWrapper.get();
+        final ProtocolAdapterWrapper protocolAdapterWrapper = optionalProtocolAdapterWrapper.get();
 
         return Optional.of(protocolAdapterWrapper.getFieldMappings());
     }
