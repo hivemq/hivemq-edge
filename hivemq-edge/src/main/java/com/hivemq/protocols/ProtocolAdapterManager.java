@@ -729,20 +729,13 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull DomainTagUpdateResult updateDomainTags(
-            final @NotNull String adapterId, final Set<DomainTag> domainTags) {
-        final Set<String> tagNames = domainTags.stream().map(DomainTag::getTagName).collect(Collectors.toSet());
+            final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<? extends Tag> tags = adapter.getTags();
-            final boolean alreadyExists = tags.removeIf(t -> tagNames.contains(t.getName()));
-            if (alreadyExists) {
-                final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
-                domainTags.forEach(dt -> tagMaps.add(dt.toTagMap()));
-                updateAdapterTags(adapterId, tagMaps);
-                return DomainTagUpdateResult.success();
-            } else {
-                return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
-            }
+            final List<Map<String, Object>> tagMaps =
+                    domainTags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                    })).collect(Collectors.toList());
+            updateAdapterTags(adapterId, tagMaps);
+            return DomainTagUpdateResult.success();
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
