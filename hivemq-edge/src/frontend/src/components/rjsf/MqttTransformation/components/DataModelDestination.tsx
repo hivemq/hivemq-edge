@@ -3,21 +3,23 @@ import type { JSONSchema7 } from 'json-schema'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 
+import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ValidationStatus from '@/components/rjsf/MqttTransformation/components/mapping/ValidationStatus.tsx'
 import { MappingValidation } from '@/modules/Mappings/types.ts'
-import { useGetTagSchema } from '@/api/hooks/_deprecated/useGetTagSchema.ts'
 
 interface DataModelDestinationProps extends CardProps {
   topic: string
+  adapterType: string
+  adapterId: string
   validation: MappingValidation
 }
 
-const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation, ...props }) => {
+const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, adapterId, validation, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetTagSchema(topic)
+  const { data, isLoading, isError, error } = useGetWritingSchema(adapterId, topic)
 
   return (
     <Card {...props} size="sm">

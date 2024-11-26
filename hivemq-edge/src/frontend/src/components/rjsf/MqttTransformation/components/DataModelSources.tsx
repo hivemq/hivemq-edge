@@ -16,7 +16,6 @@ interface DataModelSourcesProps extends CardProps {
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topic, ...props }) => {
   const { t } = useTranslation()
-
   const { schema, isLoading, isError, error } = useSamplingForTopic(topic)
 
   const structuredSchema = useMemo(() => {

@@ -19,8 +19,8 @@ import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import { useTranslation } from 'react-i18next'
 
 interface MappingDrawerProps {
-  adapterId?: string
-  adapterType?: string
+  adapterId: string
+  adapterType: string
   item: OutwardMapping
   onSubmit: (newItem: OutwardMapping) => void
   onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void

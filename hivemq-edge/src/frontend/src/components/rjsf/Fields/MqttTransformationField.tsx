@@ -6,8 +6,11 @@ import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMa
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
+import { useTranslation } from 'react-i18next'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema, AdapterContext>> = (props) => {
+  const { t } = useTranslation('components')
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
   const [subsData, setSubsData] = useState<OutwardMapping[] | undefined>(props.formData)
 
@@ -59,7 +62,6 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
     })
   }
 
-  if (!subsData) return null
   const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', OutwardMapping[]>(
     'ArrayFieldDescriptionTemplate',
     props.registry,
@@ -72,6 +74,9 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
     props.uiOptions
   )
   const uiOptions = getUiOptions(props.uiSchema)
+
+  if (!subsData || !adapterId || !adapterType)
+    return <ErrorMessage message={t('rjsf.MqttTransformationField.error.internalError')} status="error" />
 
   return (
     <>

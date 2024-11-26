@@ -218,6 +218,9 @@
       }
     },
     "MqttTransformationField": {
+      "error": {
+        "internalError": "The form cannot be created"
+      },
       "tabs": {
         "list": "List of mappings",
         "editor": "Mapping Editor"

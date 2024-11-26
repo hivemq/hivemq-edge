@@ -5,8 +5,8 @@ import { FormControl, FormLabel } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 interface SourceSelectorProps {
-  adapterType?: string
-  adapterId?: string
+  adapterType: string
+  adapterId: string
   value: string | undefined
   onChange: (v: string | readonly string[] | null) => void
 }
@@ -30,12 +30,7 @@ export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, value
       <FormLabel htmlFor={`react-select-${SelectEntityType.TAG}-input`}>
         {t('rjsf.MqttTransformationField.destination.selector.formLabel')}
       </FormLabel>
-      <SelectTag
-        adapterId={adapterId as string}
-        id="mapping-select-destination"
-        onChange={onChange}
-        value={value || null}
-      />
+      <SelectTag adapterId={adapterId} id="mapping-select-destination" onChange={onChange} value={value || null} />
     </FormControl>
   )
 }
