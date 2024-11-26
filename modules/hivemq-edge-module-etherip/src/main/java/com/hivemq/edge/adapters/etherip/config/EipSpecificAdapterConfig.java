@@ -74,7 +74,11 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig ,
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
-        this.eipToMqttConfig = eipToMqttConfig;
+        if(eipToMqttConfig == null) {
+            this.eipToMqttConfig = new EipToMqttConfig(null, null, null, null);
+        } else {
+            this.eipToMqttConfig = eipToMqttConfig;
+        }
     }
 
 
