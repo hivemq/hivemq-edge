@@ -20,10 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.fieldmapping.FieldMappings;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
-import java.util.Objects;
 
 public class AdapterConfigModel {
 
@@ -32,18 +33,23 @@ public class AdapterConfigModel {
             description = "The adapter configuration")
     private final @NotNull Adapter adapter;
 
-
     @JsonProperty("tags")
     @Schema(name = "tags",
             description = "The tags defined for this adapter")
     private final @NotNull List<DomainTagModel> domainTagModels;
 
+    @JsonProperty("fieldMappings")
+    @Schema(name = "tags", description = "The fieldMappings for this adapter")
+    private final @NotNull List<FieldMappings> fieldMappings;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AdapterConfigModel(
             @JsonProperty("config") final @NotNull Adapter adapter,
-            @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels) {
+            @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels,
+            @JsonProperty("fieldMappings") final @NotNull List<FieldMappings> fieldMappings) {
         this.adapter = adapter;
         this.domainTagModels = domainTagModels;
+        this.fieldMappings = fieldMappings;
     }
 
     public @NotNull Adapter getAdapter() {
@@ -54,22 +60,38 @@ public class AdapterConfigModel {
         return domainTagModels;
     }
 
-    @Override
-    public String toString() {
-        return "FullAdapter{" + "adapter" +
-                "=" + adapter + ", domainTagModels=" + domainTagModels + '}';
+    public @NotNull List<FieldMappings> getFieldMappings() {
+        return fieldMappings;
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         final AdapterConfigModel that = (AdapterConfigModel) o;
-        return Objects.equals(adapter, that.adapter) && Objects.equals(domainTagModels, that.domainTagModels);
+        return adapter.equals(that.adapter) &&
+                domainTagModels.equals(that.domainTagModels) &&
+                fieldMappings.equals(that.fieldMappings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(adapter, domainTagModels);
+        int result = adapter.hashCode();
+        result = 31 * result + domainTagModels.hashCode();
+        result = 31 * result + fieldMappings.hashCode();
+        return result;
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "AdapterConfigModel{" +
+                "adapter=" +
+                adapter +
+                ", domainTagModels=" +
+                domainTagModels +
+                ", fieldMappings=" +
+                fieldMappings +
+                '}';
     }
 }

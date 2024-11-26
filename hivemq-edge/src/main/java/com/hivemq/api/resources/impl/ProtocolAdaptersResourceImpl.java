@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -63,6 +65,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.protocols.FromEdgeMapping;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -70,6 +73,7 @@ import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.ToEdgeMapping;
 import com.hivemq.protocols.params.NodeTreeImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
@@ -459,7 +463,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
                 return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,
-                        "Adapter not found", "The adapter named '" + adapterId + "' does not exist.");
+                        "Adapter not found",
+                        "The adapter named '" + adapterId + "' does not exist.");
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
         }
@@ -537,14 +542,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response getDomainTag(final String tagName) {
+    public @NotNull Response getDomainTag(final @NotNull String tagName) {
         return protocolAdapterManager.getDomainTagByName(tagName)
                 .map(tag -> Response.ok().entity(DomainTagModel.fromDomainTag(tag)).build())
                 .orElse(ErrorResponseUtil.notFound("Tag", tagName));
     }
 
     @Override
-    public Response getTagSchema(String protocolId) {
+    public @NotNull Response getTagSchema(@NotNull String protocolId) {
         return protocolAdapterManager.getAdapterTypeById(protocolId)
                 .map(info -> Response.status(200)
                         .entity(new TagSchema(protocolId,
@@ -598,8 +603,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response addCompleteAdapter(
-            final String adapterType, final String adapterName, final AdapterConfigModel adapter) {
+    public @NotNull Response addCompleteAdapter(
+            final @NotNull String adapterType,
+            final @NotNull String adapterName,
+            final @NotNull AdapterConfigModel adapter) {
         final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterInformation.isEmpty()) {
@@ -621,8 +628,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             //TODO: we need to move all these conversions into a common place
             // TODO the map is not the correct map
-            final Map<String, Object> config = objectMapper.convertValue(adapter.getAdapter(), new TypeReference<>() {
-            });
+            final Map<String, Object> config =
+                    objectMapper.convertValue(adapter.getAdapter().getConfig(), new TypeReference<>() {
+                    });
 
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     configConverter.convertAdapterConfig(adapterType, config, protocolAdapterManager.writingEnabled());
@@ -635,12 +643,33 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
 
-            // TODO we need to extract the mappings from the config
+            final List<FromEdgeMapping> fromEdgeMappings;
+            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
+                final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
+                        (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
+                fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
+                        .stream()
+                        .map(FromEdgeMapping::from)
+                        .collect(Collectors.toList());
+            } else {
+                fromEdgeMappings = new ArrayList<>();
+            }
+
+            final List<ToEdgeMapping> toEdgeMappings;
+            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithWritingContexts) {
+                final AdapterConfigWithWritingContexts adapterConfigWithPollingContexts =
+                        (AdapterConfigWithWritingContexts) protocolSpecificAdapterConfig;
+                toEdgeMappings = adapterConfigWithPollingContexts.getWritingContexts()
+                        .stream()
+                        .map(ToEdgeMapping::from)
+                        .collect(Collectors.toList());
+            } else {
+                toEdgeMappings = new ArrayList<>();
+            }
+
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
                     adapterType,
-                    protocolSpecificAdapterConfig,
-                    List.of(),
-                    List.of(), tags, List.of()));
+                    protocolSpecificAdapterConfig, toEdgeMappings, fromEdgeMappings, tags, adapter.getFieldMappings()));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
