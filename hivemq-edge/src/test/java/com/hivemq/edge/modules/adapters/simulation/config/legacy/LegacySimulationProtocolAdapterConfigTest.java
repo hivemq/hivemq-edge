@@ -20,10 +20,11 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -33,11 +34,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class LegacySimulationProtocolAdapterConfigTest {
@@ -59,13 +59,59 @@ class LegacySimulationProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/configs/simulation/legacy-simulation-adapter-full-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
+        final ConfigurationMigrator migrator =
+                new ConfigurationMigrator(new ConfigurationFile(new File(resource.toURI())), mock(ModuleLoader.class));
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
 
-        final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
+        assertThat(migrator.migrateIfNeeded(Map.of("simulation",
+                new SimulationProtocolAdapterFactory(mockInput)))).isNotEmpty().get().satisfies(cfg -> {
+            assertThat(cfg.getProtocolAdapterConfig()).hasSize(1);
+                             /*
+                            .allSatisfy(entity -> {
+                                assertThat(entity.getProtocolId()).isEqualTo("simulation");
+                                assertThat(entity.getAdapterId()).isEqualTo("my-eip-protocol-adapter");
+                                assertThat(entity.getTags())
+                                        .hasSize(2)
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).startsWith("tag-name");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("address", "dataType")
+                                                    .containsExactly("tag-address", "BOOL");
+                                        })
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).startsWith("tag-name2");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("address", "dataType")
+                                                    .containsExactly("tag-address2", "BOOL");
+                                        });
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .hasSize(2)
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).startsWith("tag-name");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic");
+                                            assertThat(mapping.getUserProperties()).containsExactly(
+                                                    new MqttUserPropertyEntity("name", "value1"),
+                                                    new MqttUserPropertyEntity ("name", "value2")
+                                            );
+                                        })
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).startsWith("tag-name2");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
+                                            assertThat(mapping.getUserProperties()).containsExactly(
+                                                    new MqttUserPropertyEntity("name", "value1"),
+                                                    new MqttUserPropertyEntity ("name", "value2")
+                                            );
+                                        });
+                                assertThat(entity.getFieldMappings()).isEmpty();
+                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                            });
+
+                     */
+        });
         //TODO
         /*
         final SimulationSpecificAdapterConfig config =
