@@ -122,7 +122,7 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -147,7 +147,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -176,7 +176,7 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
@@ -191,7 +191,7 @@ class ProtocolAdapterManagerTest {
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STOPPED, adapterWrapper.getRuntimeStatus());
         verify(remoteService).fireUsageEvent(any());
-        verify(protocolAdapterWritingService).stopWriting(adapterWrapper.getAdapter());
+        verify(protocolAdapterWritingService).stopWriting((WritingProtocolAdapter<WritingContext>) adapterWrapper.getAdapter());
     }
 
     @Test
@@ -204,7 +204,7 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(),
                 anyString())).thenThrow(new RuntimeException("we failed start"));
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
@@ -219,7 +219,7 @@ class ProtocolAdapterManagerTest {
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STOPPED, adapterWrapper.getRuntimeStatus());
         verify(remoteService, never()).fireUsageEvent(any());
-        verify(protocolAdapterWritingService).stopWriting(adapterWrapper.getAdapter());
+        verify(protocolAdapterWritingService).stopWriting((WritingProtocolAdapter<WritingContext>) adapterWrapper.getAdapter());
     }
 
     @Test
@@ -231,7 +231,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.stopWriting(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -258,7 +258,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.stopWriting(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper = new ProtocolAdapterWrapper<>(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
