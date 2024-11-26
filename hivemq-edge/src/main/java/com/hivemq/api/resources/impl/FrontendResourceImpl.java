@@ -81,7 +81,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     @Override
     public @NotNull Response getConfiguration() {
 
-        GatewayConfiguration configuration = new GatewayConfiguration(getEnvironmentProperties(),
+        final GatewayConfiguration configuration = new GatewayConfiguration(getEnvironmentProperties(),
                 getCloudLink(),
                 getGitHubLink(),
                 getDocumentationLink(),
@@ -97,7 +97,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
 
     public @NotNull LinkList getDashboardCTAs() {
-        ImmutableList.Builder<Link> links = new ImmutableList.Builder().add(new Link("Connect My First Device",
+        final ImmutableList.Builder<Link> links = new ImmutableList.Builder().add(new Link("Connect My First Device",
                         "./protocol-adapters?from=dashboard-cta",
                         LoremIpsum.generate(40),
                         null,
@@ -144,7 +144,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     protected @NotNull FirstUseInformation getFirstUse() {
         //-- First use is determined by zero configuration
-        boolean firstUse = configurationService.bridgeConfiguration().getBridges().isEmpty() &&
+        final boolean firstUse = configurationService.bridgeConfiguration().getBridges().isEmpty() &&
                 protocolAdapterManager.getProtocolAdapters().isEmpty();
         //-- Populate login prefill
         String prefillUsername = null;
@@ -164,13 +164,13 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     @Override
     public @NotNull Response getNotifications() {
 
-        ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder();
-        Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
+        final ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder<>();
+        final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
         if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
                 configurationService.gatewayConfiguration().isConfigurationExportEnabled() &&
                 lastUpdate.isPresent() &&
                 lastUpdate.get() > System.currentTimeMillis() - (60000 * 5)) {
-            Link xmlDownload =
+            final Link xmlDownload =
                     new Link("Download XML Configuration", "/configuration-download", null, null, null, Boolean.FALSE);
             notifs.add(new Notification(Notification.LEVEL.NOTICE,
                     "Configuration Has Changed",
@@ -194,7 +194,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
 
     protected @NotNull EnvironmentProperties getEnvironmentProperties() {
-        Map<String, String> env = new HashMap<>();
+        final Map<String, String> env = new HashMap<>();
         env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
         env.put(HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED,
                 String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()));

@@ -74,8 +74,7 @@ public class ProtocolAdapterConfigConverter {
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig,
-                toEdgeMappingList, fromEdgeMappingList, tags, fieldMappings);
+                protocolSpecificAdapterConfig, toEdgeMappingList, fromEdgeMappingList, tags, fieldMappings);
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
@@ -83,8 +82,9 @@ public class ProtocolAdapterConfigConverter {
         final @NotNull Optional<ProtocolAdapterFactory<?>> factoryOptional =
                 protocolAdapterFactoryManager.get(protocolId);
         if (factoryOptional.isEmpty()) {
-            // TODO error handling
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("No Factory was found for adapter with protocol id '" +
+                    protocolId +
+                    "'. ");
         }
         return factoryOptional.get();
     }

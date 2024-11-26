@@ -312,7 +312,8 @@ public class ProtocolAdapterManager {
             final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
                     .map(toEdgeMapping -> new WritingContextImpl(toEdgeMapping.getTagName(),
                             toEdgeMapping.getTopicFilter(),
-                            toEdgeMapping.getMaxQoS(), findFieldMapping(fieldMappings, toEdgeMapping)))
+                            toEdgeMapping.getMaxQoS(),
+                            findFieldMapping(fieldMappings, toEdgeMapping, protocolAdapterWrapper.getId())))
                     .collect(Collectors.toList());
 
             startWritingFuture =
@@ -326,14 +327,22 @@ public class ProtocolAdapterManager {
     }
 
     private FieldMappings findFieldMapping(
-            final List<FieldMappings> fieldMappings, final @NotNull ToEdgeMapping toEdgeMapping) {
+            final List<FieldMappings> fieldMappings,
+            final @NotNull ToEdgeMapping toEdgeMapping,
+            final @NotNull String adapterId) {
 
         final Optional<FieldMappings> optionalFieldMappings = fieldMappings.stream()
                 .filter(f -> f.getTagName().equals(toEdgeMapping.getTagName()) &&
                         f.getTopicFilter().equals(toEdgeMapping.getTopicFilter()))
                 .findFirst();
 
-        // TODO error handling if it is not present
+        if (optionalFieldMappings.isEmpty()) {
+            throw new IllegalStateException(
+                    "No FieldMapping was found when trying to setup writing for protocol adapter: '" +
+                            adapterId +
+                            "'.");
+        }
+
         return optionalFieldMappings.get();
     }
 
@@ -500,8 +509,7 @@ public class ProtocolAdapterManager {
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                 adapterType,
                 protocolSpecificAdapterConfig,
-                List.of(),
-                fromEdgeMappings, List.of(),
+                List.of(), fromEdgeMappings, List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
@@ -628,14 +636,14 @@ public class ProtocolAdapterManager {
             final List<ToEdgeMapping> newToEdgeMappings = oldInstance.getToEdgeMappings()
                     .stream()
                     .map(toEdgeMapping -> new ToEdgeMapping(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(), toEdgeMapping.getMaxQoS()))
+                            toEdgeMapping.getTopicFilter(),
+                            toEdgeMapping.getMaxQoS()))
                     .collect(Collectors.toList());
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
                     oldInstance.getConfigObject(),
-                    newToEdgeMappings,
-                    oldInstance.getFromEdgeMappings(), oldInstance.getTags(), fieldMappings);
+                    newToEdgeMappings, oldInstance.getFromEdgeMappings(), oldInstance.getTags(), fieldMappings);
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
@@ -723,7 +731,9 @@ public class ProtocolAdapterManager {
                     protocolAdapterState,
                     config.getAdapterConfig(),
                     config.getTags(),
-                    config.getToEdgeMappings(), config.getFromEdgeMappings(), config.getFieldMappings());
+                    config.getToEdgeMappings(),
+                    config.getFromEdgeMappings(),
+                    config.getFieldMappings());
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 

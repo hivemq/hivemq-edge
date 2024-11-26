@@ -17,12 +17,15 @@ package com.hivemq.api.resources.examples;
 
 public interface TopicFiltersResourceExamples {
 
-
-    // TODO
-    String EXAMPLE_TOPIC_FILTER = "";
-    //TODO
-    String EXAMPLE_TOPIC_FILTER_LIST = "";
-
+    String EXAMPLE_TOPIC_FILTER_LIST = "{\n" +
+            "  \"items\" : [ {\n" +
+            "    \"topicFilter\" : \"topic1\",\n" +
+            "    \"description\" : \"filter1\"\n" +
+            "  }, {\n" +
+            "    \"topicFilter\" : \"topic2\",\n" +
+            "    \"description\" : \"filter2\"\n" +
+            "  } ]\n" +
+            "}";
 
     String EXAMPLE_NOT_PRESENT = "{\n" +
             "  \"errors\" : [ {\n" +

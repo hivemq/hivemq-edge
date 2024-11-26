@@ -16,13 +16,13 @@
 package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.api.model.mapping.FieldMappingsListModel;
-import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
+import com.hivemq.api.model.mapping.FieldMappingsListModel;
+import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -31,6 +31,7 @@ import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
+import com.hivemq.api.resources.examples.FieldMappingsExamples;
 import com.hivemq.api.resources.examples.TagResourceExamples;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -514,7 +515,6 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "An example for domain tags in opc ua",
                                                                               name = "opc ua domain tags example",
                                                                               summary = "Example for domain tags for opc ua ",
-                                                                              // TODO
                                                                               value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -575,8 +575,7 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "An example for field mappings in opc ua",
                                                                               name = "field mappings example",
                                                                               summary = "Example for field mappings ",
-                                                                              //TODO
-                                                                              value = "")}))})
+                                                                              value = FieldMappingsExamples.FIELD_MAPPINGS_LIST)}))})
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getFieldMappingsForAdapter(
@@ -601,7 +600,7 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "An example response in case no field mappings are present for this tagId.",
                                                                               name = "already present example",
                                                                               summary = "An example response in case no field mappings is present for this tagId.",
-                                                                              value = "")}))}) //TODO
+                                                                              value = FieldMappingsExamples.ADAPTER_NOT_PRESENT)}))})
     @NotNull
     Response updateFieldMappingsTags(
             @Parameter(name = "adapterId",

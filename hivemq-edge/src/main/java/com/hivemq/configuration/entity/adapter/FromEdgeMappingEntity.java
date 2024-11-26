@@ -18,7 +18,6 @@ package com.hivemq.configuration.entity.adapter;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.protocols.FromEdgeMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -115,24 +114,6 @@ public class FromEdgeMappingEntity {
         if (tagName == null || tagName.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
         }
-    }
-
-    // TODO might be removable
-    public static @NotNull FromEdgeMappingEntity from(final @NotNull FromEdgeMapping fromEdgeMapping) {
-
-        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = fromEdgeMapping.getUserProperties()
-                .stream()
-                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
-                        mqttUserProperty.getValue()))
-                .collect(Collectors.toList());
-
-        return new FromEdgeMappingEntity(fromEdgeMapping.getTagName(),
-                fromEdgeMapping.getMqttTopic(),
-                fromEdgeMapping.getMaxQoS(),
-                fromEdgeMapping.getMessageHandlingOptions(),
-                fromEdgeMapping.getIncludeTagNames(),
-                fromEdgeMapping.getIncludeTimestamp(),
-                mqttUserPropertyEntities);
     }
 
     public static @NotNull FromEdgeMappingEntity from(final @NotNull PollingContext fromEdgeMapping) {
