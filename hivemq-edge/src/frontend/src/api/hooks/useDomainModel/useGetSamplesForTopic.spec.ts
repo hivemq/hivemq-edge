@@ -29,7 +29,7 @@ describe('useGetSamplesForTopic', () => {
   })
 
   it('should not load if not seeded', async () => {
-    const { result } = renderHook(() => useGetSamplesForTopic('test/topic1', false), { wrapper })
+    const { result } = renderHook(() => useGetSamplesForTopic('test/topic1'), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isFetched).toBeFalsy()

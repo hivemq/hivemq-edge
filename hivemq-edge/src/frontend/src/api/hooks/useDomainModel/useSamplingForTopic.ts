@@ -35,9 +35,9 @@ export const useSamplingForTopic = (topic: string) => {
     if (!data) return undefined
     let schema = data
     if (samples) {
-      const dd = samples.items[0]
-      if (dd) {
-        const { payload } = dd
+      const payloadSample = samples.items[0]
+      if (payloadSample) {
+        const { payload } = payloadSample
         schema = reducerSchemaExamples(data, JSON.parse(atob(payload)))
       }
     }
