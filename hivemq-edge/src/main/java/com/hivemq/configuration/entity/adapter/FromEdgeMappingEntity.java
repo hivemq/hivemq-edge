@@ -56,7 +56,7 @@ public class FromEdgeMappingEntity {
         topic = "";
         tagName = "";
         messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
-        includeTagNames = true;
+        includeTagNames = false;
         includeTimestamp = true;
         maxQoS = 2;
         userProperties = new ArrayList<>();

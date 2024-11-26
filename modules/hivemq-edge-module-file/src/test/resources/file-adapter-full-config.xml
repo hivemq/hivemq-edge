@@ -17,52 +17,53 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <file>
+        <protocol-adapter>
+            <adapterId>my-file-protocol-adapter</adapterId>
+            <protocolId>file</protocolId>
             <config>
-                <id>my-file-protocol-adapter</id>
                 <fileToMqtt>
                     <pollingIntervalMillis>10</pollingIntervalMillis>
                     <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
-                    <fileToMqttMappings>
-                        <fileToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <mqttQos>1</mqttQos>
-                            <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                            <includeTagNames>true</includeTagNames>
-                            <includeTimestamp>false</includeTimestamp>
-                            <tagName>tag1</tagName>
-                            <mqttUserProperties>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value1</value>
-                                </mqttUserProperty>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value2</value>
-                                </mqttUserProperty>
-                            </mqttUserProperties>
-                        </fileToMqttMapping>
-                        <fileToMqttMapping>
-                            <mqttTopic>my/topic/2</mqttTopic>
-                            <mqttQos>1</mqttQos>
-                            <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                            <includeTagNames>true</includeTagNames>
-                            <includeTimestamp>false</includeTimestamp>
-                            <tagName>tag2</tagName>
-                            <mqttUserProperties>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value1</value>
-                                </mqttUserProperty>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value2</value>
-                                </mqttUserProperty>
-                            </mqttUserProperties>
-                        </fileToMqttMapping>
-                    </fileToMqttMappings>
                 </fileToMqtt>
             </config>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <topic>my/topic</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>false</includeTimestamp>
+                    <tagName>tag1</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </fromEdgeMapping>
+                <fromEdgeMapping>
+                    <topic>my/topic/2</topic>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>false</includeTimestamp>
+                    <tagName>tag2</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
             <tags>
                 <tag>
                     <name>tag1</name>
@@ -81,6 +82,6 @@
                     </definition>
                 </tag>
             </tags>
-        </file>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

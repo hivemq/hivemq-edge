@@ -36,8 +36,8 @@ public class FromEdgeMapping implements PollingContext {
     private final int maxQoS;
 
     public FromEdgeMapping(
-            @NotNull final String tagName,
-            @NotNull final String topic,
+            final @NotNull String tagName,
+            final @NotNull String topic,
             final int maxQoS,
             final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,

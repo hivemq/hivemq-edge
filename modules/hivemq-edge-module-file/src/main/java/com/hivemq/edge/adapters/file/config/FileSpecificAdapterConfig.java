@@ -38,7 +38,11 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     public FileSpecificAdapterConfig(
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
-        this.fileToMqttConfig = fileToMqttConfig;
+        if (fileToMqttConfig == null) {
+            this.fileToMqttConfig = new FileToMqttConfig(null ,null, null);
+        } else {
+            this.fileToMqttConfig = fileToMqttConfig;
+        }
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

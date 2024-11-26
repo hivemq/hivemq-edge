@@ -17,18 +17,27 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <file>
+        <protocol-adapter>
+            <adapterId>my-file-protocol-adapter</adapterId>
+            <protocolId>file</protocolId>
             <config>
-                <id>my-file-protocol-adapter</id>
-                <fileToMqtt>
-                    <fileToMqttMappings>
-                        <fileToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <contentType>BINARY</contentType>
-                        </fileToMqttMapping>
-                    </fileToMqttMappings>
-                </fileToMqtt>
+                <fileToMqtt></fileToMqtt>
             </config>
-        </file>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <topic>my/topic</topic>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>decsription</description>
+                    <definition>
+                        <filePath>pathy</filePath>
+                        <contentType>BINARY</contentType>
+                    </definition>
+                </tag>
+            </tags>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>
