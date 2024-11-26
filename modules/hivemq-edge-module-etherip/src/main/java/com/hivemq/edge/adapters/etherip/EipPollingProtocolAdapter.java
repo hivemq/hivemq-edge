@@ -54,6 +54,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull String adapterId;
     private volatile @Nullable EtherNetIP etherNetIP;
 
     private final @NotNull Map<String, EtherIpValue> lastSeenValues;
@@ -62,6 +63,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags();
@@ -72,7 +74,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override

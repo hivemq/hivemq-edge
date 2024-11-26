@@ -26,24 +26,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig , AdapterConfigWithPollingContexts {
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
-
-    @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
@@ -78,13 +65,11 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig ,
 
     @JsonCreator
     public EipSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
-        this.id = id;
         this.host = host;
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
@@ -92,9 +77,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig ,
         this.eipToMqttConfig = eipToMqttConfig;
     }
 
-    public @NotNull String getId() {
-        return id;
-    }
 
     public @NotNull String getHost() {
         return host;

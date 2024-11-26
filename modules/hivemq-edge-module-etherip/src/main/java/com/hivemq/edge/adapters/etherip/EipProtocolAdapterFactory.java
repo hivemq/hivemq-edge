@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.etherip;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -89,8 +88,7 @@ public class EipProtocolAdapterFactory
                 legacyEipAdapterConfig.getPublishChangedDataOnly(),
                 eipToMqttMappings);
 
-        final EipSpecificAdapterConfig eipSpecificAdapterConfig =
-                new EipSpecificAdapterConfig(legacyEipAdapterConfig.getId(),
+        final EipSpecificAdapterConfig eipSpecificAdapterConfig = new EipSpecificAdapterConfig(
                         legacyEipAdapterConfig.getPort(),
                         legacyEipAdapterConfig.getHost(),
                         legacyEipAdapterConfig.getBackplane(),
