@@ -58,11 +58,6 @@ public class ModbusProtocolAdapterConfigTest {
                 .isEmpty();
 
         final ModbusSpecificAdapterConfig config = (ModbusSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -116,11 +111,6 @@ public class ModbusProtocolAdapterConfigTest {
                 .isEmpty();
 
         final ModbusSpecificAdapterConfig config = (ModbusSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);

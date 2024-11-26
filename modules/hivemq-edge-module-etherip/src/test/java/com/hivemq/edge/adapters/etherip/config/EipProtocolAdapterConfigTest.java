@@ -52,8 +52,6 @@ class EipProtocolAdapterConfigTest {
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/eip-adapter-full-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
         assertThat(protocolAdapterConfig.missingTags())
@@ -83,8 +81,6 @@ class EipProtocolAdapterConfigTest {
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/eip-adapter-minimal-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
         assertThat(protocolAdapterConfig.missingTags())

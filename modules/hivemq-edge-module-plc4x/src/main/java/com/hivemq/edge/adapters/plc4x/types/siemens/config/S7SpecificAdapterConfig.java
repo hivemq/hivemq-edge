@@ -121,7 +121,11 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
         this.remoteSlot = Objects.requireNonNullElse(remoteSlot, 0);
         this.remoteSlot2 = Objects.requireNonNullElse(remoteSlot2, 0);
         this.remoteTsap = Objects.requireNonNullElse(remoteTsap, 0);
-        this.s7ToMqttConfig = s7ToMqttConfig;
+        if(s7ToMqttConfig == null) {
+            this.s7ToMqttConfig = new S7ToMqttConfig(null, null, null, null);
+        } else {
+            this.s7ToMqttConfig = s7ToMqttConfig;
+        }
 
     }
 

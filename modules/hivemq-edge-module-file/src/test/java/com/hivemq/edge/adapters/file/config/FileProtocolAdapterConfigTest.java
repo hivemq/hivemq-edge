@@ -56,8 +56,6 @@ class FileProtocolAdapterConfigTest {
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-full-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
         assertThat(protocolAdapterConfig.missingTags())
@@ -104,8 +102,6 @@ class FileProtocolAdapterConfigTest {
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-minimal-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         final FileSpecificAdapterConfig config = (FileSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
         assertThat(protocolAdapterConfig.missingTags())
@@ -125,7 +121,6 @@ class FileProtocolAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
         assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag)t))
                 .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }

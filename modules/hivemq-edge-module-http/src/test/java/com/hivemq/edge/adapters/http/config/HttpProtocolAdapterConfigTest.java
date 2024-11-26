@@ -185,8 +185,6 @@ public class HttpProtocolAdapterConfigTest {
                 .isEmpty();
 
         final BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
