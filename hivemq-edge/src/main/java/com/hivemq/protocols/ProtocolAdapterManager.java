@@ -462,7 +462,11 @@ public class ProtocolAdapterManager {
         // we can not add toMappings as we do not have field mappings here yet.
         // actually this is correct from the user workflow
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
-                adapterType, protocolSpecificAdapterConfig, List.of(), fromEdgeMappings, List.of(),
+                adapterType,
+                protocolSpecificAdapterConfig,
+                List.of(),
+                fromEdgeMappings,
+                List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
@@ -582,7 +586,9 @@ public class ProtocolAdapterManager {
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
-                    protocolId, oldInstance.getConfigObject(), oldInstance.getToEdgeMappings(),
+                    protocolId,
+                    oldInstance.getConfigObject(),
+                    oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags(),
                     fieldMappings);
@@ -732,8 +738,7 @@ public class ProtocolAdapterManager {
             final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
         return getAdapterById(adapterId).map(adapter -> {
             final List<Map<String, Object>> tagMaps =
-                    domainTags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                    })).collect(Collectors.toList());
+                    domainTags.stream().map(DomainTag::toTagMap).collect(Collectors.toList());
             updateAdapterTags(adapterId, tagMaps);
             return DomainTagUpdateResult.success();
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
@@ -763,7 +768,8 @@ public class ProtocolAdapterManager {
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
+                                tag.getDescription(),
+                                configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
                 .collect(Collectors.toList());
     }
 
@@ -776,7 +782,8 @@ public class ProtocolAdapterManager {
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
-                                tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
+                                tag.getDescription(),
+                                configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
                 .findFirst();
     }
 
@@ -786,7 +793,8 @@ public class ProtocolAdapterManager {
                 .map(tag -> new DomainTag(tag.getName(),
                         adapter.getId(),
                         adapter.getProtocolAdapterInformation().getProtocolId(),
-                        tag.getDescription(), configConverter.convertTagDefinitionToMaps(tag.getDefinition())))
+                        tag.getDescription(),
+                        configConverter.convertTagDefinitionToMaps(tag.getDefinition())))
                 .collect(Collectors.toList()));
     }
 
