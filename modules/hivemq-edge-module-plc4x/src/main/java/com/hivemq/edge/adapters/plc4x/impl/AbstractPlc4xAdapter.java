@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
@@ -101,13 +100,14 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             final String tagName = plc4xToMqttMapping.getTagName();
 
             findTag(tagName).ifPresentOrElse(def -> tempConnection.read(plc4xToMqttMapping)
-                            .thenApply(response -> processReadResponse((Plc4xToMqttMapping) pollingInput.getPollingContext(),
-                                    response))
+                            .thenApply(response -> processReadResponse(pollingInput.getPollingContext(), response))
                             .thenApply(data -> captureDataSample(data, (Plc4xTag) def))
                             .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput)),
                     () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
                             tagName +
                             "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+        } else {
+            pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
         }
     }
 
@@ -139,6 +139,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
             // we do not subscribe anymore as no current adapter type supports it anyway
+            initConnection();
             output.startedSuccessfully();
         } catch (final Exception e) {
             output.failStart(e, null);
@@ -249,8 +250,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(
-            final @NotNull PollingContext subscription,
-            final @NotNull Plc4xTag tag) {
+            final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.getDefinition().getDataType());
     }

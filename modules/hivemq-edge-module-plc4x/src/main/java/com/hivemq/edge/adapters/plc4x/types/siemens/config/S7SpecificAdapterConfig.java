@@ -18,17 +18,29 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
-public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig> {
+public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig>
+        implements AdapterConfigWithPollingContexts {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
+
+    @Override
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (s7ToMqttConfig == null) {
+            return List.of();
+        }
+        return s7ToMqttConfig.getMappings();
+    }
 
     public enum ControllerType {
         S7_300,
