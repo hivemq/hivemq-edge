@@ -42,7 +42,7 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
-    @JsonProperty(value = "id", required = true)
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
