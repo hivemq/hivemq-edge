@@ -21,7 +21,14 @@ describe('MappingEditor', () => {
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
 
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />
+      <MappingEditor
+        topic="test"
+        adapterId="my-adapter"
+        adapterType="my-type"
+        showTransformation={false}
+        onChange={cy.stub()}
+        mapping={MOCK_SUBS.fieldMapping}
+      />
     )
 
     cy.get('h3').should('have.text', 'Properties to set')
@@ -41,7 +48,14 @@ describe('MappingEditor', () => {
 
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />,
+      <MappingEditor
+        topic="test"
+        adapterId="my-adapter"
+        adapterType="my-type"
+        showTransformation={false}
+        onChange={cy.stub()}
+        mapping={MOCK_SUBS.fieldMapping}
+      />,
       { wrapper }
     )
 

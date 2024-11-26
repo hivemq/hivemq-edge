@@ -29,7 +29,14 @@ describe('MappingContainer', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(
-      <MappingContainer onClose={cy.stub()} onSubmit={cy.stub()} onChange={cy.stub()} item={MOCK_SUBS} />,
+      <MappingContainer
+        onClose={cy.stub()}
+        onSubmit={cy.stub()}
+        onChange={cy.stub()}
+        item={MOCK_SUBS}
+        adapterId="my-adapter"
+        adapterType="my-type"
+      />,
       { wrapper }
     )
 

@@ -40,7 +40,14 @@ describe('MappingDrawer', () => {
     const onSubmit = cy.stub().as('onSubmit')
     const onChange = cy.stub().as('onChange')
     cy.mountWithProviders(
-      <MappingDrawer adapterId="testid" onClose={onClose} onSubmit={onSubmit} onChange={onChange} item={MOCK_SUBS} />
+      <MappingDrawer
+        adapterId="testid"
+        adapterType="my-type"
+        onClose={onClose}
+        onSubmit={onSubmit}
+        onChange={onChange}
+        item={MOCK_SUBS}
+      />
     )
 
     cy.wait('@getTags')
@@ -83,6 +90,7 @@ describe('MappingDrawer', () => {
     cy.mountWithProviders(
       <MappingDrawer
         adapterId="testid"
+        adapterType="my-type"
         onClose={cy.stub()}
         onSubmit={cy.stub()}
         onChange={cy.stub()}

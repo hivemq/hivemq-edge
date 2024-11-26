@@ -18,7 +18,9 @@ describe('DataModelDestination', () => {
 
   it('should render properly', () => {
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
-    cy.mountWithProviders(<DataModelDestination topic="test" validation={MOCK_SUBS} />)
+    cy.mountWithProviders(
+      <DataModelDestination topic="test" adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />
+    )
 
     cy.get('h3').should('have.text', 'Destination output')
     cy.get('[role=alert]').should('have.attr', 'data-status', 'error')
@@ -50,7 +52,10 @@ describe('DataModelDestination', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
-    cy.mountWithProviders(<DataModelDestination topic="sssss" validation={MOCK_SUBS} />, { wrapper })
+    cy.mountWithProviders(
+      <DataModelDestination topic="sssss" adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />,
+      { wrapper }
+    )
     cy.checkAccessibility()
   })
 })

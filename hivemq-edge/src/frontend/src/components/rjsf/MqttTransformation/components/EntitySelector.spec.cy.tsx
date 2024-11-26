@@ -25,7 +25,9 @@ describe('SelectSourceTopics', () => {
         ],
       }).as('getTopicFilters')
 
-      cy.mountWithProviders(<SelectSourceTopics value="topic/test1" onChange={cy.stub()} />)
+      cy.mountWithProviders(
+        <SelectSourceTopics value="topic/test1" adapterId="my-adapter" adapterType="my-type" onChange={cy.stub()} />
+      )
 
       cy.get('#mapping-select-source').should('contain.text', 'Loading...')
       cy.wait('@getTopicFilters')
@@ -41,7 +43,9 @@ describe('SelectSourceTopics', () => {
       const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId, MockAdapterType.SIMULATION) }
       cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('types')
 
-      cy.mountWithProviders(<SelectDestinationTag adapterId={mockAdapterId} value="tag/test1" onChange={cy.stub()} />)
+      cy.mountWithProviders(
+        <SelectDestinationTag adapterId={mockAdapterId} adapterType="my-type" value="tag/test1" onChange={cy.stub()} />
+      )
 
       // // Loading not working?
       // cy.get('#mapping-select-destination').should('contain.text', 'Loading...')
