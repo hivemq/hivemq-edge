@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.simulation.config.legacy;
 
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -48,87 +49,27 @@ class LegacySimulationProtocolAdapterConfigTest {
 
         assertThat(migrator.migrateIfNeeded(Map.of("simulation",
                 new SimulationProtocolAdapterFactory(mockInput)))).isNotEmpty().get().satisfies(cfg -> {
-            assertThat(cfg.getProtocolAdapterConfig()).hasSize(1);
-                             /*
-                            .allSatisfy(entity -> {
-                                assertThat(entity.getProtocolId()).isEqualTo("simulation");
-                                assertThat(entity.getAdapterId()).isEqualTo("my-eip-protocol-adapter");
-                                assertThat(entity.getTags())
-                                        .hasSize(2)
-                                        .anySatisfy(tag -> {
-                                            assertThat(tag.getName()).startsWith("tag-name");
-                                            assertThat(tag.getDefinition())
-                                                    .extracting("address", "dataType")
-                                                    .containsExactly("tag-address", "BOOL");
-                                        })
-                                        .anySatisfy(tag -> {
-                                            assertThat(tag.getName()).startsWith("tag-name2");
-                                            assertThat(tag.getDefinition())
-                                                    .extracting("address", "dataType")
-                                                    .containsExactly("tag-address2", "BOOL");
-                                        });
-                                assertThat(entity.getFromEdgeMappingEntities())
-                                        .hasSize(2)
-                                        .anySatisfy(mapping -> {
-                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
-                                            assertThat(mapping.getTagName()).startsWith("tag-name");
-                                            assertThat(mapping.getTopic()).isEqualTo("my/topic");
-                                            assertThat(mapping.getUserProperties()).containsExactly(
-                                                    new MqttUserPropertyEntity("name", "value1"),
-                                                    new MqttUserPropertyEntity ("name", "value2")
-                                            );
-                                        })
-                                        .anySatisfy(mapping -> {
-                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
-                                            assertThat(mapping.getTagName()).startsWith("tag-name2");
-                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
-                                            assertThat(mapping.getUserProperties()).containsExactly(
-                                                    new MqttUserPropertyEntity("name", "value1"),
-                                                    new MqttUserPropertyEntity ("name", "value2")
-                                            );
-                                        });
-                                assertThat(entity.getFieldMappings()).isEmpty();
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
-                            });
-
-                     */
-        });
-        //TODO
-        /*
-        final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
-
-        assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
-        assertThat(config.getMinValue()).isEqualTo(0);
-        assertThat(config.getMaxValue()).isEqualTo(1000);
-        assertThat(config.getMinDelay()).isEqualTo(0);
-        assertThat(config.getMaxDelay()).isEqualTo(1000);
-        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
-
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("my-name");
-                assertThat(userProperty.getValue()).isEqualTo("my-value");
-            });
-        }, subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
-
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("my-name");
-                assertThat(userProperty.getValue()).isEqualTo("my-value");
+            assertThat(cfg.getProtocolAdapterConfig()).hasSize(1).allSatisfy(entity -> {
+                assertThat(entity.getProtocolId()).isEqualTo("simulation");
+                assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
+                assertThat(entity.getTags()).hasSize(0);
+                assertThat(entity.getFromEdgeMappingEntities()).hasSize(2).anySatisfy(mapping -> {
+                    assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                    assertThat(mapping.getTagName()).isEqualTo("ignored");
+                    assertThat(mapping.getTopic()).isEqualTo("my/topic");
+                    assertThat(mapping.getUserProperties()).containsExactly(new MqttUserPropertyEntity("my-name",
+                            "my-value"));
+                }).anySatisfy(mapping -> {
+                    assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                    assertThat(mapping.getTagName()).startsWith("ignored");
+                    assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
+                    assertThat(mapping.getUserProperties()).containsExactly(new MqttUserPropertyEntity("my-name",
+                            "my-value"));
+                });
+                assertThat(entity.getFieldMappings()).isEmpty();
+                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
             });
         });
-
-         */
     }
 
     @Test
