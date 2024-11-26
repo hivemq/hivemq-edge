@@ -13,6 +13,7 @@ import {
   ProtocolAdapter,
   ProtocolAdaptersList,
   Status,
+  type TagSchema,
   type ValuesTree,
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
@@ -710,8 +711,43 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
+export const MOCK_DEVICE_TAG_FAKE = 'MOCK/FAKE_DEVICE_TAG'
 export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DomainTag['tagDefinition'] = { startIdx: 0, endIdx: 1 }
 export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DomainTag['tagDefinition'] = { node: 'ns=3;i=1002' }
+
+export const MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA: TagSchema = {
+  protocolId: 'opcua',
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      definition: {
+        type: 'object',
+        properties: {
+          node: {
+            type: 'string',
+            title: 'Destination Node ID',
+            description: 'identifier of the node on the OPC UA server. Example: "ns=3;s=85/0:Temperature"',
+          },
+        },
+        required: ['node'],
+        title: 'definition',
+        description: 'The actual definition of the tag on the device',
+      },
+      description: {
+        type: 'string',
+        title: 'description',
+        description: 'A human readable description of the tag',
+      },
+      name: {
+        type: 'string',
+        title: 'name',
+        description: 'name of the tag to be used in mappings',
+      },
+    },
+    required: ['definition', 'description', 'name'],
+  },
+}
 
 export const MOCK_DEVICE_TAGS = (adapterId: string, type: string): DomainTag[] => {
   switch (type) {

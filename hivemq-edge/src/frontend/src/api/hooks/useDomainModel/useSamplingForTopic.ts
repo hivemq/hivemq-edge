@@ -5,14 +5,20 @@ import { useEffect, useMemo } from 'react'
 import { reducerSchemaExamples } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 export const useSamplingForTopic = (topic: string) => {
-  const { isSuccess, isPending, isError: isMutateError, error: mutateError, mutate } = useStartSamplingForTopic()
+  const {
+    isSuccess: isMutateSuccess,
+    isPending,
+    isError: isMutateError,
+    error: mutateError,
+    mutate,
+  } = useStartSamplingForTopic()
   const {
     data,
     isLoading: isSchemaLoading,
     isError: isSchemaError,
     error: schemaError,
     isSuccess: isSchemaSuccess,
-  } = useGetSchemaForTopic(topic, isSuccess)
+  } = useGetSchemaForTopic(topic, isMutateSuccess)
   const {
     data: samples,
     error: sampleError,
@@ -41,6 +47,7 @@ export const useSamplingForTopic = (topic: string) => {
   const isLoading = isSchemaLoading || isSampleLoading || isPending
   const isError = isSchemaError || isSampleError || isMutateError
   const error = schemaError || sampleError || mutateError
+  const isSuccess = isMutateSuccess || isSchemaSuccess
 
-  return { data, schema, isLoading, refetch, isError, error }
+  return { data, schema, isLoading, isSuccess, refetch, isError, error }
 }

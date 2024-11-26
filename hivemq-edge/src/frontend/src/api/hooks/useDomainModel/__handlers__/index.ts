@@ -1,7 +1,14 @@
 import { http, HttpResponse } from 'msw'
 import { RJSFSchema } from '@rjsf/utils'
 
-import type { TagSchema } from '@/api/__generated__'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import type { DomainTag, DomainTagList, JsonNode, PayloadSampleList, TagSchema } from '@/api/__generated__'
+import {
+  MOCK_DEVICE_TAG_ADDRESS_MODBUS,
+  MOCK_DEVICE_TAG_FAKE,
+  MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA,
+} from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { payloadToSchema } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
@@ -81,20 +88,74 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
 }
 
 export const handlers = [
-  http.get('**/management/domain/tags', () => {
-    return HttpResponse.json<Array<string>>([], { status: 200 })
+  http.get<{ protocolId: string }>('**/management/protocol-adapters/tagschemas/:protocolId', ({ params }) => {
+    const { protocolId } = params
+
+    if (protocolId === MockAdapterType.ADS)
+      return HttpResponse.json<ProblemDetails>(
+        { title: 'The schema for the tags cannot be found', status: 404 },
+        { status: 404 }
+      )
+
+    return HttpResponse.json<TagSchema>(MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA, { status: 200 })
   }),
 
-  http.get('**/management/domain/tags/schema', () => {
-    return HttpResponse.json<TagSchema>({ configSchema: {}, protocolId: 'protocol' }, { status: 200 })
+  http.get<{ tagName: string }>('**/management/protocol-adapters/tags/:tagName', ({ params }) => {
+    const { tagName } = params
+
+    try {
+      const realTag = atob(tagName)
+      console.log('tagName', realTag)
+      if (realTag === MOCK_DEVICE_TAG_FAKE)
+        return HttpResponse.json<ProblemDetails>({ title: 'The tag is not found', status: 404 }, { status: 404 })
+      return HttpResponse.json<DomainTag>(
+        { tagName: realTag, protocolId: MockAdapterType.MODBUS, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
+        { status: 200 }
+      )
+    } catch (e) {
+      return HttpResponse.json<ProblemDetails>({ title: 'The tag is not well formed', status: 400 }, { status: 400 })
+    }
   }),
 
-  http.get('**/management/domain/topics', () => {
-    return HttpResponse.json<Array<string>>([], { status: 200 })
+  http.get<{ topic: string }>('**/management/sampling/topic/:topic', ({ params }) => {
+    const { topic } = params
+
+    if (topic === MOCK_DEVICE_TAG_FAKE)
+      return HttpResponse.json<ProblemDetails>(
+        { title: 'The schema for the tags cannot be found', status: 404 },
+        { status: 404 }
+      )
+
+    return HttpResponse.json<PayloadSampleList>({ items: [] }, { status: 200 })
   }),
 
-  http.get('**/management/domain/topics/schema', () => {
-    return HttpResponse.json<TagSchema>({ configSchema: {}, protocolId: 'protocol' }, { status: 200 })
+  http.get<{ topic: string }>('**/management/sampling/schema/:topic', ({ params }) => {
+    const { topic } = params
+
+    if (topic === MOCK_DEVICE_TAG_FAKE)
+      return HttpResponse.json<ProblemDetails>(
+        { title: 'The schema for the tags cannot be found', status: 404 },
+        { status: 404 }
+      )
+
+    return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, topic), { status: 200 })
+  }),
+
+  http.get('**/management/protocol-adapters/tags', () => {
+    return HttpResponse.json<DomainTagList>(
+      {
+        items: [
+          { tagName: 'test/tag1', protocolId: MockAdapterType.MODBUS, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
+        ],
+      },
+      { status: 200 }
+    )
+  }),
+
+  http.post<{ topic: string }>('**/management/sampling/topic/:topic', ({ params }) => {
+    const { topic } = params
+
+    return HttpResponse.json({ topic }, { status: 200 })
   }),
 ]
 
