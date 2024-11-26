@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
@@ -113,7 +112,6 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         return singleWriter.submit(queueId, (bucketIndex) -> {
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
-            // TODO thats super ugly.
             if(queueId.startsWith(SAMPLER_PREFIX)){
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
             }
@@ -156,7 +154,6 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
-            // TODO thats super ugly.
             if(queueId.startsWith(SAMPLER_PREFIX)){
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
             }

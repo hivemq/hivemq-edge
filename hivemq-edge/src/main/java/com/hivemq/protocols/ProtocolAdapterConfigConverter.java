@@ -15,7 +15,6 @@
  */
 package com.hivemq.protocols;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -74,7 +73,11 @@ public class ProtocolAdapterConfigConverter {
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig, toEdgeMappingList, fromEdgeMappingList, tags, fieldMappings);
+                protocolSpecificAdapterConfig,
+                toEdgeMappingList,
+                fromEdgeMappingList,
+                tags,
+                fieldMappings);
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
@@ -94,16 +97,10 @@ public class ProtocolAdapterConfigConverter {
         return ProtocolAdapterEntity.from(config, mapper);
     }
 
-    public @NotNull List<Map<String, Object>> tagsToMaps(final @NotNull List<? extends Tag> tags) {
-        return tags.stream().map(tag -> mapper.convertValue(tag, new TypeReference<Map<String, Object>>() {
-        })).collect(Collectors.toList());
-    }
-
 
     public @NotNull ProtocolSpecificAdapterConfig convertAdapterConfig(
-            final @NotNull String protocolId, final @NotNull Map<String, Object> config) {
-        // TODO is true correct here?
-        return getProtocolAdapterFactory(protocolId).convertConfigObject(mapper, config, true);
+            final @NotNull String protocolId, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
+        return getProtocolAdapterFactory(protocolId).convertConfigObject(mapper, config, writingEnabled);
     }
 
     public @NotNull List<? extends Tag> mapsToTags(

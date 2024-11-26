@@ -30,7 +30,6 @@ import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import com.hivemq.util.ThreadFactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 /**
@@ -194,7 +197,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     @NotNull ConfigurationService bootstrapConfig() {
-        // TODO migration here?
         final ConfigurationMigrator configurationMigrator = new ConfigurationMigrator(systemInformation, moduleLoaderFactory.apply(systemInformation));
         configurationMigrator.migrate();
 

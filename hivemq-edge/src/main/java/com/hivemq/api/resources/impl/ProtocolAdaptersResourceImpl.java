@@ -625,7 +625,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             });
 
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                    configConverter.convertAdapterConfig(adapterType, config);
+                    configConverter.convertAdapterConfig(adapterType, config, protocolAdapterManager.writingEnabled());
 
             final List<Map<String, Object>> domainTags = adapter.getDomainTagModels()
                     .stream()

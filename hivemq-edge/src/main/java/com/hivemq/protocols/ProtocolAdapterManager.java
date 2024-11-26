@@ -66,8 +66,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -180,59 +178,19 @@ public class ProtocolAdapterManager {
             adapterFutures.add(future);
         }
 
-        if (!protocolAdapters.isEmpty()) {
-            // TODO migration MUST happen at startup of edge
-            // configPersistence.updateAllAdapters(rewriteAdapterConfigurations(protocolAdapters.values()));
-        }
-
         return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
                 .toArray(new CompletableFuture[]{})));
     }
 
-    private @NotNull Map<String, Object> rewriteAdapterConfigurations(final Collection<? extends ProtocolAdapterWrapper> protocolAdapterWrappers) {
-        final Map<String, Object> allAdapterConfigs = new HashMap<>();
-        for (final ProtocolAdapterWrapper<?> value : protocolAdapterWrappers) {
-            final ProtocolSpecificAdapterConfig configObject = value.getConfigObject();
-            final List<Tag> tags = value.getTags();
-            final List<Map<String, Object>> convertedTags = configConverter.tagsToMaps(tags);
-            final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
-            final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(adapterFactory.getClass().getClassLoader());
-                allAdapterConfigs.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(),
-                        (s, o) -> {
-                            final List<Map<String, Object>> list;
-                            if (o == null) {
-                                list = new ArrayList<>();
-                                return list;
-                            } else {
-                                //noinspection unchecked
-                                list = (List<Map<String, Object>>) o;
-                            }
-                            list.add(Map.of("config",
-                                    adapterFactory.unconvertConfigObject(objectMapper, configObject),
-                                    "tags",
-                                    convertedTags));
-                            return list;
-                        });
-            } finally {
-                Thread.currentThread().setContextClassLoader(contextClassLoader);
-            }
-        }
-
-        return allAdapterConfigs;
-    }
-
     //legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
     private static @NotNull String getKey(final @NotNull String key) {
-        if (key.equals("ethernet-ip")) {
-            return "eip";
-        }
-        if (key.equals("opc-ua-client")) {
-            return "opcua";
-        }
-        if (key.equals("file_input")) {
-            return "file";
+        switch (key) {
+            case "ethernet-ip":
+                return "eip";
+            case "opc-ua-client":
+                return "opcua";
+            case "file_input":
+                return "file";
         }
         return key;
     }
@@ -283,7 +241,6 @@ public class ProtocolAdapterManager {
                 output.failStart(throwable, output.getMessage());
                 handleStartupError(protocolAdapterWrapper.getAdapter(), output);
             } finally {
-                //TODO: discuss if this is possible.
                 startFailedStop(protocolAdapterWrapper);
             }
             return null;
@@ -490,7 +447,7 @@ public class ProtocolAdapterManager {
         }
         protocolAdapterMetrics.increaseProtocolAdapterMetric(adapterType);
         final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                configConverter.convertAdapterConfig(adapterType, config);
+                configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
 
         final List<FromEdgeMapping> fromEdgeMappings;
         if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
@@ -504,12 +461,11 @@ public class ProtocolAdapterManager {
             fromEdgeMappings = new ArrayList<>();
         }
 
-        // TODO we can not add toMappings as we do not have field mappings here yet.
+        // we can not add toMappings as we do not have field mappings here yet.
         // actually this is correct from the user workflow
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                 adapterType,
-                protocolSpecificAdapterConfig,
-                List.of(), fromEdgeMappings, List.of(),
+                protocolSpecificAdapterConfig, List.of(), fromEdgeMappings, List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
         configPersistence.addAdapter(protocolAdapterConfig);
@@ -565,7 +521,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                    configConverter.convertAdapterConfig(adapterType, config);
+                    configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
             final List<FromEdgeMapping> fromEdgeMappings;
             if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
                 final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
@@ -643,28 +599,16 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
                     oldInstance.getConfigObject(),
-                    newToEdgeMappings, oldInstance.getFromEdgeMappings(), oldInstance.getTags(), fieldMappings);
+                    newToEdgeMappings,
+                    oldInstance.getFromEdgeMappings(),
+                    oldInstance.getTags(),
+                    fieldMappings);
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
             configPersistence.updateAdapter(protocolAdapterConfig);
             return true;
         }).orElse(false);
-    }
-
-    private @NotNull FieldMappings findCorrespondingFieldMapping(
-            final @NotNull List<FieldMappings> fieldMappings,
-            final @NotNull String topicFilter,
-            final @NotNull String tagName) {
-
-        final Optional<FieldMappings> optionalFieldMappings = fieldMappings.stream()
-                .filter(fieldMapping -> fieldMapping.getTagName().equals(tagName) &&
-                        fieldMapping.getTopicFilter().equals(topicFilter))
-                .findFirst();
-        if (optionalFieldMappings.isEmpty()) { // TODO error case, every mapping should have a field mapping
-            throw new IllegalArgumentException("No field mapping found during update.");
-        }
-        return optionalFieldMappings.get();
     }
 
     public @NotNull Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> getAdapterById(final @NotNull String id) {
