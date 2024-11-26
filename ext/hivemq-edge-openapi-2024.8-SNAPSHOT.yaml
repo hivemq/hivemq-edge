@@ -3567,6 +3567,38 @@ paths:
                 field mappings example:
                   description: An example for field mappings in opc ua
                   summary: 'Example for field mappings '
+                  value:
+                    items:
+                      - topicFilter: topic1
+                        tag: someTag
+                        fieldMapping:
+                          - source: incField1
+                            destination: outField1
+                            transformation: { }
+                          - source: incField2
+                            destination: outField2
+                            transformation: { }
+                          - source: incField3
+                            destination: outField3
+                            transformation: { }
+                        metadata:
+                          source: ""
+                          destination: ""
+                      - topicFilter: topic2
+                        tag: someTag
+                        fieldMapping:
+                          - source: incField1
+                            destination: outField1
+                            transformation: { }
+                          - source: incField2
+                            destination: outField2
+                            transformation: { }
+                          - source: incField3
+                            destination: outField3
+                            transformation: { }
+                        metadata:
+                          source: ""
+                          destination: ""
               schema:
                 $ref: '#/components/schemas/FieldMappingsListModel'
           description: Success
@@ -3640,6 +3672,10 @@ paths:
                     for this tagId.
                   summary: An example response in case no field mappings is present
                     for this tagId.
+                  value:
+                    errors:
+                      - title: Resource not found
+                        detail: Adapter with id 'adapter1' not found
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
@@ -4183,6 +4219,12 @@ paths:
                 An example for the topic filter list:
                   description: An example for the topic filter list
                   summary: An example for the topic filter list
+                  value:
+                    items:
+                      - topicFilter: topic1
+                        description: filter1
+                      - topicFilter: topic2
+                        description: filter2
               schema:
                 $ref: '#/components/schemas/TopicFilterList'
           description: Success
@@ -4443,6 +4485,11 @@ components:
       properties:
         config:
           $ref: '#/components/schemas/Adapter'
+        fieldMappings:
+          type: array
+          description: The fieldMappings for this adapter
+          items:
+            $ref: '#/components/schemas/FieldMappingsModel'
         tags:
           type: array
           description: The tags defined for this adapter

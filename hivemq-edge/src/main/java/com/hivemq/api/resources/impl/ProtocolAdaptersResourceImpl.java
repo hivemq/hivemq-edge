@@ -667,9 +667,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 toEdgeMappings = new ArrayList<>();
             }
 
+            final List<FieldMappings> fieldMappings =
+                    adapter.getFieldMappings().stream().map(FieldMappings::fromModel).collect(Collectors.toList());
+
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
-                    adapterType,
-                    protocolSpecificAdapterConfig, toEdgeMappings, fromEdgeMappings, tags, adapter.getFieldMappings()));
+                    adapterType, protocolSpecificAdapterConfig, toEdgeMappings, fromEdgeMappings, tags, fieldMappings));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,

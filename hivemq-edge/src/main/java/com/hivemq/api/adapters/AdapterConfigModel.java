@@ -18,10 +18,10 @@ package com.hivemq.api.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.adapters.Adapter;
+import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -39,14 +39,14 @@ public class AdapterConfigModel {
     private final @NotNull List<DomainTagModel> domainTagModels;
 
     @JsonProperty("fieldMappings")
-    @Schema(name = "tags", description = "The fieldMappings for this adapter")
-    private final @NotNull List<FieldMappings> fieldMappings;
+    @Schema(name = "fieldMappings", description = "The fieldMappings for this adapter")
+    private final @NotNull List<FieldMappingsModel> fieldMappings;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AdapterConfigModel(
             @JsonProperty("config") final @NotNull Adapter adapter,
             @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels,
-            @JsonProperty("fieldMappings") final @NotNull List<FieldMappings> fieldMappings) {
+            @JsonProperty("fieldMappings") final @NotNull List<FieldMappingsModel> fieldMappings) {
         this.adapter = adapter;
         this.domainTagModels = domainTagModels;
         this.fieldMappings = fieldMappings;
@@ -60,7 +60,7 @@ public class AdapterConfigModel {
         return domainTagModels;
     }
 
-    public @NotNull List<FieldMappings> getFieldMappings() {
+    public @NotNull List<FieldMappingsModel> getFieldMappings() {
         return fieldMappings;
     }
 

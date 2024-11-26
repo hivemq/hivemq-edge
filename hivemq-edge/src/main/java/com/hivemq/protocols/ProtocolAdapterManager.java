@@ -584,26 +584,12 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-            final Map<String, Object> config =
-                    objectMapper.convertValue(oldInstance.getConfigObject(), new TypeReference<>() {
-                    });
-
-            // enrich the mappings with the new field mappings
-            final List<ToEdgeMapping> newToEdgeMappings = oldInstance.getToEdgeMappings()
-                    .stream()
-                    .map(toEdgeMapping -> new ToEdgeMapping(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(),
-                            toEdgeMapping.getMaxQoS()))
-                    .collect(Collectors.toList());
-
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
-                    oldInstance.getConfigObject(),
-                    newToEdgeMappings,
+                    oldInstance.getConfigObject(), oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags(),
                     fieldMappings);
-
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
             configPersistence.updateAdapter(protocolAdapterConfig);
