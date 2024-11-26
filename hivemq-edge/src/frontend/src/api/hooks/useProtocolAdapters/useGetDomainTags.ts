@@ -7,7 +7,6 @@ export const useGetDomainTags = (adapterId: string) => {
   const appClient = useHttpClient()
 
   return useQuery<DomainTagList, ApiError>({
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: [QUERY_KEYS.ADAPTERS, adapterId, QUERY_KEYS.DISCOVERY_TAGS],
     queryFn: () => appClient.protocolAdapters.getAdapterDomainTags(adapterId),
   })

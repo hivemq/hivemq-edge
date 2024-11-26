@@ -4,7 +4,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
 
 import { DomainTag, DomainTagList } from '@/api/__generated__'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
 import { useDeleteDomainTags } from '@/api/hooks/useProtocolAdapters/useDeleteDomainTags.ts'
 import { useUpdateAllDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateAllDomainTags.ts'

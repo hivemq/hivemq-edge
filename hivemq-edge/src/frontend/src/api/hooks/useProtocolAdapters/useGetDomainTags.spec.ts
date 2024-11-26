@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { deviceHandlers } from './__handlers__'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import type { DomainTagList } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 

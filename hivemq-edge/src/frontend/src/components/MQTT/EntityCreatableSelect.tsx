@@ -15,7 +15,7 @@ import {
 import { HStack, IconProps, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { PLCTagIcon, TopicFilterIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
