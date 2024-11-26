@@ -24,8 +24,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
@@ -485,6 +483,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
+        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
         return Response.serverError().build();
     }
 
@@ -511,6 +510,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
+        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
         return Response.serverError().build();
     }
 
