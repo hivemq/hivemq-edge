@@ -172,6 +172,9 @@ describe('useTagManager', () => {
           uiSchema: {
             items: {
               items: {
+                protocolId: {
+                  'ui:widget': 'hidden',
+                },
                 'ui:collapsable': {
                   titleKey: 'name',
                 },
