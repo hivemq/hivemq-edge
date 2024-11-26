@@ -496,6 +496,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
+        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
         return Response.serverError().build();
     }
 
@@ -522,6 +523,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
+        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
         return Response.serverError().build();
     }
 
