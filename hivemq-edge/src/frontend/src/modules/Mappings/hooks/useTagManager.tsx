@@ -30,10 +30,27 @@ export const useTagManager = (adapterId: string) => {
     if (!tagSchema) return undefined
 
     const { $schema: sc, ...rest } = tagSchema?.configSchema as RJSFSchema
+    // TODO[28249] Handle manually until backend fixed
+    const { properties, required } = rest
+
+    const requiredProtocol = [...(required || []), 'protocolId']
+
+    const safeSchema = {
+      ...rest,
+      properties: {
+        ...properties,
+        protocolId: {
+          const: protocol?.id,
+          default: protocol?.id,
+        },
+      },
+      required: requiredProtocol,
+    }
+
     return {
       // $schema: 'https://json-schema.org/draft/2020-12/schema',
       definitions: {
-        TagSchema: rest,
+        TagSchema: safeSchema,
       },
       properties: {
         items: {
@@ -46,7 +63,7 @@ export const useTagManager = (adapterId: string) => {
         },
       },
     }
-  }, [tagSchema])
+  }, [protocol?.id, tagSchema])
 
   // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
@@ -105,6 +122,9 @@ export const useTagManager = (adapterId: string) => {
           'ui:order': ['name', 'description', '*'],
           'ui:collapsable': {
             titleKey: 'name',
+          },
+          protocolId: {
+            'ui:widget': 'hidden',
           },
         },
       },
