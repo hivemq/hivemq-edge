@@ -69,11 +69,16 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
-            @JsonProperty(value = "modbusToMqtt") final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
+            @JsonProperty(value = "modbusToMqtt") final @Nullable ModbusToMqttConfig modbusToMQTTConfig) {
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
-        this.modbusToMQTTConfig = modbusToMQTTConfig;
+
+        if(modbusToMQTTConfig == null) {
+            this.modbusToMQTTConfig = new ModbusToMqttConfig(null, null, null, null);
+        } else {
+            this.modbusToMQTTConfig = modbusToMQTTConfig;
+        }
     }
 
     public @NotNull String getHost() {
