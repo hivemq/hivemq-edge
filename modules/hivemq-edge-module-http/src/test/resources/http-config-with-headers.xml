@@ -33,14 +33,14 @@
             </config>
             <toEdgeMappings>
                 <toEdgeMapping>
-                    <tag-name>tag3</tag-name>
-                    <topic-filter>my/#</topic-filter>
-                    <max-qos>0</max-qos>
+                    <tagName>tag3</tagName>
+                    <topicFilter>my/#</topicFilter>
+                    <maxQos>0</maxQos>
                 </toEdgeMapping>
                 <toEdgeMapping>
-                    <tag-name>tag4</tag-name>
-                    <topic-filter>my/#</topic-filter>
-                    <max-qos>1</max-qos>
+                    <tagName>tag4</tagName>
+                    <topicFilter>my/#</topicFilter>
+                    <maxQos>1</maxQos>
                 </toEdgeMapping>
             </toEdgeMappings>
             <fromEdgeMappings>
