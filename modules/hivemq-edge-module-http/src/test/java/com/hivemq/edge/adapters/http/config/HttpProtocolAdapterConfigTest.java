@@ -16,9 +16,7 @@
 package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
@@ -27,7 +25,6 @@ import com.hivemq.configuration.entity.adapter.ToEdgeMappingEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
-import com.hivemq.edge.adapters.http.HttpProtocolAdapterInformation;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpHeader;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
