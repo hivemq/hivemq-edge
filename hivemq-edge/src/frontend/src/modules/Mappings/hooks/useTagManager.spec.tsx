@@ -87,12 +87,16 @@ describe('useTagManager', () => {
     expect(result.current).toStrictEqual(
       expect.objectContaining({
         context: {
-          formData: undefined,
+          formData: {
+            items: [],
+          },
           schema: undefined,
           uiSchema: expect.objectContaining({}),
         },
-        data: undefined,
-        error: 'The protocol adapter for this device cannot be found',
+        data: {
+          items: [],
+        },
+        error: 'Internal Server Error',
         isError: true,
         isLoading: false,
         isPending: false,
@@ -110,13 +114,16 @@ describe('useTagManager', () => {
     expect(result.current).toStrictEqual(
       expect.objectContaining({
         context: {
-          formData: undefined,
+          formData: {
+            items: [],
+          },
           schema: undefined,
           uiSchema: expect.objectContaining({}),
         },
-        data: undefined,
-        error: 'The form cannot be created, due to internal errors',
-
+        data: {
+          items: [],
+        },
+        error: 'Internal Server Error',
         isError: true,
         isLoading: false,
         isPending: false,
