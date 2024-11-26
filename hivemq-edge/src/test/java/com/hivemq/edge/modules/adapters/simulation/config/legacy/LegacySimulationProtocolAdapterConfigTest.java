@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.simulation.config.legacy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -34,27 +32,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("unchecked")
 class LegacySimulationProtocolAdapterConfigTest {
-
-    private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull EventService eventService = mock();
-    final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput = new ProtocolAdapterFactoryInput() {
-        @Override
-        public boolean isWritingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull EventService eventService() {
-            return eventService;
-        }
-    };
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -63,7 +45,6 @@ class LegacySimulationProtocolAdapterConfigTest {
                 new ConfigurationMigrator(new ConfigurationFile(new File(resource.toURI())), mock(ModuleLoader.class));
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(true);
-
 
         assertThat(migrator.migrateIfNeeded(Map.of("simulation",
                 new SimulationProtocolAdapterFactory(mockInput)))).isNotEmpty().get().satisfies(cfg -> {
