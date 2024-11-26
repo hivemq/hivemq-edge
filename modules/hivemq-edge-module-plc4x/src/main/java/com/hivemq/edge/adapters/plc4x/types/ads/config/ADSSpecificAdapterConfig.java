@@ -97,7 +97,11 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         this.sourceAmsPort = sourceAmsPort;
         this.sourceAmsNetId = sourceAmsNetId;
         this.targetAmsNetId = targetAmsNetId;
-        this.adsToMqttConfig = adsToMqttConfig;
+        if (adsToMqttConfig == null) {
+            this.adsToMqttConfig = new ADSToMqttConfig(null, null, null, null);
+        } else {
+            this.adsToMqttConfig = adsToMqttConfig;
+        }
 
     }
 

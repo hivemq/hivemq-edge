@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
@@ -26,18 +27,26 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
+import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
 import com.hivemq.protocols.ProtocolAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterConfigConverter;
+import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,31 +57,16 @@ class ADSProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
-    //TODO
-    /*
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/ads-adapter-full-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
-                        true,
-                        mapper,
-                        adsProtocolAdapterFactory);
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
         assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
         final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
+
+        assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.ads-server.com");
         assertThat(config.getTargetAmsPort()).isEqualTo(1234);
@@ -82,7 +76,7 @@ class ADSProtocolAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
@@ -118,26 +112,13 @@ class ADSProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/ads-adapter-minimal-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
-                        true,
-                        mapper,
-                        adsProtocolAdapterFactory);
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
         assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
         final ADSSpecificAdapterConfig config = (ADSSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
-        assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
+        assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.ads-server.com");
         assertThat(config.getTargetAmsPort()).isEqualTo(123);
@@ -147,9 +128,9 @@ class ADSProtocolAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
@@ -165,53 +146,44 @@ class ADSProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/ads-adapter-minimal-missing-tag-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
-                new ADSProtocolAdapterFactory(mockInput);
-
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("ads"),
-                        true,
-                        mapper,
-                        adsProtocolAdapterFactory);
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
         assertThat(protocolAdapterConfig.missingTags())
                 .isPresent()
                 .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
     }
 
+
     @Test
     public void unconvertConfigObject_full_valid() {
-        final Plc4xToMqttMapping pollingContext = new Plc4xToMqttMapping("my/destination",
-                1,
-                MQTTMessagePerSubscription,
-                false,
-                true,
-                "tag-name",
-                List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final ADSSpecificAdapterConfig adsAdapterConfig = new ADSSpecificAdapterConfig("my-ads-adapter",
+
+        final ADSSpecificAdapterConfig adapterConfig = new ADSSpecificAdapterConfig(
                 14,
                 "my.host.com",
                 15,
                 16,
                 "1.2.3.4.5.6",
                 "1.2.3.4.5.7",
-                new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
+                new ADSToMqttConfig(
+                        12,
+                        13,
+                        true,
+                        List.of(new Plc4xToMqttMapping("my/destination",
+                                1,
+                                MQTTMessagePerSubscription,
+                                false,
+                                true,
+                                "tag-name",
+                                List.of(new MqttUserProperty("my-name", "my-value")))))
+        );
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final ADSProtocolAdapterFactory adsProtocolAdapterFactory =
                 new ADSProtocolAdapterFactory(mockInput);
-        final Map<String, Object> config = adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
+        final Map<String, Object> config = adsProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-ads-adapter");
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
         assertThat(config.get("targetAmsPort")).isEqualTo(15);
@@ -223,20 +195,30 @@ class ADSProtocolAdapterConfigTest {
         assertThat(adsToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(adsToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) adsToMqtt.get("adsToMqttMappings")).satisfiesExactly((mapping) -> {
+        assertThat((List<Map<String, Object>>) adsToMqtt.get("adsToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
+    }
 
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(1);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("jsonPayloadCreator")).isNull();
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
-                assertThat(userProperty.get("name")).isEqualTo("my-name");
-                assertThat(userProperty.get("value")).isEqualTo("my-value");
-            });
-        });
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
+            URISyntaxException {
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
+
+        final ProtocolAdapterConfigConverter converter = createConverter();
+
+        return converter.fromEntity(adapterEntity);
+    }
+
+    private @NotNull ProtocolAdapterConfigConverter createConverter() {
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
+
+        ADSProtocolAdapterFactory protocolAdapterFactory = new ADSProtocolAdapterFactory(mockInput);
+        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        when(manager.get("ads")).thenReturn(Optional.of(protocolAdapterFactory));
+        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
+        return converter;
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
@@ -257,7 +239,5 @@ class ADSProtocolAdapterConfigTest {
                 mock());
         return readerWriter.applyConfig();
     }
-
-     */
 
 }
