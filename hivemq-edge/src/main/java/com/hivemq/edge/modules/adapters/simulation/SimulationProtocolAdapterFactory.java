@@ -77,7 +77,6 @@ public class SimulationProtocolAdapterFactory
                 legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
         final SimulationSpecificAdapterConfig simulationSpecificAdapterConfig = new SimulationSpecificAdapterConfig(
-                legacySimulationAdapterConfig.getId(),
                 simulationToMqttConfig,
                 legacySimulationAdapterConfig.getMinValue(),
                 legacySimulationAdapterConfig.getMaxValue(),

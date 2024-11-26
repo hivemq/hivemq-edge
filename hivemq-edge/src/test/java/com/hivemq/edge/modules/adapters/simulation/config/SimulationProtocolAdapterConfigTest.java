@@ -163,7 +163,7 @@ class SimulationProtocolAdapterConfigTest {
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
         final SimulationSpecificAdapterConfig simulationAdapterConfig =
-                new SimulationSpecificAdapterConfig("someId", new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
+                new SimulationSpecificAdapterConfig( new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
                         12,
                         13,
                         14,
@@ -190,7 +190,7 @@ class SimulationProtocolAdapterConfigTest {
                 new SimulationToMqttMapping("my/destination", null, null, null, null, null);
 
         final SimulationSpecificAdapterConfig simulationAdapterConfig =
-                new SimulationSpecificAdapterConfig("id", new SimulationToMqttConfig(List.of(pollingContext), null, null),
+                new SimulationSpecificAdapterConfig( new SimulationToMqttConfig(List.of(pollingContext), null, null),
                         null,
                         null,
                         null,
