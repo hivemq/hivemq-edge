@@ -17,9 +17,10 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <opcua>
+        <protocol-adapter>
+            <adapterId>simulation-server-2</adapterId>
+            <protocolId>opcua</protocolId>
             <config>
-                <id>simulation-server-2</id>
                 <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
                 <overrideUri>true</overrideUri>
                 <auth>
@@ -66,21 +67,19 @@
                         </opcuaToMqttMapping>
                     </opcuaToMqttMappings>
                 </opcuaToMqtt>
-                <mqttToOpcua>
-                    <mqttToOpcuaMappings>
-                        <mqttToOpcuaMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
-                            <mqttMaxQos>0</mqttMaxQos>
-                        </mqttToOpcuaMapping>
-                        <mqttToOpcuaMapping>
-                            <tagName>ns=2;i=1004</tagName>
-                            <mqttTopicFilter>test/blubbb/#</mqttTopicFilter>
-                            <mqttMaxQos>0</mqttMaxQos>
-                        </mqttToOpcuaMapping>
-                    </mqttToOpcuaMappings>
-                </mqttToOpcua>
             </config>
+            <toEdgeMappings>
+                <toEdgeMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topicFilter>test/blubb/#</topicFilter>
+                    <maxQos>0</maxQos>
+                </toEdgeMapping>
+                <toEdgeMapping>
+                    <tagName>ns=2;i=1004</tagName>
+                    <topicFilter>test/blubbb/#</topicFilter>
+                    <maxQos>0</maxQos>
+                </toEdgeMapping>
+            </toEdgeMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>
@@ -97,6 +96,6 @@
                     </definition>
                 </tag>
             </tags>
-        </opcua>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>
