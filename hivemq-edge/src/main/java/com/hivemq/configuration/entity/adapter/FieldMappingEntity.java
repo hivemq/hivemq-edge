@@ -29,6 +29,13 @@ public class FieldMappingEntity {
     @XmlElement(name = "transformation")
     private final @NotNull TransformationEntity transformation;
 
+    // no- arg for JaxB
+    public FieldMappingEntity() {
+        sourceFieldName = "";
+        destinationFieldName = "";
+        transformation = new TransformationEntity();
+    }
+
     public FieldMappingEntity(
             final @NotNull String sourceFieldName,
             final @NotNull String destinationFieldName,

@@ -26,13 +26,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class ToEdgeMappingEntity {
 
-    @XmlElement(name = "topic-filter", required = true)
+    @XmlElement(name = "topicFilter", required = true)
     private final @NotNull String topicFilter;
 
-    @XmlElement(name = "tag-name", required = true)
+    @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "max-qos", required = true)
+    @XmlElement(name = "maxQos", required = true)
     private final int qos;
 
     // no-arg constructor for JaxB

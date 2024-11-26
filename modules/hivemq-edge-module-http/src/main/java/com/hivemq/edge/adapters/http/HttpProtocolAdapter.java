@@ -34,6 +34,7 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -311,10 +312,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
             writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
-        final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
-
-        final String tagName = mqttToHttpMapping.getTagName();
-        final HttpTag httpTag;
+        final @NotNull WritingContext mqttToHttpMapping = writingInput.getWritingContext();
         tags.stream()
                 .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
                 .findFirst()
@@ -327,20 +325,20 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     private void writeHttp(
             @NotNull final WritingInput writingInput,
             @NotNull final WritingOutput writingOutput,
-            @NotNull final HttpTag httpTag,
-            @NotNull final MqttToHttpMapping mqttToHttpMapping) {
+            @NotNull final HttpTag httpTag, final @NotNull WritingContext writingContext) {
+        final HttpTagDefinition tagDef = httpTag.getDefinition();
         final String url = httpTag.getDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(url));
-        builder.timeout(Duration.ofSeconds(mqttToHttpMapping.getHttpRequestTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(tagDef.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
-        mqttToHttpMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
         final HttpPayload httpPayload = (HttpPayload) writingInput.getWritingPayload();
         final String payloadAsString = httpPayload.getValue().toString();
 
-        switch (mqttToHttpMapping.getHttpRequestMethod()) {
+        switch (tagDef.getHttpRequestMethod()) {
             case POST:
                 builder.POST(HttpRequest.BodyPublishers.ofString(payloadAsString));
                 builder.header(CONTENT_TYPE_HEADER, JSON_MIME_TYPE);
@@ -351,9 +349,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
                 break;
             default:
                 writingOutput.fail(new IllegalStateException("Unsupported request method: " +
-                                mqttToHttpMapping.getHttpRequestMethod()),
+                                tagDef.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
-                                mqttToHttpMapping.getHttpRequestMethod());
+                                tagDef.getHttpRequestMethod());
                 return;
         }
 

@@ -57,8 +57,8 @@ public class ProtocolAdapterEntity {
     @XmlElement(name = "fromEdgeMapping")
     private @NotNull List<FromEdgeMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
 
-    @XmlElementWrapper(name = "field-mappings")
-    @XmlElement(name = "field-mapping")
+    @XmlElementWrapper(name = "tagMappings")
+    @XmlElement(name = "tagMapping")
     private @NotNull List<FieldMappingsEntity> fieldMappings = new ArrayList<>();
 
 

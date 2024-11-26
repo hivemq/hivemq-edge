@@ -19,23 +19,34 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class FieldMappingsEntity {
 
-    @XmlElement(name = "topic-filter")
+    @XmlElement(name = "topicFilter")
     private final @NotNull String topicFilter;
 
-    @XmlElement(name = "tag-name")
+    @XmlElement(name = "tagName")
     private final @NotNull String tagName;
 
-    @XmlElement(name = "field-mappings")
+    @XmlElementWrapper(name = "fieldMappings")
+    @XmlElement(name = "fieldMapping")
     private final @NotNull List<FieldMappingEntity> fieldMappingEntities;
 
     @XmlElement(name = "metadata")
     private final @NotNull FieldMappingMetaDataEntity metaData;
+
+    //no arg constructor for JaxB
+    public FieldMappingsEntity() {
+        topicFilter = "";
+        tagName = "";
+        fieldMappingEntities = new ArrayList<>();
+        metaData = new FieldMappingMetaDataEntity();
+    }
 
     public FieldMappingsEntity(
             final @NotNull String topicFilter,

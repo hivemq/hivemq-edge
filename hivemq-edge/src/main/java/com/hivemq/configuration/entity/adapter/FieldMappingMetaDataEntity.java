@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMappingMetaData;
 
@@ -24,11 +22,17 @@ import javax.xml.bind.annotation.XmlElement;
 
 public class FieldMappingMetaDataEntity {
 
-    @XmlElement(name = "source-schema")
+    @XmlElement(name = "sourceSchema")
     private final @NotNull String sourceJsonSchema;
 
-    @XmlElement(name = "destination-schema")
+    @XmlElement(name = "destinationSchema")
     private final @NotNull String destinationJsonSchema;
+
+    // no-arg for JaxB
+    FieldMappingMetaDataEntity() {
+        sourceJsonSchema = "{}";
+        destinationJsonSchema = "{}";
+    }
 
     public FieldMappingMetaDataEntity(
             final @NotNull String sourceJsonSchema,
