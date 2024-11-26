@@ -130,6 +130,7 @@ class FileProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag)t))
                 .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
+
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-minimal-config-missing-tag.xml");
@@ -155,82 +156,68 @@ class FileProtocolAdapterConfigTest {
                 .isInstanceOf(UnrecoverableException.class);
     }
 
-
-
-    // TODO
-    /*
     @Test
     public void unconvertConfigObject_full_valid() {
-        final FileToMqttMapping pollingContext = new FileToMqttMapping("my/destination",
-                1,
-                MQTTMessagePerTag,
-                false,
-                true,
-                List.of(new MqttUserProperty("my-name", "my-value")), "tag");
-
-        final FileSpecificAdapterConfig modbusAdapterConfig =
-                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(12, 13));
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
+                new FileToMqttConfig(
+                        12,
+                        13,
+                        List.of(
+                                new FileToMqttMapping(
+                                        "my/destination",
+                                        1,
+                                        null,
+                                        false,
+                                        true,
+                                        null,
+                                        "tag1")
+                        )
+                )
+        );
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final Map<String, Object> config =
-                fileProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
+        final Map<String, Object> config = fileProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
-        final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("fileToMqtt");
-        assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
-        assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
-        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(1);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
-                assertThat(userProperty.get("name")).isEqualTo("my-name");
-                assertThat(userProperty.get("value")).isEqualTo("my-value");
-            });
-            assertThat(mapping.get("tagName")).isEqualTo("tag");
-        });
+        final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
+        assertThat(toMqtt.get("pollingIntervalMillis")).isEqualTo(12);
+        assertThat(toMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
+        assertThat(toMqtt.get("fileToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
     }
 
     @Test
     public void unconvertConfigObject_defaults_valid() {
-        final FileToMqttMapping pollingContext = new FileToMqttMapping("my/destination",
-                null,
-                null,
-                null,
-                null,
-                null, "tag");
-
-        final FileSpecificAdapterConfig modbusAdapterConfig =
-                new FileSpecificAdapterConfig("my-modbus-adapter", new FileToMqttConfig(null, null));
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
+                new FileToMqttConfig(
+                        null,
+                        null,
+                        List.of(
+                                new FileToMqttMapping(
+                                        "my/destination",
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        "tag1")
+                        )
+                )
+        );
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
         final FileProtocolAdapterFactory fileProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(mockInput);
-        final Map<String, Object> config =
-                fileProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
+        final Map<String, Object> config = fileProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
-        final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("fileToMqtt");
-        assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
-        assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(0);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-            assertThat(mapping.get("tagName")).isEqualTo("tag");
-        });
+        final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
+        assertThat(toMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
+        assertThat(toMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
+        assertThat(toMqtt.get("fileToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
 
-    }*/
-
+    }
 
     private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
             URISyntaxException {
