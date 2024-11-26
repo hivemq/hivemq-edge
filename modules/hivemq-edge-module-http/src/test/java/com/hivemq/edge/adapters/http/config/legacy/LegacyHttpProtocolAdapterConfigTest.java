@@ -15,38 +15,24 @@
  */
 package com.hivemq.edge.adapters.http.config.legacy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.migration.ConfigurationMigrator;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.modules.ModuleLoader;
-import com.hivemq.protocols.ProtocolAdapterConfig;
-import com.hivemq.protocols.ProtocolAdapterConfigConverter;
-import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class LegacyHttpProtocolAdapterConfigTest {
-
-    private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
 
     @Test
     public void convertConfigObject_defaults() throws Exception {
@@ -138,44 +124,4 @@ public class LegacyHttpProtocolAdapterConfigTest {
                 });
     }
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws URISyntaxException {
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
-
-        final ProtocolAdapterConfigConverter converter = createConverter();
-
-        return converter.fromEntity(adapterEntity);
-    }
-
-    private @NotNull ProtocolAdapterConfigConverter createConverter() {
-        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(true);
-
-        HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(mockInput);
-        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
-        when(manager.get("http")).thenReturn(Optional.of(httpProtocolAdapterFactory));
-        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
-        return converter;
-    }
-
-    private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
-        return readerWriter.applyConfig();
-    }
 }
