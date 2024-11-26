@@ -712,8 +712,8 @@ export const mockDataPointOPCUA: ValuesTree = {
 }
 
 export const MOCK_DEVICE_TAG_FAKE = 'MOCK/FAKE_DEVICE_TAG'
-export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DomainTag['tagDefinition'] = { startIdx: 0, endIdx: 1 }
-export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DomainTag['tagDefinition'] = { node: 'ns=3;i=1002' }
+export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DomainTag['definition'] = { startIdx: 0, endIdx: 1 }
+export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DomainTag['definition'] = { node: 'ns=3;i=1002' }
 
 export const MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA: TagSchema = {
   protocolId: 'opcua',
@@ -752,14 +752,14 @@ export const MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA: TagSchema = {
 export const MOCK_DEVICE_TAGS = (adapterId: string, type: string): DomainTag[] => {
   switch (type) {
     case MockAdapterType.MODBUS:
-      return [{ tagName: `${adapterId}/alert`, protocolId: type, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
+      return [{ name: `${adapterId}/alert`, protocolId: type, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
     case MockAdapterType.OPC_UA:
       return [
-        { tagName: `${adapterId}/power/off`, protocolId: type, tagDefinition: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
-        { tagName: `${adapterId}/log/event`, protocolId: type, tagDefinition: { node: 'ns=3;i=1008' } },
+        { name: `${adapterId}/power/off`, protocolId: type, definition: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
+        { name: `${adapterId}/log/event`, protocolId: type, definition: { node: 'ns=3;i=1008' } },
       ]
     default:
-      return [{ tagName: `${adapterId}/log/event`, protocolId: type, tagDefinition: {} }]
+      return [{ name: `${adapterId}/log/event`, protocolId: type, definition: {} }]
   }
 }
 
