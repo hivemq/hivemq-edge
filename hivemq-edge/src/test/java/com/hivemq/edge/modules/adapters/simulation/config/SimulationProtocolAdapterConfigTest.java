@@ -131,10 +131,10 @@ class SimulationProtocolAdapterConfigTest {
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(protocolAdapterEntity.getFromEdgeMappingEntities()).satisfiesExactly(subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMaxQoS()).isEqualTo(0);
+            assertThat(subscription.getMaxQoS()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.isIncludeTimestamp()).isTrue();
-            assertThat(subscription.isIncludeTagNames()).isTrue();
+            assertThat(subscription.isIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
         });
     }

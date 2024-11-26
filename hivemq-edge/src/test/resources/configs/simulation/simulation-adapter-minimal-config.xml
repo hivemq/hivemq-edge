@@ -6,7 +6,6 @@
             <fromEdgeMappings>
                 <fromEdgeMapping>
                     <topic>my/topic</topic>
-                    <maxQos>0</maxQos>
                     <tagName>tag1</tagName>
                 </fromEdgeMapping>
             </fromEdgeMappings>
