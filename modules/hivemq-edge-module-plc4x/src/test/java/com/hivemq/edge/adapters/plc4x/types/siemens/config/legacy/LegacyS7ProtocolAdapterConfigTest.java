@@ -15,163 +15,131 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.reader.ConfigurationFile;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
-import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
-import com.hivemq.protocols.ProtocolAdapterConfig;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.modules.ModuleLoader;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Map;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class LegacyS7ProtocolAdapterConfigTest {
 
-    private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-
-    //TODO
-    /*
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/legacy-s7-adapter-full-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+        final ConfigurationMigrator migrator = new ConfigurationMigrator(
+                new ConfigurationFile(new File(resource.toURI())),
+                mock(ModuleLoader.class));
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(mockInput);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
-                        true,
-                        mapper,
-                        s7ProtocolAdapterFactory);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
-
-        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-
-        assertThat(config.getId()).isEqualTo("my-s7-id");
-        assertThat(config.getPort()).isEqualTo(102);
-        assertThat(config.getHost()).isEqualTo("my-ip-addr-or-host");
-        assertThat(config.getControllerType()).isEqualTo(S7_1500);
-        assertThat(config.getRemoteRack()).isEqualTo(1);
-        assertThat(config.getRemoteRack2()).isEqualTo(2);
-        assertThat(config.getRemoteSlot()).isEqualTo(3);
-        assertThat(config.getRemoteSlot2()).isEqualTo(4);
-        assertThat(config.getRemoteTsap()).isEqualTo(5);
-        assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
-
-        }, mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getMqttQos()).isEqualTo(0);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
-        });
-
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
-                .containsExactly(
-                        new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.BOOL)),
-                        new Plc4xTag("my-tag-name-2", "not set", new Plc4xTagDefinition("%I205.0", Plc4xDataType.DATA_TYPE.BOOL)));
+        assertThat(migrator.migrateIfNeeded(Map.of("s7", new S7ProtocolAdapterFactory(mockInput))))
+                .isNotEmpty()
+                .get()
+                .satisfies(cfg -> {
+                    assertThat(cfg.getProtocolAdapterConfig())
+                            .hasSize(1)
+                            .allSatisfy(entity -> {
+                                assertThat(entity.getProtocolId()).isEqualTo("s7");
+                                assertThat(entity.getAdapterId()).isEqualTo("my-s7-id");
+                                assertThat(entity.getConfig().get("port")).isEqualTo(102);
+                                assertThat(entity.getConfig().get("host")).isEqualTo("my-ip-addr-or-host");
+                                assertThat(entity.getConfig().get("controllerType")).isEqualTo("S7_1500");
+                                assertThat(entity.getConfig().get("remoteRack")).isEqualTo(1);
+                                assertThat(entity.getConfig().get("remoteRack2")).isEqualTo(2);
+                                assertThat(entity.getConfig().get("remoteSlot")).isEqualTo(3);
+                                assertThat(entity.getConfig().get("remoteSlot2")).isEqualTo(4);
+                                assertThat(entity.getConfig().get("remoteTsap")).isEqualTo(5);
+                                assertThat(entity.getTags())
+                                        .hasSize(2)
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).isEqualTo("my-tag-name-1");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("tagAddress", "dataType")
+                                                    .containsExactly("%I204.0", "BOOL");
+                                        })
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).isEqualTo("my-tag-name-2");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("tagAddress", "dataType")
+                                                    .containsExactly("%I205.0", "BOOL");
+                                        });
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .hasSize(2)
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/1");
+                                            assertThat(mapping.getUserProperties()).isEmpty();
+                                        })
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(0);
+                                            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-2");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
+                                            assertThat(mapping.getUserProperties()).isEmpty();
+                                        });
+                                assertThat(entity.getFieldMappings()).isEmpty();
+                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                            });
+                });
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/legacy-s7-adapter-minimal-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
+        final ConfigurationMigrator migrator = new ConfigurationMigrator(
+                new ConfigurationFile(new File(resource.toURI())),
+                mock(ModuleLoader.class));
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory =
-                new S7ProtocolAdapterFactory(mockInput);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("s7"),
-                        true,
-                        mapper,
-                        s7ProtocolAdapterFactory);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
-
-        final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-
-        assertThat(config.getId()).isEqualTo("my-s7-id");
-        assertThat(config.getPort()).isEqualTo(102);
-        assertThat(config.getHost()).isEqualTo("my-ip-address-or-host");
-        assertThat(config.getControllerType()).isEqualTo(S7_1500);
-        assertThat(config.getRemoteRack()).isEqualTo(0);
-        assertThat(config.getRemoteRack2()).isEqualTo(0);
-        assertThat(config.getRemoteSlot()).isEqualTo(0);
-        assertThat(config.getRemoteSlot2()).isEqualTo(0);
-        assertThat(config.getRemoteTsap()).isEqualTo(0);
-        assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/1");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
-        });
-
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
-                .containsExactly(new Plc4xTag("my-tag-name-1", "not set", new Plc4xTagDefinition("%I204.0", Plc4xDataType.DATA_TYPE.SINT)));
+        assertThat(migrator.migrateIfNeeded(Map.of("s7", new S7ProtocolAdapterFactory(mockInput))))
+                .isNotEmpty()
+                .get()
+                .satisfies(cfg -> {
+                    assertThat(cfg.getProtocolAdapterConfig())
+                            .hasSize(1)
+                            .allSatisfy(entity -> {
+                                assertThat(entity.getProtocolId()).isEqualTo("s7");
+                                assertThat(entity.getAdapterId()).isEqualTo("my-s7-id");
+                                assertThat(entity.getConfig().get("port")).isEqualTo(102);
+                                assertThat(entity.getConfig().get("host")).isEqualTo("my-ip-address-or-host");
+                                assertThat(entity.getConfig().get("controllerType")).isEqualTo("S7_1500");
+                                assertThat(entity.getConfig().get("remoteRack")).isEqualTo(0);
+                                assertThat(entity.getConfig().get("remoteRack2")).isEqualTo(0);
+                                assertThat(entity.getConfig().get("remoteSlot")).isEqualTo(0);
+                                assertThat(entity.getConfig().get("remoteSlot2")).isEqualTo(0);
+                                assertThat(entity.getConfig().get("remoteTsap")).isEqualTo(0);
+                                assertThat(entity.getTags())
+                                        .hasSize(1)
+                                        .satisfiesExactly(tag -> {
+                                            assertThat(tag.getName()).isEqualTo("my-tag-name-1");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("tagAddress", "dataType")
+                                                    .containsExactly("%I204.0", "SINT");
+                                        });
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .hasSize(1)
+                                        .satisfiesExactly(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).isEqualTo("my-tag-name-1");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/1");
+                                            assertThat(mapping.getUserProperties()).isEmpty();
+                                        });
+                                assertThat(entity.getFieldMappings()).isEmpty();
+                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                            });
+                });
     }
-
-    private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
-        return readerWriter.applyConfig();
-    }
-
-     */
 
 }
