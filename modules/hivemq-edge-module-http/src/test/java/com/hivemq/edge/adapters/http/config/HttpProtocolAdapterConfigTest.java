@@ -421,7 +421,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.get("mqttToHttp")).isNull(); //mappings are supposed to be ignored when rendered to XML
     }
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(URL resource) throws URISyntaxException {
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);

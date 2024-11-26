@@ -61,11 +61,11 @@ import java.util.stream.Collectors;
 public class ConfigurationMigrator {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigurationMigrator.class);
-    private final @NotNull SystemInformation systemInformation;
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull LegacyConfigFileReaderWriter<LegacyHiveMQConfigEntity, HiveMQConfigEntity>
             legacyConfigFileReaderWriter;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final @NotNull ConfigurationFile configurationFile;
 
     public static final String XSLT_INPUT = "\n" +
             "<xsl:stylesheet version=\"1.0\"\n" +
@@ -81,9 +81,13 @@ public class ConfigurationMigrator {
     @Inject
     public ConfigurationMigrator(
             final @NotNull SystemInformation systemInformation, final @NotNull ModuleLoader moduleLoader) {
-        this.systemInformation = systemInformation;
+        this(ConfigurationFileProvider.get(systemInformation), moduleLoader);
+    }
+
+    @VisibleForTesting
+    public ConfigurationMigrator(final @NotNull ConfigurationFile configurationFile, final @NotNull ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
-        final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
+        this.configurationFile = configurationFile;
         this.legacyConfigFileReaderWriter = new LegacyConfigFileReaderWriter<>(configurationFile,
                 LegacyHiveMQConfigEntity.class,
                 HiveMQConfigEntity.class);
@@ -92,16 +96,26 @@ public class ConfigurationMigrator {
 
     public void migrate() {
         try {
-            final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
-            if (!needsMigration(configurationFile)) {
-                log.info("No configuration migration needed.");
-                return;
-            }
-
-            final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             moduleLoader.loadModules();
+            final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             final Map<String, ProtocolAdapterFactory<?>> factoryMap =
                     ProtocolAdapterFactoryManager.findAllAdapters(moduleLoader, eventService, true);
+            migrateIfNeeded(factoryMap)
+                    .ifPresent(legacyConfigFileReaderWriter::writeConfigToXML);
+        } catch (final Exception e) {
+            log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
+            log.debug("Original Exception:", e);
+        }
+    }
+
+    @VisibleForTesting
+    public Optional<HiveMQConfigEntity> migrateIfNeeded(Map<String, ProtocolAdapterFactory<?>> factoryMap) {
+        try {
+            if (!needsMigration(configurationFile)) {
+                log.info("No configuration migration needed.");
+                return Optional.empty();
+            }
+
             final LegacyHiveMQConfigEntity legacyHiveMQConfigEntity = legacyConfigFileReaderWriter.readConfigFromXML();
             final Map<String, Object> protocolAdapterConfig = legacyHiveMQConfigEntity.getProtocolAdapterConfig();
             final List<ProtocolAdapterEntity> protocolAdapterEntities = protocolAdapterConfig.entrySet()
@@ -111,12 +125,12 @@ public class ConfigurationMigrator {
                     .map(Optional::get)
                     .collect(Collectors.toList());
 
-            final HiveMQConfigEntity hiveMQConfigEntity = legacyHiveMQConfigEntity.to(protocolAdapterEntities);
-            legacyConfigFileReaderWriter.writeConfigToXML(hiveMQConfigEntity);
+            return Optional.of(legacyHiveMQConfigEntity.to(protocolAdapterEntities));
         } catch (final Exception e) {
             log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
             log.debug("Original Exception:", e);
         }
+        return Optional.empty();
     }
 
     private @NotNull Optional<ProtocolAdapterEntity> parseProtocolAdapterEntity(
