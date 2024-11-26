@@ -42,7 +42,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, 
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    private final @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
@@ -77,15 +77,11 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, 
 
     @JsonCreator
     public EipSpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
-        this.id = id;
         this.host = host;
         this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);

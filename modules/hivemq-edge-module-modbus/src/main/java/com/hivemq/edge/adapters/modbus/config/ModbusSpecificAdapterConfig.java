@@ -43,7 +43,7 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    private final @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
@@ -76,9 +76,6 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @JsonCreator
     public ModbusSpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,

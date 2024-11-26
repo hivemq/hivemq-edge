@@ -86,7 +86,6 @@ public class OpcUaProtocolAdapterFactory
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
 
         return new ConfigTagsTuple(legacyOpcUaAdapterConfig.getId(), new OpcUaSpecificAdapterConfig(
-                legacyOpcUaAdapterConfig.getId(),
                 legacyOpcUaAdapterConfig.getUri(),
                 legacyOpcUaAdapterConfig.getOverrideUri(),
                 legacyOpcUaAdapterConfig.getAuth(),

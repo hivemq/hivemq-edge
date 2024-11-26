@@ -141,7 +141,7 @@ class S7ProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_full_valid() {
 
-        final S7SpecificAdapterConfig adapterConfig = new S7SpecificAdapterConfig("id",
+        final S7SpecificAdapterConfig adapterConfig = new S7SpecificAdapterConfig(
                 14,
                 "my.host.com",
                 S7_1500,

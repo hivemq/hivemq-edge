@@ -38,9 +38,6 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
 
     @JsonCreator
     public BidirectionalOpcUaSpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
@@ -48,7 +45,7 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty(value = "mqttToOpcua") final @Nullable MqttToOpcUaConfig mqttToOpcUaConfig,
             @JsonProperty("security") final @Nullable Security security) {
-        super(id, uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
+        super( uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
         this.mqttToOpcUaConfig =
                 Objects.requireNonNullElseGet(mqttToOpcUaConfig, () -> new MqttToOpcUaConfig(List.of()));
     }

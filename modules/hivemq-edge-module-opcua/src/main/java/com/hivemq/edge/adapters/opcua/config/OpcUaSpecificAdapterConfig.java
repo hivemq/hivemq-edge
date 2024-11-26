@@ -40,7 +40,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    private final @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty(value = "uri", required = true)
     @ModuleConfigField(title = "OPC UA Server URI",
@@ -72,14 +72,12 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
-            @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
-        this.id=id;
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.auth = requireNonNullElse(auth, new Auth(null, null));

@@ -93,7 +93,7 @@ public class FileProtocolAdapterFactory
                         fileToMqttMappings);
 
         return new ConfigTagsTuple(legacyFileAdapterConfig.getId(),
-                new FileSpecificAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig),
+                new FileSpecificAdapterConfig(fileToMqttConfig),
                 tags,
                 fileToMqttMappings);
     }

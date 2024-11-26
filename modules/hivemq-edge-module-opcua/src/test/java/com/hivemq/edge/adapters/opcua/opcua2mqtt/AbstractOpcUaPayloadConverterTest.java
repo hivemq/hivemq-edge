@@ -100,7 +100,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                         null,
                         null,
                         null)));
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("id",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
                 null,

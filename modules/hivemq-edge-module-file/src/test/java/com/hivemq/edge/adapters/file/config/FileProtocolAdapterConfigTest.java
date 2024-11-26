@@ -148,7 +148,7 @@ class FileProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig("id",
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
                 new FileToMqttConfig(12,
                         13,
                         List.of(new FileToMqttMapping("my/destination", 1, null, false, true, null, "tag1"))));
@@ -166,7 +166,7 @@ class FileProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig("id",new FileToMqttConfig(null,
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(new FileToMqttConfig(null,
                 null,
                 List.of(new FileToMqttMapping("my/destination", null, null, null, null, null, "tag1"))));
 

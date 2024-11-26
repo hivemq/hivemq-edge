@@ -93,7 +93,7 @@ public class ADSProtocolAdapterFactory
 
 
         return new ConfigTagsTuple(legacyAdsAdapterConfig.getId(),
-                new ADSSpecificAdapterConfig(legacyAdsAdapterConfig.getId(), legacyAdsAdapterConfig.getPort(),
+                new ADSSpecificAdapterConfig(legacyAdsAdapterConfig.getPort(),
                         legacyAdsAdapterConfig.getHost(),
                         legacyAdsAdapterConfig.getTargetAmsPort(),
                         legacyAdsAdapterConfig.getSourceAmsPort(),

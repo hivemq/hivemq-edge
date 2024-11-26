@@ -38,7 +38,7 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    private final @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
@@ -57,12 +57,8 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
 
     @JsonCreator
     public Plc4XSpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host) {
-        this.id = id;
         this.port = port;
         this.host = host;
     }

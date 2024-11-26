@@ -101,7 +101,7 @@ public class ModbusProtocolAdapterFactory
 
 
         return new ConfigTagsTuple(legacyModbusAdapterConfig.getId(),
-                new ModbusSpecificAdapterConfig(legacyModbusAdapterConfig.getId(),
+                new ModbusSpecificAdapterConfig(
                         legacyModbusAdapterConfig.getPort(),
                         legacyModbusAdapterConfig.getHost(),
                         legacyModbusAdapterConfig.getTimeout(),

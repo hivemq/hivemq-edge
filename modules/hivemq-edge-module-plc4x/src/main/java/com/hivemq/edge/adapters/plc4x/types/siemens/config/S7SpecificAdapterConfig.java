@@ -104,9 +104,6 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
 
     @JsonCreator
     public S7SpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
@@ -116,7 +113,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
             @JsonProperty(value = "s7ToMqtt") final @Nullable S7ToMqttConfig s7ToMqttConfig) {
-        super(id, port, host);
+        super(port, host);
         this.port = port;
         this.controllerType = controllerType;
         this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);

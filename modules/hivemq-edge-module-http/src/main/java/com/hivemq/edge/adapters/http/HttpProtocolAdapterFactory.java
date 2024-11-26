@@ -96,7 +96,7 @@ public class HttpProtocolAdapterFactory
                         List.of(httpToMqttMapping));
 
         return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
-                new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getId(),
+                new HttpSpecificAdapterConfig(
                         legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                         httpToMqttConfig,
                         legacyHttpAdapterConfig.isAllowUntrustedCertificates()),

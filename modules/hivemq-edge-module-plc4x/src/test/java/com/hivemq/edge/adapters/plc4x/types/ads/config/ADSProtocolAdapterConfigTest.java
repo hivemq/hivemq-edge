@@ -158,7 +158,7 @@ class ADSProtocolAdapterConfigTest {
     public void unconvertConfigObject_full_valid() {
 
 
-        final ADSSpecificAdapterConfig adapterConfig = new ADSSpecificAdapterConfig("id",
+        final ADSSpecificAdapterConfig adapterConfig = new ADSSpecificAdapterConfig(
                 14,
                 "my.host.com",
                 15,

@@ -91,8 +91,7 @@ public class S7ProtocolAdapterFactory
                 plc4xToMqttMappings);
 
         return new ConfigTagsTuple(legacyS7AdapterConfig.getId(),
-                new S7SpecificAdapterConfig(legacyS7AdapterConfig.getId(),
-                        legacyS7AdapterConfig.getPort(),
+                new S7SpecificAdapterConfig(legacyS7AdapterConfig.getPort(),
                         legacyS7AdapterConfig.getHost(),
                         legacyS7AdapterConfig.getControllerType(),
                         legacyS7AdapterConfig.getRemoteRack(),

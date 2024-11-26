@@ -38,7 +38,7 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    private final @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty(value = "fileToMqtt", required = true)
     @ModuleConfigField(title = "File To MQTT Config",
@@ -47,11 +47,7 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
     private final @Nullable FileToMqttConfig fileToMqttConfig;
 
     public FileSpecificAdapterConfig(
-            @JsonProperty(value = "id",
-                          required = true,
-                          access = JsonProperty.Access.WRITE_ONLY) final @NotNull String id,
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
-        this.id = id;
         if (fileToMqttConfig == null) {
             this.fileToMqttConfig = new FileToMqttConfig(null, null, null);
         } else {

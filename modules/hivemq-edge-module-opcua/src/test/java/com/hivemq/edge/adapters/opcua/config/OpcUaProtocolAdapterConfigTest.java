@@ -192,7 +192,7 @@ class OpcUaProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_full_valid() {
 
-        final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig("id",
+        final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
                 "my.uri.com",
                 true,
                 new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true)),
@@ -253,7 +253,7 @@ class OpcUaProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_default_valid() {
-        final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig("id",
+        final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
                 "my.uri.com",
                 true,
                 null,
