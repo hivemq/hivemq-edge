@@ -16,21 +16,15 @@
 package com.hivemq.edge.modules.adapters.simulation.config.legacy;
 
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.migration.ConfigurationMigrator;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,48 +69,25 @@ class LegacySimulationProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/configs/simulation/legacy-simulation-adapter-minimal-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
+        final ConfigurationMigrator migrator =
+                new ConfigurationMigrator(new ConfigurationFile(new File(resource.toURI())), mock(ModuleLoader.class));
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final @NotNull List<ProtocolAdapterEntity> adapters = configEntity.getProtocolAdapterConfig();
-//TODO
-        /*
-        final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
-        final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"), false);
-
-        assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
-        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(0);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.getIncludeTimestamp()).isTrue();
-            assertThat(subscription.getIncludeTagNames()).isFalse();
-
-            assertThat(subscription.getUserProperties()).isEmpty();
+        assertThat(migrator.migrateIfNeeded(Map.of("simulation",
+                new SimulationProtocolAdapterFactory(mockInput)))).isNotEmpty().get().satisfies(cfg -> {
+            assertThat(cfg.getProtocolAdapterConfig()).hasSize(1).satisfiesExactly(entity -> {
+                assertThat(entity.getProtocolId()).isEqualTo("simulation");
+                assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
+                assertThat(entity.getTags()).hasSize(0);
+                assertThat(entity.getFromEdgeMappingEntities()).hasSize(1).anySatisfy(mapping -> {
+                    assertThat(mapping.getMaxQoS()).isEqualTo(0);
+                    assertThat(mapping.getTagName()).isEqualTo("ignored");
+                    assertThat(mapping.getTopic()).isEqualTo("my/topic");
+                });
+                assertThat(entity.getFieldMappings()).isEmpty();
+                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+            });
         });
-
-         */
-    }
-
-    private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
-        return readerWriter.applyConfig();
     }
 }
