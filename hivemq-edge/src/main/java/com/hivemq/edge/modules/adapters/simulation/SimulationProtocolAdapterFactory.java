@@ -76,15 +76,17 @@ public class SimulationProtocolAdapterFactory
                 legacySimulationAdapterConfig.getPollingIntervalMillis(),
                 legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
-        final SimulationSpecificAdapterConfig simulationSpecificAdapterConfig =
-                new SimulationSpecificAdapterConfig(simulationToMqttConfig,
+        final SimulationSpecificAdapterConfig simulationSpecificAdapterConfig = new SimulationSpecificAdapterConfig(
+                legacySimulationAdapterConfig.getId(),
+                simulationToMqttConfig,
                 legacySimulationAdapterConfig.getMinValue(),
                 legacySimulationAdapterConfig.getMaxValue(),
                 legacySimulationAdapterConfig.getMinDelay(),
                 legacySimulationAdapterConfig.getMaxDelay());
         return new ConfigTagsTuple(legacySimulationAdapterConfig.getId(),
                 simulationSpecificAdapterConfig,
-                List.of(), simulationToMqttMappings);
+                List.of(),
+                simulationToMqttMappings);
     }
 
 }

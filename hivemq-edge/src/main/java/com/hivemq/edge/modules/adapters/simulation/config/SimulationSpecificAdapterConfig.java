@@ -33,6 +33,18 @@ import java.util.Objects;
 public class SimulationSpecificAdapterConfig
         implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
+
     @JsonProperty(value = "simulationToMqtt")
     @ModuleConfigField(title = "simulationToMqtt",
                        description = "Define Simulations to create MQTT messages.",
@@ -69,11 +81,13 @@ public class SimulationSpecificAdapterConfig
 
     @JsonCreator
     public SimulationSpecificAdapterConfig(
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "simulationToMqtt") final @Nullable SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty("minValue") final @Nullable Integer minValue,
             @JsonProperty("maxValue") final @Nullable Integer maxValue,
             @JsonProperty("minDelay") final @Nullable Integer minDelay,
             @JsonProperty("maxDelay") final @Nullable Integer maxDelay) {
+        this.id = id;
         this.simulationToMqttConfig =
                 Objects.requireNonNullElse(simulationToMqttConfig, SimulationToMqttConfig.DEFAULT);
         this.minValue = Objects.requireNonNullElse(minValue, 0);
