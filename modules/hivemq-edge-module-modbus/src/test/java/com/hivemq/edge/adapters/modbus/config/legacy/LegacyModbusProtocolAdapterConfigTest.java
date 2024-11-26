@@ -15,24 +15,18 @@
  */
 package com.hivemq.edge.adapters.modbus.config.legacy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
-import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
-import com.hivemq.protocols.ProtocolAdapterConfig;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.modules.ModuleLoader;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Map;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,131 +34,114 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LegacyModbusProtocolAdapterConfigTest {
 
-    private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    //TODO
-    /*
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/legacy-modbus-adapter-full-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
+        final ConfigurationMigrator migrator = new ConfigurationMigrator(
+                new ConfigurationFile(new File(resource.toURI())),
+                mock(ModuleLoader.class));
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(mockInput);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
-                        false,
-                        mapper,
-                        modbusProtocolAdapterFactory);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(migrator.migrateIfNeeded(Map.of("modbus", new ModbusProtocolAdapterFactory(mockInput))))
+                .isNotEmpty()
+                .get()
+                .satisfies(cfg -> {
+                    assertThat(cfg.getProtocolAdapterConfig())
+                            .hasSize(1)
+                            .allSatisfy(entity -> {
+                                assertThat(entity.getProtocolId()).isEqualTo("modbus");
+                                assertThat(entity.getAdapterId()).isEqualTo("my-modbus-protocol-adapter-full");
+                                assertThat(entity.getConfig().get("host")).isEqualTo("my.modbus-server.com");
+                                assertThat(entity.getConfig().get("port")).isEqualTo(1234);
+                                assertThat(entity.getConfig().get("timeoutMillis")).isEqualTo(1337);
 
-        final ModbusSpecificAdapterConfig config = (ModbusSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+                                assertThat(entity.getTags())
+                                        .hasSize(2)
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).startsWith("my-modbus-protocol-adapter-full-");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("startIdx", "readType", "unitId", "flipRegisters", "dataType")
+                                                    .containsExactly(11, "HOLDING_REGISTERS", 0, false, "INT_32");
+                                        })
+                                        .anySatisfy(tag -> {
+                                            assertThat(tag.getName()).startsWith("my-modbus-protocol-adapter-full-");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("startIdx", "readType", "unitId", "flipRegisters", "dataType")
+                                                    .containsExactly(11, "HOLDING_REGISTERS", 0, false, "INT_32");
+                                        });
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .hasSize(2)
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).startsWith("my-modbus-protocol-adapter-full-");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic");
+                                            assertThat(mapping.getUserProperties()).containsExactly(
+                                                    new MqttUserPropertyEntity("name", "value1"),
+                                                    new MqttUserPropertyEntity ("name", "value2")
+                                            );
+                                        })
+                                        .anySatisfy(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                            assertThat(mapping.getTagName()).startsWith("my-modbus-protocol-adapter-full-");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
+                                            assertThat(mapping.getUserProperties()).containsExactly(
+                                                    new MqttUserPropertyEntity("name", "value1"),
+                                                    new MqttUserPropertyEntity ("name", "value2")
+                                            );
+                                        });
 
-        assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-full");
-        assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
-        assertThat(config.getTimeoutMillis()).isEqualTo(1337);
-        assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
-
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
-
-        }, subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
-
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
-
-        });
+                                assertThat(entity.getFieldMappings()).isEmpty();
+                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                            });
+                });
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/legacy-modbus-adapter-minimal-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
 
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
+        final ConfigurationMigrator migrator = new ConfigurationMigrator(
+                new ConfigurationFile(new File(resource.toURI())),
+                mock(ModuleLoader.class));
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-        when(mockInput.isWritingEnabled()).thenReturn(false);
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
-                new ModbusProtocolAdapterFactory(mockInput);
+        when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        final ProtocolAdapterConfig protocolAdapterConfig =
-                ProtocolAdapterConfig.fromAdapterConfigMap((Map<String, Object>) adapters.get("modbus"),
-                        false,
-                        mapper,
-                        modbusProtocolAdapterFactory);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(migrator.migrateIfNeeded(Map.of("modbus", new ModbusProtocolAdapterFactory(mockInput))))
+                .isNotEmpty()
+                .get()
+                .satisfies(cfg -> {
+                    assertThat(cfg.getProtocolAdapterConfig())
+                            .hasSize(1)
+                            .allSatisfy(entity -> {
+                                assertThat(entity.getProtocolId()).isEqualTo("modbus");
+                                assertThat(entity.getAdapterId()).isEqualTo("my-modbus-protocol-adapter-min");
+                                assertThat(entity.getConfig().get("host")).isEqualTo("my.modbus-server.com");
+                                assertThat(entity.getConfig().get("port")).isEqualTo(1234);
+                                assertThat(entity.getConfig().get("timeoutMillis")).isEqualTo(5000);
 
-        final ModbusSpecificAdapterConfig config = (ModbusSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+                                assertThat(entity.getTags())
+                                        .hasSize(1)
+                                        .satisfiesExactly(tag -> {
+                                            assertThat(tag.getName()).startsWith("my-modbus-protocol-adapter-min-");
+                                            assertThat(tag.getDefinition())
+                                                    .extracting("startIdx", "readType", "unitId", "flipRegisters", "dataType")
+                                                    .containsExactly(11, "HOLDING_REGISTERS", 0, false, "INT_32");
+                                        });
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .hasSize(1)
+                                        .satisfiesExactly(mapping -> {
+                                            assertThat(mapping.getMaxQoS()).isEqualTo(0);
+                                            assertThat(mapping.getTagName()).startsWith("my-modbus-protocol-adapter-min-");
+                                            assertThat(mapping.getTopic()).isEqualTo("my/topic");
+                                            assertThat(mapping.getUserProperties()).isEmpty();
+                                        });
 
-        assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-min");
-        assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(config.getPort()).isEqualTo(1234);
-        assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
-        assertThat(config.getTimeoutMillis()).isEqualTo(5000);
-        assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(0);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isTrue();
-            assertThat(subscription.getIncludeTagNames()).isFalse();
-            assertThat(subscription.getUserProperties()).isEmpty();
-        });
+                                assertThat(entity.getFieldMappings()).isEmpty();
+                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                            });
+                });
 
     }
-
-    private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
-        return readerWriter.applyConfig();
-    }
-
-     */
 }
