@@ -20,19 +20,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class BidirectionalHttpSpecificAdapterConfig extends HttpSpecificAdapterConfig {
 
-    @JsonProperty(value = "mqttToHttp")
+    @JsonProperty(value = "mqttToHttp", access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "MQTT to HTTP Config",
                        description = "The configuration for a data stream from MQTT to HTTP")
     private final @NotNull MqttToHttpConfig mqttToHttpConfig;
@@ -41,7 +37,7 @@ public class BidirectionalHttpSpecificAdapterConfig extends HttpSpecificAdapterC
     public BidirectionalHttpSpecificAdapterConfig(
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
-            @JsonProperty(value = "mqttToHttp") final @Nullable MqttToHttpConfig mqttToHttpConfig,
+            @JsonProperty(value = "mqttToHttp", access = JsonProperty.Access.WRITE_ONLY) final @Nullable MqttToHttpConfig mqttToHttpConfig,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
         super( httpConnectTimeoutSeconds, httpToMqttConfig, allowUntrustedCertificates);
         this.mqttToHttpConfig = Objects.requireNonNullElseGet(mqttToHttpConfig, () -> new MqttToHttpConfig(List.of()));

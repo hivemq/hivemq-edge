@@ -286,212 +286,143 @@ public class HttpProtocolAdapterConfigTest {
 
                         });
     }
-//
-//    @Test
-//    public void unconvertConfigObject_full() throws Exception {
-//        final HttpHeader httpHeader1 = new HttpHeader("foo 1", "bar 1");
-//        final HttpHeader httpHeader2 = new HttpHeader("foo 2", "bar 2");
-//
-//        final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(1337,
-//                11,
-//                true,
-//                true,
-//                List.of(new HttpToMqttMapping("tag1",
-//                                "my/destination",
-//                                0,
-//                                List.of(),
-//                                true,
-//                                POST,
-//                                1774,
-//                                YAML,
-//                                "my-body",
-//                                List.of(httpHeader2, httpHeader1)),
-//                        new HttpToMqttMapping("tag2",
-//                                "my/destination2",
-//                                0,
-//                                List.of(),
-//                                true,
-//                                POST,
-//                                59,
-//                                YAML,
-//                                "my-body",
-//                                List.of(httpHeader2, httpHeader1))));
-//
-//
-//        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag3",
-//                        "my0/#",
-//                        1,
-//                        POST,
-//                        11,
-//                        List.of(httpHeader1, httpHeader2)),
-//                new MqttToHttpMapping("tag4", "my1/#", 2, POST, 11, List.of(httpHeader1, httpHeader2))));
-//
-//        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig =
-//                new BidirectionalHttpSpecificAdapterConfig(50, httpToMqttConfig, mqttToHttpConfig, true);
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
-//
-//        assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
-//                (it) -> assertThat(it.getKey()).isEqualTo("id"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("mqttToHttp"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt")
-//        );
-//
-//        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
-//        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(50);
-//        assertThat((Boolean) config.get("allowUntrustedCertificates")).isTrue();
-//
-//        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
-//
-//        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1337);
-//        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(11);
-//        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
-//        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isTrue();
-//
-//        final Map<String, Object> mapping0 = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
-//        assertThat(mapping0.get("tagName")).isEqualTo("tag1");
-//        assertThat(mapping0.get("mqttTopic")).isEqualTo("my/destination");
-//        assertThat(mapping0.get("mqttQos")).isEqualTo(0);
-//        assertThat(mapping0.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(mapping0.get("httpRequestBodyContentType")).isEqualTo("YAML");
-//        assertThat(mapping0.get("httpRequestBody")).isEqualTo("my-body");
-//        assertThat(mapping0.get("httpRequestTimeoutSeconds")).isEqualTo(60);
-//        assertThat((List<Map<String, String>>) mapping0.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
-//            assertThat(header1.get("name")).isEqualTo("foo 1");
-//            assertThat(header1.get("value")).isEqualTo("bar 1");
-//        }, header2 -> {
-//            assertThat(header2.get("name")).isEqualTo("foo 2");
-//            assertThat(header2.get("value")).isEqualTo("bar 2");
-//        });
-//
-//        final Map<String, Object> mapping1 = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(1);
-//        assertThat(mapping1.get("tagName")).isEqualTo("tag2");
-//        assertThat(mapping1.get("mqttTopic")).isEqualTo("my/destination2");
-//        assertThat(mapping1.get("mqttQos")).isEqualTo(0);
-//        assertThat(mapping1.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(mapping1.get("httpRequestBodyContentType")).isEqualTo("YAML");
-//        assertThat(mapping1.get("httpRequestBody")).isEqualTo("my-body");
-//        assertThat(mapping1.get("httpRequestTimeoutSeconds")).isEqualTo(59);
-//        assertThat((List<Map<String, String>>) mapping1.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
-//            assertThat(header1.get("name")).isEqualTo("foo 1");
-//            assertThat(header1.get("value")).isEqualTo("bar 1");
-//        }, header2 -> {
-//            assertThat(header2.get("name")).isEqualTo("foo 2");
-//            assertThat(header2.get("value")).isEqualTo("bar 2");
-//        });
-//
-//        final Map<String, Object> mqttToHttp = (Map<String, Object>) config.get("mqttToHttp");
-//
-//        final Map<String, Object> mqttToHttpMapping0 =
-//                (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(0);
-//        assertThat(mqttToHttpMapping0.get("tagName")).isEqualTo("tag3");
-//        assertThat(mqttToHttpMapping0.get("mqttTopicFilter")).isEqualTo("my0/#");
-//        assertThat(mqttToHttpMapping0.get("mqttMaxQos")).isEqualTo(1);
-//        assertThat(mqttToHttpMapping0.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(mqttToHttpMapping0.get("httpRequestTimeoutSeconds")).isEqualTo(11);
-//        assertThat((List<Map<String, String>>) mqttToHttpMapping0.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
-//            assertThat(header1.get("name")).isEqualTo("foo 1");
-//            assertThat(header1.get("value")).isEqualTo("bar 1");
-//        }, header2 -> {
-//            assertThat(header2.get("name")).isEqualTo("foo 2");
-//            assertThat(header2.get("value")).isEqualTo("bar 2");
-//        });
-//
-//        final Map<String, Object> mqttToHttpMapping1 =
-//                (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(1);
-//        assertThat(mqttToHttpMapping1.get("tagName")).isEqualTo("tag4");
-//        assertThat(mqttToHttpMapping1.get("mqttTopicFilter")).isEqualTo("my1/#");
-//        assertThat(mqttToHttpMapping1.get("mqttMaxQos")).isEqualTo(2);
-//        assertThat(mqttToHttpMapping1.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(mqttToHttpMapping1.get("httpRequestTimeoutSeconds")).isEqualTo(11);
-//        assertThat((List<Map<String, String>>) mqttToHttpMapping1.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
-//            assertThat(header1.get("name")).isEqualTo("foo 1");
-//            assertThat(header1.get("value")).isEqualTo("bar 1");
-//        }, header2 -> {
-//            assertThat(header2.get("name")).isEqualTo("foo 2");
-//            assertThat(header2.get("value")).isEqualTo("bar 2");
-//        });
-//    }
-//
-//    @Test
-//    public void unconvertConfigObject_defaults() {
-//        final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(null,
-//                null,
-//                null,
-//                null,
-//                List.of(new HttpToMqttMapping("tag1",
-//                        "my/destination",
-//                        null,
-//                        null,
-//                        null,
-//                        null,
-//                        null,
-//                        null,
-//                        null,
-//                        null)));
-//
-//        final MqttToHttpConfig mqttToHttpConfig =
-//                new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag1", "my/#", null, null, null, null)));
-//
-//        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
-//                "my-protocol-adapter",
-//                null,
-//                httpToMqttConfig,
-//                mqttToHttpConfig,
-//                null);
-//
-//        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
-//        when(mockInput.isWritingEnabled()).thenReturn(false);
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
-//                new HttpProtocolAdapterFactory(mockInput);
-//        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
-//
-//        assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
-//                (it) -> assertThat(it.getKey()).isEqualTo("mqttToHttp"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("id"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt")
-//        );
-//
-//        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
-//        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(5);
-//        assertThat((Boolean) config.get("allowUntrustedCertificates")).isFalse();
-//
-//        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
-//
-//        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
-//        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-//        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
-//        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isFalse();
-//
-//        final Map<String, Object> mapping = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
-//        assertThat(mapping.get("tagName")).isEqualTo("tag1");
-//        assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-//        assertThat(mapping.get("mqttQos")).isEqualTo(0);
-//        assertThat(mapping.get("httpRequestMethod")).isEqualTo("GET");
-//        assertThat(mapping.get("httpRequestBodyContentType")).isEqualTo("JSON");
-//        assertThat(mapping.get("httpRequestBody")).isNull();
-//        assertThat(mapping.get("httpRequestTimeoutSeconds")).isEqualTo(5);
-//        assertThat((List<Map<String, String>>) mapping.get("httpHeaders")).isEmpty();
-//
-//
-//        final Map<String, Object> mqttToHttp = (Map<String, Object>) config.get("mqttToHttp");
-//        final Map<String, Object> mqttToHttpMapping =
-//                (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(0);
-//        assertThat(mqttToHttpMapping.get("tagName")).isEqualTo("tag1");
-//        assertThat(mqttToHttpMapping.get("mqttTopicFilter")).isEqualTo("my/#");
-//        assertThat(mqttToHttpMapping.get("mqttMaxQos")).isEqualTo(1);
-//        assertThat(mqttToHttpMapping.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(mqttToHttpMapping.get("httpRequestTimeoutSeconds")).isEqualTo(5);
-//        assertThat((List<Map<String, String>>) mqttToHttpMapping.get("httpHeaders")).isEmpty();
-//    }
+
+    @Test
+    public void unconvertConfigObject_full() throws Exception {
+
+        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+                50,
+                new HttpToMqttConfig(
+                        1337,
+                        11,
+                        true,
+                        true,
+                        List.of(
+                                new HttpToMqttMapping(
+                                "tag1",
+                                "my/destination",
+                                0,
+                                null,
+                                true),
+
+                                new HttpToMqttMapping(
+                                "tag2",
+                                "my/destination2",
+                                0,
+                                null,
+                                true)
+                                )
+                ),
+                new MqttToHttpConfig(List.of(
+                        new MqttToHttpMapping(
+                        "tag3",
+                        "my0/#",
+                        1,
+                            POST,
+                            12,
+                            List.of(
+                                    new HttpHeader("foo 1", "bar 1"),
+                                    new HttpHeader("foo 2", "bar 2")
+                            )
+                        ),
+                        new MqttToHttpMapping(
+                                "tag4",
+                                "my1/#",
+                                2,
+                                POST,
+                                11,
+                                List.of(
+                                        new HttpHeader("foo 1", "bar 1"),
+                                        new HttpHeader("foo 2", "bar 2")
+                                )
+                        ))),
+                true
+                );
+
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(mockInput);
+        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactlyInAnyOrder(
+                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt")
+        );
+
+        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(50);
+        assertThat((Boolean) config.get("allowUntrustedCertificates")).isTrue();
+
+        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
+
+        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1337);
+        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(11);
+        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
+        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isTrue();
+
+        assertThat(httpToMqtt.get("httpToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
+
+        assertThat(config.get("mqttToHttp")).isNull(); //mappings are supposed to be ignored when rendered to XML
+    }
+
+    @Test
+    public void unconvertConfigObject_defaults() {
+
+        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+                null,
+                new HttpToMqttConfig(
+                        null,
+                        null,
+                        null,
+                        null,
+                        List.of(
+                                new HttpToMqttMapping(
+                                        "tag1",
+                                        "my/destination",
+                                        null,
+                                        null,
+                                        null)
+                        )
+                ),
+                new MqttToHttpConfig(List.of(
+                    new MqttToHttpMapping(
+                            "tag1",
+                            "my/#",
+                            null,
+                            null,
+                            null,
+                            null
+                    ))),
+                null
+        );
+
+        final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
+        when(mockInput.isWritingEnabled()).thenReturn(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(mockInput);
+        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactlyInAnyOrder(
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"),
+                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds")
+        );
+
+        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(5);
+        assertThat((Boolean) config.get("allowUntrustedCertificates")).isFalse();
+
+        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
+
+        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
+        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
+        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
+        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isFalse();
+
+        assertThat(httpToMqtt.get("httpToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
+
+        assertThat(config.get("mqttToHttp")).isNull(); //mappings are supposed to be ignored when rendered to XML
+    }
 
     private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(URL resource) throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
@@ -499,6 +430,12 @@ public class HttpProtocolAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
 
+        final ProtocolAdapterConfigConverter converter = createConverter();
+
+        return converter.fromEntity(adapterEntity);
+    }
+
+    private @NotNull ProtocolAdapterConfigConverter createConverter() {
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(true);
 
@@ -506,9 +443,7 @@ public class HttpProtocolAdapterConfigTest {
         ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
         when(manager.get("http")).thenReturn(Optional.of(httpProtocolAdapterFactory));
         ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
-
-        final ProtocolAdapterConfig protocolAdapterConfig = converter.fromEntity(adapterEntity);
-        return protocolAdapterConfig;
+        return converter;
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
