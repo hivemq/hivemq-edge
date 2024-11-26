@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -53,7 +52,6 @@ import static org.mockito.Mockito.when;
 class OpcUaProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
-    private final @NotNull EventService eventService = mock();
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
