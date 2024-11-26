@@ -213,85 +213,88 @@
             <adapterId>simulation-server-2</adapterId>
             <protocolId>opcua</protocolId>
             <config>
-                <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
                 <auth>
                     <basic>
                         <password>password</password>
                         <username>edge</username>
                     </basic>
                 </auth>
+                <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
-                    <topic>test/blubb/#</topic>
-                    <tagName>tag1</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
             <tags>
                 <tag>
                     <name>tag1</name>
+                    <description></description>
                     <definition>
                         <node>ns=1;i=1004</node>
                     </definition>
                 </tag>
             </tags>
+            <toEdgeMappings/>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <topic>test/blubb/#</topic>
+                    <tagName>tag1</tagName>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <mqttUserProperties/>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
+            <tagMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-1</adapterId>
             <protocolId>modbus</protocolId>
             <config>
-                <hostName>127.0.0.1</hostName>
-                <port>5021</port>
                 <modbusToMqtt>
+                    <publishChangedDataOnly>true</publishChangedDataOnly>
                     <pollingIntervalMillis>1000</pollingIntervalMillis>
                     <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
-                    <publishChangedDataOnly>true</publishChangedDataOnly>
                 </modbusToMqtt>
+                <hostName>127.0.0.1</hostName>
+                <port>5021</port>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
-                    <topic>test</topic>
-                    <tagName>tag1</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
             <tags>
                 <tag>
                     <name>tag1</name>
+                    <description></description>
                     <definition>
                         <node>ns=1;i=1004</node>
                     </definition>
                 </tag>
             </tags>
+            <toEdgeMappings/>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <topic>test</topic>
+                    <tagName>tag1</tagName>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <mqttUserProperties/>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
+            <tagMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-2</adapterId>
             <protocolId>modbus</protocolId>
             <config>
-                <hostName>127.0.0.1</hostName>
-                <port>5021</port>
                 <modbusToMqtt>
+                    <publishChangedDataOnly>true</publishChangedDataOnly>
                     <pollingIntervalMillis>1000</pollingIntervalMillis>
                     <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
-                    <publishChangedDataOnly>true</publishChangedDataOnly>
                 </modbusToMqtt>
+                <hostName>127.0.0.1</hostName>
+                <port>5021</port>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
-                    <topic>test</topic>
-                    <tagName>tag-modbus-2</tagName>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
-                    <topic>test</topic>
-                    <tagName>tag-modbus-2</tagName>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
-                    <topic>test</topic>
-                    <tagName>tag-modbus-2</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
             <tags>
                 <tag>
                     <name>tag-modbus-2</name>
+                    <description></description>
                     <definition>
                         <coils>
                             <endIdx>10000000</endIdx>
@@ -304,8 +307,39 @@
                     </definition>
                 </tag>
             </tags>
+            <toEdgeMappings/>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <topic>test</topic>
+                    <tagName>tag-modbus-2</tagName>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <mqttUserProperties/>
+                </fromEdgeMapping>
+                <fromEdgeMapping>
+                    <topic>test</topic>
+                    <tagName>tag-modbus-2</tagName>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <mqttUserProperties/>
+                </fromEdgeMapping>
+                <fromEdgeMapping>
+                    <topic>test</topic>
+                    <tagName>tag-modbus-2</tagName>
+                    <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <mqttUserProperties/>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
+            <tagMappings/>
         </protocol-adapter>
     </protocol-adapters>
-    <internal></internal>
-    <modules></modules>
+    <modules/>
+    <internal/>
 </hivemq>
