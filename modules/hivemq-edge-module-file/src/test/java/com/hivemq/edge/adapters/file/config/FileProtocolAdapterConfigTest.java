@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -70,7 +69,7 @@ class FileProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -85,7 +84,7 @@ class FileProtocolAdapterConfigTest {
             });
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -119,7 +118,7 @@ class FileProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(0);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
