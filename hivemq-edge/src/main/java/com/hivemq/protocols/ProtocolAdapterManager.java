@@ -766,28 +766,18 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull DomainTagUpdateResult updateDomainTags(
-            final @NotNull String adapterId,
-            final Set<DomainTag> domainTags) {
-        Set<String> tagNames = domainTags.stream().map(t -> t.getTagName()).collect(Collectors.toSet());
+            final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> tags = adapter.getTags();
-            final boolean alreadyExists = tags.removeIf(t -> tagNames.contains(t.getName()));
-            if (alreadyExists) {
-                final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
-                        })).collect(Collectors.toList());
-                domainTags.forEach(dt -> tagMaps.add(dt.toTagMap()));
-                updateAdapterTags(adapterId, tagMaps);
-                return DomainTagUpdateResult.success();
-            } else {
-                return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
-            }
+            final List<Map<String, Object>> tagMaps =
+                    domainTags.stream().map(t -> objectMapper.convertValue(t, new TypeReference<Map<String, Object>>() {
+                    })).collect(Collectors.toList());
+            updateAdapterTags(adapterId, tagMaps);
+            return DomainTagUpdateResult.success();
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
 
     public @NotNull DomainTagDeleteResult deleteDomainTag(
-            final @NotNull String adapterId,
-            final @NotNull String tagName) {
+            final @NotNull String adapterId, final @NotNull String tagName) {
         return getAdapterById(adapterId).map(adapter -> {
             final List<Tag> tags = adapter.getTags();
             final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
@@ -817,17 +807,18 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toList());
     }
 
-    public Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
-        return getProtocolAdapters().values().stream()
-                .flatMap(adapter ->
-                        adapter.getTags().stream()
-                                .filter(t -> t.getName().equals(tagName)
-                        ).map(tag -> new DomainTag(
-                                tag.getName(),
+    public @NotNull Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
+        return getProtocolAdapters().values()
+                .stream()
+                .flatMap(adapter -> adapter.getTags()
+                        .stream()
+                        .filter(t -> t.getName().equals(tagName))
+                        .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
-                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {}))))
+                                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                                }))))
                 .findFirst();
     }
 

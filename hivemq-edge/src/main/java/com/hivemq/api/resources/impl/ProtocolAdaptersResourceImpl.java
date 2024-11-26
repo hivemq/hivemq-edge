@@ -657,6 +657,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case ADAPTER_MISSING:
                 return ErrorResponseUtil.notFound("adapter", adapterId);
         }
+        log.error("AddResult '{}' was not handled in the method.", domainTagAddResult.getDomainTagPutStatus());
         return Response.serverError().build();
     }
 
