@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
-import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -64,10 +63,6 @@ public class FromEdgeMapping implements PollingContext {
 
     @Override
     public int getMqttQos() {
-        return 0;
-    }
-
-    public int getMaxQoS() {
         return maxQoS;
     }
 
