@@ -1,54 +1,52 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 
-import type { DomainTag, DomainTagList } from '@/api/__generated__'
+import { DomainTag, DomainTagList } from '@/api/__generated__'
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
 import { useDeleteDomainTags } from '@/api/hooks/useProtocolAdapters/useDeleteDomainTags.ts'
 import { useUpdateAllDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateAllDomainTags.ts'
 import { useUpdateDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateDomainTags.ts'
+import { useGetDomainTagSchema } from '@/api/hooks/useDomainModel/useGetDomainTagSchema.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
-import { getInwardMappingSchema } from '@/modules/Workspace/utils/adapter.utils.ts'
-import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
 import { ManagerContextType } from '@/modules/Mappings/types.ts'
-
-interface TagManagerSchema {
-  isError?: boolean
-  error?: string
-  data?: RJSFSchema
-}
 
 export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()
   const toast = useToast()
 
   const { protocol, isLoading: protocolLoad } = useGetAdapterInfo(adapterId)
-  const tagManager = useMemo<TagManagerSchema>(() => {
-    try {
-      if (!protocol) return { isError: true, error: t('device.errors.noAdapter') }
-
-      const schema = getInwardMappingSchema(protocol)
-      const tagSchema = createSchema(schema.items as RJSFSchema)
-      return { data: tagSchema }
-    } catch (e) {
-      return { isError: true, error: (e as Error).message }
-    }
-  }, [protocol, t])
-  const { data: tagList, isLoading, isError: isTagError, error: tagError } = useGetDomainTags(adapterId, protocol?.id)
-
-  // TODO[NVL] Error formats differ too much. ProblemDetails!
-  const { error, isError } = useMemo(() => {
-    if (!adapterId) return { error: t('device.errors.noAdapter'), isError: true }
-    if (tagManager.isError) return { error: tagManager.error, isError: true }
-    return { error: tagError, isError: isTagError }
-  }, [adapterId, isTagError, t, tagError, tagManager.error, tagManager.isError])
+  const { data: tagSchema, isError: isSchemaError, error: errorSchema } = useGetDomainTagSchema(protocol?.id)
+  const { data: tagList, isLoading, isError: isTagError, error: errorTag } = useGetDomainTags(adapterId)
 
   const createMutator = useCreateDomainTags()
   const deleteMutator = useDeleteDomainTags()
   const updateMutator = useUpdateDomainTags()
   const updateCollectionMutator = useUpdateAllDomainTags()
+
+  const tagListSchema = useMemo<RJSFSchema | undefined>(() => {
+    if (!tagSchema) return undefined
+
+    const { $schema: sc, ...rest } = tagSchema?.configSchema as RJSFSchema
+    return {
+      // $schema: 'https://json-schema.org/draft/2020-12/schema',
+      definitions: {
+        TagSchema: rest,
+      },
+      properties: {
+        items: {
+          type: 'array',
+          title: 'List of tags',
+          description: 'The list of all tags defined in the device',
+          items: {
+            $ref: '#/definitions/TagSchema',
+          },
+        },
+      },
+    }
+  }, [tagSchema])
 
   // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
@@ -96,24 +94,37 @@ export const useTagManager = (adapterId: string) => {
   }
 
   const context: ManagerContextType = {
-    schema: tagManager.data,
-    uiSchema: {},
-    formData: tagList,
+    schema: tagListSchema,
+    uiSchema: {
+      'ui:submitButtonOptions': {
+        norender: true,
+      },
+
+      items: {
+        items: {
+          'ui:order': ['name', 'description', '*'],
+          'ui:collapsable': {
+            titleKey: 'name',
+          },
+        },
+      },
+    },
+    formData: tagList || { items: [] },
   }
 
   return {
     // The context of the operations
     context,
     // The CRUD operations
-    data: tagList,
+    data: tagList || { items: [] },
     onCreate,
     onDelete,
     onUpdate,
     onupdateCollection,
     // The state (as in ReactQuery)
     isLoading: isLoading || protocolLoad,
-    isError,
-    error,
+    isError: isTagError || isSchemaError,
+    error: errorTag?.message || errorSchema?.message,
     isPending:
       createMutator.isPending ||
       updateMutator.isPending ||
