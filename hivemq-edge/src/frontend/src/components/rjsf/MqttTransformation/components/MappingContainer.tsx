@@ -2,7 +2,7 @@ import { FC, useCallback, useState } from 'react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { Card, CardBody, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
-import { JsonNode } from '@/api/__generated__'
+import { FieldMappingsModel, JsonNode } from '@/api/__generated__'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import {
@@ -10,7 +10,6 @@ import {
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { useTranslation } from 'react-i18next'
 
@@ -21,12 +20,12 @@ export enum MappingStrategy {
 }
 
 interface SubscriptionContainerProps {
-  item: OutwardMapping
+  item: FieldMappingsModel
   adapterType: string
   adapterId: string
   onClose: () => void
-  onSubmit: (newItem: OutwardMapping) => void
-  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void
+  onSubmit: (newItem: FieldMappingsModel) => void
+  onChange: (id: keyof FieldMappingsModel, v: JsonNode | string | string[] | null) => void
 }
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
@@ -47,17 +46,17 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
           <SelectSourceTopics
             adapterId={adapterId}
             adapterType={adapterType}
-            value={item.mqttTopicFilter}
-            onChange={(v) => onChange('mqttTopicFilter', v)}
+            value={item.topicFilter}
+            onChange={(v) => onChange('topicFilter', v)}
           />
-          {!item.mqttTopicFilter && (
+          {!item.topicFilter && (
             <Card size="sm" h="25vh">
               <CardBody pt="50px">
                 <ErrorMessage message={t('rjsf.MqttTransformationField.sources.prompt')} status="info" />
               </CardBody>
             </Card>
           )}
-          {item.mqttTopicFilter && <DataModelSources flex={1} topic={item.mqttTopicFilter} minH={250} />}
+          {item.topicFilter && <DataModelSources flex={1} topic={item.topicFilter} minH={250} />}
         </VStack>
         <VStack justifyContent="center">
           <HStack height={38}>

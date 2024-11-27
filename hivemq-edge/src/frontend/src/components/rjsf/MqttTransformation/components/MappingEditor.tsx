@@ -3,21 +3,21 @@ import { useTranslation } from 'react-i18next'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
+import { FieldMappingModel } from '@/api/__generated__'
 import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { FieldMapping } from '@/modules/Mappings/types.ts'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
   adapterType: string
   adapterId: string
   showTransformation?: boolean
-  mapping?: FieldMapping[]
-  onChange?: (v: FieldMapping[] | undefined) => void
+  mapping?: FieldMappingModel[]
+  onChange?: (v: FieldMappingModel[] | undefined) => void
   onSchemaReady?: (v: FlatJSONSchema7[]) => void
 }
 
@@ -63,7 +63,9 @@ const MappingEditor: FC<MappingEditorProps> = ({
         {isSuccess && (
           <List>
             {properties.map((property) => {
-              const instruction = mapping ? mapping.findIndex((e) => e.destination.propertyPath === property.key) : -1
+              const instruction = mapping
+                ? mapping.findIndex((instruction) => instruction.destination === property.key)
+                : -1
               return (
                 <ListItem key={property.key}>
                   <MappingInstruction
@@ -73,15 +75,15 @@ const MappingEditor: FC<MappingEditorProps> = ({
                     onChange={(source, destination) => {
                       let newMappings = [...(mapping || [])]
                       if (source) {
-                        const newItem: FieldMapping = {
-                          source: { propertyPath: source },
-                          destination: { propertyPath: destination },
+                        const newItem: FieldMappingModel = {
+                          source: source,
+                          destination: destination,
                         }
                         if (instruction !== -1) {
                           newMappings[instruction] = newItem
                         } else newMappings.push(newItem)
                       } else {
-                        newMappings = newMappings.filter((mapped) => mapped.destination.propertyPath !== destination)
+                        newMappings = newMappings.filter((mapped) => mapped.destination !== destination)
                       }
 
                       onChange?.(newMappings)

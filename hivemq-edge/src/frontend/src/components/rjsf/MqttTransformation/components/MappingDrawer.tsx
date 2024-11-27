@@ -12,18 +12,17 @@ import {
   CardBody,
   ButtonGroup,
 } from '@chakra-ui/react'
-
-import { JsonNode } from '@/api/__generated__'
-import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import { useTranslation } from 'react-i18next'
+
+import { FieldMappingsModel, JsonNode } from '@/api/__generated__'
+import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
 
 interface MappingDrawerProps {
   adapterId: string
   adapterType: string
-  item: OutwardMapping
-  onSubmit: (newItem: OutwardMapping) => void
-  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | null) => void
+  item: FieldMappingsModel
+  onSubmit: (newItem: FieldMappingsModel) => void
+  onChange: (id: keyof FieldMappingsModel, v: JsonNode | string | string[] | null) => void
   onClose: () => void
 }
 

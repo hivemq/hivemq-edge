@@ -1,9 +1,8 @@
 import { FormValidation, RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils'
-import { Adapter } from '@/api/__generated__'
+import { Adapter, FieldMappingsModel } from '@/api/__generated__'
 import { TFunction } from 'i18next'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 import i18n from '@/config/i18n.config.ts'
 
@@ -37,7 +36,7 @@ export const customValidate =
     return errors
   }
 
-export const customMappingValidate = (formData: Record<string, OutwardMapping[]>, errors: FormValidation) => {
+export const customMappingValidate = (formData: Record<string, FieldMappingsModel[]>, errors: FormValidation) => {
   const outwardMappings = formData['mqttToOpcuaMappings']
 
   return outwardMappings.reduce((errors, currentMapping, index) => {
@@ -60,7 +59,7 @@ export const customMappingValidate = (formData: Record<string, OutwardMapping[]>
 
     const countRequired = destination.length
 
-    if (fieldMapping.length !== countRequired) {
+    if (fieldMapping?.length !== countRequired) {
       errors.mqttToOpcuaMappings?.[index]?.fieldMapping?.addError(
         i18n.t('components:rjsf.MqttTransformationField.validation.error.missingMapping')
       )

@@ -18,11 +18,11 @@ import {
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
+import { FieldMappingModel } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { FieldMapping } from '@/modules/Mappings/types.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
@@ -34,7 +34,7 @@ enum DropState {
 interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
-  mapping?: FieldMapping
+  mapping?: FieldMappingModel
   onChange?: (source: string | undefined, destination: string) => void
 }
 
@@ -112,8 +112,8 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
             flex={3}
           >
-            {mapping?.source.propertyPath ? (
-              <Code>{formatPath(mapping.source.propertyPath)}</Code>
+            {mapping?.source ? (
+              <Code>{formatPath(mapping.source)}</Code>
             ) : (
               <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
                 {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
@@ -125,12 +125,12 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
               icon={<RiDeleteBin2Fill />}
               onClick={onHandleClear}
-              isDisabled={Boolean(!mapping?.source.propertyPath)}
+              isDisabled={Boolean(!mapping?.source)}
             />
           </ButtonGroup>
-          <Alert status={mapping?.source.propertyPath ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
+          <Alert status={mapping?.source ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
             <AlertIcon />
-            {mapping?.source.propertyPath
+            {mapping?.source
               ? t('rjsf.MqttTransformationField.validation.matching')
               : t('rjsf.MqttTransformationField.validation.required')}
           </Alert>
