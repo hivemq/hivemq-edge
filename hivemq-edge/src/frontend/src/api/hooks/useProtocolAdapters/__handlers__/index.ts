@@ -18,6 +18,9 @@ import {
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
+import { MOCK_MAPPING, mappingHandlers } from './mapping.mocks.ts'
+
+export { MOCK_MAPPING, mappingHandlers }
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
