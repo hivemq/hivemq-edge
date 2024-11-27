@@ -71,7 +71,7 @@ const config: configType = {
     /**
      * Mappings (inward and outwards) are available from the workspace and hidden in the configuration
      */
-    ADAPTER_MAPPINGS_IN_WORKSPACE: import.meta.env.VITE_FLAG_ADAPTER_MAPPINGS_IN_WORKSPACE === 'true',
+    ADAPTER_MAPPINGS_IN_WORKSPACE: true,
   },
 
   documentation: {

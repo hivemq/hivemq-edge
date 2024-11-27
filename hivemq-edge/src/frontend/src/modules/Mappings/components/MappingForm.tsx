@@ -13,8 +13,6 @@ import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
 import { CustomValidator, RJSFSchema } from '@rjsf/utils'
 import { FormContextType } from '@rjsf/utils/src/types.ts'
 
-import config from '@/config'
-
 interface MappingFormProps {
   adapterId: string
   adapterType?: string
@@ -67,8 +65,8 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
       formContext={context}
       onSubmit={onFormSubmit}
       customValidate={
-        type === MappingType.OUTWARD && config.features.ADAPTER_MAPPINGS_IN_WORKSPACE
-          ? (customMappingValidate as CustomValidator<unknown, RJSFSchema, FormContextType>)
+        type === MappingType.OUTWARD && adapterType
+          ? (customMappingValidate(adapterType) as CustomValidator<unknown, RJSFSchema, FormContextType>)
           : undefined
       }
     />

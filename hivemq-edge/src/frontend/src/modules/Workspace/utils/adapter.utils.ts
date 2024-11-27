@@ -23,6 +23,9 @@ export const getInwardMappingRootProperty = (adapterType: string) => `${adapterT
 export const getOutwardMappingRootProperty = (adapterType: string) =>
   `${MQTT_PROPERTY_STUB.outward}${capitalize(adapterType)}`
 
+export const getOutwardMappingRootPropertyKey = (adapterType: string) =>
+  `${getOutwardMappingRootProperty(adapterType)}${MQTT_PROPERTY_STUB.mapping}`
+
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
   return Boolean(adapter?.capabilities?.includes('WRITE'))
 }
