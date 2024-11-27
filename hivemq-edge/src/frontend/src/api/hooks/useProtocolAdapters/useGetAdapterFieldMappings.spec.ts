@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import { useGetAdapterFieldMappings } from '@/api/hooks/useProtocolAdapters/useGetAdapterFieldMappings.ts'
 
-import { mappingHandlers } from './__handlers__'
+import { mappingHandlers } from './__handlers__/mapping.mocks.ts'
 
 describe('useGetAdapterFieldMappings', () => {
   beforeEach(() => {
