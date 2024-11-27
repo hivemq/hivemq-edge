@@ -21,4 +21,33 @@ export const mappingHandlers = [
       return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, tagName), { status: 200 })
     }
   ),
+
+  http.put<{ adapterId: string }>(
+    '*/management/protocol-adapters/adapters/:adapterId/fieldmappings',
+    async ({ params, request }) => {
+      const { adapterId } = params
+      const { items } = (await request.json()) as FieldMappingsListModel
+
+      return HttpResponse.json(
+        {
+          adapterId,
+          items: items.map((item) => {
+            const { topicFilter, tag } = item
+            return { topicFilter, tag }
+          }),
+        },
+        { status: 200 }
+      )
+    }
+  ),
+
+  http.post<{ adapterId: string }>(
+    '*/management/protocol-adapters/adapters/:adapterId/fieldmappings',
+    async ({ params, request }) => {
+      const { adapterId } = params
+      const item = (await request.json()) as FieldMappingsModel
+      const { topicFilter, tag } = item
+      return HttpResponse.json({ adapterId, topicFilter, tag }, { status: 200 })
+    }
+  ),
 ]
