@@ -580,6 +580,56 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
+    public boolean updateAdapterFromMappings(final @NotNull String adapterId, final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
+        Preconditions.checkNotNull(adapterId);
+        return getAdapterById(adapterId).map(oldInstance -> {
+            final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
+            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
+                    protocolId,
+                    oldInstance.getConfigObject(),
+                    oldInstance.getToEdgeMappings(),
+                    fromEdgeMappings,
+                    oldInstance.getTags(),
+                    oldInstance.getFieldMappings());
+            return protocolAdapterConfig.missingTags()
+                    .map(missingTags -> {
+                        log.error("Tags were missing; {}", missingTags);
+                        return false;
+                    })
+                    .orElseGet(() -> {
+                        deleteAdapterInternal(adapterId);
+                        addAdapterInternal(protocolAdapterConfig);
+                        configPersistence.updateAdapter(protocolAdapterConfig);
+                        return true;
+                    });
+        }).orElse(false);
+    }
+
+    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<ToEdgeMapping> toEdgeMappings) {
+        Preconditions.checkNotNull(adapterId);
+        return getAdapterById(adapterId).map(oldInstance -> {
+            final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
+            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
+                    protocolId,
+                    oldInstance.getConfigObject(),
+                    toEdgeMappings,
+                    oldInstance.getFromEdgeMappings(),
+                    oldInstance.getTags(),
+                    oldInstance.getFieldMappings());
+            return protocolAdapterConfig.missingTags()
+                    .map(missingTags -> {
+                        log.error("Tags were missing; {}", missingTags);
+                        return false;
+                    })
+                    .orElseGet(() -> {
+                        deleteAdapterInternal(adapterId);
+                        addAdapterInternal(protocolAdapterConfig);
+                        configPersistence.updateAdapter(protocolAdapterConfig);
+                        return true;
+                    });
+        }).orElse(false);
+    }
+
     public boolean updateAdapterFieldMappings(
             final @NotNull String adapterId, final @NotNull List<FieldMappings> fieldMappings) {
         Preconditions.checkNotNull(adapterId);

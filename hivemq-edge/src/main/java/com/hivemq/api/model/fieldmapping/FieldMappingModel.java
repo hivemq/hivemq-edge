@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.mapping;
+package com.hivemq.api.model.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;

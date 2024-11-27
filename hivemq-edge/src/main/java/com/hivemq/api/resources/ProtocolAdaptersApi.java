@@ -21,8 +21,9 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.mapping.FieldMappingsListModel;
-import com.hivemq.api.model.mapping.FieldMappingsModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingsListModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingsModel;
+import com.hivemq.api.model.frommapping.FromEdgeMappingListModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -30,6 +31,7 @@ import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
+import com.hivemq.api.model.tomapping.ToEdgeMappingListModel;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.api.resources.examples.FieldMappingsExamples;
 import com.hivemq.api.resources.examples.TagResourceExamples;
@@ -69,6 +71,8 @@ public interface ProtocolAdaptersApi {
 
     String PATH = "/api/v1/management/protocol-adapters";
 
+    //########   SCHEMAS   #########
+
     @GET
     @Path("/types")
     @Operation(summary = "Obtain a list of available protocol adapter types",
@@ -100,6 +104,10 @@ public interface ProtocolAdaptersApi {
                                 description = "The protocol id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("protocolId") String protocolId);
+
+
+
+    //########   ADAPTERS   #########
 
     @POST
     @Path("/adapters/{adapterType: ([a-zA-Z_0-9\\-])*}")
@@ -333,6 +341,9 @@ public interface ProtocolAdaptersApi {
     Response status();
 
 
+    //########   TAGS   #########
+
+
     @GET
     @Path("/adapters/{adapterId}/tags")
     @Operation(summary = "Get the domain tags for the device connected through this adapter.",
@@ -529,7 +540,108 @@ public interface ProtocolAdaptersApi {
                                 in = ParameterIn.PATH) @PathParam("tagName") String tagName);
 
 
+    //########   FROMEDGEMAPPINGS   #########
 
+    @GET
+    @Path("/adapters/{adapterId}/frommappings")
+    @Operation(summary = "Get the mappings for messages being sent out by the adapter.",
+               operationId = "get-adapter-fromMappings",
+               description = "Get the mappings for messages being sent out by the adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = FromEdgeMappingListModel.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for field mappings in opc ua",
+                                                                              name = "field mappings example",
+                                                                              summary = "Example for field mappings ",
+                                                                              value = FieldMappingsExamples.FIELD_MAPPINGS_LIST)}))}) //TODO fix example
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getFromMappingsForAdapter(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+
+
+    @PUT
+    @Path("/adapters/{adapterId}/frommappings")
+    @Operation(summary = "Update the from mappings of an adapter.",
+               description = "Update all from mappings of an adapter.",
+               operationId = "update-adapter-fromMappings",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Not Found",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Errors.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example response in case no field mappings are present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case no field mappings is present for this tagId.",
+                                                                              value = FieldMappingsExamples.ADAPTER_NOT_PRESENT)}))}) //TODO fix example
+    @NotNull
+    Response updateFromMappingsForAdapter(
+            @Parameter(name = "adapterId",
+                       description = "The id of the adapter whose from mappings will be updated.",
+                       required = true,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
+            final @NotNull FromEdgeMappingListModel fromEdgeMappingListModel);
+
+
+    //########   TOEDGEMAPPINGS   #########
+
+    @GET
+    @Path("/adapters/{adapterId}/tomappings")
+    @Operation(summary = "Get the mappings for messages being sent to the adapter.",
+               operationId = "get-adapter-toMappings",
+               description = "Get the mappings for messages being sent to the adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = FromEdgeMappingListModel.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for field mappings in opc ua",
+                                                                              name = "field mappings example",
+                                                                              summary = "Example for field mappings ",
+                                                                              value = FieldMappingsExamples.FIELD_MAPPINGS_LIST)}))}) //TODO fix example
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getToMappingsForAdapter(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+
+
+    @PUT
+    @Path("/adapters/{adapterId}/tomappings")
+    @Operation(summary = "Update the to mappings of an adapter.",
+               description = "Update all to mappings of an adapter.",
+               operationId = "update-adapter-toMappings",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Not Found",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Errors.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example response in case no field mappings are present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case no field mappings is present for this tagId.",
+                                                                              value = FieldMappingsExamples.ADAPTER_NOT_PRESENT)}))}) //TODO fix example
+    @NotNull
+    Response updateToMappingsForAdapter(
+            @Parameter(name = "adapterId",
+                       description = "The id of the adapter whose from mappings will be updated.",
+                       required = true,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
+            final @NotNull ToEdgeMappingListModel toEdgeMappingListModel);
+
+    //########   FIELDMAPPINGS   #########
 
     @POST
     @Path("/adapters/{adapterId}/fieldmappings")

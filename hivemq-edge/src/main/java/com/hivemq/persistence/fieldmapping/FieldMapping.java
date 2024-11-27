@@ -16,7 +16,7 @@
 package com.hivemq.persistence.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.hivemq.api.model.mapping.FieldMappingModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingModel;
 import com.hivemq.configuration.entity.adapter.FieldMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 

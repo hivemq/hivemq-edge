@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.persistence.fieldmapping;
+package com.hivemq.api.model.tomapping;
 
-import com.hivemq.api.model.fieldmapping.TransformationModel;
-import com.hivemq.configuration.entity.adapter.TransformationEntity;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-@SuppressWarnings("InstantiationOfUtilityClass")
-public class Transformation {
+import java.util.List;
 
-    // currently there is no transformation present at all
+public class ToEdgeMappingListModel extends ItemsResponse<ToEdgeMappingModel> {
 
-    public static Transformation from(final @NotNull TransformationEntity transformation) {
-        return new Transformation();
-    }
-
-    public static Transformation fromModel(final @NotNull TransformationModel transformation) {
-        return new Transformation();
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public ToEdgeMappingListModel(
+            @JsonProperty("items") final @NotNull List<ToEdgeMappingModel> items) {
+        super(items);
     }
 }

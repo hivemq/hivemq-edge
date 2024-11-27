@@ -38,8 +38,10 @@ import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.mapping.FieldMappingsListModel;
-import com.hivemq.api.model.mapping.FieldMappingsModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingsListModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingsModel;
+import com.hivemq.api.model.frommapping.FromEdgeMappingModel;
+import com.hivemq.api.model.frommapping.FromEdgeMappingListModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -47,6 +49,8 @@ import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
+import com.hivemq.api.model.tomapping.ToEdgeMappingListModel;
+import com.hivemq.api.model.tomapping.ToEdgeMappingModel;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -86,6 +90,7 @@ import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -729,5 +734,91 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } else {
             return ErrorResponseUtil.notFound("adapter", adapterId);
         }
+    }
+
+    @Override
+    public Response getFromMappingsForAdapter(final @NotNull String adapterId) {
+        return protocolAdapterManager.getAdapterById(adapterId)
+                .map(adapter -> adapter.getFromEdgeMappings().stream()
+                        .map(FromEdgeMappingModel::from)
+                        .collect(Collectors.toList()))
+                .map(FromEdgeMappingListModel::new)
+                .map(mappingsList -> Response.status(200).entity(mappingsList).build())
+                .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
+    }
+
+    @Override
+    public Response updateFromMappingsForAdapter(
+            final @NotNull String adapterId,
+            final @NotNull FromEdgeMappingListModel fromEdgeMappingListModel) {
+        return protocolAdapterManager.getAdapterById(adapterId)
+                .map(adapter -> {
+                    final Set<String> requiredTags = new HashSet<>();
+                    final List<FromEdgeMapping> converted = fromEdgeMappingListModel.getItems()
+                            .stream()
+                            .map(mapping -> {
+                                requiredTags.add(mapping.getTagName());
+                                return mapping.toFromEdgeMapping();
+                            })
+                            .collect(Collectors.toList());
+                    adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
+
+                    if (requiredTags.isEmpty()) {
+                        if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
+                            log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
+                            return Response.status(200).entity(fromEdgeMappingListModel).build();
+                        } else {
+                            log.error("Something went wrong updating the adapter {}", adapterId);
+                            return Response.status(503).build();
+                        }
+                    } else {
+                        log.error("The following tags were missing for updating the fromMappings for adapter {}: {}", adapterId, requiredTags);
+                        return Response.status(503).build();
+                    }
+                })
+                .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
+    }
+
+    @Override
+    public Response getToMappingsForAdapter(final @NotNull String adapterId) {
+        return protocolAdapterManager.getAdapterById(adapterId)
+                .map(adapter -> adapter.getToEdgeMappings().stream()
+                        .map(ToEdgeMappingModel::from)
+                        .collect(Collectors.toList()))
+                .map(ToEdgeMappingListModel::new)
+                .map(mappingsList -> Response.status(200).entity(mappingsList).build())
+                .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
+    }
+
+    @Override
+    public Response updateToMappingsForAdapter(
+            final @NotNull String adapterId,
+            final @NotNull ToEdgeMappingListModel toEdgeMappingListModel) {
+        return protocolAdapterManager.getAdapterById(adapterId)
+                .map(adapter -> {
+                    final Set<String> requiredTags = new HashSet<>();
+                    final List<ToEdgeMapping> converted = toEdgeMappingListModel.getItems()
+                            .stream()
+                            .map(mapping -> {
+                                requiredTags.add(mapping.getTagName());
+                                return mapping.toToEdgeMapping();
+                            })
+                            .collect(Collectors.toList());
+                    adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
+
+                    if (requiredTags.isEmpty()) {
+                        if (protocolAdapterManager.updateAdapterToMappings(adapterId, converted)) {
+                            log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
+                            return Response.status(200).entity(toEdgeMappingListModel).build();
+                        } else {
+                            log.error("Something went wrong updating the adapter {}", adapterId);
+                            return Response.status(503).build();
+                        }
+                    } else {
+                        log.error("The following tags were missing for updating the fromMappings for adapter {}: {}", adapterId, requiredTags);
+                        return Response.status(503).build();
+                    }
+                })
+                .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
 }

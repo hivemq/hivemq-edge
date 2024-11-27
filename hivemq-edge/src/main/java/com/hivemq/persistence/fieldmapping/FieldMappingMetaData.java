@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.api.model.mapping.FieldMappingMetaDataModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingMetaDataModel;
 import com.hivemq.configuration.entity.adapter.FieldMappingMetaDataEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 

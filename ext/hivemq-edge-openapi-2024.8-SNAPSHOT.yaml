@@ -3682,6 +3682,100 @@ paths:
       summary: Update the field mappings of an adapter.
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/frommappings:
+    get:
+      description: Get the mappings for messages being sent out by the adapter.
+      operationId: get-adapter-fromMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                field mappings example:
+                  description: An example for field mappings in opc ua
+                  summary: 'Example for field mappings '
+                  value:
+                    items:
+                    - topicFilter: topic1
+                      tag: someTag
+                      fieldMapping:
+                      - source: incField1
+                        destination: outField1
+                        transformation: {}
+                      - source: incField2
+                        destination: outField2
+                        transformation: {}
+                      - source: incField3
+                        destination: outField3
+                        transformation: {}
+                      metadata:
+                        source: ""
+                        destination: ""
+                    - topicFilter: topic2
+                      tag: someTag
+                      fieldMapping:
+                      - source: incField1
+                        destination: outField1
+                        transformation: {}
+                      - source: incField2
+                        destination: outField2
+                        transformation: {}
+                      - source: incField3
+                        destination: outField3
+                        transformation: {}
+                      metadata:
+                        source: ""
+                        destination: ""
+              schema:
+                $ref: '#/components/schemas/FromEdgeMappingListModel'
+          description: Success
+      summary: Get the mappings for messages being sent out by the adapter.
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all from mappings of an adapter.
+      operationId: update-adapter-fromMappings
+      parameters:
+      - description: The id of the adapter whose from mappings will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FromEdgeMappingListModel'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no field mappings are present
+                    for this tagId.
+                  summary: An example response in case no field mappings is present
+                    for this tagId.
+                  value:
+                    errors:
+                    - title: Resource not found
+                      detail: Adapter with id 'adapter1' not found
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the from mappings of an adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
     get:
       description: Get the up to date status an adapter.
@@ -3919,6 +4013,100 @@ paths:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
       summary: Update the domain tag of an adapter.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tomappings:
+    get:
+      description: Get the mappings for messages being sent to the adapter.
+      operationId: get-adapter-toMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                field mappings example:
+                  description: An example for field mappings in opc ua
+                  summary: 'Example for field mappings '
+                  value:
+                    items:
+                    - topicFilter: topic1
+                      tag: someTag
+                      fieldMapping:
+                      - source: incField1
+                        destination: outField1
+                        transformation: {}
+                      - source: incField2
+                        destination: outField2
+                        transformation: {}
+                      - source: incField3
+                        destination: outField3
+                        transformation: {}
+                      metadata:
+                        source: ""
+                        destination: ""
+                    - topicFilter: topic2
+                      tag: someTag
+                      fieldMapping:
+                      - source: incField1
+                        destination: outField1
+                        transformation: {}
+                      - source: incField2
+                        destination: outField2
+                        transformation: {}
+                      - source: incField3
+                        destination: outField3
+                        transformation: {}
+                      metadata:
+                        source: ""
+                        destination: ""
+              schema:
+                $ref: '#/components/schemas/FromEdgeMappingListModel'
+          description: Success
+      summary: Get the mappings for messages being sent to the adapter.
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all to mappings of an adapter.
+      operationId: update-adapter-toMappings
+      parameters:
+      - description: The id of the adapter whose from mappings will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToEdgeMappingListModel'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no field mappings are present
+                    for this tagId.
+                  summary: An example response in case no field mappings is present
+                    for this tagId.
+                  value:
+                    errors:
+                    - title: Resource not found
+                      detail: Adapter with id 'adapter1' not found
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the to mappings of an adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
@@ -5160,6 +5348,54 @@ components:
           nullable: true
       required:
       - firstUse
+    FromEdgeMappingListModel:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/FromEdgeMappingModel'
+      required:
+      - items
+    FromEdgeMappingModel:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        includeTagNames:
+          type: boolean
+          description: Should tag names be included when sent out.
+        includeTimestamp:
+          type: boolean
+          description: Should the timestamp be included when sent out.
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        messageHandlingOptions:
+          type: string
+          description: How collected tags should or shouldnÖT be aggregated.
+          enum:
+          - MQTTMessagePerTag
+          - MQTTMessagePerSubscription
+        tagName:
+          type: string
+          description: The tag for which values hould be collected and sent out.
+        topic:
+          type: string
+          description: The target mqtt topic where received tags should be sent to.
+        userProperties:
+          type: array
+          description: User properties to be added to each outgoing mqtt message.
+          items:
+            $ref: '#/components/schemas/MqttUserPropertyModel'
+      required:
+      - includeTagNames
+      - includeTimestamp
+      - maxQoS
+      - messageHandlingOptions
+      - tagName
+      - topic
     FsmStateInformationItem:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5472,6 +5708,17 @@ components:
             $ref: '#/components/schemas/Module'
       required:
       - items
+    MqttUserPropertyModel:
+      type: object
+      description: User properties to be added to each outgoing mqtt message.
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+      required:
+      - name
+      - value
     Notification:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5917,6 +6164,34 @@ components:
           type: boolean
           default: false
           description: The verifyHostname from the config
+    ToEdgeMappingListModel:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/ToEdgeMappingModel'
+      required:
+      - items
+    ToEdgeMappingModel:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        tagName:
+          type: string
+          description: The tag for which values hould be collected and sent out.
+        topicFilter:
+          type: string
+          description: The filter defining what topics we will receive messages from.
+      required:
+      - maxQoS
+      - tagName
+      - topicFilter
     TopicFilter:
       type: object
       description: List of result items that are returned by this endpoint

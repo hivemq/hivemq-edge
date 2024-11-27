@@ -18,7 +18,7 @@ package com.hivemq.api.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.adapters.Adapter;
-import com.hivemq.api.model.mapping.FieldMappingsModel;
+import com.hivemq.api.model.fieldmapping.FieldMappingsModel;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;

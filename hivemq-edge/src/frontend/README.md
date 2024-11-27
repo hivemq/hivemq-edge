@@ -43,6 +43,7 @@ nvm install
 After that you need to install the `node_modules` of the project by running the following command:
 
 ```shell
+npm install -g pnpm@latest-8
 pnpm install --frozen-lockfile
 ```
 
