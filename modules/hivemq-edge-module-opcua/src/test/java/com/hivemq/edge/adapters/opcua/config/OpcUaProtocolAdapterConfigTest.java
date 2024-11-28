@@ -193,7 +193,7 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(null, null, null),
                 new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", 0))),
                 new Security(BASIC128RSA15)
         );
@@ -245,7 +245,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(null, null, null),
                 new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", null))),
                 null
         );

@@ -82,7 +82,7 @@ public class HiveMQEdgeMain {
 
     protected void startGateway(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         if (injector == null) {
-            throw new HiveMQEdgeStartupException("invalid startup state");
+            throw new HiveMQEdgeStartupException("invalid startup state  ");
         }
 
         final ShutdownHooks shutdownHooks = injector.shutdownHooks();

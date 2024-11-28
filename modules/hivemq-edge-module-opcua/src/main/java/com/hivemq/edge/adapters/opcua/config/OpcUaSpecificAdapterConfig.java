@@ -18,16 +18,19 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
 
-public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
+public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -82,10 +85,11 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.auth = requireNonNullElse(auth, new Auth(null, null));
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
-                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
+                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null, null));
 
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
     }
+
 
     public @NotNull String getUri() {
         return uri;
@@ -109,5 +113,13 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     public @NotNull Boolean getOverrideUri() {
         return overrideUri;
+    }
+
+    @Override
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
+        if (opcuaToMqttConfig == null) {
+            return List.of();
+        }
+        return opcuaToMqttConfig.getMappings();
     }
 }

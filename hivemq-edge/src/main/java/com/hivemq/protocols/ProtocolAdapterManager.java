@@ -525,35 +525,12 @@ public class ProtocolAdapterManager {
         return getAdapterById(adapterId).map(oldInstance -> {
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
-            final List<FromEdgeMapping> fromEdgeMappings;
-            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
-                final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
-                        (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
-                fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
-                        .stream()
-                        .map(FromEdgeMapping::from)
-                        .collect(Collectors.toList());
-            } else {
-                fromEdgeMappings = new ArrayList<>();
-            }
-
-            final List<ToEdgeMapping> toEdgeMappings;
-            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithWritingContexts) {
-                final AdapterConfigWithWritingContexts adapterConfigWithPollingContexts =
-                        (AdapterConfigWithWritingContexts) protocolSpecificAdapterConfig;
-                toEdgeMappings = adapterConfigWithPollingContexts.getWritingContexts()
-                        .stream()
-                        .map(ToEdgeMapping::from)
-                        .collect(Collectors.toList());
-            } else {
-                toEdgeMappings = new ArrayList<>();
-            }
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                     adapterType,
                     protocolSpecificAdapterConfig,
-                    toEdgeMappings,
-                    fromEdgeMappings,
+                    oldInstance.getToEdgeMappings(),
+                    oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags(),
                     oldInstance.getFieldMappings());
 
@@ -595,7 +572,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getFieldMappings());
             return protocolAdapterConfig.missingTags()
                     .map(missingTags -> {
-                        log.error("Tags were missing; {}", missingTags);
+                        log.error("Tags were missing in fromMappings {}", missingTags);
                         return false;
                     })
                     .orElseGet(() -> {
@@ -620,7 +597,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getFieldMappings());
             return protocolAdapterConfig.missingTags()
                     .map(missingTags -> {
-                        log.error("Tags were missing; {}", missingTags);
+                        log.error("Tags were missing in toMappings {}", missingTags);
                         return false;
                     })
                     .orElseGet(() -> {
@@ -702,8 +679,8 @@ public class ProtocolAdapterManager {
                                     config.getAdapterId(),
                                     config.getAdapterConfig(),
                                     config.getTags(),
-                                    config.getToEdgeMappings(),
                                     config.getFromEdgeMappings(),
+                                    config.getToEdgeMappings(),
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,

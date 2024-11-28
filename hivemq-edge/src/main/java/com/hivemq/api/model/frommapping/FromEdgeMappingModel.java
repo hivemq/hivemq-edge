@@ -79,7 +79,7 @@ public class FromEdgeMappingModel {
         this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
-        this.messageExpiryInterval = Objects.requireNonNullElse(messageExpiryInterval, 0L);
+        this.messageExpiryInterval = Objects.requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE);
     }
 
     public @NotNull String getTopic() {
@@ -116,8 +116,8 @@ public class FromEdgeMappingModel {
 
     public FromEdgeMapping toFromEdgeMapping() {
         return new FromEdgeMapping(
-                this.topic,
                 this.tagName,
+                this.topic,
                 this.maxQoS,
                 this.messageExpiryInterval,
                 this.messageHandlingOptions,

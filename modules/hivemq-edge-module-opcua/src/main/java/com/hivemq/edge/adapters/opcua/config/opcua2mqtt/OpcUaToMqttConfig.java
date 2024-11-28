@@ -43,12 +43,18 @@ public class OpcUaToMqttConfig {
                        defaultValue = "1000")
     private final int publishingInterval;
 
+    @JsonProperty(value="opcuaToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "OPC UA to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<OpcUaToMqttMapping> mappings;
+
     @JsonCreator
     public OpcUaToMqttConfig(
             @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
-            @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize) {
+            @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize,
+            @JsonProperty(value = "opcuaToMqttMappings") final @Nullable List<OpcUaToMqttMapping> mappings) {
         this.publishingInterval = requireNonNullElse(publishingInterval, 1000);
         this.serverQueueSize = requireNonNullElse(serverQueueSize, 1);
+        this.mappings = requireNonNullElse(mappings, List.of());
     }
 
     public int getPublishingInterval() {
@@ -57,5 +63,9 @@ public class OpcUaToMqttConfig {
 
     public int getServerQueueSize() {
         return serverQueueSize;
+    }
+
+    public @NotNull List<OpcUaToMqttMapping> getMappings() {
+        return mappings;
     }
 }

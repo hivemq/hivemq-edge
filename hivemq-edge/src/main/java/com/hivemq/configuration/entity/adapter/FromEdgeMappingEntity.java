@@ -153,7 +153,8 @@ public class FromEdgeMappingEntity {
                         mqttUserPropertyEntity.getValue()))
                 .collect(Collectors.toList());
 
-        return new FromEdgeMapping( this.getTagName(),
+        return new FromEdgeMapping(
+                this.getTagName(),
                 this.getTopic(),
                 this.getMaxQoS(),
                 this.getMessageExpiryInterval(),

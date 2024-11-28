@@ -62,8 +62,8 @@ public class ToEdgeMappingModel {
 
     public ToEdgeMapping toToEdgeMapping() {
         return new ToEdgeMapping(
-                this.topicFilter,
                 this.tagName,
+                this.topicFilter,
                 this.maxQoS
                 );
     }
