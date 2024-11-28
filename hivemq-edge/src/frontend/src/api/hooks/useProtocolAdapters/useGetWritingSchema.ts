@@ -9,6 +9,6 @@ export const useGetWritingSchema = (adapterId: string, tagName: string) => {
 
   return useQuery<TagSchema, ApiError>({
     queryKey: [QUERY_KEYS.ADAPTERS, adapterId, QUERY_KEYS.DISCOVERY_TAGS, tagName],
-    queryFn: () => appClient.protocolAdapters.getWritingSchema(adapterId, tagName),
+    queryFn: () => appClient.protocolAdapters.getWritingSchema(adapterId, btoa(tagName)),
   })
 }
