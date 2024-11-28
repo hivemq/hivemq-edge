@@ -5,9 +5,11 @@ import SchemaValidationMark from '@/modules/TopicFilters/components/SchemaValida
 describe('SchemaValidationMark', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/management/domain/topics/schema?*', (req) => {
-      req.reply(GENERATE_DATA_MODELS(true, req.query.topics as string))
-    })
+    cy.intercept('/api/v1/management/sampling/topic/**', { items: [] }).as('getTopic')
+
+    cy.intercept('/api/v1/management/sampling/schema/**', GENERATE_DATA_MODELS(true, MOCK_TOPIC_FILTER.topicFilter)).as(
+      'getSchema'
+    )
   })
 
   it('should render properly', () => {
