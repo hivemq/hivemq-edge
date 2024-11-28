@@ -16,10 +16,12 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -58,6 +60,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull List<Tag> opcuaTags;
+    private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
 
     public OpcUaSubscriptionLifecycle(
             final @NotNull OpcUaClient opcUaClient,
@@ -66,7 +69,8 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull List<Tag> opcuaTags) {
+            final @NotNull List<Tag> opcuaTags,
+            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig) {
         this.opcUaClient = opcUaClient;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
@@ -74,6 +78,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         this.eventService = eventService;
         this.adapterPublishService = adapterPublishService;
         this.opcuaTags = opcuaTags;
+        this.opcUaToMqttConfig = opcUaToMqttConfig;
     }
 
     @Override
@@ -131,7 +136,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
 
-    public @NotNull CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
+    public @NotNull CompletableFuture<Void> subscribe(final @NotNull FromEdgeMapping subscription) {
         final @NotNull String tagName = subscription.getTagName();
 
         return findTag(subscription.getTagName()).map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
@@ -142,15 +147,17 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     private @NotNull CompletableFuture<Void> subscribeToOpcua(
-            final @NotNull OpcUaToMqttMapping subscription, final @NotNull OpcuaTag opcuaTag) {
+            final @NotNull FromEdgeMapping subscription, final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
 
         return opcUaClient.getSubscriptionManager()
-                .createSubscription(subscription.getPublishingInterval())
-                .thenCompose(uaSubscription -> new OpcUaSubscriptionConsumer(subscription,
+                .createSubscription(opcUaToMqttConfig.getPublishingInterval())
+                .thenCompose(uaSubscription -> new OpcUaSubscriptionConsumer(
+                        opcUaToMqttConfig,
+                        subscription,
                         uaSubscription,
                         readValueId,
                         adapterPublishService,
@@ -166,7 +173,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
                 });
     }
 
-    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<OpcUaToMqttMapping> mappings) {
+    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<FromEdgeMapping> mappings) {
 
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 

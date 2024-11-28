@@ -23,7 +23,6 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
@@ -83,7 +82,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.auth = requireNonNullElse(auth, new Auth(null, null));
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
-                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(List.of()));
+                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
 
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
     }

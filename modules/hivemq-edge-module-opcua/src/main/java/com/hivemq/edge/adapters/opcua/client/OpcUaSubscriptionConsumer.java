@@ -16,10 +16,11 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -44,7 +45,8 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaSubscriptionConsumer {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
-    private final @NotNull OpcUaToMqttMapping subscription;
+    private final @NotNull FromEdgeMapping fromEdgeMapping;
+    private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
@@ -56,7 +58,8 @@ public class OpcUaSubscriptionConsumer {
     private final @NotNull UaSubscription uaSubscription;
 
     public OpcUaSubscriptionConsumer(
-            final @NotNull OpcUaToMqttMapping subscription,
+            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
+            final @NotNull FromEdgeMapping fromEdgeMapping,
             final @NotNull UaSubscription uaSubscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -66,7 +69,8 @@ public class OpcUaSubscriptionConsumer {
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull String protocolAdapterId) {
-        this.subscription = subscription;
+        this.fromEdgeMapping = fromEdgeMapping;
+        this.opcUaToMqttConfig = opcUaToMqttConfig;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
@@ -83,16 +87,18 @@ public class OpcUaSubscriptionConsumer {
         final UInteger clientHandle = uaSubscription.nextClientHandle();
 
         final MonitoringParameters parameters = new MonitoringParameters(clientHandle,
-                (double) subscription.getPublishingInterval(),
+                (double) opcUaToMqttConfig.getPublishingInterval(),
                 null,
-                uint(subscription.getServerQueueSize()),
+                uint(opcUaToMqttConfig.getServerQueueSize()),
                 true);
 
         final MonitoredItemCreateRequest request =
                 new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting, parameters);
 
         final UaSubscription.ItemCreationCallback onItemCreated =
-                (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(subscription,
+                (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(
+                        fromEdgeMapping,
+                        opcUaToMqttConfig,
                         adapterPublishService,
                         serializationContext,
                         endpointDescription,
@@ -129,17 +135,17 @@ public class OpcUaSubscriptionConsumer {
                                     "')");
                         }
                     }
-                    return new SubscriptionResult(subscription, uaSubscription, this);
+                    return new SubscriptionResult(fromEdgeMapping, uaSubscription, this);
                 });
     }
 
     public static class SubscriptionResult {
-        public final @NotNull OpcUaToMqttMapping subscription;
+        public final @NotNull FromEdgeMapping subscription;
         public final @NotNull UaSubscription uaSubscription;
         public final @NotNull OpcUaSubscriptionConsumer consumer;
 
         public SubscriptionResult(
-                final @NotNull OpcUaToMqttMapping subscription,
+                final @NotNull FromEdgeMapping subscription,
                 final @NotNull UaSubscription uaSubscription,
                 final @NotNull OpcUaSubscriptionConsumer consumer) {
             this.subscription = subscription;

@@ -31,6 +31,8 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
@@ -696,9 +698,12 @@ public class ProtocolAdapterManager {
                             protocolAdapterWritingService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(config.getAdapterId(),
+                            new ProtocolAdapterInputImpl(
+                                    config.getAdapterId(),
                                     config.getAdapterConfig(),
                                     config.getTags(),
+                                    config.getToEdgeMappings(),
+                                    config.getFromEdgeMappings(),
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,
@@ -895,11 +900,15 @@ public class ProtocolAdapterManager {
         private final @NotNull ModuleServices moduleServices;
         private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
         private final @NotNull List<Tag> tags;
+        private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+        private final @NotNull List<ToEdgeMapping> toEdgeMappings;
 
         public ProtocolAdapterInputImpl(
                 final @NotNull String adapterId,
                 final @NotNull T configObject,
                 final @NotNull List<Tag> tags,
+                final @NotNull List<FromEdgeMapping> fromEdgeMappings,
+                final @NotNull List<ToEdgeMapping> toEdgeMappings,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
                 final @NotNull ModuleServices moduleServices,
@@ -911,6 +920,8 @@ public class ProtocolAdapterManager {
             this.moduleServices = moduleServices;
             this.protocolAdapterMetricsService = protocolAdapterMetricsService;
             this.tags = tags;
+            this.toEdgeMappings = toEdgeMappings;
+            this.fromEdgeMappings = fromEdgeMappings;
         }
 
         @Override
@@ -951,6 +962,16 @@ public class ProtocolAdapterManager {
         @Override
         public @NotNull List<Tag> getTags() {
             return tags;
+        }
+
+        @Override
+        public @NotNull List<FromEdgeMapping> getFromEdgeMappings() {
+            return List.copyOf(fromEdgeMappings);
+        }
+
+        @Override
+        public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
+            return List.copyOf(toEdgeMappings);
         }
     }
 }

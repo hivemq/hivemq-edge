@@ -91,20 +91,23 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(tls.getTruststore().getPassword()).isEqualTo("truststore-password");
         });
 
-        assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
+
+
+        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
-            assertThat(mapping.getMqttMaxQos()).isEqualTo(1);
-            assertThat(mapping.getPublishingInterval()).isEqualTo(12);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(13);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
         }, mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/b");
-            assertThat(mapping.getMqttMaxQos()).isEqualTo(2);
-            assertThat(mapping.getPublishingInterval()).isEqualTo(13);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(14);
+            assertThat(mapping.getMqttQos()).isEqualTo(2);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
+        });
+
+        assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
+            assertThat(mapping.getPublishingInterval()).isEqualTo(12);
+            assertThat(mapping.getServerQueueSize()).isEqualTo(13);
         });
 
         assertThat(config.getMqttToOpcUaConfig()).isNotNull();
@@ -143,13 +146,17 @@ class OpcUaProtocolAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
-        assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb");
-            assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
+            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(9223372036854775807L);
+        });
+
+        assertThat(config.getOpcuaToMqttConfig()).isNotNull();
+        assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.getPublishingInterval()).isEqualTo(1000);
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
-            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(4294967295L);
         });
 
         assertThat(config.getMqttToOpcUaConfig()).isNotNull();
@@ -170,19 +177,6 @@ class OpcUaProtocolAdapterConfigTest {
                 .hasValueSatisfying(set -> assertThat(set).contains("ns=1;i=1004"));
     }
 
-
-    @Test
-    public void convertConfigObject_opcuaMissingMqttTopic_exception() {
-        final URL resource = getClass().getResource("/opcua-adapter-missing-mqtt-topic.xml");
-        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).hasMessageContaining("Missing required creator property 'mqttTopic'");
-    }
-
-    @Test
-    public void convertConfigObject_opcuaMissingTagName_exception() throws Exception {
-        final URL resource = getClass().getResource("/opcua-adapter-missing-tagname.xml");
-        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).hasMessageContaining("Missing required creator property 'tagName'");
-    }
-
     @Test
     public void convertConfigObject_opcuaMissingUri_exception() throws Exception {
         final URL resource = getClass().getResource("/opcua-adapter-missing-uri.xml");
@@ -199,7 +193,7 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
-                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping("my-node", "my/topic", 11, 12, 1, 13L))),
+                new OpcUaToMqttConfig(null, null),
                 new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", 0))),
                 new Security(BASIC128RSA15)
         );
@@ -212,14 +206,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("tagName")).isEqualTo("my-node");
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
-            assertThat(mapping.get("publishingInterval")).isEqualTo(11);
-            assertThat(mapping.get("serverQueueSize")).isEqualTo(12);
-            assertThat(mapping.get("mqttQos")).isEqualTo(1);
-            assertThat(mapping.get("messageExpiryInterval")).isEqualTo(13L);
-        });
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull();
 
         final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
         assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
@@ -258,7 +245,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
-                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping("my-node", "my/topic", null, null, null, null))),
+                new OpcUaToMqttConfig(null, null),
                 new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", null))),
                 null
         );
@@ -271,14 +258,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("tagName")).isEqualTo("my-node");
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
-            assertThat(mapping.get("publishingInterval")).isEqualTo(1000);
-            assertThat(mapping.get("serverQueueSize")).isEqualTo(1);
-            assertThat(mapping.get("mqttQos")).isEqualTo(0);
-            assertThat(mapping.get("messageExpiryInterval")).isEqualTo(4294967295L);
-        });
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull(); // must be empty
 
         final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
         assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {

@@ -32,7 +32,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.protocols.FromEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;

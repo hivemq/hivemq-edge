@@ -16,6 +16,8 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;

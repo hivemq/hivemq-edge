@@ -48,26 +48,24 @@
                     <policy>BASIC128RSA15</policy>
                 </security>
                 <opcuaToMqtt>
-                    <opcuaToMqttMappings>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopic>test/blubb/a</mqttTopic>
-                            <publishingInterval>12</publishingInterval>
-                            <serverQueueSize>13</serverQueueSize>
-                            <mqttQos>1</mqttQos>
-                            <messageExpiryInterval>15</messageExpiryInterval>
-                        </opcuaToMqttMapping>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=2;i=1004</tagName>
-                            <mqttTopic>test/blubbb/b</mqttTopic>
-                            <publishingInterval>13</publishingInterval>
-                            <serverQueueSize>14</serverQueueSize>
-                            <mqttQos>2</mqttQos>
-                            <messageExpiryInterval>16</messageExpiryInterval>
-                        </opcuaToMqttMapping>
-                    </opcuaToMqttMappings>
+                    <publishingInterval>12</publishingInterval>
+                    <serverQueueSize>13</serverQueueSize>
                 </opcuaToMqtt>
             </config>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topic>test/blubb/a</topic>
+                    <maxQos>1</maxQos>
+                    <messageExpiryInterval>15</messageExpiryInterval>
+                </fromEdgeMapping>
+                <fromEdgeMapping>
+                    <tagName>ns=2;i=1004</tagName>
+                    <topic>test/blubbb/b</topic>
+                    <maxQos>2</maxQos>
+                    <messageExpiryInterval>16</messageExpiryInterval>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
             <toEdgeMappings>
                 <toEdgeMapping>
                     <tagName>ns=1;i=1004</tagName>

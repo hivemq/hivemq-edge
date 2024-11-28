@@ -15,8 +15,9 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.protocols.ToEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -71,8 +72,19 @@ public class ToEdgeMappingEntity {
         }
     }
 
-    public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
-        return new ToEdgeMappingEntity(toEdgeMapping.getTagName(),
-                toEdgeMapping.getTopicFilter(), toEdgeMapping.getMaxQoS());
+
+    public @NotNull ToEdgeMapping toToEdgeMapping() {
+        return new ToEdgeMapping(
+                this.getTagName(),
+                this.getTopicFilter(),
+                this.getMaxQos());
     }
+
+    public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
+        return new ToEdgeMappingEntity(
+                toEdgeMapping.getTagName(),
+                toEdgeMapping.getTopicFilter(),
+                toEdgeMapping.getMaxQoS());
+    }
+
 }

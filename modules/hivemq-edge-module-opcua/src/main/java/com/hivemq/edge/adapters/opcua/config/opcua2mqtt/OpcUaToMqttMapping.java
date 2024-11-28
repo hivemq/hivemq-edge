@@ -18,49 +18,20 @@ package com.hivemq.edge.adapters.opcua.config.opcua2mqtt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Objects;
+
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 
-public class OpcUaToMqttMapping {
-
-
-    @JsonProperty(value = "tagName", required = true)
-    @ModuleConfigField(title = "tagName",
-                       description = "The name of the tag that holds the address data.",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
-    private final @NotNull String tagName;
-
-    @JsonProperty(value = "mqttTopic", required = true)
-    @ModuleConfigField(title = "Destination MQTT topic",
-                       description = "The MQTT topic to publish to",
-                       format = ModuleConfigField.FieldType.MQTT_TOPIC,
-                       required = true)
-    private final @NotNull String mqttTopic;
-
-    @JsonProperty("publishingInterval")
-    @ModuleConfigField(title = "OPC UA publishing interval [ms]",
-                       description = "OPC UA publishing interval in milliseconds for this subscription on the server",
-                       numberMin = 1,
-                       defaultValue = "1000")
-    private final int publishingInterval;
-
-    @JsonProperty("serverQueueSize")
-    @ModuleConfigField(title = "OPC UA server queue size",
-                       description = "OPC UA queue size for this subscription on the server",
-                       numberMin = 1,
-                       defaultValue = "1")
-    private final int serverQueueSize;
-
-    @JsonProperty("mqttQos")
-    @ModuleConfigField(title = "MQTT QoS",
-                       description = "MQTT quality of service level",
-                       numberMin = 0,
-                       numberMax = 2,
-                       defaultValue = "0")
-    private final int qos;
+public class OpcUaToMqttMapping implements PollingContext {
 
     @JsonProperty("messageExpiryInterval")
     @ModuleConfigField(title = "MQTT message expiry interval [s]",
@@ -69,43 +40,75 @@ public class OpcUaToMqttMapping {
                        numberMax = 4294967295L)
     private final long messageExpiryInterval;
 
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "Tag Name", description = "The name of the tag that defines the data point on the plc.",
+                       required = true,
+                       format = ModuleConfigField.FieldType.IDENTIFIER)
+    private final @NotNull String tagName;
+
+    @JsonProperty(value = "mqttTopic", required = true)
+    @ModuleConfigField(title = "Destination Mqtt Topic",
+                       description = "The topic to publish data on",
+                       required = true,
+                       format = ModuleConfigField.FieldType.MQTT_TOPIC)
+    private final @NotNull String mqttTopic;
+
+    @JsonProperty(value = "mqttQos")
+    @ModuleConfigField(title = "MQTT QoS",
+                       description = "MQTT Quality of Service level",
+                       numberMin = 0,
+                       numberMax = 2,
+                       defaultValue = "0")
+    private final int qos;
+
     @JsonCreator
     public OpcUaToMqttMapping(
-            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
-            @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize,
-            @JsonProperty("mqttQos") final @Nullable Integer qos,
-            @JsonProperty("messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
-        this.tagName = tagName;
+            @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
+            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName) {
         this.mqttTopic = mqttTopic;
-        this.publishingInterval = requireNonNullElse(publishingInterval, 1000);
-        this.serverQueueSize = requireNonNullElse(serverQueueSize, 1);
-        this.qos = requireNonNullElse(qos, 0);
-        this.messageExpiryInterval = requireNonNullElse(messageExpiryInterval, 4294967295L);
+        this.qos = requireNonNullElse(qos, 1);
+        this.tagName = tagName;
+        this.messageExpiryInterval = requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE);
     }
 
     public @NotNull String getTagName() {
         return tagName;
     }
 
+    @Override
     public @NotNull String getMqttTopic() {
         return mqttTopic;
     }
 
-    public int getPublishingInterval() {
-        return publishingInterval;
-    }
-
-    public int getServerQueueSize() {
-        return serverQueueSize;
-    }
-
-    public int getMqttMaxQos() {
+    @Override
+    public int getMqttQos() {
         return qos;
     }
 
-    public long getMessageExpiryInterval() {
+    @Override
+    public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
+        return MQTTMessagePerTag;
+    }
+
+    @Override
+    public @NotNull Boolean getIncludeTimestamp() {
+        return false;
+    }
+
+    @Override
+    public @NotNull Boolean getIncludeTagNames() {
+        return false;
+    }
+
+    @Override
+    public @NotNull List<MqttUserProperty> getUserProperties() {
+        return List.of();
+    }
+
+    @Override
+    public @Nullable Long getMessageExpiryInterval() {
         return messageExpiryInterval;
     }
 }

@@ -76,20 +76,28 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                 assertThat(((Map<String,Object>) tls.get("truststore")).get("path")).isEqualTo("path/to/truststore");
                                 assertThat(((Map<String,Object>) tls.get("truststore")).get("password")).isEqualTo("truststore-password");
 
-                                List<Map<String,Object>> mappings = (List<Map<String,Object>>)((Map<String,Object>) entity.getConfig().get("opcuaToMqtt")).get("opcuaToMqttMappings");
-                                assertThat(mappings.get(0).get("tagName").toString()).startsWith("simulation-server-2-");
-                                assertThat(mappings.get(0).get("mqttTopic").toString()).isEqualTo("test/blubb/#");
-                                assertThat(mappings.get(0).get("publishingInterval")).isEqualTo(12);
-                                assertThat(mappings.get(0).get("serverQueueSize")).isEqualTo(13);
-                                assertThat(mappings.get(0).get("mqttQos")).isEqualTo(1);
-                                assertThat(mappings.get(0).get("messageExpiryInterval")).isEqualTo(15L);
 
-                                assertThat(mappings.get(1).get("tagName").toString()).startsWith("simulation-server-2-");
-                                assertThat(mappings.get(1).get("mqttTopic").toString()).isEqualTo("test/blubbb/#");
-                                assertThat(mappings.get(1).get("publishingInterval")).isEqualTo(13);
-                                assertThat(mappings.get(1).get("serverQueueSize")).isEqualTo(14);
-                                assertThat(mappings.get(1).get("mqttQos")).isEqualTo(2);
-                                assertThat(mappings.get(1).get("messageExpiryInterval")).isEqualTo(16L);
+                                final Map<String,Object> opcuaToMqtt = (Map<String,Object>) entity.getConfig().get("opcuaToMqtt");
+                                final List<Map<String,Object>> mappings = (List<Map<String,Object>>)(opcuaToMqtt).get("opcuaToMqttMappings");
+                                assertThat(mappings).isNull(); // mappings have been moved
+
+                                assertThat(opcuaToMqtt.get("publishingInterval")).isEqualTo(13);
+                                assertThat(opcuaToMqtt.get("serverQueueSize")).isEqualTo(13);
+                                
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .satisfiesExactly(mapping -> {
+                                                    assertThat(mapping.getTagName()).startsWith("simulation-server-2-");
+                                                    assertThat(mapping.getTopic()).isEqualTo("test/blubb/#");
+                                                    assertThat(mapping.getMaxQoS()).isEqualTo(1);
+                                                    assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15L);
+                                                },
+                                                mapping -> {
+                                                    assertThat(mapping.getTagName()).startsWith("simulation-server-2-");
+                                                    assertThat(mapping.getTopic()).isEqualTo("test/blubbb/#");
+                                                    assertThat(mapping.getMaxQoS()).isEqualTo(2);
+                                                    assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16L);
+                                                }    
+                                        );
 
                                 assertThat(entity.getTags())
                                         .hasSize(2)
@@ -105,7 +113,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .extracting("node")
                                                     .isEqualTo("ns=2;i=1004");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities()).isEmpty(); // not yet available for opcua
+
                                 assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
@@ -141,18 +149,23 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                         (Map<String, Object>) entity.getConfig().get("auth");
                                 assertThat(((Map<String,Object>) auth.get("basic"))).isNull();
                                 assertThat(((Map<String,Object>) auth.get("x509"))).isNull();
-
                                 final Map<String, Object> tls =
                                         (Map<String, Object>) entity.getConfig().get("tls");
                                 assertThat(tls.get("enabled")).isEqualTo(false);
+                                final Map<String,Object> opcuaToMqtt = (Map<String,Object>) entity.getConfig().get("opcuaToMqtt");
+                                final List<Map<String,Object>> mappings = (List<Map<String,Object>>)(opcuaToMqtt).get("opcuaToMqttMappings");
+                                assertThat(mappings).isNull(); // mappings have been moved
 
-                                List<Map<String,Object>> mappings = (List<Map<String,Object>>)((Map<String,Object>) entity.getConfig().get("opcuaToMqtt")).get("opcuaToMqttMappings");
-                                assertThat(mappings.get(0).get("tagName").toString()).startsWith("simulation-server-2-");
-                                assertThat(mappings.get(0).get("mqttTopic").toString()).isEqualTo("test/blubb/#");
-                                assertThat(mappings.get(0).get("publishingInterval")).isEqualTo(1000);
-                                assertThat(mappings.get(0).get("serverQueueSize")).isEqualTo(1);
-                                assertThat(mappings.get(0).get("mqttQos")).isEqualTo(0);
-                                assertThat(mappings.get(0).get("messageExpiryInterval")).isEqualTo(4294967295L);
+                                assertThat(opcuaToMqtt.get("publishingInterval")).isEqualTo(1000);
+                                assertThat(opcuaToMqtt.get("serverQueueSize")).isEqualTo(1);
+                                assertThat(entity.getFromEdgeMappingEntities())
+                                        .satisfiesExactly(mapping -> {
+                                                    assertThat(mapping.getTagName()).startsWith("simulation-server-2-");
+                                                    assertThat(mapping.getTopic()).isEqualTo("test/blubb/#");
+                                                    assertThat(mapping.getMaxQoS()).isEqualTo(0);
+                                                    assertThat(mapping.getMessageExpiryInterval()).isEqualTo(4294967295L);
+                                                }
+                                        );
 
                                 assertThat(entity.getTags())
                                         .hasSize(1)
@@ -162,7 +175,6 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .extracting("node")
                                                     .isEqualTo("ns=1;i=1004");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities()).isEmpty(); // not yet available for opcua
                                 assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });

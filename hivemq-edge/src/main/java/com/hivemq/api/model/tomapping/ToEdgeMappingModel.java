@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.protocols.ToEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;

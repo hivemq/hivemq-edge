@@ -7,6 +7,7 @@ import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -241,6 +242,7 @@ public class OpcUaClientWrapper {
             final @NotNull String adapterId,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
             final @NotNull List<Tag> tags,
+            final @NotNull List<FromEdgeMapping> fromEdgeMappings,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -279,13 +281,15 @@ public class OpcUaClientWrapper {
         });
 
         return opcUaClient.connect().thenCompose(uaClient -> {
-            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(opcUaClient,
+            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
+                    opcUaClient,
                     adapterId,
                     protocolId,
                     protocolAdapterMetricsService,
                     eventService,
                     adapterPublishService,
-                    tags);
+                    tags,
+                    adapterConfig.getOpcuaToMqttConfig());
 
             opcUaClient.getSubscriptionManager().addSubscriptionListener(opcUaSubscriptionLifecycle);
 
@@ -295,8 +299,7 @@ public class OpcUaClientWrapper {
                 final Optional<JsonSchemaGenerator> jsonSchemaGeneratorOpt =
                         Optional.of(new JsonSchemaGenerator(opcUaClient, new ObjectMapper()));
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
-                    return opcUaSubscriptionLifecycle.subscribeAll(adapterConfig.getOpcuaToMqttConfig()
-                                    .getOpcuaToMqttMappings())
+                    return opcUaSubscriptionLifecycle.subscribeAll(fromEdgeMappings)
                             .thenApply(ignored -> new OpcUaClientWrapper(adapterId,
                                     opcUaClient,
                                     opcUaSubscriptionLifecycle,

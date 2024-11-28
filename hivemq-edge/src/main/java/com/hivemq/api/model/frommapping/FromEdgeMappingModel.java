@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.protocols.FromEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -58,6 +58,10 @@ public class FromEdgeMappingModel {
     @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
     private final int maxQoS;
 
+    @JsonProperty(value = "messageExpiryInterval", required = true)
+    @Schema(description = "The message expiry interval.")
+    private final long messageExpiryInterval;
+
     @JsonCreator
     public FromEdgeMappingModel(
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
@@ -66,7 +70,8 @@ public class FromEdgeMappingModel {
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
-            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS) {
+            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
+            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.topic = topic;
         this.tagName = tagName;
         this.messageHandlingOptions = Objects.requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
@@ -74,6 +79,7 @@ public class FromEdgeMappingModel {
         this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
+        this.messageExpiryInterval = Objects.requireNonNullElse(messageExpiryInterval, 0L);
     }
 
     public @NotNull String getTopic() {
@@ -104,11 +110,16 @@ public class FromEdgeMappingModel {
         return maxQoS;
     }
 
+    public long getMessageExpiryInterval() {
+        return messageExpiryInterval;
+    }
+
     public FromEdgeMapping toFromEdgeMapping() {
         return new FromEdgeMapping(
                 this.topic,
                 this.tagName,
                 this.maxQoS,
+                this.messageExpiryInterval,
                 this.messageHandlingOptions,
                 this.includeTagNames,
                 this.includeTimestamp,
@@ -128,6 +139,6 @@ public class FromEdgeMappingModel {
                 fromEdgeMapping.getUserProperties().stream()
                         .map(prop -> new MqttUserPropertyModel(prop.getName(),prop.getValue()))
                         .collect(Collectors.toList()),
-                fromEdgeMapping.getMqttQos());
+                fromEdgeMapping.getMqttQos(), fromEdgeMapping.getMessageExpiryInterval());
     }
 }

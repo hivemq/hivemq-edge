@@ -20,10 +20,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
+import com.hivemq.configuration.entity.adapter.ToEdgeMappingEntity;
 import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;
 
@@ -67,11 +71,11 @@ public class ProtocolAdapterConfigConverter {
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
         final List<FromEdgeMapping> fromEdgeMappingList = protocolAdapterEntity.getFromEdgeMappingEntities()
                 .stream()
-                .map(FromEdgeMapping::fromEntity)
+                .map(FromEdgeMappingEntity::toFromEdgeMapping)
                 .collect(Collectors.toList());
         final List<ToEdgeMapping> toEdgeMappingList = protocolAdapterEntity.getToEdgeMappingEntities()
                 .stream()
-                .map(entity -> ToEdgeMapping.fromEntity(entity, mapper))
+                .map(ToEdgeMappingEntity::toToEdgeMapping)
                 .collect(Collectors.toList());
         final List<FieldMappings> fieldMappings = protocolAdapterEntity.getFieldMappings()
                 .stream()

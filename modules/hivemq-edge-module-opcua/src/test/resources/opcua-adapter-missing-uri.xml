@@ -22,14 +22,14 @@
             <protocolId>opcua</protocolId>
             <config>
                 <opcuaToMqtt>
-                    <opcuaToMqttMappings>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopic>test/blubb</mqttTopic>
-                        </opcuaToMqttMapping>
-                    </opcuaToMqttMappings>
                 </opcuaToMqtt>
             </config>
+            <fromEdgeMappings>
+                <fromEdgeMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topic>test/blubb</topic>
+                </fromEdgeMapping>
+            </fromEdgeMappings>
             <toEdgeMappings>
                 <toEdgeMapping>
                     <tagName>ns=1;i=1004</tagName>

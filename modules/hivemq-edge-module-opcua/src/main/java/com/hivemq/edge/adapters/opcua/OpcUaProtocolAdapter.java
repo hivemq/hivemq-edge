@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -57,6 +58,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
+    private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
@@ -73,6 +75,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
+        this.fromEdgeMappings = input.getFromEdgeMappings();
     }
 
     @Override
@@ -87,13 +90,17 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             synchronized (this) {
                 if (opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(adapterId,
+                        OpcUaClientWrapper.createAndConnect(
+                                adapterId,
                                 adapterConfig,
                                 tags,
+                                fromEdgeMappings,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),
-                                adapterInformation.getProtocolId(), protocolAdapterMetricsService, output)
+                                adapterInformation.getProtocolId(),
+                                protocolAdapterMetricsService,
+                                output)
                                 .thenApply(wrapper -> {
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;

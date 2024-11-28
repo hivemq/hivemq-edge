@@ -34,8 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class OpcUaProtocolAdapterFactory
@@ -70,20 +74,34 @@ public class OpcUaProtocolAdapterFactory
 
         final List<OpcUaToMqttMapping> opcuaToMqttMappings = new ArrayList<>();
         final List<OpcuaTag> tags = new ArrayList<>();
+
+        final Set<Integer> publishingIntervals = new HashSet<>();
+        final Set<Integer> serverQueueSizes = new HashSet<>();
+
         for (final LegacyOpcUaAdapterConfig.Subscription subscription : legacyOpcUaAdapterConfig.getSubscriptions()) {
-            // create tag first
             final String newTagName = legacyOpcUaAdapterConfig.getId() + "-" + UUID.randomUUID();
             tags.add(new OpcuaTag(newTagName, "not set", new OpcuaTagDefinition(subscription.getNode())));
-            opcuaToMqttMappings.add(new OpcUaToMqttMapping(newTagName,
+
+            publishingIntervals.add(subscription.getPublishingInterval());
+            serverQueueSizes.add(subscription.getServerQueueSize());
+
+            opcuaToMqttMappings.add(new OpcUaToMqttMapping(
                     subscription.getMqttTopic(),
-                    subscription.getPublishingInterval(),
-                    subscription.getServerQueueSize(),
                     subscription.getQos(),
-                    subscription.getMessageExpiryInterval() != null ?
-                            subscription.getMessageExpiryInterval().longValue() :
-                            null));
+                    subscription.getMessageExpiryInterval() != null ? subscription.getMessageExpiryInterval().longValue() : 4294967295L,
+                    newTagName));
         }
-        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
+
+        final Optional<Integer> publishingInterval = publishingIntervals.stream().max(Integer::compareTo);
+        final Optional<Integer> serverQueueSize = serverQueueSizes.stream().min(Integer::compareTo);
+
+        if(publishingIntervals.size() > 1 || serverQueueSizes.size() > 1) {
+            log.warn("There are multiple values for publishingInterval and serverQueueSize set, picking publishingInterval={} and serverQueueSize={}", publishingIntervals, serverQueueSize);
+        }
+
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(
+                publishingInterval.orElse(null),
+                serverQueueSize.orElse(null));
 
         return new ConfigTagsTuple(legacyOpcUaAdapterConfig.getId(), new OpcUaSpecificAdapterConfig(
                 legacyOpcUaAdapterConfig.getUri(),
@@ -91,6 +109,8 @@ public class OpcUaProtocolAdapterFactory
                 legacyOpcUaAdapterConfig.getAuth(),
                 legacyOpcUaAdapterConfig.getTls(),
                 opcuaToMqttConfig,
-                legacyOpcUaAdapterConfig.getSecurity()), tags, List.of());
+                legacyOpcUaAdapterConfig.getSecurity()),
+                tags,
+                opcuaToMqttMappings);
     }
 }

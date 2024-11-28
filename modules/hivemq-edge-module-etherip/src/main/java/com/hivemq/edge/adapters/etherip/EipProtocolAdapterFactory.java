@@ -94,9 +94,6 @@ public class EipProtocolAdapterFactory
                         legacyEipAdapterConfig.getBackplane(),
                         legacyEipAdapterConfig.getSlot(),
                         eipToMqttConfig);
-        return new ConfigTagsTuple(legacyEipAdapterConfig.getId(), eipSpecificAdapterConfig, tags, eipToMqttMappings
-
-
-        );
+        return new ConfigTagsTuple(legacyEipAdapterConfig.getId(), eipSpecificAdapterConfig, tags, eipToMqttMappings);
     }
 }

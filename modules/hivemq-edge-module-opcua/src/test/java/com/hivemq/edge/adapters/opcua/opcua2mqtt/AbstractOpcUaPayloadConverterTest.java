@@ -19,8 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -94,12 +96,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
             throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId,
-                        "topic",
-                        null,
-                        null,
-                        null,
-                        null)));
+                new OpcUaToMqttConfig(null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -110,6 +107,16 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+        when(protocolAdapterInput.getFromEdgeMappings()).thenReturn(List.of(new FromEdgeMapping(
+                subcribedNodeId,
+                "topic",
+                1,
+                10_0000L,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                false,
+                false,
+                List.of()
+                )));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 

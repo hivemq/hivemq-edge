@@ -20,8 +20,10 @@ import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
@@ -44,7 +46,8 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     public static final byte[] EMTPY_BYTES = new byte[]{};
 
-    private final @NotNull OpcUaToMqttMapping mapping;
+    private final @NotNull FromEdgeMapping mapping;
+    final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull SerializationContext serializationContext;
     private final @NotNull Optional<EndpointDescription> endpoint;
@@ -56,7 +59,8 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
-            final @NotNull OpcUaToMqttMapping mapping,
+            final @NotNull FromEdgeMapping mapping,
+            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull SerializationContext serializationContext,
             final @NotNull Optional<EndpointDescription> endpoint,
@@ -66,6 +70,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final @NotNull EventService eventService,
             final @NotNull String protocolAdapterId) {
         this.mapping = mapping;
+        this.opcUaToMqttConfig = opcUaToMqttConfig;
         this.adapterPublishService = adapterPublishService;
         this.nodeId = nodeId;
         this.adapterId = adapterId;
@@ -83,7 +88,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final byte[] convertedPayload = convertPayload(dataValue, serializationContext);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(mapping.getMqttTopic())
-                    .withPayload(convertedPayload).withQoS(mapping.getMqttMaxQos())
+                    .withPayload(convertedPayload).withQoS(mapping.getMqttQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
             publishBuilder.withMessageExpiryInterval(mapping.getMessageExpiryInterval());
