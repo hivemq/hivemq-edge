@@ -288,7 +288,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         try {
             final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
-            protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
+                protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -688,52 +688,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getAdapter().getId());
         }
         return Response.ok().build();
-    }
-
-    @Override
-    public @NotNull Response addFieldMapping(
-            @NotNull final String adapterId, @NotNull final FieldMappingsModel fieldMappingsModel) {
-        final FieldMappings fieldMappings = FieldMappings.fromModel(fieldMappingsModel);
-        final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addFieldMappings(adapterId, fieldMappings);
-        switch (domainTagAddResult.getDomainTagPutStatus()) {
-            case SUCCESS:
-                return Response.ok().build();
-            case ALREADY_EXISTS:
-                return ErrorResponseUtil.alreadyExists("The field mappings for topic filter'" +
-                        fieldMappingsModel.getTopicFilter() +
-                        "' cannot be created since another item already exists for the same topic filter.");
-            case ADAPTER_MISSING:
-                return ErrorResponseUtil.notFound("adapter", adapterId);
-        }
-        log.error("AddResult '{}' was not handled in the method.", domainTagAddResult.getDomainTagPutStatus());
-        return Response.serverError().build();
-    }
-
-    @Override
-    public @NotNull Response getFieldMappingsForAdapter(@NotNull final String adapterId) {
-        return protocolAdapterManager.getFieldMappingsForAdapter(adapterId).map(fieldMappings -> {
-            if (fieldMappings.isEmpty()) {
-                return Response.ok().build();
-            } else {
-                final List<FieldMappingsModel> fieldMappingsModels =
-                        fieldMappings.stream().map(FieldMappingsModel::from).collect(Collectors.toList());
-                final FieldMappingsListModel fieldMappingsListModel = new FieldMappingsListModel(fieldMappingsModels);
-                return Response.ok().entity(fieldMappingsListModel).build();
-            }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).build());
-    }
-
-    @Override
-    public @NotNull Response updateFieldMappingsTags(
-            final @NotNull String adapterId, final @NotNull FieldMappingsListModel fieldMappingsListModel) {
-        final List<FieldMappings> fieldMappings =
-                fieldMappingsListModel.getItems().stream().map(FieldMappings::fromModel).collect(Collectors.toList());
-        final boolean updated = protocolAdapterManager.updateAdapterFieldMappings(adapterId, fieldMappings);
-        if (updated) {
-            return Response.ok().build();
-        } else {
-            return ErrorResponseUtil.notFound("adapter", adapterId);
-        }
     }
 
     @Override

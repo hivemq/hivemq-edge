@@ -3548,140 +3548,6 @@ paths:
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings:
-    get:
-      description: Get the field mappings for this adapter.
-      operationId: get-adapter-fieldMappings
-      parameters:
-      - description: The adapter id.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              examples:
-                field mappings example:
-                  description: An example for field mappings in opc ua
-                  summary: 'Example for field mappings '
-                  value:
-                    items:
-                    - topicFilter: topic1
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
-                    - topicFilter: topic2
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
-              schema:
-                $ref: '#/components/schemas/FieldMappingsListModel'
-          description: Success
-      summary: Get the field mappings for this adapter.
-      tags:
-      - Protocol Adapters
-    post:
-      description: Add new field mappings to the specified adapter.
-      operationId: add-adapter-fieldMappings
-      parameters:
-      - description: The adapter id.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FieldMappingsModel'
-        description: The field mappings for incoming and outgoing data
-        required: true
-      responses:
-        "200":
-          description: Success
-        "403":
-          content:
-            application/json:
-              examples:
-                already present example:
-                  description: An example response in case an tag is already present
-                    for this tagId.
-                  summary: An example response in case an tag is already present for
-                    this tagId.
-                  value:
-                    errors:
-                    - title: The resource already exists
-                      detail: The tag 'tag' cannot be created since another item already
-                        exists with the same id.
-              schema:
-                $ref: '#/components/schemas/Errors'
-          description: Already Present
-      summary: Add new field mappings to the specified adapter
-      tags:
-      - Protocol Adapters
-    put:
-      description: Update all field mappings of an adapter.
-      operationId: update-adapter-fieldMappings
-      parameters:
-      - description: The id of the adapter whose domain tags will be updated.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FieldMappingsListModel'
-      responses:
-        "200":
-          description: Success
-        "403":
-          content:
-            application/json:
-              examples:
-                already present example:
-                  description: An example response in case no field mappings are present
-                    for this tagId.
-                  summary: An example response in case no field mappings is present
-                    for this tagId.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Adapter with id 'adapter1' not found
-              schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
-      summary: Update the field mappings of an adapter.
-      tags:
-      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/frommappings:
     get:
       description: Get the mappings for messages being sent out by the adapter.
@@ -3697,42 +3563,6 @@ paths:
         "200":
           content:
             application/json:
-              examples:
-                field mappings example:
-                  description: An example for field mappings in opc ua
-                  summary: 'Example for field mappings '
-                  value:
-                    items:
-                    - topicFilter: topic1
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
-                    - topicFilter: topic2
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
               schema:
                 $ref: '#/components/schemas/FromEdgeMappingListModel'
           description: Success
@@ -3760,16 +3590,6 @@ paths:
         "403":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no field mappings are present
-                    for this tagId.
-                  summary: An example response in case no field mappings is present
-                    for this tagId.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Adapter with id 'adapter1' not found
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
@@ -4030,42 +3850,6 @@ paths:
         "200":
           content:
             application/json:
-              examples:
-                field mappings example:
-                  description: An example for field mappings in opc ua
-                  summary: 'Example for field mappings '
-                  value:
-                    items:
-                    - topicFilter: topic1
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
-                    - topicFilter: topic2
-                      tag: someTag
-                      fieldMapping:
-                      - source: incField1
-                        destination: outField1
-                        transformation: {}
-                      - source: incField2
-                        destination: outField2
-                        transformation: {}
-                      - source: incField3
-                        destination: outField3
-                        transformation: {}
-                      metadata:
-                        source: ""
-                        destination: ""
               schema:
                 $ref: '#/components/schemas/FromEdgeMappingListModel'
           description: Success
@@ -4093,16 +3877,6 @@ paths:
         "403":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no field mappings are present
-                    for this tagId.
-                  summary: An example response in case no field mappings is present
-                    for this tagId.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Adapter with id 'adapter1' not found
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
@@ -5298,19 +5072,9 @@ components:
       required:
       - instructions
       - metadata
-    FieldMappingsListModel:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/FieldMappingsModel'
-      required:
-      - items
     FieldMappingsModel:
       type: object
-      description: List of result items that are returned by this endpoint
+      description: The fieldMappings for this adapter
       properties:
         fieldMapping:
           type: array
