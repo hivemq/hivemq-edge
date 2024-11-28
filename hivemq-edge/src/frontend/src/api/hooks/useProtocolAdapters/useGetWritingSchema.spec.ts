@@ -25,7 +25,7 @@ describe('useGetWritingSchema', () => {
     expect(result.current.data).toStrictEqual(
       expect.objectContaining({
         description: 'A simple form example.',
-        title: 'my-tag',
+        title: btoa('my-tag'),
         properties: expect.objectContaining({
           age: expect.objectContaining({}),
           array: expect.objectContaining({}),
