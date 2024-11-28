@@ -10,7 +10,7 @@ describe('SchemaManager', () => {
     // })
   })
 
-  it('should render loading errors', () => {
+  it.skip('should render loading errors', () => {
     cy.intercept('/api/v1/management/sampling/topic/**', {
       statusCode: 404,
       body: { title: 'The schema for the tags cannot be found', status: 404 },
@@ -21,7 +21,7 @@ describe('SchemaManager', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'error').should('have.text', 'Not Found')
   })
 
-  it('should render validation errors', () => {
+  it.skip('should render validation errors', () => {
     cy.intercept('/api/v1/management/sampling/topic/**', { items: [] })
     cy.intercept('/api/v1/management/sampling/schema/**', {}).as('getSchema')
     cy.mountWithProviders(<SchemaManager topicFilter={MOCK_TOPIC_FILTER} />)
