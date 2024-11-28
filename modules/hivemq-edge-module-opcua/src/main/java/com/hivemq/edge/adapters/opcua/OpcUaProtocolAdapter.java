@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
 public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter<MqttToOpcUaMapping> {
@@ -102,6 +103,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                                 protocolAdapterMetricsService,
                                 output)
                                 .thenApply(wrapper -> {
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;
                             return wrapper;
