@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.frommapping;
+package com.hivemq.api.model.mappings.frommapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.mappings.fields.FieldMapping;
+import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
@@ -62,6 +64,10 @@ public class FromEdgeMappingModel {
     @Schema(description = "The message expiry interval.")
     private final long messageExpiryInterval;
 
+    @JsonProperty(value = "fieldMapping")
+    @Schema(description = "Defines how incoming data should be transformed before being sent out.")
+    private final @Nullable FieldMappingModel fieldMapping;
+
     @JsonCreator
     public FromEdgeMappingModel(
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
@@ -71,7 +77,8 @@ public class FromEdgeMappingModel {
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
             @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
-            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
+            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval,
+            @JsonProperty(value = "fieldMapping") final @Nullable FieldMappingModel fieldMapping) {
         this.topic = topic;
         this.tagName = tagName;
         this.messageHandlingOptions = Objects.requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
@@ -80,6 +87,7 @@ public class FromEdgeMappingModel {
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
         this.messageExpiryInterval = Objects.requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE);
+        this.fieldMapping = fieldMapping;
     }
 
     public @NotNull String getTopic() {
@@ -114,6 +122,10 @@ public class FromEdgeMappingModel {
         return messageExpiryInterval;
     }
 
+    public @Nullable FieldMappingModel getFieldMapping() {
+        return fieldMapping;
+    }
+
     public FromEdgeMapping toFromEdgeMapping() {
         return new FromEdgeMapping(
                 this.tagName,
@@ -125,11 +137,13 @@ public class FromEdgeMappingModel {
                 this.includeTimestamp,
                 userProperties.stream()
                         .map(prop -> new MqttUserProperty(prop.getName(),prop.getValue()))
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                null //TODO: MAKE THIS WORK!!
                 );
     }
 
     public static FromEdgeMappingModel from(FromEdgeMapping fromEdgeMapping) {
+        final FieldMapping fieldMapping = fromEdgeMapping.getFieldMapping();
         return new FromEdgeMappingModel(
                 fromEdgeMapping.getMqttTopic(),
                 fromEdgeMapping.getTagName(),
@@ -139,6 +153,7 @@ public class FromEdgeMappingModel {
                 fromEdgeMapping.getUserProperties().stream()
                         .map(prop -> new MqttUserPropertyModel(prop.getName(),prop.getValue()))
                         .collect(Collectors.toList()),
-                fromEdgeMapping.getMqttQos(), fromEdgeMapping.getMessageExpiryInterval());
+                fromEdgeMapping.getMqttQos(), fromEdgeMapping.getMessageExpiryInterval(),
+                fieldMapping != null ? FieldMappingModel.fromFieldMapping(fieldMapping) : null);
     }
 }

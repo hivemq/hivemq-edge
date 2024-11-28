@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.tomapping;
+package com.hivemq.api.model.mappings.tomapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
@@ -38,14 +39,20 @@ public class ToEdgeMappingModel {
     @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
     private final int maxQoS;
 
+    @JsonProperty(value = "fieldMapping")
+    @Schema(description = "Defines how incoming data should be transformed before being sent out.")
+    private final @Nullable FieldMappingModel fieldMapping;
+
     @JsonCreator
     public ToEdgeMappingModel(
             @JsonProperty(value = "topicFilter", required = true) final @NotNull String topicFilter,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS) {
+            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
+            @JsonProperty(value = "fieldMapping") final @Nullable FieldMappingModel fieldMapping) {
         this.topicFilter = topicFilter;
         this.tagName = tagName;
         this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
+        this.fieldMapping = fieldMapping;
     }
 
     public @NotNull String getTopicFilter() {
@@ -60,6 +67,10 @@ public class ToEdgeMappingModel {
         return maxQoS;
     }
 
+    public @Nullable FieldMappingModel getFieldMapping() {
+        return fieldMapping;
+    }
+
     public ToEdgeMapping toToEdgeMapping() {
         return new ToEdgeMapping(
                 this.tagName,
@@ -72,6 +83,7 @@ public class ToEdgeMappingModel {
         return new ToEdgeMappingModel(
                 toEdgeMapping.getTopicFilter(),
                 toEdgeMapping.getTagName(),
-                toEdgeMapping.getMaxQoS());
+                toEdgeMapping.getMaxQoS(),
+                null); //TODO FIX THIS!!!!
     }
 }

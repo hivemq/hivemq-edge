@@ -161,6 +161,7 @@ public class FromEdgeMappingEntity {
                 this.getMessageHandlingOptions(),
                 this.isIncludeTagNames(),
                 this.isIncludeTimestamp(),
-                mqttUserProperties);
+                mqttUserProperties,
+                null);
     }
 }

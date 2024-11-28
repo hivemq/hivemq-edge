@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.frommapping;
+package com.hivemq.api.model.mappings.fieldmapping;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.ItemsResponse;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.mappings.fields.Transformation;
 
-import java.util.List;
+public class TransformationModel {
 
-public class FromEdgeMappingListModel extends ItemsResponse<FromEdgeMappingModel> {
+    // currently there is no transformation present at all
 
-    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public FromEdgeMappingListModel(
-            @JsonProperty("items") final @NotNull List<FromEdgeMappingModel> items) {
-        super(items);
+    public static TransformationModel from(Transformation transformation) {
+        return new TransformationModel();
     }
 }
