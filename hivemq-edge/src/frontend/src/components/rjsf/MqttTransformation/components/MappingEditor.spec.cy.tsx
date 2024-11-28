@@ -18,7 +18,7 @@ describe('MappingEditor', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', GENERATE_DATA_MODELS(true, 'test'))
 
     cy.mountWithProviders(
       <MappingEditor
@@ -46,7 +46,7 @@ describe('MappingEditor', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
 
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
       <MappingEditor
         topic="test"

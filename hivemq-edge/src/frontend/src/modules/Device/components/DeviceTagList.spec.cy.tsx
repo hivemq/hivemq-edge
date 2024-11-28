@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import {
+  MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA,
   MOCK_DEVICE_TAGS,
   mockAdapter_OPCUA,
   mockProtocolAdapter_OPCUA,
@@ -27,7 +28,8 @@ describe('DeviceTagList', () => {
   })
 
   it('should render an empty list', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { items: [] }).as('getTags')
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', { items: [] }).as('getTags')
+    cy.intercept('/api/v1/management/protocol-adapters/tagschemas/opcua', MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA)
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -40,9 +42,10 @@ describe('DeviceTagList', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', {
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', {
       items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
+    cy.intercept('/api/v1/management/protocol-adapters/tagschemas/opcua', MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA)
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -55,9 +58,10 @@ describe('DeviceTagList', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', {
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', {
       items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
+    cy.intercept('/api/v1/management/protocol-adapters/tagschemas/opcua', MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA)
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.injectAxe()
