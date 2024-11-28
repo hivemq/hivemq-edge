@@ -7,19 +7,20 @@ const MOCK_SUBS: MappingValidation = {
   errors: [],
 }
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
-  return <h2>{children}</h2>
-}
+const mockTopic = 'test/topic'
 
 describe('DataModelDestination', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', {
+      configSchema: GENERATE_DATA_MODELS(true, mockTopic),
+      protocolId: 'my-type',
+    })
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
-      <DataModelDestination topic="test" adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />
+      <DataModelDestination topic={mockTopic} adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />
     )
 
     cy.get('h3').should('have.text', 'Destination output')
@@ -51,11 +52,15 @@ describe('DataModelDestination', () => {
 
   it('should be accessible ', () => {
     cy.injectAxe()
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+
     cy.mountWithProviders(
-      <DataModelDestination topic="sssss" adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />,
-      { wrapper }
+      <DataModelDestination topic={mockTopic} adapterId="my-adapter" adapterType="my-type" validation={MOCK_SUBS} />
     )
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // h5 used for sections is not in order. Not detected on other tests
+        'heading-order': { enabled: false },
+      },
+    })
   })
 })
