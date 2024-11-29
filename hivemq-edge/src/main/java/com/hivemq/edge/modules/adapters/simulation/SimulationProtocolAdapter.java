@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -24,12 +25,12 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -43,6 +44,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull TimeWaiter timeWaiter;
     private static final @NotNull Random RANDOM = new Random();
     private final @NotNull String adapterId;
+    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -126,5 +128,12 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+    }
+
+    @Override
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input,
+            final @NotNull TagSchemaCreationOutput output) {
+        output.finish(objectMapper.createObjectNode());
     }
 }

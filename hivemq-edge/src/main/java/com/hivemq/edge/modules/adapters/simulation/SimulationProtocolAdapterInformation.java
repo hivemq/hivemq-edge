@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.io.IOUtils;
@@ -116,7 +117,7 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     @Override
     public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return null; //We never produce tags for this adapter
+        return SimulationTag.class;
     }
 
     @Override
