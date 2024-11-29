@@ -22,7 +22,7 @@ import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
 import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.info.SystemInformation;
@@ -151,9 +151,9 @@ public class ConfigurationMigrator {
             final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
                     (Map<String, Object>) stringObjectEntry.getValue());
 
-            final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
+            final List<NorthboundMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
                     .stream()
-                    .map(FromEdgeMappingEntity::fromPollingContext)
+                    .map(NorthboundMappingEntity::fromPollingContext)
                     .collect(Collectors.toList());
 
             final List<TagEntity> tagEntities = configTagsTuple.getTags()

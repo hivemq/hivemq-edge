@@ -17,7 +17,6 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -52,11 +51,11 @@ public class ProtocolAdapterEntity {
 
     @XmlElementWrapper(name = "toEdgeMappings")
     @XmlElement(name = "toEdgeMapping")
-    private @NotNull List<ToEdgeMappingEntity> toEdgeMappingEntities = new ArrayList<>();
+    private @NotNull List<SouthboundMappingEntity> toEdgeMappingEntities = new ArrayList<>();
 
     @XmlElementWrapper(name = "fromEdgeMappings")
     @XmlElement(name = "fromEdgeMapping")
-    private @NotNull List<FromEdgeMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
+    private @NotNull List<NorthboundMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
 
 
     // no-arg constructor for JaxB
@@ -67,8 +66,8 @@ public class ProtocolAdapterEntity {
             @NotNull final String adapterId,
             @NotNull final String protocolId,
             @NotNull final Map<String, Object> config,
-            @NotNull final List<FromEdgeMappingEntity> fromEdgeMappingEntities,
-            @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities,
+            @NotNull final List<NorthboundMappingEntity> fromEdgeMappingEntities,
+            @NotNull final List<SouthboundMappingEntity> toEdgeMappingEntities,
             @NotNull final List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.config = config;
@@ -82,7 +81,7 @@ public class ProtocolAdapterEntity {
         return config;
     }
 
-    public @NotNull List<FromEdgeMappingEntity> getFromEdgeMappingEntities() {
+    public @NotNull List<NorthboundMappingEntity> getFromEdgeMappingEntities() {
         return fromEdgeMappingEntities;
     }
 
@@ -90,7 +89,7 @@ public class ProtocolAdapterEntity {
         return tags;
     }
 
-    public @NotNull List<ToEdgeMappingEntity> getToEdgeMappingEntities() {
+    public @NotNull List<SouthboundMappingEntity> getToEdgeMappingEntities() {
         return toEdgeMappingEntities;
     }
 
@@ -120,14 +119,14 @@ public class ProtocolAdapterEntity {
     public static @NotNull ProtocolAdapterEntity from(
             final @NotNull ProtocolAdapterConfig protocolAdapterConfig, final @NotNull ObjectMapper objectMapper) {
 
-        final List<FromEdgeMappingEntity> fromEdgeMappingEntities = protocolAdapterConfig.getFromEdgeMappings()
+        final List<NorthboundMappingEntity> fromEdgeMappingEntities = protocolAdapterConfig.getFromEdgeMappings()
                 .stream()
-                .map(FromEdgeMappingEntity::from)
+                .map(NorthboundMappingEntity::from)
                 .collect(Collectors.toList());
 
-        final List<ToEdgeMappingEntity> toEdgeMappingEntities = protocolAdapterConfig.getToEdgeMappings()
+        final List<SouthboundMappingEntity> toEdgeMappingEntities = protocolAdapterConfig.getToEdgeMappings()
                 .stream()
-                .map(ToEdgeMappingEntity::from)
+                .map(SouthboundMappingEntity::from)
                 .collect(Collectors.toList());
 
         final List<TagEntity> tagEntities = protocolAdapterConfig.getTags()

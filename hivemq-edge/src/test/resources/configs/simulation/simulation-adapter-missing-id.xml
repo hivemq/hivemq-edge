@@ -2,13 +2,13 @@
     <protocol-adapters>
         <protocol-adapter>
             <protocolId>simulation</protocolId>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <topic>my/topic</topic>
                     <maxQos>0</maxQos>
                     <tagName>tag1</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
         </protocol-adapter>
     </protocol-adapters>
 </hivemq>

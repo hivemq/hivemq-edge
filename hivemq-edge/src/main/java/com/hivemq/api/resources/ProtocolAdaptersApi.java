@@ -21,8 +21,8 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingListModel;
-import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingListModel;
+import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
+import com.hivemq.api.model.mappings.southbound.SouthboundMappingListModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -548,7 +548,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = FromEdgeMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getFromMappingsForAdapter(
@@ -575,7 +575,7 @@ public interface ProtocolAdaptersApi {
                        description = "The id of the adapter whose from mappings will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
-            final @NotNull FromEdgeMappingListModel fromEdgeMappingListModel);
+            final @NotNull NorthboundMappingListModel northboundMappingListModel);
 
 
     //########   TOEDGEMAPPINGS   #########
@@ -589,7 +589,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = FromEdgeMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getToMappingsForAdapter(
@@ -616,5 +616,5 @@ public interface ProtocolAdaptersApi {
                        description = "The id of the adapter whose from mappings will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
-            final @NotNull ToEdgeMappingListModel toEdgeMappingListModel);
+            final @NotNull SouthboundMappingListModel southboundMappingListModel);
 }

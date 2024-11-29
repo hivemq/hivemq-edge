@@ -31,20 +31,20 @@
                     <assertResponseIsJson>false</assertResponseIsJson>
                 </httpToMqtt>
             </config>
-            <toEdgeMappings>
-                <toEdgeMapping>
+            <soutboundMappings>
+                <soutboundMapping>
                     <tagName>tag3</tagName>
                     <topicFilter>my/#</topicFilter>
                     <maxQos>0</maxQos>
-                </toEdgeMapping>
-                <toEdgeMapping>
+                </soutboundMapping>
+                <soutboundMapping>
                     <tagName>tag4</tagName>
                     <topicFilter>my/#</topicFilter>
                     <maxQos>1</maxQos>
-                </toEdgeMapping>
-            </toEdgeMappings>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+                </soutboundMapping>
+            </soutboundMappings>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
                     <topic>my/destination</topic>
                     <maxQos>0</maxQos>
@@ -58,8 +58,8 @@
                             <value>value2</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
+                </northboundMapping>
+                <northboundMapping>
                     <tagName>tag2</tagName>
                     <topic>my/destination2</topic>
                     <maxQos>0</maxQos>
@@ -73,8 +73,8 @@
                             <value>value2</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>

@@ -1,35 +1,35 @@
 package com.hivemq.protocols;
 
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import org.jetbrains.annotations.NotNull;
 
 public class InternalWritingContextImpl implements InternalWritingContext {
 
-    private final @NotNull ToEdgeMapping toEdgeMapping;
+    private final @NotNull SoutboundMapping soutboundMapping;
 
 
-    public InternalWritingContextImpl(@NotNull final ToEdgeMapping toEdgeMapping) {
-        this.toEdgeMapping = toEdgeMapping;
+    public InternalWritingContextImpl(@NotNull final SoutboundMapping soutboundMapping) {
+        this.soutboundMapping = soutboundMapping;
     }
 
     @Override
     public FieldMapping getFieldMapping() {
-        return toEdgeMapping.getFieldMapping();
+        return soutboundMapping.getFieldMapping();
     }
 
     @Override
     public @NotNull String getTagName() {
-        return toEdgeMapping.getTagName();
+        return soutboundMapping.getTagName();
     }
 
     @Override
     public @NotNull String getTopicFilter() {
-        return toEdgeMapping.getTopicFilter();
+        return soutboundMapping.getTopicFilter();
     }
 
     @Override
     public int getMaxQoS() {
-        return toEdgeMapping.getMaxQoS();
+        return soutboundMapping.getMaxQoS();
     }
 }

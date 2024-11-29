@@ -18,14 +18,12 @@ package com.hivemq.persistence.mappings;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class FromEdgeMapping implements PollingContext{
+public class NorthboundMapping implements PollingContext{
 
     private final @NotNull String topic;
     private final @NotNull String tagName;
@@ -35,9 +33,8 @@ public class FromEdgeMapping implements PollingContext{
     private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
     private final long messageExpiryInterval;
-    private final @Nullable FieldMapping fieldMapping;
 
-    public FromEdgeMapping(
+    public NorthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
@@ -45,8 +42,7 @@ public class FromEdgeMapping implements PollingContext{
             final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,
             final boolean includeTimestamp,
-            final @NotNull List<MqttUserProperty> userProperties,
-            final @Nullable FieldMapping fieldMapping) {
+            final @NotNull List<MqttUserProperty> userProperties) {
         this.tagName = tagName;
         this.topic = topic;
         this.messageHandlingOptions = messageHandlingOptions;
@@ -55,7 +51,6 @@ public class FromEdgeMapping implements PollingContext{
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
         this.maxQoS = maxQoS;
-        this.fieldMapping = fieldMapping;
     }
 
     public @NotNull String getMqttTopic() {
@@ -88,9 +83,5 @@ public class FromEdgeMapping implements PollingContext{
 
     public @Nullable Long getMessageExpiryInterval() {
         return this.messageExpiryInterval;
-    }
-
-    public @Nullable FieldMapping getFieldMapping() {
-        return fieldMapping;
     }
 }

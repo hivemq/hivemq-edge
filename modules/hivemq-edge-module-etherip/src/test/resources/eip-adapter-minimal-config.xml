@@ -24,12 +24,12 @@
                 <port>1234</port>
                 <host>my.eip-server.com</host>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <topic>my/topic</topic>
                     <tagName>tag-name</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag-name</name>

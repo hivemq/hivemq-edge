@@ -19,8 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
-import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -28,7 +27,7 @@ import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class ToEdgeMappingEntity {
+public class SouthboundMappingEntity {
 
     @XmlElement(name = "topicFilter", required = true)
     private final @NotNull String topicFilter;
@@ -43,14 +42,14 @@ public class ToEdgeMappingEntity {
     private final @Nullable FieldMappingEntity fieldMapping;
 
     // no-arg constructor for JaxB
-    public ToEdgeMappingEntity() {
+    public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
         qos = 1;
         fieldMapping = null;
     }
 
-    public ToEdgeMappingEntity(
+    public SouthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
             final int maxQoS,
@@ -83,20 +82,20 @@ public class ToEdgeMappingEntity {
     }
 
 
-    public @NotNull ToEdgeMapping toToEdgeMapping(ObjectMapper mapper) {
-        return new ToEdgeMapping(
+    public @NotNull SoutboundMapping to(ObjectMapper mapper) {
+        return new SoutboundMapping(
                 this.getTagName(),
                 this.getTopicFilter(),
                 this.getMaxQos(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
     }
 
-    public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
-        return new ToEdgeMappingEntity(
-                toEdgeMapping.getTagName(),
-                toEdgeMapping.getTopicFilter(),
-                toEdgeMapping.getMaxQoS(),
-                FieldMappingEntity.from(toEdgeMapping.getFieldMapping())
+    public static @NotNull SouthboundMappingEntity from(final @NotNull SoutboundMapping soutboundMapping) {
+        return new SouthboundMappingEntity(
+                soutboundMapping.getTagName(),
+                soutboundMapping.getTopicFilter(),
+                soutboundMapping.getMaxQoS(),
+                FieldMappingEntity.from(soutboundMapping.getFieldMapping())
         );
     }
 

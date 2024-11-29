@@ -24,11 +24,11 @@
             <config>
                 <fileToMqtt></fileToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>

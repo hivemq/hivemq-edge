@@ -26,8 +26,8 @@
                     <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
                 </fileToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <topic>my/topic</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
@@ -44,8 +44,8 @@
                             <value>value2</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
+                </northboundMapping>
+                <northboundMapping>
                     <topic>my/topic/2</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
@@ -62,8 +62,8 @@
                             <value>value2</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>

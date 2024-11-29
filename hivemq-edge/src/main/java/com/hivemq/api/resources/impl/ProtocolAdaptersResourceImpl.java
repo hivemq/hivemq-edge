@@ -36,10 +36,10 @@ import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingListModel;
-import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingModel;
-import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingListModel;
-import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingModel;
+import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
+import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
+import com.hivemq.api.model.mappings.southbound.SouthboundMappingListModel;
+import com.hivemq.api.model.mappings.southbound.SouthboundMappingModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -63,8 +63,8 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -635,22 +635,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
 
-            final List<FromEdgeMapping> fromEdgeMappings = adapter.getFromEdgeMappingModels()
+            final List<NorthboundMapping> northboundMappings = adapter.getFromEdgeMappingModels()
                         .stream()
-                        .map(FromEdgeMappingModel::to)
+                        .map(NorthboundMappingModel::to)
                         .collect(Collectors.toList());
 
-            final List<ToEdgeMapping> toEdgeMappings = adapter.getToEdgeMappingModels()
+            final List<SoutboundMapping> soutboundMappings = adapter.getToEdgeMappingModels()
                     .stream()
-                    .map(ToEdgeMappingModel::toToEdgeMapping)
+                    .map(SouthboundMappingModel::toToEdgeMapping)
                     .collect(Collectors.toList());
 
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(
                     adapterId,
                     adapterType,
-                    protocolSpecificAdapterConfig,
-                    toEdgeMappings,
-                    fromEdgeMappings,
+                    protocolSpecificAdapterConfig, soutboundMappings, northboundMappings,
                     tags));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
@@ -672,9 +670,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public Response getFromMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getFromEdgeMappings().stream()
-                        .map(FromEdgeMappingModel::from)
+                        .map(NorthboundMappingModel::from)
                         .collect(Collectors.toList()))
-                .map(FromEdgeMappingListModel::new)
+                .map(NorthboundMappingListModel::new)
                 .map(mappingsList -> Response.status(200).entity(mappingsList).build())
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
@@ -682,11 +680,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public Response updateFromMappingsForAdapter(
             final @NotNull String adapterId,
-            final @NotNull FromEdgeMappingListModel fromEdgeMappingListModel) {
+            final @NotNull NorthboundMappingListModel northboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
-                    final List<FromEdgeMapping> converted = fromEdgeMappingListModel.getItems()
+                    final List<NorthboundMapping> converted = northboundMappingListModel.getItems()
                             .stream()
                             .map(mapping -> {
                                 requiredTags.add(mapping.getTagName());
@@ -698,7 +696,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     if (requiredTags.isEmpty()) {
                         if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
                             log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
-                            return Response.status(200).entity(fromEdgeMappingListModel).build();
+                            return Response.status(200).entity(northboundMappingListModel).build();
                         } else {
                             log.error("Something went wrong updating the adapter {}", adapterId);
                             return Response.status(503).build();
@@ -715,9 +713,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public Response getToMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getToEdgeMappings().stream()
-                        .map(ToEdgeMappingModel::from)
+                        .map(SouthboundMappingModel::from)
                         .collect(Collectors.toList()))
-                .map(ToEdgeMappingListModel::new)
+                .map(SouthboundMappingListModel::new)
                 .map(mappingsList -> Response.status(200).entity(mappingsList).build())
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
@@ -725,11 +723,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public Response updateToMappingsForAdapter(
             final @NotNull String adapterId,
-            final @NotNull ToEdgeMappingListModel toEdgeMappingListModel) {
+            final @NotNull SouthboundMappingListModel southboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
-                    final List<ToEdgeMapping> converted = toEdgeMappingListModel.getItems()
+                    final List<SoutboundMapping> converted = southboundMappingListModel.getItems()
                             .stream()
                             .map(mapping -> {
                                 requiredTags.add(mapping.getTagName());
@@ -741,7 +739,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     if (requiredTags.isEmpty()) {
                         if (protocolAdapterManager.updateAdapterToMappings(adapterId, converted)) {
                             log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
-                            return Response.status(200).entity(toEdgeMappingListModel).build();
+                            return Response.status(200).entity(southboundMappingListModel).build();
                         } else {
                             log.error("Something went wrong updating the adapter {}", adapterId);
                             return Response.status(503).build();

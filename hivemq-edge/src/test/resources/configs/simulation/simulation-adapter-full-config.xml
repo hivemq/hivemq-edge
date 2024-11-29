@@ -13,8 +13,8 @@
                 <minDelay>0</minDelay>
                 <maxDelay>1000</maxDelay>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <topic>my/topic</topic>
                     <maxQos>1</maxQos>
                     <tagName>tag</tagName>
@@ -27,8 +27,8 @@
                             <value>my-value</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
+                </northboundMapping>
+                <northboundMapping>
                     <topic>my/topic/2</topic>
                     <maxQos>1</maxQos>
                     <tagName>tag</tagName>
@@ -41,8 +41,8 @@
                             <value>my-value</value>
                         </mqttUserProperty>
                     </mqttUserProperties>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
         </protocol-adapter>
     </protocol-adapters>
 </hivemq>

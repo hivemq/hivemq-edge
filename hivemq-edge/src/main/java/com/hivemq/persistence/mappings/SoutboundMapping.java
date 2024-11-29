@@ -21,14 +21,14 @@ import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ToEdgeMapping implements WritingContext {
+public class SoutboundMapping implements WritingContext {
 
     private final @NotNull String topicFilter;
     private final @NotNull String tagName;
     private final int maxQoS;
     private final @Nullable FieldMapping fieldMapping;
 
-    public ToEdgeMapping(
+    public SoutboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
             final int maxQoS,
@@ -55,9 +55,9 @@ public class ToEdgeMapping implements WritingContext {
         return fieldMapping;
     }
 
-    public static @NotNull ToEdgeMapping from(
+    public static @NotNull SoutboundMapping from(
             final @NotNull InternalWritingContext writingContext) {
-        return new ToEdgeMapping(
+        return new SoutboundMapping(
                 writingContext.getTagName(),
                 writingContext.getTopicFilter(),
                 writingContext.getMaxQoS(),

@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.mappings.tomapping;
+package com.hivemq.api.model.mappings.southbound;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;
 
-public class ToEdgeMappingModel {
+@JsonTypeName("SouthboundMapping")
+public class SouthboundMappingModel {
 
     @JsonProperty(value = "topicFilter", required = true)
     @Schema(description = "The filter defining what topics we will receive messages from.")
@@ -45,7 +47,7 @@ public class ToEdgeMappingModel {
     private final @Nullable FieldMappingModel fieldMapping;
 
     @JsonCreator
-    public ToEdgeMappingModel(
+    public SouthboundMappingModel(
             @JsonProperty(value = "topicFilter", required = true) final @NotNull String topicFilter,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
@@ -72,19 +74,19 @@ public class ToEdgeMappingModel {
         return fieldMapping;
     }
 
-    public ToEdgeMapping toToEdgeMapping() {
-        return new ToEdgeMapping(
+    public SoutboundMapping toToEdgeMapping() {
+        return new SoutboundMapping(
                 this.tagName,
                 this.topicFilter,
                 this.maxQoS, FieldMapping.fromModel(this.fieldMapping)
                 );
     }
 
-    public static ToEdgeMappingModel from(ToEdgeMapping toEdgeMapping) {
-        return new ToEdgeMappingModel(
-                toEdgeMapping.getTopicFilter(),
-                toEdgeMapping.getTagName(),
-                toEdgeMapping.getMaxQoS(),
-                FieldMappingModel.from(toEdgeMapping.getFieldMapping()));
+    public static SouthboundMappingModel from(SoutboundMapping soutboundMapping) {
+        return new SouthboundMappingModel(
+                soutboundMapping.getTopicFilter(),
+                soutboundMapping.getTagName(),
+                soutboundMapping.getMaxQoS(),
+                FieldMappingModel.from(soutboundMapping.getFieldMapping()));
     }
 }

@@ -52,32 +52,32 @@
                     <serverQueueSize>13</serverQueueSize>
                 </opcuaToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topic>test/blubb/a</topic>
                     <maxQos>1</maxQos>
                     <messageExpiryInterval>15</messageExpiryInterval>
-                </fromEdgeMapping>
-                <fromEdgeMapping>
+                </northboundMapping>
+                <northboundMapping>
                     <tagName>ns=2;i=1004</tagName>
                     <topic>test/blubbb/b</topic>
                     <maxQos>2</maxQos>
                     <messageExpiryInterval>16</messageExpiryInterval>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
-            <toEdgeMappings>
-                <toEdgeMapping>
+                </northboundMapping>
+            </northboundMappings>
+            <soutboundMappings>
+                <soutboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
                     <maxQos>0</maxQos>
-                </toEdgeMapping>
-                <toEdgeMapping>
+                </soutboundMapping>
+                <soutboundMapping>
                     <tagName>ns=2;i=1004</tagName>
                     <topicFilter>test/blubbb/#</topicFilter>
                     <maxQos>0</maxQos>
-                </toEdgeMapping>
-            </toEdgeMappings>
+                </soutboundMapping>
+            </soutboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>

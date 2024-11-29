@@ -23,13 +23,13 @@
             <protocolId>http</protocolId>
             <config>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
                     <topic>my/destination</topic>
                     <maxQos>1</maxQos>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>wrong-tag1</name>

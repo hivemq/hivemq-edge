@@ -55,8 +55,8 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -259,8 +259,8 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
 
-            final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
-            final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
+            final List<SoutboundMapping> soutboundMappings = protocolAdapterWrapper.getToEdgeMappings();
+            final List<InternalWritingContext> writingContexts = soutboundMappings.stream()
                     .map(InternalWritingContextImpl::new)
                     .collect(Collectors.toList());
 
@@ -280,7 +280,7 @@ public class ProtocolAdapterManager {
             if (log.isDebugEnabled()) {
                 log.debug("Schedule polling for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
-            final List<FromEdgeMapping> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
+            final List<NorthboundMapping> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
             pollingContexts.forEach(adapterSubscription -> {
                 final PerSubscriptionSampler sampler = new PerSubscriptionSampler(
                         protocolAdapterWrapper,
@@ -525,15 +525,14 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterFromMappings(final @NotNull String adapterId, final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
+    public boolean updateAdapterFromMappings(final @NotNull String adapterId, final @NotNull List<NorthboundMapping> northboundMappings) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
                     oldInstance.getConfigObject(),
-                    oldInstance.getToEdgeMappings(),
-                    fromEdgeMappings,
+                    oldInstance.getToEdgeMappings(), northboundMappings,
                     oldInstance.getTags());
             return protocolAdapterConfig.missingTags()
                     .map(missingTags -> {
@@ -549,14 +548,13 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<ToEdgeMapping> toEdgeMappings) {
+    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<SoutboundMapping> soutboundMappings) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
-                    oldInstance.getConfigObject(),
-                    toEdgeMappings,
+                    oldInstance.getConfigObject(), soutboundMappings,
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags());
             return protocolAdapterConfig.missingTags()
@@ -791,7 +789,7 @@ public class ProtocolAdapterManager {
                 final @NotNull String adapterId,
                 final @NotNull T configObject,
                 final @NotNull List<Tag> tags,
-                final @NotNull List<FromEdgeMapping> fromEdgeMappings,
+                final @NotNull List<NorthboundMapping> northboundMappings,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
                 final @NotNull ModuleServices moduleServices,
@@ -803,7 +801,7 @@ public class ProtocolAdapterManager {
             this.moduleServices = moduleServices;
             this.protocolAdapterMetricsService = protocolAdapterMetricsService;
             this.tags = tags;
-            this.pollingContexts = fromEdgeMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
+            this.pollingContexts = northboundMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
         }
 
         @Override
@@ -916,16 +914,16 @@ public class ProtocolAdapterManager {
             return userProperties;
         }
 
-        public static @NotNull PollingContextWrapper from(FromEdgeMapping fromEdgeMapping) {
+        public static @NotNull PollingContextWrapper from(NorthboundMapping northboundMapping) {
             return new PollingContextWrapper(
-                    fromEdgeMapping.getMqttTopic(),
-                    fromEdgeMapping.getTagName(),
-                    fromEdgeMapping.getMessageHandlingOptions(),
-                    fromEdgeMapping.getIncludeTagNames(),
-                    fromEdgeMapping.getIncludeTimestamp(),
-                    List.copyOf(fromEdgeMapping.getUserProperties()),
-                    fromEdgeMapping.getMqttQos(),
-                    fromEdgeMapping.getMessageExpiryInterval()
+                    northboundMapping.getMqttTopic(),
+                    northboundMapping.getTagName(),
+                    northboundMapping.getMessageHandlingOptions(),
+                    northboundMapping.getIncludeTagNames(),
+                    northboundMapping.getIncludeTimestamp(),
+                    List.copyOf(northboundMapping.getUserProperties()),
+                    northboundMapping.getMqttQos(),
+                    northboundMapping.getMessageExpiryInterval()
             );
         }
     }

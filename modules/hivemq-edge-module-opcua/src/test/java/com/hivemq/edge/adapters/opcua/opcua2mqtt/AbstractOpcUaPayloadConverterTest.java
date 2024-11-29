@@ -41,7 +41,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -105,7 +105,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
-        when(protocolAdapterInput.getPollingContexts()).thenReturn(List.of(new FromEdgeMapping(
+        when(protocolAdapterInput.getPollingContexts()).thenReturn(List.of(new NorthboundMapping(
                 subcribedNodeId,
                 "topic",
                 1,
@@ -113,8 +113,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 MessageHandlingOptions.MQTTMessagePerTag,
                 false,
                 false,
-                List.of(),
-                null
+                List.of()
                 )));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);

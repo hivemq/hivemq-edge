@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.mappings.frommapping;
+package com.hivemq.api.model.mappings.southbound;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 
-public class FromEdgeMappingListModel extends ItemsResponse<FromEdgeMappingModel> {
+@JsonTypeName("SouthboundMappingList")
+public class SouthboundMappingListModel extends ItemsResponse<SouthboundMappingModel> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public FromEdgeMappingListModel(
-            @JsonProperty("items") final @NotNull List<FromEdgeMappingModel> items) {
+    public SouthboundMappingListModel(
+            @JsonProperty("items") final @NotNull List<SouthboundMappingModel> items) {
         super(items);
     }
 }

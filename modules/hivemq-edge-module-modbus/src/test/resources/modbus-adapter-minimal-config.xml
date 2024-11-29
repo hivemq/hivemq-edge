@@ -24,12 +24,12 @@
                 <host>my.modbus-server.com</host>
                 <port>1234</port>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <topic>my/topic</topic>
                     <tagName>tag1</tagName>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>

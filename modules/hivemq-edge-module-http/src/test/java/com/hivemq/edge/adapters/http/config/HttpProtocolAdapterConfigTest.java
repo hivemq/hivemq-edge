@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import com.hivemq.configuration.entity.adapter.ToEdgeMappingEntity;
+import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
@@ -31,7 +31,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -109,7 +109,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
-        final FromEdgeMappingEntity httpToMqttMapping = adapter.getFromEdgeMappingEntities().get(0);
+        final NorthboundMappingEntity httpToMqttMapping = adapter.getFromEdgeMappingEntities().get(0);
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
@@ -130,7 +130,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(tag2.getDefinition().getHttpHeaders()).isEmpty();
         assertThat(tag2.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
-        final ToEdgeMappingEntity mqttToHttpMapping = adapter.getToEdgeMappingEntities().get(0);
+        final SouthboundMappingEntity mqttToHttpMapping = adapter.getToEdgeMappingEntities().get(0);
         assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag2");
         assertThat(mqttToHttpMapping.getTopicFilter()).isEqualTo("my/#");
         assertThat(mqttToHttpMapping.getMaxQos()).isEqualTo(1);
@@ -163,7 +163,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
-        final FromEdgeMapping httpToMqttMapping = protocolAdapterConfig.getFromEdgeMappings().get(0);
+        final NorthboundMapping httpToMqttMapping = protocolAdapterConfig.getFromEdgeMappings().get(0);
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
 

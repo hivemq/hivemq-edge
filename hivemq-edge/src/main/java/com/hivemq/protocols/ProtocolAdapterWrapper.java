@@ -30,8 +30,8 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 
 import java.util.List;
 
@@ -44,8 +44,8 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolSpecificAdapterConfig configObject;
     private final @NotNull List<? extends Tag> tags;
-    private final @NotNull List<ToEdgeMapping> toEdgeMappings;
-    private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+    private final @NotNull List<SoutboundMapping> soutboundMappings;
+    private final @NotNull List<NorthboundMapping> northboundMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -56,8 +56,8 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<? extends Tag> tags,
-            final @NotNull List<ToEdgeMapping> toEdgeMappings,
-            final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
+            final @NotNull List<SoutboundMapping> soutboundMappings,
+            final @NotNull List<NorthboundMapping> northboundMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -65,8 +65,8 @@ public class ProtocolAdapterWrapper {
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
         this.tags = tags;
-        this.toEdgeMappings = toEdgeMappings;
-        this.fromEdgeMappings = fromEdgeMappings;
+        this.soutboundMappings = soutboundMappings;
+        this.northboundMappings = northboundMappings;
     }
 
     public void start(
@@ -132,12 +132,12 @@ public class ProtocolAdapterWrapper {
         return adapter;
     }
 
-    public @NotNull List<FromEdgeMapping> getFromEdgeMappings() {
-        return fromEdgeMappings;
+    public @NotNull List<NorthboundMapping> getFromEdgeMappings() {
+        return northboundMappings;
     }
 
-    public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
-        return toEdgeMappings;
+    public @NotNull List<SoutboundMapping> getToEdgeMappings() {
+        return soutboundMappings;
     }
 
     public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {

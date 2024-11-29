@@ -24,13 +24,13 @@
                 <httpToMqtt>
                 </httpToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
                     <topic>my/destination</topic>
                     <maxQos>1</maxQos>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
         </protocol-adapter>
     </protocol-adapters>
 </hivemq>

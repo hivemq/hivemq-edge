@@ -23,19 +23,19 @@
             <protocolId>http</protocolId>
             <config>
             </config>
-            <toEdgeMappings>
-                <toEdgeMapping>
+            <soutboundMappings>
+                <soutboundMapping>
                     <tagName>tag2</tagName>
                     <topicFilter>my/#</topicFilter>
-                </toEdgeMapping>
-            </toEdgeMappings>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+                </soutboundMapping>
+            </soutboundMappings>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
                     <topic>my/destination</topic>
                     <maxQos>1</maxQos>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>

@@ -24,18 +24,18 @@
                 <opcuaToMqtt>
                 </opcuaToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topic>test/blubb</topic>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
-            <toEdgeMappings>
-                <toEdgeMapping>
+                </northboundMapping>
+            </northboundMappings>
+            <soutboundMappings>
+                <soutboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
-                </toEdgeMapping>
-            </toEdgeMappings>
+                </soutboundMapping>
+            </soutboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>

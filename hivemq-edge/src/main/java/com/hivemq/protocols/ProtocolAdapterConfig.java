@@ -17,8 +17,8 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -32,20 +32,20 @@ public class ProtocolAdapterConfig {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
-    private final @NotNull List<ToEdgeMapping> toEdgeMappings;
-    private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+    private final @NotNull List<SoutboundMapping> soutboundMappings;
+    private final @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
-            final @NotNull List<ToEdgeMapping> toEdgeMappings,
-            final @NotNull List<FromEdgeMapping> fromEdgeMappings,
+            final @NotNull List<SoutboundMapping> soutboundMappings,
+            final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull List<? extends Tag> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
-        this.toEdgeMappings = toEdgeMappings;
-        this.fromEdgeMappings = fromEdgeMappings;
+        this.soutboundMappings = soutboundMappings;
+        this.northboundMappings = northboundMappings;
         this.adapterConfig = protocolSpecificConfig;
         this.tags = tags;
     }
@@ -56,8 +56,8 @@ public class ProtocolAdapterConfig {
         }
 
         final Set<String> names = new HashSet<>();
-        toEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
-        fromEdgeMappings.forEach(mapping -> names.add(mapping.getTagName()));
+        soutboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
+        northboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
 
         this.tags.forEach(tag -> names.remove(tag.getName()));
         if (names.isEmpty()) {
@@ -83,11 +83,11 @@ public class ProtocolAdapterConfig {
         return tags;
     }
 
-    public @NotNull List<FromEdgeMapping> getFromEdgeMappings() {
-        return fromEdgeMappings;
+    public @NotNull List<NorthboundMapping> getFromEdgeMappings() {
+        return northboundMappings;
     }
 
-    public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
-        return toEdgeMappings;
+    public @NotNull List<SoutboundMapping> getToEdgeMappings() {
+        return soutboundMappings;
     }
 }

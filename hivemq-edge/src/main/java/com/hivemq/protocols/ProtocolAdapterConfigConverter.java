@@ -24,8 +24,8 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
-import com.hivemq.persistence.mappings.FromEdgeMapping;
-import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SoutboundMapping;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -66,20 +66,19 @@ public class ProtocolAdapterConfigConverter {
         final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                 protocolAdapterFactory.convertConfigObject(mapper, adapterConfigMap, true);
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
-        final List<FromEdgeMapping> fromEdgeMappingList = protocolAdapterEntity.getFromEdgeMappingEntities()
+        final List<NorthboundMapping> northboundMappingList = protocolAdapterEntity.getFromEdgeMappingEntities()
                 .stream()
-                .map(fromEdge -> fromEdge.toFromEdgeMapping(mapper))
+                .map(fromEdge -> fromEdge.to(mapper))
                 .collect(Collectors.toList());
-        final List<ToEdgeMapping> toEdgeMappingList = protocolAdapterEntity.getToEdgeMappingEntities()
+        final List<SoutboundMapping> soutboundMappingList = protocolAdapterEntity.getToEdgeMappingEntities()
                 .stream()
-                .map(toEdge -> toEdge.toToEdgeMapping(mapper))
+                .map(toEdge -> toEdge.to(mapper))
                 .collect(Collectors.toList());
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig,
-                toEdgeMappingList,
-                fromEdgeMappingList,
+                protocolSpecificAdapterConfig, soutboundMappingList,
+                northboundMappingList,
                 tags);
     }
 

@@ -28,13 +28,13 @@
                     <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
                 </httpToMqtt>
             </config>
-            <fromEdgeMappings>
-                <fromEdgeMapping>
+            <northboundMappings>
+                <northboundMapping>
                     <tagName>tag1</tagName>
                     <topic>my/destination</topic>
                     <maxQos>0</maxQos>
-                </fromEdgeMapping>
-            </fromEdgeMappings>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>
