@@ -32,6 +32,7 @@ import com.hivemq.protocols.ProtocolAdapterManager;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Response;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -113,10 +114,9 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void deleteDomainTag_whenTagExists_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.deleteDomainTag("adapter", "tag")).thenReturn(DomainTagDeleteResult.success());
+        when(protocolAdapterManager.deleteDomainTag(eq("adapter"), eq("tag"))).thenReturn(DomainTagDeleteResult.success());
 
-        final Response response = protocolAdaptersResource.deleteDomainTag("adapter",
-                Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)));
+        final Response response = protocolAdaptersResource.deleteDomainTag("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
 
         assertEquals(200, response.getStatus());
 
@@ -127,8 +127,7 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(protocolAdapterManager.deleteDomainTag("adapter", "tag")).thenReturn(DomainTagDeleteResult.failed(DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND));
 
-        final Response response = protocolAdaptersResource.deleteDomainTag("adapter",
-                Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)));
+        final Response response = protocolAdaptersResource.deleteDomainTag("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
 
         assertEquals(404, response.getStatus());
 
