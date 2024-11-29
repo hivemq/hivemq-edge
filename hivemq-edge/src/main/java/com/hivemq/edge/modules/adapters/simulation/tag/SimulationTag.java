@@ -23,7 +23,8 @@ public class SimulationTag implements Tag {
 
     @JsonProperty(value = "definition", required = true)
     @ModuleConfigField(title = "definition",
-                       description = "The actual definition of the tag on the device",
+                       description = "The simulation adapter doesn't currently support any custom definition",
+                       readOnly = true,
                        required = true)
     private final @NotNull SimulationTagDefinition definition;
 
