@@ -56,7 +56,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -260,7 +260,7 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
 
-            final List<SoutboundMapping> southboundMappings = protocolAdapterWrapper.getToEdgeMappings();
+            final List<SouthboundMapping> southboundMappings = protocolAdapterWrapper.getToEdgeMappings();
             final List<InternalWritingContext> writingContexts = southboundMappings.stream()
                     .map(InternalWritingContextImpl::new)
                     .collect(Collectors.toList());
@@ -549,7 +549,7 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<SoutboundMapping> southboundMappings) {
+    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<SouthboundMapping> southboundMappings) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();

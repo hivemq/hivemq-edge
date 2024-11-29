@@ -31,7 +31,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolSpecificAdapterConfig configObject;
     private final @NotNull List<? extends Tag> tags;
-    private final @NotNull List<SoutboundMapping> southboundMappings;
+    private final @NotNull List<SouthboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
     protected @Nullable Long lastStartAttemptTime;
 
@@ -56,7 +56,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<? extends Tag> tags,
-            final @NotNull List<SoutboundMapping> southboundMappings,
+            final @NotNull List<SouthboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
@@ -136,7 +136,7 @@ public class ProtocolAdapterWrapper {
         return northboundMappings;
     }
 
-    public @NotNull List<SoutboundMapping> getToEdgeMappings() {
+    public @NotNull List<SouthboundMapping> getToEdgeMappings() {
         return southboundMappings;
     }
 

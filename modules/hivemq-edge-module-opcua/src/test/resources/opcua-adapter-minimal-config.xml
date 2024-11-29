@@ -32,10 +32,10 @@
                 </northboundMapping>
             </northboundMappings>
             <southboundMappings>
-                <soutboundMapping>
+                <southboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
-                </soutboundMapping>
+                </southboundMapping>
             </southboundMappings>
             <tags>
                 <tag>

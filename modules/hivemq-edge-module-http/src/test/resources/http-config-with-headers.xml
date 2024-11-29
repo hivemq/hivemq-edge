@@ -32,16 +32,16 @@
                 </httpToMqtt>
             </config>
             <southboundMappings>
-                <soutboundMapping>
+                <southboundMapping>
                     <tagName>tag3</tagName>
                     <topicFilter>my/#</topicFilter>
                     <maxQos>0</maxQos>
-                </soutboundMapping>
-                <soutboundMapping>
+                </southboundMapping>
+                <southboundMapping>
                     <tagName>tag4</tagName>
                     <topicFilter>my/#</topicFilter>
                     <maxQos>1</maxQos>
-                </soutboundMapping>
+                </southboundMapping>
             </southboundMappings>
             <northboundMappings>
                 <northboundMapping>

@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -70,14 +70,14 @@ public class ProtocolAdapterConfigConverter {
                 .stream()
                 .map(northbound -> northbound.to(mapper))
                 .collect(Collectors.toList());
-        final List<SoutboundMapping> soutboundMappingList = protocolAdapterEntity.getSouthboundMappingEntities()
+        final List<SouthboundMapping> southboundMappingList = protocolAdapterEntity.getSouthboundMappingEntities()
                 .stream()
                 .map(southbound -> southbound.to(mapper))
                 .collect(Collectors.toList());
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig, soutboundMappingList,
+                protocolSpecificAdapterConfig, southboundMappingList,
                 northboundMappingList,
                 tags);
     }

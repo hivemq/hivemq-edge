@@ -24,10 +24,10 @@
             <config>
             </config>
             <southboundMappings>
-                <soutboundMapping>
+                <southboundMapping>
                     <tagName>tag2</tagName>
                     <topicFilter>my/#</topicFilter>
-                </soutboundMapping>
+                </southboundMapping>
             </southboundMappings>
             <northboundMappings>
                 <northboundMapping>

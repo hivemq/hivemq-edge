@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -82,20 +82,20 @@ public class SouthboundMappingEntity {
     }
 
 
-    public @NotNull SoutboundMapping to(ObjectMapper mapper) {
-        return new SoutboundMapping(
+    public @NotNull SouthboundMapping to(ObjectMapper mapper) {
+        return new SouthboundMapping(
                 this.getTagName(),
                 this.getTopicFilter(),
                 this.getMaxQos(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
     }
 
-    public static @NotNull SouthboundMappingEntity from(final @NotNull SoutboundMapping soutboundMapping) {
+    public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {
         return new SouthboundMappingEntity(
-                soutboundMapping.getTagName(),
-                soutboundMapping.getTopicFilter(),
-                soutboundMapping.getMaxQoS(),
-                FieldMappingEntity.from(soutboundMapping.getFieldMapping())
+                southboundMapping.getTagName(),
+                southboundMapping.getTopicFilter(),
+                southboundMapping.getMaxQoS(),
+                FieldMappingEntity.from(southboundMapping.getFieldMapping())
         );
     }
 

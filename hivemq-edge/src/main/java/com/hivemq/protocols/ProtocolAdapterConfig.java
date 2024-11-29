@@ -18,7 +18,7 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -32,14 +32,14 @@ public class ProtocolAdapterConfig {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
-    private final @NotNull List<SoutboundMapping> southboundMappings;
+    private final @NotNull List<SouthboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
-            final @NotNull List<SoutboundMapping> southboundMappings,
+            final @NotNull List<SouthboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull List<? extends Tag> tags) {
         this.adapterId = adapterId;
@@ -87,7 +87,7 @@ public class ProtocolAdapterConfig {
         return northboundMappings;
     }
 
-    public @NotNull List<SoutboundMapping> getToEdgeMappings() {
+    public @NotNull List<SouthboundMapping> getToEdgeMappings() {
         return southboundMappings;
     }
 }

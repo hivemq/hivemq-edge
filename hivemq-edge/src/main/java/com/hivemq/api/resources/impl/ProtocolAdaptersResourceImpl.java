@@ -64,7 +64,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -83,10 +83,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -646,7 +644,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .map(NorthboundMappingModel::to)
                         .collect(Collectors.toList());
 
-            final List<SoutboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
+            final List<SouthboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
                     .stream()
                     .map(SouthboundMappingModel::toToEdgeMapping)
                     .collect(Collectors.toList());
@@ -738,7 +736,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
-                    final List<SoutboundMapping> converted = southboundMappingListModel.getItems()
+                    final List<SouthboundMapping> converted = southboundMappingListModel.getItems()
                             .stream()
                             .map(mapping -> {
                                 requiredTags.add(mapping.getTagName());

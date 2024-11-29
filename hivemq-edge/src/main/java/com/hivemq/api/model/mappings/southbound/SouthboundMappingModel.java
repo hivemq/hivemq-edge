@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.mappings.SoutboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -73,19 +73,19 @@ public class SouthboundMappingModel {
         return fieldMapping;
     }
 
-    public SoutboundMapping toToEdgeMapping() {
-        return new SoutboundMapping(
+    public SouthboundMapping toToEdgeMapping() {
+        return new SouthboundMapping(
                 this.tagName,
                 this.topicFilter,
                 this.maxQoS, FieldMapping.fromModel(this.fieldMapping)
                 );
     }
 
-    public static SouthboundMappingModel from(SoutboundMapping soutboundMapping) {
+    public static SouthboundMappingModel from(SouthboundMapping southboundMapping) {
         return new SouthboundMappingModel(
-                soutboundMapping.getTopicFilter(),
-                soutboundMapping.getTagName(),
-                soutboundMapping.getMaxQoS(),
-                FieldMappingModel.from(soutboundMapping.getFieldMapping()));
+                southboundMapping.getTopicFilter(),
+                southboundMapping.getTagName(),
+                southboundMapping.getMaxQoS(),
+                FieldMappingModel.from(southboundMapping.getFieldMapping()));
     }
 }
