@@ -17,6 +17,7 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -44,14 +45,14 @@ public class DomainTagModel {
 
     @JsonProperty("tagDefinition")
     @Schema(description = "A user created description for this tag.", requiredMode = Schema.RequiredMode.REQUIRED)
-    private final @NotNull Map<String, Object> definition;
+    private final @NotNull JsonNode definition;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @Nullable String description,
-            @JsonProperty("tagDefinition") final @NotNull Map<String, Object> definition) {
+            @JsonProperty("tagDefinition") final @NotNull JsonNode definition) {
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = Objects.requireNonNullElse(description, "");
@@ -70,7 +71,7 @@ public class DomainTagModel {
         return protocolId;
     }
 
-    public @NotNull Map<String, Object> getDefinition() {
+    public @NotNull JsonNode getDefinition() {
         return definition;
     }
 

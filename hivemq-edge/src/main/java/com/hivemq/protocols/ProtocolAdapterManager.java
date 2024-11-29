@@ -744,7 +744,7 @@ public class ProtocolAdapterManager {
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
-                                configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
+                                configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .collect(Collectors.toList());
     }
 
@@ -758,7 +758,7 @@ public class ProtocolAdapterManager {
                                 adapter.getId(),
                                 adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
-                                configConverter.convertTagDefinitionToMaps(tag.getDefinition()))))
+                                configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .findFirst();
     }
 
@@ -769,7 +769,7 @@ public class ProtocolAdapterManager {
                         adapter.getId(),
                         adapter.getProtocolAdapterInformation().getProtocolId(),
                         tag.getDescription(),
-                        configConverter.convertTagDefinitionToMaps(tag.getDefinition())))
+                        configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .collect(Collectors.toList()));
     }
 

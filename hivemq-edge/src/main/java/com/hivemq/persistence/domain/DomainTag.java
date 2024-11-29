@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -29,14 +30,14 @@ public class DomainTag {
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull String description;
-    private final @NotNull Map<String, Object> definition;
+    private final @NotNull JsonNode definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull String description,
-            final @NotNull Map<String, Object> definition) {
+            final @NotNull JsonNode definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
@@ -70,7 +71,7 @@ public class DomainTag {
         return protocolId;
     }
 
-    public @NotNull Map<String, Object> getDefinition() {
+    public @NotNull JsonNode getDefinition() {
         return definition;
     }
 

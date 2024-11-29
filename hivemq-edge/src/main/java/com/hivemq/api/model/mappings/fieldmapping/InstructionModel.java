@@ -24,18 +24,18 @@ import org.jetbrains.annotations.NotNull;
 @Schema(name = "Instruction")
 public class InstructionModel {
 
-    @JsonProperty(value = "destinationFieldName", required = true)
-    @Schema(description = "The field in the output object where the data will be written to")
+    @JsonProperty(value = "destination", required = true)
+    @Schema(name = "destination", description = "The field in the output object where the data will be written to")
     private final @NotNull String destinationFieldName;
 
-    @JsonProperty(value = "sourceFieldName", required = true)
-    @Schema(description = "The field in the input object where the data will be read from")
+    @JsonProperty(value = "source", required = true)
+    @Schema(name = "source", description = "The field in the input object where the data will be read from")
     private final @NotNull String sourceFieldName;
 
     @JsonCreator
     public InstructionModel(
-            @JsonProperty(value = "destinationFieldName", required = true) @NotNull final String destinationFieldName,
-            @JsonProperty(value = "sourceFieldName", required = true) @NotNull final String sourceFieldName) {
+            @JsonProperty(value = "destination", required = true) @NotNull final String destinationFieldName,
+            @JsonProperty(value = "source", required = true) @NotNull final String sourceFieldName) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
     }

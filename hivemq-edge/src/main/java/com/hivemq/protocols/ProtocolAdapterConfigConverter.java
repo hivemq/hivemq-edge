@@ -117,7 +117,7 @@ public class ProtocolAdapterConfigConverter {
         return mapper.convertValue(tag, MAP_TYPE_REFERENCE);
     }
 
-    public @NotNull Map<String, Object> convertTagDefinitionToMaps(final @NotNull TagDefinition tagDefinition) {
-        return mapper.convertValue(tagDefinition, MAP_TYPE_REFERENCE);
+    public @NotNull JsonNode convertTagDefinitionToJsonNode(final @NotNull TagDefinition tagDefinition) {
+        return mapper.valueToTree(tagDefinition);
     }
 }

@@ -25,18 +25,18 @@ import org.jetbrains.annotations.NotNull;
 @Schema(name = "Metadata")
 public class MetadataModel {
 
-    @JsonProperty(value = "destinationJsonSchema", required = true)
-    @Schema(description = "The schema used for the write target")
+    @JsonProperty(value = "destination", required = true)
+    @Schema(name = "destination", description = "The schema used for the write target")
     private final @NotNull JsonNode destinationJsonSchema;
 
-    @JsonProperty(value = "sourceJsonSchema", required = true)
-    @Schema(description = "The schema used for the incoming data")
+    @JsonProperty(value = "source", required = true)
+    @Schema(name = "source", description = "The schema used for the incoming data")
     private final @NotNull JsonNode sourceJsonSchema;
 
     @JsonCreator
     public MetadataModel(
-            @JsonProperty(value = "destinationJsonSchema", required = true) @NotNull final JsonNode destinationJsonSchema,
-            @JsonProperty(value = "sourceJsonSchema", required = true)@NotNull final JsonNode sourceJsonSchema) {
+            @JsonProperty(value = "destination", required = true) @NotNull final JsonNode destinationJsonSchema,
+            @JsonProperty(value = "source", required = true)@NotNull final JsonNode sourceJsonSchema) {
         this.destinationJsonSchema = destinationJsonSchema;
         this.sourceJsonSchema = sourceJsonSchema;
     }

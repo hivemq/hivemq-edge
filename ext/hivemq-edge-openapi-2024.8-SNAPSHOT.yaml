@@ -4914,11 +4914,7 @@ components:
           type: string
           description: The protocol id of the protocol for which this tag was created.
         tagDefinition:
-          type: object
-          additionalProperties:
-            type: object
-            description: A user created description for this tag.
-          description: A user created description for this tag.
+          $ref: '#/components/schemas/JsonNode'
         tagName:
           type: string
           description: The name of the tag that identifies it within this edge instance.
@@ -5202,16 +5198,16 @@ components:
       type: object
       description: List of instructions to be applied to incoming data
       properties:
-        destinationFieldName:
+        destination:
           type: string
           description: The field in the output object where the data will be written
             to
-        sourceFieldName:
+        source:
           type: string
           description: The field in the input object where the data will be read from
       required:
-      - destinationFieldName
-      - sourceFieldName
+      - destination
+      - source
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5359,13 +5355,13 @@ components:
       type: object
       description: Metadata for the whole mapping
       properties:
-        destinationJsonSchema:
+        destination:
           $ref: '#/components/schemas/JsonNode'
-        sourceJsonSchema:
+        source:
           $ref: '#/components/schemas/JsonNode'
       required:
-      - destinationJsonSchema
-      - sourceJsonSchema
+      - destination
+      - source
     Metric:
       type: object
       description: List of result items that are returned by this endpoint
