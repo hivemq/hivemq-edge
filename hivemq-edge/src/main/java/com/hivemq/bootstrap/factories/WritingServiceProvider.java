@@ -82,7 +82,7 @@ public class WritingServiceProvider {
         public @NotNull CompletableFuture<Void> startWriting(
                 final @NotNull WritingProtocolAdapter writingProtocolAdapter,
                 final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-                final @NotNull List<InternalWritingContext> toEdgeMappings) {
+                final @NotNull List<InternalWritingContext> southboundMappings) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
             return CompletableFuture.completedFuture(null);        }
 

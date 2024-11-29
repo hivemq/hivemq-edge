@@ -68,11 +68,11 @@ public class ProtocolAdapterConfigConverter {
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
         final List<NorthboundMapping> northboundMappingList = protocolAdapterEntity.getNorthboundMappingEntities()
                 .stream()
-                .map(fromEdge -> fromEdge.to(mapper))
+                .map(northbound -> northbound.to(mapper))
                 .collect(Collectors.toList());
         final List<SoutboundMapping> soutboundMappingList = protocolAdapterEntity.getSouthboundMappingEntities()
                 .stream()
-                .map(toEdge -> toEdge.to(mapper))
+                .map(southbound -> southbound.to(mapper))
                 .collect(Collectors.toList());
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),

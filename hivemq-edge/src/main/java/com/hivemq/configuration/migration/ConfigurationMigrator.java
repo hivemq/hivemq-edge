@@ -151,7 +151,7 @@ public class ConfigurationMigrator {
             final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
                     (Map<String, Object>) stringObjectEntry.getValue());
 
-            final List<NorthboundMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
+            final List<NorthboundMappingEntity> northboundMappingEntities = configTagsTuple.getPollingContexts()
                     .stream()
                     .map(NorthboundMappingEntity::fromPollingContext)
                     .collect(Collectors.toList());
@@ -165,7 +165,7 @@ public class ConfigurationMigrator {
                     protocolId,
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
-                    fromEdgeMappingEntities,
+                    northboundMappingEntities,
                     List.of(),
                     tagEntities));
         } else {

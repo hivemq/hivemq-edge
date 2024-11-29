@@ -635,12 +635,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
 
-            final List<NorthboundMapping> northboundMappings = adapter.getFromEdgeMappingModels()
+            final List<NorthboundMapping> northboundMappings = adapter.getNorthboundMappingModels()
                         .stream()
                         .map(NorthboundMappingModel::to)
                         .collect(Collectors.toList());
 
-            final List<SoutboundMapping> soutboundMappings = adapter.getToEdgeMappingModels()
+            final List<SoutboundMapping> soutboundMappings = adapter.getSouthboundMappingModels()
                     .stream()
                     .map(SouthboundMappingModel::toToEdgeMapping)
                     .collect(Collectors.toList());

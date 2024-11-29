@@ -56,7 +56,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
-    private final @NotNull List<PollingContext> fromEdgeMappings;
+    private final @NotNull List<PollingContext> northboundMappings;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
@@ -73,7 +73,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
-        this.fromEdgeMappings = input.getPollingContexts();
+        this.northboundMappings = input.getPollingContexts();
     }
 
     @Override
@@ -91,8 +91,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                         OpcUaClientWrapper.createAndConnect(
                                 adapterId,
                                 adapterConfig,
-                                tags,
-                                fromEdgeMappings,
+                                tags, northboundMappings,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),

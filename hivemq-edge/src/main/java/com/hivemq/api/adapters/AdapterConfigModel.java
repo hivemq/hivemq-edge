@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+@Schema(name = "AdapterConfig")
 public class AdapterConfigModel {
 
     @JsonProperty("config")
@@ -39,22 +40,22 @@ public class AdapterConfigModel {
             description = "The tags defined for this adapter")
     private final @NotNull List<DomainTagModel> domainTagModels;
 
-    @JsonProperty("toEdgeMappings")
-    @Schema(name = "toEdgeMappings",
-            description = "The toEdge mappings for thid adapter")
+    @JsonProperty("southboundMappings")
+    @Schema(name = "southboundMappings",
+            description = "The southbound mappings for this adapter")
     private final @NotNull List<SouthboundMappingModel> southboundMappingModels;
 
-    @JsonProperty("fromEdgeMappings")
-    @Schema(name = "fromEdgeMappings",
-            description = "The fromEdge mappings for thid adapter")
+    @JsonProperty("northboundMappings")
+    @Schema(name = "northboundMappings",
+            description = "The northbound mappings for this adapter")
     private final @NotNull List<NorthboundMappingModel> northboundMappingModels;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AdapterConfigModel(
             @JsonProperty("config") final @NotNull Adapter adapter,
             @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels,
-            @JsonProperty("toEdgeMappings") final @NotNull List<SouthboundMappingModel> southboundMappingModels,
-            @JsonProperty("fromEdgeMappings") final @NotNull List<NorthboundMappingModel> northboundMappingModels
+            @JsonProperty("southboundMappings") final @NotNull List<SouthboundMappingModel> southboundMappingModels,
+            @JsonProperty("northboundMappings") final @NotNull List<NorthboundMappingModel> northboundMappingModels
     ) {
         this.adapter = adapter;
         this.domainTagModels = domainTagModels;
@@ -70,11 +71,11 @@ public class AdapterConfigModel {
         return domainTagModels;
     }
 
-    public @NotNull List<SouthboundMappingModel> getToEdgeMappingModels() {
+    public @NotNull List<SouthboundMappingModel> getSouthboundMappingModels() {
         return southboundMappingModels;
     }
 
-    public @NotNull List<NorthboundMappingModel> getFromEdgeMappingModels() {
+    public @NotNull List<NorthboundMappingModel> getNorthboundMappingModels() {
         return northboundMappingModels;
     }
 
@@ -101,8 +102,8 @@ public class AdapterConfigModel {
                 adapter +
                 ", domainTagModels=" +
                 domainTagModels +
-                ", toEdgeMappingModels=" + southboundMappingModels +
-                ", fromEdgeMappingModels=" + northboundMappingModels +
+                ", southboundMappingModels=" + southboundMappingModels +
+                ", northboundMappingModels=" + northboundMappingModels +
                 '}';
     }
 }

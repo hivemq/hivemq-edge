@@ -131,8 +131,8 @@ public class ConfigFileReaderTest {
                         "        <protocol-adapter>\n" +
                         "            <adapterId>test</adapterId>" +
                         "            <protocolId>http</protocolId>" +
-                        "            <fromEdgeMappings>" +
-                        "                <fromEdgeMapping>" +
+                        "            <northboundMappings>" +
+                        "                <northboundMapping>" +
                         "                   <topic>test</topic>\n" +
                         "                   <tagName>test</tagName>\n" +
                         "                   <mqttUserProperties>\n" +
@@ -145,8 +145,8 @@ public class ConfigFileReaderTest {
                         "                       <value>my-value2</value>\n" +
                         "                   </mqttUserProperty>\n" +
                         "                   </mqttUserProperties>" +
-                        "                </fromEdgeMapping>" +
-                        "            </fromEdgeMappings>" +
+                        "                </northboundMapping>" +
+                        "            </northboundMappings>" +
                         "        </protocol-adapter>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",

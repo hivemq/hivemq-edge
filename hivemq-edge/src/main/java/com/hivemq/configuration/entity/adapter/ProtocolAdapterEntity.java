@@ -119,12 +119,12 @@ public class ProtocolAdapterEntity {
     public static @NotNull ProtocolAdapterEntity from(
             final @NotNull ProtocolAdapterConfig protocolAdapterConfig, final @NotNull ObjectMapper objectMapper) {
 
-        final List<NorthboundMappingEntity> fromEdgeMappingEntities = protocolAdapterConfig.getFromEdgeMappings()
+        final List<NorthboundMappingEntity> northboundMappings = protocolAdapterConfig.getFromEdgeMappings()
                 .stream()
                 .map(NorthboundMappingEntity::from)
                 .collect(Collectors.toList());
 
-        final List<SouthboundMappingEntity> toEdgeMappingEntities = protocolAdapterConfig.getToEdgeMappings()
+        final List<SouthboundMappingEntity> southboundMappings = protocolAdapterConfig.getToEdgeMappings()
                 .stream()
                 .map(SouthboundMappingEntity::from)
                 .collect(Collectors.toList());
@@ -141,8 +141,8 @@ public class ProtocolAdapterEntity {
                 protocolAdapterConfig.getAdapterId(),
                 protocolAdapterConfig.getProtocolId(),
                 configAsMaps,
-                fromEdgeMappingEntities,
-                toEdgeMappingEntities,
+                northboundMappings,
+                southboundMappings,
                 tagEntities);
     }
 

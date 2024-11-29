@@ -242,7 +242,7 @@ public class OpcUaClientWrapper {
             final @NotNull String adapterId,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
             final @NotNull List<Tag> tags,
-            final @NotNull List<PollingContext> fromEdgeMappings,
+            final @NotNull List<PollingContext> northboundsMappings,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -299,7 +299,7 @@ public class OpcUaClientWrapper {
                 final Optional<JsonSchemaGenerator> jsonSchemaGeneratorOpt =
                         Optional.of(new JsonSchemaGenerator(opcUaClient, new ObjectMapper()));
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
-                    return opcUaSubscriptionLifecycle.subscribeAll(fromEdgeMappings)
+                    return opcUaSubscriptionLifecycle.subscribeAll(northboundsMappings)
                             .thenApply(ignored -> new OpcUaClientWrapper(adapterId,
                                     opcUaClient,
                                     opcUaSubscriptionLifecycle,

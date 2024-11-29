@@ -45,7 +45,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaSubscriptionConsumer {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
-    private final @NotNull PollingContext fromEdgeMapping;
+    private final @NotNull PollingContext northboundMapping;
     private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
@@ -59,7 +59,7 @@ public class OpcUaSubscriptionConsumer {
 
     public OpcUaSubscriptionConsumer(
             final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
-            final @NotNull PollingContext fromEdgeMapping,
+            final @NotNull PollingContext northboundMapping,
             final @NotNull UaSubscription uaSubscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -69,7 +69,7 @@ public class OpcUaSubscriptionConsumer {
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull String protocolAdapterId) {
-        this.fromEdgeMapping = fromEdgeMapping;
+        this.northboundMapping = northboundMapping;
         this.opcUaToMqttConfig = opcUaToMqttConfig;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
@@ -96,8 +96,7 @@ public class OpcUaSubscriptionConsumer {
                 new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting, parameters);
 
         final UaSubscription.ItemCreationCallback onItemCreated =
-                (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(
-                        fromEdgeMapping,
+                (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(northboundMapping,
                         opcUaToMqttConfig,
                         adapterPublishService,
                         serializationContext,
@@ -135,7 +134,7 @@ public class OpcUaSubscriptionConsumer {
                                     "')");
                         }
                     }
-                    return new SubscriptionResult(fromEdgeMapping, uaSubscription, this);
+                    return new SubscriptionResult(northboundMapping, uaSubscription, this);
                 });
     }
 

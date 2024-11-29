@@ -3364,7 +3364,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdapterConfigModel'
+              $ref: '#/components/schemas/AdapterConfig'
         description: The new adapter.
         required: true
       responses:
@@ -4442,34 +4442,26 @@ components:
           description: The adapter type associated with this instance
       required:
       - id
-    AdapterConfigModel:
+    AdapterConfig:
       type: object
       properties:
         config:
           $ref: '#/components/schemas/Adapter'
-        fromEdgeMappingModels:
+        northboundMappings:
           type: array
+          description: The northbound mappings for this adapter
           items:
             $ref: '#/components/schemas/NorthboundMapping'
-        fromEdgeMappings:
+        southboundMappings:
           type: array
-          description: The fromEdge mappings for thid adapter
+          description: The southbound mappings for this adapter
           items:
-            $ref: '#/components/schemas/NorthboundMapping'
+            $ref: '#/components/schemas/SouthboundMapping'
         tags:
           type: array
           description: The tags defined for this adapter
           items:
             $ref: '#/components/schemas/DomainTag'
-        toEdgeMappingModels:
-          type: array
-          items:
-            $ref: '#/components/schemas/SouthboundMapping'
-        toEdgeMappings:
-          type: array
-          description: The toEdge mappings for thid adapter
-          items:
-            $ref: '#/components/schemas/SouthboundMapping'
     AdaptersList:
       type: object
       properties:
