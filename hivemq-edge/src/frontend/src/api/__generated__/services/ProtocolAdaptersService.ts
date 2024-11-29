@@ -3,14 +3,14 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Adapter } from '../models/Adapter';
-import type { AdapterConfigModel } from '../models/AdapterConfigModel';
+import type { AdapterConfig } from '../models/AdapterConfig';
 import type { AdaptersList } from '../models/AdaptersList';
 import type { DomainTag } from '../models/DomainTag';
 import type { DomainTagList } from '../models/DomainTagList';
-import type { FieldMappingsListModel } from '../models/FieldMappingsListModel';
-import type { FieldMappingsModel } from '../models/FieldMappingsModel';
 import type { JsonNode } from '../models/JsonNode';
+import type { NorthboundMappingList } from '../models/NorthboundMappingList';
 import type { ProtocolAdaptersList } from '../models/ProtocolAdaptersList';
+import type { SouthboundMappingList } from '../models/SouthboundMappingList';
 import type { Status } from '../models/Status';
 import type { StatusList } from '../models/StatusList';
 import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
@@ -37,7 +37,7 @@ export class ProtocolAdaptersService {
     public createCompleteAdapter(
         adaptertype: string,
         adaptername: string,
-        requestBody: AdapterConfigModel,
+        requestBody: AdapterConfig,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
@@ -156,18 +156,18 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get the field mappings for this adapter.
-     * Get the field mappings for this adapter.
+     * Get the mappings for northbound messages.
+     * Get the northbound mappings of the adapter.
      * @param adapterId The adapter id.
-     * @returns FieldMappingsListModel Success
+     * @returns NorthboundMappingList Success
      * @throws ApiError
      */
-    public getAdapterFieldMappings(
+    public getAdapterNorthboundMappings(
         adapterId: string,
-    ): CancelablePromise<FieldMappingsListModel> {
+    ): CancelablePromise<NorthboundMappingList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
             path: {
                 'adapterId': adapterId,
             },
@@ -175,46 +175,65 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Add new field mappings to the specified adapter
-     * Add new field mappings to the specified adapter.
-     * @param adapterId The adapter id.
-     * @param requestBody The field mappings for incoming and outgoing data
+     * Update the from mappings of an adapter.
+     * Update all northbound mappings of an adapter.
+     * @param adapterId The id of the adapter whose northbound mappings will be updated.
+     * @param requestBody
      * @returns any Success
      * @throws ApiError
      */
-    public addAdapterFieldMappings(
+    public updateAdapterNorthboundMappings(
         adapterId: string,
-        requestBody: FieldMappingsModel,
+        requestBody?: NorthboundMappingList,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
-            method: 'POST',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings',
+            method: 'PUT',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
             path: {
                 'adapterId': adapterId,
             },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Already Present`,
+                403: `Not Found`,
             },
         });
     }
 
     /**
-     * Update the field mappings of an adapter.
-     * Update all field mappings of an adapter.
-     * @param adapterId The id of the adapter whose domain tags will be updated.
+     * Get the southbound mappings.
+     * Get the southbound mappings.
+     * @param adapterId The adapter id.
+     * @returns SouthboundMappingList Success
+     * @throws ApiError
+     */
+    public getAdapterSouthboundMappings(
+        adapterId: string,
+    ): CancelablePromise<SouthboundMappingList> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
+            path: {
+                'adapterId': adapterId,
+            },
+        });
+    }
+
+    /**
+     * Update the to southbound mappings of an adapter.
+     * Update all southbound mappings of an adapter.
+     * @param adapterId The id of the adapter whose southbound mappings will be updated.
      * @param requestBody
      * @returns any Success
      * @throws ApiError
      */
-    public updateAdapterFieldMappings(
+    public updateAdapterSouthboundMappings(
         adapterId: string,
-        requestBody?: FieldMappingsListModel,
+        requestBody?: SouthboundMappingList,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
             path: {
                 'adapterId': adapterId,
             },

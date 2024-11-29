@@ -4,6 +4,10 @@
 /* eslint-disable */
 
 /**
- * The kind of transformation that is performed on the data
+ * User properties to be added to each outgoing mqtt message.
  */
-export type TransformationModel = Record<string, any>;
+export type MqttUserProperty = {
+    name: string;
+    value: string;
+};
+

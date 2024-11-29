@@ -15,14 +15,7 @@ export const $DomainTag = {
             isRequired: true,
         },
         tagDefinition: {
-            type: 'dictionary',
-            contains: {
-                type: 'dictionary',
-                contains: {
-                    properties: {
-                    },
-                },
-            },
+            type: 'JsonNode',
             isRequired: true,
         },
         tagName: {

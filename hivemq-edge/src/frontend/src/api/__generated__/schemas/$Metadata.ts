@@ -2,7 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $FieldMappingMetaDataModel = {
+export const $Metadata = {
+    description: `Metadata for the whole mapping`,
     properties: {
         destination: {
             type: 'JsonNode',
