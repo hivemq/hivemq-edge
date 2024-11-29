@@ -667,7 +667,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response getFromMappingsForAdapter(final @NotNull String adapterId) {
+    public Response getNorthboundMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getFromEdgeMappings().stream()
                         .map(NorthboundMappingModel::from)
@@ -678,7 +678,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response updateFromMappingsForAdapter(
+    public Response updateNorthboundMappingsForAdapter(
             final @NotNull String adapterId,
             final @NotNull NorthboundMappingListModel northboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId)
@@ -710,7 +710,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response getToMappingsForAdapter(final @NotNull String adapterId) {
+    public Response getSouthboundMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getToEdgeMappings().stream()
                         .map(SouthboundMappingModel::from)
@@ -721,7 +721,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response updateToMappingsForAdapter(
+    public Response updateSouthboundMappingsForAdapter(
             final @NotNull String adapterId,
             final @NotNull SouthboundMappingListModel southboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId)

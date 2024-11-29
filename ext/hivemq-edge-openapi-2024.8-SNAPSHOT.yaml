@@ -3548,10 +3548,10 @@ paths:
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/frommappings:
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings:
     get:
-      description: Get the mappings for messages being sent out by the adapter.
-      operationId: get-adapter-fromMappings
+      description: Get the northbound mappings of the adapter.
+      operationId: get-adapter-northboundMappings
       parameters:
       - description: The adapter id.
         in: path
@@ -3564,16 +3564,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FromEdgeMappingListModel'
+                $ref: '#/components/schemas/NorthboundMappingListModel'
           description: Success
-      summary: Get the mappings for messages being sent out by the adapter.
+      summary: Get the mappings for northbound messages.
       tags:
       - Protocol Adapters
     put:
-      description: Update all from mappings of an adapter.
-      operationId: update-adapter-fromMappings
+      description: Update all northbound mappings of an adapter.
+      operationId: update-adapter-northboundMappings
       parameters:
-      - description: The id of the adapter whose from mappings will be updated.
+      - description: The id of the adapter whose northbound mappings will be updated.
         in: path
         name: adapterId
         required: true
@@ -3583,7 +3583,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FromEdgeMappingListModel'
+              $ref: '#/components/schemas/NorthboundMappingListModel'
       responses:
         "200":
           description: Success
@@ -3594,6 +3594,54 @@ paths:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
       summary: Update the from mappings of an adapter.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings:
+    get:
+      description: Get the southbound mappings.
+      operationId: get-adapter-southboundMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SouthboundMappingListModel'
+          description: Success
+      summary: Get the southbound mappings.
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all southbound mappings of an adapter.
+      operationId: update-adapter-southboundMappings
+      parameters:
+      - description: The id of the adapter whose southbound mappings will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SouthboundMappingListModel'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the to southbound mappings of an adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
@@ -3833,54 +3881,6 @@ paths:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
       summary: Update the domain tag of an adapter.
-      tags:
-      - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/tomappings:
-    get:
-      description: Get the mappings for messages being sent to the adapter.
-      operationId: get-adapter-toMappings
-      parameters:
-      - description: The adapter id.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FromEdgeMappingListModel'
-          description: Success
-      summary: Get the mappings for messages being sent to the adapter.
-      tags:
-      - Protocol Adapters
-    put:
-      description: Update all to mappings of an adapter.
-      operationId: update-adapter-toMappings
-      parameters:
-      - description: The id of the adapter whose from mappings will be updated.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ToEdgeMappingListModel'
-      responses:
-        "200":
-          description: Success
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
-      summary: Update the to mappings of an adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
@@ -4447,21 +4447,29 @@ components:
       properties:
         config:
           $ref: '#/components/schemas/Adapter'
+        fromEdgeMappingModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/NorthboundMappingModel'
         fromEdgeMappings:
           type: array
           description: The fromEdge mappings for thid adapter
           items:
-            $ref: '#/components/schemas/FromEdgeMappingModel'
+            $ref: '#/components/schemas/NorthboundMappingModel'
         tags:
           type: array
           description: The tags defined for this adapter
           items:
             $ref: '#/components/schemas/DomainTag'
+        toEdgeMappingModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/SouthboundMappingModel'
         toEdgeMappings:
           type: array
           description: The toEdge mappings for thid adapter
           items:
-            $ref: '#/components/schemas/ToEdgeMappingModel'
+            $ref: '#/components/schemas/SouthboundMappingModel'
     AdaptersList:
       type: object
       properties:
@@ -5095,61 +5103,6 @@ components:
           nullable: true
       required:
       - firstUse
-    FromEdgeMappingListModel:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/FromEdgeMappingModel'
-      required:
-      - items
-    FromEdgeMappingModel:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        fieldMapping:
-          $ref: '#/components/schemas/FieldMappingModel'
-        includeTagNames:
-          type: boolean
-          description: Should tag names be included when sent out.
-        includeTimestamp:
-          type: boolean
-          description: Should the timestamp be included when sent out.
-        maxQoS:
-          type: integer
-          format: int32
-          description: The maximum MQTT-QoS for the outgoing messages.
-        messageExpiryInterval:
-          type: integer
-          format: int64
-          description: The message expiry interval.
-        messageHandlingOptions:
-          type: string
-          description: How collected tags should or shouldnÖT be aggregated.
-          enum:
-          - MQTTMessagePerTag
-          - MQTTMessagePerSubscription
-        tagName:
-          type: string
-          description: The tag for which values hould be collected and sent out.
-        topic:
-          type: string
-          description: The target mqtt topic where received tags should be sent to.
-        userProperties:
-          type: array
-          description: User properties to be added to each outgoing mqtt message.
-          items:
-            $ref: '#/components/schemas/MqttUserPropertyModel'
-      required:
-      - includeTagNames
-      - includeTimestamp
-      - maxQoS
-      - messageExpiryInterval
-      - messageHandlingOptions
-      - tagName
-      - topic
     FsmStateInformationItem:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5498,6 +5451,59 @@ components:
       required:
       - name
       - value
+    NorthboundMappingListModel:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/NorthboundMappingModel'
+      required:
+      - items
+    NorthboundMappingModel:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        includeTagNames:
+          type: boolean
+          description: Should tag names be included when sent out.
+        includeTimestamp:
+          type: boolean
+          description: Should the timestamp be included when sent out.
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        messageExpiryInterval:
+          type: integer
+          format: int64
+          description: The message expiry interval.
+        messageHandlingOptions:
+          type: string
+          description: How collected tags should or shouldnÖT be aggregated.
+          enum:
+          - MQTTMessagePerTag
+          - MQTTMessagePerSubscription
+        tagName:
+          type: string
+          description: The tag for which values hould be collected and sent out.
+        topic:
+          type: string
+          description: The target mqtt topic where received tags should be sent to.
+        userProperties:
+          type: array
+          description: User properties to be added to each outgoing mqtt message.
+          items:
+            $ref: '#/components/schemas/MqttUserPropertyModel'
+      required:
+      - includeTagNames
+      - includeTimestamp
+      - maxQoS
+      - messageExpiryInterval
+      - messageHandlingOptions
+      - tagName
+      - topic
     Notification:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5806,6 +5812,36 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
+    SouthboundMappingListModel:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/SouthboundMappingModel'
+      required:
+      - items
+    SouthboundMappingModel:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        fieldMapping:
+          $ref: '#/components/schemas/FieldMappingModel'
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        tagName:
+          type: string
+          description: The tag for which values hould be collected and sent out.
+        topicFilter:
+          type: string
+          description: The filter defining what topics we will receive messages from.
+      required:
+      - maxQoS
+      - tagName
+      - topicFilter
     Status:
       type: object
       description: Information associated with the runtime of this adapter
@@ -5943,36 +5979,6 @@ components:
           type: boolean
           default: false
           description: The verifyHostname from the config
-    ToEdgeMappingListModel:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/ToEdgeMappingModel'
-      required:
-      - items
-    ToEdgeMappingModel:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        fieldMapping:
-          $ref: '#/components/schemas/FieldMappingModel'
-        maxQoS:
-          type: integer
-          format: int32
-          description: The maximum MQTT-QoS for the outgoing messages.
-        tagName:
-          type: string
-          description: The tag for which values hould be collected and sent out.
-        topicFilter:
-          type: string
-          description: The filter defining what topics we will receive messages from.
-      required:
-      - maxQoS
-      - tagName
-      - topicFilter
     TopicFilter:
       type: object
       description: List of result items that are returned by this endpoint

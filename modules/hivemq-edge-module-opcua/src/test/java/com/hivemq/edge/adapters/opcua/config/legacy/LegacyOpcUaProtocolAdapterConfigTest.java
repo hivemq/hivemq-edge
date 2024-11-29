@@ -84,7 +84,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                 assertThat(opcuaToMqtt.get("publishingInterval")).isEqualTo(13);
                                 assertThat(opcuaToMqtt.get("serverQueueSize")).isEqualTo(13);
                                 
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .satisfiesExactly(mapping -> {
                                                     assertThat(mapping.getTagName()).startsWith("simulation-server-2-");
                                                     assertThat(mapping.getTopic()).isEqualTo("test/blubb/#");
@@ -114,7 +114,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .isEqualTo("ns=2;i=1004");
                                         });
 
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }
@@ -157,7 +157,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
 
                                 assertThat(opcuaToMqtt.get("publishingInterval")).isEqualTo(1000);
                                 assertThat(opcuaToMqtt.get("serverQueueSize")).isEqualTo(1);
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .satisfiesExactly(mapping -> {
                                                     assertThat(mapping.getTagName()).startsWith("simulation-server-2-");
                                                     assertThat(mapping.getTopic()).isEqualTo("test/blubb/#");
@@ -175,7 +175,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .isEqualTo("ns=1;i=1004");
                                         });
 
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }

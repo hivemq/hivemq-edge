@@ -61,7 +61,7 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                                         .extracting("httpRequestBody", "httpRequestBodyContentType", "httpRequestMethod", "httpRequestTimeoutSeconds", "url")
                                                         .containsExactly(null, "JSON", "GET", 5, "http://192.168.0.02:777/?asdasd=asdasd");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(1)
                                         .allSatisfy(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(1);
@@ -69,7 +69,7 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/destination");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }
@@ -109,7 +109,7 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                                             50,
                                                             "http://192.168.0.02:777/?asdasd=asdasd");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(1)
                                         .allSatisfy(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(0);
@@ -117,7 +117,7 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/destination");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }

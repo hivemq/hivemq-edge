@@ -49,13 +49,13 @@ public class ProtocolAdapterEntity {
     @XmlElement(name = "tag")
     private @NotNull List<TagEntity> tags = new ArrayList<>();
 
-    @XmlElementWrapper(name = "toEdgeMappings")
-    @XmlElement(name = "toEdgeMapping")
-    private @NotNull List<SouthboundMappingEntity> toEdgeMappingEntities = new ArrayList<>();
+    @XmlElementWrapper(name = "southboundMappings")
+    @XmlElement(name = "southboundMapping")
+    private @NotNull List<SouthboundMappingEntity> southboundMappingEntities = new ArrayList<>();
 
-    @XmlElementWrapper(name = "fromEdgeMappings")
-    @XmlElement(name = "fromEdgeMapping")
-    private @NotNull List<NorthboundMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
+    @XmlElementWrapper(name = "northboundMappings")
+    @XmlElement(name = "northboundMapping")
+    private @NotNull List<NorthboundMappingEntity> northboundMappingEntities = new ArrayList<>();
 
 
     // no-arg constructor for JaxB
@@ -66,31 +66,31 @@ public class ProtocolAdapterEntity {
             @NotNull final String adapterId,
             @NotNull final String protocolId,
             @NotNull final Map<String, Object> config,
-            @NotNull final List<NorthboundMappingEntity> fromEdgeMappingEntities,
-            @NotNull final List<SouthboundMappingEntity> toEdgeMappingEntities,
+            @NotNull final List<NorthboundMappingEntity> northboundMappingEntities,
+            @NotNull final List<SouthboundMappingEntity> southboundMappingEntities,
             @NotNull final List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.config = config;
-        this.fromEdgeMappingEntities = fromEdgeMappingEntities;
+        this.northboundMappingEntities = northboundMappingEntities;
         this.protocolId = protocolId;
         this.tags = tags;
-        this.toEdgeMappingEntities = toEdgeMappingEntities;
+        this.southboundMappingEntities = southboundMappingEntities;
     }
 
     public @NotNull Map<String, Object> getConfig() {
         return config;
     }
 
-    public @NotNull List<NorthboundMappingEntity> getFromEdgeMappingEntities() {
-        return fromEdgeMappingEntities;
+    public @NotNull List<NorthboundMappingEntity> getNorthboundMappingEntities() {
+        return northboundMappingEntities;
     }
 
     public @NotNull List<TagEntity> getTags() {
         return tags;
     }
 
-    public @NotNull List<SouthboundMappingEntity> getToEdgeMappingEntities() {
-        return toEdgeMappingEntities;
+    public @NotNull List<SouthboundMappingEntity> getSouthboundMappingEntities() {
+        return southboundMappingEntities;
     }
 
     public @NotNull String getProtocolId() {
@@ -108,11 +108,11 @@ public class ProtocolAdapterEntity {
         if (protocolId == null || protocolId.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
-        if (fromEdgeMappingEntities != null) {
-            fromEdgeMappingEntities.forEach(from -> from.validate(validationEvents));
+        if (northboundMappingEntities != null) {
+            northboundMappingEntities.forEach(from -> from.validate(validationEvents));
         }
-        if (toEdgeMappingEntities != null) {
-            toEdgeMappingEntities.forEach(to -> to.validate(validationEvents));
+        if (southboundMappingEntities != null) {
+            southboundMappingEntities.forEach(to -> to.validate(validationEvents));
         }
     }
 

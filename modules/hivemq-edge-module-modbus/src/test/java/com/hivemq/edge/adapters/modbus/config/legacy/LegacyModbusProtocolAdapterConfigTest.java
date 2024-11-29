@@ -71,7 +71,7 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                                     .extracting("startIdx", "readType", "unitId", "flipRegisters", "dataType")
                                                     .containsExactly(11, "HOLDING_REGISTERS", 0, false, "INT_32");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(2)
                                         .anySatisfy(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(1);
@@ -92,7 +92,7 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                             );
                                         });
 
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }
@@ -128,7 +128,7 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                                     .extracting("startIdx", "readType", "unitId", "flipRegisters", "dataType")
                                                     .containsExactly(11, "HOLDING_REGISTERS", 0, false, "INT_32");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(1)
                                         .satisfiesExactly(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(0);
@@ -137,7 +137,7 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
 
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
 

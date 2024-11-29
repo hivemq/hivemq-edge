@@ -47,7 +47,7 @@ class LegacySimulationProtocolAdapterConfigTest {
                 assertThat(entity.getProtocolId()).isEqualTo("simulation");
                 assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
                 assertThat(entity.getTags()).hasSize(0);
-                assertThat(entity.getFromEdgeMappingEntities()).hasSize(2).anySatisfy(mapping -> {
+                assertThat(entity.getNorthboundMappingEntities()).hasSize(2).anySatisfy(mapping -> {
                     assertThat(mapping.getMaxQoS()).isEqualTo(1);
                     assertThat(mapping.getTagName()).isEqualTo("ignored");
                     assertThat(mapping.getTopic()).isEqualTo("my/topic");
@@ -60,7 +60,7 @@ class LegacySimulationProtocolAdapterConfigTest {
                     assertThat(mapping.getUserProperties()).containsExactly(new MqttUserPropertyEntity("my-name",
                             "my-value"));
                 });
-                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
             });
         });
     }
@@ -79,12 +79,12 @@ class LegacySimulationProtocolAdapterConfigTest {
                 assertThat(entity.getProtocolId()).isEqualTo("simulation");
                 assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
                 assertThat(entity.getTags()).hasSize(0);
-                assertThat(entity.getFromEdgeMappingEntities()).hasSize(1).anySatisfy(mapping -> {
+                assertThat(entity.getNorthboundMappingEntities()).hasSize(1).anySatisfy(mapping -> {
                     assertThat(mapping.getMaxQoS()).isEqualTo(0);
                     assertThat(mapping.getTagName()).isEqualTo("ignored");
                     assertThat(mapping.getTopic()).isEqualTo("my/topic");
                 });
-                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
             });
         });
     }

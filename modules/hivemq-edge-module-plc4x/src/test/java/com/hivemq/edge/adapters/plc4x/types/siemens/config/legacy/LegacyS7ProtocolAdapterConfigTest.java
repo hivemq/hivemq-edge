@@ -73,7 +73,7 @@ class LegacyS7ProtocolAdapterConfigTest {
                                                     .extracting("tagAddress", "dataType")
                                                     .containsExactly("%I205.0", "BOOL");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(2)
                                         .anySatisfy(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(1);
@@ -87,7 +87,7 @@ class LegacyS7ProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }
@@ -127,7 +127,7 @@ class LegacyS7ProtocolAdapterConfigTest {
                                                     .extracting("tagAddress", "dataType")
                                                     .containsExactly("%I204.0", "SINT");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(1)
                                         .satisfiesExactly(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(1);
@@ -135,7 +135,7 @@ class LegacyS7ProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic/1");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }

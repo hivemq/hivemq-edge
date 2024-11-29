@@ -537,13 +537,13 @@ public interface ProtocolAdaptersApi {
                                 in = ParameterIn.PATH) @PathParam("tagName") String tagName);
 
 
-    //########   FROMEDGEMAPPINGS   #########
+    //########   NORTHBOUNDMAPPINGS   #########
 
     @GET
-    @Path("/adapters/{adapterId}/frommappings")
-    @Operation(summary = "Get the mappings for messages being sent out by the adapter.",
-               operationId = "get-adapter-fromMappings",
-               description = "Get the mappings for messages being sent out by the adapter.",
+    @Path("/adapters/{adapterId}/northboundMappings")
+    @Operation(summary = "Get the mappings for northbound messages.",
+               operationId = "get-adapter-northboundMappings",
+               description = "Get the northbound mappings of the adapter.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -551,7 +551,7 @@ public interface ProtocolAdaptersApi {
                                                        schema = @Schema(implementation = NorthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getFromMappingsForAdapter(
+    Response getNorthboundMappingsForAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter id.",
                                 required = true,
@@ -559,10 +559,10 @@ public interface ProtocolAdaptersApi {
 
 
     @PUT
-    @Path("/adapters/{adapterId}/frommappings")
+    @Path("/adapters/{adapterId}/northboundMappings")
     @Operation(summary = "Update the from mappings of an adapter.",
-               description = "Update all from mappings of an adapter.",
-               operationId = "update-adapter-fromMappings",
+               description = "Update all northbound mappings of an adapter.",
+               operationId = "update-adapter-northboundMappings",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
                        @ApiResponse(responseCode = "403",
@@ -570,29 +570,29 @@ public interface ProtocolAdaptersApi {
                                     content = @Content(mediaType = APPLICATION_JSON,
                                                        schema = @Schema(implementation = Errors.class)))}) //TODO fix example
     @NotNull
-    Response updateFromMappingsForAdapter(
+    Response updateNorthboundMappingsForAdapter(
             @Parameter(name = "adapterId",
-                       description = "The id of the adapter whose from mappings will be updated.",
+                       description = "The id of the adapter whose northbound mappings will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
             final @NotNull NorthboundMappingListModel northboundMappingListModel);
 
 
-    //########   TOEDGEMAPPINGS   #########
+    //########   SOUTHBOUNDMAPPINGS   #########
 
     @GET
-    @Path("/adapters/{adapterId}/tomappings")
-    @Operation(summary = "Get the mappings for messages being sent to the adapter.",
-               operationId = "get-adapter-toMappings",
-               description = "Get the mappings for messages being sent to the adapter.",
+    @Path("/adapters/{adapterId}/southboundMappings")
+    @Operation(summary = "Get the southbound mappings.",
+               operationId = "get-adapter-southboundMappings",
+               description = "Get the southbound mappings.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = SouthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getToMappingsForAdapter(
+    Response getSouthboundMappingsForAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter id.",
                                 required = true,
@@ -600,10 +600,10 @@ public interface ProtocolAdaptersApi {
 
 
     @PUT
-    @Path("/adapters/{adapterId}/tomappings")
-    @Operation(summary = "Update the to mappings of an adapter.",
-               description = "Update all to mappings of an adapter.",
-               operationId = "update-adapter-toMappings",
+    @Path("/adapters/{adapterId}/southboundMappings")
+    @Operation(summary = "Update the to southbound mappings of an adapter.",
+               description = "Update all southbound mappings of an adapter.",
+               operationId = "update-adapter-southboundMappings",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
                        @ApiResponse(responseCode = "403",
@@ -611,9 +611,9 @@ public interface ProtocolAdaptersApi {
                                     content = @Content(mediaType = APPLICATION_JSON,
                                                        schema = @Schema(implementation = Errors.class)))}) //TODO fix example
     @NotNull
-    Response updateToMappingsForAdapter(
+    Response updateSouthboundMappingsForAdapter(
             @Parameter(name = "adapterId",
-                       description = "The id of the adapter whose from mappings will be updated.",
+                       description = "The id of the adapter whose southbound mappings will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
             final @NotNull SouthboundMappingListModel southboundMappingListModel);

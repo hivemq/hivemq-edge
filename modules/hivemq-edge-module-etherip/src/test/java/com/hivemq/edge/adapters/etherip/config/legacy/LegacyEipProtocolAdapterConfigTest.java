@@ -65,7 +65,7 @@ class LegacyEipProtocolAdapterConfigTest {
                                                     .extracting("address", "dataType")
                                                     .containsExactly("tag-address2", "BOOL");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(2)
                                         .anySatisfy(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(1);
@@ -85,7 +85,7 @@ class LegacyEipProtocolAdapterConfigTest {
                                                     new MqttUserPropertyEntity ("name", "value2")
                                             );
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }
@@ -116,14 +116,14 @@ class LegacyEipProtocolAdapterConfigTest {
                                                     .extracting("address", "dataType")
                                                     .containsExactly("tag-address", "BOOL");
                                         });
-                                assertThat(entity.getFromEdgeMappingEntities())
+                                assertThat(entity.getNorthboundMappingEntities())
                                         .hasSize(1)
                                         .satisfiesExactly(mapping -> {
                                             assertThat(mapping.getMaxQoS()).isEqualTo(0);
                                             assertThat(mapping.getTagName()).startsWith("tag-name");
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic");
                                         });
-                                assertThat(entity.getToEdgeMappingEntities()).isEmpty();
+                                assertThat(entity.getSouthboundMappingEntities()).isEmpty();
                             });
                 });
     }

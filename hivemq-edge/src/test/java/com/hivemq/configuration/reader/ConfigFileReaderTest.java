@@ -179,7 +179,7 @@ public class ConfigFileReaderTest {
         final ProtocolAdapterEntity protocolAdapterEntity = config.get(0);
 
         final List<MqttUserPropertyEntity> userProperties =
-                protocolAdapterEntity.getFromEdgeMappingEntities().get(0).getUserProperties();
+                protocolAdapterEntity.getNorthboundMappingEntities().get(0).getUserProperties();
         assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
         assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
 
@@ -192,7 +192,7 @@ public class ConfigFileReaderTest {
 
         final ProtocolAdapterEntity protocolAdapterEntityAfterReload = config.get(0);
         final List<MqttUserPropertyEntity> userPropertiesAfterReload =
-                protocolAdapterEntityAfterReload.getFromEdgeMappingEntities().get(0).getUserProperties();
+                protocolAdapterEntityAfterReload.getNorthboundMappingEntities().get(0).getUserProperties();
         assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
         assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
     }
