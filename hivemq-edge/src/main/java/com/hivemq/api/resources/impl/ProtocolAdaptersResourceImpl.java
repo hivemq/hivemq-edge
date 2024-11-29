@@ -82,6 +82,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -453,9 +455,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ALREADY_EXISTS:
-                final @NotNull String tagId = domainTag.getTag();
+                final @NotNull String tagName = domainTag.getTag();
                 return ErrorResponseUtil.alreadyExists("The tag '" +
-                        tagId +
+                        tagName +
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
                 return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,
@@ -469,23 +471,24 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteDomainTag(
-            @NotNull final String adapterId, @NotNull final String tagIdBase64Encoded) {
-        final byte[] decoded = Base64.getDecoder().decode(tagIdBase64Encoded);
-        final String tagId = new String(decoded, StandardCharsets.UTF_8);
+            @NotNull final String adapterId, @NotNull final String tagName) {
+        final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
-        final DomainTagDeleteResult domainTagDeleteResult = protocolAdapterManager.deleteDomainTag(adapterId, tagId);
+        final DomainTagDeleteResult domainTagDeleteResult = protocolAdapterManager.deleteDomainTag(adapterId, decodedTagName);
         switch (domainTagDeleteResult.getDomainTagDeleteStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
-                return ErrorResponseUtil.notFound("Tag", tagId);
+                return ErrorResponseUtil.notFound("Tag", decodedTagName);
         }
         return Response.serverError().build();
     }
 
     @Override
     public @NotNull Response updateDomainTag(
-            final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
+            final @NotNull String adapterId, @NotNull final String tagName, final @NotNull DomainTagModel domainTag) {
+        final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+        log.info("Updating tag with name {}", decodedTagName);
         final DomainTagUpdateResult domainTagUpdateResult =
                 protocolAdapterManager.updateDomainTag(DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
@@ -516,9 +519,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return ErrorResponseUtil.notFound("adapter", adapterId);
             case ALREADY_USED_BY_ANOTHER_ADAPTER:
                 //noinspection DataFlowIssue cant be null here.
-                final @NotNull String tagId = domainTagUpdateResult.getErrorMessage();
+                final @NotNull String tagName = domainTagUpdateResult.getErrorMessage();
                 return ErrorResponseUtil.alreadyExists("The tag '" +
-                        tagId +
+                        tagName +
                         "' cannot be created since another item already exists with the same id.");
             case INTERNAL_ERROR:
                 return Response.serverError().build();
@@ -541,7 +544,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getDomainTag(final @NotNull String tagName) {
-        return protocolAdapterManager.getDomainTagByName(tagName)
+        final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+        return protocolAdapterManager.getDomainTagByName(decodedTagName)
                 .map(tag -> Response.ok().entity(DomainTagModel.fromDomainTag(tag)).build())
                 .orElse(ErrorResponseUtil.notFound("Tag", tagName));
     }
@@ -560,6 +564,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getWritingSchema(@NotNull final String adapterId, @NotNull final String tagName) {
+        final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+
         final Optional<ProtocolAdapterWrapper>
                 optionalProtocolAdapterWrapper = protocolAdapterManager.getAdapterById(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
@@ -578,7 +584,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
-        adapter.createTagSchema(new TagSchemaCreationInputImpl(tagName), tagSchemaCreationOutput);
+        adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
 
         try {
             final JsonNode jsonSchemaRootNode = tagSchemaCreationOutput.getFuture().get();

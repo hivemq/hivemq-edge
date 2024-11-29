@@ -396,7 +396,7 @@ public interface ProtocolAdaptersApi {
 
 
     @DELETE
-    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Path("/adapters/{adapterId}/tags/{tagName}")
     @Operation(summary = "Delete an domain tag",
                operationId = "delete-adapter-domainTags",
                description = "Delete the specified domain tag on the given adapter.",
@@ -409,14 +409,14 @@ public interface ProtocolAdaptersApi {
                                 description = "The adapter Id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
-            @NotNull @Parameter(name = "tagId",
+            @NotNull @Parameter(name = "tagName",
                                 description = "The domain tag Id.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagId") String tagId);
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
 
     @PUT
-    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Path("/adapters/{adapterId}/tags/{tagName}")
     @Operation(summary = "Update the domain tag of an adapter.",
                description = "Update the domain tag of an adapter.",
                operationId = "update-adapter-domainTag",
@@ -437,10 +437,10 @@ public interface ProtocolAdaptersApi {
                        description = "The id of the adapter whose domain tag will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
-            @NotNull @Parameter(name = "tagId",
-                                description = "The id of the domain tag that will be changed.",
+            @NotNull @Parameter(name = "tagName",
+                                description = "The name (urlencoded) of the domain tag that will be changed.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagId") String tagId,
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagId,
             final @NotNull DomainTagModel domainTag);
 
 
@@ -505,9 +505,9 @@ public interface ProtocolAdaptersApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTag(@NotNull @Parameter(name = "tagName",
-                                              description = "The tag name (base64 encoded).",
+                                              description = "The tag name (urlencoded).",
                                               required = true,
-                                              in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+                                              in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
     @GET
     @Path("/writing-schema/{adapterId}/{tagName}")
@@ -532,9 +532,9 @@ public interface ProtocolAdaptersApi {
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
             @NotNull @Parameter(name = "tagName",
-                                description = "The tag name (base64 encoded) for which the Json Schema for writing to a PLC gets created.",
+                                description = "The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
 
     //########   NORTHBOUNDMAPPINGS   #########

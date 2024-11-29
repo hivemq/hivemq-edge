@@ -3817,7 +3817,7 @@ paths:
       summary: Update the domain tag of an adapter.
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}:
     delete:
       description: Delete the specified domain tag on the given adapter.
       operationId: delete-adapter-domainTags
@@ -3830,10 +3830,11 @@ paths:
           type: string
       - description: The domain tag Id.
         in: path
-        name: tagId
+        name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           description: Success
@@ -3850,12 +3851,13 @@ paths:
         required: true
         schema:
           type: string
-      - description: The id of the domain tag that will be changed.
+      - description: The name (urlencoded) of the domain tag that will be changed.
         in: path
-        name: tagId
+        name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       requestBody:
         content:
           application/json:
@@ -3961,12 +3963,13 @@ paths:
       description: Get a domain tag created in this Edge instance
       operationId: get-domain-tag
       parameters:
-      - description: The tag name (base64 encoded).
+      - description: The tag name (urlencoded).
         in: path
         name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
@@ -4081,13 +4084,14 @@ paths:
         required: true
         schema:
           type: string
-      - description: The tag name (base64 encoded) for which the Json Schema for writing
+      - description: The tag name (urlencoded) for which the Json Schema for writing
           to a PLC gets created.
         in: path
         name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
