@@ -230,7 +230,7 @@
                     </definition>
                 </tag>
             </tags>
-            <soutboundMappings/>
+            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
                     <topic>test/blubb/#</topic>
@@ -264,7 +264,7 @@
                     </definition>
                 </tag>
             </tags>
-            <soutboundMappings/>
+            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
                     <topic>test</topic>
@@ -305,7 +305,7 @@
                     </definition>
                 </tag>
             </tags>
-            <soutboundMappings/>
+            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
                     <topic>test</topic>

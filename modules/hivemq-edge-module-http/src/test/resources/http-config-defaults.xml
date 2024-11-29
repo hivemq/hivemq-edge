@@ -23,12 +23,12 @@
             <protocolId>http</protocolId>
             <config>
             </config>
-            <soutboundMappings>
+            <southboundMappings>
                 <soutboundMapping>
                     <tagName>tag2</tagName>
                     <topicFilter>my/#</topicFilter>
                 </soutboundMapping>
-            </soutboundMappings>
+            </southboundMappings>
             <northboundMappings>
                 <northboundMapping>
                     <tagName>tag1</tagName>

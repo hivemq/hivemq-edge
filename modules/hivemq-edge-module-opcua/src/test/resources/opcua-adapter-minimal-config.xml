@@ -31,12 +31,12 @@
                     <topic>test/blubb</topic>
                 </northboundMapping>
             </northboundMappings>
-            <soutboundMappings>
+            <southboundMappings>
                 <soutboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
                 </soutboundMapping>
-            </soutboundMappings>
+            </southboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>

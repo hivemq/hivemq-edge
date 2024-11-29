@@ -44,7 +44,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolSpecificAdapterConfig configObject;
     private final @NotNull List<? extends Tag> tags;
-    private final @NotNull List<SoutboundMapping> soutboundMappings;
+    private final @NotNull List<SoutboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
     protected @Nullable Long lastStartAttemptTime;
 
@@ -56,7 +56,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<? extends Tag> tags,
-            final @NotNull List<SoutboundMapping> soutboundMappings,
+            final @NotNull List<SoutboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
@@ -65,7 +65,7 @@ public class ProtocolAdapterWrapper {
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
         this.tags = tags;
-        this.soutboundMappings = soutboundMappings;
+        this.southboundMappings = southboundMappings;
         this.northboundMappings = northboundMappings;
     }
 
@@ -137,7 +137,7 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull List<SoutboundMapping> getToEdgeMappings() {
-        return soutboundMappings;
+        return southboundMappings;
     }
 
     public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {

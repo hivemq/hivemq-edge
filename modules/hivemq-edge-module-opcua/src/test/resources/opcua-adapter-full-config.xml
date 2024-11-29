@@ -66,7 +66,7 @@
                     <messageExpiryInterval>16</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
-            <soutboundMappings>
+            <southboundMappings>
                 <soutboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
@@ -77,7 +77,7 @@
                     <topicFilter>test/blubbb/#</topicFilter>
                     <maxQos>0</maxQos>
                 </soutboundMapping>
-            </soutboundMappings>
+            </southboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>

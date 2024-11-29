@@ -31,7 +31,7 @@
                     <assertResponseIsJson>false</assertResponseIsJson>
                 </httpToMqtt>
             </config>
-            <soutboundMappings>
+            <southboundMappings>
                 <soutboundMapping>
                     <tagName>tag3</tagName>
                     <topicFilter>my/#</topicFilter>
@@ -42,7 +42,7 @@
                     <topicFilter>my/#</topicFilter>
                     <maxQos>1</maxQos>
                 </soutboundMapping>
-            </soutboundMappings>
+            </southboundMappings>
             <northboundMappings>
                 <northboundMapping>
                     <tagName>tag1</tagName>

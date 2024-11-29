@@ -646,7 +646,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .map(NorthboundMappingModel::to)
                         .collect(Collectors.toList());
 
-            final List<SoutboundMapping> soutboundMappings = adapter.getSouthboundMappingModels()
+            final List<SoutboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
                     .stream()
                     .map(SouthboundMappingModel::toToEdgeMapping)
                     .collect(Collectors.toList());
@@ -654,7 +654,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(
                     adapterId,
                     adapterType,
-                    protocolSpecificAdapterConfig, soutboundMappings, northboundMappings,
+                    protocolSpecificAdapterConfig, southboundMappings, northboundMappings,
                     tags));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {

@@ -32,19 +32,19 @@ public class ProtocolAdapterConfig {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
-    private final @NotNull List<SoutboundMapping> soutboundMappings;
+    private final @NotNull List<SoutboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
-            final @NotNull List<SoutboundMapping> soutboundMappings,
+            final @NotNull List<SoutboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull List<? extends Tag> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
-        this.soutboundMappings = soutboundMappings;
+        this.southboundMappings = southboundMappings;
         this.northboundMappings = northboundMappings;
         this.adapterConfig = protocolSpecificConfig;
         this.tags = tags;
@@ -56,7 +56,7 @@ public class ProtocolAdapterConfig {
         }
 
         final Set<String> names = new HashSet<>();
-        soutboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
+        southboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
         northboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
 
         this.tags.forEach(tag -> names.remove(tag.getName()));
@@ -88,6 +88,6 @@ public class ProtocolAdapterConfig {
     }
 
     public @NotNull List<SoutboundMapping> getToEdgeMappings() {
-        return soutboundMappings;
+        return southboundMappings;
     }
 }

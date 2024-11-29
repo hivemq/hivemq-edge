@@ -260,8 +260,8 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
 
-            final List<SoutboundMapping> soutboundMappings = protocolAdapterWrapper.getToEdgeMappings();
-            final List<InternalWritingContext> writingContexts = soutboundMappings.stream()
+            final List<SoutboundMapping> southboundMappings = protocolAdapterWrapper.getToEdgeMappings();
+            final List<InternalWritingContext> writingContexts = southboundMappings.stream()
                     .map(InternalWritingContextImpl::new)
                     .collect(Collectors.toList());
 
@@ -549,13 +549,13 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<SoutboundMapping> soutboundMappings) {
+    public boolean updateAdapterToMappings(final @NotNull String adapterId, final @NotNull List<SoutboundMapping> southboundMappings) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
-                    oldInstance.getConfigObject(), soutboundMappings,
+                    oldInstance.getConfigObject(), southboundMappings,
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags());
             return protocolAdapterConfig.missingTags()
