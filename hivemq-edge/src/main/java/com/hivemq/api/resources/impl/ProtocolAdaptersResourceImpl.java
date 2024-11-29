@@ -693,17 +693,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             .collect(Collectors.toList());
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
+                    // TODO for now simulation does not need tags
+                    if(adapter.getProtocolAdapterInformation().getProtocolId().equals("simulation")){
+                        requiredTags.clear();
+                    }
+
                     if (requiredTags.isEmpty()) {
                         if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
                             log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
                             return Response.status(200).entity(northboundMappingListModel).build();
                         } else {
                             log.error("Something went wrong updating the adapter {}", adapterId);
-                            return Response.status(503).build();
+                            return Response.status(500).build();
                         }
                     } else {
                         log.error("The following tags were missing for updating the fromMappings for adapter {}: {}", adapterId, requiredTags);
-                        return Response.status(503).build();
+                        return Response.status(500).build();
                     }
                 })
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
@@ -742,11 +747,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             return Response.status(200).entity(southboundMappingListModel).build();
                         } else {
                             log.error("Something went wrong updating the adapter {}", adapterId);
-                            return Response.status(503).build();
+                            return Response.status(500).build();
                         }
                     } else {
                         log.error("The following tags were missing for updating the fromMappings for adapter {}: {}", adapterId, requiredTags);
-                        return Response.status(503).build();
+                        return Response.status(500).build();
                     }
                 })
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
