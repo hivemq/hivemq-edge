@@ -31,7 +31,8 @@ public class DomainTagModel {
 
     @JsonProperty("tagName")
     @Schema(description = "The name of the tag that identifies it within this edge instance.",
-            requiredMode = Schema.RequiredMode.REQUIRED)
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            format = "mqtt-tag")
     private final @NotNull String tag;
 
     @JsonProperty("protocolId")

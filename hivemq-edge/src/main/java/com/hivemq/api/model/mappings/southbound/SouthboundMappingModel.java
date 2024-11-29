@@ -34,7 +34,8 @@ public class SouthboundMappingModel {
     private final @NotNull String topicFilter;
 
     @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.")
+    @Schema(description = "The tag for which values hould be collected and sent out.",
+            format = "mqtt-tag")
     private final @NotNull String tagName;
 
     @JsonProperty(value = "maxQoS", required = true)
