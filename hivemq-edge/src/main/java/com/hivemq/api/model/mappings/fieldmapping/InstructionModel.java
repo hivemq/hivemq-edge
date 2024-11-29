@@ -34,8 +34,8 @@ public class InstructionModel {
 
     @JsonCreator
     public InstructionModel(
-            @JsonProperty(value = "destination", required = true) @NotNull final String destinationFieldName,
-            @JsonProperty(value = "source", required = true) @NotNull final String sourceFieldName) {
+            @JsonProperty(value = "source", required = true) @NotNull final String sourceFieldName,
+            @JsonProperty(value = "destination", required = true) @NotNull final String destinationFieldName) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
     }
@@ -49,8 +49,6 @@ public class InstructionModel {
     }
 
     public static InstructionModel from(final @NotNull Instruction instruction) {
-        return new InstructionModel(
-                instruction.getDestinationFieldName(),
-                instruction.getSourceFieldName());
+        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName());
     }
 }

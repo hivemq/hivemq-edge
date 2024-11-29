@@ -19,15 +19,14 @@ import com.hivemq.api.model.mappings.fieldmapping.InstructionModel;
 import org.jetbrains.annotations.NotNull;
 
 public class Instruction {
-    private final @NotNull String destinationFieldName;
 
+    private final @NotNull String destinationFieldName;
     private final @NotNull String sourceFieldName;
 
     public Instruction(
-            @NotNull final String destinationFieldName,
-            @NotNull final String sourceFieldName) {
-        this.destinationFieldName = destinationFieldName;
+            @NotNull final String sourceFieldName, @NotNull final String destinationFieldName) {
         this.sourceFieldName = sourceFieldName;
+        this.destinationFieldName = destinationFieldName;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -38,9 +37,7 @@ public class Instruction {
         return sourceFieldName;
     }
 
-    public static Instruction from(InstructionModel model) {
-        return new Instruction(
-                model.getDestinationFieldName(),
-                model.getDestinationFieldName());
+    public static Instruction from(final @NotNull InstructionModel model) {
+        return new Instruction(model.getSourceFieldName(), model.getDestinationFieldName());
     }
 }

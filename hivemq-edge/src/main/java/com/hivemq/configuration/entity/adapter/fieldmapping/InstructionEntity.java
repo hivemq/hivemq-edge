@@ -34,8 +34,7 @@ public class InstructionEntity {
     }
 
     public InstructionEntity(
-            final @NotNull String sourceFieldName,
-            final @NotNull String destinationFieldName) {
+            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
     }
@@ -49,12 +48,10 @@ public class InstructionEntity {
     }
 
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.getSourceFieldName(),
-                model.getDestinationFieldName());
+        return new InstructionEntity(model.getSourceFieldName(), model.getDestinationFieldName());
     }
 
     public @NotNull Instruction to() {
-        return new Instruction(getSourceFieldName(),
-                getDestinationFieldName());
+        return new Instruction(getSourceFieldName(), getDestinationFieldName());
     }
 }
