@@ -22,6 +22,7 @@ import com.hivemq.persistence.mappings.fieldmapping.Metadata;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
+@Schema(name = "Metadata")
 public class MetadataModel {
 
     @JsonProperty(value = "destinationJsonSchema", required = true)

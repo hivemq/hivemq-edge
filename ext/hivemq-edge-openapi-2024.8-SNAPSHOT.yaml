@@ -3564,7 +3564,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NorthboundMappingListModel'
+                $ref: '#/components/schemas/NorthboundMappingList'
           description: Success
       summary: Get the mappings for northbound messages.
       tags:
@@ -3583,7 +3583,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NorthboundMappingListModel'
+              $ref: '#/components/schemas/NorthboundMappingList'
       responses:
         "200":
           description: Success
@@ -3612,7 +3612,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SouthboundMappingListModel'
+                $ref: '#/components/schemas/SouthboundMappingList'
           description: Success
       summary: Get the southbound mappings.
       tags:
@@ -3631,7 +3631,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SouthboundMappingListModel'
+              $ref: '#/components/schemas/SouthboundMappingList'
       responses:
         "200":
           description: Success
@@ -4450,12 +4450,12 @@ components:
         fromEdgeMappingModels:
           type: array
           items:
-            $ref: '#/components/schemas/NorthboundMappingModel'
+            $ref: '#/components/schemas/NorthboundMapping'
         fromEdgeMappings:
           type: array
           description: The fromEdge mappings for thid adapter
           items:
-            $ref: '#/components/schemas/NorthboundMappingModel'
+            $ref: '#/components/schemas/NorthboundMapping'
         tags:
           type: array
           description: The tags defined for this adapter
@@ -4464,12 +4464,12 @@ components:
         toEdgeMappingModels:
           type: array
           items:
-            $ref: '#/components/schemas/SouthboundMappingModel'
+            $ref: '#/components/schemas/SouthboundMapping'
         toEdgeMappings:
           type: array
           description: The toEdge mappings for thid adapter
           items:
-            $ref: '#/components/schemas/SouthboundMappingModel'
+            $ref: '#/components/schemas/SouthboundMapping'
     AdaptersList:
       type: object
       properties:
@@ -5060,7 +5060,7 @@ components:
             $ref: '#/components/schemas/Extension'
       required:
       - items
-    FieldMappingModel:
+    FieldMapping:
       type: object
       description: Defines how incoming data should be transformed before being sent
         out.
@@ -5069,9 +5069,9 @@ components:
           type: array
           description: List of instructions to be applied to incoming data
           items:
-            $ref: '#/components/schemas/InstructionModel'
+            $ref: '#/components/schemas/Instruction'
         metadata:
-          $ref: '#/components/schemas/MetadataModel'
+          $ref: '#/components/schemas/Metadata'
       required:
       - instructions
       - metadata
@@ -5206,7 +5206,7 @@ components:
           description: The workCell
           nullable: true
           pattern: "^[a-zA-Z0-9 -_]*$"
-    InstructionModel:
+    Instruction:
       type: object
       description: List of instructions to be applied to incoming data
       properties:
@@ -5363,7 +5363,7 @@ components:
       - destination
       - filters
       - maxQoS
-    MetadataModel:
+    Metadata:
       type: object
       description: Metadata for the whole mapping
       properties:
@@ -5440,7 +5440,7 @@ components:
             $ref: '#/components/schemas/Module'
       required:
       - items
-    MqttUserPropertyModel:
+    MqttUserProperty:
       type: object
       description: User properties to be added to each outgoing mqtt message.
       properties:
@@ -5451,17 +5451,7 @@ components:
       required:
       - name
       - value
-    NorthboundMappingListModel:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/NorthboundMappingModel'
-      required:
-      - items
-    NorthboundMappingModel:
+    NorthboundMapping:
       type: object
       description: List of result items that are returned by this endpoint
       properties:
@@ -5495,7 +5485,7 @@ components:
           type: array
           description: User properties to be added to each outgoing mqtt message.
           items:
-            $ref: '#/components/schemas/MqttUserPropertyModel'
+            $ref: '#/components/schemas/MqttUserProperty'
       required:
       - includeTagNames
       - includeTimestamp
@@ -5504,6 +5494,16 @@ components:
       - messageHandlingOptions
       - tagName
       - topic
+    NorthboundMappingList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/NorthboundMapping'
+      required:
+      - items
     Notification:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5812,22 +5812,12 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
-    SouthboundMappingListModel:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/SouthboundMappingModel'
-      required:
-      - items
-    SouthboundMappingModel:
+    SouthboundMapping:
       type: object
       description: List of result items that are returned by this endpoint
       properties:
         fieldMapping:
-          $ref: '#/components/schemas/FieldMappingModel'
+          $ref: '#/components/schemas/FieldMapping'
         maxQoS:
           type: integer
           format: int32
@@ -5842,6 +5832,16 @@ components:
       - maxQoS
       - tagName
       - topicFilter
+    SouthboundMappingList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/SouthboundMapping'
+      required:
+      - items
     Status:
       type: object
       description: Information associated with the runtime of this adapter

@@ -18,11 +18,13 @@ package com.hivemq.api.model.mappings.northbound;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+@Schema(name = "MqttUserProperty")
 public class MqttUserPropertyModel {
 
     @JsonProperty(value = "name", required = true)

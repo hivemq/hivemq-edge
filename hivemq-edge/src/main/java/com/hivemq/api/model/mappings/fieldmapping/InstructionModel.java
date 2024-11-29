@@ -21,6 +21,7 @@ import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
+@Schema(name = "Instruction")
 public class InstructionModel {
 
     @JsonProperty(value = "destinationFieldName", required = true)

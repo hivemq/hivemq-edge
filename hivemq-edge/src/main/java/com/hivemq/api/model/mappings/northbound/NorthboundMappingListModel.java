@@ -17,13 +17,13 @@ package com.hivemq.api.model.mappings.northbound;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-@JsonTypeName("NorthboundMappingList")
+@Schema(name = "NorthboundMappingList")
 public class NorthboundMappingListModel extends ItemsResponse<NorthboundMappingModel> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)

@@ -17,7 +17,6 @@ package com.hivemq.api.model.mappings.southbound;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -27,7 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;
 
-@JsonTypeName("SouthboundMapping")
+@Schema(name = "SouthboundMapping")
 public class SouthboundMappingModel {
 
     @JsonProperty(value = "topicFilter", required = true)

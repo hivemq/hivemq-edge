@@ -548,7 +548,8 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(
+                                                               implementation = NorthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getNorthboundMappingsForAdapter(
@@ -589,7 +590,8 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = SouthboundMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(
+                                                               implementation = SouthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getSouthboundMappingsForAdapter(

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Schema(name = "FieldMapping")
 public class FieldMappingModel {
 
     @JsonProperty(value = "instructions", required = true)
