@@ -33,22 +33,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("NullabilityAnnotations")
 public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
-
     @Test
     public void rewriteUnchangedConfigurationYieldsSameXML() throws IOException, SAXException {
 
-        File tempFile = loadTestConfigFile();
-        String originalXml = FileUtils.readFileToString(tempFile, UTF_8);
+        final File tempFile = loadTestConfigFile();
+        final String originalXml = FileUtils.readFileToString(tempFile, UTF_8);
 
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
         final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
         tempFile.deleteOnExit();
         configFileReader.writeConfig(new ConfigurationFile(tempCopyFile), false);
 
-        String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
-        Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
+        final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
+        final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
         if(!diff.identical()){
             System.err.println("xml diff found " + diff);
             System.err.println(originalXml);

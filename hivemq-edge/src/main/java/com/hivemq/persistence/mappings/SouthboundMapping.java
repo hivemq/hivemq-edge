@@ -32,7 +32,7 @@ public class SouthboundMapping implements WritingContext {
             final @NotNull String tagName,
             final @NotNull String topicFilter,
             final int maxQoS,
-            @Nullable FieldMapping fieldMapping) {
+            final @Nullable FieldMapping fieldMapping) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.maxQoS = maxQoS;

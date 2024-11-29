@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hivemq>
+<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <mqtt-listeners>
         <tcp-listener>
             <port>1883</port>
@@ -14,13 +14,6 @@
             <external-hostname>localhost</external-hostname>
         </udp-listener>
     </mqtt-sn-listeners>
-    <dynamic-configuration>
-        <allow-configuration-export>true</allow-configuration-export>
-        <allow-mutable-configuration>true</allow-mutable-configuration>
-    </dynamic-configuration>
-    <usage-tracking>
-        <enabled>true</enabled>
-    </usage-tracking>
     <mqtt>
         <queued-messages>
             <max-queue-size>1000</max-queue-size>
@@ -208,6 +201,13 @@
             <work-cell>work-cell</work-cell>
         </isa95>
     </uns>
+    <dynamic-configuration>
+        <allow-configuration-export>true</allow-configuration-export>
+        <allow-mutable-configuration>true</allow-mutable-configuration>
+    </dynamic-configuration>
+    <usage-tracking>
+        <enabled>true</enabled>
+    </usage-tracking>
     <protocol-adapters>
         <protocol-adapter>
             <adapterId>simulation-server-2</adapterId>
@@ -240,6 +240,7 @@
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
         </protocol-adapter>
@@ -274,6 +275,7 @@
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
         </protocol-adapter>
@@ -315,6 +317,7 @@
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
                 <northboundMapping>
                     <topic>test</topic>
@@ -324,6 +327,7 @@
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
                 <northboundMapping>
                     <topic>test</topic>
@@ -333,6 +337,7 @@
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
+                    <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
         </protocol-adapter>
