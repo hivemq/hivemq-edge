@@ -4921,6 +4921,7 @@ components:
           $ref: '#/components/schemas/JsonNode'
         tagName:
           type: string
+          format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
       required:
       - protocolId
@@ -5469,6 +5470,7 @@ components:
           - MQTTMessagePerSubscription
         tagName:
           type: string
+          format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
         topic:
           type: string
@@ -5816,6 +5818,7 @@ components:
           description: The maximum MQTT-QoS for the outgoing messages.
         tagName:
           type: string
+          format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
         topicFilter:
           type: string
