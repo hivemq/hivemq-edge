@@ -12,6 +12,6 @@ export type ExtensionList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Extension>;
+    items: Array<Extension>;
 };
 

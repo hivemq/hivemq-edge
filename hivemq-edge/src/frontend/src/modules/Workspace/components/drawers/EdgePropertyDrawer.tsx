@@ -14,7 +14,6 @@ import {
 
 import TopicExplorer from '@/modules/Workspace/components/topics/TopicExplorer.tsx'
 import MetadataExplorer from '@/modules/Workspace/components/topics/MetadataExplorer.tsx'
-import TopicSampler from '@/modules/Workspace/components/topics/TopicSampler.tsx'
 
 interface NodePropertyDrawerProps {
   nodeId: string
@@ -40,7 +39,6 @@ const EdgePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <TopicExplorer onSelect={(topic) => setSelectedTopic(topic)} />
           {selectedTopic && !isWildcard && <MetadataExplorer topic={selectedTopic} />}
-          {selectedTopic && isWildcard && <TopicSampler topic={selectedTopic} />}
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px"></DrawerFooter>
       </DrawerContent>

@@ -1,14 +1,14 @@
+import { FieldMappingsModel } from '@/api/__generated__'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingInstruction from './MappingInstruction.tsx'
 
-const MOCK_SUBS: OutwardMapping = {
+const MOCK_SUBS: FieldMappingsModel = {
   tag: 'my-node',
-  mqttTopicFilter: 'my-topic',
+  topicFilter: 'my-topic',
   fieldMapping: [
     {
-      source: { propertyPath: 'this is a mapping' },
-      destination: { propertyPath: 'my-node' },
+      source: 'this is a mapping',
+      destination: 'my-node',
     },
   ],
 }
@@ -40,7 +40,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY_STRING}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping[1]}
+        mapping={MOCK_SUBS.fieldMapping?.[1]}
       />
     )
 
@@ -57,7 +57,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY_STRING}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping[0]}
+        mapping={MOCK_SUBS.fieldMapping?.[0]}
       />
     )
 
@@ -74,7 +74,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY_OBJECT}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping[1]}
+        mapping={MOCK_SUBS.fieldMapping?.[1]}
       />
     )
 
@@ -93,7 +93,7 @@ describe('MappingInstruction', () => {
         property={MOCK_PROPERTY_STRING}
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping[0]}
+        mapping={MOCK_SUBS.fieldMapping?.[0]}
       />
     )
 

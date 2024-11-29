@@ -9,6 +9,6 @@ export type ValuesTree = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<ObjectNode>;
+    items: Array<ObjectNode>;
 };
 

@@ -1,13 +1,14 @@
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
+import { FieldMappingsModel } from '@/api/__generated__'
 import { MOCK_DEVICE_TAGS, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
 
-const MOCK_SUBS: OutwardMapping = {
+const MOCK_SUBS: FieldMappingsModel = {
   tag: 'my-tag',
-  mqttTopicFilter: 'my-topic',
-  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'Second String' } }],
+  topicFilter: 'my-topic',
+  fieldMapping: [{ source: 'dropped-property', destination: 'Second String' }],
 }
 
 describe('MappingDrawer', () => {
@@ -30,7 +31,7 @@ describe('MappingDrawer', () => {
       ],
     })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
-      items: MOCK_DEVICE_TAGS('opcua-1', 'opcua'),
+      items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
     }).as('getTags')
   })
 
@@ -39,7 +40,14 @@ describe('MappingDrawer', () => {
     const onSubmit = cy.stub().as('onSubmit')
     const onChange = cy.stub().as('onChange')
     cy.mountWithProviders(
-      <MappingDrawer adapterId="testid" onClose={onClose} onSubmit={onSubmit} onChange={onChange} item={MOCK_SUBS} />
+      <MappingDrawer
+        adapterId="testid"
+        adapterType="my-type"
+        onClose={onClose}
+        onSubmit={onSubmit}
+        onChange={onChange}
+        item={MOCK_SUBS}
+      />
     )
 
     cy.wait('@getTags')
@@ -58,15 +66,11 @@ describe('MappingDrawer', () => {
     cy.get('@modalCTAs').eq(1).click()
     cy.get('@onSubmit').should('have.been.calledWith', {
       tag: 'my-tag',
-      mqttTopicFilter: 'my-topic',
+      topicFilter: 'my-topic',
       fieldMapping: [
         {
-          source: {
-            propertyPath: 'dropped-property',
-          },
-          destination: {
-            propertyPath: 'Second String',
-          },
+          source: 'dropped-property',
+          destination: 'Second String',
         },
       ],
     })
@@ -82,6 +86,7 @@ describe('MappingDrawer', () => {
     cy.mountWithProviders(
       <MappingDrawer
         adapterId="testid"
+        adapterType="my-type"
         onClose={cy.stub()}
         onSubmit={cy.stub()}
         onChange={cy.stub()}

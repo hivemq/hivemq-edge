@@ -8,15 +8,8 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
-import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 
-import {
-  createEdgeNode,
-  createBridgeNode,
-  createAdapterNode,
-  createListenerNode,
-  createClientNode,
-} from '../utils/nodes-utils.ts'
+import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
 import { applyLayout } from '../utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 
@@ -28,7 +21,6 @@ const useGetFlowElements = () => {
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
   const { data: listenerList } = useGetListeners()
-  const { data: clients } = useListClientSubscriptions()
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
@@ -53,7 +45,7 @@ const useGetFlowElements = () => {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
-        bridges.length + (clients?.length || 0),
+        bridges.length,
         theme
       )
       nodes.push(nodeBridge)
@@ -82,20 +74,9 @@ const useGetFlowElements = () => {
       }
     })
 
-    clients?.forEach((client, incClient) => {
-      const { nodeClient, clientConnector } = createClientNode(
-        client,
-        (bridges?.length || 0) + incClient,
-        (bridges?.length || 0) + clients.length,
-        theme
-      )
-      nodes.push(nodeClient)
-      edges.push(clientConnector)
-    })
-
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
-  }, [bridges, adapters, listeners, groups, clients, setNodes, setEdges, t, options, theme, adapterTypes?.items])
+  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme, adapterTypes?.items])
 
   return { nodes, edges, onNodesChange, onEdgesChange }
 }

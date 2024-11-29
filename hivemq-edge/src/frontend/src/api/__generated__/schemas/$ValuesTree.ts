@@ -9,6 +9,7 @@ export const $ValuesTree = {
             contains: {
                 type: 'ObjectNode',
             },
+            isRequired: true,
         },
     },
 } as const;

@@ -9,6 +9,6 @@ export type AdaptersList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Adapter>;
+    items: Array<Adapter>;
 };
 

@@ -9,6 +9,6 @@ export type NotificationList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Notification>;
+    items: Array<Notification>;
 };
 

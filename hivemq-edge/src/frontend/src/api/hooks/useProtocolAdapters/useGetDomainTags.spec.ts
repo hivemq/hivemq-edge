@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { deviceHandlers } from './__handlers__'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import type { DomainTagList } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
@@ -19,7 +19,7 @@ describe('useGetDomainTags', () => {
   })
 
   it('should load the data for OPCUA', async () => {
-    const { result } = renderHook(() => useGetDomainTags('adapterId', MockAdapterType.OPC_UA), { wrapper })
+    const { result } = renderHook(() => useGetDomainTags(MockAdapterType.OPC_UA), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
@@ -27,22 +27,24 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          dataPoint: {
+          protocolId: MockAdapterType.OPC_UA,
+          definition: {
             node: 'ns=3;i=1002',
           },
-          tag: 'adapterId/power/off',
+          name: `${MockAdapterType.OPC_UA}/power/off`,
         },
         {
-          dataPoint: {
+          protocolId: MockAdapterType.OPC_UA,
+          definition: {
             node: 'ns=3;i=1008',
           },
-          tag: 'adapterId/log/event',
+          name: `${MockAdapterType.OPC_UA}/log/event`,
         },
       ],
     })
   })
   it('should load the data for MODBUS', async () => {
-    const { result } = renderHook(() => useGetDomainTags('adapterId', MockAdapterType.MODBUS), { wrapper })
+    const { result } = renderHook(() => useGetDomainTags(MockAdapterType.MODBUS), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
@@ -50,17 +52,18 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          dataPoint: {
+          protocolId: MockAdapterType.MODBUS,
+          definition: {
             endIdx: 1,
             startIdx: 0,
           },
-          tag: 'adapterId/alert',
+          name: `${MockAdapterType.MODBUS}/alert`,
         },
       ],
     })
   })
   it('should load the data for others', async () => {
-    const { result } = renderHook(() => useGetDomainTags('adapterId', MockAdapterType.SIMULATION), { wrapper })
+    const { result } = renderHook(() => useGetDomainTags(MockAdapterType.SIMULATION), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
@@ -68,8 +71,9 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          dataPoint: {},
-          tag: 'adapterId/log/event',
+          protocolId: MockAdapterType.SIMULATION,
+          definition: {},
+          name: `${MockAdapterType.SIMULATION}/log/event`,
         },
       ],
     })

@@ -14,7 +14,7 @@ import {
   SingleValueProps,
 } from 'chakra-react-select'
 
-import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.tsx'
+import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.ts'
 import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 import { getAdapterTreeView } from '@/components/rjsf/Widgets/utils/treeview.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'

@@ -2,18 +2,18 @@ import { FC, useMemo } from 'react'
 import { Alert, AlertIcon, Spinner } from '@chakra-ui/react'
 
 import { TopicFilter } from '@/api/__generated__'
-import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
+import { useSamplingForTopic } from '@/api/hooks/useDomainModel/useSamplingForTopic.ts'
 
 interface SchemaValidationMarkProps {
   topicFilter: TopicFilter
 }
 
 const SchemaValidationMark: FC<SchemaValidationMarkProps> = ({ topicFilter }) => {
-  const { data, isLoading } = useGetTopicSchemas([topicFilter.topicFilter as string])
+  const { schema, isLoading } = useSamplingForTopic(topicFilter.topicFilter)
 
   const isSchemaValid = useMemo(() => {
-    return data && Object.keys(data).length !== 0 && data.constructor === Object
-  }, [data])
+    return schema && Object.keys(schema).length !== 0 && schema.constructor === Object
+  }, [schema])
 
   if (isLoading) return <Spinner size="xs" data-testid="validation-loading" />
   return (

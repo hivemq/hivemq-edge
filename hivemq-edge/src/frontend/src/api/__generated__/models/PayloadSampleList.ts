@@ -9,6 +9,6 @@ export type PayloadSampleList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<PayloadSample>;
+    items: Array<PayloadSample>;
 };
 

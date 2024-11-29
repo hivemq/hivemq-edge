@@ -14,12 +14,18 @@ describe('TopicFilterManager', () => {
         },
       ],
     }).as('getTopicFilters')
-    cy.intercept('/api/v1/management/domain/topics/schema?*', (req) => {
-      if (req.query.topics === 'another/filter') req.reply({})
+
+    cy.intercept('/api/v1/management/sampling/schema/**', (req) => {
+      if (req.url.includes(btoa('another/filter'))) req.reply({ statusCode: 400 })
       else req.reply(GENERATE_DATA_MODELS(true, req.query.topics as string))
+    })
+
+    cy.intercept('/api/v1/management/sampling/topic/**', (req) => {
+      req.reply({ items: [] })
     })
   })
 
+  // TODO[NVL] There is a problem with re-rendering in Cypress. Redesign the component
   it('should render properly', () => {
     cy.injectAxe()
 

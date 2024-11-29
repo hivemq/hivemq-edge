@@ -6,6 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { deviceHandlers, MOCK_DEVICE_TAGS } from './__handlers__'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 describe('useCreateDomainTags', () => {
   beforeEach(() => {
@@ -22,7 +23,10 @@ describe('useCreateDomainTags', () => {
     expect(result.current.isSuccess).toBeFalsy()
 
     act(() => {
-      result.current.mutateAsync({ adapterId: 'my-adapter', requestBody: MOCK_DEVICE_TAGS('my-adapter')[0] })
+      result.current.mutateAsync({
+        adapterId: 'my-adapter',
+        requestBody: MOCK_DEVICE_TAGS('my-adapter', MockAdapterType.SIMULATION)[0],
+      })
     })
     await waitFor(() => {
       expect(result.current.isSuccess).toBeTruthy()

@@ -9,6 +9,7 @@ export const $FsmStatesInformationListItem = {
             contains: {
                 type: 'FsmStateInformationItem',
             },
+            isRequired: true,
         },
     },
 } as const;

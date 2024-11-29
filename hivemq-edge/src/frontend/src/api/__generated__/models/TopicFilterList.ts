@@ -9,6 +9,6 @@ export type TopicFilterList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<TopicFilter>;
+    items: Array<TopicFilter>;
 };
 

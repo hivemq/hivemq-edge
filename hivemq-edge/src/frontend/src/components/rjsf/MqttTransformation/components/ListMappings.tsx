@@ -4,13 +4,13 @@ import { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup, Card, Text } from '@chakra-ui/react'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
+import { FieldMappingsModel } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 interface ListSubscriptionsProps {
-  items: OutwardMapping[]
+  items: FieldMappingsModel[]
   onEdit?: (index: number) => void
   onDelete?: (index: number) => void
   onAdd?: () => void
@@ -19,10 +19,10 @@ interface ListSubscriptionsProps {
 const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd }) => {
   const { t } = useTranslation('components')
 
-  const columns = useMemo<ColumnDef<OutwardMapping>[]>(() => {
+  const columns = useMemo<ColumnDef<FieldMappingsModel>[]>(() => {
     return [
       {
-        accessorKey: 'mqttTopicFilter',
+        accessorKey: 'topicFilter',
         enableSorting: false,
         cell: (info) => {
           const values = info.getValue<string>()
@@ -77,7 +77,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
 
   return (
     <Card>
-      <PaginatedTable<OutwardMapping>
+      <PaginatedTable<FieldMappingsModel>
         aria-label={t('rjsf.MqttTransformationField.tabs.list')}
         data={items}
         columns={columns}

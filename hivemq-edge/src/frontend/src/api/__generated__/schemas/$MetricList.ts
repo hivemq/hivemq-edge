@@ -9,6 +9,7 @@ export const $MetricList = {
             contains: {
                 type: 'Metric',
             },
+            isRequired: true,
         },
     },
 } as const;

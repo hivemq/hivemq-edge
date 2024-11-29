@@ -9,6 +9,6 @@ export type BridgeList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Bridge>;
+    items: Array<Bridge>;
 };
 

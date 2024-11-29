@@ -1,11 +1,11 @@
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingEditor from './MappingEditor.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
+import { FieldMappingsModel } from '@/api/__generated__'
 
-const MOCK_SUBS: OutwardMapping = {
+const MOCK_SUBS: FieldMappingsModel = {
   tag: 'my-node',
-  mqttTopicFilter: 'my-topic',
-  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'lastName' } }],
+  topicFilter: 'my-topic',
+  fieldMapping: [{ source: 'dropped-property', destination: 'lastName' }],
 }
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
@@ -18,10 +18,17 @@ describe('MappingEditor', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', GENERATE_DATA_MODELS(true, 'test'))
 
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />
+      <MappingEditor
+        topic="test"
+        adapterId="my-adapter"
+        adapterType="my-type"
+        showTransformation={false}
+        onChange={cy.stub()}
+        mapping={MOCK_SUBS.fieldMapping}
+      />
     )
 
     cy.get('h3').should('have.text', 'Properties to set')
@@ -39,9 +46,16 @@ describe('MappingEditor', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
 
-    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
-      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.fieldMapping} />,
+      <MappingEditor
+        topic="test"
+        adapterId="my-adapter"
+        adapterType="my-type"
+        showTransformation={false}
+        onChange={cy.stub()}
+        mapping={MOCK_SUBS.fieldMapping}
+      />,
       { wrapper }
     )
 

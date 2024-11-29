@@ -129,6 +129,11 @@ export const useMappingManager = (adapterId: string) => {
         'ui:submitButtonOptions': {
           norender: true,
         },
+        mqttToOpcua: {
+          mqttToOpcuaMappings: {
+            'ui:field': 'mqtt:transform',
+          },
+        },
       },
       onSubmit: (data) => {
         processMutation(

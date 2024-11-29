@@ -9,6 +9,7 @@ export const $BridgeList = {
             contains: {
                 type: 'Bridge',
             },
+            isRequired: true,
         },
     },
 } as const;

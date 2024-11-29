@@ -203,8 +203,6 @@ describe('convertEdgeNode', () => {
 
 describe('getAdapterTreeView', () => {
   it('should convert an empty tree', () => {
-    expect(getAdapterTreeView({})).toStrictEqual([])
-    expect(getAdapterTreeView({ items: undefined })).toStrictEqual([])
     expect(getAdapterTreeView({ items: [] })).toStrictEqual([])
   })
 

@@ -7,16 +7,17 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import {
   Adapter,
   AdaptersList,
-  type DeviceDataPoint,
   type DomainTag,
   type DomainTagList,
   ObjectNode,
   ProtocolAdapter,
   ProtocolAdaptersList,
   Status,
+  type TagSchema,
   type ValuesTree,
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -710,20 +711,55 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
-export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DeviceDataPoint = { startIdx: 0, endIdx: 1 }
-export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DeviceDataPoint = { node: 'ns=3;i=1002' }
+export const MOCK_DEVICE_TAG_FAKE = 'MOCK/FAKE_DEVICE_TAG'
+export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DomainTag['definition'] = { startIdx: 0, endIdx: 1 }
+export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DomainTag['definition'] = { node: 'ns=3;i=1002' }
 
-export const MOCK_DEVICE_TAGS = (adapterId: string, type?: string | null): DomainTag[] => {
+export const MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA: TagSchema = {
+  protocolId: 'opcua',
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      definition: {
+        type: 'object',
+        properties: {
+          node: {
+            type: 'string',
+            title: 'Destination Node ID',
+            description: 'identifier of the node on the OPC UA server. Example: "ns=3;s=85/0:Temperature"',
+          },
+        },
+        required: ['node'],
+        title: 'definition',
+        description: 'The actual definition of the tag on the device',
+      },
+      description: {
+        type: 'string',
+        title: 'description',
+        description: 'A human readable description of the tag',
+      },
+      name: {
+        type: 'string',
+        title: 'name',
+        description: 'name of the tag to be used in mappings',
+      },
+    },
+    required: ['definition', 'description', 'name'],
+  },
+}
+
+export const MOCK_DEVICE_TAGS = (adapterId: string, type: string): DomainTag[] => {
   switch (type) {
     case MockAdapterType.MODBUS:
-      return [{ tag: `${adapterId}/alert`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
+      return [{ name: `${adapterId}/alert`, protocolId: type, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
     case MockAdapterType.OPC_UA:
       return [
-        { tag: `${adapterId}/power/off`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
-        { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
+        { name: `${adapterId}/power/off`, protocolId: type, definition: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
+        { name: `${adapterId}/log/event`, protocolId: type, definition: { node: 'ns=3;i=1008' } },
       ]
     default:
-      return [{ tag: `${adapterId}/log/event`, dataPoint: {} }]
+      return [{ name: `${adapterId}/log/event`, protocolId: type, definition: {} }]
   }
 }
 
@@ -763,11 +799,11 @@ export const handlers = [
 ]
 
 export const deviceHandlers = [
-  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params, request }) => {
+  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
     const { adapterId } = params
-    const url = new URL(request.url)
-    const type = url.searchParams.get('type')
+    const type = enumFromStringValue(MockAdapterType, adapterId as string)
 
+    if (!type) return HttpResponse.json({}, { status: 400 })
     return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string, type) }, { status: 200 })
   }),
 

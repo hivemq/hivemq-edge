@@ -9,7 +9,6 @@ import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 import { AuthenticationService } from './services/AuthenticationService';
 import { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
 import { BridgesService } from './services/BridgesService';
-import { ClientService } from './services/ClientService';
 import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPoliciesService';
 import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
 import { DataHubFsmService } from './services/DataHubFsmService';
@@ -18,7 +17,6 @@ import { DataHubSchemasService } from './services/DataHubSchemasService';
 import { DataHubScriptsService } from './services/DataHubScriptsService';
 import { DataHubStateService } from './services/DataHubStateService';
 import { DefaultService } from './services/DefaultService';
-import { DomainService } from './services/DomainService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
 import { GatewayEndpointService } from './services/GatewayEndpointService';
@@ -36,7 +34,6 @@ export class HiveMqClient {
     public readonly authentication: AuthenticationService;
     public readonly authenticationEndpoint: AuthenticationEndpointService;
     public readonly bridges: BridgesService;
-    public readonly client: ClientService;
     public readonly dataHubBehaviorPolicies: DataHubBehaviorPoliciesService;
     public readonly dataHubDataPolicies: DataHubDataPoliciesService;
     public readonly dataHubFsm: DataHubFsmService;
@@ -45,7 +42,6 @@ export class HiveMqClient {
     public readonly dataHubScripts: DataHubScriptsService;
     public readonly dataHubState: DataHubStateService;
     public readonly default: DefaultService;
-    public readonly domain: DomainService;
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
     public readonly gatewayEndpoint: GatewayEndpointService;
@@ -74,7 +70,6 @@ export class HiveMqClient {
         this.authentication = new AuthenticationService(this.request);
         this.authenticationEndpoint = new AuthenticationEndpointService(this.request);
         this.bridges = new BridgesService(this.request);
-        this.client = new ClientService(this.request);
         this.dataHubBehaviorPolicies = new DataHubBehaviorPoliciesService(this.request);
         this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
         this.dataHubFsm = new DataHubFsmService(this.request);
@@ -83,7 +78,6 @@ export class HiveMqClient {
         this.dataHubScripts = new DataHubScriptsService(this.request);
         this.dataHubState = new DataHubStateService(this.request);
         this.default = new DefaultService(this.request);
-        this.domain = new DomainService(this.request);
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
         this.gatewayEndpoint = new GatewayEndpointService(this.request);

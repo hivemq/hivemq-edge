@@ -9,6 +9,6 @@ export type CapabilityList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Capability>;
+    items: Array<Capability>;
 };
 

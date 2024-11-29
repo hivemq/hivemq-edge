@@ -3,16 +3,30 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { DeviceDataPoint } from './DeviceDataPoint';
+import type { JsonNode } from './JsonNode';
+
 
 /**
- * A tag associated with a data point on a device connected to the adapter
+ * List of result items that are returned by this endpoint
  */
 export type DomainTag = {
     /**
-     * The Tag associated with the data-point.
+     * A user created description for this tag.
      */
-    tag: string;
-    dataPoint: DeviceDataPoint;
+    description?: string;
+    /**
+     * The protocol id of the protocol for which this tag was created.
+     */
+    protocolId: string;
+    /**
+     * TODO[28249] Changed manually until backend fixed
+     * A user created description for this tag.
+     */
+    definition: JsonNode;
+    /**
+     * TODO[28249] Changed manually until backend fixed
+     * The name of the tag that identifies it within this edge instance.
+     */
+    name: string;
 };
 

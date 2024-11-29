@@ -1,13 +1,13 @@
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingContainer from './MappingContainer.tsx'
+import { FieldMappingsModel } from '@/api/__generated__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
-const MOCK_SUBS: OutwardMapping = {
+const MOCK_SUBS: FieldMappingsModel = {
   tag: 'my-tag',
-  mqttTopicFilter: 'my-topic',
-  fieldMapping: [{ source: { propertyPath: 'dropped-property' }, destination: { propertyPath: 'Second String' } }],
+  topicFilter: 'my-topic',
+  fieldMapping: [{ source: 'dropped-property', destination: 'Second String' }],
 }
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,7 +29,14 @@ describe('MappingContainer', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(
-      <MappingContainer onClose={cy.stub()} onSubmit={cy.stub()} onChange={cy.stub()} item={MOCK_SUBS} />,
+      <MappingContainer
+        onClose={cy.stub()}
+        onSubmit={cy.stub()}
+        onChange={cy.stub()}
+        item={MOCK_SUBS}
+        adapterId="my-adapter"
+        adapterType="my-type"
+      />,
       { wrapper }
     )
 

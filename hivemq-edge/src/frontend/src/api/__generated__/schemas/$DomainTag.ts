@@ -3,15 +3,31 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $DomainTag = {
-    description: `A tag associated with a data point on a device connected to the adapter`,
+    description: `List of result items that are returned by this endpoint`,
     properties: {
-        tag: {
+        description: {
             type: 'string',
-            description: `The Tag associated with the data-point.`,
+            description: `A user created description for this tag.`,
+        },
+        protocolId: {
+            type: 'string',
+            description: `The protocol id of the protocol for which this tag was created.`,
             isRequired: true,
         },
-        dataPoint: {
-            type: 'DeviceDataPoint',
+        tagDefinition: {
+            type: 'dictionary',
+            contains: {
+                type: 'dictionary',
+                contains: {
+                    properties: {
+                    },
+                },
+            },
+            isRequired: true,
+        },
+        tagName: {
+            type: 'string',
+            description: `The name of the tag that identifies it within this edge instance.`,
             isRequired: true,
         },
     },

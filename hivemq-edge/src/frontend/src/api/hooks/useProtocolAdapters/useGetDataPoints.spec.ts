@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { handlers } from './__handlers__'
-import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.tsx'
+import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.ts'
 
 describe('useGetDataPoints', () => {
   beforeEach(() => {

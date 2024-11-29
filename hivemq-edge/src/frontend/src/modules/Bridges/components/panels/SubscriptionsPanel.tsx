@@ -34,7 +34,7 @@ import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
 import { $BridgeSubscription, $LocalBridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
 
 import CustomUserProperties from './CustomUserProperties.tsx'

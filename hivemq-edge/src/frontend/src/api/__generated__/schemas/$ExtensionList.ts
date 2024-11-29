@@ -10,6 +10,7 @@ export const $ExtensionList = {
             contains: {
                 type: 'Extension',
             },
+            isRequired: true,
         },
     },
 } as const;

@@ -9,6 +9,6 @@ export type EventList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Event>;
+    items: Array<Event>;
 };
 

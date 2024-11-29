@@ -6,6 +6,7 @@ import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { DomainTagList } from '@/api/__generated__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 describe('SelectSourceTopics', () => {
   beforeEach(() => {
@@ -24,7 +25,9 @@ describe('SelectSourceTopics', () => {
         ],
       }).as('getTopicFilters')
 
-      cy.mountWithProviders(<SelectSourceTopics value="topic/test1" onChange={cy.stub()} />)
+      cy.mountWithProviders(
+        <SelectSourceTopics value="topic/test1" adapterId="my-adapter" adapterType="my-type" onChange={cy.stub()} />
+      )
 
       cy.get('#mapping-select-source').should('contain.text', 'Loading...')
       cy.wait('@getTopicFilters')
@@ -37,10 +40,12 @@ describe('SelectSourceTopics', () => {
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
       const mockAdapterId = 'my-adapter'
-      const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId) }
+      const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId, MockAdapterType.SIMULATION) }
       cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('types')
 
-      cy.mountWithProviders(<SelectDestinationTag adapterId={mockAdapterId} value="tag/test1" onChange={cy.stub()} />)
+      cy.mountWithProviders(
+        <SelectDestinationTag adapterId={mockAdapterId} adapterType="my-type" value="tag/test1" onChange={cy.stub()} />
+      )
 
       // // Loading not working?
       // cy.get('#mapping-select-destination').should('contain.text', 'Loading...')

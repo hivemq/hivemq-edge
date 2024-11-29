@@ -5,14 +5,7 @@
 export const $Adapter = {
     properties: {
         config: {
-            type: 'dictionary',
-            contains: {
-                type: 'dictionary',
-                contains: {
-                    properties: {
-                    },
-                },
-            },
+            type: 'JsonNode',
         },
         id: {
             type: 'string',

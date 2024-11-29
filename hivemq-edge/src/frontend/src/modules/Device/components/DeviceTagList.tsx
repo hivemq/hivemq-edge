@@ -13,12 +13,12 @@ import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
 import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
 
 interface DeviceTagListProps {
-  adapter?: Adapter
+  adapter: Adapter
 }
 
 const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, context, onupdateCollection } = useTagManager(adapter?.id)
+  const { data, isLoading, isError, context, onupdateCollection } = useTagManager(adapter.id)
 
   const onHandleSubmit = (data: unknown) => {
     if (data) onupdateCollection(data as DomainTagList)
@@ -56,12 +56,12 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
         {!isError && !isLoading && data && (
           // TODO[NVL] Too simple. Use a paginated table
           <List data-testid="device-tags-list">
-            {data.items?.map((e) => (
-              <ListItem key={e.tag} m={1} display="flex" justifyContent="space-between">
+            {data.items?.map((domainTag) => (
+              <ListItem key={domainTag.name} m={1} display="flex" justifyContent="space-between">
                 <HStack w="100%" justifyContent="space-between">
-                  <PLCTag tagTitle={e.tag} />{' '}
+                  <PLCTag tagTitle={domainTag.name} />{' '}
                   <Code size="xs" textAlign="end">
-                    {formatTagDataPoint(e.dataPoint)}
+                    {formatTagDataPoint(domainTag.definition)}
                   </Code>
                 </HStack>
               </ListItem>

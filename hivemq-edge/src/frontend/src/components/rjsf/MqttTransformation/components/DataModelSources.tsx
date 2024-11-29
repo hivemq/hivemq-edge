@@ -4,29 +4,24 @@ import { JSONSchema7 } from 'json-schema'
 import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 import { RxReload } from 'react-icons/rx'
 
+import { useSamplingForTopic } from '@/api/hooks/useDomainModel/useSamplingForTopic.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
 
 interface DataModelSourcesProps extends CardProps {
-  topics: string[]
+  topic: string
 }
 
-const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
+const DataModelSources: FC<DataModelSourcesProps> = ({ topic, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error, isSuccess } = useGetTopicSchemas(topics)
+  const { schema, isLoading, isError, error } = useSamplingForTopic(topic)
 
   const structuredSchema = useMemo(() => {
-    return Object.keys(data || {}).reduce<JSONSchema7[]>((acc, schemaId) => {
-      if (data?.[schemaId]) {
-        const newData: JSONSchema7 = { ...(data?.[schemaId] as JSONSchema7), title: schemaId }
-        acc.push(newData)
-      }
-      return acc
-    }, [])
-  }, [data])
+    if (!schema) return [] as JSONSchema7[]
+    return [{ ...schema, title: topic }] as JSONSchema7[]
+  }, [schema, topic])
 
   return (
     <Card {...props} size="sm">
@@ -45,10 +40,8 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
       <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isSuccess && !isError && !isLoading && (
-          <ErrorMessage message={t('components:rjsf.MqttTransformationField.sources.prompt')} status="info" />
-        )}
-        {isSuccess &&
+        {!isLoading &&
+          schema &&
           structuredSchema.map((schema) => (
             <JsonSchemaBrowser schema={schema} isDraggable hasExamples key={schema.title} />
           ))}

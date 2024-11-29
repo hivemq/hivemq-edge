@@ -9,6 +9,6 @@ export type DomainTagList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<DomainTag>;
+    items: Array<DomainTag>;
 };
 

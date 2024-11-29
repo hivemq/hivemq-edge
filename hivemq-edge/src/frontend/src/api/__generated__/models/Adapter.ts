@@ -3,13 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { JsonNode } from './JsonNode';
 import type { Status } from './Status';
 
 export type Adapter = {
-    /**
-     * The adapter configuration associated with this instance
-     */
-    config?: Record<string, Record<string, any>>;
+    config?: JsonNode;
     /**
      * The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.
      */

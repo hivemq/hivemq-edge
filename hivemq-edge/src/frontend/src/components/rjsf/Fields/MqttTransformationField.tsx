@@ -1,15 +1,18 @@
 import { FC, useEffect, useState } from 'react'
 import { FieldProps, getTemplate, getUiOptions } from '@rjsf/utils'
+import { useTranslation } from 'react-i18next'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
+import { FieldMappingsModel } from '@/api/__generated__'
 import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMappings.tsx'
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
-export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema, AdapterContext>> = (props) => {
+export const MqttTransformationField: FC<FieldProps<FieldMappingsModel[], RJSFSchema, AdapterContext>> = (props) => {
+  const { t } = useTranslation('components')
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
-  const [subsData, setSubsData] = useState<OutwardMapping[] | undefined>(props.formData)
+  const [subsData, setSubsData] = useState<FieldMappingsModel[] | undefined>(props.formData)
 
   const { adapterId, adapterType } = props.formContext || {}
 
@@ -42,7 +45,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
     setSubsData((old) => [
       ...(old || []),
       {
-        mqttTopicFilter: undefined,
+        topicFilter: undefined,
         tag: undefined,
         fieldMapping: [],
       },
@@ -50,7 +53,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChange = (id: keyof OutwardMapping, v: any) => {
+  const handleChange = (id: keyof FieldMappingsModel, v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
       const currentItem = old?.[selectedItem]
@@ -59,19 +62,21 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
     })
   }
 
-  if (!subsData) return null
-  const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', OutwardMapping[]>(
+  const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', FieldMappingsModel[]>(
     'ArrayFieldDescriptionTemplate',
     props.registry,
     props.uiOptions
   )
 
-  const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', OutwardMapping[]>(
+  const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', FieldMappingsModel[]>(
     'ArrayFieldTitleTemplate',
     props.registry,
     props.uiOptions
   )
   const uiOptions = getUiOptions(props.uiSchema)
+
+  if (!subsData || !adapterId || !adapterType)
+    return <ErrorMessage message={t('rjsf.MqttTransformationField.error.internalError')} status="error" />
 
   return (
     <>

@@ -10,6 +10,7 @@ export const $ModuleList = {
             contains: {
                 type: 'Module',
             },
+            isRequired: true,
         },
     },
 } as const;

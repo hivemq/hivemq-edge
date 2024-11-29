@@ -9,6 +9,7 @@ export const $CapabilityList = {
             contains: {
                 type: 'Capability',
             },
+            isRequired: true,
         },
     },
 } as const;

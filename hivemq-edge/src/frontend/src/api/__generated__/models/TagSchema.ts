@@ -3,7 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 
-/**
- * The JSON-Schema specification of a data point
- */
-export type TagSchema = Record<string, any>;
+import type { JsonNode } from './JsonNode';
+
+export type TagSchema = {
+    configSchema?: JsonNode;
+    /**
+     * The id assigned to the protocol adapter type
+     */
+    protocolId?: string;
+};
+

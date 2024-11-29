@@ -5,7 +5,7 @@ import { Box, Flex } from '@chakra-ui/react'
 
 import PageContainer from '@/components/PageContainer.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import LicenseWarning from '@datahub/components/helpers/LicenseWarning.tsx'
 import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
 

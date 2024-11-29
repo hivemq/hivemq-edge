@@ -3,9 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $TagSchema = {
-    type: 'dictionary',
-    contains: {
-        properties: {
+    properties: {
+        configSchema: {
+            type: 'JsonNode',
+        },
+        protocolId: {
+            type: 'string',
+            description: `The id assigned to the protocol adapter type`,
         },
     },
 } as const;

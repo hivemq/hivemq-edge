@@ -14,8 +14,8 @@ export const useUpdateDomainTags = () => {
   const appClient = useHttpClient()
   const queryClient = useQueryClient()
 
-  const updateAdapterDomainTags = ({ adapterId, tagId }: UpdateDomainTagsProps) => {
-    return appClient.protocolAdapters.updateAdapterDomainTags(adapterId, tagId)
+  const updateAdapterDomainTags = ({ adapterId, tagId, requestBody }: UpdateDomainTagsProps) => {
+    return appClient.protocolAdapters.updateAdapterDomainTag(adapterId, tagId, requestBody)
   }
 
   return useMutation<UpdateDomainTagsProps, ApiError, UpdateDomainTagsProps>({

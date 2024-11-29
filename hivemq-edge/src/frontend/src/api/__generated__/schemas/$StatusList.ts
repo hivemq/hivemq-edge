@@ -9,6 +9,7 @@ export const $StatusList = {
             contains: {
                 type: 'Status',
             },
+            isRequired: true,
         },
     },
 } as const;

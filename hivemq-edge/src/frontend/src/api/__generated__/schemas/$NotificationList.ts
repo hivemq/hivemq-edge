@@ -9,6 +9,7 @@ export const $NotificationList = {
             contains: {
                 type: 'Notification',
             },
+            isRequired: true,
         },
     },
 } as const;
