@@ -72,6 +72,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
@@ -502,7 +503,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getTags());
 
             deleteAdapterInternal(adapterId);
-            addAdapterInternal(protocolAdapterConfig);
+            syncFuture(addAdapterInternal(protocolAdapterConfig));
             configPersistence.updateAdapter(protocolAdapterConfig);
             return true;
         }).orElse(false);
@@ -519,7 +520,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getFromEdgeMappings(),
                     configConverter.mapsToTags(protocolId, tags));
             deleteAdapterInternal(adapterId);
-            addAdapterInternal(protocolAdapterConfig);
+            syncFuture(addAdapterInternal(protocolAdapterConfig));
             configPersistence.updateAdapter(protocolAdapterConfig);
             return true;
         }).orElse(false);
@@ -541,7 +542,7 @@ public class ProtocolAdapterManager {
                     })
                     .orElseGet(() -> {
                         deleteAdapterInternal(adapterId);
-                        addAdapterInternal(protocolAdapterConfig);
+                        syncFuture(addAdapterInternal(protocolAdapterConfig));
                         configPersistence.updateAdapter(protocolAdapterConfig);
                         return true;
                     });
@@ -564,7 +565,7 @@ public class ProtocolAdapterManager {
                     })
                     .orElseGet(() -> {
                         deleteAdapterInternal(adapterId);
-                        addAdapterInternal(protocolAdapterConfig);
+                       syncFuture(addAdapterInternal(protocolAdapterConfig));
                         configPersistence.updateAdapter(protocolAdapterConfig);
                         return true;
                     });
@@ -925,6 +926,17 @@ public class ProtocolAdapterManager {
                     northboundMapping.getMqttQos(),
                     northboundMapping.getMessageExpiryInterval()
             );
+        }
+    }
+
+
+    private static void syncFuture(final @NotNull Future future){
+        try {
+            future.get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (final ExecutionException e) {
+            log.error("Exception happened while async execution: ", e.getCause());
         }
     }
 }
