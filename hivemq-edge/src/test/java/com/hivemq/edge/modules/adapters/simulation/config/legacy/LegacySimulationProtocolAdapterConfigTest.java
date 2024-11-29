@@ -60,7 +60,6 @@ class LegacySimulationProtocolAdapterConfigTest {
                     assertThat(mapping.getUserProperties()).containsExactly(new MqttUserPropertyEntity("my-name",
                             "my-value"));
                 });
-                assertThat(entity.getFieldMappings()).isEmpty();
                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
             });
         });
@@ -85,7 +84,6 @@ class LegacySimulationProtocolAdapterConfigTest {
                     assertThat(mapping.getTagName()).isEqualTo("ignored");
                     assertThat(mapping.getTopic()).isEqualTo("my/topic");
                 });
-                assertThat(entity.getFieldMappings()).isEmpty();
                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
             });
         });

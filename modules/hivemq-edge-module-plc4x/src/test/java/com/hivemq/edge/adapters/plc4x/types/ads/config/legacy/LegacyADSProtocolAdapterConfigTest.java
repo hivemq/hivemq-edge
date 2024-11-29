@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ads.config.legacy;
 
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.migration.ConfigurationMigrator;
@@ -80,7 +79,6 @@ class LegacyADSProtocolAdapterConfigTest {
                                                             new MqttUserPropertyEntity("name", "value2")
                                                     );
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -129,7 +127,6 @@ class LegacyADSProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/mqtt/topic");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

@@ -15,21 +15,18 @@
  */
 package com.hivemq.edge.adapters.etherip.config.legacy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.modules.ModuleLoader;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
 
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -88,7 +85,6 @@ class LegacyEipProtocolAdapterConfigTest {
                                                     new MqttUserPropertyEntity ("name", "value2")
                                             );
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -127,7 +123,6 @@ class LegacyEipProtocolAdapterConfigTest {
                                             assertThat(mapping.getTagName()).startsWith("tag-name");
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic");
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

@@ -16,8 +16,11 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -36,19 +39,26 @@ public class ToEdgeMappingEntity {
     @XmlElement(name = "maxQos", required = true)
     private final int qos;
 
+    @XmlElement(name = "fieldMapping")
+    private final @Nullable FieldMappingEntity fieldMapping;
+
     // no-arg constructor for JaxB
     public ToEdgeMappingEntity() {
         topicFilter = "";
         tagName = "";
         qos = 1;
+        fieldMapping = null;
     }
 
     public ToEdgeMappingEntity(
             final @NotNull String tagName,
-            final @NotNull String topicFilter, final int maxQoS) {
+            final @NotNull String topicFilter,
+            final int maxQoS,
+            final @Nullable FieldMappingEntity fieldMapping) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.qos = maxQoS;
+        this.fieldMapping = fieldMapping;
     }
 
     public @NotNull String getTagName() {
@@ -73,18 +83,21 @@ public class ToEdgeMappingEntity {
     }
 
 
-    public @NotNull ToEdgeMapping toToEdgeMapping() {
+    public @NotNull ToEdgeMapping toToEdgeMapping(ObjectMapper mapper) {
         return new ToEdgeMapping(
                 this.getTagName(),
                 this.getTopicFilter(),
-                this.getMaxQos());
+                this.getMaxQos(),
+                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
     }
 
     public static @NotNull ToEdgeMappingEntity from(final @NotNull ToEdgeMapping toEdgeMapping) {
         return new ToEdgeMappingEntity(
                 toEdgeMapping.getTagName(),
                 toEdgeMapping.getTopicFilter(),
-                toEdgeMapping.getMaxQoS());
+                toEdgeMapping.getMaxQoS(),
+                FieldMappingEntity.from(toEdgeMapping.getFieldMapping())
+        );
     }
 
 }

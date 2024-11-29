@@ -18,28 +18,23 @@ package com.hivemq.adapter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -56,22 +51,6 @@ public class ProtocolAdapterConfigModelTest {
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
-
-    @Test
-    public void testUserPropertiesAppearOnSubscription() throws JsonProcessingException {
-
-        SpecificAdapterConfiguration entity = new SpecificAdapterConfiguration();
-        entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new TestToMqttMapping("some/path",1,List.of(new MqttUserProperty("propertyName", "propertyValue"))));
-        String marhslaled = mapper.writeValueAsString(entity);
-        System.err.println(marhslaled);
-
-        JsonNode node = mapper.readTree(marhslaled);
-
-        JsonNode subscriptions = findFirstChild(node, "subscriptions");
-        Assertions.assertFalse(hasImmediateChild(subscriptions, "mqttUserProperties"), "Wrapped typed should not have a duplicate title");
-    }
-
     private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
         Preconditions.checkNotNull(parent);
         JsonNode child = parent.get(nodeName);
@@ -93,19 +72,8 @@ public class ProtocolAdapterConfigModelTest {
         return parent.get(nodeName) != null;
     }
 
-    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig,
-            AdapterConfigWithPollingContexts {
+    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig {
 
-        @JsonProperty("subscriptions")
-        @ModuleConfigField(title = "Subscriptions",
-                           description = "List of subscriptions for the simulation",
-                           required = true)
-        private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
-
-        @Override
-        public @NotNull List<? extends PollingContext> getPollingContexts() {
-            return subscriptions;
-        }
     }
 
     private static class TestToMqttMapping implements PollingContext {

@@ -1,7 +1,7 @@
 package com.hivemq.api.model.mappings.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.mappings.fields.FieldMapping;
+import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,7 +33,10 @@ public class FieldMappingModel {
         return metadata;
     }
 
-    public static FieldMappingModel fromFieldMapping(final @NotNull FieldMapping fieldMapping) {
+    public static FieldMappingModel from(final FieldMapping fieldMapping) {
+        if(fieldMapping == null) {
+            return null;
+        }
         return new FieldMappingModel(
                 fieldMapping.getInstructions().stream().map(InstructionModel::from)
                         .collect(Collectors.toList()),

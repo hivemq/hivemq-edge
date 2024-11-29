@@ -17,24 +17,11 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Objects;
-
-public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapterConfig
-        implements AdapterConfigWithWritingContexts {
-
-    @JsonProperty(value = "mqttToOpcua")
-    @ModuleConfigField(title = "Mqtt to OpcUA Config",
-                       description = "The configuration for a data stream from MQTT to OPC UA")
-    private final @NotNull MqttToOpcUaConfig mqttToOpcUaConfig;
+public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapterConfig {
 
     @JsonCreator
     public BidirectionalOpcUaSpecificAdapterConfig(
@@ -43,19 +30,7 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
-            @JsonProperty(value = "mqttToOpcua") final @Nullable MqttToOpcUaConfig mqttToOpcUaConfig,
             @JsonProperty("security") final @Nullable Security security) {
         super( uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
-        this.mqttToOpcUaConfig =
-                Objects.requireNonNullElseGet(mqttToOpcUaConfig, () -> new MqttToOpcUaConfig(List.of()));
-    }
-
-    public @NotNull MqttToOpcUaConfig getMqttToOpcUaConfig() {
-        return mqttToOpcUaConfig;
-    }
-
-    @Override
-    public @NotNull List<? extends WritingContext> getWritingContexts() {
-        return mqttToOpcUaConfig.getMqttToOpcUaMappings();
     }
 }

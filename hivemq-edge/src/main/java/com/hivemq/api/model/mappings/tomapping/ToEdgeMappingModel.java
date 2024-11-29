@@ -20,7 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
+import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;
@@ -75,7 +76,7 @@ public class ToEdgeMappingModel {
         return new ToEdgeMapping(
                 this.tagName,
                 this.topicFilter,
-                this.maxQoS
+                this.maxQoS, FieldMapping.fromModel(this.fieldMapping)
                 );
     }
 
@@ -84,6 +85,6 @@ public class ToEdgeMappingModel {
                 toEdgeMapping.getTopicFilter(),
                 toEdgeMapping.getTagName(),
                 toEdgeMapping.getMaxQoS(),
-                null); //TODO FIX THIS!!!!
+                FieldMappingModel.from(toEdgeMapping.getFieldMapping()));
     }
 }

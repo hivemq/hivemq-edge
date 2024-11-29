@@ -17,14 +17,13 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
@@ -46,7 +45,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     public static final byte[] EMTPY_BYTES = new byte[]{};
 
-    private final @NotNull FromEdgeMapping mapping;
+    private final @NotNull PollingContext mapping;
     final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull SerializationContext serializationContext;
@@ -59,7 +58,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
-            final @NotNull FromEdgeMapping mapping,
+            final @NotNull PollingContext mapping,
             final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull SerializationContext serializationContext,

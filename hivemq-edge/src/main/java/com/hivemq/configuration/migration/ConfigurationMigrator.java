@@ -153,20 +153,21 @@ public class ConfigurationMigrator {
 
             final List<FromEdgeMappingEntity> fromEdgeMappingEntities = configTagsTuple.getPollingContexts()
                     .stream()
-                    .map(FromEdgeMappingEntity::from)
+                    .map(FromEdgeMappingEntity::fromPollingContext)
                     .collect(Collectors.toList());
 
             final List<TagEntity> tagEntities = configTagsTuple.getTags()
                     .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                     .collect(Collectors.toList());
 
-            return Optional.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
+            return Optional.of(new ProtocolAdapterEntity(
+                    configTagsTuple.getAdapterId(),
                     protocolId,
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
-                    fromEdgeMappingEntities, List.of(), tagEntities,
-                    // field mappings are always empty as they did not exist before.
-                    List.of()));
+                    fromEdgeMappingEntities,
+                    List.of(),
+                    tagEntities));
         } else {
             log.error(
                     "[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.",

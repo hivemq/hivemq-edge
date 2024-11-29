@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.etherip.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -66,8 +65,6 @@ class EipProtocolAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isFalse();
 
-        assertThat(config.getEipToMqttConfig().getMappings()).isEmpty(); //mappings are supposed to be ignored when rendered to XML
-
         assertThat(protocolAdapterConfig.getTags())
                 .allSatisfy(t -> {
                     assertThat(t)
@@ -95,8 +92,6 @@ class EipProtocolAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isTrue();
 
-        assertThat(config.getEipToMqttConfig().getMappings()).isEmpty(); //mappings are supposed to be ignored when rendered to XML
-
         assertThat(protocolAdapterConfig.getTags())
                 .allSatisfy(t -> {
                     assertThat(t)
@@ -118,17 +113,7 @@ class EipProtocolAdapterConfigTest {
                 new EipToMqttConfig(
                         12,
                         13,
-                        true,
-                        List.of(
-                                new EipToMqttMapping(
-                                        "tag1",
-                                        1,
-                                        null,
-                                        false,
-                                        false,
-                                        "tag1",
-                                        null)
-                        )));
+                        true));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

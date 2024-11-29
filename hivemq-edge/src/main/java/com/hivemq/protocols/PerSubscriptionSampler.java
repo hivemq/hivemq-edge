@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

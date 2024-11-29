@@ -18,9 +18,9 @@ package com.hivemq.edge.adapters.opcua;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -37,9 +37,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
 import org.jetbrains.annotations.NotNull;
@@ -47,19 +45,18 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter<MqttToOpcUaMapping> {
+public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
-    private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
+    private final @NotNull List<PollingContext> fromEdgeMappings;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
@@ -76,7 +73,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
-        this.fromEdgeMappings = input.getFromEdgeMappings();
+        this.fromEdgeMappings = input.getPollingContexts();
     }
 
     @Override
@@ -180,15 +177,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         } else {
             log.warn("Tried executing write while client wasn't started");
         }
-    }
-
-    @Override
-    public @NotNull List<MqttToOpcUaMapping> getWritingContexts() {
-        if (adapterConfig instanceof BidirectionalOpcUaSpecificAdapterConfig) {
-            return ((BidirectionalOpcUaSpecificAdapterConfig) adapterConfig).getMqttToOpcUaConfig()
-                    .getMqttToOpcUaMappings();
-        }
-        return Collections.emptyList();
     }
 
     @Override

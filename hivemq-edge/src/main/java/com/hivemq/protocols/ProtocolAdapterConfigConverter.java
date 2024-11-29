@@ -20,15 +20,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
-import com.hivemq.configuration.entity.adapter.FromEdgeMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
-import com.hivemq.configuration.entity.adapter.ToEdgeMappingEntity;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -71,15 +68,11 @@ public class ProtocolAdapterConfigConverter {
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
         final List<FromEdgeMapping> fromEdgeMappingList = protocolAdapterEntity.getFromEdgeMappingEntities()
                 .stream()
-                .map(FromEdgeMappingEntity::toFromEdgeMapping)
+                .map(fromEdge -> fromEdge.toFromEdgeMapping(mapper))
                 .collect(Collectors.toList());
         final List<ToEdgeMapping> toEdgeMappingList = protocolAdapterEntity.getToEdgeMappingEntities()
                 .stream()
-                .map(ToEdgeMappingEntity::toToEdgeMapping)
-                .collect(Collectors.toList());
-        final List<FieldMappings> fieldMappings = protocolAdapterEntity.getFieldMappings()
-                .stream()
-                .map(e -> FieldMappings.fromEntity(e, mapper))
+                .map(toEdge -> toEdge.toToEdgeMapping(mapper))
                 .collect(Collectors.toList());
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
@@ -87,8 +80,7 @@ public class ProtocolAdapterConfigConverter {
                 protocolSpecificAdapterConfig,
                 toEdgeMappingList,
                 fromEdgeMappingList,
-                tags,
-                fieldMappings);
+                tags);
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
@@ -107,7 +99,6 @@ public class ProtocolAdapterConfigConverter {
             final @NotNull ProtocolAdapterConfig config) {
         return ProtocolAdapterEntity.from(config, mapper);
     }
-
 
     public @NotNull ProtocolSpecificAdapterConfig convertAdapterConfig(
             final @NotNull String protocolId, final @NotNull Map<String, Object> config, final boolean writingEnabled) {

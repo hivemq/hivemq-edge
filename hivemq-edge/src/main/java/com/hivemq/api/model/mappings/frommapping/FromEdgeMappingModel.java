@@ -19,11 +19,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.mappings.fields.FieldMapping;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -126,7 +126,9 @@ public class FromEdgeMappingModel {
         return fieldMapping;
     }
 
-    public FromEdgeMapping toFromEdgeMapping() {
+    public FromEdgeMapping to() {
+
+        final FieldMapping fieldMapping = this.fieldMapping != null ? FieldMapping.fromModel(this.fieldMapping) : null;
         return new FromEdgeMapping(
                 this.tagName,
                 this.topic,
@@ -138,8 +140,7 @@ public class FromEdgeMappingModel {
                 userProperties.stream()
                         .map(prop -> new MqttUserProperty(prop.getName(),prop.getValue()))
                         .collect(Collectors.toList()),
-                null //TODO: MAKE THIS WORK!!
-                );
+                fieldMapping);
     }
 
     public static FromEdgeMappingModel from(FromEdgeMapping fromEdgeMapping) {
@@ -154,6 +155,6 @@ public class FromEdgeMappingModel {
                         .map(prop -> new MqttUserPropertyModel(prop.getName(),prop.getValue()))
                         .collect(Collectors.toList()),
                 fromEdgeMapping.getMqttQos(), fromEdgeMapping.getMessageExpiryInterval(),
-                fieldMapping != null ? FieldMappingModel.fromFieldMapping(fieldMapping) : null);
+                FieldMappingModel.from(fieldMapping));
     }
 }

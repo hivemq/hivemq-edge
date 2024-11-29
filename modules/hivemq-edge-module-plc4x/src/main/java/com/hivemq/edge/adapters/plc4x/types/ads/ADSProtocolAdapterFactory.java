@@ -88,8 +88,7 @@ public class ADSProtocolAdapterFactory
 
         final ADSToMqttConfig adsToMqttConfig = new ADSToMqttConfig(legacyAdsAdapterConfig.getPollingIntervalMillis(),
                 legacyAdsAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                legacyAdsAdapterConfig.getPublishChangedDataOnly(),
-                plc4xToMqttMappings);
+                legacyAdsAdapterConfig.getPublishChangedDataOnly());
 
 
         return new ConfigTagsTuple(legacyAdsAdapterConfig.getId(),

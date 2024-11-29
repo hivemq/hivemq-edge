@@ -18,21 +18,18 @@ package com.hivemq.edge.adapters.http.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
 
-public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
+public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public static final @NotNull String HTML_MIME_TYPE = "text/html";
     public static final @NotNull String PLAIN_MIME_TYPE = "text/plain";
@@ -97,11 +94,6 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig,
 
     public boolean isAllowUntrustedCertificates() {
         return allowUntrustedCertificates;
-    }
-
-    @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
-        return httpToMqttConfig.getMappings();
     }
 
     public static class HttpHeader {

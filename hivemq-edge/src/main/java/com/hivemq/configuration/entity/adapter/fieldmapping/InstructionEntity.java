@@ -13,44 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.entity.adapter;
+package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.persistence.fieldmapping.FieldMapping;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class FieldMappingEntity {
+public class InstructionEntity {
 
     @XmlElement(name = "source")
     private final @NotNull String sourceFieldName;
     @XmlElement(name = "destination")
     private final @NotNull String destinationFieldName;
-    @XmlElement(name = "transformation")
-    private final @NotNull TransformationEntity transformation;
 
     // no- arg for JaxB
-    public FieldMappingEntity() {
+    public InstructionEntity() {
         sourceFieldName = "";
         destinationFieldName = "";
-        transformation = new TransformationEntity();
     }
 
-    public FieldMappingEntity(
+    public InstructionEntity(
             final @NotNull String sourceFieldName,
-            final @NotNull String destinationFieldName,
-            final @NotNull TransformationEntity transformation) {
+            final @NotNull String destinationFieldName) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
-        this.transformation = transformation;
     }
-
-    public static @NotNull FieldMappingEntity from(final @NotNull FieldMapping model) {
-        return new FieldMappingEntity(model.getSourceFieldName(),
-                model.getDestinationFieldName(),
-                TransformationEntity.from(model.getTransformation()));
-    }
-
 
     public @NotNull String getDestinationFieldName() {
         return destinationFieldName;
@@ -60,7 +48,13 @@ public class FieldMappingEntity {
         return sourceFieldName;
     }
 
-    public @NotNull TransformationEntity getTransformation() {
-        return transformation;
+    public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
+        return new InstructionEntity(model.getSourceFieldName(),
+                model.getDestinationFieldName());
+    }
+
+    public @NotNull Instruction to() {
+        return new Instruction(getSourceFieldName(),
+                getDestinationFieldName());
     }
 }

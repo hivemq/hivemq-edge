@@ -17,7 +17,7 @@ package com.hivemq.api.model.mappings.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.mappings.fields.Instruction;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,18 +31,12 @@ public class InstructionModel {
     @Schema(description = "The field in the input object where the data will be read from")
     private final @NotNull String sourceFieldName;
 
-    @JsonProperty(value = "transformation", required = true)
-    @Schema(description = "The transformation to be applied between mapping the fields")
-    private final @NotNull TransformationModel transformationModel;
-
     @JsonCreator
     public InstructionModel(
             @JsonProperty(value = "destinationFieldName", required = true) @NotNull final String destinationFieldName,
-            @JsonProperty(value = "sourceFieldName", required = true) @NotNull final String sourceFieldName,
-            @JsonProperty(value = "transformation", required = true) @NotNull final TransformationModel transformationModel) {
+            @JsonProperty(value = "sourceFieldName", required = true) @NotNull final String sourceFieldName) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
-        this.transformationModel = transformationModel;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -53,14 +47,9 @@ public class InstructionModel {
         return sourceFieldName;
     }
 
-    public @NotNull TransformationModel getTransformationModel() {
-        return transformationModel;
-    }
-
-    public static InstructionModel from(final @NotNull Instruction instructionModel) {
+    public static InstructionModel from(final @NotNull Instruction instruction) {
         return new InstructionModel(
-                instructionModel.getDestinationFieldName(),
-                instructionModel.getSourceFieldName(),
-                TransformationModel.from(instructionModel.getTransformation()));
+                instruction.getDestinationFieldName(),
+                instruction.getSourceFieldName());
     }
 }

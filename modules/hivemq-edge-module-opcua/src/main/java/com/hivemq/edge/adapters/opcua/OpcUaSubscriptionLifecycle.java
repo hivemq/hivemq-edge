@@ -15,14 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
@@ -136,7 +135,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
 
-    public @NotNull CompletableFuture<Void> subscribe(final @NotNull FromEdgeMapping subscription) {
+    public @NotNull CompletableFuture<Void> subscribe(final @NotNull PollingContext subscription) {
         final @NotNull String tagName = subscription.getTagName();
 
         return findTag(subscription.getTagName()).map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
@@ -147,7 +146,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     private @NotNull CompletableFuture<Void> subscribeToOpcua(
-            final @NotNull FromEdgeMapping subscription, final @NotNull OpcuaTag opcuaTag) {
+            final @NotNull PollingContext subscription, final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
@@ -173,7 +172,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
                 });
     }
 
-    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<FromEdgeMapping> mappings) {
+    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<PollingContext> mappings) {
 
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 

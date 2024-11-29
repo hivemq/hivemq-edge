@@ -4447,16 +4447,21 @@ components:
       properties:
         config:
           $ref: '#/components/schemas/Adapter'
-        fieldMappings:
+        fromEdgeMappings:
           type: array
-          description: The fieldMappings for this adapter
+          description: The fromEdge mappings for thid adapter
           items:
-            $ref: '#/components/schemas/FieldMappingsModel'
+            $ref: '#/components/schemas/FromEdgeMappingModel'
         tags:
           type: array
           description: The tags defined for this adapter
           items:
             $ref: '#/components/schemas/DomainTag'
+        toEdgeMappings:
+          type: array
+          description: The toEdge mappings for thid adapter
+          items:
+            $ref: '#/components/schemas/ToEdgeMappingModel'
     AdaptersList:
       type: object
       properties:
@@ -5047,16 +5052,6 @@ components:
             $ref: '#/components/schemas/Extension'
       required:
       - items
-    FieldMappingMetaDataModel:
-      type: object
-      properties:
-        destination:
-          $ref: '#/components/schemas/JsonNode'
-        source:
-          $ref: '#/components/schemas/JsonNode'
-      required:
-      - destination
-      - source
     FieldMappingModel:
       type: object
       description: Defines how incoming data should be transformed before being sent
@@ -5072,22 +5067,6 @@ components:
       required:
       - instructions
       - metadata
-    FieldMappingsModel:
-      type: object
-      description: The fieldMappings for this adapter
-      properties:
-        fieldMapping:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldMappingModel'
-        metadata:
-          $ref: '#/components/schemas/FieldMappingMetaDataModel'
-        tag:
-          type: string
-        topicFilter:
-          type: string
-          format: mqtt-topic-filter
-          description: The topic filter according to the MQTT specification.
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5285,12 +5264,9 @@ components:
         sourceFieldName:
           type: string
           description: The field in the input object where the data will be read from
-        transformation:
-          $ref: '#/components/schemas/TransformationModel'
       required:
       - destinationFieldName
       - sourceFieldName
-      - transformation
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -6020,9 +5996,6 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
-    TransformationModel:
-      type: object
-      description: The transformation to be applied between mapping the fields
     TypeIdentifier:
       type: object
       description: The unique id of the event object

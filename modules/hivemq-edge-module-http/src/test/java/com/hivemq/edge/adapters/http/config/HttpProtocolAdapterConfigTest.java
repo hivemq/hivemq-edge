@@ -27,12 +27,11 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpHeader;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -291,22 +290,7 @@ public class HttpProtocolAdapterConfigTest {
                         1337,
                         11,
                         true,
-                        true,
-                        List.of(
-                                new HttpToMqttMapping(
-                                "tag1",
-                                "my/destination",
-                                0,
-                                null,
-                                true),
-
-                                new HttpToMqttMapping(
-                                "tag2",
-                                "my/destination2",
-                                0,
-                                null,
-                                true)
-                                )
+                        true
                 ),
                 new MqttToHttpConfig(List.of(
                         new MqttToHttpMapping(
@@ -370,15 +354,7 @@ public class HttpProtocolAdapterConfigTest {
                         null,
                         null,
                         null,
-                        null,
-                        List.of(
-                                new HttpToMqttMapping(
-                                        "tag1",
-                                        "my/destination",
-                                        null,
-                                        null,
-                                        null)
-                        )
+                        null
                 ),
                 new MqttToHttpConfig(List.of(
                     new MqttToHttpMapping(

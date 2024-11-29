@@ -96,8 +96,7 @@ public class ModbusProtocolAdapterFactory
         final ModbusToMqttConfig modbusToMqttConfig =
                 new ModbusToMqttConfig(legacyModbusAdapterConfig.getPollingIntervalMillis(),
                         legacyModbusAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        legacyModbusAdapterConfig.getPublishChangedDataOnly(),
-                        modbusToMqttMappings);
+                        legacyModbusAdapterConfig.getPublishChangedDataOnly());
 
 
         return new ConfigTagsTuple(legacyModbusAdapterConfig.getId(),

@@ -23,23 +23,21 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -57,7 +55,8 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -65,7 +64,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -261,44 +259,19 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
 
-            final List<FieldMappings> fieldMappings = protocolAdapterWrapper.getFieldMappings();
-
             final List<ToEdgeMapping> toEdgeMappings = protocolAdapterWrapper.getToEdgeMappings();
             final List<InternalWritingContext> writingContexts = toEdgeMappings.stream()
-                    .map(toEdgeMapping -> new WritingContextImpl(toEdgeMapping.getTagName(),
-                            toEdgeMapping.getTopicFilter(),
-                            toEdgeMapping.getMaxQoS(),
-                            findFieldMapping(fieldMappings, toEdgeMapping, protocolAdapterWrapper.getId())))
+                    .map(InternalWritingContextImpl::new)
                     .collect(Collectors.toList());
 
             startWritingFuture =
-                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter(),
+                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
                             protocolAdapterWrapper.getProtocolAdapterMetricsService(),
                             writingContexts);
         } else {
             startWritingFuture = CompletableFuture.completedFuture(null);
         }
         return startWritingFuture;
-    }
-
-    private FieldMappings findFieldMapping(
-            final List<FieldMappings> fieldMappings,
-            final @NotNull ToEdgeMapping toEdgeMapping,
-            final @NotNull String adapterId) {
-
-        final Optional<FieldMappings> optionalFieldMappings = fieldMappings.stream()
-                .filter(f -> f.getTagName().equals(toEdgeMapping.getTagName()) &&
-                        f.getTopicFilter().equals(toEdgeMapping.getTopicFilter()))
-                .findFirst();
-
-        if (optionalFieldMappings.isEmpty()) {
-            throw new IllegalStateException(
-                    "No FieldMapping was found when trying to setup writing for protocol adapter: '" +
-                            adapterId +
-                            "'.");
-        }
-
-        return optionalFieldMappings.get();
     }
 
     private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
@@ -309,7 +282,8 @@ public class ProtocolAdapterManager {
             }
             final List<FromEdgeMapping> pollingContexts = protocolAdapterWrapper.getFromEdgeMappings();
             pollingContexts.forEach(adapterSubscription -> {
-                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
+                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(
+                        protocolAdapterWrapper,
                         (PollingProtocolAdapter) adapter,
                         objectMapper,
                         moduleServices.adapterPublishService(),
@@ -337,8 +311,11 @@ public class ProtocolAdapterManager {
             if (log.isDebugEnabled()) {
                 log.debug("Stopping writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
+            final List<InternalWritingContext> writingContexts = protocolAdapterWrapper.getToEdgeMappings().stream()
+                    .map(InternalWritingContextImpl::new)
+                    .collect(Collectors.toList());
             stopWritingFuture =
-                    protocolAdapterWritingService.stopWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter());
+                    protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) protocolAdapterWrapper.getAdapter(), writingContexts);
         } else {
             stopWritingFuture = CompletableFuture.completedFuture(null);
         }
@@ -382,8 +359,11 @@ public class ProtocolAdapterManager {
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         final CompletableFuture<Void> stopWritingFuture;
         if (protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+            final List<InternalWritingContext> writingContexts = protocolAdapterWrapper.getToEdgeMappings().stream()
+                    .map(InternalWritingContextImpl::new)
+                    .collect(Collectors.toList());
             stopWritingFuture =
-                    protocolAdapterWritingService.stopWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter());
+                    protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) protocolAdapterWrapper.getAdapter(), writingContexts);
         } else {
             stopWritingFuture = CompletableFuture.completedFuture(null);
         }
@@ -449,25 +429,13 @@ public class ProtocolAdapterManager {
         final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                 configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
 
-        final List<FromEdgeMapping> fromEdgeMappings;
-        if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
-            final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
-                    (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
-            fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
-                    .stream()
-                    .map(FromEdgeMapping::from)
-                    .collect(Collectors.toList());
-        } else {
-            fromEdgeMappings = new ArrayList<>();
-        }
-
         // we can not add toMappings as we do not have field mappings here yet.
         // actually this is correct from the user workflow
-        final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
+        final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(
+                adapterId,
                 adapterType,
                 protocolSpecificAdapterConfig,
                 List.of(),
-                fromEdgeMappings,
                 List.of(),
                 List.of());
         final CompletableFuture<Void> ret = addAdapterInternal(protocolAdapterConfig);
@@ -531,8 +499,7 @@ public class ProtocolAdapterManager {
                     protocolSpecificAdapterConfig,
                     oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
-                    oldInstance.getTags(),
-                    oldInstance.getFieldMappings());
+                    oldInstance.getTags());
 
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
@@ -550,8 +517,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getConfigObject(),
                     oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
-                    configConverter.mapsToTags(protocolId, tags),
-                    oldInstance.getFieldMappings());
+                    configConverter.mapsToTags(protocolId, tags));
             deleteAdapterInternal(adapterId);
             addAdapterInternal(protocolAdapterConfig);
             configPersistence.updateAdapter(protocolAdapterConfig);
@@ -568,8 +534,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getConfigObject(),
                     oldInstance.getToEdgeMappings(),
                     fromEdgeMappings,
-                    oldInstance.getTags(),
-                    oldInstance.getFieldMappings());
+                    oldInstance.getTags());
             return protocolAdapterConfig.missingTags()
                     .map(missingTags -> {
                         log.error("Tags were missing in fromMappings {}", missingTags);
@@ -593,8 +558,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getConfigObject(),
                     toEdgeMappings,
                     oldInstance.getFromEdgeMappings(),
-                    oldInstance.getTags(),
-                    oldInstance.getFieldMappings());
+                    oldInstance.getTags());
             return protocolAdapterConfig.missingTags()
                     .map(missingTags -> {
                         log.error("Tags were missing in toMappings {}", missingTags);
@@ -606,25 +570,6 @@ public class ProtocolAdapterManager {
                         configPersistence.updateAdapter(protocolAdapterConfig);
                         return true;
                     });
-        }).orElse(false);
-    }
-
-    public boolean updateAdapterFieldMappings(
-            final @NotNull String adapterId, final @NotNull List<FieldMappings> fieldMappings) {
-        Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId).map(oldInstance -> {
-            final String protocolId = oldInstance.getProtocolAdapterInformation().getProtocolId();
-            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
-                    protocolId,
-                    oldInstance.getConfigObject(),
-                    oldInstance.getToEdgeMappings(),
-                    oldInstance.getFromEdgeMappings(),
-                    oldInstance.getTags(),
-                    fieldMappings);
-            deleteAdapterInternal(adapterId);
-            addAdapterInternal(protocolAdapterConfig);
-            configPersistence.updateAdapter(protocolAdapterConfig);
-            return true;
         }).orElse(false);
     }
 
@@ -680,7 +625,6 @@ public class ProtocolAdapterManager {
                                     config.getAdapterConfig(),
                                     config.getTags(),
                                     config.getFromEdgeMappings(),
-                                    config.getToEdgeMappings(),
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,
@@ -688,7 +632,8 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapterMetricsService,
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                    protocolAdapterMetricsService,
                     protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
@@ -696,8 +641,7 @@ public class ProtocolAdapterManager {
                     config.getAdapterConfig(),
                     config.getTags(),
                     config.getToEdgeMappings(),
-                    config.getFromEdgeMappings(),
-                    config.getFieldMappings());
+                    config.getFromEdgeMappings());
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -830,42 +774,6 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toList()));
     }
 
-    public @NotNull DomainTagAddResult addFieldMappings(
-            final @NotNull String adapterId, final @NotNull FieldMappings fieldMappings) {
-        return getAdapterById(adapterId).map(adapter -> {
-            final @NotNull List<FieldMappings> presentMappings = adapter.getFieldMappings();
-            final boolean alreadyExists =
-                    presentMappings.stream().anyMatch(t -> t.getTopicFilter().equals(fieldMappings.getTopicFilter()));
-            if (!alreadyExists) {
-                final ArrayList<FieldMappings> newFieldMappings = new ArrayList<>(presentMappings);
-                newFieldMappings.add(fieldMappings);
-                updateAdapterFieldMappings(adapterId, newFieldMappings);
-                return DomainTagAddResult.success();
-            } else {
-                return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
-            }
-        }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
-    }
-
-
-    public @NotNull Optional<List<FieldMappings>> getFieldMappingsForAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper> optionalProtocolAdapterWrapper = getAdapterById(adapterId);
-        if (optionalProtocolAdapterWrapper.isEmpty()) {
-            return Optional.empty();
-        }
-        final ProtocolAdapterWrapper protocolAdapterWrapper = optionalProtocolAdapterWrapper.get();
-
-        return Optional.of(protocolAdapterWrapper.getFieldMappings());
-    }
-
-
-    public @NotNull List<FieldMappings> getFieldMappings() {
-        return getProtocolAdapters().values()
-                .stream()
-                .flatMap(adapter -> adapter.getFieldMappings().stream())
-                .collect(Collectors.toList());
-    }
-
 
     public static class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig>
             implements ProtocolAdapterInput<T> {
@@ -877,15 +785,13 @@ public class ProtocolAdapterManager {
         private final @NotNull ModuleServices moduleServices;
         private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
         private final @NotNull List<Tag> tags;
-        private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
-        private final @NotNull List<ToEdgeMapping> toEdgeMappings;
+        private final @NotNull List<PollingContext> pollingContexts;
 
         public ProtocolAdapterInputImpl(
                 final @NotNull String adapterId,
                 final @NotNull T configObject,
                 final @NotNull List<Tag> tags,
                 final @NotNull List<FromEdgeMapping> fromEdgeMappings,
-                final @NotNull List<ToEdgeMapping> toEdgeMappings,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
                 final @NotNull ModuleServices moduleServices,
@@ -897,8 +803,7 @@ public class ProtocolAdapterManager {
             this.moduleServices = moduleServices;
             this.protocolAdapterMetricsService = protocolAdapterMetricsService;
             this.tags = tags;
-            this.toEdgeMappings = toEdgeMappings;
-            this.fromEdgeMappings = fromEdgeMappings;
+            this.pollingContexts = fromEdgeMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
         }
 
         @Override
@@ -942,13 +847,86 @@ public class ProtocolAdapterManager {
         }
 
         @Override
-        public @NotNull List<FromEdgeMapping> getFromEdgeMappings() {
-            return List.copyOf(fromEdgeMappings);
+        public @NotNull List<PollingContext> getPollingContexts() {
+            return pollingContexts;
+        }
+    }
+
+    private static class PollingContextWrapper implements PollingContext {
+        private final @NotNull String topic;
+        private final @NotNull String tagName;
+        private final @NotNull MessageHandlingOptions messageHandlingOptions;
+        private final boolean includeTagNames;
+        private final boolean includeTimestamp;
+        private final @NotNull List<MqttUserProperty> userProperties;
+        private final int maxQoS;
+        private final long messageExpiryInterval;
+
+        public PollingContextWrapper(
+                final String topic,
+                final String tagName,
+                final MessageHandlingOptions messageHandlingOptions,
+                final boolean includeTagNames,
+                final boolean includeTimestamp,
+                final List<MqttUserProperty> userProperties,
+                final int maxQoS,
+                final long messageExpiryInterval) {
+            this.topic = topic;
+            this.tagName = tagName;
+            this.messageHandlingOptions = messageHandlingOptions;
+            this.includeTagNames = includeTagNames;
+            this.includeTimestamp = includeTimestamp;
+            this.userProperties = userProperties;
+            this.maxQoS = maxQoS;
+            this.messageExpiryInterval = messageExpiryInterval;
         }
 
         @Override
-        public @NotNull List<ToEdgeMapping> getToEdgeMappings() {
-            return List.copyOf(toEdgeMappings);
+        public @NotNull String getMqttTopic() {
+            return topic;
+        }
+
+        @Override
+        public @NotNull String getTagName() {
+            return tagName;
+        }
+
+        @Override
+        public int getMqttQos() {
+            return maxQoS;
+        }
+
+        @Override
+        public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
+            return messageHandlingOptions;
+        }
+
+        @Override
+        public @NotNull Boolean getIncludeTimestamp() {
+            return includeTimestamp;
+        }
+
+        @Override
+        public @NotNull Boolean getIncludeTagNames() {
+            return includeTagNames;
+        }
+
+        @Override
+        public @NotNull List<MqttUserProperty> getUserProperties() {
+            return userProperties;
+        }
+
+        public static @NotNull PollingContextWrapper from(FromEdgeMapping fromEdgeMapping) {
+            return new PollingContextWrapper(
+                    fromEdgeMapping.getMqttTopic(),
+                    fromEdgeMapping.getTagName(),
+                    fromEdgeMapping.getMessageHandlingOptions(),
+                    fromEdgeMapping.getIncludeTagNames(),
+                    fromEdgeMapping.getIncludeTimestamp(),
+                    List.copyOf(fromEdgeMapping.getUserProperties()),
+                    fromEdgeMapping.getMqttQos(),
+                    fromEdgeMapping.getMessageExpiryInterval()
+            );
         }
     }
 }

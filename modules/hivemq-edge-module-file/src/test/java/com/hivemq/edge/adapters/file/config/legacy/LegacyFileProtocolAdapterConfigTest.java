@@ -87,7 +87,6 @@ class LegacyFileProtocolAdapterConfigTest {
                                                     new MqttUserPropertyEntity ("name", "value2")
                                             );
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -131,7 +130,6 @@ class LegacyFileProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

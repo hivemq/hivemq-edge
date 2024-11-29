@@ -18,19 +18,12 @@ package com.hivemq.edge.adapters.plc4x.types.ads.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-
-public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMqttConfig> implements
-        AdapterConfigWithPollingContexts {
+public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -98,7 +91,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         this.sourceAmsNetId = sourceAmsNetId;
         this.targetAmsNetId = targetAmsNetId;
         if (adsToMqttConfig == null) {
-            this.adsToMqttConfig = new ADSToMqttConfig(null, null, null, null);
+            this.adsToMqttConfig = new ADSToMqttConfig(null, null, null);
         } else {
             this.adsToMqttConfig = adsToMqttConfig;
         }
@@ -129,13 +122,5 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     @Override
     public @Nullable ADSToMqttConfig getPlc4xToMqttConfig() {
         return adsToMqttConfig;
-    }
-
-    @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
-        if (adsToMqttConfig==null){
-            return  List.of();
-        }
-        return adsToMqttConfig.getMappings();
     }
 }

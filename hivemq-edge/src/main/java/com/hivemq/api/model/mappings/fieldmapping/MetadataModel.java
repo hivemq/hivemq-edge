@@ -18,7 +18,7 @@ package com.hivemq.api.model.mappings.fieldmapping;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.adapter.sdk.api.mappings.fields.Metadata;
+import com.hivemq.persistence.mappings.fieldmapping.Metadata;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 

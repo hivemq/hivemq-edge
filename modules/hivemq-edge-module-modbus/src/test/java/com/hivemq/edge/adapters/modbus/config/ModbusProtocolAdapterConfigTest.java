@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.modbus.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -33,7 +32,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -41,7 +39,6 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -149,19 +146,8 @@ public class ModbusProtocolAdapterConfigTest {
                 new ModbusToMqttConfig(
                         12,
                         13,
-                        true,
-                        List.of(
-                                new ModbusToMqttMapping(
-                                        "my/destination",
-                                        1,
-                                        "tag1",
-                                        MQTTMessagePerSubscription,
-                                        false,
-                                        true,
-                                        List.of(new MqttUserProperty("my-name", "my-value")))
-                        )
-                )
-        );
+                        true
+                        ));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -190,27 +176,7 @@ public class ModbusProtocolAdapterConfigTest {
                 new ModbusToMqttConfig(
                         null,
                         null,
-                        null,
-                        List.of(
-                                new ModbusToMqttMapping(
-                                        "my/destination",
-                                        null,
-                                        "tag1",
-                                        null,
-                                        null,
-                                        null,
-                                        null),
-                                new ModbusToMqttMapping(
-                                        "my/destination/2",
-                                        null,
-                                        "tag1",
-                                        MQTTMessagePerSubscription,
-                                        null,
-                                        null,
-                                        null)
-                        )
-                )
-        );
+                        null));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

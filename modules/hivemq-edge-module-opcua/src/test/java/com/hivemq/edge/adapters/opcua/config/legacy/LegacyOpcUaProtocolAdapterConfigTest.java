@@ -114,7 +114,6 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .isEqualTo("ns=2;i=1004");
                                         });
 
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -175,7 +174,7 @@ class LegacyOpcUaProtocolAdapterConfigTest {
                                                     .extracting("node")
                                                     .isEqualTo("ns=1;i=1004");
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
+
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

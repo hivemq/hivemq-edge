@@ -85,7 +85,7 @@ public class EipPollingProtocolAdapterIT {
                 List.of());
 
         final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true, List.of(eipToMqttMapping)));
+                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
 
 
 
@@ -133,7 +133,7 @@ public class EipPollingProtocolAdapterIT {
                 List.of());
 
         final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false, List.of(eipToMqttMapping)));
+                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false));
 
 
 
@@ -176,7 +176,7 @@ public class EipPollingProtocolAdapterIT {
                 List.of());
 
         final EipSpecificAdapterConfig config =
-                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true, List.of(eipToMqttMapping)));
+                new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
 
 
         final ProtocolAdapterInput<EipSpecificAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);

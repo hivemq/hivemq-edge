@@ -16,14 +16,12 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
@@ -47,7 +45,6 @@ import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdap
 import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -153,15 +150,7 @@ class S7ProtocolAdapterConfigTest {
                 new S7ToMqttConfig(
                         12,
                         13,
-                        true,
-                        List.of(new Plc4xToMqttMapping("my/destination",
-                                1,
-                                MQTTMessagePerSubscription,
-                                false,
-                                true,
-                                "tag-name",
-                                List.of(new MqttUserProperty("my-name", "my-value")))))
-        );
+                        true));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

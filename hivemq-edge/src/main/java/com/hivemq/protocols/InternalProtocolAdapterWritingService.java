@@ -29,12 +29,12 @@ public interface InternalProtocolAdapterWritingService extends ProtocolAdapterWr
 
     @NotNull
     CompletableFuture<Void> startWriting(
-            @NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+            @NotNull WritingProtocolAdapter writingProtocolAdapter,
             @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull List<InternalWritingContext> writingContexts);
 
     @NotNull
-    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
+    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter writingProtocolAdapter, final @NotNull List<InternalWritingContext> writingContexts);
 
     void addWritingChangedCallback(@NotNull WritingChangedCallback callback);
 

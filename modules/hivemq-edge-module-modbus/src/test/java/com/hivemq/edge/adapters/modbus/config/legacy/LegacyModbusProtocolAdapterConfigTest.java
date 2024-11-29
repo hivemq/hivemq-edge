@@ -92,7 +92,6 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                             );
                                         });
 
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -138,7 +137,6 @@ public class LegacyModbusProtocolAdapterConfigTest {
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
 
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

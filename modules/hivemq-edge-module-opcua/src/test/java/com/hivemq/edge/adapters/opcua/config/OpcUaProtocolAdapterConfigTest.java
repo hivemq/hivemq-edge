@@ -22,10 +22,7 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaConfig;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -110,7 +107,6 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
         });
 
-        assertThat(config.getMqttToOpcUaConfig()).isNotNull();
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
@@ -159,7 +155,6 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
         });
 
-        assertThat(config.getMqttToOpcUaConfig()).isNotNull();
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
@@ -193,8 +188,7 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
-                new OpcUaToMqttConfig(null, null, null),
-                new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", 0))),
+                new OpcUaToMqttConfig(null, null),
                 new Security(BASIC128RSA15)
         );
 
@@ -207,13 +201,6 @@ class OpcUaProtocolAdapterConfigTest {
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull();
-
-        final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
-        assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("tagName")).isEqualTo("my-node");
-            assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
-            assertThat(mapping.get("mqttMaxQos")).isEqualTo(0);
-        });
 
         final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
         assertThat((Map<String, Object>) authMap.get("basic")).satisfies(basic -> {
@@ -245,8 +232,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
-                new OpcUaToMqttConfig(null, null, null),
-                new MqttToOpcUaConfig(List.of(new MqttToOpcUaMapping("my-node", "my/topic", null))),
+                new OpcUaToMqttConfig(null, null),
                 null
         );
 
@@ -259,13 +245,6 @@ class OpcUaProtocolAdapterConfigTest {
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull(); // must be empty
-
-        final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
-        assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("tagName")).isEqualTo("my-node");
-            assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
-            assertThat(mapping.get("mqttMaxQos")).isEqualTo(1);
-        });
 
         final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
         assertThat((Map<String, Object>) authMap.get("basic")).isNull();

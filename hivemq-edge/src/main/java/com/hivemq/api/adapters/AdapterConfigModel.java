@@ -18,13 +18,14 @@ package com.hivemq.api.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.adapters.Adapter;
-import com.hivemq.api.model.fieldmapping.FieldMappingsModel;
+import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingModel;
+import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingModel;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Objects;
 
 public class AdapterConfigModel {
 
@@ -38,18 +39,27 @@ public class AdapterConfigModel {
             description = "The tags defined for this adapter")
     private final @NotNull List<DomainTagModel> domainTagModels;
 
-    @JsonProperty("fieldMappings")
-    @Schema(name = "fieldMappings", description = "The fieldMappings for this adapter")
-    private final @NotNull List<FieldMappingsModel> fieldMappings;
+    @JsonProperty("toEdgeMappings")
+    @Schema(name = "toEdgeMappings",
+            description = "The toEdge mappings for thid adapter")
+    private final @NotNull List<ToEdgeMappingModel> toEdgeMappingModels;
+
+    @JsonProperty("fromEdgeMappings")
+    @Schema(name = "fromEdgeMappings",
+            description = "The fromEdge mappings for thid adapter")
+    private final @NotNull List<FromEdgeMappingModel> fromEdgeMappingModels;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AdapterConfigModel(
             @JsonProperty("config") final @NotNull Adapter adapter,
             @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels,
-            @JsonProperty("fieldMappings") final @NotNull List<FieldMappingsModel> fieldMappings) {
+            @JsonProperty("toEdgeMappings") final @NotNull List<ToEdgeMappingModel> toEdgeMappingModels,
+            @JsonProperty("fromEdgeMappings") final @NotNull List<FromEdgeMappingModel> fromEdgeMappingModels
+    ) {
         this.adapter = adapter;
         this.domainTagModels = domainTagModels;
-        this.fieldMappings = fieldMappings;
+        this.toEdgeMappingModels = Objects.requireNonNullElse(toEdgeMappingModels, List.of());
+        this.fromEdgeMappingModels = Objects.requireNonNullElse(fromEdgeMappingModels, List.of());
     }
 
     public @NotNull Adapter getAdapter() {
@@ -60,38 +70,41 @@ public class AdapterConfigModel {
         return domainTagModels;
     }
 
-    public @NotNull List<FieldMappingsModel> getFieldMappings() {
-        return fieldMappings;
+    public @NotNull List<ToEdgeMappingModel> getToEdgeMappingModels() {
+        return toEdgeMappingModels;
+    }
+
+    public @NotNull List<FromEdgeMappingModel> getFromEdgeMappingModels() {
+        return fromEdgeMappingModels;
     }
 
     @Override
-    public boolean equals(final @Nullable Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         final AdapterConfigModel that = (AdapterConfigModel) o;
-        return adapter.equals(that.adapter) &&
-                domainTagModels.equals(that.domainTagModels) &&
-                fieldMappings.equals(that.fieldMappings);
+        return Objects.equals(adapter, that.adapter) &&
+                Objects.equals(domainTagModels, that.domainTagModels) &&
+                Objects.equals(toEdgeMappingModels, that.toEdgeMappingModels) &&
+                Objects.equals(fromEdgeMappingModels, that.fromEdgeMappingModels);
     }
 
     @Override
     public int hashCode() {
-        int result = adapter.hashCode();
-        result = 31 * result + domainTagModels.hashCode();
-        result = 31 * result + fieldMappings.hashCode();
-        return result;
+        return Objects.hash(adapter, domainTagModels, toEdgeMappingModels, fromEdgeMappingModels);
     }
 
     @Override
-    public @NotNull String toString() {
+    public String toString() {
         return "AdapterConfigModel{" +
                 "adapter=" +
                 adapter +
                 ", domainTagModels=" +
                 domainTagModels +
-                ", fieldMappings=" +
-                fieldMappings +
+                ", toEdgeMappingModels=" +
+                toEdgeMappingModels +
+                ", fromEdgeMappingModels=" +
+                fromEdgeMappingModels +
                 '}';
     }
 }

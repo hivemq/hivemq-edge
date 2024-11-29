@@ -18,7 +18,6 @@ package com.hivemq.edge.modules.adapters.simulation.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -42,11 +41,6 @@ public class SimulationToMqttConfig {
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty(value = "simulationToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "simulationToMqttMappings",
-                       description = "List of simulation to mqtt mappings for the simulation")
-    private final @NotNull List<SimulationToMqttMapping> simulationToMqttMappings;
-
     @JsonCreator
     public SimulationToMqttConfig(
             @JsonProperty("simulationToMqttMappings") final @Nullable List<SimulationToMqttMapping> simulationToMqttMappings,
@@ -54,7 +48,6 @@ public class SimulationToMqttConfig {
             @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.simulationToMqttMappings = Objects.requireNonNullElse(simulationToMqttMappings, List.of());
     }
 
     public int getPollingIntervalMillis() {
@@ -63,9 +56,5 @@ public class SimulationToMqttConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<SimulationToMqttMapping> getSimulationToMqttMappings() {
-        return simulationToMqttMappings;
     }
 }

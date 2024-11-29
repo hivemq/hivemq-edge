@@ -28,21 +28,12 @@ import java.util.Objects;
 
 public class S7ToMqttConfig extends Plc4xToMqttConfig {
 
-    @JsonProperty(value = "s7ToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "S7 to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<Plc4xToMqttMapping> mappings;
-
     @JsonCreator
     public S7ToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "s7ToMqttMappings") final @Nullable List<Plc4xToMqttMapping> mappings) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
-    public @NotNull List<Plc4xToMqttMapping> getMappings() {
-        return mappings;
-    }
 }

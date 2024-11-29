@@ -2,12 +2,12 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -242,7 +242,7 @@ public class OpcUaClientWrapper {
             final @NotNull String adapterId,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
             final @NotNull List<Tag> tags,
-            final @NotNull List<FromEdgeMapping> fromEdgeMappings,
+            final @NotNull List<PollingContext> fromEdgeMappings,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,

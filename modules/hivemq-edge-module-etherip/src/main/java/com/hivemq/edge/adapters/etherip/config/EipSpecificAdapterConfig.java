@@ -18,16 +18,13 @@ package com.hivemq.edge.adapters.etherip.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
-public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
+public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -87,7 +84,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, 
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         if (eipToMqttConfig == null) {
-            this.eipToMqttConfig = new EipToMqttConfig(null, null, null, null);
+            this.eipToMqttConfig = new EipToMqttConfig(null, null, null);
         } else {
             this.eipToMqttConfig = eipToMqttConfig;
         }
@@ -114,11 +111,4 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, 
         return eipToMqttConfig;
     }
 
-    @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
-        if (eipToMqttConfig == null) {
-            return List.of();
-        }
-        return eipToMqttConfig.getMappings();
-    }
 }

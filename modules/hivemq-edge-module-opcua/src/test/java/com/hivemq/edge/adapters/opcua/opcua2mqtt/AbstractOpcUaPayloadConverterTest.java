@@ -22,7 +22,6 @@ import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -33,7 +32,6 @@ import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
@@ -43,6 +41,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,7 +52,6 @@ import util.EmbeddedOpcUaServerExtension;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -96,7 +94,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
             throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(null, null, null);
+                new OpcUaToMqttConfig(null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -107,7 +105,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
-        when(protocolAdapterInput.getFromEdgeMappings()).thenReturn(List.of(new FromEdgeMapping(
+        when(protocolAdapterInput.getPollingContexts()).thenReturn(List.of(new FromEdgeMapping(
                 subcribedNodeId,
                 "topic",
                 1,
@@ -115,7 +113,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 MessageHandlingOptions.MQTTMessagePerTag,
                 false,
                 false,
-                List.of()
+                List.of(),
+                null
                 )));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);

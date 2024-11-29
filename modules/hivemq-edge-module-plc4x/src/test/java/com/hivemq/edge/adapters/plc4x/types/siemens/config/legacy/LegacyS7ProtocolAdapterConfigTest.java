@@ -87,7 +87,6 @@ class LegacyS7ProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic/2");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -136,7 +135,6 @@ class LegacyS7ProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/topic/1");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

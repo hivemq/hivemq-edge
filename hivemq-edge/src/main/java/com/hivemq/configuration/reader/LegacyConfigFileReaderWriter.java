@@ -16,7 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
@@ -82,7 +82,7 @@ public class LegacyConfigFileReaderWriter<LEGACY_CONFIG_CLASS, CURRENT_CONFIG_CL
                 .add(legacyConfigClass)
                 .add(currentConfigClassClass)
                 .addAll(getInheritedEntityClasses())
-                .add(FieldMappingsEntity.class)
+                .add(FieldMappingEntity.class)
                 .build()
                 .toArray(new Class<?>[0]);
 

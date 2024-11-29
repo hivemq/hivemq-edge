@@ -39,9 +39,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
@@ -68,7 +66,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -80,7 +77,7 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLA
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProtocolAdapter<MqttToHttpMapping> {
+public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -367,14 +364,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
                         httpResponse.statusCode()));
             }
         });
-    }
-
-    @Override
-    public @NotNull List<MqttToHttpMapping> getWritingContexts() {
-        if (adapterConfig instanceof BidirectionalHttpSpecificAdapterConfig) {
-            return ((BidirectionalHttpSpecificAdapterConfig) adapterConfig).getMqttToHttpConfig().getMappings();
-        }
-        return Collections.emptyList();
     }
 
     @Override

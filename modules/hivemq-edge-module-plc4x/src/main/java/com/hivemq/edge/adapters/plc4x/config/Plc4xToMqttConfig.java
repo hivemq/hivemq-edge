@@ -15,14 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.config;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 public abstract class Plc4xToMqttConfig {
@@ -68,6 +65,4 @@ public abstract class Plc4xToMqttConfig {
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
     }
-
-    public abstract @NotNull List<Plc4xToMqttMapping> getMappings();
 }

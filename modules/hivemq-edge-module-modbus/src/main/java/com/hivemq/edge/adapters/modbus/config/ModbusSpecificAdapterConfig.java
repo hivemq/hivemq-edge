@@ -18,18 +18,15 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 
 @SuppressWarnings("FieldCanBeLocal")
-public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig, AdapterConfigWithPollingContexts {
+public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     public static final int PORT_MIN = 1;
     public static final int PORT_MAX = 65535;
 
@@ -86,7 +83,7 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
 
         if (modbusToMQTTConfig == null) {
-            this.modbusToMQTTConfig = new ModbusToMqttConfig(null, null, null, null);
+            this.modbusToMQTTConfig = new ModbusToMqttConfig(null, null, null);
         } else {
             this.modbusToMQTTConfig = modbusToMQTTConfig;
         }
@@ -108,11 +105,4 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         return modbusToMQTTConfig;
     }
 
-    @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
-        if (modbusToMQTTConfig == null) {
-            return List.of();
-        }
-        return modbusToMQTTConfig.getMappings();
-    }
 }

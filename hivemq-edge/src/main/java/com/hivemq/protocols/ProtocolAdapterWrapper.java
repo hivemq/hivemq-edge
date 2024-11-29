@@ -21,8 +21,6 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
@@ -32,7 +30,8 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
 
 import java.util.List;
 
@@ -47,7 +46,6 @@ public class ProtocolAdapterWrapper {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull List<ToEdgeMapping> toEdgeMappings;
     private final @NotNull List<FromEdgeMapping> fromEdgeMappings;
-    private final @NotNull List<FieldMappings> fieldMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -59,8 +57,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<? extends Tag> tags,
             final @NotNull List<ToEdgeMapping> toEdgeMappings,
-            final @NotNull List<FromEdgeMapping> fromEdgeMappings,
-            final @NotNull List<FieldMappings> fieldMappings) {
+            final @NotNull List<FromEdgeMapping> fromEdgeMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -70,7 +67,6 @@ public class ProtocolAdapterWrapper {
         this.tags = tags;
         this.toEdgeMappings = toEdgeMappings;
         this.fromEdgeMappings = fromEdgeMappings;
-        this.fieldMappings = fieldMappings;
     }
 
     public void start(
@@ -154,9 +150,5 @@ public class ProtocolAdapterWrapper {
 
     public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
         protocolAdapterState.setRuntimeStatus(runtimeStatus);
-    }
-
-    public @NotNull List<FieldMappings> getFieldMappings() {
-        return fieldMappings;
     }
 }

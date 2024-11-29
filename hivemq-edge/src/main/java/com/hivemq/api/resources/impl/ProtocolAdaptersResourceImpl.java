@@ -21,8 +21,6 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithPollingContexts;
-import com.hivemq.adapter.sdk.api.config.AdapterConfigWithWritingContexts;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -38,10 +36,10 @@ import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.fieldmapping.FieldMappingsListModel;
-import com.hivemq.api.model.fieldmapping.FieldMappingsModel;
-import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingModel;
 import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingListModel;
+import com.hivemq.api.model.mappings.frommapping.FromEdgeMappingModel;
+import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingListModel;
+import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -49,8 +47,6 @@ import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
-import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingListModel;
-import com.hivemq.api.model.mappings.tomapping.ToEdgeMappingModel;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -67,8 +63,8 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.ToEdgeMapping;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -76,7 +72,6 @@ import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
-import com.hivemq.adapter.sdk.api.mappings.toedge.ToEdgeMapping;
 import com.hivemq.protocols.params.NodeTreeImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
@@ -640,40 +635,23 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
 
-            final List<FromEdgeMapping> fromEdgeMappings;
-            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithPollingContexts) {
-                final AdapterConfigWithPollingContexts adapterConfigWithPollingContexts =
-                        (AdapterConfigWithPollingContexts) protocolSpecificAdapterConfig;
-                fromEdgeMappings = adapterConfigWithPollingContexts.getPollingContexts()
+            final List<FromEdgeMapping> fromEdgeMappings = adapter.getFromEdgeMappingModels()
                         .stream()
-                        .map(FromEdgeMapping::from)
+                        .map(FromEdgeMappingModel::to)
                         .collect(Collectors.toList());
-            } else {
-                fromEdgeMappings = new ArrayList<>();
-            }
 
-            final List<ToEdgeMapping> toEdgeMappings;
-            if (protocolSpecificAdapterConfig instanceof AdapterConfigWithWritingContexts) {
-                final AdapterConfigWithWritingContexts adapterConfigWithPollingContexts =
-                        (AdapterConfigWithWritingContexts) protocolSpecificAdapterConfig;
-                toEdgeMappings = adapterConfigWithPollingContexts.getWritingContexts()
-                        .stream()
-                        .map(ToEdgeMapping::from)
-                        .collect(Collectors.toList());
-            } else {
-                toEdgeMappings = new ArrayList<>();
-            }
+            final List<ToEdgeMapping> toEdgeMappings = adapter.getToEdgeMappingModels()
+                    .stream()
+                    .map(ToEdgeMappingModel::toToEdgeMapping)
+                    .collect(Collectors.toList());
 
-            final List<FieldMappings> fieldMappings =
-                    adapter.getFieldMappings().stream().map(FieldMappings::fromModel).collect(Collectors.toList());
-
-            protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
+            protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(
+                    adapterId,
                     adapterType,
                     protocolSpecificAdapterConfig,
                     toEdgeMappings,
                     fromEdgeMappings,
-                    tags,
-                    fieldMappings));
+                    tags));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -712,7 +690,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             .stream()
                             .map(mapping -> {
                                 requiredTags.add(mapping.getTagName());
-                                return mapping.toFromEdgeMapping();
+                                return mapping.to();
                             })
                             .collect(Collectors.toList());
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));

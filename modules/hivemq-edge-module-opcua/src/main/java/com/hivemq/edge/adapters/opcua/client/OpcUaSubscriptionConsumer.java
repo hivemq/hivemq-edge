@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
@@ -45,7 +45,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaSubscriptionConsumer {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
-    private final @NotNull FromEdgeMapping fromEdgeMapping;
+    private final @NotNull PollingContext fromEdgeMapping;
     private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
@@ -59,7 +59,7 @@ public class OpcUaSubscriptionConsumer {
 
     public OpcUaSubscriptionConsumer(
             final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
-            final @NotNull FromEdgeMapping fromEdgeMapping,
+            final @NotNull PollingContext fromEdgeMapping,
             final @NotNull UaSubscription uaSubscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -140,12 +140,12 @@ public class OpcUaSubscriptionConsumer {
     }
 
     public static class SubscriptionResult {
-        public final @NotNull FromEdgeMapping subscription;
+        public final @NotNull PollingContext subscription;
         public final @NotNull UaSubscription uaSubscription;
         public final @NotNull OpcUaSubscriptionConsumer consumer;
 
         public SubscriptionResult(
-                final @NotNull FromEdgeMapping subscription,
+                final @NotNull PollingContext subscription,
                 final @NotNull UaSubscription uaSubscription,
                 final @NotNull OpcUaSubscriptionConsumer consumer) {
             this.subscription = subscription;

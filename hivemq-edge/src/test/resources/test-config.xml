@@ -242,7 +242,6 @@
                     <mqttUserProperties/>
                 </fromEdgeMapping>
             </fromEdgeMappings>
-            <tagMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-1</adapterId>
@@ -277,7 +276,6 @@
                     <mqttUserProperties/>
                 </fromEdgeMapping>
             </fromEdgeMappings>
-            <tagMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-2</adapterId>
@@ -337,7 +335,6 @@
                     <mqttUserProperties/>
                 </fromEdgeMapping>
             </fromEdgeMappings>
-            <tagMappings/>
         </protocol-adapter>
     </protocol-adapters>
     <modules/>

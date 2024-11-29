@@ -69,7 +69,6 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/destination");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });
@@ -118,7 +117,6 @@ public class LegacyHttpProtocolAdapterConfigTest {
                                             assertThat(mapping.getTopic()).isEqualTo("my/destination");
                                             assertThat(mapping.getUserProperties()).isEmpty();
                                         });
-                                assertThat(entity.getFieldMappings()).isEmpty();
                                 assertThat(entity.getToEdgeMappingEntities()).isEmpty();
                             });
                 });

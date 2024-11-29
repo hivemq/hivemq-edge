@@ -15,11 +15,15 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.mappings.fromedge.FromEdgeMapping;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.mappings.FromEdgeMapping;
+import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -56,6 +60,9 @@ public class FromEdgeMappingEntity {
     @XmlElement(name = "messageExpiryInterval", required = true)
     private final @NotNull long messageExpiryInterval;
 
+    @XmlElement(name = "fieldMapping")
+    private final @Nullable FieldMappingEntity fieldMapping;
+
     // no-arg constructor for JaxB
     public FromEdgeMappingEntity() {
         topic = "";
@@ -66,6 +73,7 @@ public class FromEdgeMappingEntity {
         maxQoS = 1;
         userProperties = new ArrayList<>();
         messageExpiryInterval = Long.MAX_VALUE;
+        fieldMapping = null;
     }
 
     public FromEdgeMappingEntity(
@@ -76,7 +84,8 @@ public class FromEdgeMappingEntity {
             final boolean includeTagNames,
             final boolean includeTimestamp,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
-            final long messageExpiryInterval) {
+            final long messageExpiryInterval,
+            final @Nullable FieldMappingEntity fieldMapping) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -85,6 +94,7 @@ public class FromEdgeMappingEntity {
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
         this.messageExpiryInterval = messageExpiryInterval;
+        this.fieldMapping = fieldMapping;
     }
 
     public @NotNull String getTagName() {
@@ -115,6 +125,10 @@ public class FromEdgeMappingEntity {
         return maxQoS;
     }
 
+    public @Nullable FieldMappingEntity getFieldMapping() {
+        return fieldMapping;
+    }
+
     @NotNull public long getMessageExpiryInterval() {
         return messageExpiryInterval;
     }
@@ -128,7 +142,7 @@ public class FromEdgeMappingEntity {
         }
     }
 
-    public static @NotNull FromEdgeMappingEntity from(final @NotNull PollingContext fromEdgeMapping) {
+    public static @NotNull FromEdgeMappingEntity from(final @NotNull FromEdgeMapping fromEdgeMapping) {
         final List<MqttUserPropertyEntity> mqttUserPropertyEntities = fromEdgeMapping.getUserProperties()
                 .stream()
                 .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
@@ -143,15 +157,18 @@ public class FromEdgeMappingEntity {
                 fromEdgeMapping.getIncludeTagNames(),
                 fromEdgeMapping.getIncludeTimestamp(),
                 mqttUserPropertyEntities,
-                fromEdgeMapping.getMessageExpiryInterval());
+                fromEdgeMapping.getMessageExpiryInterval(),
+                FieldMappingEntity.from(fromEdgeMapping.getFieldMapping()));
     }
 
-    public @NotNull FromEdgeMapping toFromEdgeMapping() {
+    public @NotNull FromEdgeMapping toFromEdgeMapping(ObjectMapper mapper) {
         final List<MqttUserProperty> mqttUserProperties = this.getUserProperties()
                 .stream()
                 .map(mqttUserPropertyEntity -> new MqttUserProperty(mqttUserPropertyEntity.getName(),
                         mqttUserPropertyEntity.getValue()))
                 .collect(Collectors.toList());
+
+        final FieldMapping fieldMapping = this.getFieldMapping() != null ? this.getFieldMapping().to(mapper) : null;
 
         return new FromEdgeMapping(
                 this.getTagName(),
@@ -162,6 +179,51 @@ public class FromEdgeMappingEntity {
                 this.isIncludeTagNames(),
                 this.isIncludeTimestamp(),
                 mqttUserProperties,
+                fieldMapping);
+    }
+
+    @Override
+    public String toString() {
+        return "FromEdgeMappingEntity{" +
+                "topic='" +
+                topic +
+                '\'' +
+                ", tagName='" +
+                tagName +
+                '\'' +
+                ", maxQoS=" +
+                maxQoS +
+                ", messageHandlingOptions=" +
+                messageHandlingOptions +
+                ", includeTagNames=" +
+                includeTagNames +
+                ", includeTimestamp=" +
+                includeTimestamp +
+                ", userProperties=" +
+                userProperties +
+                ", messageExpiryInterval=" +
+                messageExpiryInterval +
+                ", fieldMapping=" +
+                fieldMapping +
+                '}';
+    }
+
+    public static @NotNull FromEdgeMappingEntity fromPollingContext(PollingContext ctx) {
+        final List<MqttUserPropertyEntity> mqttUserProperties = ctx.getUserProperties()
+                .stream()
+                .map(mqttUserPropertyEntity -> new MqttUserPropertyEntity(mqttUserPropertyEntity.getName(),
+                        mqttUserPropertyEntity.getValue()))
+                .collect(Collectors.toList());
+
+        return new FromEdgeMappingEntity(
+                ctx.getTagName(),
+                ctx.getMqttTopic(),
+                ctx.getMqttQos(),
+                ctx.getMessageHandlingOptions(),
+                ctx.getIncludeTagNames(),
+                ctx.getIncludeTimestamp(),
+                mqttUserProperties,
+                ctx.getMessageExpiryInterval(),
                 null);
     }
 }

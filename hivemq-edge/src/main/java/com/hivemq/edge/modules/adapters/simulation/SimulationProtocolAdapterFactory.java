@@ -82,7 +82,9 @@ public class SimulationProtocolAdapterFactory
                 legacySimulationAdapterConfig.getMaxValue(),
                 legacySimulationAdapterConfig.getMinDelay(),
                 legacySimulationAdapterConfig.getMaxDelay());
-        return new ConfigTagsTuple(legacySimulationAdapterConfig.getId(),
+
+        return new ConfigTagsTuple(
+                legacySimulationAdapterConfig.getId(),
                 simulationSpecificAdapterConfig,
                 List.of(),
                 simulationToMqttMappings);

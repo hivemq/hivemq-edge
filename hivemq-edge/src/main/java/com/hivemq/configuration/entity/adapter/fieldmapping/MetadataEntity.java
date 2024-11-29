@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.entity.adapter;
+package com.hivemq.configuration.entity.adapter.fieldmapping;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.persistence.fieldmapping.FieldMappingMetaData;
+import com.hivemq.persistence.mappings.fieldmapping.Metadata;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class FieldMappingMetaDataEntity {
+public class MetadataEntity {
 
     @XmlElement(name = "sourceSchema")
     private final @NotNull String sourceJsonSchema;
@@ -29,22 +31,16 @@ public class FieldMappingMetaDataEntity {
     private final @NotNull String destinationJsonSchema;
 
     // no-arg for JaxB
-    FieldMappingMetaDataEntity() {
+    MetadataEntity() {
         sourceJsonSchema = "{}";
         destinationJsonSchema = "{}";
     }
 
-    public FieldMappingMetaDataEntity(
+    public MetadataEntity(
             final @NotNull String sourceJsonSchema,
             final @NotNull String destinationJsonSchema) {
         this.sourceJsonSchema = sourceJsonSchema;
         this.destinationJsonSchema = destinationJsonSchema;
-    }
-
-    public static @NotNull FieldMappingMetaDataEntity from(
-            final @NotNull FieldMappingMetaData model) {
-        return new FieldMappingMetaDataEntity(model.getSourceJsonSchema().toString(),
-                model.getDestinationJsonSchema().toString());
     }
 
     public @NotNull String getDestinationJsonSchema() {
@@ -53,5 +49,22 @@ public class FieldMappingMetaDataEntity {
 
     public @NotNull String getSourceJsonSchema() {
         return sourceJsonSchema;
+    }
+
+    public static @NotNull MetadataEntity from(
+            final @NotNull Metadata model) {
+        return new MetadataEntity(model.getSourceJsonSchema().toString(),
+                model.getDestinationJsonSchema().toString());
+    }
+
+    public @NotNull Metadata to(ObjectMapper mapper) {
+        final Metadata metadata;
+        try {
+            metadata =
+                    new Metadata(mapper.readTree(getSourceJsonSchema()), mapper.readTree(getDestinationJsonSchema()));
+            return metadata;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e); //TODO nicer!
+        }
     }
 }

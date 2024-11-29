@@ -49,20 +49,14 @@ public class ModbusToMqttConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
-    @JsonProperty(value = "modbusToMqttMappings", access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Modbus to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<ModbusToMqttMapping> mappings;
-
     @JsonCreator
     public ModbusToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "modbusToMqttMappings") final @Nullable List<ModbusToMqttMapping> mappings) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
-        this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 
     public int getPollingIntervalMillis() {
@@ -75,9 +69,5 @@ public class ModbusToMqttConfig {
 
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
-    }
-
-    public @NotNull List<ModbusToMqttMapping> getMappings() {
-        return mappings;
     }
 }

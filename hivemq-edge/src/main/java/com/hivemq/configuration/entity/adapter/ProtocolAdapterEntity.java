@@ -17,6 +17,7 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -57,10 +58,6 @@ public class ProtocolAdapterEntity {
     @XmlElement(name = "fromEdgeMapping")
     private @NotNull List<FromEdgeMappingEntity> fromEdgeMappingEntities = new ArrayList<>();
 
-    @XmlElementWrapper(name = "tagMappings")
-    @XmlElement(name = "tagMapping")
-    private @NotNull List<FieldMappingsEntity> fieldMappings = new ArrayList<>();
-
 
     // no-arg constructor for JaxB
     public ProtocolAdapterEntity() {
@@ -71,15 +68,14 @@ public class ProtocolAdapterEntity {
             @NotNull final String protocolId,
             @NotNull final Map<String, Object> config,
             @NotNull final List<FromEdgeMappingEntity> fromEdgeMappingEntities,
-            @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities, @NotNull final List<TagEntity> tags,
-            @NotNull final List<FieldMappingsEntity> fieldMappings) {
+            @NotNull final List<ToEdgeMappingEntity> toEdgeMappingEntities,
+            @NotNull final List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.config = config;
         this.fromEdgeMappingEntities = fromEdgeMappingEntities;
         this.protocolId = protocolId;
         this.tags = tags;
         this.toEdgeMappingEntities = toEdgeMappingEntities;
-        this.fieldMappings = fieldMappings;
     }
 
     public @NotNull Map<String, Object> getConfig() {
@@ -104,10 +100,6 @@ public class ProtocolAdapterEntity {
 
     public @NotNull String getAdapterId() {
         return adapterId;
-    }
-
-    public @NotNull List<FieldMappingsEntity> getFieldMappings() {
-        return fieldMappings;
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
@@ -142,19 +134,17 @@ public class ProtocolAdapterEntity {
                 .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                 .collect(Collectors.toList());
 
-        final List<FieldMappingsEntity> fieldMappingsEntities = protocolAdapterConfig.getFieldMappings()
-                .stream()
-                .map(FieldMappingsEntity::from)
-                .collect(Collectors.toList());
-
         final Map<String, Object> configAsMaps =
                 objectMapper.convertValue(protocolAdapterConfig.getAdapterConfig(), new TypeReference<>() {
                 });
 
-        return new ProtocolAdapterEntity(protocolAdapterConfig.getAdapterId(),
+        return new ProtocolAdapterEntity(
+                protocolAdapterConfig.getAdapterId(),
                 protocolAdapterConfig.getProtocolId(),
                 configAsMaps,
-                fromEdgeMappingEntities, toEdgeMappingEntities, tagEntities, fieldMappingsEntities);
+                fromEdgeMappingEntities,
+                toEdgeMappingEntities,
+                tagEntities);
     }
 
 

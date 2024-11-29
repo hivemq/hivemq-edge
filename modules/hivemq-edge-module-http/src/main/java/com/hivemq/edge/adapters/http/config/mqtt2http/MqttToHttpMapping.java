@@ -85,12 +85,12 @@ public class MqttToHttpMapping implements WritingContext {
         return tagName;
     }
 
-    public @NotNull String getMqttTopicFilter() {
+    public @NotNull String getTopicFilter() {
         return mqttTopicFilter;
     }
 
     @Override
-    public int getMqttMaxQos() {
+    public int getMaxQoS() {
         return mqttMaxQos;
     }
 

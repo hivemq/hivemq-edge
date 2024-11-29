@@ -92,8 +92,7 @@ public class HttpProtocolAdapterFactory
                 new HttpToMqttConfig(legacyHttpAdapterConfig.getPollingIntervalMillis(),
                         legacyHttpAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         legacyHttpAdapterConfig.isAssertResponseIsJson(),
-                        legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
-                        List.of(httpToMqttMapping));
+                        legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly());
 
         return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
                 new HttpSpecificAdapterConfig(
