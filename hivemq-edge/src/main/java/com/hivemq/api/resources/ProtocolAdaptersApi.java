@@ -85,7 +85,7 @@ public interface ProtocolAdaptersApi {
     Response getAdapterTypes();
 
     @GET
-    @Path("/tagschemas/{protocolId}")
+    @Path("/tag-schemas/{protocolId}")
     @Operation(summary = "Obtain the JSON schema for a tag for a specific protocol adapter.",
                operationId = "getTagSchema",
                description = "Obtain the tag schema for a specific portocol adapter.",

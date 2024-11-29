@@ -3932,6 +3932,27 @@ paths:
       summary: Get the status of all the adapters in the system.
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/tag-schemas/{protocolId}:
+    get:
+      description: Obtain the tag schema for a specific portocol adapter.
+      operationId: getTagSchema
+      parameters:
+      - description: The protocol id.
+        in: path
+        name: protocolId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagSchema'
+          description: Success
+      summary: Obtain the JSON schema for a tag for a specific protocol adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/tags:
     get:
       description: Get the list of all domain tags created in this Edge instance
@@ -3990,27 +4011,6 @@ paths:
                 $ref: '#/components/schemas/DomainTag'
           description: Success
       summary: Get the domain tag with the given name in this Edge instance
-      tags:
-      - Protocol Adapters
-  /api/v1/management/protocol-adapters/tagschemas/{protocolId}:
-    get:
-      description: Obtain the tag schema for a specific portocol adapter.
-      operationId: getTagSchema
-      parameters:
-      - description: The protocol id.
-        in: path
-        name: protocolId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TagSchema'
-          description: Success
-      summary: Obtain the JSON schema for a tag for a specific protocol adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/types:
