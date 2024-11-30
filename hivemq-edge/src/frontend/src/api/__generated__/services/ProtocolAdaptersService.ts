@@ -362,20 +362,20 @@ export class ProtocolAdaptersService {
      * Delete an domain tag
      * Delete the specified domain tag on the given adapter.
      * @param adapterId The adapter Id.
-     * @param tagId The domain tag Id.
+     * @param tagName The domain tag Id.
      * @returns any Success
      * @throws ApiError
      */
     public deleteAdapterDomainTags(
         adapterId: string,
-        tagId: string,
+        tagName: string,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
             path: {
                 'adapterId': adapterId,
-                'tagId': tagId,
+                'tagName': tagName,
             },
         });
     }
@@ -384,22 +384,22 @@ export class ProtocolAdaptersService {
      * Update the domain tag of an adapter.
      * Update the domain tag of an adapter.
      * @param adapterId The id of the adapter whose domain tag will be updated.
-     * @param tagId The id of the domain tag that will be changed.
+     * @param tagName The name (urlencoded) of the domain tag that will be changed.
      * @param requestBody
      * @returns any Success
      * @throws ApiError
      */
     public updateAdapterDomainTag(
         adapterId: string,
-        tagId: string,
+        tagName: string,
         requestBody?: DomainTag,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
             path: {
                 'adapterId': adapterId,
-                'tagId': tagId,
+                'tagName': tagName,
             },
             body: requestBody,
             mediaType: 'application/json',
@@ -446,6 +446,25 @@ export class ProtocolAdaptersService {
     }
 
     /**
+     * Obtain the JSON schema for a tag for a specific protocol adapter.
+     * Obtain the tag schema for a specific portocol adapter.
+     * @param protocolId The protocol id.
+     * @returns TagSchema Success
+     * @throws ApiError
+     */
+    public getTagSchema(
+        protocolId: string,
+    ): CancelablePromise<TagSchema> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/tag-schemas/{protocolId}',
+            path: {
+                'protocolId': protocolId,
+            },
+        });
+    }
+
+    /**
      * Get the list of all domain tags created in this Edge instance
      * Get the list of all domain tags created in this Edge instance
      * @returns DomainTagList Success
@@ -461,7 +480,7 @@ export class ProtocolAdaptersService {
     /**
      * Get the domain tag with the given name in this Edge instance
      * Get a domain tag created in this Edge instance
-     * @param tagName The tag name (base64 encoded).
+     * @param tagName The tag name (urlencoded).
      * @returns DomainTag Success
      * @throws ApiError
      */
@@ -473,25 +492,6 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/tags/{tagName}',
             path: {
                 'tagName': tagName,
-            },
-        });
-    }
-
-    /**
-     * Obtain the JSON schema for a tag for a specific protocol adapter.
-     * Obtain the tag schema for a specific portocol adapter.
-     * @param protocolId The protocol id.
-     * @returns TagSchema Success
-     * @throws ApiError
-     */
-    public getTagSchema(
-        protocolId: string,
-    ): CancelablePromise<TagSchema> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/v1/management/protocol-adapters/tagschemas/{protocolId}',
-            path: {
-                'protocolId': protocolId,
             },
         });
     }
@@ -532,7 +532,7 @@ export class ProtocolAdaptersService {
      * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.
      * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
      * @param adapterId The id of the adapter for which the Json Schema for writing to a PLC gets created.
-     * @param tagName The tag name (base64 encoded) for which the Json Schema for writing to a PLC gets created.
+     * @param tagName The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.
      * @returns JsonNode Success
      * @throws ApiError
      */

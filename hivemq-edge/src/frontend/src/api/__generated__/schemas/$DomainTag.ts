@@ -22,6 +22,7 @@ export const $DomainTag = {
             type: 'string',
             description: `The name of the tag that identifies it within this edge instance.`,
             isRequired: true,
+            format: 'mqtt-tag',
         },
     },
 } as const;

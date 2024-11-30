@@ -35,6 +35,7 @@ export const $NorthboundMapping = {
             type: 'string',
             description: `The tag for which values hould be collected and sent out.`,
             isRequired: true,
+            format: 'mqtt-tag',
         },
         topic: {
             type: 'string',

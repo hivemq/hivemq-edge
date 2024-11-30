@@ -11,9 +11,13 @@ import type { Metadata } from './Metadata';
  */
 export type FieldMapping = {
     /**
+     * TODO[28498] Changed manually until backend fixed
      * List of instructions to be applied to incoming data
      */
-    instructions: Array<Instruction>;
-    metadata: Metadata;
+    instructions?: Array<Instruction>;
+    /**
+     * TODO[28498] Changed manually until backend fixed
+     */
+    metadata?: Metadata;
 };
 

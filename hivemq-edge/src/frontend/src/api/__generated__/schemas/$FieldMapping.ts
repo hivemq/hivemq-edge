@@ -10,11 +10,9 @@ export const $FieldMapping = {
             contains: {
                 type: 'Instruction',
             },
-            isRequired: true,
         },
         metadata: {
             type: 'Metadata',
-            isRequired: true,
         },
     },
 } as const;

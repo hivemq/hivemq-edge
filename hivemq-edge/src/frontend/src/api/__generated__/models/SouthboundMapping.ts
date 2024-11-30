@@ -15,12 +15,14 @@ export type SouthboundMapping = {
      */
     maxQoS: number;
     /**
+     * TODO[28498] Changed manually until backend fixed
      * The tag for which values hould be collected and sent out.
      */
-    tagName: string;
+    tagName?: string;
     /**
+     * TODO[28498] Changed manually until backend fixed
      * The filter defining what topics we will receive messages from.
      */
-    topicFilter: string;
+    topicFilter?: string;
 };
 
