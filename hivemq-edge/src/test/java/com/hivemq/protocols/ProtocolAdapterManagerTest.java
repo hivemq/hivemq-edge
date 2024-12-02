@@ -385,7 +385,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @NotNull @org.jetbrains.annotations.NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
             return new TestWritingProtocolAdapterInformation();
         }
     }
