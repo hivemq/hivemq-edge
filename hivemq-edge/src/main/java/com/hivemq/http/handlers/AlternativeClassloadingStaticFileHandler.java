@@ -31,9 +31,9 @@ import java.util.Set;
  * allowing modules to contribute arbitrary resources
  */
 public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler {
-    protected final static @NotNull Set<ClassLoader> classLoaders = new HashSet<>();;
+    protected static final @NotNull Set<ClassLoader> classLoaders = new HashSet<>();
 
-    public AlternativeClassloadingStaticFileHandler(ObjectMapper mapper, String resourceRoot, ShutdownHooks shutdownHooks) {
+    public AlternativeClassloadingStaticFileHandler(final ObjectMapper mapper, final String resourceRoot, final ShutdownHooks shutdownHooks) {
         super(mapper, resourceRoot);
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
@@ -48,16 +48,16 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
         });
     }
 
-    public static void addClassLoader(ClassLoader classLoader){
+    public static void addClassLoader(final ClassLoader classLoader){
         classLoaders.add(classLoader);
     }
 
     @Override
     protected InputStream loadClasspathResource(final String resource) {
         InputStream inputStream = null;
-        Iterator<ClassLoader> loaderIterator = classLoaders.iterator();
+        final Iterator<ClassLoader> loaderIterator = classLoaders.iterator();
         while(loaderIterator.hasNext() && inputStream == null){
-            ClassLoader classLoader = loaderIterator.next();
+            final ClassLoader classLoader = loaderIterator.next();
             inputStream = loadClasspathResourceInternal(classLoader, resource);
         }
         return inputStream;

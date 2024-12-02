@@ -45,9 +45,9 @@ import static java.time.temporal.ChronoField.YEAR;
  * Some data utilies to manage the interaction with the PLC API
  */
 public class Plc4xDataUtils {
-    private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    private final static String AMP = "&";
-    private final static String EQUALS = "=";
+    private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+    private static final String AMP = "&";
+    private static final String EQUALS = "=";
     public static final DateTimeFormatter TIME_FORMATTER =
             new DateTimeFormatterBuilder() //custom formatter to prevent weird abbreviations
                     .appendValue(HOUR_OF_DAY, 2)
@@ -77,9 +77,9 @@ public class Plc4xDataUtils {
                     .toFormatter();
 
     public static String toHex(final @NotNull byte... bytes) {
-        char[] hexChars = new char[bytes.length * 2];
+        final char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
+            final int v = bytes[j] & 0xFF;
             hexChars[j * 2] = hexArray[v >>> 4];
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
@@ -87,9 +87,9 @@ public class Plc4xDataUtils {
     }
 
     public static List<Pair<String, PlcValue>> readDataFromReadResponse(final @NotNull PlcReadResponse evt) {
-        List<Pair<String, PlcValue>> output = new ArrayList<>();
-        Collection<String> s = evt.getTagNames();
-        for (String field : s) {
+        final List<Pair<String, PlcValue>> output = new ArrayList<>();
+        final Collection<String> s = evt.getTagNames();
+        for (final String field : s) {
             output.add(Pair.of(field, evt.getPlcValue(field)));
         }
         return output;
@@ -97,9 +97,9 @@ public class Plc4xDataUtils {
 
     public static final String createQueryString(
             final @NotNull Map<String, String> map,
-            boolean includeKeysForNullValues) {
-        StringBuilder res = new StringBuilder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+            final boolean includeKeysForNullValues) {
+        final StringBuilder res = new StringBuilder();
+        for (final Map.Entry<String, String> entry : map.entrySet()) {
             if (res.length() > 0) {
                 res.append(AMP);
             }
@@ -113,10 +113,10 @@ public class Plc4xDataUtils {
         return res.toString();
     }
 
-    public static byte[] convertNative(PlcValue value) {
+    public static byte[] convertNative(final PlcValue value) {
         final PlcValueType type = value.getPlcValueType();
-        try (ByteArrayOutputStream memoryStream = new ByteArrayOutputStream()) {
-            try (DataOutputStream outputStream = new DataOutputStream(memoryStream)) {
+        try (final ByteArrayOutputStream memoryStream = new ByteArrayOutputStream()) {
+            try (final DataOutputStream outputStream = new DataOutputStream(memoryStream)) {
                 switch (type) {
 
                     case BOOL:  //Boolean 1bit
@@ -196,12 +196,12 @@ public class Plc4xDataUtils {
                 }
             }
             return memoryStream.toByteArray();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Object convertObject(PlcValue value) {
+    public static Object convertObject(final PlcValue value) {
         final PlcValueType type = value.getPlcValueType();
         switch (type) {
 

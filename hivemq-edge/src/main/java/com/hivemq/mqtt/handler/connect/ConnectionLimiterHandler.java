@@ -41,7 +41,7 @@ import javax.inject.Singleton;
 @ChannelHandler.Sharable
 public class ConnectionLimiterHandler extends ChannelInboundHandlerAdapter {
 
-    private final static Logger log = LoggerFactory.getLogger(ConnectionLimiterHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ConnectionLimiterHandler.class);
 
     private final @NotNull MqttConnacker mqttConnacker;
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;

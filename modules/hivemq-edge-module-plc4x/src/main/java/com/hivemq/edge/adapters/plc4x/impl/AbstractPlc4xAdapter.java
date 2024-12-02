@@ -66,7 +66,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
-    protected final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
+    protected static final @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
@@ -111,7 +111,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         }
     }
 
-    private @NotNull Optional<? extends Tag> findTag(String tagName) {
+    private @NotNull Optional<? extends Tag> findTag(final String tagName) {
         return tags.stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
     }
 

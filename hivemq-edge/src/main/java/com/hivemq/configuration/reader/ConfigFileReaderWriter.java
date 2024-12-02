@@ -64,7 +64,7 @@ import static java.util.Objects.requireNonNullElse;
 public class ConfigFileReaderWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigFileReaderWriter.class);
-    final static String XSD_SCHEMA = "config.xsd";
+    static final String XSD_SCHEMA = "config.xsd";
 
     private final @NotNull ConfigurationFile configurationFile;
     private final @NotNull ListenerConfigurator listenerConfigurator;

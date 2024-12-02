@@ -29,7 +29,7 @@ import javax.ws.rs.ext.Provider;
 @Produces(MediaType.APPLICATION_JSON)
 public class CustomJsonProvider extends JacksonJaxbJsonProvider {
 
-    private final static @NotNull ObjectMapper mapper = new ObjectMapper();
+    private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
