@@ -105,7 +105,6 @@ export const handlers = [
 
     try {
       const realTag = atob(tagName)
-      console.log('tagName', realTag)
       if (realTag === MOCK_DEVICE_TAG_FAKE)
         return HttpResponse.json<ProblemDetails>({ title: 'The tag is not found', status: 404 }, { status: 404 })
       return HttpResponse.json<DomainTag>(
