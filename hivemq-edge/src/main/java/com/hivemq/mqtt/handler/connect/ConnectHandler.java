@@ -485,8 +485,8 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
     }
 
     private void connackWillNotAuthorized(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg,
-                                          @Nullable final DisconnectReasonCode disconnectReasonCode,
-                                          @Nullable final AckReasonCode ackReasonCode, @Nullable final String reasonString) {
+                                          final @Nullable DisconnectReasonCode disconnectReasonCode,
+                                          final @Nullable AckReasonCode ackReasonCode, final @Nullable String reasonString) {
 
         Mqtt5ConnAckReasonCode connAckReasonCode = disconnectReasonCode != null ?
                 Mqtt5ConnAckReasonCode.fromDisconnectReasonCode(disconnectReasonCode) : null;

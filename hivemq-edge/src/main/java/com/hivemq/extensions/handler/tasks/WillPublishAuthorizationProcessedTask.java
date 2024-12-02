@@ -41,7 +41,7 @@ public class WillPublishAuthorizationProcessedTask implements FutureCallback<Pub
     }
 
     @Override
-    public void onSuccess(@Nullable final PublishAuthorizerOutputImpl output) {
+    public void onSuccess(final @Nullable PublishAuthorizerOutputImpl output) {
         if (output == null) {
             //this does not happen
             return;

@@ -39,7 +39,7 @@ public class PublishWithFuture extends PUBLISH {
     public PublishWithFuture(final @NotNull PUBLISH publish,
                              final @NotNull SettableFuture<PublishStatus> future,
                              final boolean shared,
-                             @Nullable final PublishPayloadPersistence persistence) {
+                             final @Nullable PublishPayloadPersistence persistence) {
         super(publish, persistence);
         this.future = future;
         this.shared = shared;

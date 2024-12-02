@@ -122,7 +122,7 @@ public abstract class AbstractHiveMQExtension implements HiveMQExtension {
     }
 
     @Override
-    public void setPreviousVersion(@Nullable final String previousVersion) {
+    public void setPreviousVersion(final @Nullable String previousVersion) {
         this.previousVersion = previousVersion;
     }
 

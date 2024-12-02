@@ -29,7 +29,7 @@ public interface BridgeInterceptorHandler {
     @NotNull ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
             @NotNull PUBLISH publish, @NotNull ExecutorService executorService, @NotNull MqttBridge bridge);
 
-    public @NotNull ListenableFuture<InterceptorResult> interceptOrDelegateOutbound(
+    @NotNull ListenableFuture<InterceptorResult> interceptOrDelegateOutbound(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @NotNull MqttBridge bridge);
@@ -38,7 +38,7 @@ public interface BridgeInterceptorHandler {
         private final @NotNull InterceptorOutcome outcome;
         private final @Nullable PUBLISH publish;
 
-        public InterceptorResult(final @NotNull InterceptorOutcome outcome, @Nullable final PUBLISH publish) {
+        public InterceptorResult(final @NotNull InterceptorOutcome outcome, final @Nullable PUBLISH publish) {
             this.outcome = outcome;
             this.publish = publish;
         }

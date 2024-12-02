@@ -32,7 +32,7 @@ public class ModifiableClientSettingsImpl implements ModifiableClientSettings {
     private boolean modified = false;
     private @Nullable Long queueSizeMaximum;
 
-    public ModifiableClientSettingsImpl(final int receiveMaximum, @Nullable final Long queueSizeMaximum) {
+    public ModifiableClientSettingsImpl(final int receiveMaximum, final @Nullable Long queueSizeMaximum) {
         this.receiveMaximum = receiveMaximum;
         this.queueSizeMaximum = queueSizeMaximum;
     }

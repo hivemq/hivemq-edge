@@ -174,7 +174,7 @@ public class AsyncLocalChunkIteratorTest {
         }
 
         @Override
-        public @NotNull ListenableFuture<ChunkResult<String>> fetchNextResults(@Nullable final ChunkCursor cursor) {
+        public @NotNull ListenableFuture<ChunkResult<String>> fetchNextResults(final @Nullable ChunkCursor cursor) {
 
             if (exception != null) {
                 return Futures.immediateFailedFuture(exception);

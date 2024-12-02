@@ -50,7 +50,7 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
     }
 
     @Override
-    public void onSuccess(@Nullable final PublishAuthorizerOutputImpl output) {
+    public void onSuccess(final @Nullable PublishAuthorizerOutputImpl output) {
         if (output == null) {
             //this does not happen
             return;
@@ -99,7 +99,7 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
         disconnectClient(null);
     }
 
-    private void disconnectClient(@Nullable final PublishAuthorizerOutputImpl output) {
+    private void disconnectClient(final @Nullable PublishAuthorizerOutputImpl output) {
         final String logMessage = "A client (IP: {}) sent a PUBLISH to an unauthorized topic '" + publish.getTopic() + "'. Disconnecting client from extension.";
         final String eventLogMessage = "Sent a PUBLISH to an unauthorized topic '" + publish.getTopic() + "', extension requested disconnect";
 

@@ -60,7 +60,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     @Override
-    public void fail(final @NotNull Throwable t, @Nullable final String errorMessage) {
+    public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
         status = Status.UNSPECIFIED_FAILURE;
         message = errorMessage;
         future.completeExceptionally(t);

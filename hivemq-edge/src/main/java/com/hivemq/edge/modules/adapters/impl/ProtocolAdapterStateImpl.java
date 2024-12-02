@@ -60,9 +60,9 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
      */
     @Override
     public void setErrorConnectionStatus(
-            @Nullable final Throwable t,
-            @Nullable final String errorMessage) {
-        boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
+            final @Nullable Throwable t,
+            final @Nullable String errorMessage) {
+        final boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
         reportErrorMessage( t, errorMessage, changed);
     }
 
@@ -74,8 +74,8 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
      */
     @Override
     public void reportErrorMessage(
-            @Nullable final Throwable throwable,
-            @Nullable final String errorMessage,
+            final @Nullable Throwable throwable,
+            final @Nullable String errorMessage,
             final boolean sendEvent) {
         this.lastErrorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if (sendEvent) {

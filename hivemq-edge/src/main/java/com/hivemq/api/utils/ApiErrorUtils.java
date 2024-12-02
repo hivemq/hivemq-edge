@@ -58,27 +58,27 @@ public class ApiErrorUtils {
         }
     }
 
-    public  static void validateFieldLengthBetweenIncl(final ApiErrorMessages apiErrorMessages, final String fieldName, final String value, int min, int max) {
+    public  static void validateFieldLengthBetweenIncl(final ApiErrorMessages apiErrorMessages, final String fieldName, final String value, final int min, final int max) {
         if(value != null){
-            int len = value.length();
+            final int len = value.length();
             if(len < min || len > max){
                 apiErrorMessages.addError(new ApiErrorMessage(fieldName, String.format("Length of field value [%s] was outside the allowed bounds [%s, %s]", len, min, max), null));
             }
         }
     }
 
-    public  static void validateFieldValueBetweenIncl(final ApiErrorMessages apiErrorMessages, final String fieldName, final int value, int min, int max) {
+    public  static void validateFieldValueBetweenIncl(final ApiErrorMessages apiErrorMessages, final String fieldName, final int value, final int min, final int max) {
         if(value < min || value > max){
             apiErrorMessages.addError(new ApiErrorMessage(fieldName, String.format("Size of field value [%s] was outside the allowed bounds [%s, %s]", value, min, max), null));
         }
     }
 
-    public static void addValidationError(final ApiErrorMessages apiErrorMessages, String fieldName, String details){
+    public static void addValidationError(final ApiErrorMessages apiErrorMessages, final String fieldName, final String details){
         apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Invalid user supplied data", details));
     }
 
     public static Response badRequest(final @NotNull String errorMessage){
-        ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(
+        final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(
                 ApiErrorMessage.from(errorMessage));
         return Response.status(HttpConstants.SC_BAD_REQUEST)
                 .entity(messages)
@@ -93,9 +93,9 @@ public class ApiErrorUtils {
                 .build();
     }
 
-    public static Response notFound(@Nullable final String message){
+    public static Response notFound(final @Nullable String message){
         if(message != null){
-            ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(ApiErrorMessage.from(message));
+            final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(ApiErrorMessage.from(message));
             return Response.status(HttpConstants.SC_NOT_FOUND)
                     .entity(messages)
                     .type(MediaType.APPLICATION_JSON_TYPE)

@@ -63,7 +63,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         fetchNextChunk(null);
     }
 
-    private void fetchNextChunk(@Nullable final ChunkCursor cursor) {
+    private void fetchNextChunk(final @Nullable ChunkCursor cursor) {
         final ListenableFuture<ChunkResult<V>> singleFuture = fetchCallback.fetchNextResults(cursor);
         Futures.addCallback(
                 singleFuture, new ChunkResultFutureCallback<V>(resultBuffer, this, lock), executorService);
@@ -188,7 +188,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         }
 
         @Override
-        public void onSuccess(@Nullable final Boolean result) {
+        public void onSuccess(final @Nullable Boolean result) {
             if (result == null) {
                 asyncLocalChunkIterator.abortExceptionally(new NullPointerException("callback result cannot be null"));
                 return;

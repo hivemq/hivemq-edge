@@ -38,6 +38,6 @@ public interface InternalPublishService {
     @NotNull ListenableFuture<PublishReturnCode> publish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
-            @Nullable final String sender);
+            final @Nullable String sender);
 
 }

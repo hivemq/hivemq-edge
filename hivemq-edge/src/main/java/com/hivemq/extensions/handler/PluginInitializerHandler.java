@@ -178,7 +178,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
 
         Futures.addCallback(initializeFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final Void result) {
+            public void onSuccess(final @Nullable Void result) {
                 authenticateWill(ctx, msg, promise);
                 clientConnection.setWillPublish(null);
             }
@@ -220,7 +220,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
                 clientSessionPersistence.deleteWill(Objects.requireNonNull(clientConnection.getClientId()));
         Futures.addCallback(removeWillFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final Void result) {
+            public void onSuccess(final @Nullable Void result) {
                 sendConnackWillNotAuthorized();
             }
 

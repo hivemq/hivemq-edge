@@ -299,11 +299,11 @@ public class IncomingSubscribeService {
                 ListenableFuture<SubscriptionResult> addSubscriptionFuture;
                 if (mqttVersion == MQTTSNv1_2 || mqttVersion == MQTTSNv2_0) {
                     try {
-                        Optional<MqttsnTopicAlias> alias = mqttsnTopicRegistry.readTopicAlias(clientId, topic.getTopic());
+                        final Optional<MqttsnTopicAlias> alias = mqttsnTopicRegistry.readTopicAlias(clientId, topic.getTopic());
                         if (alias.isEmpty()) {
                             mqttsnTopicRegistry.register(clientId, topic.getTopic());
                         }
-                    } catch (MqttsnProtocolException e) {
+                    } catch (final MqttsnProtocolException e) {
                         log.error("error registering alias", e);
                         addSubscriptionFuture = Futures.immediateFailedFuture(e);
                     }
@@ -318,7 +318,7 @@ public class IncomingSubscribeService {
         log.trace("Applied all subscriptions for client [{}]", clientId);
         if (futureCount == 0) {
             //we don't need to check for retained messages here, because we did not persist any of the subscriptions
-            Object out = createSuback(clientId, msg.getTopics(), msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString, mqttVersion);
+            final Object out = createSuback(clientId, msg.getTopics(), msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString, mqttVersion);
             if (out != null) {
                 ctx.channel().writeAndFlush(out);
             }
@@ -342,9 +342,9 @@ public class IncomingSubscribeService {
 
         Futures.addCallback(addResultsFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final List<SubscriptionResult> subscriptionResults) {
+            public void onSuccess(final @Nullable List<SubscriptionResult> subscriptionResults) {
 
-                Object out = createSuback(clientId, msg.getTopics(), msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString, mqttVersion);
+                final Object out = createSuback(clientId, msg.getTopics(), msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString, mqttVersion);
                 if (out != null) {
                     final ChannelFuture future = ctx.channel().writeAndFlush(out);
                     // actually the ignoredTopics are unnecessary in this case, as the batching logic already applies the filtering
@@ -444,12 +444,12 @@ public class IncomingSubscribeService {
         try {
             int returnCode = MqttsnConstants.RETURN_CODE_ACCEPTED;
 
-            Optional<MqttsnTopicAlias> alias = mqttsnTopicRegistry.readTopicAlias(clientId, topics.get(0).getTopic());
-            int topicId = alias.get().getAlias();
+            final Optional<MqttsnTopicAlias> alias = mqttsnTopicRegistry.readTopicAlias(clientId, topics.get(0).getTopic());
+            final int topicId = alias.get().getAlias();
             int grantedQos = 0;
 
             if (!codes.isEmpty()) {
-                Mqtt5SubAckReasonCode code = codes.get(0);
+                final Mqtt5SubAckReasonCode code = codes.get(0);
                 if (!code.isError()) {
                     grantedQos = code.getCode();
                 } else {
@@ -465,7 +465,7 @@ public class IncomingSubscribeService {
             }
             msg.setId(packetIdentifier);
             return msg;
-        } catch (MqttsnProtocolException e) {
+        } catch (final MqttsnProtocolException e) {
             log.error("error reading from the topic registry", e);
             return null;
         }
@@ -492,7 +492,7 @@ public class IncomingSubscribeService {
         }
 
         @Override
-        public void onSuccess(@Nullable final ImmutableList<SubscriptionResult> subscriptionResult) {
+        public void onSuccess(final @Nullable ImmutableList<SubscriptionResult> subscriptionResult) {
             settableFuture.set(subscriptionResult);
             log.trace("Adding subscriptions for client [{}] and topics [{}]", clientId, msg.getTopics());
         }
@@ -547,7 +547,7 @@ public class IncomingSubscribeService {
         }
 
         @Override
-        public void onSuccess(@Nullable final SubscriptionResult subscriptionResult) {
+        public void onSuccess(final @Nullable SubscriptionResult subscriptionResult) {
             settableFuture.set(subscriptionResult);
             log.trace("Adding subscriptions for client [{}] and topic [{}] with qos [{}]", clientId, topic.getTopic(), topic.getQoS());
         }

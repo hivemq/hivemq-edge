@@ -37,9 +37,9 @@ public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterVali
 
     public ProtocolAdapterValidationFailureImpl(
             final @NotNull String message,
-            @Nullable final String fieldName,
-            @Nullable final Class origin,
-            @Nullable final Throwable cause) {
+            final @Nullable String fieldName,
+            final @Nullable Class origin,
+            final @Nullable Throwable cause) {
         Preconditions.checkNotNull(message);
         this.message = message;
         this.origin = origin;
@@ -49,8 +49,8 @@ public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterVali
 
     public ProtocolAdapterValidationFailureImpl(
             final @NotNull String message,
-            @Nullable final String fieldName,
-            @Nullable final Class origin) {
+            final @Nullable String fieldName,
+            final @Nullable Class origin) {
         Preconditions.checkNotNull(message);
         this.message = message;
         this.origin = origin;

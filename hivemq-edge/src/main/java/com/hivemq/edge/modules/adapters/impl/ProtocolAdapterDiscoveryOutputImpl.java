@@ -41,7 +41,7 @@ public class ProtocolAdapterDiscoveryOutputImpl implements ProtocolAdapterDiscov
     }
 
     @Override
-    public void fail(final @NotNull Throwable t, @Nullable final String errorMessage) {
+    public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
         this.errorMessage = errorMessage;
         outputFuture.completeExceptionally(t);
     }

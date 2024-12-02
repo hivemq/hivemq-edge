@@ -51,8 +51,8 @@ public class PluginTaskExecution<I extends PluginTaskInput, O extends PluginTask
 
     public PluginTaskExecution(
             final @NotNull PluginTaskContext pluginInOutContext,
-            @Nullable final Supplier<I> pluginInputSupplier,
-            @Nullable final Supplier<O> pluginOutputSupplier,
+            final @Nullable Supplier<I> pluginInputSupplier,
+            final @Nullable Supplier<O> pluginOutputSupplier,
             final @NotNull PluginTask pluginTask) {
         this.pluginInOutContext = pluginInOutContext;
         this.pluginInputSupplier = pluginInputSupplier;

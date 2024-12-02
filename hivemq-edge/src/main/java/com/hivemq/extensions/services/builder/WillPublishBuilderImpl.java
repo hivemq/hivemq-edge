@@ -222,20 +222,20 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
     }
 
     @Override
-    public @NotNull WillPublishBuilder responseTopic(@Nullable final String responseTopic) {
+    public @NotNull WillPublishBuilder responseTopic(final @Nullable String responseTopic) {
         PluginBuilderUtil.checkResponseTopic(responseTopic, securityConfigurationService.validateUTF8());
         this.responseTopic = responseTopic;
         return this;
     }
 
     @Override
-    public @NotNull WillPublishBuilder correlationData(@Nullable final ByteBuffer correlationData) {
+    public @NotNull WillPublishBuilder correlationData(final @Nullable ByteBuffer correlationData) {
         this.correlationData = correlationData;
         return this;
     }
 
     @Override
-    public @NotNull WillPublishBuilder contentType(@Nullable final String contentType) {
+    public @NotNull WillPublishBuilder contentType(final @Nullable String contentType) {
         PluginBuilderUtil.checkContentType(contentType, securityConfigurationService.validateUTF8());
         this.contentType = contentType;
         return this;

@@ -107,8 +107,8 @@ public class InMemoryProducerQueues implements ProducerQueues {
 
     public <R> @Nullable ListenableFuture<R> submit(final int bucketIndex,
                                                     final @NotNull Task<R> task,
-                                                    @Nullable final SingleWriterService.SuccessCallback<R> successCallback,
-                                                    @Nullable final SingleWriterService.FailedCallback failedCallback) {
+                                                    final @Nullable SingleWriterService.SuccessCallback<R> successCallback,
+                                                    final @Nullable SingleWriterService.FailedCallback failedCallback) {
 
         return submitInternal(bucketIndex, task, successCallback, failedCallback, false);
     }
@@ -116,8 +116,8 @@ public class InMemoryProducerQueues implements ProducerQueues {
 
     private <R> @Nullable ListenableFuture<R> submitInternal(final int bucketIndex,
                                                      final @NotNull Task<R> task,
-                                                     @Nullable final SingleWriterService.SuccessCallback<R> successCallback,
-                                                     @Nullable final SingleWriterService.FailedCallback failedCallback,
+                                                     final @Nullable SingleWriterService.SuccessCallback<R> successCallback,
+                                                     final @Nullable SingleWriterService.FailedCallback failedCallback,
                                                      final boolean ignoreShutdown) {
         if (!ignoreShutdown && shutdown.get() && System.currentTimeMillis() - shutdownStartTime > shutdownGracePeriod) {
             return SettableFuture.create(); // Future will never return since we are shutting down.
@@ -262,7 +262,7 @@ public class InMemoryProducerQueues implements ProducerQueues {
 
         Futures.addCallback(closeFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final Void aVoid) {
+            public void onSuccess(final @Nullable Void aVoid) {
                 executorService.shutdown();
             }
 

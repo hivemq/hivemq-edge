@@ -39,7 +39,7 @@ public class StandardPublishCallback implements FutureCallback<PublishStatus> {
     }
 
     @Override
-    public void onSuccess(@Nullable final PublishStatus response) {
+    public void onSuccess(final @Nullable PublishStatus response) {
         publishFinishedFuture.set(null);
     }
 
@@ -48,6 +48,6 @@ public class StandardPublishCallback implements FutureCallback<PublishStatus> {
 
         publishFinishedFuture.set(null);
 
-        Exceptions.rethrowError("Unable to send message with id " + msg.getUniqueId() + " on topic " + msg.getTopic() + " to client " + subscriber + "", throwable);
+        Exceptions.rethrowError("Unable to send message with id " + msg.getUniqueId() + " on topic " + msg.getTopic() + " to client " + subscriber, throwable);
     }
 }

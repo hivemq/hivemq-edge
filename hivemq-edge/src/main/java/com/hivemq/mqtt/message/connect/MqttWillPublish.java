@@ -60,14 +60,14 @@ public class MqttWillPublish implements Sizable {
     protected MqttWillPublish(
             final @NotNull String hivemqId,
             final @NotNull String topic,
-            @Nullable final byte[] payload,
+            final @Nullable byte[] payload,
             final @NotNull QoS qos,
             final boolean retain,
             final long messageExpiryInterval,
-            @Nullable final Mqtt5PayloadFormatIndicator payloadFormatIndicator,
-            @Nullable final String contentType,
-            @Nullable final String responseTopic,
-            @Nullable final byte[] correlationData,
+            final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator,
+            final @Nullable String contentType,
+            final @Nullable String responseTopic,
+            final @Nullable byte[] correlationData,
             final @NotNull Mqtt5UserProperties userProperties,
             final long delayInterval) {
 
@@ -91,7 +91,7 @@ public class MqttWillPublish implements Sizable {
 
     protected MqttWillPublish(
             final @NotNull String topic,
-            @Nullable final byte[] payload,
+            final @Nullable byte[] payload,
             final @NotNull QoS qos,
             final boolean retain,
             final @NotNull String hivemqId) {
@@ -117,7 +117,7 @@ public class MqttWillPublish implements Sizable {
 
     @Nullable
     public static MqttWillPublish fromWillPacket(
-            final @NotNull String hivemqId, @Nullable final WillPublishPacket packet) {
+            final @NotNull String hivemqId, final @Nullable WillPublishPacket packet) {
         if (packet == null) {
             return null;
         }

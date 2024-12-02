@@ -152,7 +152,7 @@ public class PublishTopicTree {
 
         @NotNull
         public Set<String> get(
-                final @NotNull ArrayList<String> subTopics, @Nullable final String currentTopic, final boolean getAll) {
+                final @NotNull ArrayList<String> subTopics, final @Nullable String currentTopic, final boolean getAll) {
             if (childNodes == null && child == null) {
                 if (currentTopic == null) {
                     return ImmutableSet.of();

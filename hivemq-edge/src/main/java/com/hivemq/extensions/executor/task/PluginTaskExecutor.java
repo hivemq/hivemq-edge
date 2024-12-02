@@ -277,7 +277,7 @@ public class PluginTaskExecutor {
 
                 Futures.addCallback(asyncFuture, new FutureCallback<Boolean>() {
                     @Override
-                    public void onSuccess(@Nullable final Boolean result) {
+                    public void onSuccess(final @Nullable Boolean result) {
                         //mark the task as done and increment the semaphore to make sure the thread runs
                         task.markAsDone();
                         semaphore.release();

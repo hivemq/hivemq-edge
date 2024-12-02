@@ -36,7 +36,7 @@ public class ListenerStartupInformation {
 
     private ListenerStartupInformation(final int port, final boolean successful,
                                        final @NotNull Listener originalListener,
-                                       @Nullable final Throwable exception) {
+                                       final @Nullable Throwable exception) {
 
         checkNotNull(originalListener, "Original Listener must not be null");
 
@@ -66,7 +66,7 @@ public class ListenerStartupInformation {
         return new ListenerStartupInformation(port, true, originalListener, null);
     }
 
-    public static ListenerStartupInformation failedListenerStartup(final int port, final @NotNull Listener originalListener, @Nullable final Throwable exception) {
+    public static ListenerStartupInformation failedListenerStartup(final int port, final @NotNull Listener originalListener, final @Nullable Throwable exception) {
         return new ListenerStartupInformation(port, false, originalListener, exception);
     }
 }

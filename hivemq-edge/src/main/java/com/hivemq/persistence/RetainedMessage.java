@@ -59,7 +59,7 @@ public class RetainedMessage {
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
     public RetainedMessage(
-            @Nullable final byte[] message,
+            final @Nullable byte[] message,
             final @NotNull QoS qos,
             final long publishId,
             final long messageExpiryInterval) {
@@ -77,15 +77,15 @@ public class RetainedMessage {
     }
 
     public RetainedMessage(
-            @Nullable final byte[] message,
+            final @Nullable byte[] message,
             final @NotNull QoS qos,
             final long publishId,
             final long messageExpiryInterval,
             final @NotNull Mqtt5UserProperties userProperties,
-            @Nullable final String responseTopic,
-            @Nullable final String contentType,
-            @Nullable final byte[] correlationData,
-            @Nullable final Mqtt5PayloadFormatIndicator payloadFormatIndicator,
+            final @Nullable String responseTopic,
+            final @Nullable String contentType,
+            final @Nullable byte[] correlationData,
+            final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator,
             final long timestamp) {
         Preconditions.checkNotNull(qos, "QoS must not be null");
         this.message = message;

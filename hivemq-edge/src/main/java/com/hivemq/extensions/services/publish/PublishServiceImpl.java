@@ -108,10 +108,10 @@ public class PublishServiceImpl implements PublishService {
 
         final PUBLISH internalPublish = publishToPUBLISH((PublishImpl) publish);
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
                 .withPublish(internalPublish)
                 .build();
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
         final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
 
@@ -145,7 +145,7 @@ public class PublishServiceImpl implements PublishService {
                 subscriber.isRetainAsPublished(), subscriber.getSubscriptionIdentifier());
         Futures.addCallback(publishSendFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final PublishStatus result) {
+            public void onSuccess(final @Nullable PublishStatus result) {
                 sendPublishFuture.set(PublishToClientResult.SUCCESSFUL);
             }
 

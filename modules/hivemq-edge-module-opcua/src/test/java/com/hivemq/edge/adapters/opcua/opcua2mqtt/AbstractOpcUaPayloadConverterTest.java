@@ -119,7 +119,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
-        CompletableFuture<Void> startFuture = new CompletableFuture<>();
+        final CompletableFuture<Void> startFuture = new CompletableFuture<>();
         final ProtocolAdapterStartOutput out = new ProtocolAdapterStartOutput() {
             @Override
             public void startedSuccessfully() {
@@ -127,7 +127,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
             }
 
             @Override
-            public void failStart(final @NotNull Throwable t, @Nullable final String errorMessage) {
+            public void failStart(final @NotNull Throwable t, final @Nullable String errorMessage) {
                 startFuture.completeExceptionally(t);
             }
         };

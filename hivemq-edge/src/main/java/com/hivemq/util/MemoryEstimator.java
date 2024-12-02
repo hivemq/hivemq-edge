@@ -49,7 +49,7 @@ public class MemoryEstimator {
      * @param string the input string
      * @return the size of the string
      */
-    public static int stringSize(@Nullable final String string) {
+    public static int stringSize(final @Nullable String string) {
         if (string == null) {
             return 0;
         }
@@ -66,7 +66,7 @@ public class MemoryEstimator {
      * @param array the input array of bytes
      * @return the size of the array of bytes
      */
-    public static int byteArraySize(@Nullable final byte[] array) {
+    public static int byteArraySize(final @Nullable byte[] array) {
         if (array == null) {
             return 0;
         }
@@ -83,7 +83,7 @@ public class MemoryEstimator {
      * @param array the input {@link ImmutableIntArray}
      * @return the size of the {@link ImmutableIntArray}
      */
-    public static int immutableIntArraySize(@Nullable final ImmutableIntArray array) {
+    public static int immutableIntArraySize(final @Nullable ImmutableIntArray array) {
         if (array == null) {
             return 0;
         }

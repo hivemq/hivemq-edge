@@ -55,7 +55,8 @@ public class HiveMQExtensionXMLReader {
 
             if (validationError.isPresent()) {
                 if (logging) {
-                    log.warn("Could not parse \"{}\" in {} because of {}. Not loading extension.", HiveMQExtension.HIVEMQ_EXTENSION_XML_FILE, extensionFolder.toString(), validationError.get().getMessage());
+                    log.warn("Could not parse \"{}\" in {} because of {}. Not loading extension.", HiveMQExtension.HIVEMQ_EXTENSION_XML_FILE,
+                            extensionFolder, validationError.get().getMessage());
                 }
                 return Optional.empty();
             }
@@ -63,14 +64,15 @@ public class HiveMQExtensionXMLReader {
             return Optional.of(unmarshal);
         } catch (final JAXBException e) {
             if (logging) {
-                log.warn("Could not parse \"{}\" in {}. Not loading extension.", HiveMQExtension.HIVEMQ_EXTENSION_XML_FILE, extensionFolder.toString(), e);
+                log.warn("Could not parse \"{}\" in {}. Not loading extension.", HiveMQExtension.HIVEMQ_EXTENSION_XML_FILE,
+                        extensionFolder, e);
             }
             return Optional.empty();
         }
     }
 
     @NotNull
-    private static Optional<ValidationError> validateHiveMQExtensionEntity(@Nullable final HiveMQExtensionEntity hiveMQExtensionEntity) {
+    private static Optional<ValidationError> validateHiveMQExtensionEntity(final @Nullable HiveMQExtensionEntity hiveMQExtensionEntity) {
         final String message = "missing %s";
         if (hiveMQExtensionEntity == null || hiveMQExtensionEntity.getId().isEmpty()) {
             return Optional.of(new ValidationError(message, "<id>"));

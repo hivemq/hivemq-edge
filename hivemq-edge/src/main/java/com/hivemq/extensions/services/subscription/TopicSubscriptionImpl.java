@@ -40,7 +40,7 @@ public class TopicSubscriptionImpl implements TopicSubscription {
     private final @Nullable Integer subscriptionIdentifier;
 
     public TopicSubscriptionImpl(final @NotNull String topicFilter, final @NotNull Qos qos, final boolean retainAsPublished,
-                                 final boolean noLocal, @Nullable final Integer subscriptionIdentifier) {
+                                 final boolean noLocal, final @Nullable Integer subscriptionIdentifier) {
         Preconditions.checkNotNull(topicFilter, "Topic filter must never be null");
         Preconditions.checkNotNull(qos, "QoS must never be null");
         this.topicFilter = topicFilter;

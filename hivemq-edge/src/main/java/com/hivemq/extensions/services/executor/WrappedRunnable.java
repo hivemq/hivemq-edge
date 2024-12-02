@@ -37,7 +37,7 @@ public class WrappedRunnable implements Runnable {
 
     WrappedRunnable(
             final @NotNull Runnable runnable, final @NotNull ClassLoader classLoader,
-            @Nullable final CompletableFuture<?> future) {
+            final @Nullable CompletableFuture<?> future) {
         this.runnable = runnable;
         this.classLoader = classLoader;
         this.future = future;

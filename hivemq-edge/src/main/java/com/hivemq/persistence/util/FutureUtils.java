@@ -66,7 +66,7 @@ public class FutureUtils {
     public static void addExceptionLogger(final ListenableFuture<?> listenableFuture) {
         Futures.addCallback(listenableFuture, new FutureCallback<Object>() {
             @Override
-            public void onSuccess(@Nullable final Object o) {
+            public void onSuccess(final @Nullable Object o) {
                 //no op
             }
 
