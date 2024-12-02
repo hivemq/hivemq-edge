@@ -10,7 +10,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
 import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
-import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
+import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.ts'
 
 interface DeviceTagListProps {
   adapter: Adapter

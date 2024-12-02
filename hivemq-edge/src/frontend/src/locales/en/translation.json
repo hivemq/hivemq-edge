@@ -578,8 +578,8 @@
     },
     "mapping": {
       "manager": {
-        "header_INWARD": "Manage inward mappings",
-        "header_OUTWARD": "Manage outward mappings"
+        "header_NORTHBOUND": "Manage Northbound mappings",
+        "header_SOUTHBOUND": "Manage Southbound mappings"
       },
       "actions": {
         "submit": "Submit"
@@ -775,8 +775,8 @@
         },
         "mappings": {
           "common": "Manage mappings of the device",
-          "inward": "Edit inward mappings",
-          "outward": "Edit outward mappings"
+          "northbound": "Edit northbound mappings",
+          "southbound": "Edit southbound mappings"
         },
         "edge": {
           "topicFilter": "Manage topic filters"

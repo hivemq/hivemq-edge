@@ -88,7 +88,7 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
 }
 
 export const handlers = [
-  http.get<{ protocolId: string }>('**/management/protocol-adapters/tagschemas/:protocolId', ({ params }) => {
+  http.get<{ protocolId: string }>('**/management/protocol-adapters/tag-schemas/:protocolId', ({ params }) => {
     const { protocolId } = params
 
     if (protocolId === MockAdapterType.ADS)

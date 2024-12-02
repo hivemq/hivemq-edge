@@ -81,12 +81,12 @@ export const routes = createBrowserRouter(
               element: <NodePanelController />,
             },
             {
-              path: ':nodeType/:device?/:adapter?/:nodeId/inward',
-              element: <AdapterSubscriptionManager type={MappingType.INWARD} />,
+              path: ':nodeType/:device?/:adapter?/:nodeId/northbound',
+              element: <AdapterSubscriptionManager type={MappingType.NORTHBOUND} />,
             },
             {
-              path: ':nodeType/:device?/:adapter?/:nodeId/outward',
-              element: <AdapterSubscriptionManager type={MappingType.OUTWARD} />,
+              path: ':nodeType/:device?/:adapter?/:nodeId/southbound',
+              element: <AdapterSubscriptionManager type={MappingType.SOUTHBOUND} />,
             },
           ],
         },

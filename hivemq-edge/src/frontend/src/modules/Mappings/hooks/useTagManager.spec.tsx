@@ -17,7 +17,7 @@ import {
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Adapter, AdaptersList, type DomainTagList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
-import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
+import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { handlers } from '@/api/hooks/useDomainModel/__handlers__/index.ts'
 
