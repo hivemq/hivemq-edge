@@ -41,7 +41,7 @@ import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl
  */
 public class TopicSubscriptionBuilderImpl implements TopicSubscriptionBuilder {
 
-    private final static int MAX_SUBSCRIPTION_IDENTIFIER = 268_435_455;
+    private static final int MAX_SUBSCRIPTION_IDENTIFIER = 268_435_455;
 
     private @Nullable String topicFilter;
     private @NotNull Qos qos = Qos.AT_MOST_ONCE;
