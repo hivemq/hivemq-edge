@@ -4,6 +4,7 @@ import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import MappingForm from '@/modules/Mappings/components/MappingForm.tsx'
 import { useNorthboundMappingManager } from '@/modules/Mappings/hooks/useNorthboundMappingManager.ts'
 import { MOCK_NORTHBOUND_MAPPING } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
+import { MappingType } from '@/modules/Mappings/types.ts'
 
 describe('MappingFormExt', () => {
   beforeEach(() => {
@@ -23,7 +24,12 @@ describe('MappingFormExt', () => {
     it('should be accessible', () => {
       cy.injectAxe()
       cy.mountWithProviders(
-        <MappingForm adapterId={mockAdapter_OPCUA.id} onSubmit={cy.stub} useManager={useNorthboundMappingManager} />
+        <MappingForm
+          type={MappingType.NORTHBOUND}
+          adapterId={mockAdapter_OPCUA.id}
+          onSubmit={cy.stub}
+          useManager={useNorthboundMappingManager}
+        />
       )
       cy.get('h2').should('be.visible')
 
