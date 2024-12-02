@@ -13,6 +13,7 @@ export enum MappingType {
   SOUTHBOUND = 'SOUTHBOUND',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface MappingManagerType<T = any> {
   context: ManagerContextType
   data: T | undefined

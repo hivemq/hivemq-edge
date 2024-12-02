@@ -8,6 +8,7 @@ import { SelectTag, SelectTopic, SelectTopicFilter } from '@/components/MQTT/Ent
 import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const registerEntitySelectWidget =
+  // eslint-disable-next-line react/display-name
   (type: CustomFormat) => (props: WidgetProps<WidgetProps<unknown, RJSFSchema, MappingContext>>) => {
     const { chakraProps, label, id, disabled, readonly, onChange, required, rawErrors, value } = props
     const { multiple } = getUiOptions(props.uiSchema)
