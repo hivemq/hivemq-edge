@@ -18,6 +18,7 @@ package com.hivemq.api.model.tags;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -52,11 +53,11 @@ public class DomainTagModel {
             @JsonProperty("name") final @NotNull String name,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @Nullable String description,
-            @JsonProperty("definition") final @NotNull JsonNode definition) {
+            @JsonProperty("definition") final @Nullable JsonNode definition) {
         this.name = name;
         this.protocolId = protocolId;
         this.description = Objects.requireNonNullElse(description, "");
-        this.definition = definition;
+        this.definition = Objects.requireNonNullElse(definition, JsonNodeFactory.instance.objectNode());
     }
 
     public @NotNull String getName() {
