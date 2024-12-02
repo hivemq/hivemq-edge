@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class ProtocolAdapterConfigurationServiceImpl implements ProtocolAdapterConfigurationService {
 
-    private @NotNull List<ProtocolAdapterEntity> allConfigs = new ArrayList<>();
+    private volatile @NotNull List<ProtocolAdapterEntity> allConfigs = new ArrayList<>();
 
     @Override
     public @NotNull List<ProtocolAdapterEntity> getAllConfigs() {
