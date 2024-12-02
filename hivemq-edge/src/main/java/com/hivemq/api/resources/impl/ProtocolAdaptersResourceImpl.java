@@ -528,7 +528,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<DomainTag> domainTags = protocolAdapterManager.getDomainTags();
         if (domainTags.isEmpty()) {
             // empty list is also 200 as discussed.
-            return Response.ok().build();
+            return Response.ok().entity(new DomainTagModelList(List.of())).build();
         }
         final List<DomainTagModel> domainTagModels =
                 domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
