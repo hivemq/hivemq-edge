@@ -446,7 +446,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ALREADY_EXISTS:
-                final @NotNull String tagName = domainTag.getTag();
+                final @NotNull String tagName = domainTag.getName();
                 return ErrorResponseUtil.alreadyExists("The tag '" +
                         tagName +
                         "' cannot be created since another item already exists with the same id.");

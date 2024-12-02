@@ -23,17 +23,16 @@ import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.Map;
 import java.util.Objects;
 
 @Schema(name = "DomainTag")
 public class DomainTagModel {
 
-    @JsonProperty("tagName")
+    @JsonProperty("name")
     @Schema(description = "The name of the tag that identifies it within this edge instance.",
             requiredMode = Schema.RequiredMode.REQUIRED,
             format = "mqtt-tag")
-    private final @NotNull String tag;
+    private final @NotNull String name;
 
     @JsonProperty("protocolId")
     @Schema(description = "The protocol id of the protocol for which this tag was created.",
@@ -44,24 +43,24 @@ public class DomainTagModel {
     @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
 
-    @JsonProperty("tagDefinition")
+    @JsonProperty("definition")
     @Schema(description = "A user created description for this tag.", requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode definition;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
-            @JsonProperty("tagName") final @NotNull String tag,
+            @JsonProperty("name") final @NotNull String name,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @Nullable String description,
-            @JsonProperty("tagDefinition") final @NotNull JsonNode definition) {
-        this.tag = tag;
+            @JsonProperty("definition") final @NotNull JsonNode definition) {
+        this.name = name;
         this.protocolId = protocolId;
         this.description = Objects.requireNonNullElse(description, "");
         this.definition = definition;
     }
 
-    public @NotNull String getTag() {
-        return tag;
+    public @NotNull String getName() {
+        return name;
     }
 
     public @NotNull String getDescription() {
@@ -84,10 +83,9 @@ public class DomainTagModel {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "DomainTagModel{" +
-                "tag='" +
-                tag +
+                "tag='" + name +
                 '\'' +
                 ", protocolId='" +
                 protocolId +
@@ -99,7 +97,7 @@ public class DomainTagModel {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) {
             return true;
         }
@@ -107,13 +105,13 @@ public class DomainTagModel {
             return false;
         }
         final DomainTagModel that = (DomainTagModel) o;
-        return Objects.equals(tag, that.tag) &&
+        return Objects.equals(name, that.name) &&
                 Objects.equals(protocolId, that.protocolId) &&
                 Objects.equals(description, that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tag, protocolId, description);
+        return Objects.hash(name, protocolId, description);
     }
 }

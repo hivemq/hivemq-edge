@@ -48,7 +48,7 @@ public class DomainTag {
     public static @NotNull DomainTag fromDomainTagEntity(
             final @NotNull DomainTagModel domainTag,
             final @NotNull String adapterId) {
-        return new DomainTag(domainTag.getTag(),
+        return new DomainTag(domainTag.getName(),
                 adapterId,
                 domainTag.getProtocolId(),
                 domainTag.getDescription(),
