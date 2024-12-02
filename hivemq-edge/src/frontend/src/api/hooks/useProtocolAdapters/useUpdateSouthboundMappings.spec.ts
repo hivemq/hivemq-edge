@@ -3,10 +3,10 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { useUpdateAdapterFieldMappings } from '@/api/hooks/useProtocolAdapters/useUpdateAdapterFieldMappings.ts'
-import { mappingHandlers, MOCK_MAPPING } from './__handlers__/mapping.mocks.ts'
+import { mappingHandlers, MOCK_SOUTHBOUND_MAPPING } from './__handlers__/mapping.mocks.ts'
+import { useUpdateSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useUpdateSouthboundMappings.ts'
 
-describe('useUpdateAdapterFieldMappings', () => {
+describe('useUpdateSouthboundMappings', () => {
   afterEach(() => {
     server.resetHandlers()
   })
@@ -14,13 +14,13 @@ describe('useUpdateAdapterFieldMappings', () => {
   it('should load the data', async () => {
     server.use(...mappingHandlers)
 
-    const { result } = renderHook(() => useUpdateAdapterFieldMappings(), { wrapper })
+    const { result } = renderHook(() => useUpdateSouthboundMappings(), { wrapper })
 
     expect(result.current.isSuccess).toBeFalsy()
     act(() => {
       result.current.mutate({
         adapterId: 'my-adapter',
-        requestBody: { items: [MOCK_MAPPING] },
+        requestBody: { items: [MOCK_SOUTHBOUND_MAPPING] },
       })
     })
     await waitFor(() => {
@@ -29,7 +29,7 @@ describe('useUpdateAdapterFieldMappings', () => {
         adapterId: 'my-adapter',
         items: [
           {
-            tag: 'my/tag',
+            tagName: 'my/tag',
             topicFilter: 'my/filter',
           },
         ],

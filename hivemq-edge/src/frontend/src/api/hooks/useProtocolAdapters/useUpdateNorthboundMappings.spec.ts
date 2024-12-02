@@ -3,10 +3,10 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { useCreateAdapterFieldMappings } from '@/api/hooks/useProtocolAdapters/useCreateAdapterFieldMappings.ts'
-import { mappingHandlers, MOCK_MAPPING } from './__handlers__/mapping.mocks.ts'
+import { mappingHandlers, MOCK_NORTHBOUND_MAPPING } from './__handlers__/mapping.mocks.ts'
+import { useUpdateNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useUpdateNorthboundMappings.ts'
 
-describe('useCreateAdapterFieldMappings', () => {
+describe('useUpdateNorthboundMappings', () => {
   afterEach(() => {
     server.resetHandlers()
   })
@@ -14,21 +14,25 @@ describe('useCreateAdapterFieldMappings', () => {
   it('should load the data', async () => {
     server.use(...mappingHandlers)
 
-    const { result } = renderHook(() => useCreateAdapterFieldMappings(), { wrapper })
+    const { result } = renderHook(() => useUpdateNorthboundMappings(), { wrapper })
 
     expect(result.current.isSuccess).toBeFalsy()
     act(() => {
       result.current.mutate({
         adapterId: 'my-adapter',
-        requestBody: MOCK_MAPPING,
+        requestBody: { items: [MOCK_NORTHBOUND_MAPPING] },
       })
     })
     await waitFor(() => {
       expect(result.current.isSuccess).toBeTruthy()
       expect(result.current.data).toStrictEqual({
         adapterId: 'my-adapter',
-        tag: 'my/tag',
-        topicFilter: 'my/filter',
+        items: [
+          {
+            tagName: 'my/tag',
+            topic: 'my/topic',
+          },
+        ],
       })
     })
   })
