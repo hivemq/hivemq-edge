@@ -4,6 +4,9 @@ import { AlertStatus } from '@chakra-ui/react'
 import { CompactArrayField, InternalNotice, MqttTransformationField } from '@/components/rjsf/Fields'
 
 import i18n from '@/config/i18n.config.ts'
+import { JSONSchemaEditor } from '@datahub/components/forms'
+import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 
 export const getRequiredUiSchema = (
   uiSchema: UiSchema | undefined,
@@ -44,6 +47,10 @@ export const getRequiredUiSchema = (
 export const adapterJSFWidgets: RegistryWidgetsType = {
   // @ts-ignore [24369] Turn discovery browser off (and replace by regular text input)
   'discovery:tagBrowser': 'text',
+  'application/schema+json': JSONSchemaEditor,
+  'mqtt-tag': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
+  'mqtt-topic-filter': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC_FILTER),
+  'mqtt-topic': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
 }
 
 export const adapterJSFFields: RegistryFieldsType = {
