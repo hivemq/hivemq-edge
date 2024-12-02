@@ -161,7 +161,7 @@ public interface PluginTaskExecutorService {
         @Nullable
         private final PublishAuthorizerContext pluginInOutContext;
 
-        public PublishAuthorizerOutputImpl(@Nullable final PluginOutPutAsyncer asyncer, @Nullable final PublishAuthorizerContext pluginInOutContext) {
+        public PublishAuthorizerOutputImpl(final @Nullable PluginOutPutAsyncer asyncer, final @Nullable PublishAuthorizerContext pluginInOutContext) {
 
             this.asyncer = asyncer;
             this.pluginInOutContext = pluginInOutContext;

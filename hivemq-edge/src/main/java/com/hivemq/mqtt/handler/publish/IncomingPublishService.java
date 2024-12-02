@@ -80,7 +80,7 @@ public class IncomingPublishService {
 
     public void processPublish(final @NotNull ChannelHandlerContext ctx,
                                final @NotNull PUBLISH publish,
-                               @Nullable final PublishAuthorizerResult authorizerResult) {
+                               final @Nullable PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final ProtocolVersion protocolVersion = clientConnection.getProtocolVersion();
@@ -131,7 +131,7 @@ public class IncomingPublishService {
         authorizePublish(ctx, publish, authorizerResult);
     }
 
-    private void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, @Nullable final PublishAuthorizerResult authorizerResult) {
+    private void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @Nullable PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -169,7 +169,7 @@ public class IncomingPublishService {
     }
 
     private void finishUnauthorizedPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish,
-                                           @Nullable final AckReasonCode reasonCode, @Nullable final String reasonString) {
+                                           final @Nullable AckReasonCode reasonCode, final @Nullable String reasonString) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -233,18 +233,18 @@ public class IncomingPublishService {
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
                 .withPublish(publish).withClientId(clientId)
                 .build();
 
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(ctx.channel().eventLoop());
 
         final ListenableFuture<PublishReturnCode> publishFinishedFuture = dataGovernanceService.applyAndPublish(governanceContext);
 //        final ListenableFuture<PublishReturnCode> publishFinishedFuture = publishService.publish(publish, ctx.channel().eventLoop(), clientId);
         Futures.addCallback(publishFinishedFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final PublishReturnCode result) {
+            public void onSuccess(final @Nullable PublishReturnCode result) {
                 sendAck(ctx, publish, result);
             }
 
@@ -255,7 +255,7 @@ public class IncomingPublishService {
         }, ctx.channel().eventLoop());
     }
 
-    private void sendAck(final @NotNull ChannelHandlerContext ctx, final PUBLISH publish, @Nullable final PublishReturnCode publishReturnCode) {
+    private void sendAck(final @NotNull ChannelHandlerContext ctx, final PUBLISH publish, final @Nullable PublishReturnCode publishReturnCode) {
 
         switch (publish.getQoS()) {
             case AT_MOST_ONCE:

@@ -71,8 +71,8 @@ public class EventLog {
      * @param reason   why the message was dropped
      */
     public void messageDropped(
-            @Nullable final String clientId,
-            @Nullable final String topic,
+            final @Nullable String clientId,
+            final @Nullable String topic,
             final @NotNull int qos,
             final @NotNull String reason) {
         logMessageDropped.debug(
@@ -92,8 +92,8 @@ public class EventLog {
      * @param reason why the message was dropped
      */
     public void sharedSubscriptionMessageDropped(
-            @Nullable final String group,
-            @Nullable final String topic,
+            final @Nullable String group,
+            final @Nullable String topic,
             final @NotNull int qos,
             final @NotNull String reason) {
         logMessageDropped.debug(
@@ -112,7 +112,7 @@ public class EventLog {
      * @param reason      why the message was dropped
      */
     public void mqttMessageDropped(
-            @Nullable final String client, @Nullable final String messageType, final @NotNull String reason) {
+            final @Nullable String client, final @Nullable String messageType, final @NotNull String reason) {
         logMessageDropped.debug("Outgoing MQTT packet was dropped. Receiving client: {}, messageType: {}, reason: {}.",
                 valueOrUnknown(client),
                 valueOrUnknown(messageType),
@@ -245,7 +245,7 @@ public class EventLog {
      * @param expiryTimestamp the {@link Long} timestamp of the client-session-expiration
      * @param clientId        of the expired session
      */
-    public void clientSessionExpired(final Long expiryTimestamp, @Nullable final String clientId) {
+    public void clientSessionExpired(final Long expiryTimestamp, final @Nullable String clientId) {
 
         final LocalDateTime disconnectedSinceDateTime =
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(expiryTimestamp), ZONE);
@@ -256,7 +256,7 @@ public class EventLog {
     }
 
     @NotNull
-    private String valueOrUnknown(@Nullable final Object object) {
+    private String valueOrUnknown(final @Nullable Object object) {
         return object != null ? object.toString() : "UNKNOWN";
     }
 }

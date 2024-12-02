@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class ProtocolAdapterConfigModelTest {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
     static void beforeStart(){
@@ -57,7 +57,7 @@ public class ProtocolAdapterConfigModelTest {
         if(child != null){
             return child;
         } else {
-            Iterator<JsonNode> nodes = parent.iterator();
+            final Iterator<JsonNode> nodes = parent.iterator();
             while (nodes.hasNext()){
                 if((child = findFirstChild(nodes.next(), nodeName)) != null){
                     return child;
@@ -123,9 +123,9 @@ public class ProtocolAdapterConfigModelTest {
 
         @JsonCreator
         public TestToMqttMapping(
-                @JsonProperty("mqttTopic") @Nullable final String mqttTopic,
+                @JsonProperty("mqttTopic") final @Nullable String mqttTopic,
                 @JsonProperty("mqttQos") final int qos,
-                @JsonProperty("mqttUserProperties") @Nullable List<MqttUserProperty> userProperties) {
+                @JsonProperty("mqttUserProperties") @Nullable final List<MqttUserProperty> userProperties) {
             this.mqttTopic = mqttTopic;
             this.qos = qos;
             if (userProperties != null) {

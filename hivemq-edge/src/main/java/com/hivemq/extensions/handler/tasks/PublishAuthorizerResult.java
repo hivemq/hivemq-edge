@@ -29,18 +29,18 @@ public class PublishAuthorizerResult {
     private final @Nullable String reasonString;
     private final boolean authorizerPresent;
 
-    public PublishAuthorizerResult(@Nullable final AckReasonCode ackReasonCode,
-                                   @Nullable final String reasonString,
+    public PublishAuthorizerResult(final @Nullable AckReasonCode ackReasonCode,
+                                   final @Nullable String reasonString,
                                    final boolean authorizerPresent,
-                                   @Nullable final DisconnectReasonCode disconnectReasonCode) {
+                                   final @Nullable DisconnectReasonCode disconnectReasonCode) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;
         this.authorizerPresent = authorizerPresent;
         this.disconnectReasonCode = disconnectReasonCode;
     }
 
-    public PublishAuthorizerResult(@Nullable final AckReasonCode ackReasonCode,
-                                   @Nullable final String reasonString,
+    public PublishAuthorizerResult(final @Nullable AckReasonCode ackReasonCode,
+                                   final @Nullable String reasonString,
                                    final boolean authorizerPresent) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;

@@ -184,7 +184,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder payloadFormatIndicator(@Nullable final PayloadFormatIndicator payloadFormatIndicator) {
+    public PublishBuilder payloadFormatIndicator(final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
         this.payloadFormatIndicator = payloadFormatIndicator;
         return this;
     }
@@ -199,7 +199,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder responseTopic(@Nullable final String responseTopic) {
+    public PublishBuilder responseTopic(final @Nullable String responseTopic) {
         PluginBuilderUtil.checkResponseTopic(responseTopic, securityConfigurationService.validateUTF8());
         this.responseTopic = responseTopic;
         return this;
@@ -207,14 +207,14 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder correlationData(@Nullable final ByteBuffer correlationData) {
+    public PublishBuilder correlationData(final @Nullable ByteBuffer correlationData) {
         this.correlationData = correlationData;
         return this;
     }
 
     @NotNull
     @Override
-    public PublishBuilder contentType(@Nullable final String contentType) {
+    public PublishBuilder contentType(final @Nullable String contentType) {
         PluginBuilderUtil.checkContentType(contentType, securityConfigurationService.validateUTF8());
         this.contentType = contentType;
         return this;

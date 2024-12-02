@@ -24,6 +24,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface FetchCallback<V> {
 
-    @NotNull ListenableFuture<ChunkResult<V>> fetchNextResults(@Nullable final ChunkCursor cursor);
+    @NotNull ListenableFuture<ChunkResult<V>> fetchNextResults(final @Nullable ChunkCursor cursor);
 
 }

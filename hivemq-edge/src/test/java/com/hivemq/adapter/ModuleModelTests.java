@@ -45,7 +45,7 @@ public class ModuleModelTests {
 
     @Test
     void testModuleModel() {
-        Module module = createTestModule();
+        final Module module = createTestModule();
         assertEquals(MODULE_ID, module.getId(), "Module Id should match");
         assertEquals(MODULE_VERSION, module.getVersion(), "Module version should match");
         assertEquals(MODULE_NAME, module.getName(), "Module name should match");
@@ -62,7 +62,7 @@ public class ModuleModelTests {
 
     @Test
     void testLinkModel() {
-        Link link = createTestLink();
+        final Link link = createTestLink();
         assertEquals(LINK_DISPLAY, link.getDisplayText(), "Link display should match");
         assertEquals(LINK_DESC, link.getDescription(), "Link desc should match");
         assertEquals(LINK_URL, link.getUrl(), "Link url should match");
@@ -74,7 +74,7 @@ public class ModuleModelTests {
         return createTestLink(LINK_DISPLAY);
     }
 
-    protected static @NotNull Link createTestLink(String name){
+    protected static @NotNull Link createTestLink(final String name){
         return createLink(name, LINK_URL, LINK_DESC, LINK_TARGET, LINK_IMAGE_URL, false);
     }
 
@@ -91,22 +91,22 @@ public class ModuleModelTests {
     protected static Link createLink(final @NotNull String displayText, final @NotNull String url,
                                      final @NotNull String description, final @NotNull String target,
                                      final @NotNull String imageUrl, final boolean external){
-        Link link = new Link(displayText, url, description, target, imageUrl, external);
+        final Link link = new Link(displayText, url, description, target, imageUrl, external);
         return link;
     }
 
     protected static @NotNull Module createModule(final @NotNull String id,
                                           final @NotNull String version,
                                           final @NotNull String name,
-                                          @Nullable final Link logoUrl,
-                                          @Nullable final String description,
+                                          final @Nullable Link logoUrl,
+                                          final @Nullable String description,
                                           final @NotNull String author,
                                           final @NotNull Integer priority,
                                           final @NotNull Boolean installed,
-                                          @Nullable final String moduleType,
-                                          @Nullable final Link documentationLink,
-                                          @Nullable final Link provisioningLink){
-        Module module = new Module(id, version, name, logoUrl, description, author, priority, installed, moduleType, documentationLink, provisioningLink);
+                                          final @Nullable String moduleType,
+                                          final @Nullable Link documentationLink,
+                                          final @Nullable Link provisioningLink){
+        final Module module = new Module(id, version, name, logoUrl, description, author, priority, installed, moduleType, documentationLink, provisioningLink);
         return module;
     }
 }

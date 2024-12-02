@@ -35,7 +35,7 @@ public class LocalSubscription {
     private @Nullable String uniqueId;
     private final @Nullable Long queueLimit;
 
-    public LocalSubscription(final @NotNull List<String> filters, @Nullable final String destination) {
+    public LocalSubscription(final @NotNull List<String> filters, final @Nullable String destination) {
         this.filters = filters;
         this.destination = destination;
         this.excludes = List.of();
@@ -46,12 +46,12 @@ public class LocalSubscription {
     }
 
     public LocalSubscription(
-            @NotNull List<String> filters,
-            @Nullable String destination,
-            @NotNull List<String> excludes,
-            @NotNull List<CustomUserProperty> customUserProperties,
-            boolean preserveRetain,
-            int maxQoS,
+            @NotNull final List<String> filters,
+            @Nullable final String destination,
+            @NotNull final List<String> excludes,
+            @NotNull final List<CustomUserProperty> customUserProperties,
+            final boolean preserveRetain,
+            final int maxQoS,
             final @Nullable Long queueLimit) {
 
         this.filters = filters;
@@ -96,7 +96,7 @@ public class LocalSubscription {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LocalSubscription that = (LocalSubscription) o;
+        final LocalSubscription that = (LocalSubscription) o;
 
         if (preserveRetain != that.preserveRetain) return false;
         if (maxQoS != that.maxQoS) return false;
@@ -127,11 +127,11 @@ public class LocalSubscription {
         }
         final MD5Digest md5Overall = new MD5Digest();
         final int digestSize = md5Overall.getDigestSize();
-        byte[] digestOverAll = new byte[digestSize];
+        final byte[] digestOverAll = new byte[digestSize];
 
         if (!filters.isEmpty()) {
             // input list is immutable, need mutable list
-            ArrayList<String> strings= new ArrayList<>(filters);
+            final ArrayList<String> strings= new ArrayList<>(filters);
             strings.sort(String::compareTo);
             final byte[] filtersAsBytes = String.join("", strings).getBytes(StandardCharsets.UTF_8);
             md5Overall.update(filtersAsBytes, 0, filtersAsBytes.length);

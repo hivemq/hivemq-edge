@@ -38,9 +38,9 @@ public class NodeTreeImpl implements NodeTree {
             final @NotNull String id,
             final @NotNull String name, final @NotNull String value,
             final @NotNull String description,
-            @Nullable final String parentId,
-            @NotNull NodeType nodeType,
-            boolean selectable) {
+            final @Nullable String parentId,
+            @NotNull final NodeType nodeType,
+            final boolean selectable) {
         final ObjectNode node = new ObjectNode(name, description, value, id, nodeType, selectable);
         if (parentId != null) {
             final ObjectNode parentNode = nodes.get(parentId);
@@ -59,8 +59,8 @@ public class NodeTreeImpl implements NodeTree {
 
     @Override
     public @NotNull String toString() {
-        StringBuilder result = new StringBuilder();
-        for (ObjectNode child : root.children) {
+        final StringBuilder result = new StringBuilder();
+        for (final ObjectNode child : root.children) {
             result.append(child.toString(0));
         }
         return result.toString();
@@ -132,10 +132,10 @@ public class NodeTreeImpl implements NodeTree {
         }
 
         public @NotNull String toString(int indent) {
-            StringBuilder result =
+            final StringBuilder result =
                     new StringBuilder(String.format("%s | %s | %s | %s\n", id, name, value, description));
 
-            for (ObjectNode child : children) {
+            for (final ObjectNode child : children) {
                 result.append(child.toString(++indent));
             }
 
@@ -145,7 +145,7 @@ public class NodeTreeImpl implements NodeTree {
 
     }
 
-    public static @NotNull String indent(int n, String src) {
+    public static @NotNull String indent(final int n, final String src) {
         if (src.isEmpty()) {
             return "";
         }

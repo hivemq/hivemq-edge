@@ -33,7 +33,7 @@ public class SubscriptionResult {
 
     public SubscriptionResult(final @NotNull Topic topic,
                               final boolean subscriptionAlreadyExisted,
-                              @Nullable final String shareName) {
+                              final @Nullable String shareName) {
 
         Preconditions.checkNotNull(topic, "Topic cannot be null");
 

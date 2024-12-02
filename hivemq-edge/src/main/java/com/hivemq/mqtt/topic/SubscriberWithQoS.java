@@ -139,7 +139,7 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
     }
 
     @Override
-    public int compareTo(@Nullable final SubscriberWithQoS o) {
+    public int compareTo(final @Nullable SubscriberWithQoS o) {
         // Subscription are sorted by client id first and qos after.
         // This allows us to determine the highest qos for each subscriber
         if (o == null) {

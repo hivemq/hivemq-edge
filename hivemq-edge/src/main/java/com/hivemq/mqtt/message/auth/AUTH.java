@@ -46,10 +46,10 @@ public class AUTH extends MqttMessageWithUserProperties.MqttMessageWithReasonCod
     private final byte[] authData;
 
     public AUTH(final @NotNull String authMethod,
-                @Nullable final byte[] authData,
+                final @Nullable byte[] authData,
                 final @NotNull Mqtt5AuthReasonCode reasonCode,
                 final @NotNull Mqtt5UserProperties userProperties,
-                @Nullable final String reasonString) {
+                final @Nullable String reasonString) {
 
         super(reasonCode, reasonString, userProperties);
 

@@ -69,7 +69,7 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
     }
 
     @Override
-    public void operationComplete(@Nullable final ChannelFuture future) throws Exception {
+    public void operationComplete(final @Nullable ChannelFuture future) throws Exception {
         if (future != null && future.isSuccess()) {
 
             final Channel channel = future.channel();

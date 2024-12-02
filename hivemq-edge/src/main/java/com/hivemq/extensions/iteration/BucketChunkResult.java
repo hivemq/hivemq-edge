@@ -29,7 +29,7 @@ public class BucketChunkResult<V> {
     private final @Nullable String lastKey;
     private final int bucketIndex;
 
-    public BucketChunkResult(final @NotNull V value, final boolean finished, @Nullable final String lastKey, final int bucketIndex) {
+    public BucketChunkResult(final @NotNull V value, final boolean finished, final @Nullable String lastKey, final int bucketIndex) {
         this.value = value;
         this.finished = finished;
         this.lastKey = lastKey;

@@ -153,7 +153,7 @@ public class PublishDistributorImpl implements PublishDistributor {
             final int subscriptionQos,
             final boolean sharedSubscription,
             final boolean retainAsPublished,
-            @Nullable final ImmutableIntArray subscriptionIdentifier) {
+            final @Nullable ImmutableIntArray subscriptionIdentifier) {
 
         return handlePublish(publish,
                 clientId,
@@ -169,7 +169,7 @@ public class PublishDistributorImpl implements PublishDistributor {
             final int subscriptionQos,
             final boolean sharedSubscription,
             final boolean retainAsPublished,
-            @Nullable final ImmutableIntArray subscriptionIdentifier) {
+            final @Nullable ImmutableIntArray subscriptionIdentifier) {
 
         if (sharedSubscription) {
             // only do the bridge iterations for client ids that can even be bridge clients
@@ -224,7 +224,7 @@ public class PublishDistributorImpl implements PublishDistributor {
     private @NotNull SettableFuture<PublishStatus> handlePublishForBridgeForwarder(
             final @NotNull PUBLISH publish,
             final @NotNull String client,
-            boolean retainAsPublished,
+            final boolean retainAsPublished,
             final @NotNull ImmutableIntArray subscriptionIdentifier,
             final @NotNull Long queueLimit,
             int appliedQoS) {
@@ -259,8 +259,8 @@ public class PublishDistributorImpl implements PublishDistributor {
             final int subscriptionQos,
             final boolean shared,
             final boolean retainAsPublished,
-            @Nullable final ImmutableIntArray subscriptionIdentifier,
-            @Nullable final Long queueLimit) {
+            final @Nullable ImmutableIntArray subscriptionIdentifier,
+            final @Nullable Long queueLimit) {
 
         final Long appliedQueueLimit =
                 Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages);
@@ -287,10 +287,10 @@ public class PublishDistributorImpl implements PublishDistributor {
     }
 
     private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
-        for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
+        for (final MqttBridge bridge : bridgeConfigurationService.getBridges()) {
             final String bridgeClientId = MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId();
             if (clientId.contains(bridgeClientId)) {
-                for (LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
+                for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
                     final String detailedBridgeClientId =
                             MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId();
                     // contains as it ends with the topic filter, which we dont know

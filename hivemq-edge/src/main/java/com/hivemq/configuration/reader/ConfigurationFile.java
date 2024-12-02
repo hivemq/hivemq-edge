@@ -28,7 +28,7 @@ public class ConfigurationFile {
 
     private final Optional<File> configurationFile;
 
-    public ConfigurationFile(@Nullable final File configurationFile) {
+    public ConfigurationFile(final @Nullable File configurationFile) {
         this.configurationFile = Optional.ofNullable(configurationFile);
     }
 

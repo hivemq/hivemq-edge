@@ -164,7 +164,7 @@ public class ClientServiceImpl implements ClientService {
                 clientSessionPersistence.invalidateSession(clientId, EXTENSION);
         Futures.addCallback(setSessionFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final Boolean disconnected) {
+            public void onSuccess(final @Nullable Boolean disconnected) {
                 if (disconnected == null) {
                     setSessionSettableFuture.setException(new NoSuchClientIdException(clientId));
                 } else {

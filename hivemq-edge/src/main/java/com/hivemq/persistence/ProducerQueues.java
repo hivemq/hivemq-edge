@@ -34,8 +34,8 @@ public interface ProducerQueues {
 
     <R> @Nullable ListenableFuture<R> submit(final int bucketIndex,
                                              final @NotNull SingleWriterService.Task<R> task,
-                                             @Nullable final SingleWriterService.SuccessCallback<R> successCallback,
-                                             @Nullable final SingleWriterService.FailedCallback failedCallback);
+                                             final @Nullable SingleWriterService.SuccessCallback<R> successCallback,
+                                             final @Nullable SingleWriterService.FailedCallback failedCallback);
 
     @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsParallel(final @NotNull SingleWriterService.Task<R> task);
 

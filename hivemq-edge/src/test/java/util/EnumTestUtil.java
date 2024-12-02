@@ -55,7 +55,7 @@ public final class EnumTestUtil {
     public static <T extends Enum<T>> void assertAllValueOfWithFallback(final @NotNull Class<T> enumClass,
                                                                         final @NotNull ToIntFunction<T> toValueFunction,
                                                                         final @NotNull IntFunction<T> toEnumFunction,
-                                                                        @Nullable final T fallback) {
+                                                                        final @Nullable T fallback) {
         int minValue = Integer.MAX_VALUE;
         int maxValue = Integer.MIN_VALUE;
 

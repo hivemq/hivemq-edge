@@ -190,7 +190,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @NotNull
     public BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(
-            final int bucketIndex, @Nullable final String lastClientIdIgnored, final int maxResultsIgnored) {
+            final int bucketIndex, final @Nullable String lastClientIdIgnored, final int maxResultsIgnored) {
 
         //as all subscriptions are already in memory, we can ignore any pagination here and return the whole bucket.
         final Map<String, ImmutableSet<Topic>> result = buckets[bucketIndex].entrySet()

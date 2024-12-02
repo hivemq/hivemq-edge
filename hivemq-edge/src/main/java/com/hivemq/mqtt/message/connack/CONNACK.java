@@ -72,7 +72,7 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     private final @Nullable String serverReference;
 
     // MQTT 5 CONNACK for FAILED CONNECT
-    public CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode, @Nullable final String reasonString) {
+    public CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode, final @Nullable String reasonString) {
         super(reasonCode, reasonString, Mqtt5UserProperties.NO_USER_PROPERTIES);
 
         this.sessionPresent = false;
@@ -95,24 +95,24 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
 
     // MQTT 5
     private CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode,
-                    @Nullable final String reasonString,
+                    final @Nullable String reasonString,
                     final @NotNull Mqtt5UserProperties userProperties,
                     final boolean sessionPresent,
                     final long sessionExpiryInterval,
                     final int serverKeepAlive,
-                    @Nullable final String assignedClientIdentifier,
-                    @Nullable final String authMethod,
-                    @Nullable final byte[] authData,
+                    final @Nullable String assignedClientIdentifier,
+                    final @Nullable String authMethod,
+                    final @Nullable byte[] authData,
                     final int receiveMaximum,
                     final int topicAliasMaximum,
                     final int maximumPacketSize,
-                    @Nullable final QoS maximumQoS,
+                    final @Nullable QoS maximumQoS,
                     final boolean isRetainAvailable,
                     final boolean isWildcardSubscriptionAvailable,
                     final boolean isSubscriptionIdentifierAvailable,
                     final boolean isSharedSubscriptionAvailable,
-                    @Nullable final String responseInformation,
-                    @Nullable final String serverReference) {
+                    final @Nullable String responseInformation,
+                    final @Nullable String serverReference) {
 
         super(reasonCode, reasonString, userProperties);
 
@@ -202,14 +202,14 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
 
     private void checkPreconditions(final long sessionExpiryInterval,
                                     final int serverKeepAlive,
-                                    @Nullable final String assignedClientIdentifier,
-                                    @Nullable final String authMethod,
-                                    @Nullable final byte[] authData,
+                                    final @Nullable String assignedClientIdentifier,
+                                    final @Nullable String authMethod,
+                                    final @Nullable byte[] authData,
                                     final int receiveMaximum,
                                     final int topicAliasMaximum,
                                     final int maximumPacketSize,
-                                    @Nullable final String responseInformation,
-                                    @Nullable final String serverReference) {
+                                    final @Nullable String responseInformation,
+                                    final @Nullable String serverReference) {
 
         checkArgument(receiveMaximum != 0, "Receive maximum must never be zero");
 

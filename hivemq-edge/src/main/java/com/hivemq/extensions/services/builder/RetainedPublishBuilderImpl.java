@@ -166,7 +166,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder payloadFormatIndicator(@Nullable final PayloadFormatIndicator payloadFormatIndicator) {
+    public RetainedPublishBuilder payloadFormatIndicator(final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
         this.payloadFormatIndicator = payloadFormatIndicator;
         return this;
     }
@@ -181,7 +181,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder responseTopic(@Nullable final String responseTopic) {
+    public RetainedPublishBuilder responseTopic(final @Nullable String responseTopic) {
         PluginBuilderUtil.checkResponseTopic(responseTopic, securityConfigurationService.validateUTF8());
         this.responseTopic = responseTopic;
         return this;
@@ -189,14 +189,14 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder correlationData(@Nullable final ByteBuffer correlationData) {
+    public RetainedPublishBuilder correlationData(final @Nullable ByteBuffer correlationData) {
         this.correlationData = correlationData;
         return this;
     }
 
     @NotNull
     @Override
-    public RetainedPublishBuilder contentType(@Nullable final String contentType) {
+    public RetainedPublishBuilder contentType(final @Nullable String contentType) {
         PluginBuilderUtil.checkContentType(contentType, securityConfigurationService.validateUTF8());
         this.contentType = contentType;
         return this;

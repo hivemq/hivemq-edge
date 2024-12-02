@@ -116,15 +116,15 @@ public class Status {
         return type;
     }
 
-    public void setMessage(@Nullable final String message) {
+    public void setMessage(final @Nullable String message) {
         this.message = message;
     }
 
-    public void setLastActivity(@Nullable final Long lastActivity) {
+    public void setLastActivity(final @Nullable Long lastActivity) {
         this.lastActivity = lastActivity;
     }
 
-    public void setStartedAt(@Nullable final Long startedAt) {
+    public void setStartedAt(final @Nullable Long startedAt) {
         this.startedAt = startedAt;
     }
 

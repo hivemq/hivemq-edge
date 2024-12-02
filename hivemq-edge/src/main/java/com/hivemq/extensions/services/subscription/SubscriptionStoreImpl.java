@@ -111,7 +111,7 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
 
         Futures.addCallback(addSubscriptionFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final SubscriptionResult result) {
+            public void onSuccess(final @Nullable SubscriptionResult result) {
                 if (result == null) {
                     settableFuture.setException(new NoSuchClientIdException(clientID));
                     return;
@@ -162,7 +162,7 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
 
         Futures.addCallback(addSubscriptionFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final ImmutableList<SubscriptionResult> result) {
+            public void onSuccess(final @Nullable ImmutableList<SubscriptionResult> result) {
                 if (result == null) {
                     settableFuture.setException(new NoSuchClientIdException(clientID));
                     return;

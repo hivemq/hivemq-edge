@@ -109,8 +109,8 @@ public class ProducerQueuesImpl implements ProducerQueues {
     public <R> ListenableFuture<R> submit(
             final int bucketIndex,
             final @NotNull Task<R> task,
-            @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
-            @Nullable final InFileSingleWriter.FailedCallback failedCallback) {
+            final @Nullable InFileSingleWriter.SuccessCallback<R> successCallback,
+            final @Nullable InFileSingleWriter.FailedCallback failedCallback) {
         return submitInternal(bucketIndex, task, successCallback, failedCallback, false);
     }
 
@@ -118,8 +118,8 @@ public class ProducerQueuesImpl implements ProducerQueues {
     public <R> ListenableFuture<R> submitInternal(
             final int bucketIndex,
             final @NotNull Task<R> task,
-            @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
-            @Nullable final InFileSingleWriter.FailedCallback failedCallback,
+            final @Nullable InFileSingleWriter.SuccessCallback<R> successCallback,
+            final @Nullable InFileSingleWriter.FailedCallback failedCallback,
             final boolean ignoreShutdown) {
         if (!ignoreShutdown &&
                 shutdown.get() &&
@@ -284,7 +284,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
 
         Futures.addCallback(closeFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable final Void aVoid) {
+            public void onSuccess(final @Nullable Void aVoid) {
                 executorService.shutdown();
             }
 
