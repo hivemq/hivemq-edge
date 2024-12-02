@@ -15,7 +15,7 @@
  */
 package com.hivemq.codec.transcoder;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Convert messages from one type to another. Parameterized using Google convention where FromT is the type you

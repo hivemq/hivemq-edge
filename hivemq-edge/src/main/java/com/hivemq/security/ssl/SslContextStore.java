@@ -23,7 +23,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.PrimitiveSink;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
 import com.hivemq.security.ioc.Security;
 import io.netty.handler.ssl.SslContext;

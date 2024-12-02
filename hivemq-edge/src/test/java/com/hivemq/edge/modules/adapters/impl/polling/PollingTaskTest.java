@@ -18,7 +18,7 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
 import org.junit.jupiter.api.AfterEach;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.message.pubrec;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.packets.pubrec.PubrecPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;

@@ -16,8 +16,8 @@
 package com.hivemq.codec.transcoder;
 
 import com.hivemq.codec.transcoder.netty.NettyPipelineTranscodingContext;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.PINGRESP;

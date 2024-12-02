@@ -16,7 +16,7 @@
 package com.hivemq.datagov.model.impl;
 
 import com.hivemq.datagov.model.DataGovernanceError;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 

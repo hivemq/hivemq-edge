@@ -19,7 +19,7 @@ import com.hivemq.configuration.entity.security.AllowEmptyClientIdEntity;
 import com.hivemq.configuration.entity.security.PayloadFormatValidationEntity;
 import com.hivemq.configuration.entity.security.RequestProblemInformationEntityConfig;
 import com.hivemq.configuration.entity.security.UTF8ValidationEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

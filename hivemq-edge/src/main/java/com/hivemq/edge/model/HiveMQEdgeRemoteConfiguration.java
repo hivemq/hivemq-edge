@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.components.Extension;
 import com.hivemq.api.model.components.Module;
 import com.hivemq.api.model.components.Link;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;

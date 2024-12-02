@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;

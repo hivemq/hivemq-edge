@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.ChainedAuthenticationHandler;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

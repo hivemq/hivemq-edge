@@ -17,7 +17,7 @@
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 import com.hivemq.extensions.HiveMQExtensions;
 import org.junit.After;

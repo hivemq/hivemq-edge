@@ -23,7 +23,7 @@ import com.hivemq.bootstrap.provider.ClientSessionSubscriptionLocalPersistencePr
 import com.hivemq.bootstrap.provider.PublishPayloadPersistenceProvider;
 import com.hivemq.bootstrap.provider.RetainedMessageLocalPersistenceProvider;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;

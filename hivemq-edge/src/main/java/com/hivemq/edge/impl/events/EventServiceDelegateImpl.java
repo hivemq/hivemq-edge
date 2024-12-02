@@ -23,8 +23,8 @@ import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

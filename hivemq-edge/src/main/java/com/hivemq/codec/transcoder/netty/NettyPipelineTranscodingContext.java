@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.codec.transcoder.ITranscodingContext;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import com.hivemq.mqttsn.MqttsnClientConnection;

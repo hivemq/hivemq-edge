@@ -22,7 +22,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.PINGREQ;

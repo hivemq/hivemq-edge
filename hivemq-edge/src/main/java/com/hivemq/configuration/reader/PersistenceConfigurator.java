@@ -18,7 +18,7 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.PersistenceEntity;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl

@@ -16,7 +16,7 @@
 
 package com.hivemq.extensions.handler.testextensions;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.Authorizer;
 import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthorizerProviderInput;

@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.annotations.ReadOnly;
 import com.hivemq.configuration.entity.mqttsn.BroadcastAddress;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
 import org.slj.mqtt.sn.MqttsnConstants;
 

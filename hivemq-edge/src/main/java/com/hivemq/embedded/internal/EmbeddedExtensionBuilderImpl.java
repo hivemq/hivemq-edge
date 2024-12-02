@@ -20,8 +20,8 @@ import com.google.common.base.Preconditions;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedExtensionBuilder;
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_PRIORITY;
 import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_START_PRIORITY;

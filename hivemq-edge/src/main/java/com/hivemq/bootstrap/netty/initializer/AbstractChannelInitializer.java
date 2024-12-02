@@ -23,7 +23,7 @@ import com.hivemq.codec.decoder.MQTTMessageDecoder;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connect.MessageBarrier;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.security.exception.SslException;

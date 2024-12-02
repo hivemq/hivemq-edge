@@ -17,7 +17,7 @@ package com.hivemq.extensions.executor;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.executor.task.*;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 

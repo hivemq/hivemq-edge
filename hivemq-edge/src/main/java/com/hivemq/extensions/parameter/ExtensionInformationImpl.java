@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.parameter;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.parameter.ExtensionInformation;
 import com.hivemq.extensions.HiveMQExtension;
 

@@ -17,7 +17,7 @@ package util.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.util.Strings;
 import com.hivemq.util.Utf8Utils;

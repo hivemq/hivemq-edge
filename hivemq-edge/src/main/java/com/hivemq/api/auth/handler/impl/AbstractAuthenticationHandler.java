@@ -17,7 +17,7 @@ package com.hivemq.api.auth.handler.impl;
 
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;

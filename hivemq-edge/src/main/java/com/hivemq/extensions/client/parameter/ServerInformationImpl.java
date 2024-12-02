@@ -18,7 +18,7 @@ package com.hivemq.extensions.client.parameter;
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 

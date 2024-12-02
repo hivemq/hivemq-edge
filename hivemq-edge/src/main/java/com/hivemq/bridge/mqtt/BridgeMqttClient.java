@@ -56,7 +56,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;

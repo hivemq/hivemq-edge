@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence.qos;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 

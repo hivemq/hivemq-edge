@@ -17,7 +17,7 @@ package com.hivemq.mqttsn;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.MqttsnConstants;

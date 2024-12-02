@@ -18,7 +18,7 @@ package com.hivemq.persistence.domain;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;

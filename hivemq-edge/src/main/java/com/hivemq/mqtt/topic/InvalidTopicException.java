@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.topic;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Indicates that a provided topic is not compliant with the definition of a topic in the mqtt specification.

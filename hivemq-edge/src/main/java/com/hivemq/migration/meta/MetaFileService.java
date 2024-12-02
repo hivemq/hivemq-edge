@@ -17,7 +17,7 @@ package com.hivemq.migration.meta;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;

@@ -17,7 +17,7 @@
 package com.hivemq.extensions.services.initializer;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.ClientContext;
 import com.hivemq.extension.sdk.api.client.parameter.InitializerInput;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;

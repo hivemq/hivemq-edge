@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterInboundProviderInput;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterInformation;

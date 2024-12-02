@@ -17,7 +17,7 @@ package com.hivemq.api.auth.provider.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.util.Collections;

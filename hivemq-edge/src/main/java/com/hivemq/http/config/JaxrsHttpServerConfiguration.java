@@ -17,8 +17,8 @@ package com.hivemq.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.sun.net.httpserver.HttpsConfigurator;
 import org.apache.commons.lang3.tuple.Pair;
 

@@ -16,7 +16,7 @@
 package com.hivemq.configuration.entity;
 
 import com.google.common.collect.Lists;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

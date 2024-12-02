@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.packets.general;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 import com.hivemq.mqtt.message.ProtocolVersion;
 

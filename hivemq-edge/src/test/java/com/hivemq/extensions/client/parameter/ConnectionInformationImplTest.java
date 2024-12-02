@@ -19,7 +19,7 @@ package com.hivemq.extensions.client.parameter;
 import com.google.common.collect.Lists;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.*;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;

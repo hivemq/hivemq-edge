@@ -21,7 +21,7 @@ import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;

@@ -30,7 +30,7 @@ import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;

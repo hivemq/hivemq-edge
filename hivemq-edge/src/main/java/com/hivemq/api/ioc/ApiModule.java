@@ -49,7 +49,7 @@ import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;

@@ -16,7 +16,7 @@
 package com.hivemq.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Locale;

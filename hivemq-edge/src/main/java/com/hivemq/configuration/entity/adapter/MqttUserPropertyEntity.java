@@ -16,7 +16,7 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlElement;

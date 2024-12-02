@@ -16,7 +16,7 @@
 package com.hivemq.extensions.core;
 
 import com.hivemq.api.resources.GenericAPIHolder;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class RestComponentsServiceImpl implements RestComponentsService{
 

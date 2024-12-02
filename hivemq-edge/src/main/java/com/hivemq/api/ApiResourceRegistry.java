@@ -36,7 +36,7 @@ import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.api.resources.TopicFilterApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.RootResource;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.error.DefaultExceptionMapper;
 import dagger.Lazy;
 import org.glassfish.jersey.logging.LoggingFeature;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.topic;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Math.min;
 

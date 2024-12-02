@@ -25,7 +25,7 @@ import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterPersistenceEntity;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import org.slf4j.Logger;

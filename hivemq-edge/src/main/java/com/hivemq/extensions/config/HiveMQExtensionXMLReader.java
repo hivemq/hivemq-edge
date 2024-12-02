@@ -16,8 +16,8 @@
 package com.hivemq.extensions.config;
 
 import com.hivemq.configuration.service.exception.ValidationError;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import org.slf4j.Logger;

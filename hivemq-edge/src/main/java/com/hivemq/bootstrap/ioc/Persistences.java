@@ -15,7 +15,7 @@
  */
 package com.hivemq.bootstrap.ioc;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;

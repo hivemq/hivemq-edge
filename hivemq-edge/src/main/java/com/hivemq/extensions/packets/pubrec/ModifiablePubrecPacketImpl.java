@@ -17,8 +17,8 @@ package com.hivemq.extensions.packets.pubrec;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extension.sdk.api.packets.pubrec.ModifiablePubrecPacket;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;

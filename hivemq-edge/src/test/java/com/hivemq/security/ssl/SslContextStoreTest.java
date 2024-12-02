@@ -19,7 +19,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.handler.ssl.SslContext;
 import org.junit.After;
 import org.junit.Before;

@@ -17,8 +17,8 @@ package com.hivemq.logging;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;

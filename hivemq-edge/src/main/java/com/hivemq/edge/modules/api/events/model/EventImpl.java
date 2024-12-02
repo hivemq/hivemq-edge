@@ -22,8 +22,8 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.api.json.TimestampToDateConverter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;

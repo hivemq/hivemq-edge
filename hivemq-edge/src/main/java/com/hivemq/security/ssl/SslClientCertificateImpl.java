@@ -16,8 +16,8 @@
 package com.hivemq.security.ssl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.security.auth.SslClientCertificate;
 import com.hivemq.security.exception.PropertyNotFoundException;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;

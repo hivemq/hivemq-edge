@@ -17,7 +17,7 @@ package com.hivemq.extensions.iteration;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.general.IterationCallback;
 import com.hivemq.extensions.services.general.IterationContextImpl;
 

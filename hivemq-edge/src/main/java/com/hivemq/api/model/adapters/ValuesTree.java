@@ -18,7 +18,7 @@ package com.hivemq.api.model.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.params.NodeTreeImpl;
 
 import java.util.List;

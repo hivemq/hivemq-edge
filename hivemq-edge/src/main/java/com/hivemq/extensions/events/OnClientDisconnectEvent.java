@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.events;
 
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 

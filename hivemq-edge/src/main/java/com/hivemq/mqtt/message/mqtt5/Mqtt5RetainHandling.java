@@ -15,8 +15,8 @@
  */
 package com.hivemq.mqtt.message.mqtt5;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Retain Handling according to the MQTT 5 specification.

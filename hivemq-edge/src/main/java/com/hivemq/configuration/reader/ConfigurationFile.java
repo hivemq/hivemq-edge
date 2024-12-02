@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.Optional;

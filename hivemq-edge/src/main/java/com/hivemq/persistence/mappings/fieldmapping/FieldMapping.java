@@ -16,7 +16,7 @@
 package com.hivemq.persistence.mappings.fieldmapping;
 
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;

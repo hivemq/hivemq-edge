@@ -16,7 +16,7 @@
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.channel.embedded.EmbeddedChannel;

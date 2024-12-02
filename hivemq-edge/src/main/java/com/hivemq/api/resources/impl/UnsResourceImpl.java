@@ -22,7 +22,7 @@ import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 

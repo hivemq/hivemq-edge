@@ -19,7 +19,7 @@ import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeInterceptorHandlerImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 

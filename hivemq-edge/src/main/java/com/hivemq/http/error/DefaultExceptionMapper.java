@@ -17,7 +17,7 @@ package com.hivemq.http.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;

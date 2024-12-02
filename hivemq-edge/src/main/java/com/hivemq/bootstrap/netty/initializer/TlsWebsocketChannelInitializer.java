@@ -18,7 +18,7 @@ package com.hivemq.bootstrap.netty.initializer;
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
 import com.hivemq.security.ssl.SslFactory;
 import com.hivemq.websocket.WebSocketInitializer;

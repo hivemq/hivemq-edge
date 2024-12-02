@@ -16,8 +16,8 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 import java.util.UUID;

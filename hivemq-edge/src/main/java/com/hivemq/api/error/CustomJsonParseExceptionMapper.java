@@ -16,7 +16,7 @@
 package com.hivemq.api.error;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ErrorResponseUtil;
 
 import javax.ws.rs.core.Response;

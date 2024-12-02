@@ -17,7 +17,7 @@
 package com.hivemq.codec.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.handler.GlobalMQTTMessageCounter;
 import com.hivemq.mqtt.message.Message;
 import io.netty.buffer.ByteBuf;

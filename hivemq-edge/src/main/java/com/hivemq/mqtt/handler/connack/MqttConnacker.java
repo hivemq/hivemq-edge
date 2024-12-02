@@ -16,8 +16,8 @@
 package com.hivemq.mqtt.handler.connack;
 
 import com.hivemq.annotations.ExecuteInEventloop;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;

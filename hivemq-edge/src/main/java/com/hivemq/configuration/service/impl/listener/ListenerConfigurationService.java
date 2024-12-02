@@ -23,7 +23,7 @@ import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import com.hivemq.configuration.service.exception.ConfigurationValidationException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

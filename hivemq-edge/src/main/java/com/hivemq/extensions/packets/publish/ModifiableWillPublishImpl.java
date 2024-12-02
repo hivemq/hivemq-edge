@@ -17,8 +17,8 @@ package com.hivemq.extensions.packets.publish;
 
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.publish.ModifiableWillPublish;
 

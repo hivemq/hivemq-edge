@@ -18,7 +18,7 @@ package com.hivemq.configuration.entity.adapter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 
 import javax.xml.bind.ValidationEvent;

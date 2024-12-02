@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.netty.udp;
 
 import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;

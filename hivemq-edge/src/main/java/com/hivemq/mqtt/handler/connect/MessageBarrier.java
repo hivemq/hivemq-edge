@@ -17,7 +17,7 @@ package com.hivemq.mqtt.handler.connect;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.auth.AUTH;

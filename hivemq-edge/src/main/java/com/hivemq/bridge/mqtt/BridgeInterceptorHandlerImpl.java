@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptor;

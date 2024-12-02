@@ -16,7 +16,7 @@
 package com.hivemq.util;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.lang.reflect.Field;

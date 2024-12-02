@@ -16,7 +16,7 @@
 package com.hivemq.mqttsn.services;
 
 import com.hivemq.bootstrap.netty.BroadcastChannelCreatedListener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
 
 import javax.inject.Inject;

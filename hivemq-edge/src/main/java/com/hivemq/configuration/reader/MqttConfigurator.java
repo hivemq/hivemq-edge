@@ -17,7 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

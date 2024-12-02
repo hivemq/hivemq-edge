@@ -15,8 +15,8 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.http.error.Errors;

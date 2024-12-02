@@ -26,7 +26,7 @@ import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServi
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;

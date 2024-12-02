@@ -17,7 +17,7 @@
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableCollection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 
 import java.util.concurrent.CompletableFuture;

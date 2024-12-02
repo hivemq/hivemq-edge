@@ -19,7 +19,7 @@ import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.components.GatewayConfiguration;
 import com.hivemq.api.model.components.NotificationList;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;

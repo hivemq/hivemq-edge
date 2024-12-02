@@ -16,7 +16,7 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.configuration.entity.mqttsn.BroadcastAddress;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
 
 import java.util.List;

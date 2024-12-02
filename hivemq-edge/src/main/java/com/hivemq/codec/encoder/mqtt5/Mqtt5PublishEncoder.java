@@ -17,7 +17,7 @@ package com.hivemq.codec.encoder.mqtt5;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;

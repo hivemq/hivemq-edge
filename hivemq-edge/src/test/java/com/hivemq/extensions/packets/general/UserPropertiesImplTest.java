@@ -16,7 +16,7 @@
 package com.hivemq.extensions.packets.general;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import nl.jqno.equalsverifier.EqualsVerifier;

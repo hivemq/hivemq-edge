@@ -16,7 +16,7 @@
 package com.hivemq.metrics.handler;
 
 import com.codahale.metrics.Gauge;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.connect.CONNECT;

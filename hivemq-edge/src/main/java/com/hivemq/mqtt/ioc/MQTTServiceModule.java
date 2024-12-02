@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.ioc;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.limitation.TopicAliasLimiter;
 import com.hivemq.limitation.TopicAliasLimiterImpl;
 import com.hivemq.mqtt.services.InternalPublishService;

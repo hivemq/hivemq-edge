@@ -20,8 +20,8 @@ import com.hivemq.bootstrap.factories.ClientSessionLocalPersistenceFactory;
 import com.hivemq.bootstrap.factories.ClientSessionSubscriptionLocalPersistenceFactory;
 import com.hivemq.bootstrap.factories.PublishPayloadPersistenceFactory;
 import com.hivemq.bootstrap.factories.RetainedMessageLocalPersistenceFactory;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.PersistenceStartup;
 
 @SuppressWarnings("unused")

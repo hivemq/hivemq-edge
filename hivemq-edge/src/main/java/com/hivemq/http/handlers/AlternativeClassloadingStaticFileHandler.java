@@ -18,7 +18,7 @@ package com.hivemq.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.util.HashSet;

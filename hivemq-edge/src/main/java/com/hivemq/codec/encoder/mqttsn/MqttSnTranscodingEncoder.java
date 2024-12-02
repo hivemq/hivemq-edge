@@ -19,7 +19,7 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.codec.transcoder.ITranscoder;
 import com.hivemq.codec.transcoder.TranscodingResult;
 import com.hivemq.codec.transcoder.netty.NettyPipelineTranscodingContext;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqttsn.MqttsnProtocolException;
 import io.netty.buffer.ByteBuf;

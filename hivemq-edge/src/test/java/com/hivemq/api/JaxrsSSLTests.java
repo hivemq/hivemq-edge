@@ -16,7 +16,7 @@
 package com.hivemq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;

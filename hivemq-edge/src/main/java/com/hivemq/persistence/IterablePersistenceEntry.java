@@ -16,7 +16,7 @@
 package com.hivemq.persistence;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.MemoryEstimator;
 
 import java.util.Collection;

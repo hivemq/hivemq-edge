@@ -19,7 +19,7 @@ import com.hivemq.bootstrap.netty.ChannelInitializerFactory;
 import com.hivemq.bootstrap.netty.ChannelInitializerFactoryImpl;
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;

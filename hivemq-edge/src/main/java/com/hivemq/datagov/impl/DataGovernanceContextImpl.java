@@ -19,8 +19,8 @@ import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;

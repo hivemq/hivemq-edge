@@ -18,7 +18,7 @@ package com.hivemq.persistence.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.*;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

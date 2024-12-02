@@ -16,7 +16,7 @@
 
 package com.hivemq.extensions.config;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;

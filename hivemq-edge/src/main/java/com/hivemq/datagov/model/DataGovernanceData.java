@@ -15,7 +15,7 @@
  */
 package com.hivemq.datagov.model;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 /**

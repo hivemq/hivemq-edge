@@ -16,7 +16,7 @@
 package com.hivemq.datagov.model.impl;
 
 import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 import java.util.Objects;

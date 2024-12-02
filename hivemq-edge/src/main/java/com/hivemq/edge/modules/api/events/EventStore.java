@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.api.events;
 
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

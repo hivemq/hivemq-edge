@@ -16,7 +16,7 @@
 package com.hivemq.api.error;
 
 import com.hivemq.api.model.ApiErrorMessage;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

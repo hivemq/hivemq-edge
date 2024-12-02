@@ -18,7 +18,7 @@ package com.hivemq.edge.impl.capability;
 import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.ArrayList;

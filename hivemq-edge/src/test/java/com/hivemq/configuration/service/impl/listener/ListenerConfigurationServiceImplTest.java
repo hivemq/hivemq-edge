@@ -20,8 +20,8 @@ import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -26,7 +26,7 @@ import com.hivemq.api.model.metrics.Metric;
 import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

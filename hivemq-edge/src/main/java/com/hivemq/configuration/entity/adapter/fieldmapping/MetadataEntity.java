@@ -17,7 +17,7 @@ package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.Metadata;
 
 import javax.xml.bind.annotation.XmlElement;

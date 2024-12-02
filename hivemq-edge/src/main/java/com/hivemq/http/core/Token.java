@@ -15,7 +15,7 @@
  */
 package com.hivemq.http.core;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

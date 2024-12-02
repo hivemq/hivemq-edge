@@ -35,7 +35,7 @@ import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.ServerBootstrap;

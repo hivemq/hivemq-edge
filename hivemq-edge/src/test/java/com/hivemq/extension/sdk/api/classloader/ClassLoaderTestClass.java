@@ -16,7 +16,7 @@
 
 package com.hivemq.extension.sdk.api.classloader;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class must have this package because of plugin class loading.

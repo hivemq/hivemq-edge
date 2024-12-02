@@ -16,7 +16,7 @@
 package com.hivemq.mqtt.ioc;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.connack.MqttConnackerImpl;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;

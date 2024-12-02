@@ -16,8 +16,8 @@
 package com.hivemq.security.ssl;
 
 import com.hivemq.configuration.service.entity.Tls;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.security.exception.SslException;
 
 import javax.net.ssl.KeyManagerFactory;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.bridge;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 public class BridgeMessage {

@@ -16,7 +16,7 @@
 package com.hivemq.extensions.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.executor.task.PluginInOutTaskContext;
 import com.hivemq.mqtt.handler.auth.MqttAuthSender;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;

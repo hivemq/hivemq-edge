@@ -27,8 +27,8 @@ import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.connack.CONNACK;

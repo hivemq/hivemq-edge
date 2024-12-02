@@ -16,7 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.service.ModuleConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;

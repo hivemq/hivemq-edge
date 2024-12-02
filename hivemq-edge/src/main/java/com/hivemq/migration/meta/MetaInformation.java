@@ -15,7 +15,7 @@
  */
 package com.hivemq.migration.meta;
 import com.hivemq.configuration.service.PersistenceMode;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel

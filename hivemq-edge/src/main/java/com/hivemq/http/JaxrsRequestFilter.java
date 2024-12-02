@@ -16,7 +16,7 @@
 package com.hivemq.http;
 
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

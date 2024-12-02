@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 

@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterDynamicContext;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterPublishInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;

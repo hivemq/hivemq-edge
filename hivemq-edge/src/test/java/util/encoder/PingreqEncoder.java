@@ -17,7 +17,7 @@ package util.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.PINGREQ;
 import io.netty.buffer.ByteBuf;
 

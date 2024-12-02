@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.Chunker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.QoS;

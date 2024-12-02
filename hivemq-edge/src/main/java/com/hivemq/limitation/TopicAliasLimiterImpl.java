@@ -16,7 +16,7 @@
 package com.hivemq.limitation;
 
 import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

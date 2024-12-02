@@ -16,7 +16,7 @@
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterDynamicContext;
 
 import java.util.Optional;

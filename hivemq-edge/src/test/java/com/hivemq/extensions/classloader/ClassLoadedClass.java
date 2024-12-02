@@ -16,7 +16,7 @@
 
 package com.hivemq.extensions.classloader;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class ClassLoadedClass {
 

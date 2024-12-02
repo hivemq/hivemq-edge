@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

@@ -16,7 +16,7 @@
 package com.hivemq.util;
 
 import com.google.common.primitives.ImmutableIntArray;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl

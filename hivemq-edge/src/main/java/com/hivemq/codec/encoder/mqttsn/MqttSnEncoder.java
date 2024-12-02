@@ -16,7 +16,7 @@
 package com.hivemq.codec.encoder.mqttsn;
 
 import com.hivemq.bootstrap.netty.ChannelDependencies;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

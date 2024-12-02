@@ -17,7 +17,7 @@ package util;
 
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.SingleWriterService;
 

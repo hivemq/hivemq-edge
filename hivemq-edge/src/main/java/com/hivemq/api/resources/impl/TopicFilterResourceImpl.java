@@ -18,7 +18,7 @@ package com.hivemq.api.resources.impl;
 import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.api.model.topicFilters.TopicFilterModelList;
 import com.hivemq.api.resources.TopicFilterApi;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.TopicFilter;
 import com.hivemq.persistence.topicfilter.TopicFilterAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterDeleteResult;

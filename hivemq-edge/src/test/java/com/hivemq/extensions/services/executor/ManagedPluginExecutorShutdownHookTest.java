@@ -17,7 +17,7 @@
 package com.hivemq.extensions.services.executor;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;

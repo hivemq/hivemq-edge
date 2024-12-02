@@ -18,7 +18,7 @@ package com.hivemq.extensions.loader;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;

@@ -16,7 +16,7 @@
 package com.hivemq.datagov.provider;
 
 import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 

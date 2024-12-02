@@ -16,7 +16,7 @@
 package com.hivemq.uns;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
 
 import java.util.Map;

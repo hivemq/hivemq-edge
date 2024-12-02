@@ -17,7 +17,7 @@
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
 
 import java.util.function.Supplier;

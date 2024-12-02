@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.executor.task;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The necessary context for the execution of a {@link PluginTask}.

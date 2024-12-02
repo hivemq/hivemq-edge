@@ -17,7 +17,7 @@ package com.hivemq.api.auth.handler.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 
 import javax.ws.rs.container.ContainerRequestContext;

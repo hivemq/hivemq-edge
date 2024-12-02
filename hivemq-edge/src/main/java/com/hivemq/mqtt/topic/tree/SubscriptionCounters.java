@@ -16,7 +16,7 @@
 package com.hivemq.mqtt.topic.tree;
 
 import com.codahale.metrics.Counter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class SubscriptionCounters {
 
