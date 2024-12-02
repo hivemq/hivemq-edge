@@ -3728,12 +3728,12 @@ paths:
                   summary: 'Example for domain tags for opc ua '
                   value:
                     items:
-                    - tagDefinition:
+                    - definition:
                         node: ns=2;i=test
-                      tagName: tag1
-                    - tagDefinition:
+                      name: tag1
+                    - definition:
                         node: ns=2;i=test2
-                      tagName: tag2
+                      name: tag2
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
@@ -3967,12 +3967,12 @@ paths:
                   summary: 'Example for domain tags for opc ua '
                   value:
                     items:
-                    - tagDefinition:
+                    - definition:
                         node: ns=2;i=test
-                      tagName: tag1
-                    - tagDefinition:
+                      name: tag1
+                    - definition:
                         node: ns=2;i=test2
-                      tagName: tag2
+                      name: tag2
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
@@ -4001,12 +4001,12 @@ paths:
                   summary: 'Example for domain tags for opc ua '
                   value:
                     items:
-                    - tagDefinition:
+                    - definition:
                         node: ns=2;i=test
-                      tagName: tag1
-                    - tagDefinition:
+                      name: tag1
+                    - definition:
                         node: ns=2;i=test2
-                      tagName: tag2
+                      name: tag2
               schema:
                 $ref: '#/components/schemas/DomainTag'
           description: Success
@@ -4102,12 +4102,12 @@ paths:
                   summary: 'Example for domain tags for opc ua '
                   value:
                     items:
-                    - tagDefinition:
+                    - definition:
                         node: ns=2;i=test
-                      tagName: tag1
-                    - tagDefinition:
+                      name: tag1
+                    - definition:
                         node: ns=2;i=test2
-                      tagName: tag2
+                      name: tag2
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
