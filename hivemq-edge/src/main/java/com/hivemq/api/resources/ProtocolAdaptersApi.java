@@ -609,11 +609,7 @@ public interface ProtocolAdaptersApi {
     //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getAllSouthboundMappings(
-            @NotNull @Parameter(name = "adapterId",
-                                description = "The adapter id.",
-                                required = true,
-                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+    Response getAllSouthboundMappings();
 
     @GET
     @Path("/adapters/{adapterId}/southboundMappings")

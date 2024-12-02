@@ -703,7 +703,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
 
     @Override
-    public @NotNull Response getAllSouthboundMappings(@NotNull final String adapterId) {
+    public @NotNull Response getAllSouthboundMappings() {
         final List<SouthboundMappingListModel> southboundMappingListModels =
                 protocolAdapterManager.getProtocolAdapters()
                         .values()

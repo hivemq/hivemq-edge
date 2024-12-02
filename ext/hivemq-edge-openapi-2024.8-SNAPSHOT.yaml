@@ -3927,13 +3927,6 @@ paths:
     get:
       description: Get all southbound mappings.
       operationId: get-southboundMappings
-      parameters:
-      - description: The adapter id.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
       responses:
         "200":
           content:
