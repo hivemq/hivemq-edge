@@ -1,18 +1,12 @@
 import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
-import { AlertStatus } from '@chakra-ui/react'
 
-import { CompactArrayField, InternalNotice, MqttTransformationField } from '@/components/rjsf/Fields'
+import { CompactArrayField, MqttTransformationField } from '@/components/rjsf/Fields'
 
-import i18n from '@/config/i18n.config.ts'
 import { JSONSchemaEditor } from '@datahub/components/forms'
 import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
 import { CustomFormat } from '@/api/types/json-schema.ts'
 
-export const getRequiredUiSchema = (
-  uiSchema: UiSchema | undefined,
-  isNewAdapter: boolean,
-  hideProperties?: string[]
-): UiSchema => {
+export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
   const newSchema: UiSchema = {
     'ui:submitButtonOptions': {
@@ -26,19 +20,6 @@ export const getRequiredUiSchema = (
       'ui:disabled': !isNewAdapter,
     },
     ...rest,
-  }
-
-  if (hideProperties) {
-    for (const property of hideProperties) {
-      const status: AlertStatus = 'info'
-      newSchema[property] = {
-        'ui:field': 'text:warning',
-        'ui:options': {
-          status,
-          message: i18n.t('warnings.featureFlag.splitSchema'),
-        },
-      }
-    }
   }
 
   return newSchema
@@ -55,6 +36,5 @@ export const adapterJSFWidgets: RegistryWidgetsType = {
 
 export const adapterJSFFields: RegistryFieldsType = {
   compactTable: CompactArrayField,
-  'text:warning': InternalNotice,
   'mqtt:transform': MqttTransformationField,
 }

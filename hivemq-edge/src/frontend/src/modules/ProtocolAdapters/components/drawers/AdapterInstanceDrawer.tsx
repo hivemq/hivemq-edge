@@ -27,14 +27,8 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import {
-  getInwardMappingRootProperty,
-  getOutwardMappingRootProperty,
-  isBidirectional,
-} from '@/modules/Workspace/utils/adapter.utils.ts'
-import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 
-import config from '@/config'
+import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -63,19 +57,12 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
 
-    // If the config schema is split across entities, replace the fields by a warning
-    const hideProperties = []
-    if (config.features.ADAPTER_MAPPINGS_IN_WORKSPACE && adapter?.id) {
-      hideProperties.push(getInwardMappingRootProperty(adapter?.id))
-      if (isBidirectional(adapter)) hideProperties.push(getOutwardMappingRootProperty(adapter?.id))
-    }
-
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hideProperties),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
     }
   }, [data?.items, isNewAdapter, adapterType])
 

@@ -18,7 +18,6 @@ interface configType {
     WORKSPACE_FLOW_PANEL: boolean
     PROTOCOL_ADAPTER_FACET: boolean
     METRICS_SHOW_EDITOR: boolean
-    ADAPTER_MAPPINGS_IN_WORKSPACE: boolean
   }
 
   documentation: {
@@ -68,10 +67,6 @@ const config: configType = {
      * Show the metrics editor in the workspace panels
      */
     METRICS_SHOW_EDITOR: true,
-    /**
-     * Mappings (inward and outwards) are available from the workspace and hidden in the configuration
-     */
-    ADAPTER_MAPPINGS_IN_WORKSPACE: true,
   },
 
   documentation: {
