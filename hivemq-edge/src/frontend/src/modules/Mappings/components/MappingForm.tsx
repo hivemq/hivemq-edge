@@ -1,0 +1,52 @@
+import { type FC, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { CustomValidator, FormContextType, RJSFSchema } from '@rjsf/utils'
+
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
+import { MappingManagerType, MappingType } from '@/modules/Mappings/types.ts'
+import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
+import { customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+
+interface MappingFormProps {
+  adapterId: string
+  adapterType?: string
+  onSubmit: () => void
+  useManager: (adapterId: string) => MappingManagerType
+  type: MappingType
+}
+
+const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type }) => {
+  const { t } = useTranslation()
+  const { context } = useManager(adapterId)
+  const validationSchemas = useState<FlatJSONSchema7[]>()
+
+  if (!context.schema) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
+
+  const contextExt: MappingContext = {
+    isEditAdapter: true,
+    isDiscoverable: false,
+    adapterType: adapterType,
+    adapterId: adapterId,
+    validationSchemas,
+  }
+
+  return (
+    <ChakraRJSForm
+      id="adapter-mapping-form"
+      schema={context.schema}
+      uiSchema={context.uiSchema}
+      formData={context.formData}
+      formContext={contextExt}
+      onSubmit={(e) => console.log('XXX', e)}
+      customValidate={
+        type === MappingType.SOUTHBOUND && adapterType
+          ? (customMappingValidate(adapterType) as CustomValidator<unknown, RJSFSchema, FormContextType>)
+          : undefined
+      }
+    />
+  )
+}
+
+export default MappingForm

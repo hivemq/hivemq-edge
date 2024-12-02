@@ -42,7 +42,7 @@ describe('AdapterMappingManager', () => {
   })
 
   it('should render the drawer', () => {
-    cy.mountWithProviders(<AdapterMappingManager type={MappingType.INWARD} />, {
+    cy.mountWithProviders(<AdapterMappingManager type={MappingType.NORTHBOUND} />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
       wrapper: getWrapperWith(),
     })
@@ -62,7 +62,7 @@ describe('AdapterMappingManager', () => {
   })
 
   it('should render error properly', () => {
-    cy.mountWithProviders(<AdapterMappingManager type={MappingType.INWARD} />, {
+    cy.mountWithProviders(<AdapterMappingManager type={MappingType.NORTHBOUND} />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
       wrapper: getWrapperWith(),
     })
@@ -77,7 +77,7 @@ describe('AdapterMappingManager', () => {
   })
 
   it('should render inward properly', () => {
-    cy.mountWithProviders(<AdapterMappingManager type={MappingType.INWARD} />, {
+    cy.mountWithProviders(<AdapterMappingManager type={MappingType.NORTHBOUND} />, {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
     })
@@ -87,7 +87,7 @@ describe('AdapterMappingManager', () => {
   })
 
   it('should render outward properly', () => {
-    cy.mountWithProviders(<AdapterMappingManager type={MappingType.OUTWARD} />, {
+    cy.mountWithProviders(<AdapterMappingManager type={MappingType.SOUTHBOUND} />, {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
     })
