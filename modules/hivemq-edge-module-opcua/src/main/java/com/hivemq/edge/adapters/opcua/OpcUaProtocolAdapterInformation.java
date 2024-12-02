@@ -57,12 +57,12 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getDisplayName() {
-        return "OPC UA to MQTT Protocol Adapter";
+        return "OPC UA Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to existing OPC UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.";
+        return "Supports Northbound and Southbound communicates from and to OPC UA.";
     }
 
     @Override
@@ -110,7 +110,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the OPC UA Adapter could not be loaded from resources:", e);
             return null;
         }
