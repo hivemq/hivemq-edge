@@ -4911,22 +4911,22 @@ components:
       type: object
       description: List of result items that are returned by this endpoint
       properties:
+        definition:
+          $ref: '#/components/schemas/JsonNode'
         description:
           type: string
           description: A user created description for this tag.
-        protocolId:
-          type: string
-          description: The protocol id of the protocol for which this tag was created.
-        tagDefinition:
-          $ref: '#/components/schemas/JsonNode'
-        tagName:
+        name:
           type: string
           format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
+        protocolId:
+          type: string
+          description: The protocol id of the protocol for which this tag was created.
       required:
+      - definition
+      - name
       - protocolId
-      - tagDefinition
-      - tagName
     DomainTagList:
       type: object
       properties:
