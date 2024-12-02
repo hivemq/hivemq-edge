@@ -17,10 +17,10 @@ export default function AddButton<
   F extends FormContextType = never
 >({ uiSchema, registry, ...props }: IconButtonProps<T, S, F>) {
   const { translateString } = registry
-  const { disabled, ...rest } = props
+  const { disabled, 'aria-label': ariaLabel, ...rest } = props
   return (
     <Button leftIcon={<AddIcon />} {...rest} isDisabled={props.disabled}>
-      {translateString(TranslatableString.AddItemButton)}
+      {ariaLabel || translateString(TranslatableString.AddItemButton)}
     </Button>
   )
 }
