@@ -18,6 +18,8 @@ package com.hivemq.api.resources.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -201,6 +203,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         try {
             Thread.currentThread().setContextClassLoader(value.getAdapterFactory().getClass().getClassLoader());
             configObject = value.getAdapterFactory().unconvertConfigObject(objectMapper, value.getConfigObject());
+            configObject.put("id", value.getId());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
