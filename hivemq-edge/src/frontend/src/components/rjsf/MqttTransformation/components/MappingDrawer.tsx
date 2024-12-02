@@ -14,15 +14,15 @@ import {
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { FieldMappingsModel, JsonNode } from '@/api/__generated__'
+import { SouthboundMapping, JsonNode } from '@/api/__generated__'
 import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
 
 interface MappingDrawerProps {
   adapterId: string
   adapterType: string
-  item: FieldMappingsModel
-  onSubmit: (newItem: FieldMappingsModel) => void
-  onChange: (id: keyof FieldMappingsModel, v: JsonNode | string | string[] | null) => void
+  item: SouthboundMapping
+  onSubmit: (newItem: SouthboundMapping) => void
+  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | null) => void
   onClose: () => void
 }
 

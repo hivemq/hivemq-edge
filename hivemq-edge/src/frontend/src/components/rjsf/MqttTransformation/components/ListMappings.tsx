@@ -4,13 +4,13 @@ import { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup, Card, Text } from '@chakra-ui/react'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
-import { FieldMappingsModel } from '@/api/__generated__'
+import { SouthboundMapping } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
 
 interface ListSubscriptionsProps {
-  items: FieldMappingsModel[]
+  items: SouthboundMapping[]
   onEdit?: (index: number) => void
   onDelete?: (index: number) => void
   onAdd?: () => void
@@ -19,7 +19,7 @@ interface ListSubscriptionsProps {
 const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd }) => {
   const { t } = useTranslation('components')
 
-  const columns = useMemo<ColumnDef<FieldMappingsModel>[]>(() => {
+  const columns = useMemo<ColumnDef<SouthboundMapping>[]>(() => {
     return [
       {
         accessorKey: 'topicFilter',
@@ -77,7 +77,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
 
   return (
     <Card>
-      <PaginatedTable<FieldMappingsModel>
+      <PaginatedTable<SouthboundMapping>
         aria-label={t('rjsf.MqttTransformationField.tabs.list')}
         data={items}
         columns={columns}
