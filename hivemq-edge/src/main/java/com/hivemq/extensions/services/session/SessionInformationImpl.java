@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.services.session;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.session.SessionInformation;
 
 /**

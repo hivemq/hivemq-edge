@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.utils;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.util.internal.MacAddressUtil;
 
 import java.net.NetworkInterface;

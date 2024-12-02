@@ -18,7 +18,7 @@ package com.hivemq.bootstrap.ioc;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.persistence.SingleWriterService;
 

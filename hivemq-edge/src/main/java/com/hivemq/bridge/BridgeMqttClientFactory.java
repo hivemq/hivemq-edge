@@ -22,7 +22,7 @@ import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

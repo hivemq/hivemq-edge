@@ -26,7 +26,7 @@ import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
 

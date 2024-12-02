@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.core;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public interface RestComponentsService {
 

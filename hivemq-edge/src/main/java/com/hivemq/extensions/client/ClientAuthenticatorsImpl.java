@@ -17,7 +17,7 @@ package com.hivemq.extensions.client;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.common.annotations.GuardedBy;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;

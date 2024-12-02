@@ -17,7 +17,7 @@ package com.hivemq.extensions.iteration;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.Set;

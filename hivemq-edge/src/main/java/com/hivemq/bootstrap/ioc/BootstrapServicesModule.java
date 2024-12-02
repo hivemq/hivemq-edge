@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapServiceImpl;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapServiceImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 

@@ -15,7 +15,7 @@
  */
 package com.hivemq.http.sun;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.sun.net.httpserver.HttpExchange;

@@ -16,7 +16,7 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 
 import java.util.concurrent.ScheduledFuture;

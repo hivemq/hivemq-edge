@@ -17,8 +17,8 @@ package com.hivemq.common.topic;
 
 import com.hivemq.client.annotations.Immutable;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

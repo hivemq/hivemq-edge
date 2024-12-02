@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionType;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 

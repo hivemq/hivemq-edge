@@ -18,8 +18,8 @@ package com.hivemq.edge.impl.events;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.EventStore;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.RollingList;
 
 import javax.inject.Inject;

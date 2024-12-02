@@ -16,7 +16,7 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.UnsConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.uns.config.ISA88;
 import com.hivemq.uns.config.ISA95;
 

@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The Polling Service allows Protocol Adapters to use a centrally managed and tracked Scheduler

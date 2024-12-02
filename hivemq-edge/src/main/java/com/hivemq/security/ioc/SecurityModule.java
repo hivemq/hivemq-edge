@@ -15,7 +15,7 @@
  */
 package com.hivemq.security.ioc;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
 

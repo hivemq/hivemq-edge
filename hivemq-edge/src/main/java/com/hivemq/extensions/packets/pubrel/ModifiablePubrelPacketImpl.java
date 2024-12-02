@@ -16,8 +16,8 @@
 package com.hivemq.extensions.packets.pubrel;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.pubrel.ModifiablePubrelPacket;
 import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;

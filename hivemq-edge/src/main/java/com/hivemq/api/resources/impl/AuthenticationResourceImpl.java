@@ -29,8 +29,8 @@ import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import javax.inject.Inject;

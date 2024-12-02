@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence.ioc.provider;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.SingleWriterService;

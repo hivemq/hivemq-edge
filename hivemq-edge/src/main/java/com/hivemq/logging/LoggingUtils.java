@@ -17,7 +17,7 @@ package com.hivemq.logging;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
 
 public final class LoggingUtils {

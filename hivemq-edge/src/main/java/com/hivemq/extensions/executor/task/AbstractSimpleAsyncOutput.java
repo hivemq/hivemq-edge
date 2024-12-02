@@ -17,7 +17,7 @@ package com.hivemq.extensions.executor.task;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.SimpleAsyncOutput;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;

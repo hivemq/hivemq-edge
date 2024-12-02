@@ -20,8 +20,8 @@ import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 

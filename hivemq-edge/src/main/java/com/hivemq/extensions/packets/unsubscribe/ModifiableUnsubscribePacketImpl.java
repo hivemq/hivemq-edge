@@ -18,7 +18,7 @@ package com.hivemq.extensions.packets.unsubscribe;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.unsubscribe.ModifiableUnsubscribePacket;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 

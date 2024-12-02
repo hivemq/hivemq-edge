@@ -17,7 +17,7 @@ package com.hivemq.bootstrap;
 
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

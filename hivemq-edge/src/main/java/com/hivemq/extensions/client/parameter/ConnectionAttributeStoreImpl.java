@@ -16,7 +16,7 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionAttributeStore;
 import com.hivemq.util.Bytes;
 import io.netty.channel.Channel;

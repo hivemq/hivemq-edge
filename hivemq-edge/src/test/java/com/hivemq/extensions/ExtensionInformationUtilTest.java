@@ -16,7 +16,7 @@
 package com.hivemq.extensions;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
 import com.hivemq.extension.sdk.api.client.parameter.TlsInformation;
 import com.hivemq.mqtt.message.ProtocolVersion;

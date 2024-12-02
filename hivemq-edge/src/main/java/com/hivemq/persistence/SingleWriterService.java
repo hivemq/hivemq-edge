@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Executor;
 

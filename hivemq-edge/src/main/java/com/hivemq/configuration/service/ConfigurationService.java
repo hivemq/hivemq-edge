@@ -17,7 +17,7 @@ package com.hivemq.configuration.service;
 
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Writer;
 import java.util.Optional;

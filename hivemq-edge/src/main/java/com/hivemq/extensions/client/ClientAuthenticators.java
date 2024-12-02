@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.client;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 

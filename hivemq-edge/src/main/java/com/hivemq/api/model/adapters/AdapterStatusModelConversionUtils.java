@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.status.Status;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 
 /**

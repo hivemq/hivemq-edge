@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.ioc;
 
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import dagger.Binds;

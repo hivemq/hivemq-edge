@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqttsn.handler.sleep;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnClientConnection;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandler;

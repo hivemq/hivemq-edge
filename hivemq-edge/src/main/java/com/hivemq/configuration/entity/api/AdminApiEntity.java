@@ -16,7 +16,7 @@
 package com.hivemq.configuration.entity.api;
 
 import com.hivemq.configuration.entity.EnabledEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

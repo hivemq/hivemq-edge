@@ -17,8 +17,8 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import javax.xml.bind.ValidationEvent;

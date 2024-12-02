@@ -25,7 +25,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
 import org.junit.Assert;
 import org.junit.Test;

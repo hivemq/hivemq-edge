@@ -15,7 +15,7 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 public class HandlerResult {

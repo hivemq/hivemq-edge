@@ -17,7 +17,7 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class TagSchema {

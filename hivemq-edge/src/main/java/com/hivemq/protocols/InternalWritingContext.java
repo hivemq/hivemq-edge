@@ -17,7 +17,7 @@ package com.hivemq.protocols;
 
 
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 
 // internal view on a writing context.

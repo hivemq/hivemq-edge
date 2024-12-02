@@ -16,7 +16,7 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

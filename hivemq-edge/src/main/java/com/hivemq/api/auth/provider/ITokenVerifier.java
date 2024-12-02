@@ -16,7 +16,7 @@
 package com.hivemq.api.auth.provider;
 
 import com.hivemq.api.auth.ApiPrincipal;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 

@@ -16,7 +16,7 @@
 package com.hivemq.configuration.migration;
 
 import com.hivemq.configuration.reader.ConfigurationFile;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

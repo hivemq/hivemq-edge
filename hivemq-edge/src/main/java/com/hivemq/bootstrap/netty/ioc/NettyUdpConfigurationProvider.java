@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.netty.ioc;
 
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 

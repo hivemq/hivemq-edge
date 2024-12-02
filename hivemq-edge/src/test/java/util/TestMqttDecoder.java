@@ -24,7 +24,7 @@ import com.hivemq.codec.decoder.mqtt.mqtt3.*;
 import com.hivemq.codec.decoder.mqtt.mqtt5.*;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.limitation.TopicAliasLimiterImpl;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;

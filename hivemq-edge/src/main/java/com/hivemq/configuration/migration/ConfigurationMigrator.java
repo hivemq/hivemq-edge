@@ -32,7 +32,7 @@ import com.hivemq.configuration.reader.LegacyConfigFileReaderWriter;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;

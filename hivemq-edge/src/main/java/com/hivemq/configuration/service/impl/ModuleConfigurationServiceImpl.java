@@ -16,7 +16,7 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.ModuleConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;

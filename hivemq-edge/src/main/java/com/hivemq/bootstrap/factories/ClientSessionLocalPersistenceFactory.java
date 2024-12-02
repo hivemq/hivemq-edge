@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.factories;
 
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.persistence.PersistenceStartup;

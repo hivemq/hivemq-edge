@@ -17,7 +17,7 @@ package com.hivemq.mqttsn;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;

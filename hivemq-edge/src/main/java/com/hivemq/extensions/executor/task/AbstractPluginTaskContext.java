@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.executor.task;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Convenience class for creating the necessary runtime information for the handling of {@link PluginTask}s.

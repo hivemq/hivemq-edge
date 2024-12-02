@@ -17,7 +17,7 @@
 package com.hivemq.extensions.classloader;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.classloader.ClassLoaderTestClass;
 import com.hivemq.extension.sdk.api.services.Services;
 import org.apache.commons.io.FileUtils;

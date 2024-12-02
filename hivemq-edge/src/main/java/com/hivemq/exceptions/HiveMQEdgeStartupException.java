@@ -15,7 +15,7 @@
  */
 package com.hivemq.exceptions;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class HiveMQEdgeStartupException extends RuntimeException {
 

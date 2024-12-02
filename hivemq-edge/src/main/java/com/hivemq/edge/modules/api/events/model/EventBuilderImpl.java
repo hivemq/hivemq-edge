@@ -23,8 +23,8 @@ import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 

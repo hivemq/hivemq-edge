@@ -16,7 +16,7 @@
 package com.hivemq.common.shutdown;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook.Priority;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 

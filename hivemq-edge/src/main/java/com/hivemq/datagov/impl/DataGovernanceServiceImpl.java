@@ -29,7 +29,7 @@ import com.hivemq.datagov.model.DataGovernancePolicy;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.model.impl.DataGoveranceResultImpl;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.services.InternalPublishService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

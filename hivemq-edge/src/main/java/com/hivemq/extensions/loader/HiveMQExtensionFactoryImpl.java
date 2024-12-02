@@ -17,7 +17,7 @@
 package com.hivemq.extensions.loader;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import com.hivemq.extensions.HiveMQExtensionImpl;

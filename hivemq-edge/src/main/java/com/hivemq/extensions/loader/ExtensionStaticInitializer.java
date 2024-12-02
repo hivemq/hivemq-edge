@@ -16,7 +16,7 @@
 
 package com.hivemq.extensions.loader;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.exception.ExtensionLoadingException;
 
 public interface ExtensionStaticInitializer {

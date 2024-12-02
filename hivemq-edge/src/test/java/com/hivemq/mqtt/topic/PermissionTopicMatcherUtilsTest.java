@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.topic;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 

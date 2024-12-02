@@ -21,7 +21,7 @@ import com.hivemq.configuration.entity.mqttsn.AllowWakingPingToHijackSessionEnti
 import com.hivemq.configuration.entity.mqttsn.DiscoveryEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.entity.mqttsn.TopicRegistrationsHeldDuringSleepEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.MqttsnConstants;
 
 import javax.xml.bind.annotation.*;

@@ -19,7 +19,7 @@ import com.hivemq.bootstrap.factories.ClientSessionLocalPersistenceFactory;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;

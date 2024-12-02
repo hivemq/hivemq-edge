@@ -17,8 +17,8 @@ package com.hivemq.api.model.uns;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.uns.config.ISA95;
 import io.swagger.v3.oas.annotations.media.Schema;
 

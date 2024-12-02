@@ -17,8 +17,8 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.protocols.params.NodeTreeImpl;
 
 import java.util.concurrent.CompletableFuture;

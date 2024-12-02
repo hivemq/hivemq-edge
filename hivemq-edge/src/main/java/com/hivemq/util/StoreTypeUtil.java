@@ -15,7 +15,7 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import static com.hivemq.configuration.reader.BridgeConfigurator.KEYSTORE_TYPE_JKS;
 import static com.hivemq.configuration.reader.BridgeConfigurator.KEYSTORE_TYPE_PKCS12;

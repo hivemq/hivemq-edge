@@ -17,8 +17,8 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HandlerService {
 

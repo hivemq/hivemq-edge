@@ -17,7 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

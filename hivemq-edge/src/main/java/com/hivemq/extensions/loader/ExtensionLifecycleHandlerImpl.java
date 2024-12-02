@@ -19,7 +19,7 @@ package com.hivemq.extensions.loader;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.ioc.annotation.PluginStartStop;

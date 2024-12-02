@@ -21,7 +21,7 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
 import com.hivemq.api.model.mappings.southbound.SouthboundMappingModel;
 import com.hivemq.api.model.tags.DomainTagModel;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;

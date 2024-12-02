@@ -17,7 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.UsageTrackingConfigEntity;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 

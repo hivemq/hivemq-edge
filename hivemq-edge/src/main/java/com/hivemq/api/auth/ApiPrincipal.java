@@ -16,7 +16,7 @@
 package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.Principal;
 import java.util.Set;

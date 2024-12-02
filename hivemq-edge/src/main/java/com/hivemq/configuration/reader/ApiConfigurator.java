@@ -24,7 +24,7 @@ import com.hivemq.configuration.entity.api.*;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

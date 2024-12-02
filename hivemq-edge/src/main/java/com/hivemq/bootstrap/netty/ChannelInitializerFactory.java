@@ -17,7 +17,7 @@ package com.hivemq.bootstrap.netty;
 
 import com.hivemq.bootstrap.netty.initializer.*;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface for {@link ChannelInitializerFactoryImpl}

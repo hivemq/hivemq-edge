@@ -17,8 +17,8 @@ package com.hivemq.adapter;
 
 import com.hivemq.api.model.components.Link;
 import com.hivemq.api.model.components.Module;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -16,7 +16,7 @@
 package com.hivemq.configuration.entity.uns;
 
 import com.hivemq.configuration.entity.DisabledEntity;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

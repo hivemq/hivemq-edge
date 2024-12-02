@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.handler.subscribe;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.handler.IncomingSubscribeHandler;
 import com.hivemq.mqtt.handler.connect.SubscribeMessageBarrier;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;

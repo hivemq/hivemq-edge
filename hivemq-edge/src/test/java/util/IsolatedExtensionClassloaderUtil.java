@@ -16,7 +16,7 @@
 
 package util;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import javassist.ClassPool;
 import org.jboss.shrinkwrap.api.ShrinkWrap;

@@ -16,7 +16,7 @@
 package com.hivemq.persistence.exception;
 
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An exception which is thrown when the session expiry interval is less than '0'.

@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.api.model.topicFilters.TopicFilterModelList;
 import com.hivemq.api.resources.examples.TopicFiltersResourceExamples;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.error.Errors;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

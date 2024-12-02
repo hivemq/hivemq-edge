@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.event;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 
 /**

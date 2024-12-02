@@ -32,7 +32,7 @@ import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.apache.commons.io.FileUtils;
 import util.TestConfigurationBootstrap;
 

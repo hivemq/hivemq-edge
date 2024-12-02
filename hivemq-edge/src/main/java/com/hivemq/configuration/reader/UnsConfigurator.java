@@ -18,7 +18,7 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.service.UnsConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
 
 import javax.inject.Inject;

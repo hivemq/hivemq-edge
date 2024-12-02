@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.message.dropping;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
 

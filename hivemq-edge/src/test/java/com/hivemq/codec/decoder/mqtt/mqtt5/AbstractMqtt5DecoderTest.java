@@ -15,7 +15,7 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.buffer.ByteBuf;

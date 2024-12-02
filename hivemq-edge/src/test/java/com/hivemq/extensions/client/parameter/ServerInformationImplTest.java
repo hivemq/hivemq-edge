@@ -23,7 +23,7 @@ import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;

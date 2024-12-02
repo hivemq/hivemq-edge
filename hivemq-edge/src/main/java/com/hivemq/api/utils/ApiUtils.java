@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.net.InetAddress;

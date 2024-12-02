@@ -15,7 +15,7 @@
  */
 package com.hivemq.common.shutdown;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A interface for shutdown hooks used for registering HiveMQ shutdown hooks

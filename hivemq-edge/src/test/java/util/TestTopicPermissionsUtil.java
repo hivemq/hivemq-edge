@@ -15,7 +15,7 @@
  */
 package util;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
 

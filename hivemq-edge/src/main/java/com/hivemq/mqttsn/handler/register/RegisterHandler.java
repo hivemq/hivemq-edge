@@ -16,7 +16,7 @@
 package com.hivemq.mqttsn.handler.register;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandler;

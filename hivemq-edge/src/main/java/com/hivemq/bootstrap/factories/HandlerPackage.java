@@ -15,7 +15,7 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class HandlerPackage {

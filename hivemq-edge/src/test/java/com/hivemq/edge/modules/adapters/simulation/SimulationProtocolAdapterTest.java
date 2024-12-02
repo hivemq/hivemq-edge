@@ -20,7 +20,7 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.PollingInputImpl;
 import com.hivemq.protocols.PollingOutputImpl;
 import org.junit.jupiter.api.BeforeEach;

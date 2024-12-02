@@ -19,7 +19,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ExceptionUtils;
 import com.hivemq.util.NanoTimeProvider;
 import org.jetbrains.annotations.VisibleForTesting;

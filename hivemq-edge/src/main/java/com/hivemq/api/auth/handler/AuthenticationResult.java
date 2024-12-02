@@ -17,7 +17,7 @@ package com.hivemq.api.auth.handler;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.ApiPrincipal;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

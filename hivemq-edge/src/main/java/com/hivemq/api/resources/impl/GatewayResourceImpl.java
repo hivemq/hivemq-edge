@@ -26,7 +26,7 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.glassfish.jersey.internal.util.collection.StringIgnoreCaseKeyComparator;
 

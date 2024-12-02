@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.executor;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.executor.task.*;
 
 import java.util.function.Supplier;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.message.dropping;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The MessageDroppedService is used to centralize the update of dropped message metrics. The corresponding method

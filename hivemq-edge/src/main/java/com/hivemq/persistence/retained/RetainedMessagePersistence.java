@@ -17,7 +17,7 @@ package com.hivemq.persistence.retained;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.annotations.ReadOnly;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.ChunkCursor;
 import com.hivemq.extensions.iteration.MultipleChunkResult;
 import com.hivemq.persistence.RetainedMessage;

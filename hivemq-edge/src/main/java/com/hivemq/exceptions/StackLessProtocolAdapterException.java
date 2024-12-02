@@ -16,7 +16,7 @@
 package com.hivemq.exceptions;
 
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class StackLessProtocolAdapterException extends ProtocolAdapterException {
 

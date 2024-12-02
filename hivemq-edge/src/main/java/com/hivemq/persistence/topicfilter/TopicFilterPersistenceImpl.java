@@ -17,7 +17,7 @@ package com.hivemq.persistence.topicfilter;
 
 import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

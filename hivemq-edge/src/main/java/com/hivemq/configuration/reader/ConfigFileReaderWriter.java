@@ -26,7 +26,7 @@ import com.hivemq.configuration.entity.listener.UDPBroadcastListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.EnvVarUtil;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence.topicfilter;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 
 public class TopicFilterMapper {

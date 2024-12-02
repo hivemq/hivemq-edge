@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceError;
 import com.hivemq.datagov.model.DataGovernanceResult;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;

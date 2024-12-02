@@ -17,8 +17,8 @@ package com.hivemq.edge.modules.api.adapters.model;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson

@@ -16,8 +16,8 @@
 package com.hivemq.security.ssl;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;

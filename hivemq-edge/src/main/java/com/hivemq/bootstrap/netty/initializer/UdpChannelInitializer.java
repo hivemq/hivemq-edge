@@ -23,7 +23,7 @@ import com.hivemq.codec.decoder.mqttsn.MqttSnDecoder;
 import com.hivemq.codec.encoder.mqttsn.M2MMqttSnTranscodingEncoder;
 import com.hivemq.codec.encoder.mqttsn.MqttSnEncoder;
 import com.hivemq.configuration.service.entity.MqttsnUdpListener;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connect.MessageBarrier;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqttsn.MqttsnClientConnection;

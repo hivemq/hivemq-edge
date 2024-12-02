@@ -26,8 +26,8 @@ import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;

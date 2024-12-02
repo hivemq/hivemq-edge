@@ -19,7 +19,7 @@ import com.hivemq.api.model.components.Extension;
 import com.hivemq.api.model.components.Module;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 

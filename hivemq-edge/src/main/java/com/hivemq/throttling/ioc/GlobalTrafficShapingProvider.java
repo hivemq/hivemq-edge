@@ -18,7 +18,7 @@ package com.hivemq.throttling.ioc;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.throttling.GlobalTrafficShaperExecutorShutdownHook;
 import com.hivemq.util.ThreadFactoryUtil;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;

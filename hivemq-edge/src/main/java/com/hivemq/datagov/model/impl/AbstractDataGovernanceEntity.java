@@ -17,7 +17,7 @@ package com.hivemq.datagov.model.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.datagov.model.DataGovernanceEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 

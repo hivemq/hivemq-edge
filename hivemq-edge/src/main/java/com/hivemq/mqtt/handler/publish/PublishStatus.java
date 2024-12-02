@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel

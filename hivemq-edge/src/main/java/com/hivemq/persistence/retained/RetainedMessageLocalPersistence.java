@@ -17,8 +17,8 @@ package com.hivemq.persistence.retained;
 
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.annotations.ReadOnly;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.persistence.LocalPersistence;
 import com.hivemq.persistence.RetainedMessage;

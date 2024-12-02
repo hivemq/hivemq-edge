@@ -17,7 +17,7 @@ package com.hivemq.bridge.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
 import dagger.internal.Preconditions;
 import javassist.convert.TransformNew;

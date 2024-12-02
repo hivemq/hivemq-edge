@@ -15,7 +15,7 @@
  */
 package com.hivemq.extensions.exception;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Exception which is thrown if an extension can not be loaded or initialized

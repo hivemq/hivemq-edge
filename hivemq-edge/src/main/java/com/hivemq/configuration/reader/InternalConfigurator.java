@@ -18,7 +18,7 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.OptionEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class InternalConfigurator {
 

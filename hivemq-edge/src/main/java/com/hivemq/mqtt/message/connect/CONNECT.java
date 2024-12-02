@@ -16,8 +16,8 @@
 package com.hivemq.mqtt.message.connect;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.connect.ConnectPacketImpl;
 import com.hivemq.extensions.packets.general.MqttVersionUtil;
 import com.hivemq.mqtt.message.MessageType;

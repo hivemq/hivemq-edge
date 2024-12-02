@@ -16,7 +16,7 @@
 package com.hivemq.api.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

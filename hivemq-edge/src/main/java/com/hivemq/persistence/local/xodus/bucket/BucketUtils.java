@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence.local.xodus.bucket;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import net.openhft.hashing.LongHashFunction;
 
 /**

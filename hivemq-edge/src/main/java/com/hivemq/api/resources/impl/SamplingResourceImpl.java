@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.ErrorResponseUtil;
 import com.saasquatch.jsonschemainferrer.AdditionalPropertiesPolicies;

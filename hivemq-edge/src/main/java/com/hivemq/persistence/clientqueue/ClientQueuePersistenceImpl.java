@@ -24,7 +24,7 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;

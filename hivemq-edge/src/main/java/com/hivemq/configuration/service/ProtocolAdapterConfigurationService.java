@@ -16,7 +16,7 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;

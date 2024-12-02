@@ -18,7 +18,7 @@ package com.hivemq.edge.modules;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import org.slf4j.Logger;

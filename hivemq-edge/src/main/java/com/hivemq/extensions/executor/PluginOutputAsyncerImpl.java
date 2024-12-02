@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extensions.executor.task.AsyncOutputImpl;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;

@@ -16,8 +16,8 @@
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

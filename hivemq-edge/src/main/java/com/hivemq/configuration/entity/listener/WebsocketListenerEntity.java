@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.entity.listener;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;

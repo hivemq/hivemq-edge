@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.samples.PayloadSampleList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;

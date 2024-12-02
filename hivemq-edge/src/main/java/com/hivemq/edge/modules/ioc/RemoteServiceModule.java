@@ -23,7 +23,7 @@ import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.edge.impl.remote.HiveMQRemoteServiceImpl;
 import com.hivemq.edge.impl.ModulesAndExtensionsServiceImpl;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensions;
 import dagger.Module;
 import dagger.Provides;

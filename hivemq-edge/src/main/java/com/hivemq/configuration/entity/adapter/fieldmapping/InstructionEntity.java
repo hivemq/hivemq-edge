@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 
 import javax.xml.bind.annotation.XmlElement;
