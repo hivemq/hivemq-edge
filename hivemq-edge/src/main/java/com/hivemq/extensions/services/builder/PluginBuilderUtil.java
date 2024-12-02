@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PluginBuilderUtil {
 
-    public final static int UTF_8_STRING_MAX_LENGTH = 65535;
+    public static final int UTF_8_STRING_MAX_LENGTH = 65535;
 
     public static boolean isValidUtf8String(final @NotNull String stringToValidate, final boolean validateUTF8) {
         if (Utf8Utils.containsMustNotCharacters(stringToValidate)) {
