@@ -44,9 +44,9 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
     private final @NotNull SslFactory sslFactory;
     private final @NotNull ChannelDependencies channelDependencies;
 
-    public AbstractTlsChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                         @NotNull final MqttTlsListener mqttTlsListener,
-                                         @NotNull final SslFactory sslFactory) {
+    public AbstractTlsChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
+                                         final @NotNull MqttTlsListener mqttTlsListener,
+                                         final @NotNull SslFactory sslFactory) {
 
         super(channelDependencies, mqttTlsListener);
         this.mqttTlsListener = mqttTlsListener;
@@ -55,16 +55,16 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
     }
 
     @Override
-    protected void addNoConnectIdleHandler(@NotNull final Channel ch) {
+    protected void addNoConnectIdleHandler(final @NotNull Channel ch) {
         // No connect idle handler are added, as soon as the TLS handshake is done.
     }
 
-    protected void addNoConnectIdleHandlerAfterTlsHandshake(@NotNull final Channel ch) {
+    protected void addNoConnectIdleHandlerAfterTlsHandshake(final @NotNull Channel ch) {
         super.addNoConnectIdleHandler(ch);
     }
 
     @Override
-    protected void addSpecialHandlers(@NotNull final Channel ch) throws SslException {
+    protected void addSpecialHandlers(final @NotNull Channel ch) throws SslException {
         final int handshakeTimeout = mqttTlsListener.getTls().getHandshakeTimeout();
 
         final IdleStateHandler idleStateHandler = new IdleStateHandler(handshakeTimeout, 0, 0, TimeUnit.MILLISECONDS);

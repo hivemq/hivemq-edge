@@ -127,7 +127,7 @@ public class HiveMQExtensions {
         return (extension != null) && extension.getExtensionFolderPath().equals(extensionFolder);
     }
 
-    public boolean isHiveMQExtensionEnabled(@NotNull final String hiveMQExtensionID) {
+    public boolean isHiveMQExtensionEnabled(final @NotNull String hiveMQExtensionID) {
         checkNotNull(hiveMQExtensionID, "every extension must have an id");
 
         return getExtension(hiveMQExtensionID, true) != null;
@@ -198,7 +198,7 @@ public class HiveMQExtensions {
     /**
      * Returns false if the extension is not known to HiveMQ or not enabled
      */
-    public boolean extensionStart(@NotNull final String extensionId) {
+    public boolean extensionStart(final @NotNull String extensionId) {
         checkNotNull(extensionId, "every extension must have an id");
 
         final HiveMQExtension extension = getExtension(extensionId, true);
@@ -260,7 +260,7 @@ public class HiveMQExtensions {
     /**
      * Returns false if the extension is not known to HiveMQ or not enabled
      */
-    public boolean extensionStop(@NotNull final String extensionId, boolean disable) {
+    public boolean extensionStop(final @NotNull String extensionId, boolean disable) {
         checkNotNull(extensionId, "every extension must have an id");
 
         final HiveMQExtension extension;

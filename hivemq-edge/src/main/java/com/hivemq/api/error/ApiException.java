@@ -29,24 +29,24 @@ public class ApiException extends RuntimeException {
     private Throwable cause;
     private String fieldName;
 
-    public ApiException(@NotNull final String errorMessage) {
+    public ApiException(final @NotNull String errorMessage) {
         this.errorMessage = errorMessage;
     }
 
-    public ApiException(@NotNull final String errorMessage, final int httpStatusCode) {
+    public ApiException(final @NotNull String errorMessage, final int httpStatusCode) {
         super(errorMessage);
         this.errorMessage = errorMessage;
         this.httpStatusCode = httpStatusCode;
     }
 
-    public ApiException(@NotNull final Object subject, @NotNull final String errorMessage, final int httpStatusCode) {
+    public ApiException(final @NotNull Object subject, final @NotNull String errorMessage, final int httpStatusCode) {
         super(errorMessage);
         this.errorMessage = errorMessage;
         this.httpStatusCode = httpStatusCode;
         this.subject = subject;
     }
 
-    public ApiException(@NotNull final String errorMessage, int httpStatusCode, @NotNull final Throwable cause, @NotNull final Object subject) {
+    public ApiException(final @NotNull String errorMessage, int httpStatusCode, final @NotNull Throwable cause, final @NotNull Object subject) {
         super(errorMessage);
         this.errorMessage = errorMessage;
         this.httpStatusCode = httpStatusCode;
@@ -54,7 +54,7 @@ public class ApiException extends RuntimeException {
         this.cause = cause;
     }
 
-    public ApiException(@NotNull final String errorMessage, @NotNull final Throwable cause) {
+    public ApiException(final @NotNull String errorMessage, final @NotNull Throwable cause) {
         super(errorMessage, cause);
         this.errorMessage = errorMessage;
         this.cause = cause;

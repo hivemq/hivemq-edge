@@ -62,8 +62,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
 
     @Inject
     ClientSessionSubscriptionMemoryLocalPersistence(
-            @NotNull final MetricRegistry metricRegistry,
-            @NotNull final InternalConfigurationService internalConfigurationService) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
 
         bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
 
@@ -82,15 +82,15 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @ExecuteInSingleWriter
     public void addSubscription(
-            @NotNull final String client, @NotNull final Topic topic, final long timestamp, final int bucketIndex) {
+            final @NotNull String client, final @NotNull Topic topic, final long timestamp, final int bucketIndex) {
         addSubscriptions(client, ImmutableSet.of(topic), timestamp, bucketIndex);
     }
 
     @Override
     @ExecuteInSingleWriter
     public void addSubscriptions(
-            @NotNull final String client,
-            @NotNull final ImmutableSet<Topic> topics,
+            final @NotNull String client,
+            final @NotNull ImmutableSet<Topic> topics,
             final long timestamp,
             final int bucketIndex) {
         checkNotNull(client, "Client id must not be null");
@@ -117,7 +117,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @ExecuteInSingleWriter
     public void remove(
-            @NotNull final String client, @NotNull final String topic, final long timestamp, final int bucketIndex) {
+            final @NotNull String client, final @NotNull String topic, final long timestamp, final int bucketIndex) {
         checkNotNull(client, "Clientid must not be null");
         checkNotNull(topic, "Topic must not be null");
         checkState(timestamp > 0, "Timestamp must not be 0");
@@ -159,7 +159,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
 
     @Override
     @ExecuteInSingleWriter
-    public void removeAll(@NotNull final String client, final long timestamp, final int bucketIndex) {
+    public void removeAll(final @NotNull String client, final long timestamp, final int bucketIndex) {
         checkNotNull(client, "Clientid must not be null");
         checkState(timestamp > 0, "Timestamp must not be 0");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
@@ -174,7 +174,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
 
     @Override
     @NotNull
-    public ImmutableSet<Topic> getSubscriptions(@NotNull final String client) {
+    public ImmutableSet<Topic> getSubscriptions(final @NotNull String client) {
         checkNotNull(client, "Clientid must not be null");
 
         final IterablePersistenceEntry<ImmutableSet<Topic>> entry =

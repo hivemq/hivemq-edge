@@ -94,7 +94,7 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
     }
 
     @Override
-    public void onFailure(@NotNull final Throwable t) {
+    public void onFailure(final @NotNull Throwable t) {
         Exceptions.rethrowError("Exception at PublishAuthorization", t);
         disconnectClient(null);
     }
@@ -112,7 +112,7 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
         });
     }
 
-    private String getReasonString(@NotNull final PUBLISH publish) {
+    private String getReasonString(final @NotNull PUBLISH publish) {
         return "Not authorized to publish on topic '" + publish.getTopic() + "' with QoS '"
                 + publish.getQoS().getQosNumber() + "' and retain '" + publish.isRetain() + "'";
     }

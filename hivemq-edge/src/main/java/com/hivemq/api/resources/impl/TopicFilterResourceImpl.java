@@ -45,7 +45,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     }
 
     @Override
-    public @NotNull Response addTopicFilter(@NotNull final TopicFilterModel topicFilterModel) {
+    public @NotNull Response addTopicFilter(final @NotNull TopicFilterModel topicFilterModel) {
         final @NotNull TopicFilterAddResult addResult =
                 topicFilterPersistence.addTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
         final @NotNull String name = topicFilterModel.getDescription();
@@ -74,7 +74,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     }
 
     @Override
-    public @NotNull Response deleteTopicFilter(@NotNull final String filterUriEncoded) {
+    public @NotNull Response deleteTopicFilter(final @NotNull String filterUriEncoded) {
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
 
         final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(filter);

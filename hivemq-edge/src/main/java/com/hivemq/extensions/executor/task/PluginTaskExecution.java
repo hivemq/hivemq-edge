@@ -50,10 +50,10 @@ public class PluginTaskExecution<I extends PluginTaskInput, O extends PluginTask
     private final AtomicBoolean done = new AtomicBoolean(false);
 
     public PluginTaskExecution(
-            @NotNull final PluginTaskContext pluginInOutContext,
+            final @NotNull PluginTaskContext pluginInOutContext,
             @Nullable final Supplier<I> pluginInputSupplier,
             @Nullable final Supplier<O> pluginOutputSupplier,
-            @NotNull final PluginTask pluginTask) {
+            final @NotNull PluginTask pluginTask) {
         this.pluginInOutContext = pluginInOutContext;
         this.pluginInputSupplier = pluginInputSupplier;
         this.pluginOutputSupplier = pluginOutputSupplier;
@@ -102,7 +102,7 @@ public class PluginTaskExecution<I extends PluginTaskInput, O extends PluginTask
         return input;
     }
 
-    public void setOutputObject(@NotNull final O output) {
+    public void setOutputObject(final @NotNull O output) {
         this.output = output;
     }
 }

@@ -26,7 +26,7 @@ public class PublishDroppedEvent {
     @NotNull
     private final PUBLISH message;
 
-    public PublishDroppedEvent(@NotNull final PUBLISH message) {
+    public PublishDroppedEvent(final @NotNull PUBLISH message) {
         this.message = message;
     }
 

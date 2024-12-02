@@ -59,7 +59,7 @@ public interface SharedSubscriptionService {
      * @return a set of subscribers
      */
     @NotNull
-    ImmutableSet<SubscriberWithQoS> getSharedSubscriber(@NotNull final String sharedSubscription);
+    ImmutableSet<SubscriberWithQoS> getSharedSubscriber(final @NotNull String sharedSubscription);
 
     /**
      * Requests all shared subscriptions for a given client id.
@@ -68,21 +68,21 @@ public interface SharedSubscriptionService {
      * @return a set of subscriptions
      */
     @NotNull
-    ImmutableSet<Topic> getSharedSubscriptions(@NotNull final String client) throws ExecutionException;
+    ImmutableSet<Topic> getSharedSubscriptions(final @NotNull String client) throws ExecutionException;
 
     /**
      * Invalidate the shared subscriber cache for a specific shared subscription.
      *
      * @param sharedSubscription The shared subscription.
      */
-    void invalidateSharedSubscriberCache(@NotNull final String sharedSubscription);
+    void invalidateSharedSubscriberCache(final @NotNull String sharedSubscription);
 
     /**
      * Invalidate the shared subscription cache for a specific shared subscriber (client).
      *
      * @param clientId The client id of the shared subscriber.
      */
-    void invalidateSharedSubscriptionCache(@NotNull final String clientId);
+    void invalidateSharedSubscriptionCache(final @NotNull String clientId);
 
     /**
      * Removes the '$share/' from a given topic.
@@ -91,6 +91,6 @@ public interface SharedSubscriptionService {
      * @param topic from which the prefix will be removed
      * @return the topic without the leading '$share/' or the original topic if it does't start with '$share/'
      */
-    @NotNull String removePrefix(@NotNull final String topic);
+    @NotNull String removePrefix(final @NotNull String topic);
 
 }

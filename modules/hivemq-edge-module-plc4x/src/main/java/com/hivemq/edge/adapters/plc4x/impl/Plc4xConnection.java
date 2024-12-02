@@ -176,7 +176,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     }
 
 
-    protected boolean validConfiguration(@NotNull final T config) {
+    protected boolean validConfiguration(final @NotNull T config) {
         return config.getHost() != null && config.getPort() > 0 && config.getPort() < MAX_UINT16;
     }
 

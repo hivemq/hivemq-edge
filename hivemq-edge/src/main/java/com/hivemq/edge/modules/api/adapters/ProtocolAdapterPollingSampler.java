@@ -58,7 +58,7 @@ public interface ProtocolAdapterPollingSampler {
         return String.format("%s:%s", getAdapterId(), getId());
     }
 
-    default void error(@NotNull final Throwable t, final boolean continuing) {}
+    default void error(final @NotNull Throwable t, final boolean continuing) {}
 
     default int getMaxErrorsBeforeRemoval(){
         return 25;

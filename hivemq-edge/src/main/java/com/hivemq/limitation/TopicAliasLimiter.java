@@ -45,7 +45,7 @@ public interface TopicAliasLimiter {
      *
      * @param topic the topic to add memory usage for
      */
-    void addUsage(@NotNull final String topic);
+    void addUsage(final @NotNull String topic);
 
     /**
      * Use this method to remove topic alias memory usage
@@ -59,6 +59,6 @@ public interface TopicAliasLimiter {
      *
      * @param topics the topics to remove memory usage for
      */
-    void finishUsage(@NotNull final String... topics);
+    void finishUsage(final @NotNull String... topics);
 
 }

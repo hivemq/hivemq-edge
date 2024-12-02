@@ -69,7 +69,7 @@ public class InterceptorsImpl implements Interceptors {
     private final ReadWriteLock readWriteLock;
 
     @Inject
-    public InterceptorsImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
+    public InterceptorsImpl(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
         final ExtensionPriorityComparator extensionPriorityComparator =
                 new ExtensionPriorityComparator(hiveMQExtensions);
@@ -89,7 +89,7 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public void addConnectInboundInterceptorProvider(@NotNull final ConnectInboundInterceptorProvider provider) {
+    public void addConnectInboundInterceptorProvider(final @NotNull ConnectInboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
 
         writeLock.lock();
@@ -156,7 +156,7 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public void addBridgeInboundInterceptorProvider(@NotNull final BridgePublishInboundInterceptorProvider provider) {
+    public void addBridgeInboundInterceptorProvider(final @NotNull BridgePublishInboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
@@ -182,7 +182,7 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public void addBridgeOutboundInterceptorProvider(@NotNull final BridgePublishOutboundInterceptorProvider provider) {
+    public void addBridgeOutboundInterceptorProvider(final @NotNull BridgePublishOutboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
@@ -208,7 +208,7 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public void addProtocolAdapterInboundInterceptorProvider(@NotNull final ProtocolAdapterPublishInboundInterceptorProvider provider) {
+    public void addProtocolAdapterInboundInterceptorProvider(final @NotNull ProtocolAdapterPublishInboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
@@ -233,7 +233,7 @@ public class InterceptorsImpl implements Interceptors {
         }
     }
 
-    private void removeInterceptors(@NotNull final String pluginId) {
+    private void removeInterceptors(final @NotNull String pluginId) {
 
         final Lock writeLock = readWriteLock.writeLock();
 

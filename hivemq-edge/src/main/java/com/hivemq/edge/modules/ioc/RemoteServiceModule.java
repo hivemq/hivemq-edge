@@ -39,17 +39,17 @@ public class RemoteServiceModule {
 
     @Provides
     @Singleton
-    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(@NotNull final SystemInformation systemInformation,
-                                                                        @NotNull final ConfigurationService configurationService,
-                                                                        @NotNull final ObjectMapper objectMapper,
-                                                                       @NotNull final ShutdownHooks shutdownHooks){
+    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(final @NotNull SystemInformation systemInformation,
+                                                                        final @NotNull ConfigurationService configurationService,
+                                                                        final @NotNull ObjectMapper objectMapper,
+                                                                       final @NotNull ShutdownHooks shutdownHooks){
         return new HiveMQRemoteServiceImpl(systemInformation, configurationService, objectMapper, shutdownHooks);
     }
 
     @Provides
     @Singleton
-    static @NotNull ModulesAndExtensionsService modulesAndExtensionsService(@NotNull final HiveMQExtensions hiveMQExtensions,
-                                                                            @NotNull final HiveMQEdgeRemoteService remoteService){
+    static @NotNull ModulesAndExtensionsService modulesAndExtensionsService(final @NotNull HiveMQExtensions hiveMQExtensions,
+                                                                            final @NotNull HiveMQEdgeRemoteService remoteService){
         return new ModulesAndExtensionsServiceImpl(hiveMQExtensions, remoteService);
     }
 

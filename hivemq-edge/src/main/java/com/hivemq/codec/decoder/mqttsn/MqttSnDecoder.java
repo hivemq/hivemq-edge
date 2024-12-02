@@ -133,7 +133,7 @@ public class MqttSnDecoder extends ByteToMessageDecoder {
     /**
      * Use the CONNECT packet to determine the version of the protocol and set this on the ClientConnection
      */
-    protected void detectProtocolVersion(@NotNull final NettyPipelineTranscodingContext context, @NotNull final byte[] header) {
+    protected void detectProtocolVersion(final @NotNull NettyPipelineTranscodingContext context, final @NotNull byte[] header) {
 
         final int messageType = MqttsnWireUtils.readMessageType(header);
         int protocolVersion = MqttsnConstants.PROTOCOL_VERSION_UNKNOWN;

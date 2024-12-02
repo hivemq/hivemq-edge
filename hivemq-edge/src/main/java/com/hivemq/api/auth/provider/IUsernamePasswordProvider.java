@@ -25,5 +25,5 @@ import java.util.Optional;
  */
 public interface IUsernamePasswordProvider extends ICredentialsProvider {
 
-    Optional<UsernamePasswordRoles> findByUsername(@NotNull final String userName);
+    Optional<UsernamePasswordRoles> findByUsername(final @NotNull String userName);
 }

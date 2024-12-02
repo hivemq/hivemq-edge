@@ -43,7 +43,7 @@ public class MqttsnClientConnection extends ClientConnection {
     private final @NotNull Object flushCallbackMutex = new Object();
 
 
-    public MqttsnClientConnection(@NotNull final Channel channel, @NotNull final PublishFlushHandler publishFlushHandler) {
+    public MqttsnClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         super(channel, publishFlushHandler);
         publishMsgIdToTopicAliasId = Collections.synchronizedMap(new HashMap<>());
     }
@@ -87,11 +87,11 @@ public class MqttsnClientConnection extends ClientConnection {
         mqttsnClientState = MqttsnClientState.ACTIVE;
     }
 
-    public void correlatePublishToTopicAlias(@NotNull final Integer msgId, @NotNull final Integer topicAliasId){
+    public void correlatePublishToTopicAlias(final @NotNull Integer msgId, final @NotNull Integer topicAliasId){
         publishMsgIdToTopicAliasId.put(msgId, topicAliasId);
     }
 
-    public Integer getOriginatingTopicAliasForMessageId(@NotNull final Integer msgId){
+    public Integer getOriginatingTopicAliasForMessageId(final @NotNull Integer msgId){
         return publishMsgIdToTopicAliasId.get(msgId);
     }
 

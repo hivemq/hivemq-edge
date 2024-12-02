@@ -78,7 +78,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void start(
-            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         modbusClient.connect().whenComplete((unused, throwable) -> {
             if (throwable == null) {
                 output.startedSuccessfully();
@@ -90,7 +90,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         modbusClient.disconnect().whenComplete((unused, t) -> {
             if (t == null) {
                 output.stoppedSuccessfully();
@@ -144,7 +144,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void discoverValues(
-            @NotNull final ProtocolAdapterDiscoveryInput input, @NotNull final ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
@@ -167,7 +167,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         return adapterInformation;
     }
 
-    protected void captureDataSample(final @NotNull ModBusData modBusData, @NotNull final PollingOutput pollingOutput) {
+    protected void captureDataSample(final @NotNull ModBusData modBusData, final @NotNull PollingOutput pollingOutput) {
         if (log.isTraceEnabled()) {
             log.trace("Captured ModBus data with {} data points.", modBusData.getDataPoints().size());
         }
@@ -182,7 +182,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         pollingOutput.finish();
     }
 
-    private void calculateDelta(@NotNull final ModBusData modBusData, @NotNull final PollingOutput pollingOutput) {
+    private void calculateDelta(final @NotNull ModBusData modBusData, final @NotNull PollingOutput pollingOutput) {
         final ModbusToMqttMapping subscription = (ModbusToMqttMapping) modBusData.getPollingContext();
 
         final List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
@@ -241,8 +241,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     private static void addAddresses(
-            @NotNull final NodeTree tree,
-            @NotNull final String parent,
+            final @NotNull NodeTree tree,
+            final @NotNull String parent,
             final int startIdx,
             final int count,
             final int groupIdx) {

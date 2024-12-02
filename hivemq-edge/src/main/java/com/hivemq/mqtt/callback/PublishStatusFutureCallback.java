@@ -54,14 +54,14 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
     @NotNull
     private final String client;
 
-    public PublishStatusFutureCallback(@NotNull final PublishPayloadPersistence payloadPersistence,
-                                       @NotNull final PublishPollService publishPollService,
+    public PublishStatusFutureCallback(final @NotNull PublishPayloadPersistence payloadPersistence,
+                                       final @NotNull PublishPollService publishPollService,
                                        final boolean sharedSubscription,
-                                       @NotNull final String queueId,
-                                       @NotNull final PUBLISH publish,
-                                       @NotNull final FreePacketIdRanges messageIDPool,
-                                       @NotNull final Channel channel,
-                                       @NotNull final String client) {
+                                       final @NotNull String queueId,
+                                       final @NotNull PUBLISH publish,
+                                       final @NotNull FreePacketIdRanges messageIDPool,
+                                       final @NotNull Channel channel,
+                                       final @NotNull String client) {
         this.payloadPersistence = payloadPersistence;
         this.publishPollService = publishPollService;
         this.sharedSubscription = sharedSubscription;
@@ -120,7 +120,7 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
     }
 
     @Override
-    public void onFailure(@NotNull final Throwable throwable) {
+    public void onFailure(final @NotNull Throwable throwable) {
 
         if (throwable instanceof CancellationException) {
             //ignore because task was cancelled because channel became inactive and

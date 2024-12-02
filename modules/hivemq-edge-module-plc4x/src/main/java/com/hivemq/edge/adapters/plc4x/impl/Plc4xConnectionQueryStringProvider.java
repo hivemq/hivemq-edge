@@ -23,6 +23,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface Plc4xConnectionQueryStringProvider<T extends Plc4XSpecificAdapterConfig> {
 
-    String getConnectionQueryString(@NotNull final T plc4xAdapterConfig);
+    String getConnectionQueryString(final @NotNull T plc4xAdapterConfig);
 
 }

@@ -95,14 +95,14 @@ public class ModuleModelTests {
         return link;
     }
 
-    protected static @NotNull Module createModule(@NotNull final String id,
-                                          @NotNull final String version,
-                                          @NotNull final String name,
+    protected static @NotNull Module createModule(final @NotNull String id,
+                                          final @NotNull String version,
+                                          final @NotNull String name,
                                           @Nullable final Link logoUrl,
                                           @Nullable final String description,
-                                          @NotNull final String author,
-                                          @NotNull final Integer priority,
-                                          @NotNull final Boolean installed,
+                                          final @NotNull String author,
+                                          final @NotNull Integer priority,
+                                          final @NotNull Boolean installed,
                                           @Nullable final String moduleType,
                                           @Nullable final Link documentationLink,
                                           @Nullable final Link provisioningLink){

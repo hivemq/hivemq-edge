@@ -97,7 +97,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     public abstract @NotNull CompletableFuture<?> execute();
 
     @Override
-    public void error(@NotNull final Throwable t, final boolean continuing) {
+    public void error(final @NotNull Throwable t, final boolean continuing) {
         onSamplerError(t, continuing);
     }
 

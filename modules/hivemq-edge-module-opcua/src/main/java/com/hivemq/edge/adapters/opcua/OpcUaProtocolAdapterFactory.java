@@ -49,7 +49,7 @@ public class OpcUaProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public OpcUaProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public OpcUaProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 

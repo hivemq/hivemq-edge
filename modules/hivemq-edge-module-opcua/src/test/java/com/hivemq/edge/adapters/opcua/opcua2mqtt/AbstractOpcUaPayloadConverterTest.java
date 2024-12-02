@@ -127,7 +127,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
             }
 
             @Override
-            public void failStart(@NotNull final Throwable t, @Nullable final String errorMessage) {
+            public void failStart(final @NotNull Throwable t, @Nullable final String errorMessage) {
                 startFuture.completeExceptionally(t);
             }
         };
@@ -151,7 +151,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         private final @NotNull List<PUBLISH> publishes = new ArrayList<>();
 
         @Override
-        public @NotNull ProtocolAdapterPublishBuilder withTopic(@NotNull final String mqttTopic) {
+        public @NotNull ProtocolAdapterPublishBuilder withTopic(final @NotNull String mqttTopic) {
             builder.withTopic(mqttTopic);
             return this;
         }
@@ -188,13 +188,13 @@ abstract class AbstractOpcUaPayloadConverterTest {
         }
 
         @Override
-        public @NotNull ProtocolAdapterPublishBuilder withAdapter(@NotNull final ProtocolAdapter adapter) {
+        public @NotNull ProtocolAdapterPublishBuilder withAdapter(final @NotNull ProtocolAdapter adapter) {
             return this;
         }
 
         @Override
         public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
-                @NotNull final String key, @NotNull final String value) {
+                final @NotNull String key, final @NotNull String value) {
             return this;
         }
 

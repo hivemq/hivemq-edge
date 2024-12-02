@@ -35,8 +35,8 @@ public class MqttUserPropertyEntity {
     }
 
     public MqttUserPropertyEntity(
-            @JsonProperty(value = "name", required = true) @NotNull final String name,
-            @JsonProperty(value = "value", required = true) @NotNull final String value) {
+            @JsonProperty(value = "name", required = true) final @NotNull String name,
+            @JsonProperty(value = "value", required = true) final @NotNull String value) {
         this.name = name;
         this.value = value;
     }

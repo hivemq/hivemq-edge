@@ -60,7 +60,7 @@ public class RetainedMessage {
 
     public RetainedMessage(
             @Nullable final byte[] message,
-            @NotNull final QoS qos,
+            final @NotNull QoS qos,
             final long publishId,
             final long messageExpiryInterval) {
         this(
@@ -78,10 +78,10 @@ public class RetainedMessage {
 
     public RetainedMessage(
             @Nullable final byte[] message,
-            @NotNull final QoS qos,
+            final @NotNull QoS qos,
             final long publishId,
             final long messageExpiryInterval,
-            @NotNull final Mqtt5UserProperties userProperties,
+            final @NotNull Mqtt5UserProperties userProperties,
             @Nullable final String responseTopic,
             @Nullable final String contentType,
             @Nullable final byte[] correlationData,
@@ -101,7 +101,7 @@ public class RetainedMessage {
     }
 
     public RetainedMessage(
-            @NotNull final PUBLISH publish,
+            final @NotNull PUBLISH publish,
             final long messageExpiryInterval) {
         this.message = publish.getPayload();
         this.qos = publish.getQoS();

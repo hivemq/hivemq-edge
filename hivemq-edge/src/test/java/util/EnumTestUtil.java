@@ -25,9 +25,9 @@ import static org.junit.Assert.*;
 
 public final class EnumTestUtil {
 
-    public static <T extends Enum<T>> void assertAllValueOf(@NotNull final Class<T> enumClass,
-                                                            @NotNull final ToIntFunction<T> toValueFunction,
-                                                            @NotNull final IntFunction<T> toEnumFunction) {
+    public static <T extends Enum<T>> void assertAllValueOf(final @NotNull Class<T> enumClass,
+                                                            final @NotNull ToIntFunction<T> toValueFunction,
+                                                            final @NotNull IntFunction<T> toEnumFunction) {
         int minValue = Integer.MAX_VALUE;
         int maxValue = Integer.MIN_VALUE;
 
@@ -52,9 +52,9 @@ public final class EnumTestUtil {
         }
     }
 
-    public static <T extends Enum<T>> void assertAllValueOfWithFallback(@NotNull final Class<T> enumClass,
-                                                                        @NotNull final ToIntFunction<T> toValueFunction,
-                                                                        @NotNull final IntFunction<T> toEnumFunction,
+    public static <T extends Enum<T>> void assertAllValueOfWithFallback(final @NotNull Class<T> enumClass,
+                                                                        final @NotNull ToIntFunction<T> toValueFunction,
+                                                                        final @NotNull IntFunction<T> toEnumFunction,
                                                                         @Nullable final T fallback) {
         int minValue = Integer.MAX_VALUE;
         int maxValue = Integer.MIN_VALUE;

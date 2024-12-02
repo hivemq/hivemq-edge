@@ -46,13 +46,13 @@ public class MqttsnTopicAlias {
     private int alias;
     private TYPE type;
 
-    public MqttsnTopicAlias(@NotNull final String topicName, final int alias, @NotNull final TYPE type) {
+    public MqttsnTopicAlias(final @NotNull String topicName, final int alias, final @NotNull TYPE type) {
         this.topicName = topicName;
         this.alias = alias;
         this.type = type;
     }
 
-    public MqttsnTopicAlias(@NotNull final String topicName, @NotNull final TYPE type) {
+    public MqttsnTopicAlias(final @NotNull String topicName, final @NotNull TYPE type) {
         this.topicName = topicName;
         this.type = type;
     }

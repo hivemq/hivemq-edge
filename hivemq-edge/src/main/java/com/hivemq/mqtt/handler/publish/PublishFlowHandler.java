@@ -87,7 +87,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void channelRead(final ChannelHandlerContext ctx, @NotNull final Object msg) throws Exception {
+    public void channelRead(final ChannelHandlerContext ctx, final @NotNull Object msg) throws Exception {
         final String client = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
 
         if (msg instanceof PUBLISH) {
@@ -154,7 +154,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void userEventTriggered(@NotNull final ChannelHandlerContext ctx, @NotNull final Object evt) throws Exception {
+    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
         if (evt instanceof PublishDroppedEvent) {
             final PublishDroppedEvent publishDroppedEvent = (PublishDroppedEvent) evt;
             // Already logged, just proceeded with with the next message
@@ -219,7 +219,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         log.trace("Client {} sent a publish message with id {} which was not forwarded before. This message is processed normally", client, messageId);
     }
 
-    private void handlePuback(final @NotNull ChannelHandlerContext ctx, final PUBACK msg, @NotNull final String client) {
+    private void handlePuback(final @NotNull ChannelHandlerContext ctx, final PUBACK msg, final @NotNull String client) {
 
         log.trace("Client {}: Received PUBACK", client);
         final int messageId = msg.getPacketIdentifier();
@@ -230,7 +230,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         }
     }
 
-    private void handlePubrec(@NotNull final ChannelHandlerContext ctx, @NotNull final PUBREC msg, @NotNull final String client) {
+    private void handlePubrec(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBREC msg, final @NotNull String client) {
         log.trace("Client {}: Received pubrec", client);
 
         if (msg.getReasonCode() != Mqtt5PubRecReasonCode.SUCCESS &&
@@ -257,7 +257,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
                 new PubcompSentListener(messageId, client, persistence));
     }
 
-    private void handlePubcomp(final @NotNull ChannelHandlerContext ctx, @NotNull final PUBCOMP msg, @NotNull final String client) {
+    private void handlePubcomp(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBCOMP msg, final @NotNull String client) {
         log.trace("Client {}: Received PUBCOMP", client);
 
         orderedTopicService.messageFlowComplete(ctx, msg.getPacketIdentifier());

@@ -51,7 +51,7 @@ public class EipTag implements Tag {
     }
 
     @Override
-    public boolean equals(@NotNull final Object o) {
+    public boolean equals(final @NotNull Object o) {
         if (this == o) {
             return true;
         }

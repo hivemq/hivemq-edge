@@ -46,10 +46,10 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     private final EventLog eventLog;
 
     @Inject
-    public ChannelInitializerFactoryImpl(@NotNull final ChannelDependencies channelDependencies,
-                                         @NotNull final SslFactory sslFactory,
-                                         @NotNull final Provider<NonSslHandler> nonSslHandlerProvider,
-                                         @NotNull final EventLog eventLog) {
+    public ChannelInitializerFactoryImpl(final @NotNull ChannelDependencies channelDependencies,
+                                         final @NotNull SslFactory sslFactory,
+                                         final @NotNull Provider<NonSslHandler> nonSslHandlerProvider,
+                                         final @NotNull EventLog eventLog) {
         this.channelDependencies = channelDependencies;
         this.sslFactory = sslFactory;
         this.nonSslHandlerProvider = nonSslHandlerProvider;
@@ -57,7 +57,7 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     }
 
     @NotNull
-    public AbstractChannelInitializer getChannelInitializer(@NotNull final Listener listener) {
+    public AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener) {
 
         checkNotNull(listener, "Listener must not be null");
 
@@ -87,28 +87,28 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     }
 
     @NotNull
-    protected AbstractChannelInitializer createTcpInitializer(@NotNull final MqttTcpListener listener) {
+    protected AbstractChannelInitializer createTcpInitializer(final @NotNull MqttTcpListener listener) {
         return new TcpChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
     @NotNull
-    protected AbstractChannelInitializer createUdpInitializer(@NotNull final MqttsnUdpListener listener) {
+    protected AbstractChannelInitializer createUdpInitializer(final @NotNull MqttsnUdpListener listener) {
         return new UdpChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
     @NotNull
-    protected AbstractChannelInitializer createTlsTcpInitializer(@NotNull final MqttTlsTcpListener listener) {
+    protected AbstractChannelInitializer createTlsTcpInitializer(final @NotNull MqttTlsTcpListener listener) {
         sslFactory.verifySslAtBootstrap(listener, listener.getTls());
         return new TlsTcpChannelInitializer(channelDependencies, listener, sslFactory);
     }
 
     @NotNull
-    protected AbstractChannelInitializer createWebsocketInitializer(@NotNull final MqttWebsocketListener listener) {
+    protected AbstractChannelInitializer createWebsocketInitializer(final @NotNull MqttWebsocketListener listener) {
         return new WebsocketChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
     @NotNull
-    protected AbstractChannelInitializer createTlsWebsocketInitializer(@NotNull final MqttTlsWebsocketListener listener) {
+    protected AbstractChannelInitializer createTlsWebsocketInitializer(final @NotNull MqttTlsWebsocketListener listener) {
         sslFactory.verifySslAtBootstrap(listener, listener.getTls());
         return new TlsWebsocketChannelInitializer(channelDependencies, listener, sslFactory);
     }

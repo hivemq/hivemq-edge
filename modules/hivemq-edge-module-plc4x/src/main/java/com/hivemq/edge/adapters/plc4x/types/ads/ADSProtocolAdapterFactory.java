@@ -48,7 +48,7 @@ public class ADSProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public ADSProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public ADSProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 
@@ -59,8 +59,8 @@ public class ADSProtocolAdapterFactory
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<ADSSpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<ADSSpecificAdapterConfig> input) {
         return new ADSProtocolAdapter(adapterInformation, input);
     }
 

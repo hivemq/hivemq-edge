@@ -93,7 +93,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     @Override
-    public void poll(final @NotNull PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
+    public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
             final PollingContext plc4xToMqttMapping = pollingInput.getPollingContext();
@@ -136,7 +136,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     @Override
     public void start(
-            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             // we do not subscribe anymore as no current adapter type supports it anyway
             initConnection();
@@ -147,7 +147,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     @Override
-    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         final Plc4xConnection<T> tempConnection = connection;
         connection = null;
         if (tempConnection != null) {
@@ -262,14 +262,14 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * ?remote-rack=0&remote-slot=3. Each value in the returned map will be encoded onto
      * the final connection string.
      */
-    protected @NotNull Map<String, String> createQueryStringParams(@NotNull final T config) {
+    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull T config) {
         return Collections.emptyMap();
     }
 
     /**
      * Hook method to format data from source tag
      */
-    protected @NotNull Object convertTagValue(@NotNull final String tag, @NotNull final PlcValue plcValue) {
+    protected @NotNull Object convertTagValue(final @NotNull String tag, final @NotNull PlcValue plcValue) {
         return Plc4xDataUtils.convertObject(plcValue);
 //        return Plc4xDataUtils.convertNative(plcValue);
     }

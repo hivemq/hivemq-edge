@@ -113,7 +113,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
 
     @ExecuteInSingleWriter
     @Override
-    public void remove(@NotNull final String topic, final int bucketIndex) {
+    public void remove(final @NotNull String topic, final int bucketIndex) {
         checkNotNull(topic, "Topic must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
@@ -127,7 +127,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
 
     @ExecuteInSingleWriter
     @Override
-    public @Nullable RetainedMessage get(@NotNull final String topic, final int bucketIndex) {
+    public @Nullable RetainedMessage get(final @NotNull String topic, final int bucketIndex) {
         checkNotNull(topic, "Topic must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
@@ -147,7 +147,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     @ExecuteInSingleWriter
     @Override
     public void put(
-            @NotNull final RetainedMessage retainedMessage, @NotNull final String topic, final int bucketIndex) {
+            final @NotNull RetainedMessage retainedMessage, final @NotNull String topic, final int bucketIndex) {
         checkNotNull(topic, "Topic must not be null");
         checkNotNull(retainedMessage, "Retained message must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
@@ -164,7 +164,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     @NotNull
     @ExecuteInSingleWriter
     @Override
-    public Set<String> getAllTopics(@NotNull final String subscription, final int bucketIndex) {
+    public Set<String> getAllTopics(final @NotNull String subscription, final int bucketIndex) {
         checkArgument(bucketIndex >= 0 && bucketIndex < bucketCount, "Bucket index out of range");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
@@ -228,7 +228,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     }
 
     @Override
-    public void iterate(@NotNull final ItemCallback callback) {
+    public void iterate(final @NotNull ItemCallback callback) {
         throw new UnsupportedOperationException(
                 "Iterate is only used for migrations which are not needed for memory persistences");
     }

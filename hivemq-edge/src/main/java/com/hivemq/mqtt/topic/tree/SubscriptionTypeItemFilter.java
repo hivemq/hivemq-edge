@@ -25,7 +25,7 @@ public class SubscriptionTypeItemFilter implements Predicate<SubscriberWithQoS> 
 
     private final @NotNull SubscriptionType subscriptionType;
 
-    public SubscriptionTypeItemFilter(@NotNull final SubscriptionType subscriptionType) {
+    public SubscriptionTypeItemFilter(final @NotNull SubscriptionType subscriptionType) {
         this.subscriptionType = subscriptionType;
     }
 

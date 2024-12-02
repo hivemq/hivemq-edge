@@ -40,7 +40,7 @@ public class HiveMQExtensionXMLReader {
     private static final Logger log = LoggerFactory.getLogger(HiveMQExtensionXMLReader.class);
 
     @NotNull
-    public static Optional<HiveMQExtensionEntity> getExtensionEntityFromXML(@NotNull final Path extensionFolder, final boolean logging) {
+    public static Optional<HiveMQExtensionEntity> getExtensionEntityFromXML(final @NotNull Path extensionFolder, final boolean logging) {
 
         final Path extensionXMLPath = extensionFolder.resolve(HiveMQExtension.HIVEMQ_EXTENSION_XML_FILE);
         if (Files.exists(extensionXMLPath) && logging) {

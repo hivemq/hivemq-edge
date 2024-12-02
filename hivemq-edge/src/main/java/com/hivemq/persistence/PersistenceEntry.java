@@ -30,7 +30,7 @@ public class PersistenceEntry<T extends Sizable> implements Sizable {
 
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
-    public PersistenceEntry(@NotNull final T object, final long timestamp) {
+    public PersistenceEntry(final @NotNull T object, final long timestamp) {
         this.timestamp = timestamp;
         this.object = object;
     }

@@ -24,7 +24,7 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     private final @NotNull SouthboundMapping southboundMapping;
 
 
-    public InternalWritingContextImpl(@NotNull final SouthboundMapping southboundMapping) {
+    public InternalWritingContextImpl(final @NotNull SouthboundMapping southboundMapping) {
         this.southboundMapping = southboundMapping;
     }
 

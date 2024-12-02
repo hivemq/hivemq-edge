@@ -373,13 +373,13 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> iterateAllSubscriptions(@NotNull final IterationCallback<SubscriptionsForClientResult> callback) {
+    public @NotNull CompletableFuture<Void> iterateAllSubscriptions(final @NotNull IterationCallback<SubscriptionsForClientResult> callback) {
         return iterateAllSubscriptions(callback, managedExtensionExecutorService);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> iterateAllSubscriptions(@NotNull final IterationCallback<SubscriptionsForClientResult> callback,
-                                                                    @NotNull final Executor callbackExecutor) {
+    public @NotNull CompletableFuture<Void> iterateAllSubscriptions(final @NotNull IterationCallback<SubscriptionsForClientResult> callback,
+                                                                    final @NotNull Executor callbackExecutor) {
 
         Preconditions.checkNotNull(callback, "Callback cannot be null");
         Preconditions.checkNotNull(callback, "Callback executor cannot be null");
@@ -423,7 +423,7 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
         @NotNull
         private final ClientSessionSubscriptionPersistence subscriptionPersistence;
 
-        AllSubscribersFetchCallback(@NotNull final ClientSessionSubscriptionPersistence subscriptionPersistence) {
+        AllSubscribersFetchCallback(final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence) {
             this.subscriptionPersistence = subscriptionPersistence;
         }
 

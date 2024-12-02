@@ -51,7 +51,7 @@ public class BridgeConfigurationServiceImpl implements BridgeConfigurationServic
     }
 
     @Override
-    public boolean removeBridge(@NotNull final String id) {
+    public boolean removeBridge(final @NotNull String id) {
         synchronized (mqttBridges) {
             return mqttBridges.removeIf(mqttBridge -> mqttBridge.getId().equals(id));
         }

@@ -68,7 +68,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
 
 
     @Override
-    protected void channelRead0(@NotNull final ChannelHandlerContext ctx, @NotNull final UNSUBSCRIBE msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull UNSUBSCRIBE msg) throws Exception {
 
         SubscribeMessageBarrier.addToPipeline(ctx);
 
@@ -99,7 +99,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
 
         Futures.addCallback(future, new FutureCallback<>() {
             @Override
-            public void onSuccess(@NotNull final Void aVoid) {
+            public void onSuccess(final @NotNull Void aVoid) {
 
                 for (final String topic : msg.getTopics()) {
                     final SharedSubscription sharedSubscription = sharedSubscriptionService.checkForSharedSubscription(topic);
@@ -117,7 +117,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
             }
 
             @Override
-            public void onFailure(@NotNull final Throwable throwable) {
+            public void onFailure(final @NotNull Throwable throwable) {
 
                 //DON'T ACK for MQTT 3
                 if (ProtocolVersion.MQTTv5 == protocolVersion) { //Version 2.0 ChangePoint: will need this for MQTT-SN
@@ -134,7 +134,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
     }
 
     @VisibleForTesting
-    boolean batch(@NotNull final UNSUBSCRIBE msg) {
+    boolean batch(final @NotNull UNSUBSCRIBE msg) {
         return msg.getTopics().size() >= 2;
     }
 }

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class MappingException extends RuntimeException {
 
-    public MappingException(@NotNull final String message) {
+    public MappingException(final @NotNull String message) {
         super(message);
     }
 

@@ -142,7 +142,7 @@ public class InterceptorsImplTest {
     public static class TestConnectInboundInterceptorProvider implements ConnectInboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnectInboundInterceptor getConnectInboundInterceptor(@NotNull final ConnectInboundProviderInput input) {
+        public @Nullable ConnectInboundInterceptor getConnectInboundInterceptor(final @NotNull ConnectInboundProviderInput input) {
             return (connectInterceptorInput, connectInterceptorOutput) -> {
                 //noop
             };
@@ -152,7 +152,7 @@ public class InterceptorsImplTest {
     public static class TestConnackOutboundInterceptorProvider implements ConnackOutboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(@NotNull final ConnackOutboundProviderInput input) {
+        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(final @NotNull ConnackOutboundProviderInput input) {
             return (connectInterceptorInput, connectInterceptorOutput) -> {
                 //noop
             };

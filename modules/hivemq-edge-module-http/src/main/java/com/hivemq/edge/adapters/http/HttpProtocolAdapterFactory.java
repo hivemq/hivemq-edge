@@ -48,7 +48,7 @@ public class HttpProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public HttpProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public HttpProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 

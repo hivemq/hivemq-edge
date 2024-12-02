@@ -31,7 +31,7 @@ public class ExtensionStartOutputImpl implements ExtensionStartOutput {
     private @Nullable String reason = null;
 
     @Override
-    public void preventExtensionStartup(@NotNull final String reason) {
+    public void preventExtensionStartup(final @NotNull String reason) {
         checkNotNull(reason, "A reason for preventing an extension startup must be given.");
         this.reason = reason;
     }

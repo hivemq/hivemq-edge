@@ -39,7 +39,7 @@ public class SslClientCertificateImpl implements SslClientCertificate {
 
     private final Certificate[] certificates;
 
-    public SslClientCertificateImpl(@NotNull final Certificate[] certificates) {
+    public SslClientCertificateImpl(final @NotNull Certificate[] certificates) {
         Preconditions.checkNotNull(certificates, "Certificates must not be null");
         this.certificates = certificates;
     }

@@ -271,7 +271,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         return clientConnection.getExtensionClientAuthorizers();
     }
 
-    private void disconnectWithReasonCode(final @NotNull ChannelHandlerContext ctx, @NotNull final String logReason, final @NotNull String reasonString) {
+    private void disconnectWithReasonCode(final @NotNull ChannelHandlerContext ctx, final @NotNull String logReason, final @NotNull String reasonString) {
         if (ctx.channel().isActive()) {
             final String logMessage = "Client (IP: {}) sent PUBLISH for " + logReason + ". This is not allowed. Disconnecting client.";
             final String reasonMessage = "Sent PUBLISH for " + reasonString;

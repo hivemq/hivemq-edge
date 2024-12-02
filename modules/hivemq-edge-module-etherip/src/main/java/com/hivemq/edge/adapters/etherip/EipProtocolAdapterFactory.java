@@ -44,7 +44,7 @@ public class EipProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public EipProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public EipProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 
@@ -56,7 +56,7 @@ public class EipProtocolAdapterFactory
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
         return new EipPollingProtocolAdapter(adapterInformation, input);
     }
 

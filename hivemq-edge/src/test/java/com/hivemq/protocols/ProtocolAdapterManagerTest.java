@@ -350,7 +350,7 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void write(
-                final @NotNull WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
+                final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
 
         }
 

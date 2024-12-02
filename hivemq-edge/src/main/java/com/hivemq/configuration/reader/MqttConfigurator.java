@@ -42,12 +42,12 @@ public class MqttConfigurator {
 
 
     @Inject
-    public MqttConfigurator(@NotNull final MqttConfigurationService mqttConfigurationService) {
+    public MqttConfigurator(final @NotNull MqttConfigurationService mqttConfigurationService) {
         this.mqttConfigurationService = mqttConfigurationService;
     }
 
 
-    void setMqttConfig(@NotNull final MqttConfigEntity mqttConfigEntity) {
+    void setMqttConfig(final @NotNull MqttConfigEntity mqttConfigEntity) {
 
 
         mqttConfigurationService.setRetainedMessagesEnabled(mqttConfigEntity.getRetainedMessagesConfigEntity().isEnabled());

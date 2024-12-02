@@ -30,7 +30,7 @@ public class SubscriptionsForClientResultImpl implements SubscriptionsForClientR
     private final @NotNull Set<TopicSubscription> topicSubscriptions;
 
     public SubscriptionsForClientResultImpl(
-            @NotNull final String clientId, @NotNull final Set<TopicSubscription> topicSubscriptions) {
+            final @NotNull String clientId, final @NotNull Set<TopicSubscription> topicSubscriptions) {
         this.clientId = clientId;
         this.topicSubscriptions = topicSubscriptions;
     }

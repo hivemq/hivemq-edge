@@ -99,7 +99,7 @@ public class InMemoryProducerQueues implements ProducerQueues {
     }
 
     public <R> @NotNull ListenableFuture<R> submit(final int bucketIndex,
-                                          @NotNull final Task<R> task) {
+                                          final @NotNull Task<R> task) {
         //noinspection ConstantConditions (futuer is never null if the callbacks are null)
         return submitInternal(bucketIndex, task, null, null, false);
     }

@@ -182,17 +182,17 @@ public class ReAuthTaskTest {
     public static class TestAuthenticator implements EnhancedAuthenticator {
 
         @Override
-        public void onConnect(@NotNull final EnhancedAuthConnectInput input, @NotNull final EnhancedAuthOutput output) {
+        public void onConnect(final @NotNull EnhancedAuthConnectInput input, final @NotNull EnhancedAuthOutput output) {
             connect.set(true);
         }
 
         @Override
-        public void onAuth(@NotNull final EnhancedAuthInput input, @NotNull final EnhancedAuthOutput output) {
+        public void onAuth(final @NotNull EnhancedAuthInput input, final @NotNull EnhancedAuthOutput output) {
             auth.set(true);
         }
 
         @Override
-        public void onReAuth(@NotNull final EnhancedAuthInput input, @NotNull final EnhancedAuthOutput output) {
+        public void onReAuth(final @NotNull EnhancedAuthInput input, final @NotNull EnhancedAuthOutput output) {
             reAuth.set(true);
         }
     }

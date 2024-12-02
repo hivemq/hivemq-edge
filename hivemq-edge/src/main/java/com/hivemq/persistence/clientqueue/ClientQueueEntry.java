@@ -29,7 +29,7 @@ public class ClientQueueEntry {
 
     private final boolean retained;
 
-    public ClientQueueEntry(@NotNull final MessageWithID messageWithID, final boolean retained) {
+    public ClientQueueEntry(final @NotNull MessageWithID messageWithID, final boolean retained) {
         this.messageWithID = messageWithID;
         this.retained = retained;
     }

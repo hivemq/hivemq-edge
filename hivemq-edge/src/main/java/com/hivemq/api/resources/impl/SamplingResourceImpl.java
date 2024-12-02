@@ -63,7 +63,7 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response getSamplesForTopic(@NotNull final String topicBase64) {
+    public @NotNull Response getSamplesForTopic(final @NotNull String topicBase64) {
 
         final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
 
@@ -78,7 +78,7 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response getSchemaForTopic(@NotNull final String topicBase64) {
+    public @NotNull Response getSchemaForTopic(final @NotNull String topicBase64) {
         final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
@@ -102,7 +102,7 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response startSamplingForTopic(@NotNull final String topicBase64) {
+    public @NotNull Response startSamplingForTopic(final @NotNull String topicBase64) {
         final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
         samplingService.startSampling(topic);
         return Response.ok().build();

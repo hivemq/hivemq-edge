@@ -86,14 +86,14 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Inject
-    public PublishBuilderImpl(@NotNull final ConfigurationService configurationService) {
+    public PublishBuilderImpl(final @NotNull ConfigurationService configurationService) {
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.securityConfigurationService = configurationService.securityConfiguration();
     }
 
     @NotNull
     @Override
-    public PublishBuilder fromPublish(@NotNull final PublishPacket publish) {
+    public PublishBuilder fromPublish(final @NotNull PublishPacket publish) {
 
         Preconditions.checkNotNull(publish, "publish must not be null");
 
@@ -108,7 +108,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder fromPublish(@NotNull final Publish publish) {
+    public PublishBuilder fromPublish(final @NotNull Publish publish) {
 
         Preconditions.checkNotNull(publish, "publish must not be null");
 
@@ -122,16 +122,16 @@ public class PublishBuilderImpl implements PublishBuilder {
     }
 
     @NotNull
-    private PublishBuilder fromComplete(@NotNull final Qos qos,
+    private PublishBuilder fromComplete(final @NotNull Qos qos,
                                         final boolean retain,
-                                        @NotNull final String topic,
-                                        @NotNull final Optional<PayloadFormatIndicator> payloadFormatIndicator,
-                                        @NotNull final Optional<Long> messageExpiryInterval,
-                                        @NotNull final Optional<String> responseTopic,
-                                        @NotNull final Optional<ByteBuffer> correlationData,
-                                        @NotNull final Optional<String> contentType,
-                                        @NotNull final Optional<ByteBuffer> payload,
-                                        @NotNull final UserProperties userProperties) {
+                                        final @NotNull String topic,
+                                        final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
+                                        final @NotNull Optional<Long> messageExpiryInterval,
+                                        final @NotNull Optional<String> responseTopic,
+                                        final @NotNull Optional<ByteBuffer> correlationData,
+                                        final @NotNull Optional<String> contentType,
+                                        final @NotNull Optional<ByteBuffer> payload,
+                                        final @NotNull UserProperties userProperties) {
         this.qos(qos);
         this.retain(retain);
         this.topic(topic);
@@ -149,7 +149,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder qos(@NotNull final Qos qos) {
+    public PublishBuilder qos(final @NotNull Qos qos) {
         PluginBuilderUtil.checkQos(qos, mqttConfigurationService.maximumQos().getQosNumber());
         this.qos = qos;
         return this;
@@ -167,7 +167,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder topic(@NotNull final String topic) {
+    public PublishBuilder topic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
 
         if (!Topics.isValidTopicToPublish(topic)) {
@@ -222,7 +222,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder payload(@NotNull final ByteBuffer payload) {
+    public PublishBuilder payload(final @NotNull ByteBuffer payload) {
         checkNotNull(payload, "Payload must not be null");
         this.payload = payload;
         return this;
@@ -230,7 +230,7 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     @Override
-    public PublishBuilder userProperty(@NotNull final String name, @NotNull final String value) {
+    public PublishBuilder userProperty(final @NotNull String name, final @NotNull String value) {
         PluginBuilderUtil.checkUserProperty(name, value, securityConfigurationService.validateUTF8());
         this.userPropertyBuilder.add(new MqttUserProperty(name, value));
         return this;

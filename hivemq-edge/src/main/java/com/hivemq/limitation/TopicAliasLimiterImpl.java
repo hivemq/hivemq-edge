@@ -60,7 +60,7 @@ public class TopicAliasLimiterImpl implements TopicAliasLimiter {
     }
 
     @Override
-    public void addUsage(@NotNull final String topic) {
+    public void addUsage(final @NotNull String topic) {
         this.memoryUsage.addAndGet(getEstimatedSize(topic));
         this.topicAliasesTotal.incrementAndGet();
     }
@@ -76,7 +76,7 @@ public class TopicAliasLimiterImpl implements TopicAliasLimiter {
     }
 
     @Override
-    public void finishUsage(@NotNull final String... topics) {
+    public void finishUsage(final @NotNull String... topics) {
         //4 bytes per topic as index
         this.memoryUsage.addAndGet(topics.length * -4);
         this.removeUsage(topics);

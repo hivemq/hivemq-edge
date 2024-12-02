@@ -156,7 +156,7 @@ public class InFileSingleWriter implements SingleWriterService {
 
 
     @NotNull
-    public ExecutorService callbackExecutor(@NotNull final String key) {
+    public ExecutorService callbackExecutor(final @NotNull String key) {
         final int bucketsPerQueue = persistenceBucketCount / amountOfQueues;
         final int bucketIndex = BucketUtils.getBucket(key, persistenceBucketCount);
         final int queueIndex = bucketIndex / bucketsPerQueue;

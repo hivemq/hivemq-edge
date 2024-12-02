@@ -50,7 +50,7 @@ public class ConnectionAttributes {
      * @return the {@link ConnectionAttributes} associated to the given channel if present.
      */
     @Nullable
-    static ConnectionAttributes getInstanceIfPresent(@NotNull final Channel channel) {
+    static ConnectionAttributes getInstanceIfPresent(final @NotNull Channel channel) {
         Preconditions.checkNotNull(channel, "Channel for connection attributes must not be null.");
 
         return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectionAttributes();
@@ -64,7 +64,7 @@ public class ConnectionAttributes {
      * @return the {@link ConnectionAttributes} associated to the given channel.
      */
     @NotNull
-    public static ConnectionAttributes getInstance(@NotNull final Channel channel) {
+    public static ConnectionAttributes getInstance(final @NotNull Channel channel) {
         Preconditions.checkNotNull(channel, "Channel for connection attributes must not be null.");
 
         final ConnectionAttributes connectionAttributes = getInstanceIfPresent(channel);
@@ -90,7 +90,7 @@ public class ConnectionAttributes {
      * @param value the value of the connection attribute
      * @throws LimitExceededException when the size of the passed value exceeds the maximum allowed size in bytes
      */
-    public synchronized void put(@NotNull final String key, @NotNull final ByteBuffer value) {
+    public synchronized void put(final @NotNull String key, final @NotNull ByteBuffer value) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
         Preconditions.checkNotNull(value, "Value of connection attribute must not be null.");
 
@@ -111,7 +111,7 @@ public class ConnectionAttributes {
      * @return the value of the connection attribute with the given key if present, otherwise null
      */
     @NotNull
-    public synchronized Optional<ByteBuffer> get(@NotNull final String key) {
+    public synchronized Optional<ByteBuffer> get(final @NotNull String key) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
 
         if (data == null) {
@@ -148,7 +148,7 @@ public class ConnectionAttributes {
      * @return the value of the removed connection attribute if it was present, otherwise null
      */
     @NotNull
-    public synchronized Optional<ByteBuffer> remove(@NotNull final String key) {
+    public synchronized Optional<ByteBuffer> remove(final @NotNull String key) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
 
         if (data == null) {

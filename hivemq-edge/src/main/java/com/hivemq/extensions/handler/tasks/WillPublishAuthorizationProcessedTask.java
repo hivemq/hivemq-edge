@@ -34,8 +34,8 @@ public class WillPublishAuthorizationProcessedTask implements FutureCallback<Pub
     private final @NotNull CONNECT connect;
     private final @NotNull ChannelHandlerContext ctx;
 
-    public WillPublishAuthorizationProcessedTask(@NotNull final CONNECT connect,
-                                                 @NotNull final ChannelHandlerContext ctx) {
+    public WillPublishAuthorizationProcessedTask(final @NotNull CONNECT connect,
+                                                 final @NotNull ChannelHandlerContext ctx) {
         this.connect = connect;
         this.ctx = ctx;
     }
@@ -84,14 +84,14 @@ public class WillPublishAuthorizationProcessedTask implements FutureCallback<Pub
     }
 
     @Override
-    public void onFailure(@NotNull final Throwable t) {
+    public void onFailure(final @NotNull Throwable t) {
         Exceptions.rethrowError("Exception at PublishAuthorization", t);
         final PublishAuthorizerResult result = new PublishAuthorizerResult(AckReasonCode.NOT_AUTHORIZED, getReasonString(connect),
                 true, DisconnectReasonCode.NOT_AUTHORIZED);
         ctx.pipeline().fireUserEventTriggered(new PluginAuthorizerServiceImpl.AuthorizeWillResultEvent(connect, result));
     }
 
-    private String getReasonString(@NotNull final CONNECT connect) {
+    private String getReasonString(final @NotNull CONNECT connect) {
         return "Not allowed to connect with Will Publish for unauthorized topic '" + connect.getWillPublish().getTopic() + "' with QoS '"
                 + connect.getWillPublish().getQos().getQosNumber() + "' and retain '" + connect.getWillPublish().isRetain() + "'";
     }

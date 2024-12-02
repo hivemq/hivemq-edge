@@ -29,12 +29,12 @@ public class RestrictionConfigurator {
 
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
 
-    public RestrictionConfigurator(@NotNull final RestrictionsConfigurationService restrictionsConfigurationService) {
+    public RestrictionConfigurator(final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
 
-    void setRestrictionsConfig(@NotNull final RestrictionsEntity restrictionsEntity) {
+    void setRestrictionsConfig(final @NotNull RestrictionsEntity restrictionsEntity) {
         restrictionsConfigurationService.setMaxConnections(validateMaxConnections(restrictionsEntity.getMaxConnections()));
         restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(restrictionsEntity.getMaxClientIdLength()));
         restrictionsConfigurationService.setNoConnectIdleTimeout(validateNoConnectIdleTimeout(restrictionsEntity.getNoConnectIdleTimeout()));

@@ -70,8 +70,8 @@ public class NorthboundMappingEntity {
     }
 
     public NorthboundMappingEntity(
-            @NotNull final String tagName,
-            @NotNull final String topic,
+            final @NotNull String tagName,
+            final @NotNull String topic,
             final int maxQoS,
             final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,

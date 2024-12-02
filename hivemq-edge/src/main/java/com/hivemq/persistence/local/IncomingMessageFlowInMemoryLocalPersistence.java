@@ -51,22 +51,22 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
 
     @Override
     @Nullable
-    public MessageWithID get(@NotNull final String client, final int messageId) {
+    public MessageWithID get(final @NotNull String client, final int messageId) {
         return backingMap.get(new MessageFlowKey(client, messageId));
     }
 
     @Override
-    public void addOrReplace(@NotNull final String client, final int messageId, @NotNull final MessageWithID message) {
+    public void addOrReplace(final @NotNull String client, final int messageId, final @NotNull MessageWithID message) {
         backingMap.put(new MessageFlowKey(client, messageId), message);
     }
 
     @Override
-    public void remove(@NotNull final String client, final int messageId) {
+    public void remove(final @NotNull String client, final int messageId) {
         backingMap.remove(new MessageFlowKey(client, messageId));
     }
 
     @Override
-    public void delete(@NotNull final String client) {
+    public void delete(final @NotNull String client) {
 
         /* dobermai: This is a dangerous operation since that delete is not atomic.
         It shouldn't be a problem, though, since if delete is called, no adds / removes
@@ -98,7 +98,7 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
         //any access to it
         private final int messageId;
 
-        public MessageFlowKey(@NotNull final String clientId, final int messageId) {
+        public MessageFlowKey(final @NotNull String clientId, final int messageId) {
             this.clientId = clientId;
             this.messageId = messageId;
         }

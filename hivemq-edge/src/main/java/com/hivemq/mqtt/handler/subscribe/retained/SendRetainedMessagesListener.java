@@ -54,10 +54,10 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
     private final @NotNull Set<Topic> ignoredTopics;
 
     public SendRetainedMessagesListener(
-            @NotNull final List<SubscriptionResult> subscriptions,
-            @NotNull final Set<Topic> ignoredTopics,
-            @NotNull final RetainedMessagePersistence retainedMessagePersistence,
-            @NotNull final RetainedMessagesSender retainedMessagesSender) {
+            final @NotNull List<SubscriptionResult> subscriptions,
+            final @NotNull Set<Topic> ignoredTopics,
+            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
+            final @NotNull RetainedMessagesSender retainedMessagesSender) {
 
         checkNotNull(subscriptions, "Subscriptions must not be null");
         checkNotNull(ignoredTopics, "ignoredTopics must not be null");
@@ -94,7 +94,7 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
      * @return a List of all topics which contained wildcards and thus were not processed by this method
      */
     @NotNull
-    private List<Topic> sendExactMatches(@NotNull final Channel channel) {
+    private List<Topic> sendExactMatches(final @NotNull Channel channel) {
         final List<Topic> topicsWithWildcards = new ArrayList<>(subscriptions.size());
         for (final SubscriptionResult subscription : subscriptions) {
 
@@ -149,7 +149,7 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
      * @param channel             the {@link Channel} to write the matching retained messages to
      */
     private void sendMatchingWildcardSubscriptions(
-            @NotNull final List<Topic> topicsWithWildcards, @NotNull final Channel channel) {
+            final @NotNull List<Topic> topicsWithWildcards, final @NotNull Channel channel) {
 
         for (final Topic subscribedTopic : topicsWithWildcards) {
 

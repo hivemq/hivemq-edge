@@ -27,15 +27,15 @@ import java.util.Optional;
  */
 public class ApiPermissionUtils {
 
-    public static <T extends Annotation> boolean isAnnotationPresent(@NotNull final Class<T> t, @NotNull final Method method) {
+    public static <T extends Annotation> boolean isAnnotationPresent(final @NotNull Class<T> t, final @NotNull Method method) {
         return getAnnotationIfExists(t, method).isPresent();
     }
 
-    public static <T extends Annotation> boolean isAnnotationPresent(@NotNull final Class<T> t, @NotNull final Class<?> clz) {
+    public static <T extends Annotation> boolean isAnnotationPresent(final @NotNull Class<T> t, final @NotNull Class<?> clz) {
         return getAnnotationIfExists(t, clz).isPresent();
     }
 
-    public static <T extends Annotation> Optional<T> getAnnotationIfExists(@NotNull final Class<T> t, @NotNull final Class<?> clz) {
+    public static <T extends Annotation> Optional<T> getAnnotationIfExists(final @NotNull Class<T> t, final @NotNull Class<?> clz) {
         Preconditions.checkNotNull(t);
         Preconditions.checkNotNull(clz);
         try {
@@ -59,7 +59,7 @@ public class ApiPermissionUtils {
     /**
      * Read interfaces for Annotation declarations
      */
-    public static <T extends Annotation> Optional<T> getAnnotationIfExists(@NotNull final Class<T> t, @NotNull final Method method) {
+    public static <T extends Annotation> Optional<T> getAnnotationIfExists(final @NotNull Class<T> t, final @NotNull Method method) {
         Preconditions.checkNotNull(t);
         Preconditions.checkNotNull(method);
         try {

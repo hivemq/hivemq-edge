@@ -75,7 +75,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull final TopicFilter topicFilter) {
+    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(final @NotNull TopicFilter topicFilter) {
         final TopicFilter removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
         if (removed != null) {
             this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
@@ -87,7 +87,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(@NotNull final List<TopicFilter> topicFilters) {
+    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(final @NotNull List<TopicFilter> topicFilters) {
         filterToTopicFilter.clear();
         for (final TopicFilter topicFilter : topicFilters) {
             filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
@@ -97,7 +97,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(@NotNull final String filter) {
+    public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(final @NotNull String filter) {
         final TopicFilter topicFilter = filterToTopicFilter.remove(filter);
         if (topicFilter == null) {
             return TopicFilterDeleteResult.failed(TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
@@ -113,7 +113,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public @NotNull TopicFilter getTag(@NotNull final String filter) {
+    public @NotNull TopicFilter getTag(final @NotNull String filter) {
         final TopicFilter topicFilter = filterToTopicFilter.get(filter);
         if (topicFilter == null) {
             throw new TagNotFoundException("TopicFilter for filter '" + filter + "' was not found in the persistence.");

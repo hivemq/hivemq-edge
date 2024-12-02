@@ -46,7 +46,7 @@ public class FileProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public FileProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public FileProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 
@@ -58,7 +58,7 @@ public class FileProtocolAdapterFactory
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
         return new FilePollingProtocolAdapter(input.getAdapterId(), adapterInformation, input);
     }
 

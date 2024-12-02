@@ -38,9 +38,9 @@ public class TopicPermissionImpl implements InternalTopicPermission {
     private final boolean isRootWildcard;
     private final boolean endsWithWildcard;
 
-    public TopicPermissionImpl(@NotNull final String topic, @NotNull final PermissionType type, @NotNull final Qos qos,
-                               @NotNull final MqttActivity activity, @NotNull final Retain retain,
-                               @NotNull final SharedSubscription sharedSubscription, @NotNull final String sharedGroup) {
+    public TopicPermissionImpl(final @NotNull String topic, final @NotNull PermissionType type, final @NotNull Qos qos,
+                               final @NotNull MqttActivity activity, final @NotNull Retain retain,
+                               final @NotNull SharedSubscription sharedSubscription, final @NotNull String sharedGroup) {
         this.topic = topic;
         this.type = type;
         this.qos = qos;

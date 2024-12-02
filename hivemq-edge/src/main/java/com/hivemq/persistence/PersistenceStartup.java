@@ -48,11 +48,11 @@ public class PersistenceStartup implements HiveMQShutdownHook {
         start = System.currentTimeMillis();
     }
 
-    public void submitEnvironmentCreate(@NotNull final Runnable createTask) {
+    public void submitEnvironmentCreate(final @NotNull Runnable createTask) {
         environmentCreateExecutor.submit(createTask);
     }
 
-    public void submitPersistenceStart(@NotNull final FilePersistence filePersistence) {
+    public void submitPersistenceStart(final @NotNull FilePersistence filePersistence) {
         filePersistenceList.add(filePersistence);
         persistenceStartExecutor.submit(filePersistence::start);
     }

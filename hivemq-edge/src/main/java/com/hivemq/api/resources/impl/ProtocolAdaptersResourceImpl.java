@@ -169,7 +169,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getAdaptersForType(@NotNull final String adapterType) {
+    public @NotNull Response getAdaptersForType(final @NotNull String adapterType) {
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
@@ -212,7 +212,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response discoverValues(
-            @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
+            final @NotNull String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
@@ -424,7 +424,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
 
     @Override
-    public @NotNull Response getDomainTagsForAdapter(@NotNull final String adapterId) {
+    public @NotNull Response getDomainTagsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getTagsForAdapter(adapterId).map(tags -> {
             if (tags.isEmpty()) {
                 return Response.ok().build();
@@ -439,7 +439,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response addAdapterDomainTag(
-            @NotNull final String adapterId, @NotNull final DomainTagModel domainTag) {
+            final @NotNull String adapterId, final @NotNull DomainTagModel domainTag) {
         final DomainTagAddResult domainTagAddResult =
                 protocolAdapterManager.addDomainTag(adapterId, DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagAddResult.getDomainTagPutStatus()) {
@@ -463,7 +463,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteDomainTag(
-            @NotNull final String adapterId, @NotNull final String tagName) {
+            final @NotNull String adapterId, final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final DomainTagDeleteResult domainTagDeleteResult =
@@ -479,7 +479,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateDomainTag(
-            final @NotNull String adapterId, @NotNull final String tagName, final @NotNull DomainTagModel domainTag) {
+            final @NotNull String adapterId, final @NotNull String tagName, final @NotNull DomainTagModel domainTag) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         log.info("Updating tag with name {}", decodedTagName);
         final DomainTagUpdateResult domainTagUpdateResult =
@@ -561,7 +561,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getWritingSchema(@NotNull final String adapterId, @NotNull final String tagName) {
+    public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final Optional<ProtocolAdapterWrapper> optionalProtocolAdapterWrapper =

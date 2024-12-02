@@ -33,7 +33,7 @@ public class BindInformation {
     private final ChannelFuture bindFuture;
 
 
-    public BindInformation(@NotNull final Listener listener, @NotNull final ChannelFuture bindFuture) {
+    public BindInformation(final @NotNull Listener listener, final @NotNull ChannelFuture bindFuture) {
         checkNotNull(listener, "Listener must not be null");
         checkNotNull(bindFuture, "Future must not be null");
         this.listener = listener;

@@ -256,7 +256,7 @@ public class JsonToOpcUAConverter {
     }
 
     private @NotNull Struct extractExtensionObject(
-            @NotNull final JsonNode jsonNode, @NotNull final NodeId binaryEncodingId) {
+            final @NotNull JsonNode jsonNode, final @NotNull NodeId binaryEncodingId) {
 
 
         final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
@@ -503,7 +503,7 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createException(
-            @NotNull final Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value, final @NotNull String intendedClass) {
         log.warn("Can not convert '{}' of class '{}' to '{}'..",
                 value,
                 value.getClass().getSimpleName(),
@@ -518,7 +518,7 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createOverflowException(
-            @NotNull final Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value, final @NotNull String intendedClass) {
         log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to overflow.",
                 value,
                 value.getClass().getSimpleName(),
@@ -533,7 +533,7 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createUnderflowException(
-            @NotNull final Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value, final @NotNull String intendedClass) {
         log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to underflow.",
                 value,
                 value.getClass().getSimpleName(),

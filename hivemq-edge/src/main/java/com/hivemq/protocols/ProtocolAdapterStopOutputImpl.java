@@ -44,7 +44,7 @@ public class ProtocolAdapterStopOutputImpl implements ProtocolAdapterStopOutput 
     }
 
     @Override
-    public void failStop(@NotNull final Throwable throwable, @Nullable final String errorMessage) {
+    public void failStop(final @NotNull Throwable throwable, @Nullable final String errorMessage) {
         this.errorMessage = errorMessage;
         this.outputFuture.completeExceptionally(throwable);
     }

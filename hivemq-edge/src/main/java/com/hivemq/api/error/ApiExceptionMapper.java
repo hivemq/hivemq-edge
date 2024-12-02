@@ -37,7 +37,7 @@ public class ApiExceptionMapper implements ExceptionMapper<ApiException> {
     private static final Logger logger = LoggerFactory.getLogger(ApiExceptionMapper.class);
 
     @Override
-    public Response toResponse(@NotNull final ApiException exception) {
+    public Response toResponse(final @NotNull ApiException exception) {
         logger.warn("Api Error Handled Api Exception Mapper {}", exception.getMessage(), exception.getCause());
         String message = exception.getMessage();
         ApiErrorMessage apiError = new ApiErrorMessage();

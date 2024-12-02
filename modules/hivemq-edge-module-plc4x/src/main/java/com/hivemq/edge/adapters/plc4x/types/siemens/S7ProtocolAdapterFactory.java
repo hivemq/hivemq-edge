@@ -48,7 +48,7 @@ public class S7ProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public S7ProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public S7ProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 
@@ -59,8 +59,8 @@ public class S7ProtocolAdapterFactory
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<S7SpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> input) {
         return new S7ProtocolAdapter(adapterInformation, input);
     }
 

@@ -58,7 +58,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder topicFilter(@NotNull final String topicFilter) {
+    public TopicPermissionBuilder topicFilter(final @NotNull String topicFilter) {
         Preconditions.checkNotNull(topicFilter, "Topic filter cannot be null");
         Preconditions.checkArgument(!topicFilter.isEmpty(), "Topic filter cannot be empty");
         Preconditions.checkArgument(topicFilter.length() <= restrictionsConfig.maxTopicLength(), "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() + "' characters, but has '" + topicFilter.length() + "' characters");
@@ -79,7 +79,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder type(@NotNull final PermissionType type) {
+    public TopicPermissionBuilder type(final @NotNull PermissionType type) {
         Preconditions.checkNotNull(type, "Type cannot be null");
 
         this.type = type;
@@ -88,7 +88,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder qos(@NotNull final Qos qos) {
+    public TopicPermissionBuilder qos(final @NotNull Qos qos) {
         Preconditions.checkNotNull(qos, "QoS cannot be null");
 
         this.qos = qos;
@@ -97,7 +97,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder activity(@NotNull final MqttActivity activity) {
+    public TopicPermissionBuilder activity(final @NotNull MqttActivity activity) {
         Preconditions.checkNotNull(activity, "Activity cannot be null");
 
         this.activity = activity;
@@ -106,7 +106,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder retain(@NotNull final Retain retain) {
+    public TopicPermissionBuilder retain(final @NotNull Retain retain) {
         Preconditions.checkNotNull(retain, "Retain cannot be null");
 
         this.retain = retain;
@@ -115,7 +115,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder sharedSubscription(@NotNull final SharedSubscription sharedSubscription) {
+    public TopicPermissionBuilder sharedSubscription(final @NotNull SharedSubscription sharedSubscription) {
         Preconditions.checkNotNull(sharedSubscription, "Shared subscription cannot be null");
 
         this.sharedSubscription = sharedSubscription;
@@ -124,7 +124,7 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
 
     @NotNull
     @Override
-    public TopicPermissionBuilder sharedGroup(@NotNull final String sharedGroup) {
+    public TopicPermissionBuilder sharedGroup(final @NotNull String sharedGroup) {
         Preconditions.checkNotNull(sharedGroup, "Shared group cannot be null");
         Preconditions.checkArgument(!sharedGroup.isEmpty(), "Shared group cannot be empty");
         Preconditions.checkArgument(!(sharedGroup.length() > 1 && sharedGroup.contains("#")), "Shared group cannot contain wildcard character '#' inside the name");

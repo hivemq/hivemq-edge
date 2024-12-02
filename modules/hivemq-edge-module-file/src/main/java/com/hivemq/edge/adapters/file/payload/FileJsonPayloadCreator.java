@@ -36,7 +36,7 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
 
     @Override
     public @NotNull List<byte[]> convertToJson(
-            @NotNull final ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
+            final @NotNull ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
         List<byte[]> payloads = new ArrayList<>();
         for (DataPoint dataPoint : sample.getDataPoints()) {
             try {

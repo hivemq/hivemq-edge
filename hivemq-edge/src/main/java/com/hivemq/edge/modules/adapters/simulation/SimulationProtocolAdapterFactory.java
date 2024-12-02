@@ -50,8 +50,8 @@ public class SimulationProtocolAdapterFactory
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
 

@@ -38,12 +38,12 @@ public class TranscodingResult<FromT, ToT> {
     private Throwable error;
 
 
-    public TranscodingResult(@NotNull ITranscodingContext context, @NotNull final FromT input) {
+    public TranscodingResult(@NotNull ITranscodingContext context, final @NotNull FromT input) {
         this.context = context;
         this.input = input;
     }
 
-    public void setResult(@NotNull final RESULT result) {
+    public void setResult(final @NotNull RESULT result) {
         this.result = result;
     }
 
@@ -51,7 +51,7 @@ public class TranscodingResult<FromT, ToT> {
         return context;
     }
 
-    public void setOutput(@NotNull final Optional<ToT> output) {
+    public void setOutput(final @NotNull Optional<ToT> output) {
         this.result = RESULT.success;
         this.output = output;
     }
@@ -64,7 +64,7 @@ public class TranscodingResult<FromT, ToT> {
         return reasonString;
     }
 
-    public void setReasonString(@NotNull final String reasonString) {
+    public void setReasonString(final @NotNull String reasonString) {
         this.reasonString = reasonString;
     }
 

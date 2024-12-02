@@ -138,7 +138,7 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
     }
 
     @Override
-    public void setQueuedMessagesStrategy(@NotNull final QueuedMessagesStrategy strategy) {
+    public void setQueuedMessagesStrategy(final @NotNull QueuedMessagesStrategy strategy) {
         checkNotNull(strategy, "Queued Messages strategy must not be null");
         log.debug("Setting queued messages strategy for each client to {}", strategy.name());
         queuedMessagesStrategy.set(strategy);
@@ -181,7 +181,7 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
     }
 
     @Override
-    public void setMaximumQos(@NotNull final QoS maximumQos) {
+    public void setMaximumQos(final @NotNull QoS maximumQos) {
         checkNotNull(maximumQos, "Maximum QoS may never be null");
         log.debug("Setting maximum qos to {} ", maximumQos);
         this.maximumQos.set(maximumQos);

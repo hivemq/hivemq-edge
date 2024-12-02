@@ -24,7 +24,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public class ExtensionLoadingException extends Exception {
 
-    public ExtensionLoadingException(@NotNull final String message, @NotNull final Throwable cause) {
+    public ExtensionLoadingException(final @NotNull String message, final @NotNull Throwable cause) {
         super(message, cause);
     }
 }

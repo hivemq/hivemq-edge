@@ -44,7 +44,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
-    public boolean setConnectionStatus(@NotNull final ConnectionStatus connectionStatus) {
+    public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
         return this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
     }
@@ -88,7 +88,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
-    public void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus) {
+    public void setRuntimeStatus(final @NotNull RuntimeStatus runtimeStatus) {
         this.runtimeStatus.set(runtimeStatus);
     }
 

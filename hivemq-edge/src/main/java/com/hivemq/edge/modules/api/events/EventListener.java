@@ -23,5 +23,5 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public interface EventListener {
 
-    void eventFired(@NotNull final Event event);
+    void eventFired(final @NotNull Event event);
 }

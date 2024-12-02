@@ -46,7 +46,7 @@ public class LifecycleEventListenersImpl implements LifecycleEventListeners {
     private final ReadWriteLock readWriteLock;
 
     @Inject
-    public LifecycleEventListenersImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
+    public LifecycleEventListenersImpl(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
         readWriteLock = new ReentrantReadWriteLock();
         clientLifecycleEventListenerProviderMap = new TreeMap<>(new ExtensionPriorityComparator(hiveMQExtensions));

@@ -77,11 +77,11 @@ public class PublishDistributorImpl implements PublishDistributor {
 
     @Inject
     public PublishDistributorImpl(
-            @NotNull final PublishPayloadPersistence payloadPersistence,
-            @NotNull final ClientQueuePersistence clientQueuePersistence,
-            @NotNull final Lazy<ClientSessionPersistence> clientSessionPersistence,
-            @NotNull final SingleWriterService singleWriterService,
-            @NotNull final ConfigurationService configurationService) {
+            final @NotNull PublishPayloadPersistence payloadPersistence,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
+            final @NotNull SingleWriterService singleWriterService,
+            final @NotNull ConfigurationService configurationService) {
         this.payloadPersistence = payloadPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
@@ -93,9 +93,9 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     @Override
     public ListenableFuture<Void> distributeToNonSharedSubscribers(
-            @NotNull final Map<String, SubscriberWithIdentifiers> subscribers,
-            @NotNull final PUBLISH publish,
-            @NotNull final ExecutorService executorService) {
+            final @NotNull Map<String, SubscriberWithIdentifiers> subscribers,
+            final @NotNull PUBLISH publish,
+            final @NotNull ExecutorService executorService) {
 
         final ImmutableList.Builder<ListenableFuture<Void>> publishResultFutureBuilder = ImmutableList.builder();
 
@@ -122,9 +122,9 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     @Override
     public ListenableFuture<Void> distributeToSharedSubscribers(
-            @NotNull final Set<String> sharedSubscribers,
-            @NotNull final PUBLISH publish,
-            @NotNull final ExecutorService executorService) {
+            final @NotNull Set<String> sharedSubscribers,
+            final @NotNull PUBLISH publish,
+            final @NotNull ExecutorService executorService) {
 
         final ImmutableList.Builder<ListenableFuture<Void>> publishResultFutureBuilder = ImmutableList.builder();
 
@@ -148,8 +148,8 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     @Override
     public ListenableFuture<PublishStatus> sendMessageToSubscriber(
-            @NotNull final PUBLISH publish,
-            @NotNull final String clientId,
+            final @NotNull PUBLISH publish,
+            final @NotNull String clientId,
             final int subscriptionQos,
             final boolean sharedSubscription,
             final boolean retainAsPublished,
@@ -164,8 +164,8 @@ public class PublishDistributorImpl implements PublishDistributor {
     }
 
     private @NotNull ListenableFuture<PublishStatus> handlePublish(
-            @NotNull final PUBLISH publish,
-            @NotNull final String client,
+            final @NotNull PUBLISH publish,
+            final @NotNull String client,
             final int subscriptionQos,
             final boolean sharedSubscription,
             final boolean retainAsPublished,
@@ -254,8 +254,8 @@ public class PublishDistributorImpl implements PublishDistributor {
 
     @NotNull
     private SettableFuture<PublishStatus> queuePublish(
-            @NotNull final String client,
-            @NotNull final PUBLISH publish,
+            final @NotNull String client,
+            final @NotNull PUBLISH publish,
             final int subscriptionQos,
             final boolean shared,
             final boolean retainAsPublished,

@@ -38,7 +38,7 @@ public class AdapterStatusModelConversionUtils {
                 protocolAdapterWrapper.getErrorMessage());
     }
 
-    public static @NotNull Status.CONNECTION_STATUS convertConnectionStatus(@NotNull final ProtocolAdapterState.ConnectionStatus connectionStatus){
+    public static @NotNull Status.CONNECTION_STATUS convertConnectionStatus(final @NotNull ProtocolAdapterState.ConnectionStatus connectionStatus){
         Preconditions.checkNotNull(connectionStatus);
         switch (connectionStatus){
             case DISCONNECTED:
@@ -55,7 +55,7 @@ public class AdapterStatusModelConversionUtils {
         }
     }
 
-    public static @NotNull Status.RUNTIME_STATUS convertRuntimeStatus(@NotNull final ProtocolAdapterState.RuntimeStatus runtimeStatus){
+    public static @NotNull Status.RUNTIME_STATUS convertRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus){
         Preconditions.checkNotNull(runtimeStatus);
         switch (runtimeStatus){
             case STARTED:

@@ -29,20 +29,20 @@ public class PublishTopicTree {
 
     private final Node root = new Node();
 
-    public void add(@NotNull final String topic) {
+    public void add(final @NotNull String topic) {
         final ArrayList<String> subTopics =
                 new ArrayList<>(Arrays.asList(StringUtils.splitPreserveAllTokens(topic, '/')));
         root.add(subTopics);
     }
 
     @NotNull
-    public Set<String> get(@NotNull final String topic) {
+    public Set<String> get(final @NotNull String topic) {
         final ArrayList<String> subTopics =
                 new ArrayList<>(Arrays.asList(StringUtils.splitPreserveAllTokens(topic, '/')));
         return root.get(subTopics, null, false);
     }
 
-    public void remove(@NotNull final String topic) {
+    public void remove(final @NotNull String topic) {
         final ArrayList<String> subTopics =
                 new ArrayList<>(Arrays.asList(StringUtils.splitPreserveAllTokens(topic, '/')));
         root.remove(subTopics);
@@ -63,7 +63,7 @@ public class PublishTopicTree {
         */
         boolean directMatch = false;
 
-        public void add(@NotNull final ArrayList<String> subTopics) {
+        public void add(final @NotNull ArrayList<String> subTopics) {
             final String currentSubTopic = subTopics.get(0);
             if (child != null && !currentSubTopic.equals(childSubTopic)) {
                 childNodes = new HashMap<>(1);
@@ -101,7 +101,7 @@ public class PublishTopicTree {
             directMatch = true;
         }
 
-        public boolean remove(@NotNull final ArrayList<String> subTopics) {
+        public boolean remove(final @NotNull ArrayList<String> subTopics) {
             if (subTopics.isEmpty()) {
                 if (!directMatch) {
                     return false;
@@ -152,7 +152,7 @@ public class PublishTopicTree {
 
         @NotNull
         public Set<String> get(
-                @NotNull final ArrayList<String> subTopics, @Nullable final String currentTopic, final boolean getAll) {
+                final @NotNull ArrayList<String> subTopics, @Nullable final String currentTopic, final boolean getAll) {
             if (childNodes == null && child == null) {
                 if (currentTopic == null) {
                     return ImmutableSet.of();

@@ -122,12 +122,12 @@ public class TagSchemaNodeGeneratorTest {
 
         @JsonProperty(value = "address")
         @ModuleConfigField(title = "Address")
-        private @NotNull final String address;
+        private final @NotNull String address;
 
 
         @JsonProperty(value = "dataType")
         @ModuleConfigField(title = "Data Type")
-        private @NotNull final DataType dataType;
+        private final @NotNull DataType dataType;
 
         public TestTagDefinition(final String address, final DataType dataType) {
             this.address = address;

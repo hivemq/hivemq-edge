@@ -31,7 +31,7 @@ public interface PluginTaskPost<O extends PluginTaskOutput> {
      *
      * @param pluginOutput the final result of a {@link PluginTask}, executed through the HiveMQ extension system.
      */
-    void pluginPost(@NotNull final O pluginOutput);
+    void pluginPost(final @NotNull O pluginOutput);
 
 
     /**

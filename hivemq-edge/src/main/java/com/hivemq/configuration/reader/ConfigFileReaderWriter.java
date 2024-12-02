@@ -131,7 +131,7 @@ public class ConfigFileReaderWriter {
         this.defaultBackupConfig = defaultBackupConfig;
     }
 
-    public void writeConfig(@NotNull final ConfigurationFile file, final boolean rollConfig) {
+    public void writeConfig(final @NotNull ConfigurationFile file, final boolean rollConfig) {
         writeConfigToXML(file, rollConfig);
     }
 
@@ -162,7 +162,7 @@ public class ConfigFileReaderWriter {
         return context;
     }
 
-    private void writeConfigToXML(@NotNull final ConfigurationFile outputFile, final boolean rollConfig) {
+    private void writeConfigToXML(final @NotNull ConfigurationFile outputFile, final boolean rollConfig) {
 
         synchronized (lock) {
 
@@ -197,7 +197,7 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    protected void backupConfig(@NotNull final File configFile, final int maxBackFiles) throws IOException {
+    protected void backupConfig(final @NotNull File configFile, final int maxBackFiles) throws IOException {
         int idx = 0;
         final String fileNameExclExt = com.hivemq.util.Files.getFileNameExcludingExtension(configFile.getName());
         final String fileExtension = com.hivemq.util.Files.getFileExtension(configFile.getName());
@@ -225,7 +225,7 @@ public class ConfigFileReaderWriter {
         FileUtils.copyFile(configFile, copyFile);
     }
 
-    public void writeConfigToXML(@NotNull final Writer writer) {
+    public void writeConfigToXML(final @NotNull Writer writer) {
         synchronized (lock) {
             try {
                 final JAXBContext context = createContext();
@@ -329,7 +329,7 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    void setConfiguration(@NotNull final HiveMQConfigEntity config) {
+    void setConfiguration(final @NotNull HiveMQConfigEntity config) {
         listenerConfigurator.setListenerConfig(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
         mqttConfigurator.setMqttConfig(config.getMqttConfig());
         restrictionConfigurator.setRestrictionsConfig(config.getRestrictionsConfig());

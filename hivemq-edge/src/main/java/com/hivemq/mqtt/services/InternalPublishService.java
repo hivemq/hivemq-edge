@@ -36,8 +36,8 @@ public interface InternalPublishService {
      * @param sender          client identifier of the client which sent the message
      */
     @NotNull ListenableFuture<PublishReturnCode> publish(
-            @NotNull final PUBLISH publish,
-            @NotNull final ExecutorService executorService,
+            final @NotNull PUBLISH publish,
+            final @NotNull ExecutorService executorService,
             @Nullable final String sender);
 
 }

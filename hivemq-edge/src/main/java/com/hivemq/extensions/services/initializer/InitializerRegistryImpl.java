@@ -34,12 +34,12 @@ public class InitializerRegistryImpl implements InitializerRegistry {
     private final Initializers initializers;
 
     @Inject
-    public InitializerRegistryImpl(@NotNull final Initializers initializers) {
+    public InitializerRegistryImpl(final @NotNull Initializers initializers) {
         this.initializers = initializers;
     }
 
     @Override
-    public void setClientInitializer(@NotNull final ClientInitializer initializer) {
+    public void setClientInitializer(final @NotNull ClientInitializer initializer) {
         Preconditions.checkNotNull(initializer, "Client initializer must never be null");
         initializers.addClientInitializer(initializer);
     }

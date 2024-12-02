@@ -224,7 +224,7 @@ public interface ProtocolAdaptersApi {
                                 description = "The adapter Id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
-            @NotNull final Adapter adapter);
+            final @NotNull Adapter adapter);
 
     @DELETE
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}")
@@ -291,7 +291,7 @@ public interface ProtocolAdaptersApi {
             @Parameter(name = "adapterId",
                        description = "The name of the adapter to query.",
                        required = true,
-                       in = ParameterIn.PATH) @PathParam("adapterId") @NotNull final String adapterId);
+                       in = ParameterIn.PATH) @PathParam("adapterId") final @NotNull String adapterId);
 
     @PUT
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")

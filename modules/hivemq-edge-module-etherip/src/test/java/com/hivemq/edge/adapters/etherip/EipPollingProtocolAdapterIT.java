@@ -70,10 +70,10 @@ public class EipPollingProtocolAdapterIT {
     @ParameterizedTest
     @MethodSource("tagsToExpectedValues")
     public void test_parameterized(
-            @NotNull final String tagAddress,
-            @NotNull final EipDataType tagType,
-            @NotNull final String expectedName,
-            @NotNull final Object expectedValue) {
+            final @NotNull String tagAddress,
+            final @NotNull EipDataType tagType,
+            final @NotNull String expectedName,
+            final @NotNull Object expectedValue) {
 
 
         final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",

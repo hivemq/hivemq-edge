@@ -124,7 +124,7 @@ public class ISA95ApiBean {
         return bridge;
     }
 
-    public static ISA95 unconvert(@NotNull final ISA95ApiBean apiBean) {
+    public static ISA95 unconvert(final @NotNull ISA95ApiBean apiBean) {
         ISA95 bean = new ISA95(
                 apiBean.getEnabled(),
                 apiBean.getPrefixAllTopics(),

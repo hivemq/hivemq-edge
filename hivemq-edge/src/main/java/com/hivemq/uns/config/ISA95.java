@@ -93,27 +93,27 @@ public class ISA95 {
         private @Nullable String productionLine;
         private @Nullable String workCell;
 
-        public @NotNull ISA95.Builder withEnterprise(@NotNull final String enterprise) {
+        public @NotNull ISA95.Builder withEnterprise(final @NotNull String enterprise) {
             this.enterprise = enterprise;
             return this;
         }
 
-        public @NotNull ISA95.Builder withSite(@NotNull final String site) {
+        public @NotNull ISA95.Builder withSite(final @NotNull String site) {
             this.site = site;
             return this;
         }
 
-        public @NotNull ISA95.Builder withArea(@NotNull final String area) {
+        public @NotNull ISA95.Builder withArea(final @NotNull String area) {
             this.area = area;
             return this;
         }
 
-        public @NotNull ISA95.Builder withProductionLine(@NotNull final String productionLine) {
+        public @NotNull ISA95.Builder withProductionLine(final @NotNull String productionLine) {
             this.productionLine = productionLine;
             return this;
         }
 
-        public @NotNull ISA95.Builder withWorkCell(@NotNull final String workCell) {
+        public @NotNull ISA95.Builder withWorkCell(final @NotNull String workCell) {
             this.workCell = workCell;
             return this;
         }

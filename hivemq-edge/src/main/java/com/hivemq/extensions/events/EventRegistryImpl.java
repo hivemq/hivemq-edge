@@ -39,7 +39,7 @@ public class EventRegistryImpl implements EventRegistry {
     }
 
     @Override
-    public void setClientLifecycleEventListener(@NotNull final ClientLifecycleEventListenerProvider provider) {
+    public void setClientLifecycleEventListener(final @NotNull ClientLifecycleEventListenerProvider provider) {
         Preconditions.checkNotNull(provider, "ClientLifecycleEventListenerProvider must never be null");
         lifecycleEventListeners.addClientLifecycleEventListenerProvider(provider);
     }

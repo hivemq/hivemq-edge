@@ -46,7 +46,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
     }
 
     @Override
-    public void setPublish(@NotNull final PUBLISH publish) {
+    public void setPublish(final @NotNull PUBLISH publish) {
         this.publish = publish;
     }
 

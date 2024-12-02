@@ -167,31 +167,31 @@ public class PluginTaskExecutorServiceImplTest {
 
     private static class TestPluginInOutContext extends PluginInOutTaskContext<TestPluginTaskOutput> {
 
-        TestPluginInOutContext(@NotNull final String identifier) {
+        TestPluginInOutContext(final @NotNull String identifier) {
             super(identifier);
         }
 
         @Override
-        public void pluginPost(@NotNull final TestPluginTaskOutput pluginOutput) {
+        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {
 
         }
     }
 
     private static class TestPluginOutContext extends PluginOutTaskContext<TestPluginTaskOutput> {
 
-        TestPluginOutContext(@NotNull final String identifier) {
+        TestPluginOutContext(final @NotNull String identifier) {
             super(identifier);
         }
 
         @Override
-        public void pluginPost(@NotNull final TestPluginTaskOutput pluginOutput) {
+        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {
 
         }
     }
 
     private static class TestPluginInContext extends PluginInTaskContext {
 
-        TestPluginInContext(@NotNull final String identifier) {
+        TestPluginInContext(final @NotNull String identifier) {
             super(identifier);
         }
 
@@ -248,8 +248,8 @@ public class PluginTaskExecutorServiceImplTest {
         @NotNull
         @Override
         public TestPluginTaskOutput apply(
-                @NotNull final TestPluginTaskInput testPluginTaskInput,
-                @NotNull final TestPluginTaskOutput testPluginTaskOutput) {
+                final @NotNull TestPluginTaskInput testPluginTaskInput,
+                final @NotNull TestPluginTaskOutput testPluginTaskOutput) {
 
             return testPluginTaskOutput;
         }

@@ -103,7 +103,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
     }
 
     private static void pollFile(
-            @NotNull final PollingOutput pollingOutput, @NotNull final FileTag fileTag) {
+            final @NotNull PollingOutput pollingOutput, final @NotNull FileTag fileTag) {
         final String absolutePathToFle = fileTag.getDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);

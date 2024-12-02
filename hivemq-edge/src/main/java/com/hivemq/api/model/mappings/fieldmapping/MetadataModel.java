@@ -35,8 +35,8 @@ public class MetadataModel {
 
     @JsonCreator
     public MetadataModel(
-            @JsonProperty(value = "destination", required = true) @NotNull final JsonNode destinationJsonSchema,
-            @JsonProperty(value = "source", required = true)@NotNull final JsonNode sourceJsonSchema) {
+            @JsonProperty(value = "destination", required = true) final @NotNull JsonNode destinationJsonSchema,
+            @JsonProperty(value = "source", required = true)final @NotNull JsonNode sourceJsonSchema) {
         this.destinationJsonSchema = destinationJsonSchema;
         this.sourceJsonSchema = sourceJsonSchema;
     }

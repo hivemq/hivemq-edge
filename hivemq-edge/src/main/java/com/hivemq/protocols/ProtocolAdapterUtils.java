@@ -30,7 +30,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public class ProtocolAdapterUtils {
 
-    public static @NotNull ObjectMapper createProtocolAdapterMapper(@NotNull final ObjectMapper objectMapper){
+    public static @NotNull ObjectMapper createProtocolAdapterMapper(final @NotNull ObjectMapper objectMapper){
         final ObjectMapper copyObjectMapper = objectMapper.copy();
         copyObjectMapper.coercionConfigFor(LogicalType.POJO).
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);

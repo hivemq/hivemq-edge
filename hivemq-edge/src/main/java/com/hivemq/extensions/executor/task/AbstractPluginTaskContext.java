@@ -26,7 +26,7 @@ public abstract class AbstractPluginTaskContext implements PluginTaskContext {
 
     private final @NotNull String identifier;
 
-    protected AbstractPluginTaskContext(@NotNull final String identifier) {
+    protected AbstractPluginTaskContext(final @NotNull String identifier) {
         this.identifier = identifier;
     }
 

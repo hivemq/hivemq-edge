@@ -48,7 +48,7 @@ public class RegackHandler extends SimpleChannelInboundHandler<MqttsnRegack> {
     }
 
     @Override
-    protected void channelRead0(@NotNull final ChannelHandlerContext ctx, @NotNull final MqttsnRegack msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnRegack msg) throws Exception {
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         log.info("Received REGACK from client {}  {} -> {}", clientId, msg.getReturnCode(), msg.getId());

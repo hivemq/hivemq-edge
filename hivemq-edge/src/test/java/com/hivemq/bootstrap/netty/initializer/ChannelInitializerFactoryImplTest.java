@@ -192,22 +192,22 @@ public class ChannelInitializerFactoryImplTest {
         }
 
         @NotNull
-        protected AbstractChannelInitializer createTcpInitializer(@NotNull final MqttTcpListener listener) {
+        protected AbstractChannelInitializer createTcpInitializer(final @NotNull MqttTcpListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TCP);
         }
 
         @NotNull
-        protected AbstractChannelInitializer createTlsTcpInitializer(@NotNull final MqttTlsTcpListener listener) {
+        protected AbstractChannelInitializer createTlsTcpInitializer(final @NotNull MqttTlsTcpListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TLS_TCP);
         }
 
         @NotNull
-        protected AbstractChannelInitializer createWebsocketInitializer(@NotNull final MqttWebsocketListener listener) {
+        protected AbstractChannelInitializer createWebsocketInitializer(final @NotNull MqttWebsocketListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_WEBSOCKET);
         }
 
         @NotNull
-        protected AbstractChannelInitializer createTlsWebsocketInitializer(@NotNull final MqttTlsWebsocketListener listener) {
+        protected AbstractChannelInitializer createTlsWebsocketInitializer(final @NotNull MqttTlsWebsocketListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TLS_WEBSOCKET);
         }
     }
@@ -222,7 +222,7 @@ public class ChannelInitializerFactoryImplTest {
         }
 
         @Override
-        protected void addSpecialHandlers(@NotNull final Channel ch) {
+        protected void addSpecialHandlers(final @NotNull Channel ch) {
             //no-op
         }
 

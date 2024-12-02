@@ -62,7 +62,7 @@ public class TopicSubscriptionBuilderImpl implements TopicSubscriptionBuilder {
     }
 
     @Override
-    public @NotNull TopicSubscriptionBuilder fromSubscription(@NotNull final Subscription subscription) {
+    public @NotNull TopicSubscriptionBuilder fromSubscription(final @NotNull Subscription subscription) {
         Preconditions.checkNotNull(subscription, "Subscription must never be null");
 
         if (!(subscription instanceof SubscriptionImpl)) {
@@ -77,7 +77,7 @@ public class TopicSubscriptionBuilderImpl implements TopicSubscriptionBuilder {
     }
 
     @Override
-    public @NotNull TopicSubscriptionBuilder topicFilter(@NotNull final String topicFilter) {
+    public @NotNull TopicSubscriptionBuilder topicFilter(final @NotNull String topicFilter) {
         Preconditions.checkNotNull(topicFilter, "Topic filter must never be null");
         Preconditions.checkArgument(topicFilter.length() <= restrictionsConfig.maxTopicLength(), "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() + "' characters, but has '" + topicFilter.length() + "' characters");
         Preconditions.checkArgument(!(!mqttConfig.wildcardSubscriptionsEnabled() && Topics.containsWildcard(topicFilter)), "Wildcard characters '+' or '#' are not allowed");
@@ -104,7 +104,7 @@ public class TopicSubscriptionBuilderImpl implements TopicSubscriptionBuilder {
     }
 
     @Override
-    public @NotNull TopicSubscriptionBuilder qos(@NotNull final Qos qos) {
+    public @NotNull TopicSubscriptionBuilder qos(final @NotNull Qos qos) {
         Preconditions.checkNotNull(qos, "Qos must never be null");
         this.qos = qos;
         return this;

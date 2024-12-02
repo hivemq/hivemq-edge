@@ -27,7 +27,7 @@ public class LicenseInformationImpl implements LicenseInformation {
     @NotNull
     private final LicenseEdition edition;
 
-    public LicenseInformationImpl(@NotNull final LicenseEdition edition) {
+    public LicenseInformationImpl(final @NotNull LicenseEdition edition) {
         this.edition = edition;
     }
 

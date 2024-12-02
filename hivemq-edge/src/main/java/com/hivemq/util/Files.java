@@ -54,7 +54,7 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. location
      */
-    public static String getFileNameExcludingExtension(@NotNull final String filePath){
+    public static String getFileNameExcludingExtension(final @NotNull String filePath){
         Preconditions.checkNotNull(filePath);
         String name = getFileName(filePath);
         if(name.contains(PERIOD)){
@@ -71,7 +71,7 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. txt
      */
-    public static String getFileExtension(@NotNull final String filePath){
+    public static String getFileExtension(final @NotNull String filePath){
         Preconditions.checkNotNull(filePath);
         String name = getFileName(filePath);
         int idx = name.lastIndexOf(PERIOD);

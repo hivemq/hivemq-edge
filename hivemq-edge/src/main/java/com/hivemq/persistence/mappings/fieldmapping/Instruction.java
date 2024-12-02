@@ -24,7 +24,7 @@ public class Instruction {
     private final @NotNull String sourceFieldName;
 
     public Instruction(
-            @NotNull final String sourceFieldName, @NotNull final String destinationFieldName) {
+            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
     }

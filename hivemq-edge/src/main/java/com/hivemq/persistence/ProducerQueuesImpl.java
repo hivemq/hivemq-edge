@@ -94,13 +94,13 @@ public class ProducerQueuesImpl implements ProducerQueues {
     }
 
     @NotNull
-    public <R> ListenableFuture<R> submit(@NotNull final String key, @NotNull final Task<R> task) {
+    public <R> ListenableFuture<R> submit(final @NotNull String key, final @NotNull Task<R> task) {
         //noinspection ConstantConditions (futuer is never null if the callbacks are null)
         return submitInternal(getBucket(key), task, null, null, false);
     }
 
     @NotNull
-    public <R> ListenableFuture<R> submit(final int bucketIndex, @NotNull final Task<R> task) {
+    public <R> ListenableFuture<R> submit(final int bucketIndex, final @NotNull Task<R> task) {
         //noinspection ConstantConditions (futuer is never null if the callbacks are null)
         return submitInternal(bucketIndex, task, null, null, false);
     }
@@ -108,7 +108,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
     @Nullable
     public <R> ListenableFuture<R> submit(
             final int bucketIndex,
-            @NotNull final Task<R> task,
+            final @NotNull Task<R> task,
             @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
             @Nullable final InFileSingleWriter.FailedCallback failedCallback) {
         return submitInternal(bucketIndex, task, successCallback, failedCallback, false);
@@ -117,7 +117,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
     @Nullable
     public <R> ListenableFuture<R> submitInternal(
             final int bucketIndex,
-            @NotNull final Task<R> task,
+            final @NotNull Task<R> task,
             @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
             @Nullable final InFileSingleWriter.FailedCallback failedCallback,
             final boolean ignoreShutdown) {
@@ -200,7 +200,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
         return builder.build();
     }
 
-    public int getBucket(@NotNull final String key) {
+    public int getBucket(final @NotNull String key) {
         return BucketUtils.getBucket(key, singleWriterServiceImpl.getPersistenceBucketCount());
     }
 

@@ -86,7 +86,7 @@ public class Plc4xDataUtils {
         return new String(hexChars);
     }
 
-    public static List<Pair<String, PlcValue>> readDataFromReadResponse(@NotNull final PlcReadResponse evt) {
+    public static List<Pair<String, PlcValue>> readDataFromReadResponse(final @NotNull PlcReadResponse evt) {
         List<Pair<String, PlcValue>> output = new ArrayList<>();
         Collection<String> s = evt.getTagNames();
         for (String field : s) {

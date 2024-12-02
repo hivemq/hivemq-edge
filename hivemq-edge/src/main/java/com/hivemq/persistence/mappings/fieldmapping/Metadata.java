@@ -24,7 +24,7 @@ public class Metadata {
 
     private final @NotNull JsonNode sourceJsonSchema;
 
-    public Metadata(@NotNull final JsonNode destinationJsonSchema, @NotNull final JsonNode sourceJsonSchema) {
+    public Metadata(final @NotNull JsonNode destinationJsonSchema, final @NotNull JsonNode sourceJsonSchema) {
         this.destinationJsonSchema = destinationJsonSchema;
         this.sourceJsonSchema = sourceJsonSchema;
     }

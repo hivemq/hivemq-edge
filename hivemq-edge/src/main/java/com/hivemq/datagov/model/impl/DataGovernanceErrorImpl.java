@@ -76,22 +76,22 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.message = Optional.ofNullable(message);
     }
 
-    public static DataGovernanceError ofPipelineAndFunction(@NotNull final Throwable t,
-                                                            @NotNull final String pipelineId,
-                                                            @NotNull final String functionId){
+    public static DataGovernanceError ofPipelineAndFunction(final @NotNull Throwable t,
+                                                            final @NotNull String pipelineId,
+                                                            final @NotNull String functionId){
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
         impl.setFunctionId(functionId);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofPipeline(@NotNull final Throwable t, @NotNull final String pipelineId){
+    public static DataGovernanceError ofPipeline(final @NotNull Throwable t, final @NotNull String pipelineId){
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofValidator(@NotNull final String message, @NotNull final String validatorId){
+    public static DataGovernanceError ofValidator(final @NotNull String message, final @NotNull String validatorId){
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(message);
         impl.setValidatorId(validatorId);
         return impl;

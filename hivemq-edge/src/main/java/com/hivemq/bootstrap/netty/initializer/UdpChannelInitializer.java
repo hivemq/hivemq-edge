@@ -73,9 +73,9 @@ public class UdpChannelInitializer extends AbstractChannelInitializer<UdpChannel
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    public UdpChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                 @NotNull final MqttsnUdpListener mqttsnUdpListener,
-                                 @NotNull final Provider<NonSslHandler> nonSslHandlerProvider) {
+    public UdpChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
+                                 final @NotNull MqttsnUdpListener mqttsnUdpListener,
+                                 final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, mqttsnUdpListener);
         this.nonSslHandlerProvider = nonSslHandlerProvider;
     }
@@ -137,7 +137,7 @@ public class UdpChannelInitializer extends AbstractChannelInitializer<UdpChannel
     }
 
     @Override
-    protected void addSpecialHandlers(@NotNull final Channel ch) {
+    protected void addSpecialHandlers(final @NotNull Channel ch) {
         ch.pipeline().addFirst(NON_SSL_HANDLER, nonSslHandlerProvider.get());
     }
 

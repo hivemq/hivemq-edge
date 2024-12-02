@@ -72,7 +72,7 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     private final @Nullable String serverReference;
 
     // MQTT 5 CONNACK for FAILED CONNECT
-    public CONNACK(@NotNull final Mqtt5ConnAckReasonCode reasonCode, @Nullable final String reasonString) {
+    public CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode, @Nullable final String reasonString) {
         super(reasonCode, reasonString, Mqtt5UserProperties.NO_USER_PROPERTIES);
 
         this.sessionPresent = false;
@@ -94,9 +94,9 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     }
 
     // MQTT 5
-    private CONNACK(@NotNull final Mqtt5ConnAckReasonCode reasonCode,
+    private CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode,
                     @Nullable final String reasonString,
-                    @NotNull final Mqtt5UserProperties userProperties,
+                    final @NotNull Mqtt5UserProperties userProperties,
                     final boolean sessionPresent,
                     final long sessionExpiryInterval,
                     final int serverKeepAlive,
@@ -166,12 +166,12 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     }
 
     //MQTT 3.1
-    public CONNACK(@NotNull final Mqtt3ConnAckReturnCode returnCode) {
+    public CONNACK(final @NotNull Mqtt3ConnAckReturnCode returnCode) {
         this(returnCode, false);
     }
 
     //MQTT 3.1.1
-    public CONNACK(@NotNull final Mqtt3ConnAckReturnCode returnCode, final boolean sessionPresent) {
+    public CONNACK(final @NotNull Mqtt3ConnAckReturnCode returnCode, final boolean sessionPresent) {
 
         super(Mqtt5ConnAckReasonCode.fromReturnCode(returnCode), null, Mqtt5UserProperties.NO_USER_PROPERTIES);
 

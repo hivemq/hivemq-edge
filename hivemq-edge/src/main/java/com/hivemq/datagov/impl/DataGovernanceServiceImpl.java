@@ -64,7 +64,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
     }
 
     @Override
-    public @NotNull ListenableFuture<DataGovernanceResult> apply(@NotNull final DataGovernanceContext context) {
+    public @NotNull ListenableFuture<DataGovernanceResult> apply(final @NotNull DataGovernanceContext context) {
 
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
@@ -83,7 +83,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
     }
 
     @Override
-    public @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull final DataGovernanceContext context) {
+    public @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(final @NotNull DataGovernanceContext context) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
         ListenableFuture<DataGovernanceResult> policyFuture = apply(context);
@@ -91,7 +91,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         return Futures.transformAsync(policyFuture, async, getExecutorForContext(context));
     }
 
-    protected @NotNull ListenableFuture<PublishReturnCode> publish(@NotNull final DataGovernanceContext context) {
+    protected @NotNull ListenableFuture<PublishReturnCode> publish(final @NotNull DataGovernanceContext context) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getResult(), "Data Governance Result Cannot Be <null>");
         Preconditions.checkArgument(context.getResult().getStatus() == DataGovernanceResult.STATUS.SUCCESS,
@@ -109,7 +109,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         }
     }
 
-    protected ExecutorService getExecutorForContext(@NotNull final DataGovernanceContext context){
+    protected ExecutorService getExecutorForContext(final @NotNull DataGovernanceContext context){
         return context.getExecutorService() == null ? executorService :
                 context.getExecutorService();
     }

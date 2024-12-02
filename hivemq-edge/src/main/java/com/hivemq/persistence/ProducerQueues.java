@@ -27,13 +27,13 @@ import java.util.List;
 public interface ProducerQueues {
 
 
-    <R> @NotNull ListenableFuture<R> submit(@NotNull final String key, @NotNull final SingleWriterService.Task<R> task);
+    <R> @NotNull ListenableFuture<R> submit(final @NotNull String key, final @NotNull SingleWriterService.Task<R> task);
 
-    <R> @NotNull ListenableFuture<R> submit(final int bucketIndex, @NotNull final SingleWriterService.Task<R> task);
+    <R> @NotNull ListenableFuture<R> submit(final int bucketIndex, final @NotNull SingleWriterService.Task<R> task);
 
 
     <R> @Nullable ListenableFuture<R> submit(final int bucketIndex,
-                                             @NotNull final SingleWriterService.Task<R> task,
+                                             final @NotNull SingleWriterService.Task<R> task,
                                              @Nullable final SingleWriterService.SuccessCallback<R> successCallback,
                                              @Nullable final SingleWriterService.FailedCallback failedCallback);
 
@@ -41,7 +41,7 @@ public interface ProducerQueues {
 
     @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsSequential(final @NotNull SingleWriterService.Task<R> task);
 
-    int getBucket(@NotNull final String key);
+    int getBucket(final @NotNull String key);
 
     @NotNull ListenableFuture<Void> shutdown(final @Nullable SingleWriterService.Task<Void> finalTask);
 

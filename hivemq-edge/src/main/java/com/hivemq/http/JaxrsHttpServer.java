@@ -266,7 +266,7 @@ public class JaxrsHttpServer {
         }
     }
 
-    protected JaxrsObjectMapperProvider createObjectMapperProvider(@NotNull final JaxrsHttpServerConfiguration config) {
+    protected JaxrsObjectMapperProvider createObjectMapperProvider(final @NotNull JaxrsHttpServerConfiguration config) {
         ObjectMapper mapper = config.getObjectMapper();
         if (mapper != null) {
             return new JaxrsObjectMapperProvider(mapper);
@@ -277,7 +277,7 @@ public class JaxrsHttpServer {
 
 
     private void registerStaticRoot(
-            @NotNull final JaxrsHttpServerConfiguration config, final @NotNull HttpServer server) {
+            final @NotNull JaxrsHttpServerConfiguration config, final @NotNull HttpServer server) {
         List<Pair<String, String>> staticResources = config.getStaticResources();
         if (staticResources != null && !staticResources.isEmpty()) {
             staticResources.stream()
@@ -288,8 +288,8 @@ public class JaxrsHttpServer {
     }
 
     public void registerContext(
-            @NotNull final String contextPath,
-            @NotNull final IHttpRequestResponseHandler handler,
+            final @NotNull String contextPath,
+            final @NotNull IHttpRequestResponseHandler handler,
             final @NotNull HttpServer server) {
         Preconditions.checkNotNull(contextPath);
         Preconditions.checkNotNull(handler);

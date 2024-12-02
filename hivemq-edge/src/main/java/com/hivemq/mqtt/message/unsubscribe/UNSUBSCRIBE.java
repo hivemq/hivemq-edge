@@ -39,23 +39,23 @@ public class UNSUBSCRIBE extends MqttMessageWithUserProperties implements Mqtt3U
     private final ImmutableList<String> topics;
 
     //MQTT 3
-    public UNSUBSCRIBE(@NotNull final ImmutableList<String> topics) {
+    public UNSUBSCRIBE(final @NotNull ImmutableList<String> topics) {
         this(topics, 0);
     }
 
     //MQTT 3
-    public UNSUBSCRIBE(@NotNull final ImmutableList<String> topics, final int packetIdentifier) {
+    public UNSUBSCRIBE(final @NotNull ImmutableList<String> topics, final int packetIdentifier) {
         this(topics, packetIdentifier, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
     //MQTT 3
-    public UNSUBSCRIBE(@NotNull final List<String> topics, final int packetIdentifier) {
+    public UNSUBSCRIBE(final @NotNull List<String> topics, final int packetIdentifier) {
         this(ImmutableList.copyOf(topics), packetIdentifier, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
     //MQTT 5
     public UNSUBSCRIBE(
-            @NotNull final ImmutableList<String> topicFilters, final int packetIdentifier,
+            final @NotNull ImmutableList<String> topicFilters, final int packetIdentifier,
             final Mqtt5UserProperties userProperties) {
         super(userProperties);
 

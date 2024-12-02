@@ -166,7 +166,7 @@ public class ScheduledCleanUpService {
         private final int persistenceIndex;
 
         @VisibleForTesting
-        CleanUpTask(@NotNull final ScheduledCleanUpService scheduledCleanUpService,
+        CleanUpTask(final @NotNull ScheduledCleanUpService scheduledCleanUpService,
                     final @NotNull ListeningScheduledExecutorService scheduledExecutorService,
                     final int cleanUpTaskTimeoutSec,
                     final int bucketIndex,

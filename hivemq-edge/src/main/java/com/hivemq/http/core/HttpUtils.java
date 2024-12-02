@@ -93,7 +93,7 @@ public class HttpUtils {
         return map;
     }
 
-    public static boolean validHttpOrHttpsUrl(@NotNull final String url){
+    public static boolean validHttpOrHttpsUrl(final @NotNull String url){
         try {
             new URL(url);
             return true;

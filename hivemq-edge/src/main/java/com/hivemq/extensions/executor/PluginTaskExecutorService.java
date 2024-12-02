@@ -54,9 +54,9 @@ public interface PluginTaskExecutorService {
      * @param <I>                 a type extending the {@link PluginTaskInput} marker interface.
      * @throws java.util.concurrent.RejectedExecutionException when task executor is shut down.
      */
-    <I extends PluginTaskInput> void handlePluginInTaskExecution(@NotNull final PluginInTaskContext pluginInTaskContext,
-                                                                    @NotNull final Supplier<I> pluginInputSupplier,
-                                                                    @NotNull final PluginInTask<I> pluginTask);
+    <I extends PluginTaskInput> void handlePluginInTaskExecution(final @NotNull PluginInTaskContext pluginInTaskContext,
+                                                                    final @NotNull Supplier<I> pluginInputSupplier,
+                                                                    final @NotNull PluginInTask<I> pluginTask);
 
     /**
      * Handle a {@link PluginTask}, that can affect the execution of HiveMQ, but provides no additional information to
@@ -69,9 +69,9 @@ public interface PluginTaskExecutorService {
      * @param <O>                  a type extending the {@link PluginTaskOutput} marker interface.
      * @throws java.util.concurrent.RejectedExecutionException when task executor is shut down.
      */
-    <O extends PluginTaskOutput> void handlePluginOutTaskExecution(@NotNull final PluginOutTaskContext<O> pluginOutTaskContext,
-                                                                      @NotNull final Supplier<O> pluginOutputSupplier,
-                                                                      @NotNull final PluginOutTask<O> pluginTask);
+    <O extends PluginTaskOutput> void handlePluginOutTaskExecution(final @NotNull PluginOutTaskContext<O> pluginOutTaskContext,
+                                                                      final @NotNull Supplier<O> pluginOutputSupplier,
+                                                                      final @NotNull PluginOutTask<O> pluginTask);
 
     /**
      * Handle a {@link PluginTask}, that can affect the execution of HiveMQ and provides additional information to
@@ -86,10 +86,10 @@ public interface PluginTaskExecutorService {
      * @param <O>                  a type extending the {@link PluginTaskOutput} marker interface.
      * @throws java.util.concurrent.RejectedExecutionException when task executor is shut down.
      */
-    <I extends PluginTaskInput, O extends PluginTaskOutput> void handlePluginInOutTaskExecution(@NotNull final PluginInOutTaskContext<O> pluginInOutContext,
-                                                                                                   @NotNull final Supplier<I> pluginInputSupplier,
-                                                                                                   @NotNull final Supplier<O> pluginOutputSupplier,
-                                                                                                   @NotNull final PluginInOutTask<I, O> pluginTask);
+    <I extends PluginTaskInput, O extends PluginTaskOutput> void handlePluginInOutTaskExecution(final @NotNull PluginInOutTaskContext<O> pluginInOutContext,
+                                                                                                   final @NotNull Supplier<I> pluginInputSupplier,
+                                                                                                   final @NotNull Supplier<O> pluginOutputSupplier,
+                                                                                                   final @NotNull PluginInOutTask<I, O> pluginTask);
 
 
 
@@ -105,15 +105,15 @@ public interface PluginTaskExecutorService {
         private final ClientSessionPersistence clientSessionPersistence;
 
         @Inject
-        public PublishAuthorizerHandler(@NotNull final PluginOutPutAsyncer asyncer,
-                          @NotNull final PluginTaskExecutorService service,
-                          @NotNull final ClientSessionPersistence clientSessionPersistence) {
+        public PublishAuthorizerHandler(final @NotNull PluginOutPutAsyncer asyncer,
+                          final @NotNull PluginTaskExecutorService service,
+                          final @NotNull ClientSessionPersistence clientSessionPersistence) {
             this.asyncer = asyncer;
             this.service = service;
             this.clientSessionPersistence = clientSessionPersistence;
         }
 
-        void handle(@NotNull final String id, @NotNull final PublishAuthorizer authorizer) {
+        void handle(final @NotNull String id, final @NotNull PublishAuthorizer authorizer) {
             final PublishAuthorizerContext pluginInOutContext = new PublishAuthorizerContext(authorizer.getClass(), id, clientSessionPersistence);
             service.handlePluginInOutTaskExecution(pluginInOutContext,
                     () -> new PublishAuthorizerInputImpl(),
@@ -128,16 +128,16 @@ public interface PluginTaskExecutorService {
         @NotNull
         private final ClientSessionPersistence clientSessionPersistence;
 
-        protected PublishAuthorizerContext(@NotNull final Class<?> taskClazz,
-                                           @NotNull final String clientId,
-                                           @NotNull final ClientSessionPersistence clientSessionPersistence) {
+        protected PublishAuthorizerContext(final @NotNull Class<?> taskClazz,
+                                           final @NotNull String clientId,
+                                           final @NotNull ClientSessionPersistence clientSessionPersistence) {
             super(taskClazz, clientId);
             this.clientId = clientId;
             this.clientSessionPersistence = clientSessionPersistence;
         }
 
         @Override
-        public void pluginPost(@NotNull final PublishAuthorizerOutputImpl pluginOutput) {
+        public void pluginPost(final @NotNull PublishAuthorizerOutputImpl pluginOutput) {
             // handle extension result
             if (pluginOutput.isTimedOut() {
                 if (pluginOutput.getTimeoutFallback() == TimeoutFallback.FAILURE) {
@@ -175,13 +175,13 @@ public interface PluginTaskExecutorService {
         @NotNull
         private final PublishAuthorizer authorizer;
 
-        public PublishAuthorizerTask(@NotNull final PublishAuthorizer authorizer) {
+        public PublishAuthorizerTask(final @NotNull PublishAuthorizer authorizer) {
             this.authorizer = authorizer;
         }
 
         @NotNull
         @Override
-        public PublishAuthorizerOutputImpl apply(@NotNull final PublishAuthorizerInputImpl publishAuthorizerInput, @NotNull final PublishAuthorizerOutputImpl publishAuthorizerOutput) {
+        public PublishAuthorizerOutputImpl apply(final @NotNull PublishAuthorizerInputImpl publishAuthorizerInput, final @NotNull PublishAuthorizerOutputImpl publishAuthorizerOutput) {
             try {
                 authorizer.authorizePublish(publishAuthorizerInput, publishAuthorizerOutput);
                 return publishAuthorizerOutput;

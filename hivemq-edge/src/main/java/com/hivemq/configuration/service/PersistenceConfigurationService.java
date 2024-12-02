@@ -35,5 +35,5 @@ public interface PersistenceConfigurationService {
      *
      * @param mode to use for persistent date
      */
-    void setMode(@NotNull final PersistenceMode mode);
+    void setMode(final @NotNull PersistenceMode mode);
 }

@@ -25,7 +25,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
  */
 public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterValidationFailure {
 
-    private @NotNull final String message;
+    private final @NotNull String message;
     private @Nullable Class origin;
     private @Nullable Throwable cause;
     private @Nullable String fieldName;
@@ -36,7 +36,7 @@ public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterVali
     }
 
     public ProtocolAdapterValidationFailureImpl(
-            @NotNull final String message,
+            final @NotNull String message,
             @Nullable final String fieldName,
             @Nullable final Class origin,
             @Nullable final Throwable cause) {
@@ -48,7 +48,7 @@ public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterVali
     }
 
     public ProtocolAdapterValidationFailureImpl(
-            @NotNull final String message,
+            final @NotNull String message,
             @Nullable final String fieldName,
             @Nullable final Class origin) {
         Preconditions.checkNotNull(message);
