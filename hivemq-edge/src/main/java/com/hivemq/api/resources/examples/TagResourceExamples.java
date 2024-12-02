@@ -20,16 +20,16 @@ public interface TagResourceExamples {
     String EXAMPLE_OPC_UA = "{\n" +
             "   \"items\":[\n" +
             "      {\n" +
-            "         \"tagDefinition\":{\n" +
+            "         \"definition\":{\n" +
             "            \"node\":\"ns=2;i=test\"\n" +
             "         },\n" +
-            "         \"tagName\":\"tag1\"\n" +
+            "         \"name\":\"tag1\"\n" +
             "      },\n" +
             "      {\n" +
-            "         \"tagDefinition\":{\n" +
+            "         \"definition\":{\n" +
             "            \"node\":\"ns=2;i=test2\"\n" +
             "         },\n" +
-            "         \"tagName\":\"tag2\"\n" +
+            "         \"name\":\"tag2\"\n" +
             "      }\n" +
             "   ]\n" +
             "}";
