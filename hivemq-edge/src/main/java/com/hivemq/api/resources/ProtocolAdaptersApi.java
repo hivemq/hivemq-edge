@@ -32,8 +32,6 @@ import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.api.resources.examples.TagResourceExamples;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.error.Errors;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,6 +41,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -101,7 +101,6 @@ public interface ProtocolAdaptersApi {
                                 description = "The protocol id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("protocolId") String protocolId);
-
 
 
     //########   ADAPTERS   #########
@@ -504,10 +503,11 @@ public interface ProtocolAdaptersApi {
                                                                               value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getDomainTag(@NotNull @Parameter(name = "tagName",
-                                              description = "The tag name (urlencoded).",
-                                              required = true,
-                                              in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
+    Response getDomainTag(
+            @NotNull @Parameter(name = "tagName",
+                                description = "The tag name (urlencoded).",
+                                required = true,
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
     @GET
     @Path("/writing-schema/{adapterId}/{tagName}")
@@ -540,6 +540,21 @@ public interface ProtocolAdaptersApi {
     //########   NORTHBOUNDMAPPINGS   #########
 
     @GET
+    @Path("northboundMappings")
+    @Operation(summary = "Get the mappings for northbound messages.",
+               operationId = "get-northboundMappings",
+               description = "Get all northbound mappings",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))})
+    //TODO fix example
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getAllNorthboundMappings();
+
+    @GET
     @Path("/adapters/{adapterId}/northboundMappings")
     @Operation(summary = "Get the mappings for northbound messages.",
                operationId = "get-adapter-northboundMappings",
@@ -548,8 +563,8 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(
-                                                               implementation = NorthboundMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = NorthboundMappingListModel.class)))})
+    //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getNorthboundMappingsForAdapter(
@@ -582,6 +597,25 @@ public interface ProtocolAdaptersApi {
     //########   SOUTHBOUNDMAPPINGS   #########
 
     @GET
+    @Path("/southboundMappings")
+    @Operation(summary = "Get all  southbound mappings.",
+               operationId = "get-southboundMappings",
+               description = "Get all southbound mappings.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = SouthboundMappingListModel.class)))})
+    //TODO fix example
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getAllSouthboundMappings(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+
+    @GET
     @Path("/adapters/{adapterId}/southboundMappings")
     @Operation(summary = "Get the southbound mappings.",
                operationId = "get-adapter-southboundMappings",
@@ -590,8 +624,8 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(
-                                                               implementation = SouthboundMappingListModel.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = SouthboundMappingListModel.class)))})
+    //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getSouthboundMappingsForAdapter(
@@ -611,7 +645,8 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "403",
                                     description = "Not Found",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))}) //TODO fix example
+                                                       schema = @Schema(implementation = Errors.class)))})
+    //TODO fix example
     @NotNull
     Response updateSouthboundMappingsForAdapter(
             @Parameter(name = "adapterId",

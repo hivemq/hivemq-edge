@@ -58,8 +58,6 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
@@ -78,6 +76,8 @@ import com.hivemq.protocols.params.NodeTreeImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.util.ErrorResponseUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -606,6 +606,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
     }
 
+
     @Override
     public @NotNull Response addCompleteAdapter(
             final @NotNull String adapterType,
@@ -682,6 +683,38 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .map(NorthboundMappingListModel::new)
                 .map(mappingsList -> Response.status(200).entity(mappingsList).build())
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
+    }
+
+
+    @Override
+    public @NotNull Response getAllNorthboundMappings() {
+        final List<NorthboundMappingListModel> northboundMappingListModels =
+                protocolAdapterManager.getProtocolAdapters()
+                        .values()
+                        .stream()
+                        .map(adapter -> adapter.getFromEdgeMappings()
+                                .stream()
+                                .map(NorthboundMappingModel::from)
+                                .collect(Collectors.toList()))
+                        .map(NorthboundMappingListModel::new)
+                        .collect(Collectors.toList());
+        return Response.status(200).entity(northboundMappingListModels).build();
+    }
+
+
+    @Override
+    public @NotNull Response getAllSouthboundMappings(@NotNull final String adapterId) {
+        final List<SouthboundMappingListModel> southboundMappingListModels =
+                protocolAdapterManager.getProtocolAdapters()
+                        .values()
+                        .stream()
+                        .map(adapter -> adapter.getToEdgeMappings()
+                                .stream()
+                                .map(SouthboundMappingModel::from)
+                                .collect(Collectors.toList()))
+                        .map(SouthboundMappingListModel::new)
+                        .collect(Collectors.toList());
+        return Response.status(200).entity(southboundMappingListModels).build();
     }
 
     @Override
