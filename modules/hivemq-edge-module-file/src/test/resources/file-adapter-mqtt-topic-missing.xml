@@ -16,19 +16,29 @@
 
 -->
 <hivemq>
+
     <protocol-adapters>
-        <file>
+        <protocol-adapter>
+            <adapterId>my-file-protocol-adapter</adapterId>
+            <protocolId>file</protocolId>
             <config>
-                <id>my-file-protocol-adapter</id>
-                <fileToMqtt>
-                    <fileToMqttMappings>
-                        <fileToMqttMapping>
-                            <filePath>path/to/file1</filePath>
-                            <contentType>BINARY</contentType>
-                        </fileToMqttMapping>
-                    </fileToMqttMappings>
-                </fileToMqtt>
+                <fileToMqtt></fileToMqtt>
             </config>
-        </file>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>tag1</tagName>
+                </northboundMapping>
+            </northboundMappings>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>decsription</description>
+                    <definition>
+                        <filePath>pathy</filePath>
+                        <contentType>BINARY</contentType>
+                    </definition>
+                </tag>
+            </tags>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

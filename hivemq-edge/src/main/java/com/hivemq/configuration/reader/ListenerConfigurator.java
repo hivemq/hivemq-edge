@@ -26,6 +26,8 @@ import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.tls.ClientAuthenticationModeEntity;
+import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
+import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
@@ -43,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ListenerConfigurator {
 
@@ -88,7 +91,8 @@ public class ListenerConfigurator {
         return builder.build();
     }
 
-    @Nullable Listener convertListener(final @NotNull ListenerEntity entity) {
+    @Nullable
+    Listener convertListener(final @NotNull ListenerEntity entity) {
         if (entity instanceof TCPListenerEntity) {
             return convertTcpListener((TCPListenerEntity) entity);
         } else if (entity instanceof WebsocketListenerEntity) {
@@ -103,21 +107,24 @@ public class ListenerConfigurator {
         return null;
     }
 
-    @NotNull MqttTcpListener convertTcpListener(final @NotNull TCPListenerEntity entity) {
+    @NotNull
+    MqttTcpListener convertTcpListener(final @NotNull TCPListenerEntity entity) {
         return new MqttTcpListener(entity.getPort(),
                 entity.getBindAddress(),
                 getName(entity, "tcp-listener-"),
                 entity.getExternalHostname());
     }
 
-    @NotNull MqttsnUdpListener convertUdpListener(final @NotNull UDPListenerEntity entity) {
+    @NotNull
+    MqttsnUdpListener convertUdpListener(final @NotNull UDPListenerEntity entity) {
         return new MqttsnUdpListener(entity.getPort(),
                 entity.getBindAddress(),
                 getName(entity, "udp-listener-"),
                 entity.getExternalHostname());
     }
 
-    @NotNull MqttWebsocketListener convertWebsocketListener(final @NotNull WebsocketListenerEntity entity) {
+    @NotNull
+    MqttWebsocketListener convertWebsocketListener(final @NotNull WebsocketListenerEntity entity) {
         return new MqttWebsocketListener.Builder().allowExtensions(entity.isAllowExtensions())
                 .bindAddress(entity.getBindAddress())
                 .path(entity.getPath())
@@ -128,7 +135,8 @@ public class ListenerConfigurator {
                 .build();
     }
 
-    @NotNull MqttTlsTcpListener convertTlsTcpListener(final @NotNull TlsTCPListenerEntity entity) {
+    @NotNull
+    MqttTlsTcpListener convertTlsTcpListener(final @NotNull TlsTCPListenerEntity entity) {
         return new MqttTlsTcpListener(entity.getPort(),
                 entity.getBindAddress(),
                 convertTls(entity.getTls()),
@@ -136,7 +144,8 @@ public class ListenerConfigurator {
                 entity.getExternalHostname());
     }
 
-    @NotNull MqttTlsWebsocketListener convertTlsWebsocketListener(final @NotNull TlsWebsocketListenerEntity entity) {
+    @NotNull
+    MqttTlsWebsocketListener convertTlsWebsocketListener(final @NotNull TlsWebsocketListenerEntity entity) {
         return new MqttTlsWebsocketListener.Builder().port(entity.getPort())
                 .bindAddress(entity.getBindAddress())
                 .path(entity.getPath())
@@ -177,10 +186,16 @@ public class ListenerConfigurator {
 
     }
 
-    @NotNull Tls convertTls(final @NotNull TLSEntity entity) {
+    @NotNull
+    Tls convertTls(final @NotNull TLSEntity entity) {
+        final String keystorePath =
+                getPathFromEntityPath(Objects.requireNonNullElse(entity.getKeystoreEntity(), new KeystoreEntity())
+                        .getPath());
+        final TruststoreEntity truststoreEntity = Objects.requireNonNullElse(entity.getTruststoreEntity(), new TruststoreEntity());
 
-        final String keystorePath = getPathFromEntityPath(entity.getKeystoreEntity().getPath());
-        final String truststorePath = getPathFromEntityPath(entity.getTruststoreEntity().getPath());
+
+        final String truststorePath =
+                getPathFromEntityPath(truststoreEntity.getPath());
 
         Preconditions.checkNotNull(keystorePath, "Keystore path must not be null");
 
@@ -197,7 +212,7 @@ public class ListenerConfigurator {
 
                 .withTruststorePath(truststorePath)
                 .withTruststoreType(type)
-                .withTruststorePassword(entity.getTruststoreEntity().getPassword())
+                .withTruststorePassword(truststoreEntity.getPassword())
 
                 .withClientAuthMode(getClientAuthMode(entity.getClientAuthMode()))
                 .withCipherSuites(entity.getCipherSuites())
@@ -229,7 +244,8 @@ public class ListenerConfigurator {
         }
     }
 
-    @NotNull Tls.ClientAuthMode getClientAuthMode(final @NotNull ClientAuthenticationModeEntity entity) {
+    @NotNull
+    Tls.ClientAuthMode getClientAuthMode(final @NotNull ClientAuthenticationModeEntity entity) {
         switch (entity) {
             case OPTIONAL:
                 return Tls.ClientAuthMode.OPTIONAL;

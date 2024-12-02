@@ -24,19 +24,38 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNullElse;
+
 public class OpcUaToMqttConfig {
 
-    @JsonProperty("opcuaToMqttMappings")
-    @ModuleConfigField(title = "opcuaToMqttMappings",
-                       description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<OpcUaToMqttMapping> opcuaToMqttMappings;
+    @JsonProperty("serverQueueSize")
+    @ModuleConfigField(title = "OPC UA server queue size",
+                       description = "OPC UA queue size for this subscription on the server",
+                       numberMin = 1,
+                       defaultValue = "1")
+    private final int serverQueueSize;
+
+
+    @JsonProperty("publishingInterval")
+    @ModuleConfigField(title = "OPC UA publishing interval [ms]",
+                       description = "OPC UA publishing interval in milliseconds for this subscription on the server",
+                       numberMin = 1,
+                       defaultValue = "1000")
+    private final int publishingInterval;
 
     @JsonCreator
-    public OpcUaToMqttConfig(@JsonProperty("opcuaToMqttMappings") final @Nullable List<OpcUaToMqttMapping> opcuaToMqttMappings) {
-        this.opcuaToMqttMappings = Objects.requireNonNullElse(opcuaToMqttMappings, List.of());
+    public OpcUaToMqttConfig(
+            @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
+            @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize) {
+        this.publishingInterval = requireNonNullElse(publishingInterval, 1000);
+        this.serverQueueSize = requireNonNullElse(serverQueueSize, 1);
     }
 
-    public @NotNull List<OpcUaToMqttMapping> getOpcuaToMqttMappings() {
-        return opcuaToMqttMappings;
+    public int getPublishingInterval() {
+        return publishingInterval;
+    }
+
+    public int getServerQueueSize() {
+        return serverQueueSize;
     }
 }

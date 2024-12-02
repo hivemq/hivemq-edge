@@ -31,8 +31,7 @@ import java.io.File;
 public class ConfigurationFileProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigurationFileProvider.class);
-    private static String DEFAULT_CONFIG_FILENAME = "config.xml";
-
+    private static final String DEFAULT_CONFIG_FILENAME = "config.xml";
 
     public static ConfigurationFile get(final SystemInformation systemInformation) {
 

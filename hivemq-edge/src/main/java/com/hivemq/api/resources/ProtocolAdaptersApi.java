@@ -16,13 +16,13 @@
 package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.api.model.mapping.FieldMappingsListModel;
-import com.hivemq.api.model.mapping.FieldMappingsModel;
 import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
+import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
+import com.hivemq.api.model.mappings.southbound.SouthboundMappingListModel;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -68,6 +68,8 @@ public interface ProtocolAdaptersApi {
 
     String PATH = "/api/v1/management/protocol-adapters";
 
+    //########   SCHEMAS   #########
+
     @GET
     @Path("/types")
     @Operation(summary = "Obtain a list of available protocol adapter types",
@@ -83,7 +85,7 @@ public interface ProtocolAdaptersApi {
     Response getAdapterTypes();
 
     @GET
-    @Path("/tagschemas/{protocolId}")
+    @Path("/tag-schemas/{protocolId}")
     @Operation(summary = "Obtain the JSON schema for a tag for a specific protocol adapter.",
                operationId = "getTagSchema",
                description = "Obtain the tag schema for a specific portocol adapter.",
@@ -99,6 +101,10 @@ public interface ProtocolAdaptersApi {
                                 description = "The protocol id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("protocolId") String protocolId);
+
+
+
+    //########   ADAPTERS   #########
 
     @POST
     @Path("/adapters/{adapterType: ([a-zA-Z_0-9\\-])*}")
@@ -332,6 +338,9 @@ public interface ProtocolAdaptersApi {
     Response status();
 
 
+    //########   TAGS   #########
+
+
     @GET
     @Path("/adapters/{adapterId}/tags")
     @Operation(summary = "Get the domain tags for the device connected through this adapter.",
@@ -387,7 +396,7 @@ public interface ProtocolAdaptersApi {
 
 
     @DELETE
-    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Path("/adapters/{adapterId}/tags/{tagName}")
     @Operation(summary = "Delete an domain tag",
                operationId = "delete-adapter-domainTags",
                description = "Delete the specified domain tag on the given adapter.",
@@ -400,14 +409,14 @@ public interface ProtocolAdaptersApi {
                                 description = "The adapter Id.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
-            @NotNull @Parameter(name = "tagId",
+            @NotNull @Parameter(name = "tagName",
                                 description = "The domain tag Id.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagId") String tagId);
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
 
     @PUT
-    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Path("/adapters/{adapterId}/tags/{tagName}")
     @Operation(summary = "Update the domain tag of an adapter.",
                description = "Update the domain tag of an adapter.",
                operationId = "update-adapter-domainTag",
@@ -428,10 +437,10 @@ public interface ProtocolAdaptersApi {
                        description = "The id of the adapter whose domain tag will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
-            @NotNull @Parameter(name = "tagId",
-                                description = "The id of the domain tag that will be changed.",
+            @NotNull @Parameter(name = "tagName",
+                                description = "The name (urlencoded) of the domain tag that will be changed.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagId") String tagId,
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagId,
             final @NotNull DomainTagModel domainTag);
 
 
@@ -496,9 +505,9 @@ public interface ProtocolAdaptersApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTag(@NotNull @Parameter(name = "tagName",
-                                              description = "The tag name (base64 encoded).",
+                                              description = "The tag name (urlencoded).",
                                               required = true,
-                                              in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+                                              in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
     @GET
     @Path("/writing-schema/{adapterId}/{tagName}")
@@ -514,7 +523,6 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "An example for domain tags in opc ua",
                                                                               name = "opc ua domain tags example",
                                                                               summary = "Example for domain tags for opc ua ",
-                                                                              // TODO
                                                                               value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -524,62 +532,27 @@ public interface ProtocolAdaptersApi {
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
             @NotNull @Parameter(name = "tagName",
-                                description = "The tag name (base64 encoded) for which the Json Schema for writing to a PLC gets created.",
+                                description = "The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("tagName") String tagName);
+                                in = ParameterIn.PATH) @Schema(format = "urlencoded") @PathParam("tagName") String tagName);
 
 
-
-
-    @POST
-    @Path("/adapters/{adapterId}/fieldmappings")
-    @Operation(summary = "Add new field mappings to the specified adapter",
-               operationId = "add-adapter-fieldMappings",
-               description = "Add new field mappings to the specified adapter.",
-               responses = {
-                       @ApiResponse(responseCode = "200", description = "Success"),
-                       @ApiResponse(responseCode = "403",
-                                    description = "Already Present",
-                                    content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example response in case an tag is already present for this tagId.",
-                                                                              name = "already present example",
-                                                                              summary = "An example response in case an tag is already present for this tagId.",
-                                                                              value = TagResourceExamples.EXAMPLE_ALREADY_PRESENT)}))}
-
-    )
-    @NotNull
-    Response addFieldMapping(
-            @NotNull @Parameter(name = "adapterId",
-                                description = "The adapter id.",
-                                required = true,
-                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
-            @NotNull @Parameter(name = "fieldMappings",
-                                description = "The field mappings for incoming and outgoing data",
-                                required = true,
-                                in = ParameterIn.DEFAULT) FieldMappingsModel fieldMappingsModel);
-
+    //########   NORTHBOUNDMAPPINGS   #########
 
     @GET
-    @Path("/adapters/{adapterId}/fieldmappings")
-    @Operation(summary = "Get the field mappings for this adapter.",
-               operationId = "get-adapter-fieldMappings",
-               description = "Get the field mappings for this adapter.",
+    @Path("/adapters/{adapterId}/northboundMappings")
+    @Operation(summary = "Get the mappings for northbound messages.",
+               operationId = "get-adapter-northboundMappings",
+               description = "Get the northbound mappings of the adapter.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = FieldMappingsListModel.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example for field mappings in opc ua",
-                                                                              name = "field mappings example",
-                                                                              summary = "Example for field mappings ",
-                                                                              //TODO
-                                                                              value = "")}))})
+                                                       schema = @Schema(
+                                                               implementation = NorthboundMappingListModel.class)))}) //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getFieldMappingsForAdapter(
+    Response getNorthboundMappingsForAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter id.",
                                 required = true,
@@ -587,26 +560,63 @@ public interface ProtocolAdaptersApi {
 
 
     @PUT
-    @Path("/adapters/{adapterId}/fieldmappings/")
-    @Operation(summary = "Update the field mappings of an adapter.",
-               description = "Update all field mappings of an adapter.",
-               operationId = "update-adapter-fieldMappings",
+    @Path("/adapters/{adapterId}/northboundMappings")
+    @Operation(summary = "Update the from mappings of an adapter.",
+               description = "Update all northbound mappings of an adapter.",
+               operationId = "update-adapter-northboundMappings",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
                        @ApiResponse(responseCode = "403",
                                     description = "Not Found",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example response in case no field mappings are present for this tagId.",
-                                                                              name = "already present example",
-                                                                              summary = "An example response in case no field mappings is present for this tagId.",
-                                                                              value = "")}))}) //TODO
+                                                       schema = @Schema(implementation = Errors.class)))}) //TODO fix example
     @NotNull
-    Response updateFieldMappingsTags(
+    Response updateNorthboundMappingsForAdapter(
             @Parameter(name = "adapterId",
-                       description = "The id of the adapter whose domain tags will be updated.",
+                       description = "The id of the adapter whose northbound mappings will be updated.",
                        required = true,
                        in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
-            final @NotNull FieldMappingsListModel fieldMappingsListModel);
+            final @NotNull NorthboundMappingListModel northboundMappingListModel);
+
+
+    //########   SOUTHBOUNDMAPPINGS   #########
+
+    @GET
+    @Path("/adapters/{adapterId}/southboundMappings")
+    @Operation(summary = "Get the southbound mappings.",
+               operationId = "get-adapter-southboundMappings",
+               description = "Get the southbound mappings.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(
+                                                               implementation = SouthboundMappingListModel.class)))}) //TODO fix example
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getSouthboundMappingsForAdapter(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+
+
+    @PUT
+    @Path("/adapters/{adapterId}/southboundMappings")
+    @Operation(summary = "Update the to southbound mappings of an adapter.",
+               description = "Update all southbound mappings of an adapter.",
+               operationId = "update-adapter-southboundMappings",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Not Found",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Errors.class)))}) //TODO fix example
+    @NotNull
+    Response updateSouthboundMappingsForAdapter(
+            @Parameter(name = "adapterId",
+                       description = "The id of the adapter whose southbound mappings will be updated.",
+                       required = true,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
+            final @NotNull SouthboundMappingListModel southboundMappingListModel);
 }

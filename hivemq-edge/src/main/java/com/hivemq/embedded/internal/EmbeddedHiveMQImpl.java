@@ -22,6 +22,7 @@ import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
@@ -36,7 +37,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 /**
@@ -192,6 +197,9 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     @NotNull ConfigurationService bootstrapConfig() {
+        final ConfigurationMigrator configurationMigrator = new ConfigurationMigrator(systemInformation, moduleLoaderFactory.apply(systemInformation));
+        configurationMigrator.migrate();
+
         if (configurationService == null) {
             configurationService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }

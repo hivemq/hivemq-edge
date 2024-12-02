@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -24,29 +25,32 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationToMqttMapping> {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull SimulationAdapterConfig adapterConfig;
+    private final @NotNull SimulationSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull TimeWaiter timeWaiter;
     private static final @NotNull Random RANDOM = new Random();
+    private final @NotNull String adapterId;
+    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput,
+            final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> protocolAdapterInput,
             final @NotNull TimeWaiter timeWaiter) {
+        this.adapterId = protocolAdapterInput.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
@@ -56,7 +60,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
@@ -77,7 +81,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
 
     @Override
     public void poll(
-            final @NotNull PollingInput<SimulationToMqttMapping> pollingInput,
+            final @NotNull PollingInput pollingInput,
             final @NotNull PollingOutput pollingOutput) {
 
         final int minDelay = adapterConfig.getMinDelay();
@@ -117,11 +121,6 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
     }
 
     @Override
-    public @NotNull List<SimulationToMqttMapping> getPollingContexts() {
-        return adapterConfig.getSimulationToMqttConfig().getSimulationToMqttMappings();
-    }
-
-    @Override
     public int getPollingIntervalMillis() {
         return adapterConfig.getSimulationToMqttConfig().getPollingIntervalMillis();
     }
@@ -129,5 +128,12 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+    }
+
+    @Override
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input,
+            final @NotNull TagSchemaCreationOutput output) {
+        output.finish(objectMapper.createObjectNode());
     }
 }

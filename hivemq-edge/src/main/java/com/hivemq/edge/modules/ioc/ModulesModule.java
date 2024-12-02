@@ -63,7 +63,6 @@ public abstract class ModulesModule {
     @ElementsIntoSet
     @Singleton
     static @NotNull Set<EventListener> provideEventListeners() {
-        //TODO register event listeners here
         return Set.of();
     }
 }

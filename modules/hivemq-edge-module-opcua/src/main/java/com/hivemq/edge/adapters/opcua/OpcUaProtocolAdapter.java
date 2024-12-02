@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -31,13 +32,12 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
 import org.jetbrains.annotations.NotNull;
@@ -45,54 +45,61 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter<MqttToOpcUaMapping> {
+public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull List<Tag> tags;
+    private final @NotNull List<PollingContext> northboundMappings;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
-    private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper ;
+    private final @NotNull String adapterId;
+    private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags = input.getTags();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
+        this.northboundMappings = input.getPollingContexts();
     }
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
-        if(opcUaClientWrapper == null) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+        if (opcUaClientWrapper == null) {
             synchronized (this) {
-                if(opcUaClientWrapper == null) {
+                if (opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(adapterConfig,
-                                tags,
+                        OpcUaClientWrapper.createAndConnect(
+                                adapterId,
+                                adapterConfig,
+                                tags, northboundMappings,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),
-                                adapterConfig.getId(),
                                 adapterInformation.getProtocolId(),
-                                protocolAdapterMetricsService, output).thenApply(wrapper -> {
+                                protocolAdapterMetricsService,
+                                output)
+                                .thenApply(wrapper -> {
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;
                             return wrapper;
@@ -118,9 +125,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        if(opcUaClientWrapper != null) {
+        if (opcUaClientWrapper != null) {
             synchronized (this) {
-                if(opcUaClientWrapper != null) {
+                if (opcUaClientWrapper != null) {
                     opcUaClientWrapper.stop().whenComplete((aVoid, t) -> {
                         if (t != null) {
                             protocolAdapterState.setErrorConnectionStatus(t, null);
@@ -140,10 +147,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input,
-            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        if(opcUaClientWrapperTemp != null) {
+        if (opcUaClientWrapperTemp != null) {
             opcUaClientWrapperTemp.discoverValues(input, output);
         } else {
             log.warn("Tried executing discoverValues while client wasn't started");
@@ -158,44 +164,33 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) input.getWritingContext();
-        if(opcUaClientWrapperTemp != null) {
-        tags.stream()
-                .filter(tag -> tag.getName().equals(writeContext.getTagName()))
-                .findFirst()
-                .ifPresentOrElse(
-                        def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
-                        () -> output.fail("Polling for protocol adapter failed because the used tag '" +
-                                writeContext.getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI.")
-                );
+        final WritingContext writeContext = input.getWritingContext();
+        if (opcUaClientWrapperTemp != null) {
+            tags.stream()
+                    .filter(tag -> tag.getName().equals(writeContext.getTagName()))
+                    .findFirst()
+                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
+                            () -> output.fail("Subscription for protocol adapter failed because the used tag '" +
+                                    writeContext.getTagName() +
+                                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
         } else {
             log.warn("Tried executing write while client wasn't started");
         }
     }
 
     @Override
-    public @NotNull List<MqttToOpcUaMapping> getWritingContexts() {
-        if(adapterConfig instanceof BidirectionalOpcUaAdapterConfig) {
-            return ((BidirectionalOpcUaAdapterConfig) adapterConfig).getMqttToOpcUaConfig().getMqttToOpcUaMappings();
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void createTagSchema(final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        if(opcUaClientWrapperTemp != null) {
+        if (opcUaClientWrapperTemp != null) {
             tags.stream()
-                .filter(tag -> tag.getName().equals(input.getTagName()))
-                .findFirst()
-                .ifPresentOrElse(
-                        def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
-                        () -> {
-                            //FIXME needs logging
-                            output.adapterNotStarted();
-                        }
-                );
+                    .filter(tag -> tag.getName().equals(input.getTagName()))
+                    .findFirst()
+                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
+                            () -> {
+                                //FIXME needs logging
+                                output.adapterNotStarted();
+                            });
         } else {
             output.adapterNotStarted();
         }

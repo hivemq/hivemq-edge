@@ -16,13 +16,10 @@
 package com.hivemq.edge.adapters.opcua.config.legacy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
-import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

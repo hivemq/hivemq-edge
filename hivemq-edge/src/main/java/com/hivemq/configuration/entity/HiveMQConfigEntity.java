@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.entity;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
@@ -82,9 +83,9 @@ public class HiveMQConfigEntity {
     @XmlElementRef(required = false)
     private @NotNull UsageTrackingConfigEntity usageTracking = new UsageTrackingConfigEntity();
 
-    @XmlElement(name = "protocol-adapters")
-    @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
-    private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
+    @XmlElementWrapper(name = "protocol-adapters")
+    @XmlElement(name = "protocol-adapter")
+    private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -92,6 +93,42 @@ public class HiveMQConfigEntity {
 
     @XmlElementRef(required = false)
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
+
+    // no-arg constructor as JaxB does need one
+    public HiveMQConfigEntity(){
+
+    }
+
+    public HiveMQConfigEntity(
+            @NotNull final AdminApiEntity api,
+            @NotNull final DynamicConfigEntity gateway,
+            @NotNull final Map<String, Object> moduleConfigs,
+            @NotNull final MqttConfigEntity mqtt,
+            @NotNull final List<MqttBridgeEntity> mqttBridges,
+            @NotNull final List<ListenerEntity> mqttListeners,
+            @NotNull final MqttSnConfigEntity mqttsn,
+            @NotNull final List<ListenerEntity> mqttsnListeners,
+            @NotNull final PersistenceEntity persistence,
+            @NotNull final List<ProtocolAdapterEntity> protocolAdapterConfig,
+            @NotNull final RestrictionsEntity restrictions,
+            @NotNull final SecurityConfigEntity security,
+            @NotNull final UnsConfigEntity uns,
+            @NotNull final UsageTrackingConfigEntity usageTracking) {
+        this.api = api;
+        this.gateway = gateway;
+        this.moduleConfigs = moduleConfigs;
+        this.mqtt = mqtt;
+        this.mqttBridges = mqttBridges;
+        this.mqttListeners = mqttListeners;
+        this.mqttsn = mqttsn;
+        this.mqttsnListeners = mqttsnListeners;
+        this.persistence = persistence;
+        this.protocolAdapterConfig = protocolAdapterConfig;
+        this.restrictions = restrictions;
+        this.security = security;
+        this.uns = uns;
+        this.usageTracking = usageTracking;
+    }
 
     public @NotNull List<ListenerEntity> getMqttListenerConfig() {
         return mqttListeners;
@@ -129,7 +166,7 @@ public class HiveMQConfigEntity {
         return api;
     }
 
-    public @NotNull Map<String, Object> getProtocolAdapterConfig() {
+    public @NotNull List<ProtocolAdapterEntity> getProtocolAdapterConfig() {
         return protocolAdapterConfig;
     }
 

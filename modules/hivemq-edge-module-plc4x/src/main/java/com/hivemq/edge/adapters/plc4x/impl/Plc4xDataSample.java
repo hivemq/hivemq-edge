@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.plc4x.impl;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class Plc4xDataSample<T extends ProtocolAdapterConfig> implements ProtocolAdapterDataSample {
+public class Plc4xDataSample<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull PollingContext pollingContext;

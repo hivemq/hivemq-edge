@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ProtocolAdapterConfigurator {
 
@@ -31,22 +30,12 @@ public class ProtocolAdapterConfigurator {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull Map<String, Object> protocolAdapterConfig) {
-        //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
-        Map<String, Object> configMap = new HashMap<>();
-        for (final String key : protocolAdapterConfig.keySet()) {
-            Object value = protocolAdapterConfig.get(key);
-            if (value instanceof List) {
-                //if its a <structural element> ie. a list, create a shallow copy to additions and removals are distinct
-                value = new ArrayList((List) value);
-            }
-            configMap.put(key, value);
-        }
-        configurationService.setAllConfigs(configMap);
+    public void setConfigs(final @NotNull List<ProtocolAdapterEntity> protocolAdapterConfigs) {
+        configurationService.setAllConfigs(new ArrayList<>(protocolAdapterConfigs));
     }
 
-    public void syncConfigs(final @NotNull Map<String, Object> config) {
+    public void syncConfigs(final @NotNull List<ProtocolAdapterEntity> config) {
         config.clear();
-        config.putAll(configurationService.getAllConfigs());
+        config.addAll(configurationService.getAllConfigs());
     }
 }

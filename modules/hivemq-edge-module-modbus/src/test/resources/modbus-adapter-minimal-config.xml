@@ -17,20 +17,19 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <modbus>
+        <protocol-adapter>
+            <adapterId>my-modbus-protocol-adapter</adapterId>
+            <protocolId>modbus</protocolId>
             <config>
-                <id>my-modbus-protocol-adapter</id>
-                <port>1234</port>
                 <host>my.modbus-server.com</host>
-                <modbusToMqtt>
-                    <modbusToMqttMappings>
-                        <modbusToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <tagName>tag1</tagName>
-                        </modbusToMqttMapping>
-                    </modbusToMqttMappings>
-                </modbusToMqtt>
+                <port>1234</port>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <tagName>tag1</tagName>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag1</name>
@@ -42,6 +41,6 @@
                     </definition>
                 </tag>
             </tags>
-        </modbus>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

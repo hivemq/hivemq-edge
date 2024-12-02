@@ -18,7 +18,7 @@ package com.hivemq.configuration.reader;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.adapter.FieldMappingsEntity;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
@@ -154,7 +154,7 @@ public class ConfigFileReaderWriter {
         final Class<?>[] classes = ImmutableList.<Class<?>>builder()
                 .add(getConfigEntityClass())
                 .addAll(getInheritedEntityClasses())
-                .add(FieldMappingsEntity.class)
+                .add(FieldMappingEntity.class)
                 .build()
                 .toArray(new Class<?>[0]);
 
@@ -271,7 +271,7 @@ public class ConfigFileReaderWriter {
                 final StreamSource streamSource = new StreamSource(is);
 
                 unmarshaller.setEventHandler(e -> {
-                    if (e.getSeverity() > ValidationEvent.ERROR) {
+                    if (e.getSeverity() >= ValidationEvent.ERROR) {
                         validationErrors.add(e);
                     }
                     return true;
@@ -288,6 +288,13 @@ public class ConfigFileReaderWriter {
                 if (configEntity == null) {
                     throw new JAXBException("Result is null");
                 }
+
+                configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
+
+                if (!validationErrors.isEmpty()) {
+                    throw new JAXBException("Parsing failed");
+                }
+
                 setConfiguration(configEntity);
                 return configEntity;
 
@@ -356,6 +363,7 @@ public class ConfigFileReaderWriter {
                 return schema;
             }
         }
+        log.warn("No schema loaded for validation of config xml.");
         return null;
     }
 

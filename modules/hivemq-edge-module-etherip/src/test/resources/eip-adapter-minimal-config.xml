@@ -17,20 +17,19 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <eip>
+        <protocol-adapter>
+            <adapterId>my-eip-protocol-adapter</adapterId>
+            <protocolId>eip</protocolId>
             <config>
-                <id>my-eip-protocol-adapter</id>
                 <port>1234</port>
                 <host>my.eip-server.com</host>
-                <eipToMqtt>
-                    <eipToMqttMappings>
-                        <eipToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <tagName>tag-name</tagName>
-                        </eipToMqttMapping>
-                    </eipToMqttMappings>
-                </eipToMqtt>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <tagName>tag-name</tagName>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag-name</name>
@@ -41,6 +40,6 @@
                     </definition>
                 </tag>
             </tags>
-        </eip>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

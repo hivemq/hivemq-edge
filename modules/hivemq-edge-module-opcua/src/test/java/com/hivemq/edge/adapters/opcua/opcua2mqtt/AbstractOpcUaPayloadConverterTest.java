@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -29,9 +30,8 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
@@ -41,6 +41,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
+import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +52,6 @@ import util.EmbeddedOpcUaServerExtension;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +70,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull ProtocolAdapterPublishService adapterPublishService = mock();
     private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder =
             new TestProtocolAdapterPublishBuilder();
-    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
+    private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
 
@@ -94,13 +94,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
             throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId,
-                        "topic",
-                        null,
-                        null,
-                        null,
-                        null)));
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test-" + UUID.randomUUID(),
+                new OpcUaToMqttConfig(null, null);
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
                 null,
@@ -110,6 +105,16 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+        when(protocolAdapterInput.getPollingContexts()).thenReturn(List.of(new NorthboundMapping(
+                subcribedNodeId,
+                "topic",
+                1,
+                10_0000L,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                false,
+                false,
+                List.of()
+                )));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 

@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
@@ -26,7 +26,7 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
     private int port = 102;
 
     @JsonProperty(value = "controllerType", required = true)
-    private @NotNull S7AdapterConfig.ControllerType controllerType = S7AdapterConfig.ControllerType.S7_300;
+    private @NotNull S7SpecificAdapterConfig.ControllerType controllerType = S7SpecificAdapterConfig.ControllerType.S7_300;
 
     @JsonProperty("remoteRack")
     private @NotNull Integer remoteRack = 0;
@@ -71,7 +71,7 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
         return remoteTsap;
     }
 
-    public S7AdapterConfig.ControllerType getControllerType() {
+    public S7SpecificAdapterConfig.ControllerType getControllerType() {
         return controllerType;
     }
 

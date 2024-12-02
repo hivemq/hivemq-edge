@@ -17,27 +17,26 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <opcua>
+        <protocol-adapter>
+            <adapterId>simulation-server-2</adapterId>
+            <protocolId>opcua</protocolId>
             <config>
-                <id>simulation-server-2</id>
                 <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
                 <opcuaToMqtt>
-                    <opcuaToMqttMappings>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopic>test/blubb/#</mqttTopic>
-                        </opcuaToMqttMapping>
-                    </opcuaToMqttMappings>
                 </opcuaToMqtt>
-                <mqttToOpcua>
-                    <mqttToOpcuaMappings>
-                        <mqttToOpcuaMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
-                        </mqttToOpcuaMapping>
-                    </mqttToOpcuaMappings>
-                </mqttToOpcua>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topic>test/blubb</topic>
+                </northboundMapping>
+            </northboundMappings>
+            <southboundMappings>
+                <southboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topicFilter>test/blubb/#</topicFilter>
+                </southboundMapping>
+            </southboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>
@@ -47,6 +46,6 @@
                     </definition>
                 </tag>
             </tags>
-        </opcua>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

@@ -17,9 +17,10 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <opcua>
+        <protocol-adapter>
+            <adapterId>simulation-server-2</adapterId>
+            <protocolId>opcua</protocolId>
             <config>
-                <id>simulation-server-2</id>
                 <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
                 <overrideUri>true</overrideUri>
                 <auth>
@@ -47,40 +48,36 @@
                     <policy>BASIC128RSA15</policy>
                 </security>
                 <opcuaToMqtt>
-                    <opcuaToMqttMappings>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopic>test/blubb/a</mqttTopic>
-                            <publishingInterval>12</publishingInterval>
-                            <serverQueueSize>13</serverQueueSize>
-                            <mqttQos>1</mqttQos>
-                            <messageExpiryInterval>15</messageExpiryInterval>
-                        </opcuaToMqttMapping>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=2;i=1004</tagName>
-                            <mqttTopic>test/blubbb/b</mqttTopic>
-                            <publishingInterval>13</publishingInterval>
-                            <serverQueueSize>14</serverQueueSize>
-                            <mqttQos>2</mqttQos>
-                            <messageExpiryInterval>16</messageExpiryInterval>
-                        </opcuaToMqttMapping>
-                    </opcuaToMqttMappings>
+                    <publishingInterval>12</publishingInterval>
+                    <serverQueueSize>13</serverQueueSize>
                 </opcuaToMqtt>
-                <mqttToOpcua>
-                    <mqttToOpcuaMappings>
-                        <mqttToOpcuaMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
-                            <mqttMaxQos>0</mqttMaxQos>
-                        </mqttToOpcuaMapping>
-                        <mqttToOpcuaMapping>
-                            <tagName>ns=2;i=1004</tagName>
-                            <mqttTopicFilter>test/blubbb/#</mqttTopicFilter>
-                            <mqttMaxQos>0</mqttMaxQos>
-                        </mqttToOpcuaMapping>
-                    </mqttToOpcuaMappings>
-                </mqttToOpcua>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topic>test/blubb/a</topic>
+                    <maxQos>1</maxQos>
+                    <messageExpiryInterval>15</messageExpiryInterval>
+                </northboundMapping>
+                <northboundMapping>
+                    <tagName>ns=2;i=1004</tagName>
+                    <topic>test/blubbb/b</topic>
+                    <maxQos>2</maxQos>
+                    <messageExpiryInterval>16</messageExpiryInterval>
+                </northboundMapping>
+            </northboundMappings>
+            <southboundMappings>
+                <southboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topicFilter>test/blubb/#</topicFilter>
+                    <maxQos>0</maxQos>
+                </southboundMapping>
+                <southboundMapping>
+                    <tagName>ns=2;i=1004</tagName>
+                    <topicFilter>test/blubbb/#</topicFilter>
+                    <maxQos>0</maxQos>
+                </southboundMapping>
+            </southboundMappings>
             <tags>
                 <tag>
                     <name>ns=1;i=1004</name>
@@ -97,6 +94,6 @@
                     </definition>
                 </tag>
             </tags>
-        </opcua>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

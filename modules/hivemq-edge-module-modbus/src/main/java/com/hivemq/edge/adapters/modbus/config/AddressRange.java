@@ -27,7 +27,7 @@ public class AddressRange {
     @ModuleConfigField(title = "Start Index",
                        description = "The Starting Index (Incl.) of the Address Range",
                        numberMin = 0,
-                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
                        required = true)
     public final int startIdx;
 

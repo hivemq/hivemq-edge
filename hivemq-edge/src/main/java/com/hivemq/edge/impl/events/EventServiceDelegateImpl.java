@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -30,8 +29,6 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 /**
  * SPI delegate which wraps multiple (chained) implementations and
@@ -42,28 +39,17 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class EventServiceDelegateImpl implements EventService {
 
-    private final @NotNull Set<EventListener> eventListeners;
     private final @NotNull EventStore eventStore;
-    private final @NotNull ExecutorService executorService;
 
     @Inject
     public EventServiceDelegateImpl(
-            final @NotNull EventStore eventStore,
-            final @NotNull Set<EventListener> eventListeners,
-            final @NotNull ExecutorService executorService) {
+            final @NotNull EventStore eventStore) {
         Preconditions.checkNotNull(eventStore);
-        Preconditions.checkNotNull(executorService);
         this.eventStore = eventStore;
-        this.eventListeners = eventListeners;
-        this.executorService = executorService;
     }
 
     public void fireEvent(final @NotNull Event event) {
-        try {
-            eventStore.storeEvent(event);
-        } finally {
-            notifyEventListeners(event);
-        }
+        eventStore.storeEvent(event);
     }
 
     public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
@@ -82,10 +68,4 @@ public class EventServiceDelegateImpl implements EventService {
         return eventStore.readEvents(sinceTimestamp, limit);
     }
 
-    private void notifyEventListeners(final @NotNull Event event) {
-        Preconditions.checkNotNull(event);
-        if (!eventListeners.isEmpty()) {
-            eventListeners.forEach(l -> executorService.submit(() -> l.eventFired(event)));
-        }
-    }
 }

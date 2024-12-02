@@ -1,13 +1,14 @@
 <hivemq>
     <protocol-adapters>
-        <simulation>
-            <simulationToMqtt>
-                <simulationToMqttMappings>
-                    <simulationToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                    </simulationToMqttMapping>
-                </simulationToMqttMappings>
-            </simulationToMqtt>
-        </simulation>
+        <protocol-adapter>
+            <protocolId>simulation</protocolId>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <maxQos>0</maxQos>
+                    <tagName>tag1</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

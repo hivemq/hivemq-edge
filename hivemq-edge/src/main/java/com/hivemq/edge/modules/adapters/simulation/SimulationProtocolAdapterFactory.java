@@ -18,25 +18,23 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
+import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import com.hivemq.edge.modules.adapters.simulation.config.legacy.LegacySimulationAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationAdapterConfig> {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterFactory.class);
+public class SimulationProtocolAdapterFactory
+        implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig>, LegacyConfigConversion {
 
     final boolean writingEnabled;
 
@@ -53,39 +51,12 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
+            @NotNull final ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
 
     @Override
-    public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config, final boolean writingEnabled) {
-        try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config, writingEnabled);
-        } catch (final Exception currentConfigFailedException) {
-            try {
-                log.warn(
-                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
-                        SimulationProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        currentConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", currentConfigFailedException);
-                }
-                return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
-                        SimulationProtocolAdapterInformation.INSTANCE.getDisplayName(),
-                        legacyConfigFailedException.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception:", legacyConfigFailedException);
-                }
-                //we rethrow the exception from the current config conversation, to have a correct rest response.
-                throw currentConfigFailedException;
-            }
-        }
-    }
-
-    private static @NotNull SimulationAdapterConfig tryConvertLegacyConfig(
+    public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacySimulationAdapterConfig legacySimulationAdapterConfig =
                 objectMapper.convertValue(config, LegacySimulationAdapterConfig.class);
@@ -105,13 +76,18 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
                 legacySimulationAdapterConfig.getPollingIntervalMillis(),
                 legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
 
-
-        return new SimulationAdapterConfig(simulationToMqttConfig,
-                legacySimulationAdapterConfig.getId(),
+        final SimulationSpecificAdapterConfig simulationSpecificAdapterConfig = new SimulationSpecificAdapterConfig(
+                simulationToMqttConfig,
                 legacySimulationAdapterConfig.getMinValue(),
                 legacySimulationAdapterConfig.getMaxValue(),
                 legacySimulationAdapterConfig.getMinDelay(),
                 legacySimulationAdapterConfig.getMaxDelay());
+
+        return new ConfigTagsTuple(
+                legacySimulationAdapterConfig.getId(),
+                simulationSpecificAdapterConfig,
+                List.of(),
+                simulationToMqttMappings);
     }
 
 }

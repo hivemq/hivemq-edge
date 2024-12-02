@@ -17,6 +17,7 @@ package com.hivemq.datagov.ioc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hivemq.datagov.DataGovernanceService;
@@ -61,6 +62,7 @@ public abstract class DataGovernanceModule {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        mapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
 //        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }

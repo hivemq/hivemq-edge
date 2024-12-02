@@ -17,9 +17,10 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <ads>
+        <protocol-adapter>
+            <adapterId>my-ads-protocol-adapter</adapterId>
+            <protocolId>ads</protocolId>
             <config>
-                <id>my-ads-protocol-adapter</id>
                 <host>my.ads-server.com</host>
                 <port>1234</port>
                 <targetAmsPort>1234</targetAmsPort>
@@ -30,46 +31,46 @@
                     <pollingIntervalMillis>10</pollingIntervalMillis>
                     <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
                     <publishChangedDataOnly>false</publishChangedDataOnly>
-                    <adsToMqttMappings>
-                        <adsToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <mqttQos>1</mqttQos>
-                            <includeTagNames>true</includeTagNames>
-                            <includeTimestamp>true</includeTimestamp>
-                            <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                            <tagName>tag-name</tagName>
-                            <mqttUserProperties>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value1</value>
-                                </mqttUserProperty>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value2</value>
-                                </mqttUserProperty>
-                            </mqttUserProperties>
-                        </adsToMqttMapping>
-                        <adsToMqttMapping>
-                            <mqttTopic>my/topic/2</mqttTopic>
-                            <mqttQos>1</mqttQos>
-                            <includeTagNames>true</includeTagNames>
-                            <includeTimestamp>true</includeTimestamp>
-                            <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
-                            <tagName>tag-name</tagName>
-                            <mqttUserProperties>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value1</value>
-                                </mqttUserProperty>
-                                <mqttUserProperty>
-                                    <name>name</name>
-                                    <value>value2</value>
-                                </mqttUserProperty>
-                            </mqttUserProperties>
-                        </adsToMqttMapping>
-                    </adsToMqttMappings>
                 </adsToMqtt>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <maxQos>1</maxQos>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <tagName>tag-name</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </northboundMapping>
+                <northboundMapping>
+                    <topic>my/topic/2</topic>
+                    <maxQos>1</maxQos>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <tagName>tag-name</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag-name</name>
@@ -80,6 +81,6 @@
                     </definition>
                 </tag>
             </tags>
-        </ads>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

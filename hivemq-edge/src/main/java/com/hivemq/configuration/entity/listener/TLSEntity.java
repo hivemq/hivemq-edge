@@ -36,10 +36,10 @@ import java.util.List;
 public class TLSEntity {
 
     @XmlElementRef
-    private @NotNull KeystoreEntity keystoreEntity = new KeystoreEntity();
+    private @Nullable KeystoreEntity keystoreEntity = null;
 
     @XmlElementRef(required = false)
-    private @NotNull TruststoreEntity truststoreEntity = new TruststoreEntity();
+    private @Nullable TruststoreEntity truststoreEntity = null;
 
     @XmlElement(name = "handshake-timeout", defaultValue = "10000")
     private @NotNull Integer handshakeTimeout = 10000;
@@ -58,11 +58,11 @@ public class TLSEntity {
     @XmlElement(name = "prefer-server-cipher-suites")
     private @Nullable Boolean preferServerCipherSuites = null;
 
-    public @NotNull KeystoreEntity getKeystoreEntity() {
+    public @Nullable KeystoreEntity getKeystoreEntity() {
         return keystoreEntity;
     }
 
-    public @NotNull TruststoreEntity getTruststoreEntity() {
+    public @Nullable TruststoreEntity getTruststoreEntity() {
         return truststoreEntity;
     }
 

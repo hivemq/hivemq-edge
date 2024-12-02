@@ -22,6 +22,7 @@ import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -31,10 +32,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
@@ -42,12 +40,12 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
     @Test
     public void test_sync_uns() throws IOException {
 
-        File tempFile = loadTestConfigFile();
+        final File tempFile = loadTestConfigFile();
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        ISA95 isa95 = new ISA95.Builder().withArea("testingArea")
+        final ISA95 isa95 = new ISA95.Builder().withArea("testingArea")
                 .withSite("testingSite")
                 .withEnterprise("testingEnterprise")
                 .withProductionLine("testProductionLine")
@@ -62,73 +60,53 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
         //-- Check the writes have been written to disk
         final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
+        final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
         assertISA95Equals(isa95, updatedHiveMQConfigEntity.getUns().getIsa95());
     }
 
     @Test
     public void test_sync_adapters() throws IOException {
 
-        File tempFile = loadTestConfigFile();
+        final File tempFile = loadTestConfigFile();
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        Map<String, Object> config = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-
-        Assert.assertEquals("Adapter type count should match", 2, config.size());
-        Assert.assertEquals("Modbus Adapter type value should match",
-                ArrayList.class,
-                config.get("modbus-adapter").getClass());
-        Assert.assertEquals("OPC-UA Adapter type value should match",
-                HashMap.class,
-                config.get("opc-ua-adapter").getClass());
-        Assert.assertEquals("Modbus instance count should match", 2, ((List) config.get("modbus-adapter")).size());
-        //-- Check the writes have been proxied onto the configuration model
+        final List<ProtocolAdapterEntity> entities =
+                configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        Assert.assertEquals("Adapter type count should match", 3, entities.size());
 
         //-- Remove first adapter
-        ((List<?>) config.get("modbus-adapter")).remove(0);
+        entities.remove(1);
 
         //-- Ensure the original config is NOT YET UPDATED
-        Assert.assertEquals("Modbus instance count should NOT be reflected in configuration",
+        Assert.assertEquals("instance count should NOT be reflected in configuration",
+                3,
+                hiveMQConfigEntity.getProtocolAdapterConfig().size());
+
+        configurationService.protocolAdapterConfigurationService().setAllConfigs(entities);
+
+        Assert.assertEquals("instance count be reflected in configuration",
                 2,
-                ((List) hiveMQConfigEntity.getProtocolAdapterConfig().get("modbus-adapter")).size());
-
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(config);
-
-        Assert.assertEquals("Modbus instance count be reflected in configuration",
-                1,
-                ((List) hiveMQConfigEntity.getProtocolAdapterConfig().get("modbus-adapter")).size());
-
-        //-- Change the value of an adapter
-        ((Map) config.get("opc-ua-adapter")).put("uri", "new-uri-in-here");
-
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(config);
-
-        //-- Check the writes have been written to disk
-        final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
-        Assert.assertEquals("OPC-UA URI value should be updated",
-                "new-uri-in-here",
-                ((Map) updatedHiveMQConfigEntity.getProtocolAdapterConfig().get("opc-ua-adapter")).get("uri"));
+                hiveMQConfigEntity.getProtocolAdapterConfig().size());
     }
 
     @Test
     public void test_sync_bridge() throws IOException {
 
-        File tempFile = loadTestConfigFile();
+        final File tempFile = loadTestConfigFile();
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        ImmutableList.Builder<RemoteSubscription> remoteSubscriptionBuilder = ImmutableList.builder();
+        final ImmutableList.Builder<RemoteSubscription> remoteSubscriptionBuilder = ImmutableList.builder();
         remoteSubscriptionBuilder.add(new RemoteSubscription(List.of("filter1", "filter2"),
                 "destination/filter",
                 List.of(CustomUserProperty.of("someKey", "someValue")),
                 true,
                 2));
 
-        ImmutableList.Builder<LocalSubscription> localSubscriptionBuilder = ImmutableList.builder();
+        final ImmutableList.Builder<LocalSubscription> localSubscriptionBuilder = ImmutableList.builder();
         localSubscriptionBuilder.add(new LocalSubscription(List.of("filter1", "filter2"),
                 "destination/filter",
                 List.of("excludes1", "excludes2"),
@@ -137,7 +115,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 2,
                 1000L));
 
-        MqttBridge newBridge = new MqttBridge.Builder().withId("MyNewBridge")
+        final MqttBridge newBridge = new MqttBridge.Builder().withId("MyNewBridge")
                 .withClientId("MyNewBridgeClientId")
                 .withHost("MyNewBridgeHost")
                 .withKeepAlive(120)
@@ -172,7 +150,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
         //-- Check the writes have been written to disk
         final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
-        HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
+        final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
 
         //-- Check the writes persist an XML  re-read
         Assert.assertEquals("New bridge count should be 2", 2, updatedHiveMQConfigEntity.getBridgeConfig().size());

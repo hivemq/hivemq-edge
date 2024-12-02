@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
@@ -41,7 +41,8 @@ import java.util.UUID;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig>, LegacyConfigConversion {
+public class HttpProtocolAdapterFactory
+        implements ProtocolAdapterFactory<HttpSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
@@ -59,44 +60,46 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<HttpSpecificAdapterConfig> input) {
         return new HttpProtocolAdapter(adapterInformation, input);
     }
 
     @Override
     public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
         // create tag first
         final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
         ArrayList<HttpTag> tags = new ArrayList<>();
-        tags.add(new HttpTag(newTagName, "not set", new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
+        tags.add(new HttpTag(newTagName,
+                "not set",
+                new HttpTagDefinition(legacyHttpAdapterConfig.getUrl(),
+                        legacyHttpAdapterConfig.getHttpRequestMethod(),
+                        legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                        legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
+                        legacyHttpAdapterConfig.getHttpRequestBody(),
+                        legacyHttpAdapterConfig.getHttpHeaders())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
                 legacyHttpAdapterConfig.getQos(),
                 List.of(),
-                false,
-                legacyHttpAdapterConfig.getHttpRequestMethod(),
-                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
-                legacyHttpAdapterConfig.getHttpRequestBody(),
-                legacyHttpAdapterConfig.getHttpHeaders());
+                false);
 
         final HttpToMqttConfig httpToMqttConfig =
                 new HttpToMqttConfig(legacyHttpAdapterConfig.getPollingIntervalMillis(),
                         legacyHttpAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         legacyHttpAdapterConfig.isAssertResponseIsJson(),
-                        legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
-                        List.of(httpToMqttMapping));
+                        legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly());
 
-        return new ConfigTagsTuple(new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
-                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                httpToMqttConfig,
-                legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
-                tags);
+        return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
+                new HttpSpecificAdapterConfig(
+                        legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                        httpToMqttConfig,
+                        legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
+                tags,
+                List.of(httpToMqttMapping));
     }
 }

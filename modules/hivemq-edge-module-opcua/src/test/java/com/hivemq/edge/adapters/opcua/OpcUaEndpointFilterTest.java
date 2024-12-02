@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
-import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
@@ -50,8 +50,7 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSet_thenPickCorrectEndpoint() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id",
-                "opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 new Tls(true, new Keystore("path", null, null), null),
@@ -59,7 +58,7 @@ class OpcUaEndpointFilterTest {
                 null);
 
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
@@ -69,18 +68,11 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig(
-                        "id",
-                        "opc.tcp://127.0.0.1:49320",
-                        false,
-                        null,
-                        null,
-                        null,
-                        null);
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
 
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
@@ -90,16 +82,9 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig(
-                        "id",
-                        "opc.tcp://127.0.0.1:49320",
-                        false,
-                        null,
-                        null,
-                        null,
-                        null);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, config);
 
         final Optional<EndpointDescription> result =
                 opcUaEndpointFilter.apply(convertToEndpointDescription(convertToUri(List.of(NONE))));
@@ -109,15 +94,9 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig("id",
-                        "opc.tcp://127.0.0.1:49320",
-                        false,
-                        null,
-                        null,
-                        null,
-                        null);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(convertToUri(DEFAULT), config);
+        final OpcUaSpecificAdapterConfig config =
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(DEFAULT), config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 

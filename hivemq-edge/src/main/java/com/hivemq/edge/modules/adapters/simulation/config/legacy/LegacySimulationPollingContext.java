@@ -27,7 +27,7 @@ import java.util.List;
 public class LegacySimulationPollingContext {
 
     @JsonProperty(value = "destination", required = true)
-    protected @Nullable String destination;
+    protected @NotNull String destination;
 
     @JsonProperty(value = "qos", required = true)
     protected int qos = 0;
@@ -44,7 +44,7 @@ public class LegacySimulationPollingContext {
     @JsonProperty(value = "userProperties")
     private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
 
-    public @Nullable String getMqttTopic() {
+    public @NotNull String getMqttTopic() {
         return destination;
     }
 

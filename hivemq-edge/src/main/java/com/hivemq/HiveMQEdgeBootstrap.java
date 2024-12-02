@@ -30,6 +30,7 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
@@ -113,7 +114,11 @@ public class HiveMQEdgeBootstrap {
         log.trace("Cleaning up temporary folders");
         deleteTmpFolder(systemInformation.getDataFolder());
 
+        // it is not null in case of integration tests
+        // it is null when edge is started "usually"
         if (configService == null) {
+            final ConfigurationMigrator migrator = new ConfigurationMigrator(systemInformation, moduleLoader);
+            migrator.migrate();
             log.trace("Initializing configuration");
             configService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }

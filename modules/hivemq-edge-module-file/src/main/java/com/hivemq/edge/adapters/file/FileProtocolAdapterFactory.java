@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
+import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.config.legacy.LegacyFileAdapterConfig;
@@ -39,7 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAdapterConfig>, LegacyConfigConversion {
+public class FileProtocolAdapterFactory
+        implements ProtocolAdapterFactory<FileSpecificAdapterConfig>, LegacyConfigConversion {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
@@ -57,8 +58,8 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     @Override
     public @NotNull ProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<FileAdapterConfig> input) {
-        return new FilePollingProtocolAdapter(adapterInformation, input);
+            @NotNull final ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
+        return new FilePollingProtocolAdapter(input.getAdapterId(), adapterInformation, input);
     }
 
     @Override
@@ -73,17 +74,16 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
         for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
             // create tag first
             final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID();
-            tags.add(new FileTag(newTagName, "not set",
+            tags.add(new FileTag(newTagName,
+                    "not set",
                     new FileTagDefinition(context.getFilePath(), context.getContentType())));
-            final FileToMqttMapping fileToMqttMapping =
-                    new FileToMqttMapping(context.getDestinationMqttTopic(),
-                            //TODO why nullable??
-                            context.getQos(),
-                            context.getMessageHandlingOptions(),
-                            context.getIncludeTimestamp(),
-                            context.getIncludeTagNames(),
-                            context.getUserProperties(),
-                            newTagName);
+            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
+                    context.getQos(),
+                    context.getMessageHandlingOptions(),
+                    context.getIncludeTimestamp(),
+                    context.getIncludeTagNames(),
+                    context.getUserProperties(),
+                    newTagName);
             fileToMqttMappings.add(fileToMqttMapping);
         }
 
@@ -92,6 +92,9 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         fileToMqttMappings);
 
-        return new ConfigTagsTuple(new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig), tags);
+        return new ConfigTagsTuple(legacyFileAdapterConfig.getId(),
+                new FileSpecificAdapterConfig(fileToMqttConfig),
+                tags,
+                fileToMqttMappings);
     }
 }

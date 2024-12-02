@@ -11,13 +11,9 @@ import java.util.Objects;
 
 public class MqttToHttpConfig {
 
-    @JsonProperty("mqttToHttpMappings")
-    @ModuleConfigField(title = "MQTT to HTTP Mappings", description = "Map your HTTP data to MQTT Topics")
     private final @NotNull List<MqttToHttpMapping> mappings;
 
-    @JsonCreator
-    public MqttToHttpConfig(
-            @JsonProperty(value = "mqttToHttpMappings") final @Nullable List<MqttToHttpMapping> mappings) {
+    public MqttToHttpConfig(final @Nullable List<MqttToHttpMapping> mappings) {
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
     }
 

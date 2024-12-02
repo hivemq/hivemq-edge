@@ -18,27 +18,18 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <http>
+        <protocol-adapter>
+            <adapterId>my-protocol-adapter</adapterId>
+            <protocolId>http</protocolId>
             <config>
-                <id>my-protocol-adapter</id>
-                <httpToMqtt>
-                    <httpToMqttMappings>
-                        <httpToMqttMapping>
-                            <tagName>tag1</tagName>
-                            <mqttTopic>my/destination</mqttTopic>
-                            <mqttQos>1</mqttQos>
-                        </httpToMqttMapping>
-                    </httpToMqttMappings>
-                </httpToMqtt>
-                <mqttToHttp>
-                    <mqttToHttpMappings>
-                        <mqttToHttpMapping>
-                            <tagName>tag1</tagName>
-                            <mqttTopicFilter>my/#</mqttTopicFilter>
-                        </mqttToHttpMapping>
-                    </mqttToHttpMappings>
-                </mqttToHttp>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>tag1</tagName>
+                    <topic>my/destination</topic>
+                    <maxQos>1</maxQos>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>wrong-tag1</name>
@@ -48,6 +39,6 @@
                     </definition>
                 </tag>
             </tags>
-        </http>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

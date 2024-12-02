@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -28,14 +27,14 @@ import java.util.concurrent.CompletableFuture;
 public interface InternalProtocolAdapterWritingService extends ProtocolAdapterWritingService {
 
 
-
     @NotNull
     CompletableFuture<Void> startWriting(
-            @NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
-            @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService, @NotNull List<FieldMappings> fieldMappings);
+            @NotNull WritingProtocolAdapter writingProtocolAdapter,
+            @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull List<InternalWritingContext> writingContexts);
 
     @NotNull
-    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
+    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter writingProtocolAdapter, final @NotNull List<InternalWritingContext> writingContexts);
 
     void addWritingChangedCallback(@NotNull WritingChangedCallback callback);
 

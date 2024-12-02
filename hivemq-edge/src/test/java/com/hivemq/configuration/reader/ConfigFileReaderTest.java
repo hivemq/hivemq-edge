@@ -17,7 +17,10 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.io.Files;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,10 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("NullabilityAnnotations")
@@ -116,132 +117,6 @@ public class ConfigFileReaderTest {
         assertDoesNotThrow(configFileReader::applyConfig);
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void whenArbitraryField_thenMapCorrectlyFilled() throws Exception {
-        final URL resource = getClass().getResource("/arbitrary-properties-config1.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final ConfigurationFile configurationFile = new ConfigurationFile(path);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
-        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
-
-        final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
-
-        assertNotNull(config);
-        assertEquals(5, config.keySet().size());
-
-        assertThat((Map<String, Object>) config.get("my-protocol-adapter1")).satisfies(map -> {
-            assertThat(map.get("numval")).isEqualTo("3");
-            assertThat(map.get("textval")).isEqualTo("thisisatext");
-            assertThat(map.get("listvals")).isEqualTo(List.of("entry1", "entry2"));
-        });
-
-        assertThat((Map<String, Object>) config.get("my-protocol-adapter2")).satisfies(map -> {
-            assertThat(map.get("boolval")).isEqualTo("true");
-            assertThat(map.get("listvals")).isEqualTo(List.of("entry3"));
-        });
-
-        assertThat((Map<String, Object>) config.get("my-protocol-adapter3")).satisfies(map -> {
-            assertThat((List<Map<String, Object>>) map.get("persons")).satisfiesExactly(person -> {
-                assertThat(person.get("name")).isEqualTo("john");
-                assertThat(person.get("lastName")).isEqualTo("doe");
-            }, person -> {
-                assertThat(person.get("name")).isEqualTo("boris");
-            });
-        });
-
-        assertThat((Map<String, Object>) config.get("my-protocol-adapter4")).satisfies(map -> {
-            assertThat(map.get("boolval")).isEqualTo("false");
-            assertThat((List<Map<String, Object>>) map.get("cats")).satisfiesExactly(cat -> {
-                assertThat(cat.get("name")).isEqualTo("leo");
-            }, cat -> {
-                assertThat(cat.get("name")).isEqualTo("karli");
-            });
-        });
-
-        assertThat((Map<String, Object>) config.get("my-protocol-adapter5")).satisfies(map -> {
-            assertThat((List<Map<String, Object>>) map.get("cats")).satisfiesExactly(cat -> {
-                assertThat(cat.get("name")).isEqualTo("emma");
-            });
-        });
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void whenUserProperties_thenMapCorrectlyFilled() throws Exception {
-        final File tempFile = new File(tempDir, "conf.xml");
-        FileUtils.writeStringToFile(tempFile,
-                "<hivemq>\n" +
-                        "    <protocol-adapters>\n" +
-                        "        <test-node>\n" +
-                        "            <mqttUserProperties>\n" +
-                        "                <mqttUserProperty>\n" +
-                        "                    <name>my-name</name>\n" +
-                        "                    <value>my-value1</value>\n" +
-                        "                </mqttUserProperty>\n" +
-                        "                <mqttUserProperty>\n" +
-                        "                    <name>my-name</name>\n" +
-                        "                    <value>my-value2</value>\n" +
-                        "                </mqttUserProperty>\n" +
-                        "            </mqttUserProperties>" +
-                        "        </test-node>\n" +
-                        "    </protocol-adapters>\n" +
-                        "</hivemq>",
-                UTF_8);
-
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
-        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
-
-        final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
-
-        assertNotNull(config);
-        System.out.println(config);
-        assertEquals(1, config.keySet().size());
-
-        final List<Map<String, String>> userProperties1 =
-                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("mqttUserProperties");
-        assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
-            assertThat(userProperty1.get("name")).isEqualTo("my-name");
-            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
-        }, userProperty2 -> {
-            assertThat(userProperty2.get("name")).isEqualTo("my-name");
-            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
-        });
-
-        configFileReader.writeConfig();
-        final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
-        assertThat(afterReload).contains("mqttUserProperty");
-    }
 
     /**
      * Checks the downwards compatability for 'userPropertie'.
@@ -253,18 +128,26 @@ public class ConfigFileReaderTest {
         FileUtils.writeStringToFile(tempFile,
                 "<hivemq>\n" +
                         "    <protocol-adapters>\n" +
-                        "        <modbus>\n" +
-                        "            <mqttUserProperties>\n" +
-                        "                <mqttUserPropertie>\n" +
-                        "                    <name>my-name</name>\n" +
-                        "                    <value>my-value1</value>\n" +
-                        "                </mqttUserPropertie>\n" +
-                        "                <mqttUserPropertie>\n" +
-                        "                    <name>my-name</name>\n" +
-                        "                    <value>my-value2</value>\n" +
-                        "                </mqttUserPropertie>\n" +
-                        "            </mqttUserProperties>" +
-                        "        </modbus>\n" +
+                        "        <protocol-adapter>\n" +
+                        "            <adapterId>test</adapterId>" +
+                        "            <protocolId>http</protocolId>" +
+                        "            <northboundMappings>" +
+                        "                <northboundMapping>" +
+                        "                   <topic>test</topic>\n" +
+                        "                   <tagName>test</tagName>\n" +
+                        "                   <mqttUserProperties>\n" +
+                        "                   <mqttUserProperty>\n" +
+                        "                        <name>my-name</name>\n" +
+                        "                       <value>my-value1</value>\n" +
+                        "                   </mqttUserProperty>\n" +
+                        "                   <mqttUserProperty>\n" +
+                        "                        <name>my-name</name>\n" +
+                        "                       <value>my-value2</value>\n" +
+                        "                   </mqttUserProperty>\n" +
+                        "                   </mqttUserProperties>" +
+                        "                </northboundMapping>" +
+                        "            </northboundMappings>" +
+                        "        </protocol-adapter>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",
                 UTF_8);
@@ -287,36 +170,30 @@ public class ConfigFileReaderTest {
                 mock(InternalConfigurator.class));
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
-        final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
+        final @NotNull List<ProtocolAdapterEntity> config = hiveMQConfigEntity.getProtocolAdapterConfig();
 
         assertNotNull(config);
         System.out.println(config);
-        assertEquals(1, config.keySet().size());
+        assertEquals(1, config.size());
 
-        final List<Map<String, String>> userProperties1 =
-                (List<Map<String, String>>) ((Map<String, Object>) config.get("modbus")).get("mqttUserProperties");
-        assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
-            assertThat(userProperty1.get("name")).isEqualTo("my-name");
-            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
-        }, userProperty2 -> {
-            assertThat(userProperty2.get("name")).isEqualTo("my-name");
-            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
-        });
+        final ProtocolAdapterEntity protocolAdapterEntity = config.get(0);
+
+        final List<MqttUserPropertyEntity> userProperties =
+                protocolAdapterEntity.getNorthboundMappingEntities().get(0).getUserProperties();
+        assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
+        assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
 
         configFileReader.writeConfig();
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
         assertThat(afterReload).contains("mqttUserProperty");
-        final Map<String, Object> config2 = hiveMQConfigEntity.getProtocolAdapterConfig();
-        assertEquals(1, config2.keySet().size());
+        final @NotNull List<ProtocolAdapterEntity> config2 = hiveMQConfigEntity.getProtocolAdapterConfig();
+        assertEquals(1, config2.size());
         configFileReader.applyConfig();
-        final List<Map<String, String>> userProperties2 =
-                (List<Map<String, String>>) ((Map<String, Object>) config2.get("modbus")).get("mqttUserProperties");
-        assertThat(userProperties2).satisfiesExactly(userProperty1 -> {
-            assertThat(userProperty1.get("name")).isEqualTo("my-name");
-            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
-        }, userProperty2 -> {
-            assertThat(userProperty2.get("name")).isEqualTo("my-name");
-            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
-        });
+
+        final ProtocolAdapterEntity protocolAdapterEntityAfterReload = config.get(0);
+        final List<MqttUserPropertyEntity> userPropertiesAfterReload =
+                protocolAdapterEntityAfterReload.getNorthboundMappingEntities().get(0).getUserProperties();
+        assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
+        assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
     }
 }

@@ -17,24 +17,23 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <ads>
+        <protocol-adapter>
+            <adapterId>my-ads-protocol-adapter</adapterId>
+            <protocolId>ads</protocolId>
             <config>
-                <id>my-ads-protocol-adapter</id>
-                <port>1234</port>
                 <host>my.ads-server.com</host>
+                <port>1234</port>
                 <targetAmsPort>123</targetAmsPort>
                 <sourceAmsPort>124</sourceAmsPort>
                 <targetAmsNetId>1.2.3.4.5.6</targetAmsNetId>
                 <sourceAmsNetId>1.2.3.4.5.7</sourceAmsNetId>
-                <adsToMqtt>
-                    <adsToMqttMappings>
-                        <adsToMqttMapping>
-                            <mqttTopic>my/topic</mqttTopic>
-                            <tagName>tag-name</tagName>
-                        </adsToMqttMapping>
-                    </adsToMqttMappings>
-                </adsToMqtt>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <tagName>tag-name</tagName>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>wrong-tag-name</name>
@@ -45,6 +44,6 @@
                     </definition>
                 </tag>
             </tags>
-        </ads>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>

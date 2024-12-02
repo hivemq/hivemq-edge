@@ -19,10 +19,10 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
-import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.BidirectionalHttpSpecificAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -125,12 +125,12 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
-        return HttpAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+        return HttpSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
-        return BidirectionalHttpAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+        return BidirectionalHttpSpecificAdapterConfig.class;
     }
 }

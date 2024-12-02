@@ -3364,7 +3364,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdapterConfigModel'
+              $ref: '#/components/schemas/AdapterConfig'
         description: The new adapter.
         required: true
       responses:
@@ -3548,10 +3548,10 @@ paths:
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/fieldmappings:
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings:
     get:
-      description: Get the field mappings for this adapter.
-      operationId: get-adapter-fieldMappings
+      description: Get the northbound mappings of the adapter.
+      operationId: get-adapter-northboundMappings
       parameters:
       - description: The adapter id.
         in: path
@@ -3563,61 +3563,17 @@ paths:
         "200":
           content:
             application/json:
-              examples:
-                field mappings example:
-                  description: An example for field mappings in opc ua
-                  summary: 'Example for field mappings '
               schema:
-                $ref: '#/components/schemas/FieldMappingsListModel'
+                $ref: '#/components/schemas/NorthboundMappingList'
           description: Success
-      summary: Get the field mappings for this adapter.
-      tags:
-      - Protocol Adapters
-    post:
-      description: Add new field mappings to the specified adapter.
-      operationId: add-adapter-fieldMappings
-      parameters:
-      - description: The adapter id.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FieldMappingsModel'
-        description: The field mappings for incoming and outgoing data
-        required: true
-      responses:
-        "200":
-          description: Success
-        "403":
-          content:
-            application/json:
-              examples:
-                already present example:
-                  description: An example response in case an tag is already present
-                    for this tagId.
-                  summary: An example response in case an tag is already present for
-                    this tagId.
-                  value:
-                    errors:
-                    - title: The resource already exists
-                      detail: The tag 'tag' cannot be created since another item already
-                        exists with the same id.
-              schema:
-                $ref: '#/components/schemas/Errors'
-          description: Already Present
-      summary: Add new field mappings to the specified adapter
+      summary: Get the mappings for northbound messages.
       tags:
       - Protocol Adapters
     put:
-      description: Update all field mappings of an adapter.
-      operationId: update-adapter-fieldMappings
+      description: Update all northbound mappings of an adapter.
+      operationId: update-adapter-northboundMappings
       parameters:
-      - description: The id of the adapter whose domain tags will be updated.
+      - description: The id of the adapter whose northbound mappings will be updated.
         in: path
         name: adapterId
         required: true
@@ -3627,23 +3583,65 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FieldMappingsListModel'
+              $ref: '#/components/schemas/NorthboundMappingList'
       responses:
         "200":
           description: Success
         "403":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no field mappings are present
-                    for this tagId.
-                  summary: An example response in case no field mappings is present
-                    for this tagId.
               schema:
                 $ref: '#/components/schemas/Errors'
           description: Not Found
-      summary: Update the field mappings of an adapter.
+      summary: Update the from mappings of an adapter.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings:
+    get:
+      description: Get the southbound mappings.
+      operationId: get-adapter-southboundMappings
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SouthboundMappingList'
+          description: Success
+      summary: Get the southbound mappings.
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all southbound mappings of an adapter.
+      operationId: update-adapter-southboundMappings
+      parameters:
+      - description: The id of the adapter whose southbound mappings will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SouthboundMappingList'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the to southbound mappings of an adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
@@ -3819,7 +3817,7 @@ paths:
       summary: Update the domain tag of an adapter.
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}:
     delete:
       description: Delete the specified domain tag on the given adapter.
       operationId: delete-adapter-domainTags
@@ -3832,10 +3830,11 @@ paths:
           type: string
       - description: The domain tag Id.
         in: path
-        name: tagId
+        name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           description: Success
@@ -3852,12 +3851,13 @@ paths:
         required: true
         schema:
           type: string
-      - description: The id of the domain tag that will be changed.
+      - description: The name (urlencoded) of the domain tag that will be changed.
         in: path
-        name: tagId
+        name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       requestBody:
         content:
           application/json:
@@ -3932,6 +3932,27 @@ paths:
       summary: Get the status of all the adapters in the system.
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/tag-schemas/{protocolId}:
+    get:
+      description: Obtain the tag schema for a specific portocol adapter.
+      operationId: getTagSchema
+      parameters:
+      - description: The protocol id.
+        in: path
+        name: protocolId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagSchema'
+          description: Success
+      summary: Obtain the JSON schema for a tag for a specific protocol adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/tags:
     get:
       description: Get the list of all domain tags created in this Edge instance
@@ -3963,12 +3984,13 @@ paths:
       description: Get a domain tag created in this Edge instance
       operationId: get-domain-tag
       parameters:
-      - description: The tag name (base64 encoded).
+      - description: The tag name (urlencoded).
         in: path
         name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
@@ -3989,27 +4011,6 @@ paths:
                 $ref: '#/components/schemas/DomainTag'
           description: Success
       summary: Get the domain tag with the given name in this Edge instance
-      tags:
-      - Protocol Adapters
-  /api/v1/management/protocol-adapters/tagschemas/{protocolId}:
-    get:
-      description: Obtain the tag schema for a specific portocol adapter.
-      operationId: getTagSchema
-      parameters:
-      - description: The protocol id.
-        in: path
-        name: protocolId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TagSchema'
-          description: Success
-      summary: Obtain the JSON schema for a tag for a specific protocol adapter.
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/types:
@@ -4083,13 +4084,14 @@ paths:
         required: true
         schema:
           type: string
-      - description: The tag name (base64 encoded) for which the Json Schema for writing
+      - description: The tag name (urlencoded) for which the Json Schema for writing
           to a PLC gets created.
         in: path
         name: tagName
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
@@ -4183,6 +4185,12 @@ paths:
                 An example for the topic filter list:
                   description: An example for the topic filter list
                   summary: An example for the topic filter list
+                  value:
+                    items:
+                    - topicFilter: topic1
+                      description: filter1
+                    - topicFilter: topic2
+                      description: filter2
               schema:
                 $ref: '#/components/schemas/TopicFilterList'
           description: Success
@@ -4438,11 +4446,21 @@ components:
           description: The adapter type associated with this instance
       required:
       - id
-    AdapterConfigModel:
+    AdapterConfig:
       type: object
       properties:
         config:
           $ref: '#/components/schemas/Adapter'
+        northboundMappings:
+          type: array
+          description: The northbound mappings for this adapter
+          items:
+            $ref: '#/components/schemas/NorthboundMapping'
+        southboundMappings:
+          type: array
+          description: The southbound mappings for this adapter
+          items:
+            $ref: '#/components/schemas/SouthboundMapping'
         tags:
           type: array
           description: The tags defined for this adapter
@@ -4900,13 +4918,10 @@ components:
           type: string
           description: The protocol id of the protocol for which this tag was created.
         tagDefinition:
-          type: object
-          additionalProperties:
-            type: object
-            description: A user created description for this tag.
-          description: A user created description for this tag.
+          $ref: '#/components/schemas/JsonNode'
         tagName:
           type: string
+          format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
       required:
       - protocolId
@@ -5038,53 +5053,21 @@ components:
             $ref: '#/components/schemas/Extension'
       required:
       - items
-    FieldMappingMetaDataModel:
+    FieldMapping:
       type: object
+      description: Defines how incoming data should be transformed before being sent
+        out.
       properties:
-        destination:
-          $ref: '#/components/schemas/JsonNode'
-        source:
-          $ref: '#/components/schemas/JsonNode'
-      required:
-      - destination
-      - source
-    FieldMappingModel:
-      type: object
-      properties:
-        destination:
-          type: string
-          description: The field name in the outgoing data
-        source:
-          type: string
-          description: The field name in the incoming data.
-        transformation:
-          $ref: '#/components/schemas/TransformationModel'
-    FieldMappingsListModel:
-      type: object
-      properties:
-        items:
+        instructions:
           type: array
-          description: List of result items that are returned by this endpoint
+          description: List of instructions to be applied to incoming data
           items:
-            $ref: '#/components/schemas/FieldMappingsModel'
-      required:
-      - items
-    FieldMappingsModel:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        fieldMapping:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldMappingModel'
+            $ref: '#/components/schemas/Instruction'
         metadata:
-          $ref: '#/components/schemas/FieldMappingMetaDataModel'
-        tag:
-          type: string
-        topicFilter:
-          type: string
-          format: mqtt-topic-filter
-          description: The topic filter according to the MQTT specification.
+          $ref: '#/components/schemas/Metadata'
+      required:
+      - instructions
+      - metadata
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5216,6 +5199,20 @@ components:
           description: The workCell
           nullable: true
           pattern: "^[a-zA-Z0-9 -_]*$"
+    Instruction:
+      type: object
+      description: List of instructions to be applied to incoming data
+      properties:
+        destination:
+          type: string
+          description: The field in the output object where the data will be written
+            to
+        source:
+          type: string
+          description: The field in the input object where the data will be read from
+      required:
+      - destination
+      - source
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5359,6 +5356,17 @@ components:
       - destination
       - filters
       - maxQoS
+    Metadata:
+      type: object
+      description: Metadata for the whole mapping
+      properties:
+        destination:
+          $ref: '#/components/schemas/JsonNode'
+        source:
+          $ref: '#/components/schemas/JsonNode'
+      required:
+      - destination
+      - source
     Metric:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5423,6 +5431,71 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Module'
+      required:
+      - items
+    MqttUserProperty:
+      type: object
+      description: User properties to be added to each outgoing mqtt message.
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+      required:
+      - name
+      - value
+    NorthboundMapping:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        includeTagNames:
+          type: boolean
+          description: Should tag names be included when sent out.
+        includeTimestamp:
+          type: boolean
+          description: Should the timestamp be included when sent out.
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        messageExpiryInterval:
+          type: integer
+          format: int64
+          description: The message expiry interval.
+        messageHandlingOptions:
+          type: string
+          description: How collected tags should or shouldnÖT be aggregated.
+          enum:
+          - MQTTMessagePerTag
+          - MQTTMessagePerSubscription
+        tagName:
+          type: string
+          format: mqtt-tag
+          description: The tag for which values hould be collected and sent out.
+        topic:
+          type: string
+          description: The target mqtt topic where received tags should be sent to.
+        userProperties:
+          type: array
+          description: User properties to be added to each outgoing mqtt message.
+          items:
+            $ref: '#/components/schemas/MqttUserProperty'
+      required:
+      - includeTagNames
+      - includeTimestamp
+      - maxQoS
+      - messageExpiryInterval
+      - messageHandlingOptions
+      - tagName
+      - topic
+    NorthboundMappingList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/NorthboundMapping'
       required:
       - items
     Notification:
@@ -5733,6 +5806,37 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
+    SouthboundMapping:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        fieldMapping:
+          $ref: '#/components/schemas/FieldMapping'
+        maxQoS:
+          type: integer
+          format: int32
+          description: The maximum MQTT-QoS for the outgoing messages.
+        tagName:
+          type: string
+          format: mqtt-tag
+          description: The tag for which values hould be collected and sent out.
+        topicFilter:
+          type: string
+          description: The filter defining what topics we will receive messages from.
+      required:
+      - maxQoS
+      - tagName
+      - topicFilter
+    SouthboundMappingList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/SouthboundMapping'
+      required:
+      - items
     Status:
       type: object
       description: Information associated with the runtime of this adapter
@@ -5893,9 +5997,6 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
-    TransformationModel:
-      type: object
-      description: The kind of transformation that is performed on the data
     TypeIdentifier:
       type: object
       description: The unique id of the event object

@@ -17,7 +17,6 @@ package com.hivemq.api.resources.examples;
 
 /**
  *
- * //TODO pad this out with real examples
  * @author Simon L Johnson
  */
 public interface ApiBodyExamples {

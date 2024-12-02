@@ -17,18 +17,35 @@
 -->
 <hivemq>
     <protocol-adapters>
-        <opcua>
+        <protocol-adapter>
+            <adapterId>simulation-server-2</adapterId>
+            <protocolId>opcua</protocolId>
             <config>
-                <id>simulation-server-2</id>
                 <opcuaToMqtt>
-                    <opcuaToMqttMappings>
-                        <opcuaToMqttMapping>
-                            <tagName>ns=1;i=1004</tagName>
-                            <mqttTopic>test/blubb/#</mqttTopic>
-                        </opcuaToMqttMapping>
-                    </opcuaToMqttMappings>
                 </opcuaToMqtt>
             </config>
-        </opcua>
+            <northboundMappings>
+                <northboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topic>test/blubb</topic>
+                </northboundMapping>
+            </northboundMappings>
+            <southboundMappings>
+                <southboundMapping>
+                    <tagName>ns=1;i=1004</tagName>
+                    <topicFilter>test/blubb/#</topicFilter>
+                </southboundMapping>
+            </southboundMappings>
+            <tags>
+                <tag>
+                    <name>ns=1;i=1004</name>
+                    <description>description1</description>
+                    <definition>
+                        <node>ns=1;i=1004</node>
+                    </definition>
+                </tag>
+            </tags>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>
+

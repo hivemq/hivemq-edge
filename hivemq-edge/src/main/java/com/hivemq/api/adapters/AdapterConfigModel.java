@@ -18,6 +18,8 @@ package com.hivemq.api.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.adapters.Adapter;
+import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
+import com.hivemq.api.model.mappings.southbound.SouthboundMappingModel;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+@Schema(name = "AdapterConfig")
 public class AdapterConfigModel {
 
     @JsonProperty("config")
@@ -32,18 +35,32 @@ public class AdapterConfigModel {
             description = "The adapter configuration")
     private final @NotNull Adapter adapter;
 
-
     @JsonProperty("tags")
     @Schema(name = "tags",
             description = "The tags defined for this adapter")
     private final @NotNull List<DomainTagModel> domainTagModels;
 
+    @JsonProperty("southboundMappings")
+    @Schema(name = "southboundMappings",
+            description = "The southbound mappings for this adapter")
+    private final @NotNull List<SouthboundMappingModel> southboundMappingModels;
+
+    @JsonProperty("northboundMappings")
+    @Schema(name = "northboundMappings",
+            description = "The northbound mappings for this adapter")
+    private final @NotNull List<NorthboundMappingModel> northboundMappingModels;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AdapterConfigModel(
             @JsonProperty("config") final @NotNull Adapter adapter,
-            @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels) {
+            @JsonProperty("tags") final @NotNull List<DomainTagModel> domainTagModels,
+            @JsonProperty("southboundMappings") final @NotNull List<SouthboundMappingModel> southboundMappingModels,
+            @JsonProperty("northboundMappings") final @NotNull List<NorthboundMappingModel> northboundMappingModels
+    ) {
         this.adapter = adapter;
         this.domainTagModels = domainTagModels;
+        this.southboundMappingModels = Objects.requireNonNullElse(southboundMappingModels, List.of());
+        this.northboundMappingModels = Objects.requireNonNullElse(northboundMappingModels, List.of());
     }
 
     public @NotNull Adapter getAdapter() {
@@ -54,10 +71,12 @@ public class AdapterConfigModel {
         return domainTagModels;
     }
 
-    @Override
-    public String toString() {
-        return "FullAdapter{" + "adapter" +
-                "=" + adapter + ", domainTagModels=" + domainTagModels + '}';
+    public @NotNull List<SouthboundMappingModel> getSouthboundMappingModels() {
+        return southboundMappingModels;
+    }
+
+    public @NotNull List<NorthboundMappingModel> getNorthboundMappingModels() {
+        return northboundMappingModels;
     }
 
     @Override
@@ -65,11 +84,26 @@ public class AdapterConfigModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final AdapterConfigModel that = (AdapterConfigModel) o;
-        return Objects.equals(adapter, that.adapter) && Objects.equals(domainTagModels, that.domainTagModels);
+        return Objects.equals(adapter, that.adapter) &&
+                Objects.equals(domainTagModels, that.domainTagModels) &&
+                Objects.equals(southboundMappingModels, that.southboundMappingModels) &&
+                Objects.equals(northboundMappingModels, that.northboundMappingModels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(adapter, domainTagModels);
+        return Objects.hash(adapter, domainTagModels, southboundMappingModels, northboundMappingModels);
+    }
+
+    @Override
+    public String toString() {
+        return "AdapterConfigModel{" +
+                "adapter=" +
+                adapter +
+                ", domainTagModels=" +
+                domainTagModels +
+                ", southboundMappingModels=" + southboundMappingModels +
+                ", northboundMappingModels=" + northboundMappingModels +
+                '}';
     }
 }

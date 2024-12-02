@@ -16,6 +16,7 @@
 package com.hivemq.configuration.entity.listener;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -31,9 +32,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class TlsTCPListenerEntity extends ListenerEntity {
 
     @XmlElementRef
-    private @NotNull TLSEntity tls = new TLSEntity();
+    private @Nullable TLSEntity tls = null;
 
-    public @NotNull TLSEntity getTls() {
+    public @Nullable TLSEntity getTls() {
         return tls;
     }
 }

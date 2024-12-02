@@ -15,22 +15,25 @@
  */
 package com.hivemq.configuration.service.impl;
 
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ProtocolAdapterConfigurationServiceImpl implements ProtocolAdapterConfigurationService {
 
-    private @NotNull Map<String, Object> allConfigs = Map.of();
+    private volatile @NotNull List<ProtocolAdapterEntity> allConfigs = new ArrayList<>();
 
     @Override
-    public @NotNull Map<String, Object> getAllConfigs() {
+    public @NotNull List<ProtocolAdapterEntity> getAllConfigs() {
         return allConfigs;
     }
 
     @Override
-    public void setAllConfigs(final @NotNull Map<String, Object> allConfigs) {
+    public void setAllConfigs(final @NotNull List<ProtocolAdapterEntity> allConfigs) {
         this.allConfigs = allConfigs;
     }
 }

@@ -1,7 +1,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -12,8 +12,8 @@ public class ModbusMainTest {
         String host = args[0];
         int port = Integer.parseInt(args[1]);
 
-        ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("1", port, host, 5000, null) ;
-        ModbusClient modbusClient = new ModbusClient(modbusAdapterConfig, DataPointImpl::new);
+        ModbusSpecificAdapterConfig modbusAdapterConfig = new ModbusSpecificAdapterConfig(port, host, 5000, null) ;
+        ModbusClient modbusClient = new ModbusClient("1", modbusAdapterConfig, DataPointImpl::new);
 
         modbusClient.connect().get();
 

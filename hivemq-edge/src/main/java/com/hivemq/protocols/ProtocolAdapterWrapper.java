@@ -17,7 +17,7 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -30,31 +30,34 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.persistence.fieldmapping.FieldMappings;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import java.util.List;
 
-public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
+public class ProtocolAdapterWrapper {
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private final @NotNull T adapter;
+    private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull ProtocolAdapterConfig configObject;
-    private final @NotNull List<Tag> tags;
-    private final @NotNull List<FieldMappings> fieldMappings;
+    private final @NotNull ProtocolSpecificAdapterConfig configObject;
+    private final @NotNull List<? extends Tag> tags;
+    private final @NotNull List<SouthboundMapping> southboundMappings;
+    private final @NotNull List<NorthboundMapping> northboundMappings;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull T adapter,
+            final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
-            final @NotNull ProtocolAdapterConfig configObject,
-            final @NotNull List<Tag> tags,
-            final @NotNull List<FieldMappings> fieldMappings) {
+            final @NotNull ProtocolSpecificAdapterConfig configObject,
+            final @NotNull List<? extends Tag> tags,
+            final @NotNull List<SouthboundMapping> southboundMappings,
+            final @NotNull List<NorthboundMapping> northboundMappings) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -62,7 +65,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
         this.tags = tags;
-        this.fieldMappings = fieldMappings;
+        this.southboundMappings = southboundMappings;
+        this.northboundMappings = northboundMappings;
     }
 
     public void start(
@@ -108,16 +112,12 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return adapterInformation;
     }
 
-    public @NotNull ProtocolAdapterConfig getConfigObject() {
+    public @NotNull ProtocolSpecificAdapterConfig getConfigObject() {
         return configObject;
     }
 
-    public @NotNull List<Tag> getTags() {
+    public @NotNull List<? extends Tag> getTags() {
         return tags;
-    }
-
-    public @NotNull List<FieldMappings> getFieldMappings() {
-        return fieldMappings;
     }
 
     public @NotNull Long getTimeOfLastStartAttempt() {
@@ -128,8 +128,16 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
         return adapter.getId();
     }
 
-    public @NotNull T getAdapter() {
+    public @NotNull ProtocolAdapter getAdapter() {
         return adapter;
+    }
+
+    public @NotNull List<NorthboundMapping> getFromEdgeMappings() {
+        return northboundMappings;
+    }
+
+    public @NotNull List<SouthboundMapping> getToEdgeMappings() {
+        return southboundMappings;
     }
 
     public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {
