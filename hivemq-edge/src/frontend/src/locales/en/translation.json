@@ -775,8 +775,8 @@
         },
         "mappings": {
           "common": "Manage mappings of the device",
-          "northbound": "Edit northbound mappings",
-          "southbound": "Edit southbound mappings"
+          "northbound": "Edit Northbound mappings",
+          "southbound": "Edit Southbound mappings"
         },
         "edge": {
           "topicFilter": "Manage topic filters"

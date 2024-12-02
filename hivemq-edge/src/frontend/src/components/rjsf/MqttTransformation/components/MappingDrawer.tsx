@@ -32,7 +32,7 @@ const MappingDrawer: FC<MappingDrawerProps> = ({ adapterId, adapterType, item, o
   return (
     <Drawer isOpen={true} placement="right" size="full" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent aria-label={t('rjsf.MqttTransformationField.tabs.editor')}>
         <DrawerCloseButton />
         <DrawerHeader>{t('rjsf.MqttTransformationField.tabs.editor')}</DrawerHeader>
 
