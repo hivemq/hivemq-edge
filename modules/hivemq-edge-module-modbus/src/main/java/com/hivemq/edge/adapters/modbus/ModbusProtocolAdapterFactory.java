@@ -48,7 +48,7 @@ public class ModbusProtocolAdapterFactory
 
     final boolean writingEnabled;
 
-    public ModbusProtocolAdapterFactory(@NotNull final ProtocolAdapterFactoryInput input) {
+    public ModbusProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
     }
 
@@ -59,8 +59,8 @@ public class ModbusProtocolAdapterFactory
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
         return new ModbusProtocolAdapter(adapterInformation, input);
     }
 

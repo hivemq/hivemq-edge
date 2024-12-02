@@ -36,7 +36,7 @@ public class StartupListenerVerifier {
     private static final Logger log = LoggerFactory.getLogger(StartupListenerVerifier.class);
     private final List<ListenerStartupInformation> startupInformation;
 
-    public StartupListenerVerifier(@NotNull final List<ListenerStartupInformation> startupInformation) {
+    public StartupListenerVerifier(final @NotNull List<ListenerStartupInformation> startupInformation) {
 
         checkNotNull(startupInformation);
         this.startupInformation = startupInformation;

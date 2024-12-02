@@ -45,7 +45,7 @@ public class MqttTcpListener implements Listener {
      * @param bindAddress the bind address
      */
     @Deprecated
-    public MqttTcpListener(final int port, @NotNull final String bindAddress) {
+    public MqttTcpListener(final int port, final @NotNull String bindAddress) {
         this(port, bindAddress, "tcp-listener-" + port, null);
     }
 

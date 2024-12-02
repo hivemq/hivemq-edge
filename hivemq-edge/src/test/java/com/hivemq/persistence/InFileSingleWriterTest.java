@@ -133,31 +133,31 @@ public class InFileSingleWriterTest {
         }
 
         @Override
-        public boolean awaitTermination(final long timeout, @NotNull final TimeUnit unit) throws InterruptedException {
+        public boolean awaitTermination(final long timeout, final @NotNull TimeUnit unit) throws InterruptedException {
             return false;
         }
 
         @NotNull
         @Override
-        public <T> Future<T> submit(@NotNull final Callable<T> task) {
+        public <T> Future<T> submit(final @NotNull Callable<T> task) {
             return null;
         }
 
         @NotNull
         @Override
-        public <T> Future<T> submit(@NotNull final Runnable task, final T result) {
+        public <T> Future<T> submit(final @NotNull Runnable task, final T result) {
             return null;
         }
 
         @NotNull
         @Override
-        public Future<?> submit(@NotNull final Runnable task) {
+        public Future<?> submit(final @NotNull Runnable task) {
             return SettableFuture.create();
         }
 
         @NotNull
         @Override
-        public <T> List<Future<T>> invokeAll(@NotNull final Collection<? extends Callable<T>> tasks)
+        public <T> List<Future<T>> invokeAll(final @NotNull Collection<? extends Callable<T>> tasks)
                 throws InterruptedException {
             return null;
         }
@@ -165,29 +165,29 @@ public class InFileSingleWriterTest {
         @NotNull
         @Override
         public <T> List<Future<T>> invokeAll(
-                @NotNull final Collection<? extends Callable<T>> tasks,
+                final @NotNull Collection<? extends Callable<T>> tasks,
                 final long timeout,
-                @NotNull final TimeUnit unit) throws InterruptedException {
+                final @NotNull TimeUnit unit) throws InterruptedException {
             return null;
         }
 
         @NotNull
         @Override
-        public <T> T invokeAny(@NotNull final Collection<? extends Callable<T>> tasks)
+        public <T> T invokeAny(final @NotNull Collection<? extends Callable<T>> tasks)
                 throws InterruptedException, ExecutionException {
             return null;
         }
 
         @Override
         public <T> T invokeAny(
-                @NotNull final Collection<? extends Callable<T>> tasks,
+                final @NotNull Collection<? extends Callable<T>> tasks,
                 final long timeout,
-                @NotNull final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                final @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return null;
         }
 
         @Override
-        public void execute(@NotNull final Runnable command) {
+        public void execute(final @NotNull Runnable command) {
 
         }
     }

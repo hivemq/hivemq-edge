@@ -35,18 +35,18 @@ public class GlobalInterceptorRegistryImpl implements GlobalInterceptorRegistry 
     private final Interceptors interceptors;
 
     @Inject
-    public GlobalInterceptorRegistryImpl(@NotNull final Interceptors interceptors) {
+    public GlobalInterceptorRegistryImpl(final @NotNull Interceptors interceptors) {
         this.interceptors = interceptors;
     }
 
     @Override
-    public void setConnectInboundInterceptorProvider(@NotNull final ConnectInboundInterceptorProvider connectInboundInterceptorProvider) {
+    public void setConnectInboundInterceptorProvider(final @NotNull ConnectInboundInterceptorProvider connectInboundInterceptorProvider) {
         Preconditions.checkNotNull(connectInboundInterceptorProvider, "Connect interceptor provider must never be null");
         interceptors.addConnectInboundInterceptorProvider(connectInboundInterceptorProvider);
     }
 
     @Override
-    public void setConnackOutboundInterceptorProvider(@NotNull final ConnackOutboundInterceptorProvider provider) {
+    public void setConnackOutboundInterceptorProvider(final @NotNull ConnackOutboundInterceptorProvider provider) {
         Preconditions.checkNotNull(provider, "Connack outbound interceptor provider must never be null");
         interceptors.addConnackOutboundInterceptorProvider(provider);
     }

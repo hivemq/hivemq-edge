@@ -31,7 +31,7 @@ public class ProtocolAdapterDynamicContextImpl implements ProtocolAdapterDynamic
     }
 
     @Override
-    public @NotNull Optional<String> getValue(@NotNull final String key) {
+    public @NotNull Optional<String> getValue(final @NotNull String key) {
         return Optional.ofNullable(dynamicContext.get(key));
     }
 

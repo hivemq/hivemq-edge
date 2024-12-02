@@ -102,7 +102,7 @@ public class LegacyConfigFileReaderWriter<LEGACY_CONFIG_CLASS, CURRENT_CONFIG_CL
     }
 
     private synchronized void writeConfigToXML(
-            @NotNull final Writer writer,
+            final @NotNull Writer writer,
             final @NotNull CURRENT_CONFIG_CLASS config) {
         try {
             final JAXBContext context = createContext();

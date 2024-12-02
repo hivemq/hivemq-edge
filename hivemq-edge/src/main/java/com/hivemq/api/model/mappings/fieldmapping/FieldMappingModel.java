@@ -35,8 +35,8 @@ public class FieldMappingModel {
     private final @NotNull MetadataModel metadata;
 
     public FieldMappingModel(
-            @JsonProperty(value = "instructions", required = true) @NotNull final List<InstructionModel> instructions,
-            @JsonProperty(value = "metadata", required = true) @NotNull final MetadataModel metadata) {
+            @JsonProperty(value = "instructions", required = true) final @NotNull List<InstructionModel> instructions,
+            @JsonProperty(value = "metadata", required = true) final @NotNull MetadataModel metadata) {
         this.instructions = instructions;
         this.metadata = metadata;
     }

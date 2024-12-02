@@ -96,7 +96,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder fromPublish(@NotNull final PublishPacket publish) {
+    public RetainedPublishBuilder fromPublish(final @NotNull PublishPacket publish) {
 
         Preconditions.checkNotNull(publish, "publish must not be null");
 
@@ -111,7 +111,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder fromPublish(@NotNull final Publish publish) {
+    public RetainedPublishBuilder fromPublish(final @NotNull Publish publish) {
 
         Preconditions.checkNotNull(publish, "publish must not be null");
 
@@ -125,15 +125,15 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
     }
 
     @NotNull
-    private RetainedPublishBuilder fromComplete(@NotNull final Qos qos,
-                                                @NotNull final String topic,
-                                                @NotNull final Optional<PayloadFormatIndicator> payloadFormatIndicator,
-                                                @NotNull final Optional<Long> messageExpiryInterval,
-                                                @NotNull final Optional<String> responseTopic,
-                                                @NotNull final Optional<ByteBuffer> correlationData,
-                                                @NotNull final Optional<String> contentType,
-                                                @NotNull final Optional<ByteBuffer> payload,
-                                                @NotNull final UserProperties userProperties) {
+    private RetainedPublishBuilder fromComplete(final @NotNull Qos qos,
+                                                final @NotNull String topic,
+                                                final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
+                                                final @NotNull Optional<Long> messageExpiryInterval,
+                                                final @NotNull Optional<String> responseTopic,
+                                                final @NotNull Optional<ByteBuffer> correlationData,
+                                                final @NotNull Optional<String> contentType,
+                                                final @NotNull Optional<ByteBuffer> payload,
+                                                final @NotNull UserProperties userProperties) {
         this.qos(qos);
         this.topic(topic);
         this.payloadFormatIndicator(payloadFormatIndicator.orElse(null));
@@ -150,7 +150,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder qos(@NotNull final Qos qos) {
+    public RetainedPublishBuilder qos(final @NotNull Qos qos) {
         PluginBuilderUtil.checkQos(qos, mqttConfigurationService.maximumQos().getQosNumber());
         this.qos = qos;
         return this;
@@ -158,7 +158,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder topic(@NotNull final String topic) {
+    public RetainedPublishBuilder topic(final @NotNull String topic) {
         PluginBuilderUtil.checkTopic(topic, restrictionsConfig.maxTopicLength(), securityConfigurationService.validateUTF8());
         this.topic = topic;
         return this;
@@ -204,7 +204,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder payload(@NotNull final ByteBuffer payload) {
+    public RetainedPublishBuilder payload(final @NotNull ByteBuffer payload) {
         checkNotNull(payload, "Payload must not be null");
         this.payload = payload;
         return this;
@@ -212,7 +212,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
 
     @NotNull
     @Override
-    public RetainedPublishBuilder userProperty(@NotNull final String name, @NotNull final String value) {
+    public RetainedPublishBuilder userProperty(final @NotNull String name, final @NotNull String value) {
         PluginBuilderUtil.checkUserProperty(name, value, securityConfigurationService.validateUTF8());
         this.userPropertyBuilder.add(new MqttUserProperty(name, value));
         return this;

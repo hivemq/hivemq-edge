@@ -65,12 +65,12 @@ public class ProtocolAdapterDataSampleImpl<T extends PollingContext> implements 
     }
 
     @Override
-    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+    public void addDataPoint(final @NotNull DataPoint dataPoint) {
         dataPoints.add(dataPoint);
     }
 
     @Override
-    public void setDataPoints(@NotNull final List<DataPoint> list) {
+    public void setDataPoints(final @NotNull List<DataPoint> list) {
         this.dataPoints = list;
     }
 

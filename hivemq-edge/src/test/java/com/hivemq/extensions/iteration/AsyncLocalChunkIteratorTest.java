@@ -146,7 +146,7 @@ public class AsyncLocalChunkIteratorTest {
 
         @Override
         @NotNull
-        public ListenableFuture<Boolean> onItems(@NotNull final Collection<String> items) {
+        public ListenableFuture<Boolean> onItems(final @NotNull Collection<String> items) {
             this.items.addAll(items);
             return Futures.immediateFuture(!abort);
         }

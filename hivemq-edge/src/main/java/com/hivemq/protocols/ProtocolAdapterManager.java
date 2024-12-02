@@ -378,7 +378,7 @@ public class ProtocolAdapterManager {
     }
 
     protected void handleStartupError(
-            final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output) {
+            final @NotNull ProtocolAdapter protocolAdapter, final @NotNull ProtocolAdapterStartOutputImpl output) {
         if (log.isWarnEnabled()) {
             log.warn("Protocol-adapter '{}' could not be started, reason: {}",
                     protocolAdapter.getId(),

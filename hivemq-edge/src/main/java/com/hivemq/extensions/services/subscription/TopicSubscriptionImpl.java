@@ -84,7 +84,7 @@ public class TopicSubscriptionImpl implements TopicSubscription {
         return Optional.ofNullable(subscriptionIdentifier);
     }
 
-    public static @NotNull Topic convertToTopic(@NotNull final TopicSubscription topicSubscription) {
+    public static @NotNull Topic convertToTopic(final @NotNull TopicSubscription topicSubscription) {
         Preconditions.checkNotNull(topicSubscription, "TopicSubscription must never be null");
         return new Topic(topicSubscription.getTopicFilter(),
                 Objects.requireNonNull(QoS.valueOf(topicSubscription.getQos().getQosNumber())),

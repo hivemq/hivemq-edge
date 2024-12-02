@@ -317,7 +317,7 @@ public class Utf8Utils {
      * @param binary the UTF-8 encoded byte array.
      * @return whether the binary data contains characters a UTF-8 encoded String must not.
      */
-    public static boolean containsMustNotCharacters(@NotNull final byte[] binary) {
+    public static boolean containsMustNotCharacters(final @NotNull byte[] binary) {
         if (!Utf8.isWellFormed(binary)) {
             return true;
         }
@@ -338,7 +338,7 @@ public class Utf8Utils {
      * @param string the UTF-16 encoded Java string
      * @return whether the string contains characters a UTF-8 encoded String must not.
      */
-    public static boolean containsMustNotCharacters(@NotNull final String string) {
+    public static boolean containsMustNotCharacters(final @NotNull String string) {
         boolean highSurrogate = false;
         for (int i = 0; i < string.length(); i++) {
             final char c = string.charAt(i);

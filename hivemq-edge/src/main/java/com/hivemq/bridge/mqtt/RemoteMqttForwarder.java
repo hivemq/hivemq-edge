@@ -123,7 +123,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     @Override
-    public void onMessage(final @NotNull PUBLISH publish, @NotNull final String queueId) {
+    public void onMessage(final @NotNull PUBLISH publish, final @NotNull String queueId) {
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         final QoS originalQoS = publish.getQoS();
@@ -412,12 +412,12 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
-    public void setAfterForwardCallback(@NotNull final AfterForwardCallback callback) {
+    public void setAfterForwardCallback(final @NotNull AfterForwardCallback callback) {
         this.afterForwardCallback = callback;
     }
 
     @Override
-    public void setResetInflightMarkerCallback(@NotNull final ResetInflightMarkerCallback callback) {
+    public void setResetInflightMarkerCallback(final @NotNull ResetInflightMarkerCallback callback) {
         this.resetInflightMarkerCallback = callback;
     }
 

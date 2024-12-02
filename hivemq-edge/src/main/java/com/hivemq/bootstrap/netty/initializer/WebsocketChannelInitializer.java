@@ -36,16 +36,16 @@ public class WebsocketChannelInitializer extends AbstractChannelInitializer<Chan
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    public WebsocketChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                       @NotNull final MqttWebsocketListener mqttWebsocketListener,
-                                       @NotNull final Provider<NonSslHandler> nonSslHandlerProvider) {
+    public WebsocketChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
+                                       final @NotNull MqttWebsocketListener mqttWebsocketListener,
+                                       final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, mqttWebsocketListener);
         this.mqttWebsocketListener = mqttWebsocketListener;
         this.nonSslHandlerProvider = nonSslHandlerProvider;
     }
 
     @Override
-    protected void addSpecialHandlers(@NotNull final Channel ch) {
+    protected void addSpecialHandlers(final @NotNull Channel ch) {
         ch.pipeline().addFirst(NON_SSL_HANDLER, nonSslHandlerProvider.get());
         new WebSocketInitializer(mqttWebsocketListener).addHandlers(ch, NON_SSL_HANDLER);
     }

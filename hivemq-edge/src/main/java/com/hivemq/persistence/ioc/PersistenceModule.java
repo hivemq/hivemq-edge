@@ -102,43 +102,43 @@ public abstract class PersistenceModule {
     @Provides
     @Singleton
     static @NotNull MessageDroppedService messageDroppedService(
-            @NotNull final MetricsHolder metricsHolder, @NotNull final EventLog eventLog) {
+            final @NotNull MetricsHolder metricsHolder, final @NotNull EventLog eventLog) {
         return new MessageDroppedServiceImpl(metricsHolder, eventLog);
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence(@NotNull final ClientQueueLocalPersistenceProvider clientQueueLocalPersistenceProvider) {
+    static @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence(final @NotNull ClientQueueLocalPersistenceProvider clientQueueLocalPersistenceProvider) {
         return clientQueueLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(@NotNull final RetainedMessageLocalPersistenceProvider retainedMessageLocalPersistenceProvider) {
+    static @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(final @NotNull RetainedMessageLocalPersistenceProvider retainedMessageLocalPersistenceProvider) {
         return retainedMessageLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence(@NotNull final ClientSessionLocalPersistenceProvider clientSessionLocalPersistenceProvider) {
+    static @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence(final @NotNull ClientSessionLocalPersistenceProvider clientSessionLocalPersistenceProvider) {
         return clientSessionLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence(@NotNull final ClientSessionSubscriptionLocalPersistenceProvider clientSessionSubscriptionLocalPersistenceProvider) {
+    static @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence(final @NotNull ClientSessionSubscriptionLocalPersistenceProvider clientSessionSubscriptionLocalPersistenceProvider) {
         return clientSessionSubscriptionLocalPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull PublishPayloadPersistence publishPayloadPersistence(@NotNull final PublishPayloadPersistenceProvider publishPayloadPersistenceProvider) {
+    static @NotNull PublishPayloadPersistence publishPayloadPersistence(final @NotNull PublishPayloadPersistenceProvider publishPayloadPersistenceProvider) {
         return publishPayloadPersistenceProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull SingleWriterService singleWriterService(@NotNull final SingleWriterProvider singleWriterProvider) {
+    static @NotNull SingleWriterService singleWriterService(final @NotNull SingleWriterProvider singleWriterProvider) {
         return singleWriterProvider.get();
     }
 

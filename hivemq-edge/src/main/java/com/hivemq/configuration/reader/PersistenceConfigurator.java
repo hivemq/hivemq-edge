@@ -28,11 +28,11 @@ public class PersistenceConfigurator {
     @NotNull
     private final PersistenceConfigurationService persistenceConfigurationService;
 
-    public PersistenceConfigurator(@NotNull final PersistenceConfigurationService persistenceConfigurationService) {
+    public PersistenceConfigurator(final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
         this.persistenceConfigurationService = persistenceConfigurationService;
     }
 
-    public void setPersistenceConfig(@NotNull final PersistenceEntity persistenceConfig) {
+    public void setPersistenceConfig(final @NotNull PersistenceEntity persistenceConfig) {
         persistenceConfigurationService.setMode(PersistenceMode.valueOf(
                 persistenceConfig.getMode().name()));
 

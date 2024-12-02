@@ -44,7 +44,7 @@ public class StandardPublishCallback implements FutureCallback<PublishStatus> {
     }
 
     @Override
-    public void onFailure(@NotNull final Throwable throwable) {
+    public void onFailure(final @NotNull Throwable throwable) {
 
         publishFinishedFuture.set(null);
 

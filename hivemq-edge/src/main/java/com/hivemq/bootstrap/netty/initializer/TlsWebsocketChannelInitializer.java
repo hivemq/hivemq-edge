@@ -35,16 +35,16 @@ public class TlsWebsocketChannelInitializer extends AbstractTlsChannelInitialize
     @NotNull
     private final MqttTlsWebsocketListener mqttTlsWebsocketListener;
 
-    public TlsWebsocketChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                          @NotNull final MqttTlsWebsocketListener mqttTlsWebsocketListener,
-                                          @NotNull final SslFactory sslFactory) {
+    public TlsWebsocketChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
+                                          final @NotNull MqttTlsWebsocketListener mqttTlsWebsocketListener,
+                                          final @NotNull SslFactory sslFactory) {
 
         super(channelDependencies, mqttTlsWebsocketListener, sslFactory);
         this.mqttTlsWebsocketListener = mqttTlsWebsocketListener;
     }
 
     @Override
-    protected void addSpecialHandlers(@NotNull final Channel ch) throws SslException {
+    protected void addSpecialHandlers(final @NotNull Channel ch) throws SslException {
         super.addSpecialHandlers(ch);
 
         final Tls.ClientAuthMode authMode = mqttTlsWebsocketListener.getTls().getClientAuthMode();

@@ -52,7 +52,7 @@ public class PluginOutputAsyncerImpl implements PluginOutPutAsyncer {
     }
 
     @Inject
-    public PluginOutputAsyncerImpl(@NotNull final ShutdownHooks shutdownHooks) {
+    public PluginOutputAsyncerImpl(final @NotNull ShutdownHooks shutdownHooks) {
         this.shutdownHooks = shutdownHooks;
 
         final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
@@ -64,8 +64,8 @@ public class PluginOutputAsyncerImpl implements PluginOutPutAsyncer {
     }
 
     @Override
-    public @NotNull <T extends PluginTaskOutput> Async<T> asyncify(@NotNull final T output,
-                                                                   @NotNull final Duration timeout) {
+    public @NotNull <T extends PluginTaskOutput> Async<T> asyncify(final @NotNull T output,
+                                                                   final @NotNull Duration timeout) {
 
         output.markAsAsync();
 

@@ -70,7 +70,7 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
 
     @NotNull
     @Override
-    public ListenableFuture<RetainedMessage> get(@NotNull final String topic) {
+    public ListenableFuture<RetainedMessage> get(final @NotNull String topic) {
         try {
             checkNotNull(topic, "Topic must not be null");
             if (topic.contains("+") || topic.contains("#")) {
@@ -99,7 +99,7 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
 
     @NotNull
     @Override
-    public ListenableFuture<Void> remove(@NotNull final String topic) {
+    public ListenableFuture<Void> remove(final @NotNull String topic) {
         try {
             checkNotNull(topic, "Topic must not be null");
 
@@ -114,7 +114,7 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
 
     @NotNull
     @Override
-    public ListenableFuture<Void> persist(@NotNull final String topic, @NotNull final RetainedMessage retainedMessage) {
+    public ListenableFuture<Void> persist(final @NotNull String topic, final @NotNull RetainedMessage retainedMessage) {
         try {
             checkNotNull(topic, "Topic must not be null");
             checkNotNull(retainedMessage, "Retained message must not be null");
@@ -133,7 +133,7 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
 
     @NotNull
     @Override
-    public ListenableFuture<Set<String>> getWithWildcards(@NotNull final String subscription) {
+    public ListenableFuture<Set<String>> getWithWildcards(final @NotNull String subscription) {
         try {
             checkNotNull(subscription, "Topic must not be null");
             if (!subscription.contains("+") && !subscription.contains("#")) {

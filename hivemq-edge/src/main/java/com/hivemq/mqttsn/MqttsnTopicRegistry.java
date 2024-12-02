@@ -175,7 +175,7 @@ public class MqttsnTopicRegistry
         return aliasId;
     }
 
-    protected Optional<MqttsnTopicAlias> readRegisteredTopic(@NotNull final String clientId, @NotNull final String topicName){
+    protected Optional<MqttsnTopicAlias> readRegisteredTopic(final @NotNull String clientId, final @NotNull String topicName){
         Map<Integer, MqttsnTopicAlias> m = sessionRegistrations.get(clientId);
         Optional<MqttsnTopicAlias> alias =
                 m.values().stream().filter(t -> topicName.equals(t.getTopicName())).findFirst();
@@ -189,7 +189,7 @@ public class MqttsnTopicRegistry
      * @param startAt - where the alias should start from
      * @return the next available uint16
      */
-    public static int getNextAvailableUint16(@NotNull final Collection<Integer> used, final int startAt) throws MqttsnProtocolException {
+    public static int getNextAvailableUint16(final @NotNull Collection<Integer> used, final int startAt) throws MqttsnProtocolException {
         if(used.isEmpty()){
             return startAt;
         }

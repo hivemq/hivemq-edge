@@ -44,7 +44,7 @@ public class ClientAuthenticatorsImpl implements ClientAuthenticators {
     }
 
     @Override
-    public void put(@NotNull final String pluginId, @NotNull final EnhancedAuthenticator authenticator) {
+    public void put(final @NotNull String pluginId, final @NotNull EnhancedAuthenticator authenticator) {
         final Lock lock = authenticatorLock.writeLock();
         lock.lock();
         try {

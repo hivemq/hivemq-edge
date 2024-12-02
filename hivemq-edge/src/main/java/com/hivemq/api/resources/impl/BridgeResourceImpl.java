@@ -257,7 +257,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return throwable == null ? null : throwable.getMessage();
     }
 
-    protected boolean checkBridgeExists(@NotNull final String bridgeName) {
+    protected boolean checkBridgeExists(final @NotNull String bridgeName) {
         Optional<MqttBridge> bridge = configurationService.bridgeConfiguration()
                 .getBridges()
                 .stream()
@@ -266,7 +266,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return bridge.isPresent();
     }
 
-    private @Nullable MqttBridge getBridge(@NotNull final String bridgeName) {
+    private @Nullable MqttBridge getBridge(final @NotNull String bridgeName) {
         return configurationService.bridgeConfiguration()
                 .getBridges()
                 .stream()

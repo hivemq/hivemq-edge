@@ -30,7 +30,7 @@ public class Metric {
     private final @NotNull String name;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public Metric(@JsonProperty("name") @NotNull final String name) {
+    public Metric(@JsonProperty("name") final @NotNull String name) {
         this.name = name;
     }
 

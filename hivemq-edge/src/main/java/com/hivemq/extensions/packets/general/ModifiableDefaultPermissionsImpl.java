@@ -47,7 +47,7 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
     }
 
     @Override
-    public void add(@NotNull final TopicPermission permission) {
+    public void add(final @NotNull TopicPermission permission) {
         Preconditions.checkNotNull(permission, "Permission cannot be null");
         if (!(permission instanceof TopicPermissionImpl)) {
             throw new DoNotImplementException("Topic permission must be created with Builders.topicPermission()");
@@ -60,7 +60,7 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
     }
 
     @Override
-    public void addAll(@NotNull final Collection<? extends TopicPermission> permissions) {
+    public void addAll(final @NotNull Collection<? extends TopicPermission> permissions) {
         Preconditions.checkNotNull(permissions, "Permissions cannot be null");
 
         for (final TopicPermission permission : permissions) {
@@ -78,7 +78,7 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
     }
 
     @Override
-    public void remove(@NotNull final TopicPermission permission) {
+    public void remove(final @NotNull TopicPermission permission) {
         Preconditions.checkNotNull(permission, "Permission cannot be null");
         if (!(permission instanceof TopicPermissionImpl)) {
             throw new DoNotImplementException("Topic permission must be created with Builders.topicPermission()");
@@ -104,7 +104,7 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
     }
 
     @Override
-    public void setDefaultBehaviour(@NotNull final DefaultAuthorizationBehaviour defaultBehaviour) {
+    public void setDefaultBehaviour(final @NotNull DefaultAuthorizationBehaviour defaultBehaviour) {
         Preconditions.checkNotNull(defaultBehaviour, "Default behaviour cannot be null");
         defaultAuthorizationBehaviourOverridden.set(true);
         defaultAuthorizationBehaviour.set(defaultBehaviour);

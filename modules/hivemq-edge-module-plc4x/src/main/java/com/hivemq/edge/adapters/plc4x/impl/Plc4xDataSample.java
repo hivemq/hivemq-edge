@@ -64,7 +64,7 @@ public class Plc4xDataSample<T extends ProtocolSpecificAdapterConfig> implements
     }
 
     @Override
-    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+    public void addDataPoint(final @NotNull DataPoint dataPoint) {
         dataPoints.add(dataPoint);
     }
 

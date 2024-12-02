@@ -103,7 +103,7 @@ public class ClientLifecycleEventHandler extends SimpleChannelInboundHandler<CON
 
 
     @Override
-    public void userEventTriggered(@NotNull final ChannelHandlerContext ctx, @NotNull final Object evt) throws Exception {
+    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
 
         Preconditions.checkNotNull(evt, "A user event must never be null");
 
@@ -258,7 +258,7 @@ public class ClientLifecycleEventHandler extends SimpleChannelInboundHandler<CON
         }
     }
 
-    private void fireOnMqttConnect(@NotNull final ChannelHandlerContext ctx, @NotNull final CONNECT connect) {
+    private void fireOnMqttConnect(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT connect) {
 
         final Map<String, ClientLifecycleEventListenerProvider> pluginEventListenerProviderMap = lifecycleEventListeners.getClientLifecycleEventListenerProviderMap();
 

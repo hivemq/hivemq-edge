@@ -88,7 +88,7 @@ public class WritingServiceProvider {
 
         @Override
         public @NotNull CompletableFuture<Void> stopWriting(
-                @NotNull final WritingProtocolAdapter writingProtocolAdapter,
+                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
                 final @NotNull List<InternalWritingContext> writingContexts) {
             // NOOP as nothing was started.
             return CompletableFuture.completedFuture(null);

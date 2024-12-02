@@ -118,7 +118,7 @@ public class HiveMQEdgeMain {
         LoggingBootstrap.resetLogging();
     }
 
-    protected void initializeApiServer(@NotNull final Injector injector) {
+    protected void initializeApiServer(final @NotNull Injector injector) {
         ApiConfigurationService config = Objects.requireNonNull(configService).apiConfiguration();
         if (jaxrsServer == null && config.isEnabled()) {
             jaxrsServer = injector.apiServer();

@@ -32,7 +32,7 @@ public class IterablePersistenceEntry<T extends Collection<? extends Sizable>> i
 
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
-    public IterablePersistenceEntry(@NotNull final T object, final long timestamp) {
+    public IterablePersistenceEntry(final @NotNull T object, final long timestamp) {
         this.timestamp = timestamp;
         this.object = object;
     }

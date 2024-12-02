@@ -43,7 +43,7 @@ public class CapabilityServiceImpl implements HiveMQCapabilityService {
     }
 
     @Override
-    public synchronized void addCapability(@NotNull final Capability capability) {
+    public synchronized void addCapability(final @NotNull Capability capability) {
         capabilities.add(capability);
     }
 }

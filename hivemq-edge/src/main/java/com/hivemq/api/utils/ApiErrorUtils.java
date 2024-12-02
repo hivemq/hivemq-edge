@@ -77,7 +77,7 @@ public class ApiErrorUtils {
         apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Invalid user supplied data", details));
     }
 
-    public static Response badRequest(@NotNull final String errorMessage){
+    public static Response badRequest(final @NotNull String errorMessage){
         ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(
                 ApiErrorMessage.from(errorMessage));
         return Response.status(HttpConstants.SC_BAD_REQUEST)
@@ -86,7 +86,7 @@ public class ApiErrorUtils {
                 .build();
     }
 
-    public static Response badRequest(@NotNull final ApiErrorMessages apiErrorMessages){
+    public static Response badRequest(final @NotNull ApiErrorMessages apiErrorMessages){
         return Response.status(HttpConstants.SC_BAD_REQUEST)
                 .entity(apiErrorMessages)
                 .type(MediaType.APPLICATION_JSON_TYPE)
@@ -107,7 +107,7 @@ public class ApiErrorUtils {
         }
     }
 
-    public static boolean hasRequestErrors(@NotNull final ApiErrorMessages apiErrorMessages){
+    public static boolean hasRequestErrors(final @NotNull ApiErrorMessages apiErrorMessages){
         return !apiErrorMessages.getErrors().isEmpty();
     }
 

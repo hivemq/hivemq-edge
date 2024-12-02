@@ -45,7 +45,7 @@ public class ExtensionInformationUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ExtensionInformationUtil.class);
 
-    public static @NotNull ClientInformation getAndSetClientInformation(@NotNull final Channel channel, @NotNull final String clientId) {
+    public static @NotNull ClientInformation getAndSetClientInformation(final @NotNull Channel channel, final @NotNull String clientId) {
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection.getExtensionClientInformation() == null) {
             clientConnection.setExtensionClientInformation(new ClientInformationImpl(clientId));
@@ -53,7 +53,7 @@ public class ExtensionInformationUtil {
         return clientConnection.getExtensionClientInformation();
     }
 
-    public static @NotNull ConnectionInformation getAndSetConnectionInformation(@NotNull final Channel channel) {
+    public static @NotNull ConnectionInformation getAndSetConnectionInformation(final @NotNull Channel channel) {
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection.getExtensionConnectionInformation() == null) {
             clientConnection.setExtensionConnectionInformation(new ConnectionInformationImpl(clientConnection));

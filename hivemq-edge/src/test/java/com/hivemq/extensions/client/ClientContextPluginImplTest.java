@@ -123,7 +123,7 @@ public class ClientContextPluginImplTest {
     }
 
     private void addInterceptors(
-            final List<Interceptor> interceptorList, @NotNull final ClientContextPluginImpl contextPlugin) {
+            final List<Interceptor> interceptorList, final @NotNull ClientContextPluginImpl contextPlugin) {
         for (final Interceptor interceptor : interceptorList) {
             if (interceptor instanceof PublishInboundInterceptor) {
                 contextPlugin.addPublishInboundInterceptor((PublishInboundInterceptor) interceptor);
@@ -135,7 +135,7 @@ public class ClientContextPluginImplTest {
     }
 
     private void removeInterceptors(
-            final List<Interceptor> interceptorList, @NotNull final ClientContextPluginImpl contextPlugin) {
+            final List<Interceptor> interceptorList, final @NotNull ClientContextPluginImpl contextPlugin) {
         for (final Interceptor interceptor : interceptorList) {
             if (interceptor instanceof PublishInboundInterceptor) {
                 contextPlugin.removePublishInboundInterceptor((PublishInboundInterceptor) interceptor);

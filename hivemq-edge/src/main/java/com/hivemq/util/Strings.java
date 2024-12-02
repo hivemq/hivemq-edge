@@ -70,7 +70,7 @@ public class Strings {
         return string;
     }
 
-    public static String getValidatedPrefixedString(@NotNull final ByteBuf buf, final int utf8StringLength, final boolean validateShouldNotCharacters) {
+    public static String getValidatedPrefixedString(final @NotNull ByteBuf buf, final int utf8StringLength, final boolean validateShouldNotCharacters) {
         checkNotNull(buf);
 
         if (buf.readableBytes() < utf8StringLength) {

@@ -350,7 +350,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
     @Override
     public @NotNull ImmutableList<PUBLISH> peek(
-            @NotNull final String queueId,
+            final @NotNull String queueId,
             final boolean shared,
             final long bytesLimit,
             final int maxMessages,

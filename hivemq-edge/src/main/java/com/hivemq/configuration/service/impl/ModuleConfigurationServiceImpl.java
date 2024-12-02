@@ -31,7 +31,7 @@ public class ModuleConfigurationServiceImpl implements ModuleConfigurationServic
     }
 
     @Override
-    public void setAllConfigs(@NotNull final Map<String, Object> allConfigs) {
+    public void setAllConfigs(final @NotNull Map<String, Object> allConfigs) {
         this.configs = allConfigs;
     }
 }

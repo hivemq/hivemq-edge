@@ -41,7 +41,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     @Override
-    public void finish(@NotNull final JsonNode schema) {
+    public void finish(final @NotNull JsonNode schema) {
         future.complete(schema);
     }
 
@@ -60,14 +60,14 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     @Override
-    public void fail(@NotNull final Throwable t, @Nullable final String errorMessage) {
+    public void fail(final @NotNull Throwable t, @Nullable final String errorMessage) {
         status = Status.UNSPECIFIED_FAILURE;
         message = errorMessage;
         future.completeExceptionally(t);
     }
 
     @Override
-    public void fail(@NotNull final String errorMessage) {
+    public void fail(final @NotNull String errorMessage) {
         status = Status.UNSPECIFIED_FAILURE;
         message = errorMessage;
         future.completeExceptionally(new StackLessProtocolAdapterException("Json schema creation for tag failed."));
@@ -75,7 +75,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     @Override
-    public void tagNotFound(@NotNull final String errorMessage) {
+    public void tagNotFound(final @NotNull String errorMessage) {
         status = Status.TAG_NOT_FOUND;
         future.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
     }

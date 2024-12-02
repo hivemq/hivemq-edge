@@ -47,7 +47,7 @@ public class ThreadPreConditions {
         enabled = false;
     }
 
-    public static void startsWith(@NotNull final String prefix) {
+    public static void startsWith(final @NotNull String prefix) {
         if (!enabled) {
             return;
         }

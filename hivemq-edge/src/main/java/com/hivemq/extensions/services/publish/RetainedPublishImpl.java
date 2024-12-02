@@ -38,20 +38,20 @@ import static com.hivemq.util.Bytes.getBytesFromReadOnlyBuffer;
  */
 public class RetainedPublishImpl extends PublishImpl implements RetainedPublish {
 
-    public RetainedPublishImpl(@NotNull final Qos qos,
-                               @NotNull final String topic,
+    public RetainedPublishImpl(final @NotNull Qos qos,
+                               final @NotNull String topic,
                                @Nullable final PayloadFormatIndicator payloadFormatIndicator,
                                @Nullable final Long messageExpiryInterval,
                                @Nullable final String responseTopic,
                                @Nullable final ByteBuffer correlationData,
                                @Nullable final String contentType,
                                @Nullable final ByteBuffer payload,
-                               @NotNull final UserPropertiesImpl userProperties) {
+                               final @NotNull UserPropertiesImpl userProperties) {
         super(qos, true, topic, payloadFormatIndicator, messageExpiryInterval,
                 responseTopic, correlationData, contentType, payload, userProperties);
     }
 
-    public RetainedPublishImpl(@NotNull final String topic, @NotNull final RetainedMessage retainedMessage) {
+    public RetainedPublishImpl(final @NotNull String topic, final @NotNull RetainedMessage retainedMessage) {
 
         this(retainedMessage.getQos().toQos(),
                 topic,
@@ -65,7 +65,7 @@ public class RetainedPublishImpl extends PublishImpl implements RetainedPublish 
     }
 
     @NotNull
-    public static RetainedMessage convert(@NotNull final RetainedPublishImpl retainedPublish) {
+    public static RetainedMessage convert(final @NotNull RetainedPublishImpl retainedPublish) {
 
         final byte[] payloadAsArray = getBytesFromReadOnlyBuffer(retainedPublish.getPayload());
 

@@ -34,16 +34,16 @@ public class CompletableScheduledFutureImpl<T> extends CompletableScheduledFutur
     private ScheduledFuture<?> scheduledFuture;
 
     @Override
-    public long getDelay(@NotNull final TimeUnit unit) {
+    public long getDelay(final @NotNull TimeUnit unit) {
         return Objects.requireNonNull(scheduledFuture).getDelay(unit);
     }
 
     @Override
-    public int compareTo(@NotNull final Delayed o) {
+    public int compareTo(final @NotNull Delayed o) {
         return Objects.requireNonNull(scheduledFuture).compareTo(o);
     }
 
-    public void setScheduledFuture(@NotNull final ScheduledFuture<?> scheduledFuture) {
+    public void setScheduledFuture(final @NotNull ScheduledFuture<?> scheduledFuture) {
         this.scheduledFuture = scheduledFuture;
     }
 

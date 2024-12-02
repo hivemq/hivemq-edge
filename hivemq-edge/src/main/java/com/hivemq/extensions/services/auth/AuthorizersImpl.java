@@ -46,14 +46,14 @@ public class AuthorizersImpl implements Authorizers {
     private final HiveMQExtensions hiveMQExtensions;
 
     @Inject
-    public AuthorizersImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
+    public AuthorizersImpl(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
         authorizerProviderMap = new TreeMap<>(new ExtensionPriorityComparator(hiveMQExtensions));
         readWriteLock = new ReentrantReadWriteLock();
     }
 
     @Override
-    public void addAuthorizerProvider(@NotNull final AuthorizerProvider authorizerProvider) {
+    public void addAuthorizerProvider(final @NotNull AuthorizerProvider authorizerProvider) {
 
         final Lock writeLock = readWriteLock.writeLock();
 

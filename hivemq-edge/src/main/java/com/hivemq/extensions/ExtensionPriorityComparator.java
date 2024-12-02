@@ -26,12 +26,12 @@ public class ExtensionPriorityComparator implements Comparator<String> {
 
     private final @NotNull HiveMQExtensions hiveMQExtensions;
 
-    public ExtensionPriorityComparator(@NotNull final HiveMQExtensions hiveMQExtensions) {
+    public ExtensionPriorityComparator(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
     }
 
     @Override
-    public int compare(@NotNull final String o1, @NotNull final String o2) {
+    public int compare(final @NotNull String o1, final @NotNull String o2) {
 
         if (o1.equals(o2)) {
             return 0;

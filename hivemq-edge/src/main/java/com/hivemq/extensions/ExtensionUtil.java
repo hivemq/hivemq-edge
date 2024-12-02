@@ -36,7 +36,7 @@ public class ExtensionUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ExtensionUtil.class);
 
-    static boolean isValidExtensionFolder(@NotNull final Path path, final boolean logErrors) {
+    static boolean isValidExtensionFolder(final @NotNull Path path, final boolean logErrors) {
 
         checkNotNull(path, "extension path must not be null");
 
@@ -82,7 +82,7 @@ public class ExtensionUtil {
     }
 
     @NotNull
-    public static List<Path> findAllExtensionFolders(@NotNull final Path extensionPath) throws IOException {
+    public static List<Path> findAllExtensionFolders(final @NotNull Path extensionPath) throws IOException {
 
         checkNotNull(extensionPath, "provided extension folder path CAN NOT be null");
 
@@ -98,7 +98,7 @@ public class ExtensionUtil {
         return builder.build();
     }
 
-    public static boolean disableExtensionFolder(@NotNull final Path extensionFolderPath) throws IOException {
+    public static boolean disableExtensionFolder(final @NotNull Path extensionFolderPath) throws IOException {
 
         final File disabledFile = extensionFolderPath.resolve("DISABLED").toFile();
         if (!disabledFile.exists()) {

@@ -73,8 +73,8 @@ public class EventLog {
     public void messageDropped(
             @Nullable final String clientId,
             @Nullable final String topic,
-            @NotNull final int qos,
-            @NotNull final String reason) {
+            final @NotNull int qos,
+            final @NotNull String reason) {
         logMessageDropped.debug(
                 "Outgoing publish message was dropped. Receiving client: {}, topic: {}, qos: {}, reason: {}.",
                 valueOrUnknown(clientId),
@@ -94,8 +94,8 @@ public class EventLog {
     public void sharedSubscriptionMessageDropped(
             @Nullable final String group,
             @Nullable final String topic,
-            @NotNull final int qos,
-            @NotNull final String reason) {
+            final @NotNull int qos,
+            final @NotNull String reason) {
         logMessageDropped.debug(
                 "Outgoing publish message was dropped. Receiving shared subscription group: {}, topic: {}, qos: {}, reason: {}.",
                 valueOrUnknown(group),
@@ -112,7 +112,7 @@ public class EventLog {
      * @param reason      why the message was dropped
      */
     public void mqttMessageDropped(
-            @Nullable final String client, @Nullable final String messageType, @NotNull final String reason) {
+            @Nullable final String client, @Nullable final String messageType, final @NotNull String reason) {
         logMessageDropped.debug("Outgoing MQTT packet was dropped. Receiving client: {}, messageType: {}, reason: {}.",
                 valueOrUnknown(client),
                 valueOrUnknown(messageType),
@@ -124,7 +124,7 @@ public class EventLog {
      *
      * @param channel of the client connection
      */
-    public void clientConnected(@NotNull final Channel channel) {
+    public void clientConnected(final @NotNull Channel channel) {
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);
@@ -202,7 +202,7 @@ public class EventLog {
      * @param channel of the client connection
      * @param reason  why the connection was closed
      */
-    public void clientWasDisconnected(@NotNull final Channel channel, @NotNull final String reason) {
+    public void clientWasDisconnected(final @NotNull Channel channel, final @NotNull String reason) {
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);
@@ -222,7 +222,7 @@ public class EventLog {
      * @param reasonCode of the AUTH packet.
      */
     public void clientAuthentication(
-            @NotNull final Channel channel, @NotNull final Mqtt5AuthReasonCode reasonCode, final boolean received) {
+            final @NotNull Channel channel, final @NotNull Mqtt5AuthReasonCode reasonCode, final boolean received) {
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);

@@ -35,7 +35,7 @@ public class MqttsnConnectionHelper {
 
     public static final AttributeKey<PUBLISH> PUBLISH_TOPIC_ID_ATTRIBUTE_NAME = AttributeKey.valueOf("Sn.PublishTopicMapContext");
 
-    public static IMqttsnCodec getCodecForConnection(@NotNull final ClientConnection connection){
+    public static IMqttsnCodec getCodecForConnection(final @NotNull ClientConnection connection){
         IMqttsnCodec codec = MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2;
         if(connection instanceof MqttsnClientConnection){
             MqttsnProtocolVersion version =
@@ -47,12 +47,12 @@ public class MqttsnConnectionHelper {
         return codec;
     }
 
-    public static IMqttsnMessageFactory getMessageFactoryForConnection(@NotNull final ClientConnection connection){
+    public static IMqttsnMessageFactory getMessageFactoryForConnection(final @NotNull ClientConnection connection){
         IMqttsnCodec codec = getCodecForConnection(connection);
         return codec.createMessageFactory();
     }
 
-    public static MqttsnClientConnection getConnection(@NotNull final ChannelHandlerContext ctx){
+    public static MqttsnClientConnection getConnection(final @NotNull ChannelHandlerContext ctx){
         final ClientConnection clientConnection =
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         Preconditions.checkState(clientConnection instanceof MqttsnClientConnection, "Client Connection should be of SN type");

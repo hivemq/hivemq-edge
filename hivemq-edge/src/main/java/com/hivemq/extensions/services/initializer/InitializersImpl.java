@@ -56,14 +56,14 @@ public class InitializersImpl implements Initializers {
     private final HiveMQExtensions hiveMQExtensions;
 
     @Inject
-    public InitializersImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
+    public InitializersImpl(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
         clientInitializerMap = new TreeMap<>(new ExtensionPriorityComparator(hiveMQExtensions));
         readWriteLock = new ReentrantReadWriteLock();
     }
 
     @Override
-    public void addClientInitializer(@NotNull final ClientInitializer initializer) {
+    public void addClientInitializer(final @NotNull ClientInitializer initializer) {
 
         final Lock writeLock = readWriteLock.writeLock();
 

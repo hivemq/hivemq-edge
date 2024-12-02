@@ -46,7 +46,7 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     static final int TIMEOUT = 5000;
     static final int REFRESH = 60000;
     private static final Logger logger = LoggerFactory.getLogger(HiveMQRemoteServiceImpl.class);
-    private @NotNull final ObjectMapper objectMapper;
+    private final @NotNull ObjectMapper objectMapper;
     private @NotNull HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
     private @NotNull HiveMQEdgeRemoteConfiguration localConfiguration;
     private @NotNull SystemInformation systemInformation;
@@ -55,10 +55,10 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
 
     @Inject
     public HiveMQRemoteServiceImpl(
-            @NotNull final SystemInformation systemInformation,
-            @NotNull final ConfigurationService configurationService,
-            @NotNull final ObjectMapper objectMapper,
-            @NotNull final ShutdownHooks shutdownHooks) {
+            final @NotNull SystemInformation systemInformation,
+            final @NotNull ConfigurationService configurationService,
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ShutdownHooks shutdownHooks) {
         this.objectMapper = objectMapper;
         this.systemInformation = systemInformation;
 

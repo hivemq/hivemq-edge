@@ -244,7 +244,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
     @Override
     public @NotNull ListenableFuture<ImmutableList<PUBLISH>> peek(
-            @NotNull final String queueId,
+            final @NotNull String queueId,
             final boolean shared,
             final long byteLimit,
             final int maxMessages) {

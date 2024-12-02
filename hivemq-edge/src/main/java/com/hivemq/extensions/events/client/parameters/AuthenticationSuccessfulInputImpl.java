@@ -35,7 +35,7 @@ public class AuthenticationSuccessfulInputImpl implements AuthenticationSuccessf
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;
 
-    public AuthenticationSuccessfulInputImpl(@NotNull final String clientId, @NotNull final Channel channel) {
+    public AuthenticationSuccessfulInputImpl(final @NotNull String clientId, final @NotNull Channel channel) {
         Preconditions.checkNotNull(clientId, "client id must never be null");
         Preconditions.checkNotNull(channel, "channel must never be null");
         this.connectionInformation = ExtensionInformationUtil.getAndSetConnectionInformation(channel);

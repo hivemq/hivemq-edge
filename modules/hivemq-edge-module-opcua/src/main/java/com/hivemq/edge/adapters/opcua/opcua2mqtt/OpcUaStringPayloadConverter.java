@@ -37,12 +37,12 @@ import java.util.UUID;
 
 public class OpcUaStringPayloadConverter {
 
-    public static @NotNull ByteBuffer convertPayload(@NotNull final DataValue dataValue) {
+    public static @NotNull ByteBuffer convertPayload(final @NotNull DataValue dataValue) {
         final String payload = convertPayloadToString(dataValue.getValue().getValue());
         return StandardCharsets.UTF_8.encode(payload != null ? payload : "");
     }
 
-    public static @Nullable String convertPayloadToString(@NotNull final Object value) {
+    public static @Nullable String convertPayloadToString(final @NotNull Object value) {
         if (value instanceof DataValue) {
             return convertPayloadToString(((DataValue) value).getValue().getValue());
         } else if (value instanceof Number) {

@@ -25,7 +25,7 @@ public class BucketUtils {
 
     private static final LongHashFunction XX = LongHashFunction.xx();
 
-    public static int getBucket(@NotNull final String id, final int bucketSize) {
+    public static int getBucket(final @NotNull String id, final int bucketSize) {
         return Math.abs((int) (XX.hashChars(id) % bucketSize));
     }
 

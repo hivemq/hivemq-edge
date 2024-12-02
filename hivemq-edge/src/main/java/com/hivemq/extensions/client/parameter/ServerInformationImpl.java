@@ -42,7 +42,7 @@ public class ServerInformationImpl implements ServerInformation {
     private final ListenerConfigurationService listenerConfigurationService;
 
     @Inject
-    public ServerInformationImpl(@NotNull final SystemInformation systemInformation, @NotNull final ListenerConfigurationService listenerConfigurationService) {
+    public ServerInformationImpl(final @NotNull SystemInformation systemInformation, final @NotNull ListenerConfigurationService listenerConfigurationService) {
         this.systemInformation = systemInformation;
         this.listenerConfigurationService = listenerConfigurationService;
     }

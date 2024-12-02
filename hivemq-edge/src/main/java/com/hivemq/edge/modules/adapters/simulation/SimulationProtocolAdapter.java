@@ -70,7 +70,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         output.stoppedSuccessfully();
     }
 

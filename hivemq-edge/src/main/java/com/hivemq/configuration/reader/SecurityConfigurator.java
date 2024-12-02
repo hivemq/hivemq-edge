@@ -24,11 +24,11 @@ public class SecurityConfigurator {
 
     protected final @NotNull SecurityConfigurationService securityConfigurationService;
 
-    public SecurityConfigurator(@NotNull final SecurityConfigurationService securityConfigurationService) {
+    public SecurityConfigurator(final @NotNull SecurityConfigurationService securityConfigurationService) {
         this.securityConfigurationService = securityConfigurationService;
     }
 
-    void setSecurityConfig(@NotNull final SecurityConfigEntity securityConfigEntity) {
+    void setSecurityConfig(final @NotNull SecurityConfigEntity securityConfigEntity) {
         securityConfigurationService.setAllowServerAssignedClientId(securityConfigEntity.getAllowEmptyClientIdEntity().isEnabled());
         securityConfigurationService.setValidateUTF8(securityConfigEntity.getUtf8ValidationEntity().isEnabled());
         securityConfigurationService.setPayloadFormatValidation(securityConfigEntity.getPayloadFormatValidationEntity().isEnabled());

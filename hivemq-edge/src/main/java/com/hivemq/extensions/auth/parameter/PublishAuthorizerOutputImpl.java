@@ -48,7 +48,7 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
         SUCCESS, CONTINUE, FAIL, DISCONNECT, UNDECIDED
     }
 
-    public PublishAuthorizerOutputImpl(@NotNull final PluginOutPutAsyncer asyncer) {
+    public PublishAuthorizerOutputImpl(final @NotNull PluginOutPutAsyncer asyncer) {
         super(asyncer);
     }
 

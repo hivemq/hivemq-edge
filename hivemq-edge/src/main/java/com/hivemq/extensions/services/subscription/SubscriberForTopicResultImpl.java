@@ -26,7 +26,7 @@ public class SubscriberForTopicResultImpl implements SubscriberForTopicResult {
     @NotNull
     private final String clientId;
 
-    public SubscriberForTopicResultImpl(@NotNull final String clientId) {
+    public SubscriberForTopicResultImpl(final @NotNull String clientId) {
         this.clientId = clientId;
     }
 

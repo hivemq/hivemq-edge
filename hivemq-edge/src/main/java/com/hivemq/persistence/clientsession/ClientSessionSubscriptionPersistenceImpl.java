@@ -95,14 +95,14 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ImmutableSet<Topic> getSubscriptions(@NotNull final String client) {
+    public ImmutableSet<Topic> getSubscriptions(final @NotNull String client) {
         checkNotNull(client, "Client id must not be null");
         return localPersistence.get().getSubscriptions(client);
     }
 
     @NotNull
     @Override
-    public ListenableFuture<SubscriptionResult> addSubscription(@NotNull final String client, @NotNull final Topic topic) {
+    public ListenableFuture<SubscriptionResult> addSubscription(final @NotNull String client, final @NotNull Topic topic) {
         try {
             checkNotNull(client, "Client id must not be null");
             checkNotNull(topic, "Topic must not be null");
@@ -164,7 +164,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ListenableFuture<ImmutableList<SubscriptionResult>> addSubscriptions(@NotNull final String client, @NotNull final ImmutableSet<Topic> topics) {
+    public ListenableFuture<ImmutableList<SubscriptionResult>> addSubscriptions(final @NotNull String client, final @NotNull ImmutableSet<Topic> topics) {
         try {
             checkNotNull(client, "Client id must not be null");
             checkNotNull(topics, "Topics must not be null");
@@ -178,7 +178,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ListenableFuture<Void> removeSubscriptions(@NotNull final String client, @NotNull final ImmutableSet<String> topics) {
+    public ListenableFuture<Void> removeSubscriptions(final @NotNull String client, final @NotNull ImmutableSet<String> topics) {
         try {
             checkNotNull(client, "Client id must not be null");
             checkNotNull(topics, "Topics must not be null");
@@ -192,7 +192,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ListenableFuture<Void> remove(@NotNull final String client, @NotNull final String topic) {
+    public ListenableFuture<Void> remove(final @NotNull String client, final @NotNull String topic) {
         try {
             checkNotNull(client, "Client id must not be null");
             checkNotNull(topic, "Topic must not be null");
@@ -227,7 +227,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ListenableFuture<Void> removeAll(@NotNull final String clientId) {
+    public ListenableFuture<Void> removeAll(final @NotNull String clientId) {
         try {
             checkNotNull(clientId, "Client id must not be null");
 
@@ -256,7 +256,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     @Override
-    public ListenableFuture<Void> removeAllLocally(@NotNull final String clientId) {
+    public ListenableFuture<Void> removeAllLocally(final @NotNull String clientId) {
         return singleWriter.submit(clientId, (bucketIndex) -> {
             localPersistence.get().removeAll(clientId, System.currentTimeMillis(), bucketIndex);
             return null;
@@ -265,8 +265,8 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @NotNull
     private ListenableFuture<ImmutableList<SubscriptionResult>> addBatchedTopics(
-            @NotNull final String clientId,
-            @NotNull final ImmutableSet<Topic> topics) {
+            final @NotNull String clientId,
+            final @NotNull ImmutableSet<Topic> topics) {
 
         final long timestamp = System.currentTimeMillis();
 
@@ -355,7 +355,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
     }
 
     @NotNull
-    public ListenableFuture<MultipleChunkResult<Map<String, ImmutableSet<Topic>>>> getAllLocalSubscribersChunk(@NotNull final ChunkCursor cursor) {
+    public ListenableFuture<MultipleChunkResult<Map<String, ImmutableSet<Topic>>>> getAllLocalSubscribersChunk(final @NotNull ChunkCursor cursor) {
         return chunker.getAllLocalChunk(cursor, InternalConfigurations.PERSISTENCE_SUBSCRIPTIONS_MAX_CHUNK_SIZE,
                 // Chunker.SingleWriterCall interface
                 (bucket, lastKey, maxResults) -> singleWriter.submit(bucket,
@@ -368,7 +368,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
     }
 
     @NotNull
-    private ListenableFuture<Void> removeBatchedTopics(@NotNull final String clientId, @NotNull final ImmutableSet<String> topics) {
+    private ListenableFuture<Void> removeBatchedTopics(final @NotNull String clientId, final @NotNull ImmutableSet<String> topics) {
 
         final long timestamp = System.currentTimeMillis();
 
@@ -415,7 +415,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
 
     @Override
     @NotNull
-    public ImmutableSet<Topic> getSharedSubscriptions(@NotNull final String client) {
+    public ImmutableSet<Topic> getSharedSubscriptions(final @NotNull String client) {
 
         checkNotNull(client, "Client id must not be null");
         final ImmutableSet<Topic> subscriptions = getSubscriptions(client);

@@ -53,7 +53,7 @@ public class Topics {
      * @param topic the topic to check
      * @return true if it is a shared subscription, else false.
      */
-    public static boolean isSharedSubscriptionTopic(@NotNull final String topic) {
+    public static boolean isSharedSubscriptionTopic(final @NotNull String topic) {
         //optimizing
         if (!topic.startsWith("$share/")) {
             return false;
@@ -76,7 +76,7 @@ public class Topics {
      * @param topic the topic to check
      * @return <code>true</code> if the topic is valid, <code>false</code> otherwise
      */
-    public static boolean isValidTopicToPublish(@NotNull final String topic) {
+    public static boolean isValidTopicToPublish(final @NotNull String topic) {
 
         if (topic.isEmpty()) {
             return false;
@@ -102,7 +102,7 @@ public class Topics {
      * @param topic the topic to check
      * @return <code>true</code> if the topic is valid, <code>false</code> otherwise
      */
-    public static boolean isValidToSubscribe(@NotNull final String topic) {
+    public static boolean isValidToSubscribe(final @NotNull String topic) {
 
         if (topic.isEmpty()) {
             return false;
@@ -186,7 +186,7 @@ public class Topics {
      * @param topic the topic to check
      * @return <code>true</code> if the topic starts with '$' <code>false</code> otherwise
      */
-    public static boolean isDollarTopic(@NotNull final String topic) {
+    public static boolean isDollarTopic(final @NotNull String topic) {
         return topic.startsWith("$");
     }
 
@@ -208,7 +208,7 @@ public class Topics {
      * @param topic the topic to check.
      * @return the {@link SharedSubscription} for a given topic or <null> if it is none.
      */
-    public static SharedSubscription checkForSharedSubscription(@NotNull final String topic) {
+    public static SharedSubscription checkForSharedSubscription(final @NotNull String topic) {
 
         final Matcher matcher = SHARED_SUBSCRIPTION_PATTERN.matcher(topic);
         if (matcher.matches()) {

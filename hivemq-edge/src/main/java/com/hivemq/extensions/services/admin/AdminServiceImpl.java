@@ -38,7 +38,7 @@ public class AdminServiceImpl implements AdminService {
     private LifecycleStage lifecycleStage = LifecycleStage.STARTING;
 
     @Inject
-    public AdminServiceImpl(@NotNull final ServerInformation serverInformation) {
+    public AdminServiceImpl(final @NotNull ServerInformation serverInformation) {
         this.serverInformation = serverInformation;
     }
 

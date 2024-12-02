@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public interface DataGovernanceTokenProvider {
 
-    @NotNull Map<String, String> getTokenReplacements(@NotNull final DataGovernanceContext context);
+    @NotNull Map<String, String> getTokenReplacements(final @NotNull DataGovernanceContext context);
 
 
 }

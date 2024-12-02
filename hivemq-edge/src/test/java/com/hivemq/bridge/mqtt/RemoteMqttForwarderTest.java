@@ -392,9 +392,9 @@ class RemoteMqttForwarderTest {
     private static class TestInterceptorHandler implements BridgeInterceptorHandler {
         @Override
         public @NotNull ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
-                @NotNull final PUBLISH publish,
-                @NotNull final ExecutorService executorService,
-                @NotNull final MqttBridge bridge) {
+                final @NotNull PUBLISH publish,
+                final @NotNull ExecutorService executorService,
+                final @NotNull MqttBridge bridge) {
             return Futures.immediateFuture(PublishReturnCode.DELIVERED);
         }
 

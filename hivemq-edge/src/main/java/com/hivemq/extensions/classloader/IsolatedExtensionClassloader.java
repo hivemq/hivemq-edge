@@ -69,12 +69,12 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
 
     private final @Nullable ClassLoader delegate;
 
-    public IsolatedExtensionClassloader(@NotNull final URL @NotNull [] classpath, @NotNull final ClassLoader parent) {
+    public IsolatedExtensionClassloader(final @NotNull URL @NotNull [] classpath, final @NotNull ClassLoader parent) {
         super(classpath, parent);
         this.delegate = null;
     }
 
-    public IsolatedExtensionClassloader(@NotNull final ClassLoader delegate, @NotNull final ClassLoader parent) {
+    public IsolatedExtensionClassloader(final @NotNull ClassLoader delegate, final @NotNull ClassLoader parent) {
         super(new URL[]{}, parent);
         this.delegate = delegate;
     }
@@ -94,7 +94,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     }
 
     @Override
-    protected synchronized @NotNull Class<?> loadClass(@NotNull final String name, final boolean resolve)
+    protected synchronized @NotNull Class<?> loadClass(final @NotNull String name, final boolean resolve)
             throws ClassNotFoundException {
         if (delegate != null) {
             return delegate.loadClass(name);
@@ -140,7 +140,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
         return c;
     }
 
-    private boolean mustLoadFromParentClassloader(@NotNull final String name) {
+    private boolean mustLoadFromParentClassloader(final @NotNull String name) {
         for (final String packageName : restrictedPackages) {
             if (name.startsWith(packageName)) {
                 return true;
@@ -150,7 +150,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     }
 
     @Override
-    public @Nullable URL getResource(@NotNull final String name) {
+    public @Nullable URL getResource(final @NotNull String name) {
         URL url;
         if (delegate != null) {
             url = delegate.getResource(name);
@@ -165,7 +165,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     }
 
     @Override
-    public @NotNull Enumeration<URL> getResources(@NotNull final String name) throws IOException {
+    public @NotNull Enumeration<URL> getResources(final @NotNull String name) throws IOException {
         // similar to super, but local resources are enumerated before parent resources
         final Enumeration<URL> localUrls;
         if (delegate != null) {
@@ -205,7 +205,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
 
     @Override
     @Nullable
-    public InputStream getResourceAsStream(@NotNull final String name) {
+    public InputStream getResourceAsStream(final @NotNull String name) {
         final URL url = getResource(name);
         try {
             return url != null ? url.openStream() : null;

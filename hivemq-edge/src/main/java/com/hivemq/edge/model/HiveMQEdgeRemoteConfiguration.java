@@ -32,14 +32,14 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HiveMQEdgeRemoteConfiguration {
 
-    private @JsonProperty("ctas") @NotNull final List<Link> ctas;
-    private @JsonProperty("resources") @NotNull final List<Link> resources;
-    private @JsonProperty("extensions") @NotNull final List<Extension> extensions;
-    private @JsonProperty("modules") @NotNull final List<Module> modules;
-    private @JsonProperty("properties") @NotNull final Map<String, Object> properties;
-    private @JsonProperty("cloudLink") @NotNull final Link cloudLink;
-    private @JsonProperty("gitHubLink") @NotNull final Link gitHubLink;
-    private @JsonProperty("documentationLink") @NotNull final Link documentationLink;
+    private @JsonProperty("ctas") final @NotNull List<Link> ctas;
+    private @JsonProperty("resources") final @NotNull List<Link> resources;
+    private @JsonProperty("extensions") final @NotNull List<Extension> extensions;
+    private @JsonProperty("modules") final @NotNull List<Module> modules;
+    private @JsonProperty("properties") final @NotNull Map<String, Object> properties;
+    private @JsonProperty("cloudLink") final @NotNull Link cloudLink;
+    private @JsonProperty("gitHubLink") final @NotNull Link gitHubLink;
+    private @JsonProperty("documentationLink") final @NotNull Link documentationLink;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public HiveMQEdgeRemoteConfiguration(

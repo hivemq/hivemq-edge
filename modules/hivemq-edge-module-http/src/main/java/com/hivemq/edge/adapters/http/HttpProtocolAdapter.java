@@ -320,9 +320,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
     }
 
     private void writeHttp(
-            @NotNull final WritingInput writingInput,
-            @NotNull final WritingOutput writingOutput,
-            @NotNull final HttpTag httpTag, final @NotNull WritingContext writingContext) {
+            final @NotNull WritingInput writingInput,
+            final @NotNull WritingOutput writingOutput,
+            final @NotNull HttpTag httpTag, final @NotNull WritingContext writingContext) {
         final HttpTagDefinition tagDef = httpTag.getDefinition();
         final String url = httpTag.getDefinition().getUrl();
 

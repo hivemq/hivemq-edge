@@ -58,17 +58,17 @@ public class MqttWillPublish implements Sizable {
     private long delayInterval;
 
     protected MqttWillPublish(
-            @NotNull final String hivemqId,
-            @NotNull final String topic,
+            final @NotNull String hivemqId,
+            final @NotNull String topic,
             @Nullable final byte[] payload,
-            @NotNull final QoS qos,
+            final @NotNull QoS qos,
             final boolean retain,
             final long messageExpiryInterval,
             @Nullable final Mqtt5PayloadFormatIndicator payloadFormatIndicator,
             @Nullable final String contentType,
             @Nullable final String responseTopic,
             @Nullable final byte[] correlationData,
-            @NotNull final Mqtt5UserProperties userProperties,
+            final @NotNull Mqtt5UserProperties userProperties,
             final long delayInterval) {
 
         Preconditions.checkNotNull(topic, "A topic must never be null");
@@ -90,11 +90,11 @@ public class MqttWillPublish implements Sizable {
     }
 
     protected MqttWillPublish(
-            @NotNull final String topic,
+            final @NotNull String topic,
             @Nullable final byte[] payload,
-            @NotNull final QoS qos,
+            final @NotNull QoS qos,
             final boolean retain,
-            @NotNull final String hivemqId) {
+            final @NotNull String hivemqId) {
 
         Preconditions.checkNotNull(topic, "A topic must never be null");
         Preconditions.checkNotNull(qos, "Quality of service must never be null");
@@ -117,7 +117,7 @@ public class MqttWillPublish implements Sizable {
 
     @Nullable
     public static MqttWillPublish fromWillPacket(
-            @NotNull final String hivemqId, @Nullable final WillPublishPacket packet) {
+            final @NotNull String hivemqId, @Nullable final WillPublishPacket packet) {
         if (packet == null) {
             return null;
         }

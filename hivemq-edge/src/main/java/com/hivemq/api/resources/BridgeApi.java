@@ -143,7 +143,7 @@ public interface BridgeApi {
                                             description = "The name of the bridge to query.",
                                             required = true,
                                             in = ParameterIn.PATH)
-                                 @PathParam("bridgeId") @NotNull final String bridgeId) ;
+                                 @PathParam("bridgeId") final @NotNull String bridgeId) ;
 
     @PUT
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/status")
@@ -193,7 +193,7 @@ public interface BridgeApi {
                                              description = "The id of the bridge to query.",
                                              required = true,
                                              in = ParameterIn.PATH)
-                                 @PathParam("bridgeId") @NotNull final String bridgeId) ;
+                                 @PathParam("bridgeId") final @NotNull String bridgeId) ;
 
     @GET
     @Path("/status")

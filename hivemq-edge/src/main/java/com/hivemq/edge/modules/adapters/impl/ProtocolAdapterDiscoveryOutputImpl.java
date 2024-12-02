@@ -41,13 +41,13 @@ public class ProtocolAdapterDiscoveryOutputImpl implements ProtocolAdapterDiscov
     }
 
     @Override
-    public void fail(@NotNull final Throwable t, @Nullable final String errorMessage) {
+    public void fail(final @NotNull Throwable t, @Nullable final String errorMessage) {
         this.errorMessage = errorMessage;
         outputFuture.completeExceptionally(t);
     }
 
     @Override
-    public void fail(@NotNull final String errorMessage) {
+    public void fail(final @NotNull String errorMessage) {
         this.errorMessage = errorMessage;
         outputFuture.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
     }

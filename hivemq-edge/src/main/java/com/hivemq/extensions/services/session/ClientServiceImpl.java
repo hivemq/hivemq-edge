@@ -66,10 +66,10 @@ public class ClientServiceImpl implements ClientService {
 
     @Inject
     public ClientServiceImpl(
-            @NotNull final PluginServiceRateLimitService pluginServiceRateLimitService,
-            @NotNull final ClientSessionPersistence clientSessionPersistence,
-            @NotNull final GlobalManagedExtensionExecutorService managedExtensionExecutorService,
-            @NotNull final AsyncIteratorFactory asyncIteratorFactory) {
+            final @NotNull PluginServiceRateLimitService pluginServiceRateLimitService,
+            final @NotNull ClientSessionPersistence clientSessionPersistence,
+            final @NotNull GlobalManagedExtensionExecutorService managedExtensionExecutorService,
+            final @NotNull AsyncIteratorFactory asyncIteratorFactory) {
         this.pluginServiceRateLimitService = pluginServiceRateLimitService;
         this.clientSessionPersistence = clientSessionPersistence;
         this.managedExtensionExecutorService = managedExtensionExecutorService;
@@ -78,7 +78,7 @@ public class ClientServiceImpl implements ClientService {
 
     @NotNull
     @Override
-    public CompletableFuture<Boolean> isClientConnected(@NotNull final String clientId) {
+    public CompletableFuture<Boolean> isClientConnected(final @NotNull String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
@@ -92,7 +92,7 @@ public class ClientServiceImpl implements ClientService {
 
     @NotNull
     @Override
-    public CompletableFuture<Optional<SessionInformation>> getSession(@NotNull final String clientId) {
+    public CompletableFuture<Optional<SessionInformation>> getSession(final @NotNull String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
@@ -108,14 +108,14 @@ public class ClientServiceImpl implements ClientService {
 
     @NotNull
     @Override
-    public CompletableFuture<Boolean> disconnectClient(@NotNull final String clientId) {
+    public CompletableFuture<Boolean> disconnectClient(final @NotNull String clientId) {
         return disconnectClient(clientId, false);
     }
 
     @NotNull
     @Override
     public CompletableFuture<Boolean> disconnectClient(
-            @NotNull final String clientId, final boolean preventWillMessage) {
+            final @NotNull String clientId, final boolean preventWillMessage) {
         return disconnectClient(clientId, preventWillMessage, null, null);
     }
 
@@ -154,7 +154,7 @@ public class ClientServiceImpl implements ClientService {
 
     @NotNull
     @Override
-    public CompletableFuture<Boolean> invalidateSession(@NotNull final String clientId) {
+    public CompletableFuture<Boolean> invalidateSession(final @NotNull String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
@@ -173,7 +173,7 @@ public class ClientServiceImpl implements ClientService {
             }
 
             @Override
-            public void onFailure(@NotNull final Throwable t) {
+            public void onFailure(final @NotNull Throwable t) {
                 Exceptions.rethrowError(t);
                 setSessionSettableFuture.setException(t);
             }
@@ -184,13 +184,13 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public @NotNull CompletableFuture<Void> iterateAllClients(
-            @NotNull final IterationCallback<SessionInformation> callback) {
+            final @NotNull IterationCallback<SessionInformation> callback) {
         return iterateAllClients(callback, managedExtensionExecutorService);
     }
 
     @Override
     public @NotNull CompletableFuture<Void> iterateAllClients(
-            @NotNull final IterationCallback<SessionInformation> callback, @NotNull final Executor callbackExecutor) {
+            final @NotNull IterationCallback<SessionInformation> callback, final @NotNull Executor callbackExecutor) {
         Preconditions.checkNotNull(callback, "Callback cannot be null");
         Preconditions.checkNotNull(callbackExecutor, "Callback executor cannot be null");
 
@@ -223,7 +223,7 @@ public class ClientServiceImpl implements ClientService {
         @NotNull
         private final ClientSessionPersistence clientSessionPersistence;
 
-        AllClientsFetchCallback(@NotNull final ClientSessionPersistence clientSessionPersistence) {
+        AllClientsFetchCallback(final @NotNull ClientSessionPersistence clientSessionPersistence) {
             this.clientSessionPersistence = clientSessionPersistence;
         }
 

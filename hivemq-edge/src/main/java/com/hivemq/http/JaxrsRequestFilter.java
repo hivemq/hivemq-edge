@@ -44,7 +44,7 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
     private static final boolean DEBUG = Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE);
 
     @Override
-    public void filter(@NotNull final ContainerRequestContext ctx) throws IOException {
+    public void filter(final @NotNull ContainerRequestContext ctx) throws IOException {
         if (DEBUG) {
 //            printUriInfo(ctx.getUriInfo());
 //            printRequest(ctx.getRequest());
@@ -58,7 +58,7 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
         }
     }
 
-    protected void printHeaders(@NotNull final MultivaluedMap<String, String> headers) {
+    protected void printHeaders(final @NotNull MultivaluedMap<String, String> headers) {
         for (String header : headers.keySet()) {
             logger.debug("*** Http-Header: {} -> {}",
                     header,
@@ -66,7 +66,7 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
         }
     }
 
-    protected void printUriInfo(@NotNull final UriInfo info) {
+    protected void printUriInfo(final @NotNull UriInfo info) {
         logger.debug("*** Http-Uri-Absolute: {}", info.getAbsolutePath());
         logger.debug("*** Http-Uri-Base: {}", info.getBaseUri());
         logger.debug("*** Http-Uri-Request: {}", info.getRequestUri());
@@ -77,12 +77,12 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
 
     }
 
-    protected void printSecurityContext(@NotNull final SecurityContext securityContext) {
+    protected void printSecurityContext(final @NotNull SecurityContext securityContext) {
         logger.debug("*** Http-Security-Context-Principal: {}", securityContext.getUserPrincipal());
         logger.debug("*** Http-Security-Context-Scheme: {}", securityContext.getAuthenticationScheme());
     }
 
-    protected void printRequest(@NotNull final Request request) {
+    protected void printRequest(final @NotNull Request request) {
 
         if (request instanceof ContainerRequest) {
             ContainerRequest r = (ContainerRequest) request;

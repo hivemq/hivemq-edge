@@ -70,12 +70,12 @@ public class ProtocolAdapterWrapper {
     }
 
     public void start(
-            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         initStartAttempt();
         adapter.start(input, output);
     }
 
-    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         adapter.stop(input, output);
     }
 
@@ -84,7 +84,7 @@ public class ProtocolAdapterWrapper {
     }
 
     public void discoverValues(
-            @NotNull final ProtocolAdapterDiscoveryInput input, @NotNull final ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         adapter.discoverValues(input, output);
     }
 

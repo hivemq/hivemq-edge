@@ -31,10 +31,10 @@ public class HiveMQExtensionEvent {
     private final boolean embedded;
 
     public HiveMQExtensionEvent(
-            @NotNull final Change change,
-            @NotNull final String extensionId,
+            final @NotNull Change change,
+            final @NotNull String extensionId,
             final int priority,
-            @NotNull final Path extensionFolder,
+            final @NotNull Path extensionFolder,
             final boolean embedded) {
         this.change = change;
         this.extensionId = extensionId;

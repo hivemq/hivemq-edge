@@ -216,7 +216,7 @@ public class AbstractChannelInitializerTest {
         }
 
         @Override
-        protected void addSpecialHandlers(@NotNull final Channel ch) {
+        protected void addSpecialHandlers(final @NotNull Channel ch) {
             //no op, just to test the non abstract stuff
         }
     }
@@ -258,13 +258,13 @@ public class AbstractChannelInitializerTest {
         }
 
         @Override
-        protected void initChannel(@NotNull final Channel ch) throws Exception {
+        protected void initChannel(final @NotNull Channel ch) throws Exception {
             ch.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(ch, null));
             addSpecialHandlers(ch);
         }
 
         @Override
-        protected void addSpecialHandlers(@NotNull final Channel ch) {
+        protected void addSpecialHandlers(final @NotNull Channel ch) {
             throw new SslException("Error!");
         }
     }

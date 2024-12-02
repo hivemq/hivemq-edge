@@ -147,7 +147,7 @@ public class BridgeService {
         }
     }
 
-    public void startBridge(@NotNull final String bridgeName) {
+    public void startBridge(final @NotNull String bridgeName) {
         final long start = System.currentTimeMillis();
         Optional<MqttBridge> bridgeOptional = getBridgeByName(bridgeName);
         if (bridgeOptional.isPresent()) {
@@ -205,7 +205,7 @@ public class BridgeService {
         return Collections.unmodifiableSet(bridgeToClientMap.keySet());
     }
 
-    protected @NotNull Optional<MqttBridge> getBridgeByName(@NotNull final String bridgeName) {
+    protected @NotNull Optional<MqttBridge> getBridgeByName(final @NotNull String bridgeName) {
         List<MqttBridge> bridges = bridgeConfig.getBridges();
         for (MqttBridge bridge : bridges) {
             if (bridge.getId().equals(bridgeName)) {
@@ -215,11 +215,11 @@ public class BridgeService {
         return Optional.empty();
     }
 
-    public @Nullable Throwable getLastError(@NotNull final String bridgeName) {
+    public @Nullable Throwable getLastError(final @NotNull String bridgeName) {
         return lastErrors.get(bridgeName);
     }
 
-    public boolean isConnected(@NotNull final String bridgeName) {
+    public boolean isConnected(final @NotNull String bridgeName) {
         Optional<MqttBridge> bridge = getBridgeByName(bridgeName);
         if (bridge.isPresent()) {
             BridgeMqttClient client;
@@ -230,7 +230,7 @@ public class BridgeService {
         return false;
     }
 
-    public boolean isRunning(@NotNull final String bridgeName) {
+    public boolean isRunning(final @NotNull String bridgeName) {
         return activeBridges().contains(bridgeName);
     }
 

@@ -296,7 +296,7 @@ public class HiveMQEdgeNettyBootstrap {
 
     @VisibleForTesting
     public static @NotNull ClientWriteBufferProperties validateWriteBufferProperties(
-            @NotNull final ClientWriteBufferProperties writeBufferProperties) {
+            final @NotNull ClientWriteBufferProperties writeBufferProperties) {
 
         checkNotNull(writeBufferProperties, "writeBufferProperties must not be null");
 

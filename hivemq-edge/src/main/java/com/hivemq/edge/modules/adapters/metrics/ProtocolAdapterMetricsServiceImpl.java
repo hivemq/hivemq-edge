@@ -147,7 +147,7 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
      * @param suffix - the suffix to append to the namespace
      * @return a namespace string for use in the metrics registry
      */
-    protected synchronized @NotNull String createAdapterMetricsNamespace(@NotNull final String suffix) {
+    protected synchronized @NotNull String createAdapterMetricsNamespace(final @NotNull String suffix) {
         final String metricName =
                 PROTOCOL_ADAPTER_PREFIX + protocolAdapterType + "." + protocolAdapterId + "." + suffix;
         metricNames.add(metricName);

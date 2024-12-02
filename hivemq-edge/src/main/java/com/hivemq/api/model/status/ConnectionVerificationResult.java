@@ -64,15 +64,15 @@ public class ConnectionVerificationResult {
         return result;
     }
 
-    public static ConnectionVerificationResult success(@NotNull final ConnectionDetails details){
+    public static ConnectionVerificationResult success(final @NotNull ConnectionDetails details){
         return new ConnectionVerificationResult(details, "Socket established", RESULT.CONTINUE_SUCCESS);
     }
 
-    public static ConnectionVerificationResult warning(@NotNull final ConnectionDetails details, String message){
+    public static ConnectionVerificationResult warning(final @NotNull ConnectionDetails details, String message){
         return new ConnectionVerificationResult(details, message, RESULT.CONTINUE_WARNING);
     }
 
-    public static ConnectionVerificationResult error(@NotNull final ConnectionDetails details, String message){
+    public static ConnectionVerificationResult error(final @NotNull ConnectionDetails details, String message){
         return new ConnectionVerificationResult(details, message, RESULT.ERROR);
     }
 

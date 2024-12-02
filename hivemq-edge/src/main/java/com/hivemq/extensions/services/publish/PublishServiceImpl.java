@@ -81,12 +81,12 @@ public class PublishServiceImpl implements PublishService {
     private final DataGovernanceService dataGovernanceService;
 
     @Inject
-    public PublishServiceImpl(@NotNull final PluginServiceRateLimitService rateLimitService,
-                              @NotNull final GlobalManagedExtensionExecutorService globalManagedExtensionExecutorService,
-                              @NotNull final PublishDistributor publishDistributor,
-                              @NotNull final HivemqId hiveMQId,
-                              @NotNull final LocalTopicTree topicTree,
-                              @NotNull final DataGovernanceService dataGovernanceService) {
+    public PublishServiceImpl(final @NotNull PluginServiceRateLimitService rateLimitService,
+                              final @NotNull GlobalManagedExtensionExecutorService globalManagedExtensionExecutorService,
+                              final @NotNull PublishDistributor publishDistributor,
+                              final @NotNull HivemqId hiveMQId,
+                              final @NotNull LocalTopicTree topicTree,
+                              final @NotNull DataGovernanceService dataGovernanceService) {
         this.rateLimitService = rateLimitService;
         this.globalManagedExtensionExecutorService = globalManagedExtensionExecutorService;
         this.publishDistributor = publishDistributor;
@@ -97,7 +97,7 @@ public class PublishServiceImpl implements PublishService {
 
     @Override
     @NotNull
-    public CompletableFuture<Void> publish(@NotNull final Publish publish) {
+    public CompletableFuture<Void> publish(final @NotNull Publish publish) {
         checkNotNull(publish, "Publish must never be null");
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
@@ -121,7 +121,7 @@ public class PublishServiceImpl implements PublishService {
 
     @Override
     @NotNull
-    public CompletableFuture<PublishToClientResult> publishToClient(@NotNull final Publish publish, @NotNull final String clientId) {
+    public CompletableFuture<PublishToClientResult> publishToClient(final @NotNull Publish publish, final @NotNull String clientId) {
         checkNotNull(publish, "Publish must never be null");
         checkNotNull(clientId, "Client ID must never be null");
         checkArgument(!clientId.isEmpty(), "Client ID must not be empty");
@@ -150,7 +150,7 @@ public class PublishServiceImpl implements PublishService {
             }
 
             @Override
-            public void onFailure(@NotNull final Throwable t) {
+            public void onFailure(final @NotNull Throwable t) {
                 sendPublishFuture.setException(t);
             }
         }, MoreExecutors.directExecutor());
@@ -160,7 +160,7 @@ public class PublishServiceImpl implements PublishService {
     }
 
     @NotNull
-    private PUBLISH publishToPUBLISH(@NotNull final PublishImpl publish) {
+    private PUBLISH publishToPUBLISH(final @NotNull PublishImpl publish) {
         final byte[] payload = Bytes.getBytesFromReadOnlyBuffer(publish.getPayload());
 
         final byte[] correlationData = Bytes.getBytesFromReadOnlyBuffer(publish.getCorrelationData());

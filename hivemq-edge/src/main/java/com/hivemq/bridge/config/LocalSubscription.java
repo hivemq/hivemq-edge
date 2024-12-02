@@ -35,7 +35,7 @@ public class LocalSubscription {
     private @Nullable String uniqueId;
     private final @Nullable Long queueLimit;
 
-    public LocalSubscription(@NotNull final List<String> filters, @Nullable final String destination) {
+    public LocalSubscription(final @NotNull List<String> filters, @Nullable final String destination) {
         this.filters = filters;
         this.destination = destination;
         this.excludes = List.of();

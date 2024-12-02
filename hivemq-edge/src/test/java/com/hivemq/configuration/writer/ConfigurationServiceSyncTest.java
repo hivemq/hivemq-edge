@@ -169,7 +169,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
     }
 
-    protected void assertISA95Equals(@NotNull final ISA95 isa95, @NotNull final ISA95Entity config) {
+    protected void assertISA95Equals(final @NotNull ISA95 isa95, final @NotNull ISA95Entity config) {
         Assert.assertEquals("Objects should be updated by flush", isa95.getArea(), config.getArea());
         Assert.assertEquals("Objects should be updated by flush",
                 isa95.getProductionLine(),

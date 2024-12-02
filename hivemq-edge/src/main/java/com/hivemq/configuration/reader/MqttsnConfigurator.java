@@ -39,7 +39,7 @@ public class MqttsnConfigurator {
         }
     }
 
-    void setMqttsnConfig(@NotNull final MqttSnConfigEntity mqttsnConfig) {
+    void setMqttsnConfig(final @NotNull MqttSnConfigEntity mqttsnConfig) {
         mqttsnConfigurationService.setGatewayId(mqttsnConfig.getGatewayId());
         setPredefinedTopicAliases(mqttsnConfig.getPredefinedTopicAliases());
         mqttsnConfigurationService.setMaxClientIdentifierLength(mqttsnConfig.getMaxClientIdentifierLength());

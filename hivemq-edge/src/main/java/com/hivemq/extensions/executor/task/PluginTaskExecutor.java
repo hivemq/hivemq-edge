@@ -97,7 +97,7 @@ public class PluginTaskExecutor {
         executorService.shutdownNow();
     }
 
-    public void handlePluginTaskExecution(@NotNull final PluginTaskExecution pluginTaskExecution) {
+    public void handlePluginTaskExecution(final @NotNull PluginTaskExecution pluginTaskExecution) {
 
         if (!running.get()) {
             throw new RejectedExecutionException("Extension Task executor is already stopped");
@@ -122,7 +122,7 @@ public class PluginTaskExecutor {
     private static class CreateQueueIfNotPresent implements Function<String, Queue<PluginTaskExecution>> {
         @NotNull
         @Override
-        public Queue<PluginTaskExecution> apply(@NotNull final String id) {
+        public Queue<PluginTaskExecution> apply(final @NotNull String id) {
             return new ConcurrentLinkedQueue<>();
         }
     }
@@ -217,7 +217,7 @@ public class PluginTaskExecutor {
         /**
          * Tries to clean an empty queue if it is really empty
          */
-        private boolean possiblyCleanupEmptyQueue(@NotNull final String key) {
+        private boolean possiblyCleanupEmptyQueue(final @NotNull String key) {
             //cleanup empty queues immediately
             //only acquire the lock if the queue might be empty, if we don't see the queue as empty
             // although it is empty it will be cleaned up by a later run
@@ -237,7 +237,7 @@ public class PluginTaskExecutor {
             return false;
         }
 
-        private void executeDoneTask(@NotNull final PluginTaskExecution task) {
+        private void executeDoneTask(final @NotNull PluginTaskExecution task) {
 
             try {
                 final PluginTaskOutput outputObject = task.getOutputObject();
@@ -259,7 +259,7 @@ public class PluginTaskExecutor {
             }
         }
 
-        private void executeTask(@NotNull final PluginTaskExecution task) {
+        private void executeTask(final @NotNull PluginTaskExecution task) {
 
             final PluginTaskOutput output = runTask(task);
 
@@ -284,7 +284,7 @@ public class PluginTaskExecutor {
                     }
 
                     @Override
-                    public void onFailure(@NotNull final Throwable t) {
+                    public void onFailure(final @NotNull Throwable t) {
                         Exceptions.rethrowError("Exception at PluginTaskExecutor", t);
                         task.markAsDone();
                         semaphore.release();
@@ -303,7 +303,7 @@ public class PluginTaskExecutor {
         }
 
         @NotNull
-        private PluginTaskOutput runTask(@NotNull final PluginTaskExecution task) {
+        private PluginTaskOutput runTask(final @NotNull PluginTaskExecution task) {
             final Thread thread = Thread.currentThread();
             final ClassLoader contextClassLoader = thread.getContextClassLoader();
             try {
@@ -327,20 +327,20 @@ public class PluginTaskExecutor {
         }
 
         @NotNull
-        private PluginTaskOutput runOutTask(@NotNull final PluginTaskExecution task, final PluginOutTask pluginTask) {
+        private PluginTaskOutput runOutTask(final @NotNull PluginTaskExecution task, final PluginOutTask pluginTask) {
             //noinspection unchecked: cast is safe because accept has generics that extend PluginTaskOutput
             return (PluginTaskOutput) pluginTask.apply(task.getOutputObject());
         }
 
         @NotNull
-        private PluginTaskOutput runInTask(@NotNull final PluginTaskExecution task, @NotNull final PluginInTask pluginTask) {
+        private PluginTaskOutput runInTask(final @NotNull PluginTaskExecution task, final @NotNull PluginInTask pluginTask) {
             //noinspection unchecked: cast is safe because accept has generics that extend PluginTaskOutput
             pluginTask.accept(task.getInputObject());
             return DefaultPluginTaskOutput.getInstance();
         }
 
         @NotNull
-        private PluginTaskOutput runInOutTask(@NotNull final PluginTaskExecution task, final PluginInOutTask pluginTask) {
+        private PluginTaskOutput runInOutTask(final @NotNull PluginTaskExecution task, final PluginInOutTask pluginTask) {
             //noinspection unchecked: cast is safe because apply has generics that extend PluginTaskOutput
             return (PluginTaskOutput) pluginTask.apply(task.getInputObject(), task.getOutputObject());
         }

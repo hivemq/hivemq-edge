@@ -99,26 +99,26 @@ public class GlobalManagedExtensionExecutorService implements ScheduledExecutorS
 
     @NotNull
     public ScheduledFuture<?> schedule(
-            @NotNull final Runnable command, final long delay, @NotNull final TimeUnit unit) {
+            final @NotNull Runnable command, final long delay, final @NotNull TimeUnit unit) {
         return Objects.requireNonNull(scheduledExecutorService).schedule(command, delay, unit);
     }
 
     @NotNull
     public <V> ScheduledFuture<V> schedule(
-            @NotNull final Callable<V> callable, final long delay, @NotNull final TimeUnit unit) {
+            final @NotNull Callable<V> callable, final long delay, final @NotNull TimeUnit unit) {
         return Objects.requireNonNull(scheduledExecutorService).schedule(callable, delay, unit);
     }
 
     @NotNull
     public ScheduledFuture<?> scheduleAtFixedRate(
-            @NotNull final Runnable command, final long initialDelay, final long period, @NotNull final TimeUnit unit) {
+            final @NotNull Runnable command, final long initialDelay, final long period, final @NotNull TimeUnit unit) {
         return Objects.requireNonNull(scheduledExecutorService)
                 .scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @NotNull
     public ScheduledFuture<?> scheduleWithFixedDelay(
-            @NotNull final Runnable command, final long initialDelay, final long delay, @NotNull final TimeUnit unit) {
+            final @NotNull Runnable command, final long initialDelay, final long delay, final @NotNull TimeUnit unit) {
         return Objects.requireNonNull(scheduledExecutorService)
                 .scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -141,52 +141,52 @@ public class GlobalManagedExtensionExecutorService implements ScheduledExecutorS
         return Objects.requireNonNull(scheduledExecutorService).isTerminated();
     }
 
-    public boolean awaitTermination(final long timeout, @NotNull final TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(final long timeout, final @NotNull TimeUnit unit) throws InterruptedException {
         return Objects.requireNonNull(scheduledExecutorService).awaitTermination(timeout, unit);
     }
 
     @NotNull
-    public <T> Future<T> submit(@NotNull final Callable<T> task) {
+    public <T> Future<T> submit(final @NotNull Callable<T> task) {
         return Objects.requireNonNull(scheduledExecutorService).submit(task);
     }
 
     @NotNull
-    public <T> Future<T> submit(@NotNull final Runnable task, @NotNull final T result) {
+    public <T> Future<T> submit(final @NotNull Runnable task, final @NotNull T result) {
         return Objects.requireNonNull(scheduledExecutorService).submit(task, result);
     }
 
     @NotNull
-    public Future<?> submit(@NotNull final Runnable task) {
+    public Future<?> submit(final @NotNull Runnable task) {
         return Objects.requireNonNull(scheduledExecutorService).submit(task);
     }
 
     @NotNull
-    public <T> List<Future<T>> invokeAll(@NotNull final Collection<? extends Callable<T>> tasks)
+    public <T> List<Future<T>> invokeAll(final @NotNull Collection<? extends Callable<T>> tasks)
             throws InterruptedException {
         return Objects.requireNonNull(scheduledExecutorService).invokeAll(tasks);
     }
 
     @NotNull
     public <T> List<Future<T>> invokeAll(
-            @NotNull final Collection<? extends Callable<T>> tasks, final long timeout, @NotNull final TimeUnit unit)
+            final @NotNull Collection<? extends Callable<T>> tasks, final long timeout, final @NotNull TimeUnit unit)
             throws InterruptedException {
         return Objects.requireNonNull(scheduledExecutorService).invokeAll(tasks, timeout, unit);
     }
 
     @NotNull
-    public <T> T invokeAny(@NotNull final Collection<? extends Callable<T>> tasks)
+    public <T> T invokeAny(final @NotNull Collection<? extends Callable<T>> tasks)
             throws InterruptedException, ExecutionException {
         return Objects.requireNonNull(scheduledExecutorService).invokeAny(tasks);
     }
 
     @NotNull
     public <T> T invokeAny(
-            @NotNull final Collection<? extends Callable<T>> tasks, final long timeout, @NotNull final TimeUnit unit)
+            final @NotNull Collection<? extends Callable<T>> tasks, final long timeout, final @NotNull TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         return Objects.requireNonNull(scheduledExecutorService).invokeAny(tasks, timeout, unit);
     }
 
-    public void execute(@NotNull final Runnable command) {
+    public void execute(final @NotNull Runnable command) {
         Objects.requireNonNull(scheduledExecutorService).execute(command);
     }
 }

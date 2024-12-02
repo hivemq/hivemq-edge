@@ -88,12 +88,12 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
         this(topic, qoS, DEFAULT_NO_LOCAL, DEFAULT_RETAIN_AS_PUBLISHED, DEFAULT_RETAIN_HANDLING, null);
     }
 
-    public static Topic topicFromString(@NotNull final String string) {
+    public static Topic topicFromString(final @NotNull String string) {
         return new Topic(string, DEFAULT_QOS);
     }
 
     @NotNull
-    public static Topic topicFromSubscription(@NotNull final Subscription subscription, final @Nullable Integer subscriptionIdentifier) {
+    public static Topic topicFromSubscription(final @NotNull Subscription subscription, final @Nullable Integer subscriptionIdentifier) {
         return new Topic(subscription.getTopicFilter(),
                 Objects.requireNonNull(QoS.valueOf(subscription.getQos().getQosNumber())),
                 subscription.getNoLocal(),
@@ -119,7 +119,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     }
 
 
-    public void setQoS(@NotNull final QoS qos) {
+    public void setQoS(final @NotNull QoS qos) {
         checkNotNull(qos, "QoS must not be null");
         this.qoS = qos;
     }

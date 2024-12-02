@@ -66,7 +66,7 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         private @Nullable ProtocolAdapter adapter;
 
         public ProtocolAdapterPublishServicePerAdapter(
-                @NotNull final ProtocolAdapterPublishService delegate) {
+                final @NotNull ProtocolAdapterPublishService delegate) {
             this.delegate = delegate;
         }
 

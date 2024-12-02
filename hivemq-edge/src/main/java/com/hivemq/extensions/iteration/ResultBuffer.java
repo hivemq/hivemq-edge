@@ -32,11 +32,11 @@ public class ResultBuffer<V> {
     @NotNull
     private final NextChunkCallback<V> nextChunkCallback;
 
-    ResultBuffer(@NotNull final NextChunkCallback<V> nextChunkCallback) {
+    ResultBuffer(final @NotNull NextChunkCallback<V> nextChunkCallback) {
         this.nextChunkCallback = nextChunkCallback;
     }
 
-    synchronized void addChunk(@NotNull final ChunkResult<V> chunk) {
+    synchronized void addChunk(final @NotNull ChunkResult<V> chunk) {
         currentChunk = chunk;
     }
 

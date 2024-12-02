@@ -26,7 +26,7 @@ public class PubrelDroppedEvent {
     @NotNull
     private final PUBREL message;
 
-    public PubrelDroppedEvent(@NotNull final PUBREL message) {
+    public PubrelDroppedEvent(final @NotNull PUBREL message) {
         this.message = message;
     }
 

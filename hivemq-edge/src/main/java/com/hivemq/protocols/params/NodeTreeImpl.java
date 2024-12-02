@@ -35,9 +35,9 @@ public class NodeTreeImpl implements NodeTree {
 
     @Override
     public void addNode(
-            @NotNull final String id,
-            @NotNull final String name, @NotNull final String value,
-            @NotNull final String description,
+            final @NotNull String id,
+            final @NotNull String name, final @NotNull String value,
+            final @NotNull String description,
             @Nullable final String parentId,
             @NotNull NodeType nodeType,
             boolean selectable) {

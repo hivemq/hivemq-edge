@@ -30,7 +30,7 @@ public class ClientInformationImpl implements ClientInformation {
     @NotNull
     private final String clientId;
 
-    public ClientInformationImpl(@NotNull final String clientId) {
+    public ClientInformationImpl(final @NotNull String clientId) {
         Preconditions.checkNotNull(clientId, "client id must never be null");
         this.clientId = clientId;
     }

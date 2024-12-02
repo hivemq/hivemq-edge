@@ -98,8 +98,8 @@ public class ClientAuthorizersImplTest {
 
         @Override
         public void authorizeSubscribe(
-                @NotNull final SubscriptionAuthorizerInput subscriptionAuthorizerInput,
-                @NotNull final SubscriptionAuthorizerOutput subscriptionAuthorizerOutput) {
+                final @NotNull SubscriptionAuthorizerInput subscriptionAuthorizerInput,
+                final @NotNull SubscriptionAuthorizerOutput subscriptionAuthorizerOutput) {
         }
     }
 }

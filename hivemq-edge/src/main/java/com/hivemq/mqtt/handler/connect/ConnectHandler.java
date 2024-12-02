@@ -416,7 +416,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
     private void applyClientSettings(final @NotNull ModifiableClientSettingsImpl clientSettings,
                                      final @NotNull CONNECT msg,
-                                     @NotNull final Channel channel) {
+                                     final @NotNull Channel channel) {
         msg.setReceiveMaximum(clientSettings.getClientReceiveMaximum());
 
         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
@@ -434,7 +434,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         disconnectClientWithSameClientId(clientConnection, ctx, msg);
     }
 
-    private void afterPublishAuthorizer(@NotNull final ChannelHandlerContext ctx, @NotNull final CONNECT msg, @NotNull final PublishAuthorizerResult authorizerResult) {
+    private void afterPublishAuthorizer(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final @NotNull PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -470,7 +470,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         continueAfterWillAuthorization(ctx, clientConnection, msg);
     }
 
-    private boolean isWillNotAuthorized(@NotNull final ChannelHandlerContext ctx, @NotNull final CONNECT msg) {
+    private boolean isWillNotAuthorized(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
         if (msg.getWillPublish() != null) {
             final ModifiableDefaultPermissions permissions = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthPermissions();
             if (!DefaultPermissionsEvaluator.checkWillPublish(permissions, msg.getWillPublish())) {
@@ -484,7 +484,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         return false;
     }
 
-    private void connackWillNotAuthorized(@NotNull final ChannelHandlerContext ctx, @NotNull final CONNECT msg,
+    private void connackWillNotAuthorized(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg,
                                           @Nullable final DisconnectReasonCode disconnectReasonCode,
                                           @Nullable final AckReasonCode ackReasonCode, @Nullable final String reasonString) {
 

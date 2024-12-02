@@ -141,7 +141,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         return token;
     }
 
-    protected JwtClaims createClaims(@NotNull final ApiPrincipal principal){
+    protected JwtClaims createClaims(final @NotNull ApiPrincipal principal){
         Preconditions.checkNotNull(principal);
         JwtClaims claims = new JwtClaims();
         claims.setGeneratedJwtId();
@@ -155,7 +155,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         return claims;
     }
 
-    protected JsonWebSignature signClaims(@NotNull final JwtClaims claims){
+    protected JsonWebSignature signClaims(final @NotNull JwtClaims claims){
         Preconditions.checkNotNull(claims);
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());

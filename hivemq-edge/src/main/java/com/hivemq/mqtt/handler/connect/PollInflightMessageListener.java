@@ -30,13 +30,13 @@ public class PollInflightMessageListener implements ChannelFutureListener {
     @NotNull
     private final String clientId;
 
-    public PollInflightMessageListener(@NotNull final PublishPollService publishPollService, @NotNull final String clientId) {
+    public PollInflightMessageListener(final @NotNull PublishPollService publishPollService, final @NotNull String clientId) {
         this.publishPollService = publishPollService;
         this.clientId = clientId;
     }
 
     @Override
-    public void operationComplete(@NotNull final ChannelFuture future) throws Exception {
+    public void operationComplete(final @NotNull ChannelFuture future) throws Exception {
         publishPollService.pollInflightMessages(clientId, future.channel());
     }
 }

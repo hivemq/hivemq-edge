@@ -67,7 +67,7 @@ public class PollingOutputImpl implements PollingOutput {
     }
 
     @Override
-    public void fail(@NotNull final String errorMessage) {
+    public void fail(final @NotNull String errorMessage) {
         this.errorMessage = errorMessage;
         outputFuture.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
     }

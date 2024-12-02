@@ -38,8 +38,8 @@ public class NettyPipelineTranscodingContext implements ITranscodingContext {
     private final @NotNull ChannelHandlerContext channelHandlerContext;
     private final @NotNull ChannelDependencies channelDependencies;
 
-    public NettyPipelineTranscodingContext(@NotNull final ChannelHandlerContext channelHandlerContext,
-                                           @NotNull final ChannelDependencies channelDependencies) {
+    public NettyPipelineTranscodingContext(final @NotNull ChannelHandlerContext channelHandlerContext,
+                                           final @NotNull ChannelDependencies channelDependencies) {
         this.channelHandlerContext = channelHandlerContext;
         this.channelDependencies = channelDependencies;
     }

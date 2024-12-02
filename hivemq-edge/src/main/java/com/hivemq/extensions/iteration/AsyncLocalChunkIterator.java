@@ -47,9 +47,9 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
     private final Lock lock = new ReentrantLock();
 
-    AsyncLocalChunkIterator(@NotNull final FetchCallback<V> fetchCallback,
-                            @NotNull final ItemCallback<V> itemCallback,
-                            @NotNull final ExecutorService executorService) {
+    AsyncLocalChunkIterator(final @NotNull FetchCallback<V> fetchCallback,
+                            final @NotNull ItemCallback<V> itemCallback,
+                            final @NotNull ExecutorService executorService) {
         this.fetchCallback = fetchCallback;
         this.resultBuffer = new ResultBuffer<>((cursor, resultBuffer) -> {
             fetchNextChunk(cursor);
@@ -96,7 +96,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         callCallback(items);
     }
 
-    private synchronized void callCallback(@NotNull final Collection<V> items) {
+    private synchronized void callCallback(final @NotNull Collection<V> items) {
         if (aborted.get()) {
             return;
         }
@@ -115,7 +115,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         return fetchFuture;
     }
 
-    private void abortExceptionally(@NotNull final Throwable t) {
+    private void abortExceptionally(final @NotNull Throwable t) {
         aborted.set(true);
         resultBuffer.clean();
         fetchFuture.completeExceptionally(t);
@@ -128,9 +128,9 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         private final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator;
         private final @NotNull Lock lock;
 
-        ChunkResultFutureCallback(@NotNull final ResultBuffer<V> resultBuffer,
-                                  @NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                                  @NotNull final Lock lock) {
+        ChunkResultFutureCallback(final @NotNull ResultBuffer<V> resultBuffer,
+                                  final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                                  final @NotNull Lock lock) {
             this.resultBuffer = resultBuffer;
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.lock = lock;
@@ -168,7 +168,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         }
 
         @Override
-        public void onFailure(@NotNull final Throwable t) {
+        public void onFailure(final @NotNull Throwable t) {
             asyncLocalChunkIterator.abortExceptionally(t);
         }
     }
@@ -179,9 +179,9 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         private final @NotNull ResultBuffer<V> resultBuffer;
         private final @NotNull Lock lock;
 
-        private ChunkCallback(@NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                              @NotNull final ResultBuffer<V> resultBuffer,
-                              @NotNull final Lock lock) {
+        private ChunkCallback(final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                              final @NotNull ResultBuffer<V> resultBuffer,
+                              final @NotNull Lock lock) {
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.resultBuffer = resultBuffer;
             this.lock = lock;
@@ -225,7 +225,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         }
 
         @Override
-        public void onFailure(@NotNull final Throwable t) {
+        public void onFailure(final @NotNull Throwable t) {
             asyncLocalChunkIterator.abortExceptionally(t);
         }
     }

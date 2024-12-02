@@ -56,7 +56,7 @@ public class ApiErrorMessage {
         return title;
     }
 
-    public void setTitle(@NotNull final String title) {
+    public void setTitle(final @NotNull String title) {
         this.title = title;
     }
 
@@ -64,11 +64,11 @@ public class ApiErrorMessage {
         return detail;
     }
 
-    public void setDetail(@NotNull final String detail) {
+    public void setDetail(final @NotNull String detail) {
         this.detail = detail;
     }
 
-    public void setFieldName(@NotNull final String fieldName) {
+    public void setFieldName(final @NotNull String fieldName) {
         this.fieldName = fieldName;
     }
 
@@ -76,7 +76,7 @@ public class ApiErrorMessage {
         return fieldName;
     }
 
-    public static ApiErrorMessage from(@NotNull final String message){
+    public static ApiErrorMessage from(final @NotNull String message){
         Preconditions.checkNotNull(message);
         return new ApiErrorMessage(null, message, null);
     }

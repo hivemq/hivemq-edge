@@ -58,8 +58,8 @@ public class AsyncIteratorFactory {
 
     @NotNull
     public <V> AsyncIterator<V> createIterator(
-            @NotNull final FetchCallback<V> fetchCallback,
-            @NotNull final AsyncIterator.ItemCallback<V> iterationCallback) {
+            final @NotNull FetchCallback<V> fetchCallback,
+            final @NotNull AsyncIterator.ItemCallback<V> iterationCallback) {
 
         return new AsyncLocalChunkIterator<V>(fetchCallback, iterationCallback, executorService);
     }

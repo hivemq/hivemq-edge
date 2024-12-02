@@ -29,7 +29,7 @@ public class RemoteSubscription {
     private final boolean preserveRetain;
     private final int maxQoS;
 
-    public RemoteSubscription(@NotNull final List<String> filters, @Nullable final String destination) {
+    public RemoteSubscription(final @NotNull List<String> filters, @Nullable final String destination) {
         this.filters = filters;
         this.destination = destination;
         this.customUserProperties = List.of();

@@ -91,7 +91,7 @@ public interface ConfigurationService {
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 
-    void writeConfiguration(@NotNull final Writer writer);
+    void writeConfiguration(final @NotNull Writer writer);
 
     @NotNull Optional<Long> getLastUpdateTime();
 

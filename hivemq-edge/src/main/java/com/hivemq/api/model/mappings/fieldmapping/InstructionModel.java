@@ -34,8 +34,8 @@ public class InstructionModel {
 
     @JsonCreator
     public InstructionModel(
-            @JsonProperty(value = "source", required = true) @NotNull final String sourceFieldName,
-            @JsonProperty(value = "destination", required = true) @NotNull final String destinationFieldName) {
+            @JsonProperty(value = "source", required = true) final @NotNull String sourceFieldName,
+            @JsonProperty(value = "destination", required = true) final @NotNull String destinationFieldName) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
     }

@@ -38,8 +38,8 @@ public class WrappedScheduledRunnable implements Runnable {
     private final HiveMQExtensions hiveMQExtensions;
 
     WrappedScheduledRunnable(
-            @NotNull final Runnable runnable, @NotNull final ClassLoader classLoader,
-            @NotNull final CompletableScheduledFuture<?> future, @NotNull final HiveMQExtensions hiveMQExtensions) {
+            final @NotNull Runnable runnable, final @NotNull ClassLoader classLoader,
+            final @NotNull CompletableScheduledFuture<?> future, final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.runnable = runnable;
         this.classLoader = classLoader;
         this.future = future;

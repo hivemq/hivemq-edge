@@ -26,8 +26,8 @@ import java.util.Objects;
  */
 public abstract class AbstractDataGovernanceEntity implements DataGovernanceEntity {
 
-    private @NotNull final String id;
-    private @NotNull final String name;
+    private final @NotNull String id;
+    private final @NotNull String name;
     private boolean enabled = true;
     private boolean mutable = false;
 

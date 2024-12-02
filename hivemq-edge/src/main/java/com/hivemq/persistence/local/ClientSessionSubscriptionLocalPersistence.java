@@ -41,7 +41,7 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscription is stored.
      */
     @ExecuteInSingleWriter
-    void addSubscription(@NotNull final String client, @NotNull final Topic topic, long timestamp, int bucketIndex);
+    void addSubscription(final @NotNull String client, final @NotNull Topic topic, long timestamp, int bucketIndex);
 
     /**
      * Add subscriptions of specific topics for a specific client to a persistence bucket.
@@ -63,7 +63,7 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscription is stored.
      */
     @ExecuteInSingleWriter
-    void remove(@NotNull final String client, @NotNull final String topic, long timestamp, int bucketIndex);
+    void remove(final @NotNull String client, final @NotNull String topic, long timestamp, int bucketIndex);
 
     /**
      * Remove subscriptions of specific topics for a specific client from a persistence bucket.
@@ -84,7 +84,7 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscriptions are stored.
      */
     @ExecuteInSingleWriter
-    void removeAll(@NotNull final String client, long timestamp, int bucketIndex);
+    void removeAll(final @NotNull String client, long timestamp, int bucketIndex);
 
     /**
      * Trigger a cleanup for a specific persistence bucket.
@@ -102,7 +102,7 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      */
     @ReadOnly
     @NotNull
-    ImmutableSet<Topic> getSubscriptions(@NotNull final String client);
+    ImmutableSet<Topic> getSubscriptions(final @NotNull String client);
 
     /**
      * Get a chunk of subscriptions.

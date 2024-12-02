@@ -31,7 +31,7 @@ public interface SingleWriterService {
 
     @NotNull ProducerQueues getAttributeStoreQueue();
 
-    @NotNull Executor callbackExecutor(@NotNull final String key);
+    @NotNull Executor callbackExecutor(final @NotNull String key);
 
     int getPersistenceBucketCount();
 

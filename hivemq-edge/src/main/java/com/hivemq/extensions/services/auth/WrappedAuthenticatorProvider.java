@@ -48,13 +48,13 @@ public class WrappedAuthenticatorProvider {
     @NotNull
     private final ClassLoader classLoader;
 
-    public WrappedAuthenticatorProvider(@NotNull final AuthenticatorProvider simpleAuthenticatorProvider, @NotNull final ClassLoader classLoader) {
+    public WrappedAuthenticatorProvider(final @NotNull AuthenticatorProvider simpleAuthenticatorProvider, final @NotNull ClassLoader classLoader) {
         this.simpleAuthenticatorProvider = simpleAuthenticatorProvider;
         this.classLoader = classLoader;
         this.enhancedAuthenticatorProvider = null;
     }
 
-    public WrappedAuthenticatorProvider(@NotNull final EnhancedAuthenticatorProvider enhancedAuthenticatorProvider, @NotNull final ClassLoader classLoader) {
+    public WrappedAuthenticatorProvider(final @NotNull EnhancedAuthenticatorProvider enhancedAuthenticatorProvider, final @NotNull ClassLoader classLoader) {
         this.enhancedAuthenticatorProvider = enhancedAuthenticatorProvider;
         this.classLoader = classLoader;
         this.simpleAuthenticatorProvider = null;
@@ -65,7 +65,7 @@ public class WrappedAuthenticatorProvider {
     }
 
     @Nullable
-    public SimpleAuthenticator getAuthenticator(@NotNull final AuthenticatorProviderInput authenticatorProviderInput) {
+    public SimpleAuthenticator getAuthenticator(final @NotNull AuthenticatorProviderInput authenticatorProviderInput) {
 
         if(enhancedAuthenticatorProvider != null){
             return null;
@@ -92,7 +92,7 @@ public class WrappedAuthenticatorProvider {
     }
 
     @Nullable
-    public EnhancedAuthenticator getEnhancedAuthenticator(@NotNull final AuthenticatorProviderInput authenticatorProviderInput) {
+    public EnhancedAuthenticator getEnhancedAuthenticator(final @NotNull AuthenticatorProviderInput authenticatorProviderInput) {
 
         if(enhancedAuthenticatorProvider == null){
             return null;

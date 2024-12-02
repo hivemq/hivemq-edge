@@ -63,12 +63,12 @@ public class ProtocolAdapterEntity {
     }
 
     public ProtocolAdapterEntity(
-            @NotNull final String adapterId,
-            @NotNull final String protocolId,
-            @NotNull final Map<String, Object> config,
-            @NotNull final List<NorthboundMappingEntity> northboundMappingEntities,
-            @NotNull final List<SouthboundMappingEntity> southboundMappingEntities,
-            @NotNull final List<TagEntity> tags) {
+            final @NotNull String adapterId,
+            final @NotNull String protocolId,
+            final @NotNull Map<String, Object> config,
+            final @NotNull List<NorthboundMappingEntity> northboundMappingEntities,
+            final @NotNull List<SouthboundMappingEntity> southboundMappingEntities,
+            final @NotNull List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.config = config;
         this.northboundMappingEntities = northboundMappingEntities;

@@ -51,7 +51,7 @@ public class ClientAuthorizersImpl implements ClientAuthorizers {
     }
 
     @Override
-    public void put(@NotNull final String pluginId, @NotNull final Authorizer authorizer) {
+    public void put(final @NotNull String pluginId, final @NotNull Authorizer authorizer) {
         final Lock lock = authorizerLock.writeLock();
         lock.lock();
         try {

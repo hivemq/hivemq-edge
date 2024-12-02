@@ -37,7 +37,7 @@ public class ChunkCursor {
         finishedBuckets = ImmutableSet.of();
     }
 
-    public ChunkCursor(@NotNull final Map<Integer, String> lastKeys, @NotNull final Set<Integer> finishedBuckets) {
+    public ChunkCursor(final @NotNull Map<Integer, String> lastKeys, final @NotNull Set<Integer> finishedBuckets) {
         this.lastKeys = lastKeys;
         this.finishedBuckets = finishedBuckets;
     }

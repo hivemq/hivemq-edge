@@ -78,8 +78,8 @@ public class IncomingPublishService {
         this.dataGovernanceService = dataGovernanceService;
     }
 
-    public void processPublish(@NotNull final ChannelHandlerContext ctx,
-                               @NotNull final PUBLISH publish,
+    public void processPublish(final @NotNull ChannelHandlerContext ctx,
+                               final @NotNull PUBLISH publish,
                                @Nullable final PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
@@ -131,7 +131,7 @@ public class IncomingPublishService {
         authorizePublish(ctx, publish, authorizerResult);
     }
 
-    private void authorizePublish(@NotNull final ChannelHandlerContext ctx, @NotNull final PUBLISH publish, @Nullable final PublishAuthorizerResult authorizerResult) {
+    private void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, @Nullable final PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -168,7 +168,7 @@ public class IncomingPublishService {
         }
     }
 
-    private void finishUnauthorizedPublish(@NotNull final ChannelHandlerContext ctx, @NotNull final PUBLISH publish,
+    private void finishUnauthorizedPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish,
                                            @Nullable final AckReasonCode reasonCode, @Nullable final String reasonString) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
@@ -228,7 +228,7 @@ public class IncomingPublishService {
         );
     }
 
-    private void publishMessage(final ChannelHandlerContext ctx, @NotNull final PUBLISH publish) {
+    private void publishMessage(final ChannelHandlerContext ctx, final @NotNull PUBLISH publish) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
@@ -249,13 +249,13 @@ public class IncomingPublishService {
             }
 
             @Override
-            public void onFailure(@NotNull final Throwable t) {
+            public void onFailure(final @NotNull Throwable t) {
                 sendAck(ctx, publish, PublishReturnCode.FAILED);
             }
         }, ctx.channel().eventLoop());
     }
 
-    private void sendAck(@NotNull final ChannelHandlerContext ctx, final PUBLISH publish, @Nullable final PublishReturnCode publishReturnCode) {
+    private void sendAck(final @NotNull ChannelHandlerContext ctx, final PUBLISH publish, @Nullable final PublishReturnCode publishReturnCode) {
 
         switch (publish.getQoS()) {
             case AT_MOST_ONCE:
@@ -280,7 +280,7 @@ public class IncomingPublishService {
         }
     }
 
-    private boolean isMessageSizeAllowed(final @Nullable Long maxPublishSize, @NotNull final PUBLISH publish) {
+    private boolean isMessageSizeAllowed(final @Nullable Long maxPublishSize, final @NotNull PUBLISH publish) {
         return maxPublishSize == null || publish.getPayload() == null || maxPublishSize >= publish.getPayload().length;
     }
 

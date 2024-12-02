@@ -50,7 +50,7 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
     }
 
     @Override
-    public @NotNull ProtocolAdapterPublishBuilder withTopic(@NotNull final String mqttTopic) {
+    public @NotNull ProtocolAdapterPublishBuilder withTopic(final @NotNull String mqttTopic) {
         builder.withTopic(mqttTopic);
         return this;
     }

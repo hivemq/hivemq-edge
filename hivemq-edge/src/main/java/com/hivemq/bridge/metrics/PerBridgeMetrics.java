@@ -95,7 +95,7 @@ public class PerBridgeMetrics {
                 "count");
     }
 
-    private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, @NotNull final String... names){
+    private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, final @NotNull String... names){
         final String metricName = MetricRegistry.name(BRIDGE_PREFIX, names);
         synchronized (mutex){
             metricNames.add(metricName);

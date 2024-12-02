@@ -34,15 +34,15 @@ public class TcpChannelInitializer extends AbstractChannelInitializer<Channel> {
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    public TcpChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                 @NotNull final MqttTcpListener mqttTcpListener,
-                                 @NotNull final Provider<NonSslHandler> nonSslHandlerProvider) {
+    public TcpChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
+                                 final @NotNull MqttTcpListener mqttTcpListener,
+                                 final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, mqttTcpListener);
         this.nonSslHandlerProvider = nonSslHandlerProvider;
     }
 
     @Override
-    protected void addSpecialHandlers(@NotNull final Channel ch) {
+    protected void addSpecialHandlers(final @NotNull Channel ch) {
         ch.pipeline().addFirst(NON_SSL_HANDLER, nonSslHandlerProvider.get());
     }
 

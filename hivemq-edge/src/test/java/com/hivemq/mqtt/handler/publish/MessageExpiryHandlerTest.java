@@ -84,7 +84,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PublishDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -108,7 +108,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PublishDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -132,7 +132,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PublishDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -156,7 +156,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PublishDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -181,7 +181,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PublishDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -204,7 +204,7 @@ public class MessageExpiryHandlerTest {
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PubrelDroppedEvent) {
                     droppedEventFiredLatch.countDown();
@@ -228,7 +228,7 @@ public class MessageExpiryHandlerTest {
 
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
-            public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
+            public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt)
                     throws Exception {
                 if (evt instanceof PubrelDroppedEvent) {
                     droppedEventFiredLatch.countDown();

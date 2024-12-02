@@ -38,7 +38,7 @@ public interface BridgeInterceptorHandler {
         private final @NotNull InterceptorOutcome outcome;
         private final @Nullable PUBLISH publish;
 
-        public InterceptorResult(@NotNull final InterceptorOutcome outcome, @Nullable final PUBLISH publish) {
+        public InterceptorResult(final @NotNull InterceptorOutcome outcome, @Nullable final PUBLISH publish) {
             this.outcome = outcome;
             this.publish = publish;
         }

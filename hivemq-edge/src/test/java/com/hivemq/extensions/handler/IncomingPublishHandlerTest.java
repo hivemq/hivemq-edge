@@ -747,9 +747,9 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void withReason(
-                @NotNull final String clientId,
-                @NotNull final String topic,
-                @NotNull final String reason,
+                final @NotNull String clientId,
+                final @NotNull String topic,
+                final @NotNull String reason,
                 final int qos) {
 
         }

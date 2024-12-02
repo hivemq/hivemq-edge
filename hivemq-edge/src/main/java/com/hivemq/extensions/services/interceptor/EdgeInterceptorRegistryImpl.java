@@ -32,26 +32,26 @@ public class EdgeInterceptorRegistryImpl implements EdgeInterceptorRegistry {
     private final Interceptors interceptors;
 
     @Inject
-    public EdgeInterceptorRegistryImpl(@NotNull final Interceptors interceptors) {
+    public EdgeInterceptorRegistryImpl(final @NotNull Interceptors interceptors) {
         this.interceptors = interceptors;
     }
 
     @Override
-    public void setBridgeInboundInterceptorProvider(@NotNull final BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider) {
+    public void setBridgeInboundInterceptorProvider(final @NotNull BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider) {
         Preconditions.checkNotNull(bridgeInboundInterceptorProvider,
                 "Bridge inbound interceptor provider must never be null");
         interceptors.addBridgeInboundInterceptorProvider(bridgeInboundInterceptorProvider);
     }
 
     @Override
-    public void setBridgeOutboundInterceptorProvider(@NotNull final BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider) {
+    public void setBridgeOutboundInterceptorProvider(final @NotNull BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider) {
         Preconditions.checkNotNull(bridgeOutboundInterceptorProvider,
                 "Bridge outbound nterceptor provider must never be null");
         interceptors.addBridgeOutboundInterceptorProvider(bridgeOutboundInterceptorProvider);
     }
 
     @Override
-    public void setProtocolAdapterInboundInterceptorProvider(@NotNull final ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider) {
+    public void setProtocolAdapterInboundInterceptorProvider(final @NotNull ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider) {
         Preconditions.checkNotNull(protocolAdapterInboundInterceptorProvider,
                 "Protocol adapter inbound interceptor provider must never be null");
         interceptors.addProtocolAdapterInboundInterceptorProvider(protocolAdapterInboundInterceptorProvider);

@@ -32,12 +32,12 @@ public class CollectUserEventsHandler<T> extends ChannelInboundHandlerAdapter {
 
     private final Queue<T> objects = new ArrayDeque<>();
 
-    public CollectUserEventsHandler(@NotNull final Class<T> classToCollect) {
+    public CollectUserEventsHandler(final @NotNull Class<T> classToCollect) {
         this.classToCollect = classToCollect;
     }
 
     @Override
-    public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt) throws Exception {
+    public void userEventTriggered(final ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
         if (classToCollect.isAssignableFrom(evt.getClass())) {
             objects.add((T) evt);
         }

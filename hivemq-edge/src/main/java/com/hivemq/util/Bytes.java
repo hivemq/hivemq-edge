@@ -254,7 +254,7 @@ public class Bytes {
      * @return the bytes of an {@link Optional} of a {@link ByteBuffer} as byte array or null if the optional is not present
      */
     @Nullable
-    public static byte[] getBytesFromReadOnlyBuffer(@NotNull final Optional<ByteBuffer> optional) {
+    public static byte[] getBytesFromReadOnlyBuffer(final @NotNull Optional<ByteBuffer> optional) {
         Preconditions.checkNotNull(optional, "optional must never be null");
         return optional.map(Bytes::fromReadOnlyBuffer).orElse(null);
     }
