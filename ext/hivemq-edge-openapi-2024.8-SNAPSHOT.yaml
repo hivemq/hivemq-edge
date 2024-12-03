@@ -4920,13 +4920,9 @@ components:
           type: string
           format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
-        protocolId:
-          type: string
-          description: The protocol id of the protocol for which this tag was created.
       required:
       - definition
       - name
-      - protocolId
     DomainTagList:
       type: object
       properties:
