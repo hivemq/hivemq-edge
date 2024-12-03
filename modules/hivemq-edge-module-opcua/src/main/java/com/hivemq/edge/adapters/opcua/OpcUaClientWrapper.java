@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -251,6 +252,7 @@ public class OpcUaClientWrapper {
             final @NotNull ProtocolAdapterStartOutput output) throws UaException {
         final String configPolicyUri = adapterConfig.getSecurity().getPolicy().getSecurityPolicy().getUri();
 
+        final long start = System.nanoTime();
         final OpcUaClient opcUaClient = OpcUaClient.create(adapterConfig.getUri(),
                 new OpcUaEndpointFilter(adapterId, configPolicyUri, adapterConfig),
                 new OpcUaClientConfigurator(adapterConfig, adapterId));
@@ -267,7 +269,7 @@ public class OpcUaClientWrapper {
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
-                log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
+                log.info("OPC UA client of protocol adapter '{}' connected: {}. Took {} ms.", adapterId, session, TimeUnit.NANOSECONDS.toMillis(System.nanoTime()- start));
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
