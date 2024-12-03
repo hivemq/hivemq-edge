@@ -84,8 +84,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             final @Nullable File extensions,
             final @Nullable File license,
             final @Nullable EmbeddedExtension embeddedExtension) {
-        final ModuleLoader moduleLoader = new ModuleLoader();
-
         this(conf, data, extensions, license, embeddedExtension, ModuleLoader::new);
     }
 
