@@ -108,7 +108,7 @@ export const handlers = [
       if (realTag === MOCK_DEVICE_TAG_FAKE)
         return HttpResponse.json<ProblemDetails>({ title: 'The tag is not found', status: 404 }, { status: 404 })
       return HttpResponse.json<DomainTag>(
-        { name: realTag, protocolId: MockAdapterType.MODBUS, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
+        { name: realTag, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
         { status: 200 }
       )
     } catch (e) {
@@ -143,7 +143,7 @@ export const handlers = [
   http.get('**/management/protocol-adapters/tags', () => {
     return HttpResponse.json<DomainTagList>(
       {
-        items: [{ name: 'test/tag1', protocolId: MockAdapterType.MODBUS, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
+        items: [{ name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
       },
       { status: 200 }
     )

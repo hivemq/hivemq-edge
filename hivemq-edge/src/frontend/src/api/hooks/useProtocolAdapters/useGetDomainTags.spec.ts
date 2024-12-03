@@ -27,14 +27,12 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          protocolId: MockAdapterType.OPC_UA,
           definition: {
             node: 'ns=3;i=1002',
           },
           name: `${MockAdapterType.OPC_UA}/power/off`,
         },
         {
-          protocolId: MockAdapterType.OPC_UA,
           definition: {
             node: 'ns=3;i=1008',
           },
@@ -52,7 +50,6 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          protocolId: MockAdapterType.MODBUS,
           definition: {
             endIdx: 1,
             startIdx: 0,
@@ -71,7 +68,6 @@ describe('useGetDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          protocolId: MockAdapterType.SIMULATION,
           definition: {},
           name: `${MockAdapterType.SIMULATION}/log/event`,
         },
