@@ -1,6 +1,7 @@
-import { type FC, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CustomValidator, FormContextType, RJSFSchema } from '@rjsf/utils'
+import { IChangeEvent } from '@rjsf/core'
 
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -19,8 +20,15 @@ interface MappingFormProps {
 
 const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type }) => {
   const { t } = useTranslation()
-  const { context } = useManager(adapterId)
+  const { context, onUpdateCollection } = useManager(adapterId)
   const validationSchemas = useState<FlatJSONSchema7[]>()
+
+  const onFormSubmit = useCallback(
+    (data: IChangeEvent<unknown>) => {
+      onUpdateCollection(data.formData)
+    },
+    [onUpdateCollection]
+  )
 
   if (!context.schema) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
 
@@ -39,7 +47,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager,
       uiSchema={context.uiSchema}
       formData={context.formData}
       formContext={contextExt}
-      onSubmit={(e) => console.log('XXX', e)}
+      onSubmit={onFormSubmit}
       customValidate={
         type === MappingType.SOUTHBOUND && adapterType
           ? (customMappingValidate(adapterType) as CustomValidator<unknown, RJSFSchema, FormContextType>)
