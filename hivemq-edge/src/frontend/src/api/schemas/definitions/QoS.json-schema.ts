@@ -1,6 +1,7 @@
 import { RJSFSchema } from '@rjsf/utils'
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 
+/* istanbul ignore next -- @preserve */
 export const QoS: RJSFSchema = {
   type: 'number',
   title: 'MQTT QoS',

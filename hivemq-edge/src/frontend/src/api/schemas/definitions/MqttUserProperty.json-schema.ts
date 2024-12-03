@@ -1,5 +1,6 @@
 import { RJSFSchema } from '@rjsf/utils'
 
+/* istanbul ignore next -- @preserve */
 export const MqttUserProperty: RJSFSchema = {
   title: 'MQTT User Properties',
   description: 'Arbitrary properties to associate with the mapping',
