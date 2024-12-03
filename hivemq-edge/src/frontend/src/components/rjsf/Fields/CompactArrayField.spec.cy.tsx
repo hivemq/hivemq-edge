@@ -60,7 +60,7 @@ describe('CompactArrayField', () => {
     )
 
     cy.get('[role="group"] h5').should('contain.text', 'User Properties')
-    cy.get('[role="group"] p').should('contain.text', 'Arbitrary properties to associate with the subscription')
+    cy.get('[role="group"] sup').should('contain.text', 'Arbitrary properties to associate with the subscription')
     cy.get('table thead tr th').should('have.length', 3)
     cy.get('table thead tr th').eq(0).should('contain.text', 'Property Name')
     cy.get('table thead tr th').eq(1).should('contain.text', 'Property Value')
