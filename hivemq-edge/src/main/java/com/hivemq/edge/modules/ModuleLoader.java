@@ -18,9 +18,11 @@ package com.hivemq.edge.modules;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModuleLoader {
     private static final Logger log = LoggerFactory.getLogger(ModuleLoader.class);
@@ -40,13 +43,19 @@ public class ModuleLoader {
     private final @NotNull SystemInformation systemInformation;
     protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
     private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
+    private final AtomicBoolean loaded = new AtomicBoolean();
 
+    @Inject
     public ModuleLoader(final @NotNull SystemInformation systemInformation) {
         this.systemInformation = systemInformation;
     }
 
-    @Inject
     public void loadModules() {
+        if(loaded.get()){
+            // avoid duplicate loads
+            return;
+        }
+        loaded.set(true);
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
             log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
@@ -67,7 +76,7 @@ public class ModuleLoader {
         }
     }
 
-    private void loadCommercialModuleLoaderFromWorkSpace(ClassLoader contextClassLoader) {
+    private void loadCommercialModuleLoaderFromWorkSpace(final ClassLoader contextClassLoader) {
         final File userDir = new File(System.getProperty("user.dir"));
         final File commercialModulesRepoRootFolder = new File(userDir, "../hivemq-edge-commercial-modules");
         if (!commercialModulesRepoRootFolder.exists()) {
@@ -119,7 +128,7 @@ public class ModuleLoader {
 
     protected void loadFromWorkspace(final ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
-        File userDir = new File(System.getProperty("user.dir"));
+        final File userDir = new File(System.getProperty("user.dir"));
         if (userDir.getName().equals("hivemq-edge")) {
             discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
         } else if (userDir.getName().equals("hivemq-edge-composite")) {
@@ -129,19 +138,19 @@ public class ModuleLoader {
 
     protected void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
         if (dir.exists()) {
-            File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
+            final File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
                     pathname.canRead() &&
                     new File(pathname, "build").exists());
             for (int i = 0; i < files.length; i++) {
                 log.info("Found module workspace directory {}.", files[i].getAbsolutePath());
                 try {
-                    List<URL> urls = new ArrayList<>();
+                    final List<URL> urls = new ArrayList<>();
                     urls.add(new File(files[i], "build/classes/java/main").toURI().toURL());
                     urls.add(new File(files[i], "build/resources/main").toURI().toURL());
-                    File deps = new File(files[i], "build/deps/libs");
+                    final File deps = new File(files[i], "build/deps/libs");
                     if (deps.exists()) {
-                        File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
-                        for (File jar : jars) {
+                        final File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
+                        for (final File jar : jars) {
                             urls.add(jar.toURI().toURL());
                         }
                     }
@@ -197,7 +206,7 @@ public class ModuleLoader {
                             serviceClazz,
                             module.root);
                 }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (final IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -214,7 +223,7 @@ public class ModuleLoader {
 
     public static class EdgeModule {
 
-        private File root;
+        private final File root;
         private final @NotNull ClassLoader classloader;
 
         public EdgeModule(
@@ -238,10 +247,8 @@ public class ModuleLoader {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("EdgeModule{");
-            sb.append("root=").append(root);
-            sb.append('}');
-            return sb.toString();
+            final String sb = "EdgeModule{" + "root=" + root + '}';
+            return sb;
         }
     }
 }

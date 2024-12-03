@@ -96,7 +96,6 @@ public class ConfigurationMigrator {
 
     public void migrate() {
         try {
-            moduleLoader.loadModules();
             final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             final Map<String, ProtocolAdapterFactory<?>> factoryMap =
                     ProtocolAdapterFactoryManager.findAllAdapters(moduleLoader, eventService, true);
@@ -109,7 +108,7 @@ public class ConfigurationMigrator {
     }
 
     @VisibleForTesting
-    public Optional<HiveMQConfigEntity> migrateIfNeeded(Map<String, ProtocolAdapterFactory<?>> factoryMap) {
+    public Optional<HiveMQConfigEntity> migrateIfNeeded(final Map<String, ProtocolAdapterFactory<?>> factoryMap) {
         try {
             if (!needsMigration(configurationFile)) {
                 log.info("No configuration migration needed.");

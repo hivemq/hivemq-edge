@@ -168,10 +168,11 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                         bootstrapConfig();
                     }
 
+                    final ModuleLoader moduleLoader = moduleLoaderFactory.apply(systemInformation);
+                    moduleLoader.loadModules();
                     hiveMQServer = new HiveMQEdgeMain(systemInformation,
                             metricRegistry,
-                            configurationService,
-                            moduleLoaderFactory.apply(systemInformation));
+                            configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 
