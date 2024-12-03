@@ -11,7 +11,10 @@ import java.util.Objects;
 public class EipTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name", description = "name of the tag to be used in mappings", required = true)
+    @ModuleConfigField(title = "name",
+                       description = "name of the tag to be used in mappings",
+                       format = ModuleConfigField.FieldType.MQTT_TAG,
+                       required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -19,8 +22,7 @@ public class EipTag implements Tag {
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "definition",
-                       description = "The actual definition of the tag on the device")
+    @ModuleConfigField(title = "definition", description = "The actual definition of the tag on the device")
     private final @NotNull EipTagDefinition definition;
 
     public EipTag(
