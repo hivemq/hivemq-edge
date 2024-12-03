@@ -47,7 +47,7 @@ describe('DeviceTagForm', () => {
     cy.get('@tagList').find('[role="listitem"]').should('have.length', 1)
 
     cy.get('@tagList').eq(0).find('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Remove')
-    cy.get('#root_items_0__title').should('have.text', 'items-0')
+    cy.get('#root_items_0__title').should('have.text', 'List of tags-1')
 
     cy.get('@tagList').eq(0).find('[role="group"] > label').eq(0).should('contain.text', 'Tag Name')
     cy.get('@tagList').eq(0).find('[role="group"] > input').eq(0).should('contain.value', `opcua-generator/power/off`)
