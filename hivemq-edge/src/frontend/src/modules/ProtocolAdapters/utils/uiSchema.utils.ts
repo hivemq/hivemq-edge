@@ -3,8 +3,6 @@ import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
 import { CompactArrayField, MqttTransformationField } from '@/components/rjsf/Fields'
 
 import { JSONSchemaEditor } from '@datahub/components/forms'
-import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
-import { CustomFormat } from '@/api/types/json-schema.ts'
 
 export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
@@ -29,9 +27,10 @@ export const adapterJSFWidgets: RegistryWidgetsType = {
   // @ts-ignore [24369] Turn discovery browser off (and replace by regular text input)
   'discovery:tagBrowser': 'text',
   'application/schema+json': JSONSchemaEditor,
-  'mqtt-tag': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
-  'mqtt-topic-filter': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC_FILTER),
-  'mqtt-topic': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
+  // TODO[⚠ 28441 ⚠] This will need to be put back in place
+  // 'mqtt-tag': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
+  // 'mqtt-topic-filter': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC_FILTER),
+  // 'mqtt-topic': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
 }
 
 export const adapterJSFFields: RegistryFieldsType = {
