@@ -3,6 +3,11 @@ import { Adapter, SouthboundMapping } from '@/api/__generated__'
 import { TFunction } from 'i18next'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
+//
+// import {
+//   getOutwardMappingRootProperty,
+//   getOutwardMappingRootPropertyKey,
+// } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 /**
  *
@@ -38,4 +43,43 @@ export const customMappingValidate =
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_adapterType: string) => (_formData: Record<string, SouthboundMapping[]>, errors: FormValidation) => {
     return errors
+
+    // TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
+    // const key = getOutwardMappingRootProperty(adapterType)
+    // const outwardMappingsKey = getOutwardMappingRootPropertyKey(adapterType)
+    // // @ts-ignore
+    // const outwardMappings = formData[key][outwardMappingsKey] as SouthboundMapping[]
+    //
+    // if (!outwardMappings.length) return errors
+    //
+    // // return outwardMappings.reduce((errors, currentMapping, index) => {
+    // return outwardMappings.reduce((errors) => {
+    //   // const { metadata, fieldMapping } = currentMapping
+    //   // if (!metadata) {
+    //   //   errors?.[key]?.[outwardMappingsKey]?.[index]?.fieldMapping?.addError(
+    //   //     i18n.t('components:rjsf.MqttTransformationField.validation.error.noValidation')
+    //   //   )
+    //   //   return errors
+    //   // }
+    //   //
+    //   // const { destination } = metadata
+    //   // if (!destination) {
+    //   //   // TODO[NVL] This is not necessarily an error
+    //   //   errors?.[key]?.[outwardMappingsKey]?.[index]?.fieldMapping?.addError(
+    //   //     i18n.t('components:rjsf.MqttTransformationField.validation.error.noSchema')
+    //   //   )
+    //   //   return errors
+    //   // }
+    //   //
+    //   // const countRequired = destination.length
+    //   //
+    //   // if (fieldMapping?.length !== countRequired) {
+    //   //   errors?.[key]?.[outwardMappingsKey]?.[index]?.fieldMapping?.addError(
+    //   //     i18n.t('components:rjsf.MqttTransformationField.validation.error.missingMapping')
+    //   //   )
+    //   //   return errors
+    //   // }
+    //
+    //   return errors
+    // }, errors)
   }

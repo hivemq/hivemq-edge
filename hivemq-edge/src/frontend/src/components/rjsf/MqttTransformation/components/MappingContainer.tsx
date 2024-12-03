@@ -34,7 +34,7 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onSchemaReadyHandler = useCallback((_properties: FlatJSONSchema7[]) => {
-    /// TODO[⚠ XXXXX ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
+    /// TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
     // onChange('metadata', { ...item.metadata, destination: properties })
   }, [])
 

@@ -60,6 +60,12 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
   const handleChange = (_id: keyof SouthboundMapping, _v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
+      // const currentItem = old?.[selectedItem]
+      // TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
+      // if (currentItem) {
+      //   // @ts-ignore
+      //   currentItem[id] = v
+      // }
       return [...(old || [])]
     })
   }
