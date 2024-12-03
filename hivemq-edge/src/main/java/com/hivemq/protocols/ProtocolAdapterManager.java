@@ -742,7 +742,6 @@ public class ProtocolAdapterManager {
                         .stream()
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
-                                adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
                                 configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .collect(Collectors.toList());
@@ -756,7 +755,6 @@ public class ProtocolAdapterManager {
                         .filter(t -> t.getName().equals(tagName))
                         .map(tag -> new DomainTag(tag.getName(),
                                 adapter.getId(),
-                                adapter.getProtocolAdapterInformation().getProtocolId(),
                                 tag.getDescription(),
                                 configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .findFirst();
@@ -767,7 +765,6 @@ public class ProtocolAdapterManager {
                 .stream()
                 .map(tag -> new DomainTag(tag.getName(),
                         adapter.getId(),
-                        adapter.getProtocolAdapterInformation().getProtocolId(),
                         tag.getDescription(),
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .collect(Collectors.toList()));
@@ -915,7 +912,7 @@ public class ProtocolAdapterManager {
             return userProperties;
         }
 
-        public static @NotNull PollingContextWrapper from(NorthboundMapping northboundMapping) {
+        public static @NotNull PollingContextWrapper from(final NorthboundMapping northboundMapping) {
             return new PollingContextWrapper(
                     northboundMapping.getMqttTopic(),
                     northboundMapping.getTagName(),

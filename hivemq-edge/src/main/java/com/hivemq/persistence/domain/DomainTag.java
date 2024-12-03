@@ -28,19 +28,16 @@ public class DomainTag {
 
     private final @NotNull String tagName;
     private final @NotNull String adapterId;
-    private final @NotNull String protocolId;
     private final @NotNull String description;
     private final @NotNull JsonNode definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
-            final @NotNull String protocolId,
             final @NotNull String description,
             final @NotNull JsonNode definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
-        this.protocolId = protocolId;
         this.description = description;
         this.definition = definition;
     }
@@ -50,7 +47,6 @@ public class DomainTag {
             final @NotNull String adapterId) {
         return new DomainTag(domainTag.getName(),
                 adapterId,
-                domainTag.getProtocolId(),
                 domainTag.getDescription(),
                 domainTag.getDefinition());
     }
@@ -65,10 +61,6 @@ public class DomainTag {
 
     public @NotNull String getDescription() {
         return description;
-    }
-
-    public @NotNull String getProtocolId() {
-        return protocolId;
     }
 
     public @NotNull JsonNode getDefinition() {
@@ -99,16 +91,13 @@ public class DomainTag {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "DomainTag{" +
                 "tagName='" +
                 tagName +
                 '\'' +
                 ", adapterId='" +
                 adapterId +
-                '\'' +
-                ", protocolId='" +
-                protocolId +
                 '\'' +
                 ", description='" +
                 description +

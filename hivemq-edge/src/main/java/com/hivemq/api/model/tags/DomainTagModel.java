@@ -35,11 +35,6 @@ public class DomainTagModel {
             format = "mqtt-tag")
     private final @NotNull String name;
 
-    @JsonProperty("protocolId")
-    @Schema(description = "The protocol id of the protocol for which this tag was created.",
-            requiredMode = Schema.RequiredMode.REQUIRED)
-    private final @NotNull String protocolId;
-
     @JsonProperty("description")
     @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
@@ -51,11 +46,9 @@ public class DomainTagModel {
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("name") final @NotNull String name,
-            @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @Nullable String description,
             @JsonProperty("definition") final @Nullable JsonNode definition) {
         this.name = name;
-        this.protocolId = protocolId;
         this.description = Objects.requireNonNullElse(description, "");
         this.definition = Objects.requireNonNullElse(definition, JsonNodeFactory.instance.objectNode());
     }
@@ -68,17 +61,12 @@ public class DomainTagModel {
         return description;
     }
 
-    public @NotNull String getProtocolId() {
-        return protocolId;
-    }
-
     public @NotNull JsonNode getDefinition() {
         return definition;
     }
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
         return new DomainTagModel(domainTag.getTagName(),
-                domainTag.getProtocolId(),
                 domainTag.getDescription(),
                 domainTag.getDefinition());
     }
@@ -87,9 +75,6 @@ public class DomainTagModel {
     public @NotNull String toString() {
         return "DomainTagModel{" +
                 "tag='" + name +
-                '\'' +
-                ", protocolId='" +
-                protocolId +
                 '\'' +
                 ", description='" +
                 description +
@@ -107,12 +92,11 @@ public class DomainTagModel {
         }
         final DomainTagModel that = (DomainTagModel) o;
         return Objects.equals(name, that.name) &&
-                Objects.equals(protocolId, that.protocolId) &&
                 Objects.equals(description, that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, protocolId, description);
+        return Objects.hash(name, description);
     }
 }
