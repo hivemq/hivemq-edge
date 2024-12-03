@@ -28,6 +28,7 @@ public class SimulationTag implements Tag {
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",
                        description = "name of the tag to be used in mappings",
+                       format = ModuleConfigField.FieldType.MQTT_TAG,
                        required = true)
     private final @NotNull String name;
 
