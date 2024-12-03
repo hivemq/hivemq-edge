@@ -243,6 +243,7 @@ public class ModuleLoader {
             return sb;
         }
 
+        /*
         @Override
         public boolean equals(final @Nullable Object o) {
             if (this == o) return true;
@@ -256,5 +257,7 @@ public class ModuleLoader {
         public int hashCode() {
             return root.hashCode();
         }
+
+         */
     }
 }
