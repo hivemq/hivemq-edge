@@ -5,7 +5,10 @@
 
 import type { JsonNode } from './JsonNode';
 
-export type FieldMappingMetaDataModel = {
+/**
+ * Metadata for the whole mapping
+ */
+export type Metadata = {
     destination: JsonNode;
     source: JsonNode;
 };

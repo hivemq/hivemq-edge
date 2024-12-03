@@ -88,7 +88,7 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
 }
 
 export const handlers = [
-  http.get<{ protocolId: string }>('**/management/protocol-adapters/tagschemas/:protocolId', ({ params }) => {
+  http.get<{ protocolId: string }>('**/management/protocol-adapters/tag-schemas/:protocolId', ({ params }) => {
     const { protocolId } = params
 
     if (protocolId === MockAdapterType.ADS)
@@ -105,11 +105,10 @@ export const handlers = [
 
     try {
       const realTag = atob(tagName)
-      console.log('tagName', realTag)
       if (realTag === MOCK_DEVICE_TAG_FAKE)
         return HttpResponse.json<ProblemDetails>({ title: 'The tag is not found', status: 404 }, { status: 404 })
       return HttpResponse.json<DomainTag>(
-        { name: realTag, protocolId: MockAdapterType.MODBUS, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
+        { name: realTag, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS },
         { status: 200 }
       )
     } catch (e) {
@@ -144,7 +143,7 @@ export const handlers = [
   http.get('**/management/protocol-adapters/tags', () => {
     return HttpResponse.json<DomainTagList>(
       {
-        items: [{ name: 'test/tag1', protocolId: MockAdapterType.MODBUS, definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
+        items: [{ name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
       },
       { status: 200 }
     )

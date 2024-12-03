@@ -32,6 +32,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema,
   const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate'>('ArrayFieldTitleTemplate', registry, uiOptions)
 
   const { onBatchUpload, isEditAdapter } = formContext || {}
+  const addButtonTitle = uiSchema?.items?.['ui:addButton'] as string | undefined
 
   return (
     <Box>
@@ -66,11 +67,13 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema,
         {canAdd && (
           <HStack justifyContent="space-between" mt={2}>
             <AddButton
+              data-testid="array-item-add"
               className="array-item-add"
               onClick={onAddClick}
               disabled={disabled || readonly}
               uiSchema={uiSchema}
               registry={registry}
+              aria-label={addButtonTitle}
             />
             {uiOptions.batchMode && onBatchUpload && isEditAdapter && (
               <BatchUploadButton idSchema={idSchema} schema={schema} onBatchUpload={onBatchUpload} />

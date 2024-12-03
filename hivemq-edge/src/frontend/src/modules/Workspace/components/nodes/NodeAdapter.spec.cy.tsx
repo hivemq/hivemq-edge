@@ -48,7 +48,7 @@ describe('NodeAdapter', () => {
     cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
     cy.get('[role="toolbar"] button').should('have.length', 2)
     cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
-    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit inward mappings')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit Northbound mappings')
   })
 
   it('should render the toolbar for bi-directional adapter', () => {
@@ -68,8 +68,8 @@ describe('NodeAdapter', () => {
     cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
     cy.get('[role="toolbar"] button').should('have.length', 3)
     cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
-    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit outward mappings')
-    cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Edit inward mappings')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit Southbound mappings')
+    cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Edit Northbound mappings')
   })
 
   it('should render the toolbar for multiple selected', () => {
@@ -102,7 +102,7 @@ describe('NodeAdapter', () => {
     cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
     cy.get('[role="toolbar"] button').should('have.length', 3)
     cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
-    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit inward mappings')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Edit Northbound mappings')
     cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Group the selected adapters')
   })
 
@@ -131,13 +131,13 @@ describe('NodeAdapter', () => {
     cy.get('[role="toolbar"] button').eq(1).click()
     cy.getByTestId('test-navigate-pathname').should(
       'have.text',
-      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/outward`
+      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/southbound`
     )
 
     cy.get('[role="toolbar"] button').eq(2).click()
     cy.getByTestId('test-navigate-pathname').should(
       'have.text',
-      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/inward`
+      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/northbound`
     )
   })
 

@@ -3,12 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { FieldMappingsModel } from './FieldMappingsModel';
+import type { SouthboundMapping } from './SouthboundMapping';
 
-export type FieldMappingsListModel = {
+export type SouthboundMappingList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items: Array<FieldMappingsModel>;
+    items: Array<SouthboundMapping>;
 };
 

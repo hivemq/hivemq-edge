@@ -27,7 +27,6 @@ describe('useGetDomainTag', () => {
       expect(result.current.isSuccess).toBeTruthy()
     })
     expect(result.current.data).toStrictEqual<DomainTag>({
-      protocolId: 'modbus',
       definition: {
         endIdx: 1,
         startIdx: 0,

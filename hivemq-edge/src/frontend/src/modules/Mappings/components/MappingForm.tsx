@@ -1,33 +1,38 @@
 import { type FC, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type IChangeEvent } from '@rjsf/core'
+import { CustomValidator, FormContextType, RJSFSchema } from '@rjsf/utils'
+import { IChangeEvent } from '@rjsf/core'
 
+import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
-import { customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
-import { MappingType } from '@/modules/Mappings/types.ts'
-import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
+import { MappingManagerType, MappingType } from '@/modules/Mappings/types.ts'
 import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
-import { CustomValidator, RJSFSchema } from '@rjsf/utils'
-import { FormContextType } from '@rjsf/utils/src/types.ts'
+import { customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 
 interface MappingFormProps {
   adapterId: string
   adapterType?: string
-  type: MappingType
   onSubmit: () => void
+  useManager: (adapterId: string) => MappingManagerType
+  type: MappingType
 }
 
-const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSubmit }) => {
+const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type }) => {
   const { t } = useTranslation()
-  const { inwardManager, outwardManager } = useMappingManager(adapterId)
-  const { errorToast } = useEdgeToast()
+  const { context, onUpdateCollection } = useManager(adapterId)
   const validationSchemas = useState<FlatJSONSchema7[]>()
-  const mappingManager = type === MappingType.INWARD ? inwardManager : outwardManager
 
-  const context: MappingContext = {
+  const onFormSubmit = useCallback(
+    (data: IChangeEvent<unknown>) => {
+      onUpdateCollection(data.formData)
+    },
+    [onUpdateCollection]
+  )
+
+  if (!context.schema) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
+
+  const contextExt: MappingContext = {
     isEditAdapter: true,
     isDiscoverable: false,
     adapterType: adapterType,
@@ -35,37 +40,16 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
     validationSchemas,
   }
 
-  const onFormSubmit = useCallback(
-    (data: IChangeEvent<unknown>) => {
-      if (!mappingManager?.onSubmit) {
-        errorToast(
-          {
-            title: t('protocolAdapter.toast.update.title'),
-            description: t('protocolAdapter.toast.update.error'),
-          },
-          new Error(t('protocolAdapter.export.error.noSchema'))
-        )
-      } else {
-        mappingManager.onSubmit(data.formData)
-        // TODO[NVL] A bit too fast; handle pending and errors
-        onSubmit()
-      }
-    },
-    [errorToast, mappingManager, onSubmit, t]
-  )
-
-  if (!mappingManager) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
-
   return (
     <ChakraRJSForm
       id="adapter-mapping-form"
-      schema={mappingManager.schema}
-      uiSchema={mappingManager.uiSchema}
-      formData={mappingManager.formData}
-      formContext={context}
+      schema={context.schema}
+      uiSchema={context.uiSchema}
+      formData={context.formData}
+      formContext={contextExt}
       onSubmit={onFormSubmit}
       customValidate={
-        type === MappingType.OUTWARD && adapterType
+        type === MappingType.SOUTHBOUND && adapterType
           ? (customMappingValidate(adapterType) as CustomValidator<unknown, RJSFSchema, FormContextType>)
           : undefined
       }

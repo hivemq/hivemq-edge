@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $FieldMappingsListModel = {
+export const $NorthboundMappingList = {
     properties: {
         items: {
             type: 'array',
             contains: {
-                type: 'FieldMappingsModel',
+                type: 'NorthboundMapping',
             },
             isRequired: true,
         },

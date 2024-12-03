@@ -3,16 +3,17 @@ import { FieldProps, getTemplate, getUiOptions } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-import { FieldMappingsModel } from '@/api/__generated__'
+import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
+import { SouthboundMapping } from '@/api/__generated__'
 import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMappings.tsx'
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
-export const MqttTransformationField: FC<FieldProps<FieldMappingsModel[], RJSFSchema, AdapterContext>> = (props) => {
+export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
-  const [subsData, setSubsData] = useState<FieldMappingsModel[] | undefined>(props.formData)
+  const [subsData, setSubsData] = useState<SouthboundMapping[] | undefined>(props.formData)
 
   const { adapterId, adapterType } = props.formContext || {}
 
@@ -46,29 +47,36 @@ export const MqttTransformationField: FC<FieldProps<FieldMappingsModel[], RJSFSc
       ...(old || []),
       {
         topicFilter: undefined,
-        tag: undefined,
-        fieldMapping: [],
+        tagName: undefined,
+        maxQoS: MOCK_MAX_QOS,
+        fieldMapping: {
+          instructions: [],
+        },
       },
     ])
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChange = (id: keyof FieldMappingsModel, v: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  const handleChange = (_id: keyof SouthboundMapping, _v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
-      const currentItem = old?.[selectedItem]
-      if (currentItem) currentItem[id] = v
+      // const currentItem = old?.[selectedItem]
+      // TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
+      // if (currentItem) {
+      //   // @ts-ignore
+      //   currentItem[id] = v
+      // }
       return [...(old || [])]
     })
   }
 
-  const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', FieldMappingsModel[]>(
+  const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', SouthboundMapping[]>(
     'ArrayFieldDescriptionTemplate',
     props.registry,
     props.uiOptions
   )
 
-  const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', FieldMappingsModel[]>(
+  const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', SouthboundMapping[]>(
     'ArrayFieldTitleTemplate',
     props.registry,
     props.uiOptions

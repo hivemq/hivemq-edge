@@ -50,14 +50,14 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
           {bidirectional && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
-              aria-label={t('workspace.toolbar.command.mappings.outward')}
-              onClick={() => navigate(`${adapterNavPath}/outward`)}
+              aria-label={t('workspace.toolbar.command.mappings.southbound')}
+              onClick={() => navigate(`${adapterNavPath}/southbound`)}
             />
           )}
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}
-            aria-label={t('workspace.toolbar.command.mappings.inward')}
-            onClick={() => navigate(`${adapterNavPath}/inward`)}
+            aria-label={t('workspace.toolbar.command.mappings.northbound')}
+            onClick={() => navigate(`${adapterNavPath}/northbound`)}
           />
         </ToolbarButtonGroup>
       </ContextualToolbar>

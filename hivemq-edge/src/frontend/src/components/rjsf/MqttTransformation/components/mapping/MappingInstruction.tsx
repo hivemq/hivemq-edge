@@ -18,7 +18,7 @@ import {
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
-import { FieldMappingModel } from '@/api/__generated__'
+import { Instruction } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
@@ -34,13 +34,13 @@ enum DropState {
 interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
-  mapping?: FieldMappingModel
+  instruction?: Instruction
   onChange?: (source: string | undefined, destination: string) => void
 }
 
 const MappingInstruction: FC<MappingInstructionProps> = ({
   property,
-  mapping,
+  instruction,
   onChange,
   showTransformation = false,
 }) => {
@@ -112,8 +112,8 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
             flex={3}
           >
-            {mapping?.source ? (
-              <Code>{formatPath(mapping.source)}</Code>
+            {instruction?.source ? (
+              <Code>{formatPath(instruction.source)}</Code>
             ) : (
               <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
                 {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
@@ -125,12 +125,12 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
               icon={<RiDeleteBin2Fill />}
               onClick={onHandleClear}
-              isDisabled={Boolean(!mapping?.source)}
+              isDisabled={Boolean(!instruction?.source)}
             />
           </ButtonGroup>
-          <Alert status={mapping?.source ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
+          <Alert status={instruction?.source ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
             <AlertIcon />
-            {mapping?.source
+            {instruction?.source
               ? t('rjsf.MqttTransformationField.validation.matching')
               : t('rjsf.MqttTransformationField.validation.required')}
           </Alert>

@@ -2,7 +2,7 @@ import { FC, useCallback, useState } from 'react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { Card, CardBody, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
-import { FieldMappingsModel, JsonNode } from '@/api/__generated__'
+import { SouthboundMapping, JsonNode } from '@/api/__generated__'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import {
@@ -20,24 +20,23 @@ export enum MappingStrategy {
 }
 
 interface SubscriptionContainerProps {
-  item: FieldMappingsModel
+  item: SouthboundMapping
   adapterType: string
   adapterId: string
   onClose: () => void
-  onSubmit: (newItem: FieldMappingsModel) => void
-  onChange: (id: keyof FieldMappingsModel, v: JsonNode | string | string[] | null) => void
+  onSubmit: (newItem: SouthboundMapping) => void
+  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | null) => void
 }
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
   const { t } = useTranslation('components')
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
 
-  const onSchemaReadyHandler = useCallback(
-    (properties: FlatJSONSchema7[]) => {
-      onChange('metadata', { ...item.metadata, destination: properties })
-    },
-    [item.metadata, onChange]
-  )
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onSchemaReadyHandler = useCallback((_properties: FlatJSONSchema7[]) => {
+    /// TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
+    // onChange('metadata', { ...item.metadata, destination: properties })
+  }, [])
 
   return (
     <VStack alignItems="stretch" gap={4}>
@@ -67,10 +66,10 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
           <SelectDestinationTag
             adapterId={adapterId}
             adapterType={adapterType}
-            value={item.tag}
-            onChange={(v) => onChange('tag', v)}
+            value={item.tagName}
+            onChange={(v) => onChange('tagName', v)}
           />
-          {!item.tag && (
+          {!item.tagName && (
             <Card size="sm" h="25vh">
               <CardBody pt="50px">
                 <ErrorMessage message={t('rjsf.MqttTransformationField.destination.prompt')} status="info" />
@@ -78,13 +77,13 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
             </Card>
           )}
 
-          {item.tag && (
+          {item.tagName && (
             <MappingEditor
               flex={1}
               adapterId={adapterId}
               adapterType={adapterType}
-              topic={item.tag}
-              mapping={item.fieldMapping}
+              topic={item.tagName}
+              instructions={item.fieldMapping?.instructions}
               showTransformation={strategy === MappingStrategy.TRANSFORMED}
               onChange={(mappings) => {
                 if (!mappings) {

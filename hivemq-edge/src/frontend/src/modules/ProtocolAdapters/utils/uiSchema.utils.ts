@@ -1,15 +1,10 @@
 import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
-import { AlertStatus } from '@chakra-ui/react'
 
-import { CompactArrayField, InternalNotice, MqttTransformationField } from '@/components/rjsf/Fields'
+import { CompactArrayField, MqttTransformationField } from '@/components/rjsf/Fields'
 
-import i18n from '@/config/i18n.config.ts'
+import { JSONSchemaEditor } from '@datahub/components/forms'
 
-export const getRequiredUiSchema = (
-  uiSchema: UiSchema | undefined,
-  isNewAdapter: boolean,
-  hideProperties?: string[]
-): UiSchema => {
+export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
   const newSchema: UiSchema = {
     'ui:submitButtonOptions': {
@@ -25,29 +20,20 @@ export const getRequiredUiSchema = (
     ...rest,
   }
 
-  if (hideProperties) {
-    for (const property of hideProperties) {
-      const status: AlertStatus = 'info'
-      newSchema[property] = {
-        'ui:field': 'text:warning',
-        'ui:options': {
-          status,
-          message: i18n.t('warnings.featureFlag.splitSchema'),
-        },
-      }
-    }
-  }
-
   return newSchema
 }
 
 export const adapterJSFWidgets: RegistryWidgetsType = {
   // @ts-ignore [24369] Turn discovery browser off (and replace by regular text input)
   'discovery:tagBrowser': 'text',
+  'application/schema+json': JSONSchemaEditor,
+  // TODO[⚠ 28441 ⚠] This will need to be put back in place
+  // 'mqtt-tag': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
+  // 'mqtt-topic-filter': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC_FILTER),
+  // 'mqtt-topic': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
 }
 
 export const adapterJSFFields: RegistryFieldsType = {
   compactTable: CompactArrayField,
-  'text:warning': InternalNotice,
   'mqtt:transform': MqttTransformationField,
 }

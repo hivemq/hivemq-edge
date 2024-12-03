@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
-import { FieldMappingModel } from '@/api/__generated__'
+import { Instruction } from '@/api/__generated__'
 import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
@@ -16,18 +16,19 @@ interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   adapterType: string
   adapterId: string
   showTransformation?: boolean
-  mapping?: FieldMappingModel[]
-  onChange?: (v: FieldMappingModel[] | undefined) => void
+  instructions?: Instruction[]
+  onChange?: (v: Instruction[] | undefined) => void
   onSchemaReady?: (v: FlatJSONSchema7[]) => void
 }
 
 const MappingEditor: FC<MappingEditorProps> = ({
   topic,
   showTransformation = false,
-  mapping,
+  instructions,
   onChange,
   onSchemaReady,
   adapterId,
+  adapterType,
   ...props
 }) => {
   const { t } = useTranslation('components')
@@ -63,19 +64,19 @@ const MappingEditor: FC<MappingEditorProps> = ({
         {isSuccess && (
           <List>
             {properties.map((property) => {
-              const instruction = mapping
-                ? mapping.findIndex((instruction) => instruction.destination === property.key)
+              const instruction = instructions
+                ? instructions.findIndex((instruction) => instruction.destination === property.key)
                 : -1
               return (
                 <ListItem key={property.key}>
                   <MappingInstruction
                     showTransformation={showTransformation}
                     property={property}
-                    mapping={instruction !== -1 ? mapping?.[instruction] : undefined}
+                    instruction={instruction !== -1 ? instructions?.[instruction] : undefined}
                     onChange={(source, destination) => {
-                      let newMappings = [...(mapping || [])]
+                      let newMappings = [...(instructions || [])]
                       if (source) {
-                        const newItem: FieldMappingModel = {
+                        const newItem: Instruction = {
                           source: source,
                           destination: destination,
                         }

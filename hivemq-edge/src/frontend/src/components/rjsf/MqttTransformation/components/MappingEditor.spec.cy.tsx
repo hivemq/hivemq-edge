@@ -1,12 +1,6 @@
 import MappingEditor from './MappingEditor.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
-import { FieldMappingsModel } from '@/api/__generated__'
-
-const MOCK_SUBS: FieldMappingsModel = {
-  tag: 'my-node',
-  topicFilter: 'my-topic',
-  fieldMapping: [{ source: 'dropped-property', destination: 'lastName' }],
-}
+import { MOCK_SOUTHBOUND_MAPPING } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
   return <h2>{children}</h2>
@@ -27,7 +21,7 @@ describe('MappingEditor', () => {
         adapterType="my-type"
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping}
+        instructions={MOCK_SOUTHBOUND_MAPPING.fieldMapping?.instructions}
       />
     )
 
@@ -54,7 +48,7 @@ describe('MappingEditor', () => {
         adapterType="my-type"
         showTransformation={false}
         onChange={cy.stub()}
-        mapping={MOCK_SUBS.fieldMapping}
+        instructions={MOCK_SOUTHBOUND_MAPPING.fieldMapping?.instructions}
       />,
       { wrapper }
     )

@@ -26,7 +26,6 @@ describe('useListDomainTags', () => {
     expect(result.current.data).toStrictEqual<DomainTagList>({
       items: [
         {
-          protocolId: 'modbus',
           definition: {
             endIdx: 1,
             startIdx: 0,

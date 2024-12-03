@@ -1,0 +1,16 @@
+{
+  "definitions": {
+    "Instruction": {
+      "description": "Each instruction describes how one of the properties of your destination data model is populated from the source",
+      "destination": {
+        "title": "Destination path"
+      }
+    },
+    "FieldMapping": {
+      "instructions": {
+        "title": "Instructions",
+        "description": "List of transformation instructions to apply to this mapping"
+      }
+    }
+  }
+}

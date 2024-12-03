@@ -2,10 +2,22 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $AdapterConfigModel = {
+export const $AdapterConfig = {
     properties: {
         config: {
             type: 'Adapter',
+        },
+        northboundMappings: {
+            type: 'array',
+            contains: {
+                type: 'NorthboundMapping',
+            },
+        },
+        southboundMappings: {
+            type: 'array',
+            contains: {
+                type: 'SouthboundMapping',
+            },
         },
         tags: {
             type: 'array',

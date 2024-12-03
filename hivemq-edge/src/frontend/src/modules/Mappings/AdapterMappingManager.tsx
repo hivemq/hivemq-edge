@@ -18,10 +18,12 @@ import {
 
 import type { Adapter } from '@/api/__generated__'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import MappingForm from '@/modules/Mappings/components/MappingForm.tsx'
+import { useNorthboundMappingManager } from '@/modules/Mappings/hooks/useNorthboundMappingManager.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { useSouthboundMappingManager } from '@/modules/Mappings/hooks/useSouthboundMappingManager.ts'
 import { MappingType } from './types'
 
 interface AdapterMappingManagerProps {
@@ -51,6 +53,7 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   }, [onOpen])
 
   const adapterId = selectedNode?.data.id
+  const manager = type === MappingType.NORTHBOUND ? useNorthboundMappingManager : useSouthboundMappingManager
 
   return (
     <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={handleClose} variant="hivemq">
@@ -67,8 +70,9 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
             <MappingForm
               adapterId={adapterId}
               adapterType={selectedNode?.data.type}
-              type={type}
               onSubmit={handleClose}
+              useManager={manager}
+              type={type}
             />
           )}
         </DrawerBody>
