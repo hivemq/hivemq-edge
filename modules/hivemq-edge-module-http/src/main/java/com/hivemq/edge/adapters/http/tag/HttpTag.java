@@ -4,35 +4,31 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public class HttpTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       required = true)
+    @ModuleConfigField(title = "name", description = "name of the tag to be used in mappings", required = true)
     private final @NotNull String name;
 
-    @JsonProperty(value = "description", required = true)
-    @ModuleConfigField(title = "description",
-                       description = "A human readable description of the tag",
-                       required = true)
+    @JsonProperty(value = "description")
+    @ModuleConfigField(title = "description", description = "A human readable description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
     @ModuleConfigField(title = "definition",
-                       description = "The actual definition of the tag on the device",
-                       required = true)
+                       description = "The actual definition of the tag on the device")
     private final @NotNull HttpTagDefinition definition;
 
     public HttpTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
-            @JsonProperty(value = "description", required = true) final @NotNull String description,
+            @JsonProperty(value = "description") final @Nullable String description,
             @JsonProperty(value = "definition", required = true) final @NotNull HttpTagDefinition definiton) {
         this.name = name;
-        this.description = description;
+        this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definiton;
     }
 
@@ -68,8 +64,12 @@ public class HttpTag implements Tag {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final HttpTag httpTag = (HttpTag) o;
         return Objects.equals(name, httpTag.name) &&
                 Objects.equals(description, httpTag.description) &&
