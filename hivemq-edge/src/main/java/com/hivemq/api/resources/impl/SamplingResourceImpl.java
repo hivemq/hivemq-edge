@@ -83,7 +83,7 @@ public class SamplingResourceImpl implements SamplingApi {
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
             log.info("No samples were found for the requested topic '{}'.", topic);
-            return ErrorResponseUtil.notFound("samples", "topic");
+            return ErrorResponseUtil.notFound("samples", topic);
         }
 
         final ArrayList<JsonNode> jsonSamples = new ArrayList<>();
