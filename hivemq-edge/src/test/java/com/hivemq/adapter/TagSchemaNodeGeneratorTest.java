@@ -32,12 +32,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Iterator;
-
 
 /**
  * @author Jochen Mader
  */
+@SuppressWarnings("DataFlowIssue")
 public class TagSchemaNodeGeneratorTest {
 
     private static final @NotNull ObjectMapper mapper = new ObjectMapper();
@@ -52,11 +51,11 @@ public class TagSchemaNodeGeneratorTest {
 
     @Test
     public void testCanProduceSchemaForTag() {
-        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-        JsonNode node = generator.generateJsonSchema(TestTag.class);
-        JsonNode propertiesNode = node.get("properties");
-        JsonNode definition = findFirstChild(propertiesNode, "definition");
-        JsonNode definitionProperties = findFirstChild(definition, "properties");
+        final CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        final JsonNode node = generator.generateJsonSchema(TestTag.class);
+        final JsonNode propertiesNode = node.get("properties");
+        final JsonNode definition = findFirstChild(propertiesNode, "definition");
+        final JsonNode definitionProperties = findFirstChild(definition, "properties");
         Assertions.assertTrue(hasImmediateChild(definitionProperties, "address"), "TagDefintiion should have an address type");
     }
 
@@ -66,9 +65,8 @@ public class TagSchemaNodeGeneratorTest {
         if(child != null){
             return child;
         } else {
-            Iterator<JsonNode> nodes = parent.iterator();
-            while (nodes.hasNext()){
-                if((child = findFirstChild(nodes.next(), nodeName)) != null){
+            for (final JsonNode jsonNode : parent) {
+                if ((child = findFirstChild(jsonNode, nodeName)) != null) {
                     return child;
                 }
             }
@@ -96,7 +94,7 @@ public class TagSchemaNodeGeneratorTest {
         @ModuleConfigField(title = "Definition")
         final @NotNull TestTagDefinition definition;
 
-        public TestTag(final String name, final String description, final TestTagDefinition definition) {
+        public TestTag(final @com.hivemq.extension.sdk.api.annotations.NotNull String name, final @com.hivemq.extension.sdk.api.annotations.NotNull String description, final @com.hivemq.extension.sdk.api.annotations.NotNull TestTagDefinition definition) {
             this.name = name;
             this.description = description;
             this.definition = definition;
@@ -129,21 +127,13 @@ public class TagSchemaNodeGeneratorTest {
         @ModuleConfigField(title = "Data Type")
         private final @NotNull DataType dataType;
 
-        public TestTagDefinition(final String address, final DataType dataType) {
+        public TestTagDefinition(final @NotNull String address, final @NotNull DataType dataType) {
             this.address = address;
             this.dataType = dataType;
         }
-
-        public @NotNull String getAddress() {
-            return address;
-        }
-
-        public @NotNull DataType getDataType() {
-            return dataType;
-        }
     }
 
-    public static enum DataType{
+    public enum DataType{
         INT,
         INT32,
         INT64
