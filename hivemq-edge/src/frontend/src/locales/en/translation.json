@@ -583,6 +583,14 @@
       },
       "actions": {
         "submit": "Submit"
+      },
+      "toast": {
+        "description_loading": "Processing the request",
+        "updateCollection": {
+          "title": "Edit the mappings",
+          "description_success": "The mappings have been modified on the adapter",
+          "description_error": "The list of mappings could not be updated on the adapter"
+        }
       }
     }
   },

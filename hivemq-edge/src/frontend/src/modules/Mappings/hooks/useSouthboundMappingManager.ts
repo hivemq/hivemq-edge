@@ -17,19 +17,18 @@ export const useSouthboundMappingManager = (adapterId: string): MappingManagerTy
 
   const updateCollectionMutator = useUpdateSouthboundMappings()
 
-  // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
     success: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
-      description: t(`device.drawer.tagList.toast.${operation}.description`, { context: 'success' }),
+      title: t(`protocolAdapter.mapping.toast.${operation}.title`),
+      description: t(`protocolAdapter.mapping.toast.${operation}.description`, { context: 'success' }),
     },
     error: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
-      description: t(`device.drawer.tagList.toast.${operation}.description`, { context: 'error' }),
+      title: t(`protocolAdapter.mapping.toast.${operation}.title`),
+      description: t(`protocolAdapter.mapping.toast.${operation}.description`, { context: 'error' }),
     },
     loading: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
-      description: t('device.drawer.tagList.toast.description', { context: 'loading' }),
+      title: t(`protocolAdapter.mapping.toast.${operation}.title`),
+      description: t('protocolAdapter.mapping.toast.description', { context: 'loading' }),
     },
   })
 
