@@ -13,8 +13,7 @@ export const $TopicFilter = {
             type: 'string',
             description: `The topic filter according to the MQTT specification.`,
             isRequired: true,
-            // TODO[28249] Changed manually until backend fixed
-            format: 'identifier:topic-filter',
+            format: 'mqtt-topic-filter',
         },
     },
 } as const;
