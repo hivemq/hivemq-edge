@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 public class CommercialModuleLoaderDiscovery {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
-    private final @NotNull ImmutableList<ModuleLoaderMain> instances;
+    private final @NotNull ModuleLoaderMain instance;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull ModuleLoader moduleLoader) {
@@ -37,37 +37,35 @@ public class CommercialModuleLoaderDiscovery {
         moduleLoader.findImplementations(ModuleLoaderMain.class).forEach(impl -> {
             try {
                 builder.add(impl.getDeclaredConstructor().newInstance());
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Error when instancing '{}':", impl, e);
             }
         });
-        this.instances = builder.build();
+
+        this.instance = builder.build().get(0);
     }
 
     public void generalBootstrap(final @NotNull GeneralBootstrapService generalBootstrapService) {
         try {
-            instances.forEach(instance -> instance.generalBootstrap(generalBootstrapService));
-        } catch (Exception e) {
+            instance.generalBootstrap(generalBootstrapService);
+        } catch (final Exception e) {
             log.error("Error when bootstrapping general information", e);
         }
     }
 
     public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
         try {
-            for (ModuleLoaderMain instance : instances) {
-                instance.persistenceBootstrap(persistenceBootstrapService);
-            }
-        } catch (Exception e) {
+            instance.persistenceBootstrap(persistenceBootstrapService);
+
+        } catch (final Exception e) {
             log.error("Error when bootstrapping persistences ", e);
         }
     }
 
     public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
         try {
-            for (ModuleLoaderMain instance : instances) {
-                instance.afterPersistenceBootstrap(completeBootstrapService);
-            }
-        } catch (Exception e) {
+            instance.afterPersistenceBootstrap(completeBootstrapService);
+        } catch (final Exception e) {
             log.error("Error when completing bootstrap ", e);
         }
     }
@@ -75,14 +73,11 @@ public class CommercialModuleLoaderDiscovery {
 
     public void afterHiveMQStart(final @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService) {
         try {
-            for (ModuleLoaderMain instance : instances) {
-                instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
-            }
-        } catch (Exception e) {
+            instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
+        } catch (final Exception e) {
             log.error("Error when completing bootstrap ", e);
         }
     }
-
 
 
 }
