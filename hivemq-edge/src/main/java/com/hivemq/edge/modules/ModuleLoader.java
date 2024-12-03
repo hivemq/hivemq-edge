@@ -67,7 +67,7 @@ public class ModuleLoader {
         }
     }
 
-    private void loadCommercialModuleLoaderFromWorkSpace(ClassLoader contextClassLoader) {
+    private void loadCommercialModuleLoaderFromWorkSpace(final ClassLoader contextClassLoader) {
         final File userDir = new File(System.getProperty("user.dir"));
         final File commercialModulesRepoRootFolder = new File(userDir, "../hivemq-edge-commercial-modules");
         if (!commercialModulesRepoRootFolder.exists()) {
@@ -119,7 +119,7 @@ public class ModuleLoader {
 
     protected void loadFromWorkspace(final ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
-        File userDir = new File(System.getProperty("user.dir"));
+        final File userDir = new File(System.getProperty("user.dir"));
         if (userDir.getName().equals("hivemq-edge")) {
             discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
         } else if (userDir.getName().equals("hivemq-edge-composite")) {
@@ -128,20 +128,23 @@ public class ModuleLoader {
     }
 
     protected void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
+        // clear the modules collection to avoid loading the same module twice
+        modules.clear();
+
         if (dir.exists()) {
-            File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
+            final File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
                     pathname.canRead() &&
                     new File(pathname, "build").exists());
             for (int i = 0; i < files.length; i++) {
                 log.info("Found module workspace directory {}.", files[i].getAbsolutePath());
                 try {
-                    List<URL> urls = new ArrayList<>();
+                    final List<URL> urls = new ArrayList<>();
                     urls.add(new File(files[i], "build/classes/java/main").toURI().toURL());
                     urls.add(new File(files[i], "build/resources/main").toURI().toURL());
-                    File deps = new File(files[i], "build/deps/libs");
+                    final File deps = new File(files[i], "build/deps/libs");
                     if (deps.exists()) {
-                        File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
-                        for (File jar : jars) {
+                        final File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
+                        for (final File jar : jars) {
                             urls.add(jar.toURI().toURL());
                         }
                     }
@@ -160,6 +163,9 @@ public class ModuleLoader {
 
     protected void loadFromModulesDirectory(final ClassLoader parentClassloader) {
         log.debug("Loading modules from HiveMQ Home.");
+        // clear the modules collection to avoid loading the same module twice
+        modules.clear();
+
         final File modulesFolder = systemInformation.getModulesFolder();
         final File[] libs = modulesFolder.listFiles();
         if (libs != null) {
@@ -197,7 +203,7 @@ public class ModuleLoader {
                             serviceClazz,
                             module.root);
                 }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (final IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -214,7 +220,7 @@ public class ModuleLoader {
 
     public static class EdgeModule {
 
-        private File root;
+        private final File root;
         private final @NotNull ClassLoader classloader;
 
         public EdgeModule(
@@ -238,10 +244,8 @@ public class ModuleLoader {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("EdgeModule{");
-            sb.append("root=").append(root);
-            sb.append('}');
-            return sb.toString();
+            final String sb = "EdgeModule{" + "root=" + root + '}';
+            return sb;
         }
     }
 }
