@@ -18,6 +18,7 @@ package com.hivemq.edge.modules;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModuleLoader {
     private static final Logger log = LoggerFactory.getLogger(ModuleLoader.class);
@@ -41,6 +43,7 @@ public class ModuleLoader {
     private final @NotNull SystemInformation systemInformation;
     protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
     private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
+    private final AtomicBoolean loaded = new AtomicBoolean();
 
     @Inject
     public ModuleLoader(final @NotNull SystemInformation systemInformation) {
@@ -48,6 +51,11 @@ public class ModuleLoader {
     }
 
     public void loadModules() {
+        if(loaded.get()){
+            // avoid duplicate loads
+            return;
+        }
+        loaded.set(true);
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
             log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));

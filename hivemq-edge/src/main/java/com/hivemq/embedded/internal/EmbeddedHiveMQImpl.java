@@ -84,6 +84,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             final @Nullable File extensions,
             final @Nullable File license,
             final @Nullable EmbeddedExtension embeddedExtension) {
+        final ModuleLoader moduleLoader = new ModuleLoader();
+
         this(conf, data, extensions, license, embeddedExtension, ModuleLoader::new);
     }
 
@@ -168,10 +170,11 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                         bootstrapConfig();
                     }
 
+                    final ModuleLoader moduleLoader = moduleLoaderFactory.apply(systemInformation);
+                    moduleLoader.loadModules();
                     hiveMQServer = new HiveMQEdgeMain(systemInformation,
                             metricRegistry,
-                            configurationService,
-                            moduleLoaderFactory.apply(systemInformation));
+                            configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 

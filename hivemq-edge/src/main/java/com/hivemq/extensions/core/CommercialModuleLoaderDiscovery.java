@@ -22,13 +22,14 @@ import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.modules.ModuleLoader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CommercialModuleLoaderDiscovery {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
-    private final @NotNull ModuleLoaderMain instance;
+    private final @Nullable ModuleLoaderMain instance;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull ModuleLoader moduleLoader) {
@@ -41,13 +42,23 @@ public class CommercialModuleLoaderDiscovery {
                 log.error("Error when instancing '{}':", impl, e);
             }
         });
-
-        this.instance = builder.build().get(0);
+        final ImmutableList<ModuleLoaderMain> moduleLoaderMains = builder.build();
+        if (moduleLoaderMains.isEmpty()) {
+            log.info("No commercial module loader main was discovered. Commercial modules will not be loaded.");
+            instance = null;
+        } else if (moduleLoaderMains.size() == 1) {
+            this.instance = moduleLoaderMains.get(0);
+        } else {
+            log.warn("More than one module loader main was discovered. Only the first one will be used.");
+            this.instance = moduleLoaderMains.get(0);
+        }
     }
 
     public void generalBootstrap(final @NotNull GeneralBootstrapService generalBootstrapService) {
         try {
-            instance.generalBootstrap(generalBootstrapService);
+            if (instance != null) {
+                instance.generalBootstrap(generalBootstrapService);
+            }
         } catch (final Exception e) {
             log.error("Error when bootstrapping general information", e);
         }
@@ -55,8 +66,9 @@ public class CommercialModuleLoaderDiscovery {
 
     public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
         try {
-            instance.persistenceBootstrap(persistenceBootstrapService);
-
+            if (instance != null) {
+                instance.persistenceBootstrap(persistenceBootstrapService);
+            }
         } catch (final Exception e) {
             log.error("Error when bootstrapping persistences ", e);
         }
@@ -64,7 +76,10 @@ public class CommercialModuleLoaderDiscovery {
 
     public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
         try {
-            instance.afterPersistenceBootstrap(completeBootstrapService);
+            if (instance != null) {
+
+                instance.afterPersistenceBootstrap(completeBootstrapService);
+            }
         } catch (final Exception e) {
             log.error("Error when completing bootstrap ", e);
         }
@@ -73,7 +88,9 @@ public class CommercialModuleLoaderDiscovery {
 
     public void afterHiveMQStart(final @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService) {
         try {
-            instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
+            if (instance != null) {
+                instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
+            }
         } catch (final Exception e) {
             log.error("Error when completing bootstrap ", e);
         }
