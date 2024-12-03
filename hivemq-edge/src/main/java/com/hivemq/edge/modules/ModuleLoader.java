@@ -42,11 +42,11 @@ public class ModuleLoader {
     protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
     private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
 
+    @Inject
     public ModuleLoader(final @NotNull SystemInformation systemInformation) {
         this.systemInformation = systemInformation;
     }
 
-    @Inject
     public void loadModules() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
@@ -242,22 +242,5 @@ public class ModuleLoader {
             final String sb = "EdgeModule{" + "root=" + root + '}';
             return sb;
         }
-
-        /*
-        @Override
-        public boolean equals(final @Nullable Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final EdgeModule that = (EdgeModule) o;
-            return root.equals(that.root);
-        }
-
-        @Override
-        public int hashCode() {
-            return root.hashCode();
-        }
-
-         */
     }
 }
