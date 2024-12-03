@@ -31,9 +31,7 @@ public class CommercialModuleLoaderDiscovery {
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
     private final @Nullable ModuleLoaderMain instance;
 
-    public CommercialModuleLoaderDiscovery(
-            final @NotNull ModuleLoader moduleLoader) {
-        moduleLoader.loadModules();
+    public CommercialModuleLoaderDiscovery(final @NotNull ModuleLoader moduleLoader) {
         final ImmutableList.Builder<ModuleLoaderMain> builder = ImmutableList.builder();
         moduleLoader.findImplementations(ModuleLoaderMain.class).forEach(impl -> {
             try {

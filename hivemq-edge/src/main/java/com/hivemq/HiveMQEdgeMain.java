@@ -119,7 +119,7 @@ public class HiveMQEdgeMain {
     }
 
     protected void initializeApiServer(final @NotNull Injector injector) {
-        ApiConfigurationService config = Objects.requireNonNull(configService).apiConfiguration();
+        final ApiConfigurationService config = Objects.requireNonNull(configService).apiConfiguration();
         if (jaxrsServer == null && config.isEnabled()) {
             jaxrsServer = injector.apiServer();
         } else {
@@ -157,7 +157,7 @@ public class HiveMQEdgeMain {
                             injector.protocolAdapterManager(),
                             injector.services().modulesAndExtensionsService());
             injector.commercialModuleLoaderDiscovery().afterHiveMQStart(afterHiveMQStartBootstrapService);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Error on bootstrapping modules:", e);
             throw new HiveMQEdgeStartupException(e);
         }
@@ -176,7 +176,7 @@ public class HiveMQEdgeMain {
         stopGateway();
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
-        } catch (IllegalStateException ignored) {
+        } catch (final IllegalStateException ignored) {
             //ignore
         }
     }
@@ -185,8 +185,10 @@ public class HiveMQEdgeMain {
         log.info("Starting HiveMQ Edge...");
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
+        final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
+        moduleLoader.loadModules();
         final HiveMQEdgeMain server =
-                new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, new ModuleLoader(systemInformation));
+                new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
         try {
             server.start(null);
             log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
