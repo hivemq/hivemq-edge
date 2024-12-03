@@ -21,6 +21,7 @@ import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,9 +129,6 @@ public class ModuleLoader {
     }
 
     protected void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
-        // clear the modules collection to avoid loading the same module twice
-        modules.clear();
-
         if (dir.exists()) {
             final File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
                     pathname.canRead() &&
@@ -163,9 +161,6 @@ public class ModuleLoader {
 
     protected void loadFromModulesDirectory(final ClassLoader parentClassloader) {
         log.debug("Loading modules from HiveMQ Home.");
-        // clear the modules collection to avoid loading the same module twice
-        modules.clear();
-
         final File modulesFolder = systemInformation.getModulesFolder();
         final File[] libs = modulesFolder.listFiles();
         if (libs != null) {
@@ -246,6 +241,20 @@ public class ModuleLoader {
         public String toString() {
             final String sb = "EdgeModule{" + "root=" + root + '}';
             return sb;
+        }
+
+        @Override
+        public boolean equals(final @Nullable Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final EdgeModule that = (EdgeModule) o;
+            return root.equals(that.root);
+        }
+
+        @Override
+        public int hashCode() {
+            return root.hashCode();
         }
     }
 }
