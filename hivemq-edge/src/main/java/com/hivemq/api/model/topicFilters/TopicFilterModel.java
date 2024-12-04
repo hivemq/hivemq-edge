@@ -37,12 +37,19 @@ public class TopicFilterModel {
     @Schema(description = "The name for this topic filter.")
     private final @NotNull String description;
 
+    @JsonProperty("schema")
+    @Schema(description = "The optional json schema for this topic filter in the data uri format.")
+    private final @Nullable String schema;
+
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TopicFilterModel(
             @JsonProperty("topicFilter") final @NotNull String topicFilter,
-            @JsonProperty("description") final @Nullable String description) {
+            @JsonProperty("description") final @Nullable String description,
+            @JsonProperty("schema") final @Nullable String schema) {
         this.description = Objects.requireNonNullElse(description, "");
         this.topicFilter = topicFilter;
+        this.schema = schema;
     }
 
     public @NotNull String getDescription() {
@@ -53,23 +60,26 @@ public class TopicFilterModel {
         return topicFilter;
     }
 
+    public @Nullable String getSchema() {
+        return schema;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         final TopicFilterModel that = (TopicFilterModel) o;
-        return description.equals(that.description) && topicFilter.equals(that.topicFilter);
+        return topicFilter.equals(that.topicFilter) &&
+                description.equals(that.description) &&
+                schema.equals(that.schema);
     }
 
     @Override
     public int hashCode() {
-        int result = description.hashCode();
-        result = 31 * result + topicFilter.hashCode();
+        int result = topicFilter.hashCode();
+        result = 31 * result + description.hashCode();
+        result = 31 * result + schema.hashCode();
         return result;
     }
 
@@ -82,10 +92,13 @@ public class TopicFilterModel {
                 ", topicFilter='" +
                 topicFilter +
                 '\'' +
+                ", schema='" +
+                schema +
+                '\'' +
                 '}';
     }
 
     public static @NotNull TopicFilterModel fromTopicFilter(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterModel(topicFilter.getTopicFilter(), topicFilter.getDescription());
+        return new TopicFilterModel(topicFilter.getTopicFilter(), topicFilter.getDescription(), topicFilter.getSchema());
     }
 }

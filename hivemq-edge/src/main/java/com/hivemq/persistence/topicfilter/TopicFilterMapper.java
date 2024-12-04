@@ -15,18 +15,20 @@
  */
 package com.hivemq.persistence.topicfilter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
+import org.jetbrains.annotations.NotNull;
 
 public class TopicFilterMapper {
 
     public static @NotNull TopicFilter topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
-        return new TopicFilter(topicFilterXmlEntity.getTopicFilter(), topicFilterXmlEntity.getDescription());
-
+        return new TopicFilter(topicFilterXmlEntity.getTopicFilter(),
+                topicFilterXmlEntity.getDescription(),
+                topicFilterXmlEntity.getSchema());
     }
 
     public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterXmlEntity(topicFilter.getTopicFilter(), topicFilter.getDescription());
+        return new TopicFilterXmlEntity(topicFilter.getTopicFilter(),
+                topicFilter.getDescription(),
+                topicFilter.getSchema());
     }
-
 }

@@ -16,6 +16,7 @@
 package com.hivemq.persistence.topicfilter.xml;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -30,18 +31,24 @@ public class TopicFilterXmlEntity {
     @XmlElement(name = "filter", required = true)
     private final @NotNull String topicFilter;
 
+    @XmlElement(name = "schema")
+    private final @Nullable String schema;
+
 
     //no-arg for JaxB
     @SuppressWarnings("unused")
     public TopicFilterXmlEntity() {
         this.description = "";
         this.topicFilter = "";
+        this.schema = null;
     }
 
+
     public TopicFilterXmlEntity(
-            final @NotNull String topicFilter, final @NotNull String description) {
+            final @NotNull String topicFilter, final @NotNull String description, final @Nullable String schema) {
         this.description = description;
         this.topicFilter = topicFilter;
+        this.schema = schema;
     }
 
 
@@ -51,6 +58,10 @@ public class TopicFilterXmlEntity {
 
     public @NotNull String getTopicFilter() {
         return topicFilter;
+    }
+
+    public @Nullable String getSchema() {
+        return schema;
     }
 
     @Override
