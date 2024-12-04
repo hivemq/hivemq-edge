@@ -99,6 +99,7 @@ import java.util.stream.Collectors;
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
+    public static final String INTERNAL_ERROR_PLEASE_CHECK_LOGS = "Internal error, please check logs.";
 
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
@@ -165,7 +166,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .stream()
                 .map(this::convertToAdapter)
                 .collect(Collectors.toUnmodifiableList());
-        return Response.status(200).entity(new AdaptersList(adapters)).build();
+        return Response.ok(new AdaptersList(adapters)).build();
     }
 
     @Override
@@ -173,7 +174,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return ApiErrorUtils.notFound("Adapter not found");
         }
         final List<Adapter> adapters = protocolAdapterManager.getProtocolAdapters()
                 .values()
@@ -182,7 +183,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .map(this::convertToAdapter)
                 .collect(Collectors.toUnmodifiableList());
 
-        return Response.status(200).entity(new AdaptersList(adapters)).build();
+        return Response.ok(new AdaptersList(adapters)).build();
     }
 
     @Override
@@ -191,7 +192,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
-        return Response.status(200).entity(convertToAdapter(instance.get())).build();
+        return Response.ok(convertToAdapter(instance.get())).build();
     }
 
 
@@ -258,7 +259,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final NodeTreeImpl nodeTree = output.getNodeTree();
         final List<NodeTreeImpl.ObjectNode> children = nodeTree.getRootNode().getChildren();
-        return Response.status(200).entity(new ValuesTree(children)).build();
+        return Response.ok(new ValuesTree(children)).build();
     }
 
     @Override
@@ -315,7 +316,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } catch (final Exception e) {
             log.error("Exception during update of adapter '{}'.", adapterId);
             log.debug("Original Exception:", e);
-            return Response.serverError().build();
+            return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
         }
         return Response.ok().build();
     }
@@ -376,7 +377,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
-            return Response.status(200).entity(getStatusInternal(adapterId)).build();
+            return Response.ok(getStatusInternal(adapterId)).build();
         }
     }
 
@@ -420,7 +421,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         for (final ProtocolAdapterWrapper instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
-        return Response.status(200).entity(new StatusList(builder.build())).build();
+        return Response.ok(new StatusList(builder.build())).build();
     }
 
 
@@ -434,7 +435,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
                 return Response.ok(new DomainTagModelList(domainTagModels)).build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).build());
+        }).orElse(ApiErrorUtils.notFound("Adapter not found"));
     }
 
     @Override
@@ -458,7 +459,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
         }
-        return Response.serverError().build();
+        return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
     }
 
     @Override
@@ -474,7 +475,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case NOT_FOUND:
                 return ErrorResponseUtil.notFound("Tag", decodedTagName);
         }
-        return Response.serverError().build();
+        return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
     }
 
     @Override
@@ -488,9 +489,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ADAPTER_NOT_FOUND:
-                return Response.status(403).entity("").build();
+                return ApiErrorUtils.badRequest("Adapter not found");
             case INTERNAL_ERROR:
-                return Response.serverError().build();
+                return Response.serverError().entity("").build();
         }
         log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
         return Response.serverError().build();
@@ -546,8 +547,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getTagSchema(final @NotNull String protocolId) {
         return protocolAdapterManager.getAdapterTypeById(protocolId)
-                .map(info -> Response.status(200)
-                        .entity(new TagSchema(protocolId,
+                .map(info -> Response.ok(new TagSchema(protocolId,
                                 customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
                         .build())
                 .orElseGet(() -> {
@@ -679,7 +679,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .map(NorthboundMappingModel::from)
                         .collect(Collectors.toList()))
                 .map(NorthboundMappingListModel::new)
-                .map(mappingsList -> Response.status(200).entity(mappingsList).build())
+                .map(mappingsList -> Response.ok(mappingsList).build())
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
 
@@ -724,16 +724,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             if (requiredTags.isEmpty()) {
                 if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
                     log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
-                    return Response.status(200).entity(northboundMappingListModel).build();
+                    return Response.ok(northboundMappingListModel).build();
                 } else {
                     log.error("Something went wrong updating the adapter {}", adapterId);
-                    return Response.status(500).build();
+                    return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
                 }
             } else {
                 log.error("The following tags were missing for updating the fromMappings for adapter {}: {}",
                         adapterId,
                         requiredTags);
-                return Response.status(500).build();
+                return Response.status(400).entity("The following tags were missing for updating the fromMappings for adapter " + adapterId + ": "+ requiredTags).build();
             }
         }).orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
@@ -746,7 +746,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .map(SouthboundMappingModel::from)
                         .collect(Collectors.toList()))
                 .map(SouthboundMappingListModel::new)
-                .map(mappingsList -> Response.status(200).entity(mappingsList).build())
+                .map(mappingsList -> Response.ok(mappingsList).build())
                 .orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
 
@@ -764,16 +764,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             if (requiredTags.isEmpty()) {
                 if (protocolAdapterManager.updateAdapterToMappings(adapterId, converted)) {
                     log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
-                    return Response.status(200).entity(southboundMappingListModel).build();
+                    return Response.ok().entity(southboundMappingListModel).build();
                 } else {
                     log.error("Something went wrong updating the adapter {}", adapterId);
-                    return Response.status(500).build();
+                    return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
                 }
             } else {
                 log.error("The following tags were missing for updating the fromMappings for adapter {}: {}",
                         adapterId,
                         requiredTags);
-                return Response.status(500).build();
+                return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
             }
         }).orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
     }
