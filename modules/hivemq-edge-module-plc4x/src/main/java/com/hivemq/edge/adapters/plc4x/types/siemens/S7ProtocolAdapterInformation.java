@@ -59,12 +59,12 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull String getDisplayName() {
-        return "S7 to MQTT Protocol Adapter";
+        return "S7 Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to S7-300, S7-400, S7-1200, S7-1500 & LOGO devices, reading data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to S7-300, S7-400, S7-1200, S7-1500 & LOGO devices.";
     }
 
     @Override
@@ -115,7 +115,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the S7 Adapter could not be loaded from resources:", e);
             return null;
         }
