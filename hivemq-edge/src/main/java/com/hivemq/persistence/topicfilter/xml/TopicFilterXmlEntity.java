@@ -34,7 +34,6 @@ public class TopicFilterXmlEntity {
     @XmlElement(name = "schema")
     private final @Nullable String schema;
 
-
     //no-arg for JaxB
     @SuppressWarnings("unused")
     public TopicFilterXmlEntity() {
@@ -42,7 +41,6 @@ public class TopicFilterXmlEntity {
         this.topicFilter = "";
         this.schema = null;
     }
-
 
     public TopicFilterXmlEntity(
             final @NotNull String topicFilter, final @NotNull String description, final @Nullable String schema) {
@@ -66,6 +64,16 @@ public class TopicFilterXmlEntity {
 
     @Override
     public @NotNull String toString() {
-        return "TopicFilterXmlEntity{" + "description='" + description + '\'' + ", topicFilter='" + topicFilter + '\'' + '}';
+        return "TopicFilterXmlEntity{" +
+                "description='" +
+                description +
+                '\'' +
+                ", topicFilter='" +
+                topicFilter +
+                '\'' +
+                ", schema='" +
+                schema +
+                '\'' +
+                '}';
     }
 }
