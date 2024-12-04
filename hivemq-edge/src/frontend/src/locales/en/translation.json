@@ -867,6 +867,7 @@
     }
   },
   "modals": {
+    "native": "Native UX",
     "generics": {
       "confirmation": "Are you sure? You can't undo this action afterward."
     },

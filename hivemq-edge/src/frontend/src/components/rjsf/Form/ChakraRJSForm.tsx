@@ -7,7 +7,6 @@ import { FormProps, IChangeEvent } from '@rjsf/core'
 import { IdSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 
-import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/DescriptionFieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
@@ -15,11 +14,12 @@ import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
-import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
 import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
+import { MqttTransformationField } from '@/components/rjsf/Fields'
+import { adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -27,6 +27,7 @@ interface CustomFormProps<T>
     'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly'
   > {
   onSubmit: (data: IChangeEvent) => void
+  showNativeWidgets?: boolean
 }
 
 const FLAG_POST_VALIDATE = false
@@ -40,6 +41,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
   formContext,
   customValidate,
   readonly,
+  showNativeWidgets = false,
 }) => {
   const { t } = useTranslation()
   const { setTabIndex } = useFormControlStore()
@@ -101,7 +103,8 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       formData={defaultValues}
       formContext={context}
       templates={{
-        ObjectFieldTemplate,
+        // TODO[NVL] This override was mostly for the tabs (not used in this context) but is wrongly rendering additionalProperties
+        // ObjectFieldTemplate,
         FieldTemplate,
         BaseInputTemplate,
         ArrayFieldTemplate,
@@ -110,8 +113,14 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
         ErrorListTemplate,
         TitleFieldTemplate,
       }}
-      widgets={adapterJSFWidgets}
-      fields={adapterJSFFields}
+      widgets={{
+        ...(!showNativeWidgets && adapterJSFWidgets),
+      }}
+      fields={{
+        ...(!showNativeWidgets && {
+          'mqtt:transform': MqttTransformationField,
+        }),
+      }}
       onSubmit={onValidate}
       liveValidate
       // TODO[NVL] Removing HTML validation; see https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation/#html5-validation

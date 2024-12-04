@@ -16,9 +16,10 @@ interface MappingFormProps {
   onSubmit: () => void
   useManager: (adapterId: string) => MappingManagerType
   type: MappingType
+  showNativeWidgets?: boolean
 }
 
-const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type }) => {
+const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type, showNativeWidgets = false }) => {
   const { t } = useTranslation()
   const { context, onUpdateCollection } = useManager(adapterId)
   const validationSchemas = useState<FlatJSONSchema7[]>()
@@ -42,6 +43,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager,
 
   return (
     <ChakraRJSForm
+      showNativeWidgets={showNativeWidgets}
       id="adapter-mapping-form"
       schema={context.schema}
       uiSchema={context.uiSchema}

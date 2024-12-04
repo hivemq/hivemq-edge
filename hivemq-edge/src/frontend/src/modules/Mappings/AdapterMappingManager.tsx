@@ -11,10 +11,15 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
+  FormControl,
+  FormLabel,
+  Switch,
   Text,
   useBoolean,
   useDisclosure,
 } from '@chakra-ui/react'
+
+import config from '@/config'
 
 import type { Adapter } from '@/api/__generated__'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
@@ -55,6 +60,8 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   const adapterId = selectedNode?.data.id
   const manager = type === MappingType.NORTHBOUND ? useNorthboundMappingManager : useSouthboundMappingManager
 
+  const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
+
   return (
     <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
@@ -73,10 +80,19 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
               onSubmit={handleClose}
               useManager={manager}
               type={type}
+              showNativeWidgets={showNativeWidgets}
             />
           )}
         </DrawerBody>
         <DrawerFooter>
+          {config.environment === 'development' && (
+            <FormControl display="flex" alignItems="center">
+              <FormLabel htmlFor="email-alerts" mb="0">
+                {t('modals.native')}
+              </FormLabel>
+              <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
+            </FormControl>
+          )}
           <Button variant="primary" type="submit" form="adapter-mapping-form">
             {t('protocolAdapter.mapping.actions.submit')}
           </Button>
