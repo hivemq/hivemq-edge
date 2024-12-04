@@ -430,12 +430,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getDomainTagsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getTagsForAdapter(adapterId).map(tags -> {
             if (tags.isEmpty()) {
-                return Response.ok().build();
+                return Response.ok(new DomainTagModelList(List.of())).build();
             } else {
                 final List<DomainTagModel> domainTagModels =
                         tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
-                final DomainTagModelList domainTagModelList = new DomainTagModelList(domainTagModels);
-                return Response.ok().entity(domainTagModelList).build();
+                return Response.ok(new DomainTagModelList(domainTagModels)).build();
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
