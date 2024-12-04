@@ -103,6 +103,9 @@ public class HiveMQEdgeBootstrap {
             //Create SystemInformation this early because logging depends on it
             systemInformation.init();
         }
+        // load available modules after system information is bootstrapped.
+        moduleLoader.loadModules();
+
 
         log.trace("Initializing Logging");
         LoggingBootstrap.initLogging(systemInformation.getConfigFolder());
@@ -148,7 +151,7 @@ public class HiveMQEdgeBootstrap {
 
         try {
             persistenceStartup.finish();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             throw new HiveMQEdgeStartupException(e);
         }
         log.info("HiveMQ Edge starts with Persistence Mode: '{}'",
@@ -189,7 +192,7 @@ public class HiveMQEdgeBootstrap {
             generalBootstrapService =
                     new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId, edgeCoreFactoryService);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
             throw new HiveMQEdgeStartupException(e);
         }
@@ -206,7 +209,7 @@ public class HiveMQEdgeBootstrap {
         try {
             persistenceBootstrapService = injector.persistenceBootstrapService();
             commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Error on bootstrapping persistences.", e);
             throw new HiveMQEdgeStartupException(e);
         }
@@ -221,7 +224,7 @@ public class HiveMQEdgeBootstrap {
 
         try {
             commercialModuleLoaderDiscovery.completeBootstrap(injector.completeBootstrapService());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Error on bootstraping persistences.", e);
             throw new HiveMQEdgeStartupException(e);
         }
@@ -233,7 +236,7 @@ public class HiveMQEdgeBootstrap {
         try {
             //ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
             FileUtils.deleteDirectory(new File(tmpFolder));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             //No error because it's not business breaking
             log.warn("The temporary folder could not be deleted ({}).", tmpFolder);
             if (log.isDebugEnabled()) {

@@ -186,7 +186,6 @@ public class HiveMQEdgeMain {
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
         final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
-        moduleLoader.loadModules();
         final HiveMQEdgeMain server =
                 new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
         try {
