@@ -36,6 +36,11 @@ export const northboundMappingListSchema: JSONSchema7 = {
             'This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample',
           default: 'MQTTMessagePerTag',
         },
+        messageExpiryInterval: {
+          type: 'number',
+          description: `The message expiry interval.`,
+          format: 'int64',
+        },
         maxQoS: {
           $ref: '#/definitions/QoS',
         },
