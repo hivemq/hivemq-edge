@@ -16,10 +16,12 @@ export const useUpdateSouthboundMappings = () => {
     return appClient.protocolAdapters.updateAdapterSouthboundMappings(adapterId, requestBody)
   }
 
-  return useMutation<UpdateSouthboundMappingsProps, ApiError, UpdateSouthboundMappingsProps>({
+  return useMutation<unknown, ApiError, UpdateSouthboundMappingsProps>({
     mutationFn: updateProtocolAdapter,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, data.adapterId, QUERY_KEYS.SOUTHBOUND_MAPPINGS] })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ADAPTERS, variables.adapterId, QUERY_KEYS.SOUTHBOUND_MAPPINGS],
+      })
     },
   })
 }
