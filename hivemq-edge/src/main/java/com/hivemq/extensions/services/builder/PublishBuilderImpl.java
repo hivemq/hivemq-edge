@@ -20,8 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extension.sdk.api.packets.general.UserProperty;
@@ -36,6 +34,8 @@ import com.hivemq.extensions.services.publish.PublishImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
@@ -161,16 +161,16 @@ public class PublishBuilderImpl implements PublishBuilder {
 
     @NotNull
     private PublishBuilder fromComplete(
-            final @NotNullQos qos,
+            final @NotNull Qos qos,
             final boolean retain,
-            final @NotNull  String topic,
-            final @NotNull  Optional<PayloadFormatIndicator> payloadFormatIndicator,
-             final @NotNullOptional<Long> messageExpiryInterval,
-             final @NotNullOptional<String> responseTopic,
-            final @NotNull  Optional<ByteBuffer> correlationData,
-             final @NotNullOptional<String> contentType,
-             final @NotNullOptional<ByteBuffer> payload,
-             final @NotNull UserProperties userProperties) {
+            final @NotNull String topic,
+            final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
+            final @NotNull Optional<Long> messageExpiryInterval,
+            final @NotNull Optional<String> responseTopic,
+            final @NotNull Optional<ByteBuffer> correlationData,
+            final @NotNull Optional<String> contentType,
+            final @NotNull Optional<ByteBuffer> payload,
+            final @NotNull UserProperties userProperties) {
         this.qos(qos);
         this.retain(retain);
         this.topic(topic);
