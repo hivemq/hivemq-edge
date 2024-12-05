@@ -12,7 +12,6 @@ import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hook
 
 import { safeTopicSchemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
 import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
-import { safeWritingSchemaHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 
 export const handlers = [
   ...useFrontendServices,
@@ -38,6 +37,6 @@ export const createHandlersWithMQTTClient = (
     // Domain & Schemas
     // ...schemaHandlers(onSampling),
     ...safeTopicSchemaHandlers,
-    ...safeWritingSchemaHandlers,
+    // ...safeWritingSchemaHandlers,
   ]
 }

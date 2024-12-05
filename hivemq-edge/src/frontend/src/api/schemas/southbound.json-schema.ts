@@ -37,12 +37,14 @@ export const southboundMappingListSchema: JSONSchema7 = {
       description: `Metadata for the whole mapping`,
       properties: {
         destination: {
-          type: 'string',
-          format: 'data-url',
+          type: 'object',
+          // type: 'string',
+          // format: 'data-url',
         },
         source: {
-          type: 'string',
-          format: 'data-url',
+          type: 'object',
+          // type: 'string',
+          // format: 'data-url',
         },
       },
     },
