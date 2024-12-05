@@ -95,6 +95,9 @@ export const useTopicFilterOperations = () => {
         'ui:title': 'Topic Filters',
         items: {
           'ui:order': ['topicFilter', '*'],
+          schema: {
+            'ui:widget': 'hidden',
+          },
         },
       },
     },
