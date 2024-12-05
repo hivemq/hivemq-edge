@@ -25,16 +25,19 @@ public class TopicFilter {
 
     private final @NotNull String description;
     private final @NotNull String topicFilter;
+    private final @Nullable String schema;
+
 
     public TopicFilter(
-            final @NotNull String topicFilter, final @NotNull String description) {
+            final @NotNull String topicFilter, final @NotNull String description, final @Nullable String schema) {
         this.description = description;
         this.topicFilter = topicFilter;
+        this.schema = schema;
     }
 
     public static @NotNull TopicFilter fromTopicFilterModel(
             final @NotNull TopicFilterModel topicFilter) {
-        return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription());
+        return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription(), topicFilter.getSchema());
     }
 
     public @NotNull String getDescription() {
@@ -45,11 +48,19 @@ public class TopicFilter {
         return topicFilter;
     }
 
+    public @Nullable String getSchema() {
+        return schema;
+    }
+
     // IMPORTANT: Only use filter for equals and hashcode as we do not care about the description and these methods are used for removal
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         final TopicFilter that = (TopicFilter) o;
         return topicFilter.equals(that.topicFilter);
