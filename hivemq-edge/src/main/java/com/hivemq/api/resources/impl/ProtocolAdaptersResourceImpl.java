@@ -465,8 +465,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "The adapter named '" + adapterId + "' does not exist.");
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
+                return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
         }
-        return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
     }
 
     @Override
@@ -481,8 +481,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return Response.ok().build();
             case NOT_FOUND:
                 return ErrorResponseUtil.notFound("Tag", decodedTagName);
+            default:
+                log.error("Unhandled DELETE-status: {}", domainTagDeleteResult.getDomainTagDeleteStatus());
+                return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
         }
-        return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
     }
 
     @Override
@@ -498,10 +500,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case ADAPTER_NOT_FOUND:
                 return ApiErrorUtils.badRequest("Adapter not found");
             case INTERNAL_ERROR:
-                return Response.serverError().entity("").build();
+                return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
+            default:
+                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
+                return Response.serverError().build();
         }
-        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
-        return Response.serverError().build();
     }
 
     @Override
@@ -526,9 +529,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "' cannot be created since another item already exists with the same id.");
             case INTERNAL_ERROR:
                 return Response.serverError().build();
+            default:
+                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
+                return Response.serverError().build();
         }
-        log.error("UpdateResult '{}' was not handled in the method.", domainTagUpdateResult.getDomainTagUpdateStatus());
-        return Response.serverError().build();
     }
 
     @Override
@@ -597,7 +601,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } catch (final InterruptedException e) {
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
             log.debug("Original exception: ", e);
-            return Response.serverError().build();
+            return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
         } catch (final ExecutionException e) {
             if (e.getCause() instanceof UnsupportedOperationException) {
                 return ErrorResponseUtil.errorResponse(404, "Operation not supported", e.getCause().getMessage());
@@ -606,7 +610,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             } else {
                 log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                 log.debug("Original exception: ", e);
-                return Response.serverError().build();
+                return Response.serverError().entity(INTERNAL_ERROR_PLEASE_CHECK_LOGS).build();
             }
         }
     }
