@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
 import org.eclipse.milo.opcua.sdk.client.DataTypeTreeBuilder;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -56,26 +57,31 @@ public class JsonSchemaGenerator {
         this.builtinJsonSchema = new BuiltinJsonSchema();
     }
 
-    public @NotNull CompletableFuture<@NotNull JsonNode> createJsonSchema(final @NotNull NodeId destinationNodeId) {
+    public void createJsonSchema(
+            final @NotNull NodeId destinationNodeId, final @NotNull TagSchemaCreationOutput output) {
         final CompletableFuture<UaVariableNode> variableNodeFuture =
                 client.getAddressSpace().getVariableNodeAsync(destinationNodeId);
-        return variableNodeFuture.thenApply(uaVariableNode -> {
+        variableNodeFuture.whenComplete((uaVariableNode, throwable) -> {
+            if (throwable != null) {
+                // no node was found for the given nodeId
+                output.tagNotFound("No node was found for the given node id '" + destinationNodeId + "'");
+                return;
+            }
             final NodeId dataTypeNodeId = uaVariableNode.getDataType();
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
             if (dataType == null) {
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeNodeId +
-                        "'");
+                output.fail("Unable to find the data type for the given node id '" + destinationNodeId + "'.");
+                return;
             }
             final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                return builtinJsonSchema.getJsonSchema(builtinType);
+                output.finish(builtinJsonSchema.getJsonSchema(builtinType));
             } else {
                 final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
                 if (binaryEncodingId == null) {
-                    throw new RuntimeException("No encoding was present for data type: '" + dataType + "'");
+                    output.fail("No encoding was present for the complex data type: '" + dataType + "'.");
                 }
-                return jsonSchemaFromNodeId(binaryEncodingId);
+                output.finish(jsonSchemaFromNodeId(binaryEncodingId));
             }
         });
     }
