@@ -58,6 +58,7 @@ import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -910,6 +911,11 @@ public class ProtocolAdapterManager {
         @Override
         public @NotNull List<MqttUserProperty> getUserProperties() {
             return userProperties;
+        }
+
+        @Override
+        public @Nullable Long getMessageExpiryInterval() {
+            return messageExpiryInterval;
         }
 
         public static @NotNull PollingContextWrapper from(final NorthboundMapping northboundMapping) {
