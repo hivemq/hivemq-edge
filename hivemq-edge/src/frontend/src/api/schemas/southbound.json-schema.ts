@@ -38,11 +38,11 @@ export const southboundMappingListSchema: JSONSchema7 = {
       properties: {
         destination: {
           type: 'string',
-          // readOnly: true,
+          format: 'data-url',
         },
         source: {
           type: 'string',
-          // readOnly: true,
+          format: 'data-url',
         },
       },
     },
