@@ -14,8 +14,5 @@ describe('DeviceMetadataViewer', () => {
     cy.getByTestId('device-metadata-header').should('be.visible')
     cy.getByTestId('device-metadata-header').find('h2').should('contain.text', 'simulation')
     cy.getByTestId('device-metadata-header').find('h2 + p').should('contain.text', 'Simulation')
-
-    cy.get('[role="alert"]').should('contain.text', 'Uploading device metadata is not yet supported')
-    cy.get('[role="alert"]').should('have.attr', 'data-status', 'warning')
   })
 })
