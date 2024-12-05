@@ -53,12 +53,12 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
 
     @Override
     public @NotNull String getDisplayName() {
-        return "Modbus to MQTT Protocol Adapter";
+        return "Modbus Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to existing Modbus devices, bringing data from coils & registers into MQTT.";
+        return "Connects HiveMQ Edge to existing Modbus devices.";
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
             return null;
         }

@@ -56,12 +56,12 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public @NotNull String getDisplayName() {
-        return "Ethernet IP to MQTT Protocol Adapter";
+        return "Ethernet IP Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP, reading data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP.";
     }
 
     @Override
@@ -112,7 +112,7 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the EIP Adapter could not be loaded from resources:", e);
             return null;
         }

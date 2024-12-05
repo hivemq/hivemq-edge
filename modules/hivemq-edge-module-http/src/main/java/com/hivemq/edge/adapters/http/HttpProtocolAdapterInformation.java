@@ -113,7 +113,7 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the Http Adapter could not be loaded from resources:", e);
             return null;
         }
