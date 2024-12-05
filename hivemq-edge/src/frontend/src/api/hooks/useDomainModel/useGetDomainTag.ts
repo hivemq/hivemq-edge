@@ -9,6 +9,6 @@ export const useGetDomainTag = (tagName: string) => {
 
   return useQuery<DomainTag, ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_TAGS, tagName],
-    queryFn: () => appClient.protocolAdapters.getDomainTag(btoa(tagName)),
+    queryFn: () => appClient.protocolAdapters.getDomainTag(encodeURIComponent(tagName)),
   })
 }

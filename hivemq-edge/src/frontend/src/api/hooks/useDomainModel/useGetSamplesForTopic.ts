@@ -9,7 +9,7 @@ export const useGetSamplesForTopic = (topic: string, hasBeenStarted = false) => 
 
   return useQuery<PayloadSampleList, ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_PAYLOADS, topic],
-    queryFn: () => appClient.payloadSampling.getSamplesForTopic(btoa(topic)),
+    queryFn: () => appClient.payloadSampling.getSamplesForTopic(encodeURIComponent(topic)),
     enabled: hasBeenStarted,
     retry: 1,
   })

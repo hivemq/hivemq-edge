@@ -7,7 +7,7 @@ export const useStartSamplingForTopic = () => {
   const appClient = useHttpClient()
 
   const createAdapterDomainTags = (topic: string) => {
-    return appClient.payloadSampling.startSamplingForTopic(btoa(topic))
+    return appClient.payloadSampling.startSamplingForTopic(encodeURIComponent(topic))
   }
 
   return useMutation<string, ApiError, string>({
