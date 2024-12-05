@@ -4,16 +4,15 @@ import { handlers as ConnectionStatusHandlers } from '@/api/hooks/useConnection/
 import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
-import { handlers as TopicFilterHandlers } from '@/api/hooks/useTopicFilters/__handlers__'
 
 import { handlers as DataHubDataPoliciesService } from '@/extensions/datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { handlers as DataHubBehaviorPoliciesService } from '@/extensions/datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import { handlers as DataHubSchemasService } from '@/extensions/datahub/api/hooks/DataHubSchemasService/__handlers__'
 import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hooks/DataHubScriptsService/__handlers__'
 
-import { deviceHandlers as DeviceHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { schemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
+import { safeTopicSchemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
 import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
+import { safeWritingSchemaHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 
 export const handlers = [
   ...useFrontendServices,
@@ -30,12 +29,15 @@ export const handlers = [
 ]
 
 export const createHandlersWithMQTTClient = (
-  onSampling?: (topicFilter: string) => Promise<MQTTSample[]> | undefined
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _onSampling?: (topicFilter: string) => Promise<MQTTSample[]> | undefined
 ) => {
   return [
-    ...DeviceHandlers,
-    ...TopicFilterHandlers,
+    // ...DeviceHandlers,
+    // ...TopicFilterHandlers,
     // Domain & Schemas
-    ...schemaHandlers(onSampling),
+    // ...schemaHandlers(onSampling),
+    ...safeTopicSchemaHandlers,
+    ...safeWritingSchemaHandlers,
   ]
 }
