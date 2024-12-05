@@ -3909,6 +3909,34 @@ paths:
       summary: Add a new Adapter
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/northboundMappings:
+    get:
+      description: Get all northbound mappings
+      operationId: get-northboundMappings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NorthboundMappingList'
+          description: Success
+      summary: Get the mappings for northbound messages.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/southboundMappings:
+    get:
+      description: Get all southbound mappings.
+      operationId: get-southboundMappings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SouthboundMappingList'
+          description: Success
+      summary: Get all  southbound mappings.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/status:
     get:
       description: Obtain the details.
