@@ -168,7 +168,7 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
-    void updateDomainTag_whenTagDoesNotExists_thenReturn403() {
+    void updateDomainTag_whenTagDoesNotExists_thenReturn400() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.failed(
                 DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND));
@@ -180,7 +180,7 @@ class ProtocolAdaptersResourceImplTest {
                         "description",
                         objectMapper.valueToTree(Map.of("address", "addressy")))));
 
-        assertEquals(403, response.getStatus());
+        assertEquals(400, response.getStatus());
     }
 
     @Test
