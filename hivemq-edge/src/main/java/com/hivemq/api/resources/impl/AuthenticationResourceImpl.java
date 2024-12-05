@@ -29,6 +29,7 @@ import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.core.UsernamePasswordRoles;
@@ -84,14 +85,15 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
                             logger.trace("Bearer authentication was success, token generated for {}",
                                     user.getUserName());
                         }
-                        return Response.status(200).entity(token).build();
+                        return Response.ok(token).build();
                     } catch (AuthenticationException e) {
                         logger.warn("Authentication failed with error", e);
                         throw new ApiException("error encountered during authentication", e);
                     }
                 }
             }
-            return Response.status(401).entity(ApiErrorMessage.from("Invalid username and/or password")).build();
+
+            return ErrorResponseUtil.unauthorized("Invalid username and/or password");
         }
     }
 
@@ -103,7 +105,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         if (principal.isPresent()) {
             return Response.ok().build();
         } else {
-            return Response.status(401).entity(ApiErrorMessage.from("Invalid token")).build();
+            return ErrorResponseUtil.unauthorized("Invalid username and/or password");
         }
     }
 
@@ -115,7 +117,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
             if (logger.isTraceEnabled()) {
                 logger.trace("Token reissue requested for {}", principal.getName());
             }
-            return Response.status(200).entity(token).build();
+            return Response.ok(token).build();
         } catch (AuthenticationException e) {
             logger.warn("Authentication failed with error", e);
             throw new ApiException("error encountered during authentication", e);

@@ -18,26 +18,61 @@ package com.hivemq.http.error;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
+import java.net.URI;
 import java.util.List;
 
 public class Errors {
 
+    public static final URI GENERIC_BAD_REQUEST = URI.create("/error/generic-bad-request");
+
+    @JsonProperty("type")
+    private final @NotNull URI type;
+
+    @JsonProperty("title")
+    private final @NotNull String title;
+
+    @JsonProperty("detail")
+    private final @Nullable String detail;
+
+    @JsonProperty("status")
+    private final int status;
+
     @JsonProperty("errors")
     private final @NotNull List<@NotNull Error> errors;
 
-    public Errors(final @NotNull Error... errors) {
-        this.errors = Arrays.asList(errors);
-    }
-
     @JsonCreator
-    public Errors(@JsonProperty("errors") final @NotNull List<Error> errors) {
+    public Errors(
+            @JsonProperty("type") final @NotNull URI type,
+            @JsonProperty("title") final @NotNull String title,
+            @JsonProperty("detail") final @Nullable String detail,
+            @JsonProperty("status") final int status,
+            @JsonProperty("errors") final @NotNull List<Error> errors) {
+        this.type = type;
+        this.title = title;
+        this.detail = detail;
+        this.status = status;
         this.errors = errors;
     }
 
-    public @NotNull List<@NotNull Error> getErrors() {
+    public @NotNull List<Error> getErrors() {
         return errors;
     }
 
+    public @NotNull URI getType() {
+        return type;
+    }
+
+    public @NotNull String getTitle() {
+        return title;
+    }
+
+    public @Nullable String getDetail() {
+        return detail;
+    }
+
+    public int getStatus() {
+        return status;
+    }
 }

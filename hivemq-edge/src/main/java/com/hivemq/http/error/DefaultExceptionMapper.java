@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.EOFException;
+import java.util.List;
 
 
 @Provider
@@ -53,20 +54,22 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null);
+                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null, List.of());
             } else if (exception instanceof BadRequestException) {
                 return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
                         "Bad request",
-                        exception.getMessage());
+                        exception.getMessage(),
+                        List.of());
             } else if (exception instanceof NotAllowedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null);
+                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null, List.of());
             } else if (exception instanceof NotSupportedException) {
                 return ErrorResponseUtil.errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415,
                         "Unsupported Media Type",
-                        null);
+                        null,
+                        List.of());
             }
             //build a new response to prevent additional information from being passed out to the http clients by the exception
-            return ErrorResponseUtil.errorResponse(status, "Internal error", null);
+            return ErrorResponseUtil.errorResponse(status, "Internal error", null, List.of());
         }
 
         if (exception instanceof JsonProcessingException) {
@@ -75,7 +78,8 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
                         "Invalid input",
                         "Unrecognized field \"" +
                                 ((UnrecognizedPropertyException) exception).getPropertyName() +
-                                "\", not marked as ignorable");
+                                "\", not marked as ignorable",
+                        List.of());
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

@@ -49,7 +49,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
     public Response getIsa95() {
         ISA95 isa95 = unifiedNamespaceService.getISA95();
         ISA95ApiBean isa95ApiBean = ISA95ApiBean.convert(isa95);
-        return Response.status(200).entity(isa95ApiBean).build();
+        return Response.ok(isa95ApiBean).build();
     }
 
     @Override
@@ -79,7 +79,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
             unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
-            return Response.status(200).build();
+            return Response.ok().build();
         }
     }
 }
