@@ -4154,6 +4154,7 @@ paths:
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
@@ -4175,6 +4176,7 @@ paths:
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           content:
@@ -4195,6 +4197,7 @@ paths:
         required: true
         schema:
           type: string
+          format: urlencoded
       responses:
         "200":
           description: Success
@@ -4277,7 +4280,7 @@ paths:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
       parameters:
-      - description: The URL-encoded  filter of the topic filter that should be deleted.
+      - description: The URL-encoded filter of the topic filter that should be deleted.
         in: path
         name: filter
         required: true

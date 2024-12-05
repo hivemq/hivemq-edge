@@ -108,7 +108,7 @@ public interface TopicFilterApi {
     @NotNull
     Response deleteTopicFilter(
             @NotNull @Parameter(name = "filter",
-                                description = "The URL-encoded  filter of the topic filter that should be deleted.",
+                                description = "The URL-encoded filter of the topic filter that should be deleted.",
                                 required = true,
                                 schema = @Schema(format = "urlencoded"),
                                 in = ParameterIn.PATH) @PathParam("filter") String filter);

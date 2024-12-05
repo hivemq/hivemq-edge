@@ -63,6 +63,7 @@ public interface SamplingApi {
             @NotNull @Parameter(name = "topic",
                                 description = "The topic.",
                                 required = true,
+                                schema = @Schema(format = "urlencoded"),
                                 in = ParameterIn.PATH) @PathParam("topic") String topic);
 
     @GET
@@ -81,6 +82,7 @@ public interface SamplingApi {
             @NotNull @Parameter(name = "topic",
                                 description = "The topic.",
                                 required = true,
+                                schema = @Schema(format = "urlencoded"),
                                 in = ParameterIn.PATH) @PathParam("topic") String topic);
 
 
@@ -96,5 +98,6 @@ public interface SamplingApi {
             @NotNull @Parameter(name = "topic",
                                 description = "The topic.",
                                 required = true,
+                                schema = @Schema(format = "urlencoded"),
                                 in = ParameterIn.PATH) @PathParam("topic") String topic);
 }

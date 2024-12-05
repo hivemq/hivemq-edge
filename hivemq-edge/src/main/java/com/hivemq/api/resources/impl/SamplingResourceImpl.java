@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -63,9 +64,8 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response getSamplesForTopic(final @NotNull String topicBase64) {
-
-        final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
+    public @NotNull Response getSamplesForTopic(final @NotNull String topicUrlEncoded) {
+        final String topic = URLDecoder.decode(topicUrlEncoded, StandardCharsets.UTF_8);
 
         final List<byte[]> samples = samplingService.getSamples(topic);
         final ArrayList<PayloadSample> sampleArrayList = new ArrayList<>();
@@ -78,8 +78,8 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response getSchemaForTopic(final @NotNull String topicBase64) {
-        final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
+    public @NotNull Response getSchemaForTopic(final @NotNull String topicUrlEncoded) {
+        final String topic = URLDecoder.decode(topicUrlEncoded, StandardCharsets.UTF_8);
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
             log.info("No samples were found for the requested topic '{}'.", topic);
@@ -102,8 +102,8 @@ public class SamplingResourceImpl implements SamplingApi {
     }
 
     @Override
-    public @NotNull Response startSamplingForTopic(final @NotNull String topicBase64) {
-        final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
+    public @NotNull Response startSamplingForTopic(final @NotNull String topicUrlEncoded) {
+        final String topic = URLDecoder.decode(topicUrlEncoded, StandardCharsets.UTF_8);
         samplingService.startSampling(topic);
         return Response.ok().build();
     }
