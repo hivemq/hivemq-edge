@@ -56,7 +56,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getDisplayName() {
-        return "File Input Adapter";
+        return "File Adapter";
     }
 
     @Override
@@ -110,7 +110,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             LOG.warn("The UISchema for the File Adapter could not be loaded from resources:", e);
             return null;
         }

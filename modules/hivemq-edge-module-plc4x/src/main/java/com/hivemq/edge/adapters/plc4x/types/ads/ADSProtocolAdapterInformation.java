@@ -58,12 +58,12 @@ public class ADSProtocolAdapterInformation
 
     @Override
     public @NotNull String getDisplayName() {
-        return "ADS to MQTT Protocol Adapter";
+        return "ADS Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to devices supporting ADS, reading data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to devices supporting ADS.";
     }
 
     @Override
@@ -114,7 +114,7 @@ public class ADSProtocolAdapterInformation
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the ADS Adapter could not be loaded from resources:", e);
             return null;
         }
