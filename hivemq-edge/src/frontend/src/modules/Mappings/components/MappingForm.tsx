@@ -26,9 +26,10 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager,
 
   const onFormSubmit = useCallback(
     (data: IChangeEvent<unknown>) => {
-      onUpdateCollection(data.formData)
+      const promise = onUpdateCollection(data.formData)
+      promise?.then(onSubmit)
     },
-    [onUpdateCollection]
+    [onSubmit, onUpdateCollection]
   )
 
   if (!context.schema) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />

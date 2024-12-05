@@ -17,7 +17,8 @@ export enum MappingType {
 export interface MappingManagerType<T = any> {
   context: ManagerContextType
   data: T | undefined
-  onUpdateCollection: (tags: T) => void
+  onUpdateCollection: (tags: T) => Promise<unknown> | undefined
+  onClose: () => void
   isLoading: boolean
   isError: boolean
   isPending: boolean

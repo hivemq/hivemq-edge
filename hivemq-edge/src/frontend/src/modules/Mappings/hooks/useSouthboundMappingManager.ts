@@ -8,10 +8,14 @@ import { useUpdateSouthboundMappings } from '@/api/hooks/useProtocolAdapters/use
 import { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 import { southboundMappingListSchema } from '@/api/schemas/southbound.json-schema.ts'
 import { southboundMappingListUISchema } from '@/api/schemas/southbound.ui-schema.ts'
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useSouthboundMappingManager = (adapterId: string): MappingManagerType<SouthboundMappingList> => {
   const { t } = useTranslation()
-  const toast = useToast()
+  const toast = useToast({
+    duration: DEFAULT_TOAST_OPTION.duration,
+    isClosable: DEFAULT_TOAST_OPTION.isClosable,
+  })
 
   const { data, isError, isLoading, error } = useListSouthboundMappings(adapterId)
 
@@ -34,10 +38,9 @@ export const useSouthboundMappingManager = (adapterId: string): MappingManagerTy
 
   const onUpdateCollection = (tags: SouthboundMappingList) => {
     if (!adapterId) return
-    toast.promise(
-      updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }),
-      formatToast('updateCollection')
-    )
+    const promise = updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags })
+    toast.promise(promise, formatToast('updateCollection'))
+    return promise
   }
 
   const context: ManagerContextType = {
@@ -52,6 +55,7 @@ export const useSouthboundMappingManager = (adapterId: string): MappingManagerTy
     // The CRUD operations
     data: data,
     onUpdateCollection,
+    onClose: () => toast.closeAll(),
     // The state (as in ReactQuery)
     isLoading: isLoading,
     isError: isError,

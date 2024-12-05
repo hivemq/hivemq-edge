@@ -5,14 +5,17 @@ import { type NorthboundMappingList } from '@/api/__generated__'
 import { useListNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useListNorthboundMappings.ts'
 import { useUpdateNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useUpdateNorthboundMappings.ts'
 
-import { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 import { northboundMappingListSchema } from '@/api/schemas/northbound.json-schema.ts'
 import { northboundMappingListUISchema } from '@/api/schemas/northbound.ui-schema.ts'
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 
 export const useNorthboundMappingManager = (adapterId: string): MappingManagerType<NorthboundMappingList> => {
   const { t } = useTranslation()
-  const toast = useToast()
-
+  const toast = useToast({
+    duration: DEFAULT_TOAST_OPTION.duration,
+    isClosable: DEFAULT_TOAST_OPTION.isClosable,
+  })
   const { data, isError, isLoading, error } = useListNorthboundMappings(adapterId)
 
   const updateCollectionMutator = useUpdateNorthboundMappings()
@@ -33,11 +36,10 @@ export const useNorthboundMappingManager = (adapterId: string): MappingManagerTy
   })
 
   const onUpdateCollection = (tags: NorthboundMappingList) => {
-    if (!adapterId) return
-    toast.promise(
-      updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }),
-      formatToast('updateCollection')
-    )
+    if (!adapterId) return undefined
+    const promise = updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags })
+    toast.promise(promise, formatToast('updateCollection'))
+    return promise
   }
 
   const context: ManagerContextType = {
@@ -52,6 +54,7 @@ export const useNorthboundMappingManager = (adapterId: string): MappingManagerTy
     // The CRUD operations
     data: data,
     onUpdateCollection,
+    onClose: () => toast.closeAll(),
     // The state (as in ReactQuery)
     isLoading: isLoading,
     isError: isError,
