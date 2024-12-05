@@ -25,7 +25,7 @@ describe('useGetSchemaForTopic', () => {
     })
     expect(result.current.data).toStrictEqual<JsonNode>(
       expect.objectContaining({
-        title: 'dGVzdC90b3BpYzE=',
+        title: encodeURIComponent('test/topic1'),
         type: 'object',
       })
     )

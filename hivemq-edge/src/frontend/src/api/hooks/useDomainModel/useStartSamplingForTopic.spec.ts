@@ -27,7 +27,7 @@ describe('useStartSamplingForTopic', () => {
       expect(result.current.isSuccess).toBeTruthy()
     })
     expect(result.current.data).toStrictEqual({
-      topic: 'dGVzdC9kYXRh',
+      topic: encodeURIComponent('test/data'),
     })
   })
 })
