@@ -18,8 +18,6 @@ package com.hivemq.api.resources.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -688,33 +686,23 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAllNorthboundMappings() {
-        final List<NorthboundMappingListModel> northboundMappingListModels =
-                protocolAdapterManager.getProtocolAdapters()
-                        .values()
-                        .stream()
-                        .map(adapter -> adapter.getFromEdgeMappings()
-                                .stream()
-                                .map(NorthboundMappingModel::from)
-                                .collect(Collectors.toList()))
-                        .map(NorthboundMappingListModel::new)
-                        .collect(Collectors.toList());
-        return Response.status(200).entity(northboundMappingListModels).build();
+        final List<NorthboundMappingModel> northboundMappingListModels = protocolAdapterManager.getProtocolAdapters()
+                .values()
+                .stream()
+                .flatMap(adapter -> adapter.getFromEdgeMappings().stream().map(NorthboundMappingModel::from))
+                .collect(Collectors.toList());
+        return Response.status(200).entity(new NorthboundMappingListModel(northboundMappingListModels)).build();
     }
 
 
     @Override
     public @NotNull Response getAllSouthboundMappings() {
-        final List<SouthboundMappingListModel> southboundMappingListModels =
-                protocolAdapterManager.getProtocolAdapters()
-                        .values()
-                        .stream()
-                        .map(adapter -> adapter.getToEdgeMappings()
-                                .stream()
-                                .map(SouthboundMappingModel::from)
-                                .collect(Collectors.toList()))
-                        .map(SouthboundMappingListModel::new)
-                        .collect(Collectors.toList());
-        return Response.status(200).entity(southboundMappingListModels).build();
+        final List<SouthboundMappingModel> southboundMappingModels = protocolAdapterManager.getProtocolAdapters()
+                .values()
+                .stream()
+                .flatMap(adapter -> adapter.getToEdgeMappings().stream().map(SouthboundMappingModel::from))
+                .collect(Collectors.toList());
+        return Response.status(200).entity(new SouthboundMappingListModel(southboundMappingModels)).build();
     }
 
     @Override
