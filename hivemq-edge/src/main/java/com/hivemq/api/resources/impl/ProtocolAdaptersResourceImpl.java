@@ -603,15 +603,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             log.debug("Original exception: ", e);
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         } catch (final ExecutionException e) {
-            if (e.getCause() instanceof UnsupportedOperationException) {
-                return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Operation not supported '%s'", e.getCause().getMessage())));
-            } else if (e.getCause() instanceof IllegalStateException) {
-                return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Adapter not started '%s'", e.getCause().getMessage())));
-            } else {
-                log.warn("Exception was raised during creation of json schema for writing to PLCs.");
-                log.debug("Original exception: ", e);
-                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
-            }
+            switch (tagSchemaCreationOutput.getStatus()) {
+                case NOT_SUPPORTED:
+                    return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Operation not supported '%s'", e.getCause().getMessage())));
+                    case ADAPTER_NOT_STARTED:
+                        return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Adapter not started '%s'", e.getCause().getMessage())));
+                case TAG_NOT_FOUND:
+                    return ErrorResponseUtil.errorResponse(404, "Tag not found", e.getCause().getMessage());
+                default:
+                    log.warn("Exception was raised during creation of json schema for writing to PLCs.");
+                    log.debug("Original exception: ", e);
+                    return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
 
