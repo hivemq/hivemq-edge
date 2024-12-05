@@ -41,4 +41,9 @@ public class OpcuaTagDefinition implements TagDefinition {
     public int hashCode() {
         return node.hashCode();
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "OpcuaTagDefinition{" + "node='" + node + '\'' + '}';
+    }
 }
