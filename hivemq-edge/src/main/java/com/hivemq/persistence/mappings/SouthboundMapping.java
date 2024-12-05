@@ -63,4 +63,20 @@ public class SouthboundMapping implements WritingContext {
                 writingContext.getMaxQoS(),
                 writingContext.getFieldMapping());
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "SouthboundMapping{" +
+                "fieldMapping=" +
+                fieldMapping +
+                ", topicFilter='" +
+                topicFilter +
+                '\'' +
+                ", tagName='" +
+                tagName +
+                '\'' +
+                ", maxQoS=" +
+                maxQoS +
+                '}';
+    }
 }

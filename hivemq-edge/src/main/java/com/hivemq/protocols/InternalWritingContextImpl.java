@@ -47,4 +47,10 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     public int getMaxQoS() {
         return southboundMapping.getMaxQoS();
     }
+
+
+    @Override
+    public @NotNull String toString() {
+        return "InternalWritingContextImpl{" + "southboundMapping=" + southboundMapping + '}';
+    }
 }

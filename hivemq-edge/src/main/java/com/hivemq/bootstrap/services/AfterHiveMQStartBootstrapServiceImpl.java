@@ -25,6 +25,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import org.jetbrains.annotations.NotNull;
+import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
@@ -103,6 +104,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull EventService eventService() {
         return delegate.eventService();
+    }
+
+    @Override
+    public @NotNull PublishService publishService() {
+        return delegate.publishService();
     }
 
     @Override
