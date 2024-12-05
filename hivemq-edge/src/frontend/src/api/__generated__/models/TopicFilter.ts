@@ -12,6 +12,10 @@ export type TopicFilter = {
      */
     description?: string;
     /**
+     * The optional json schema for this topic filter in the data uri format.
+     */
+    schema?: string;
+    /**
      * The topic filter according to the MQTT specification.
      */
     topicFilter: string;
