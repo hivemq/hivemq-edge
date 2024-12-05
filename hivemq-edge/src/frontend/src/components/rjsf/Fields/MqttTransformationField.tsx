@@ -60,7 +60,7 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
     ])
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = (id: keyof SouthboundMapping, v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
