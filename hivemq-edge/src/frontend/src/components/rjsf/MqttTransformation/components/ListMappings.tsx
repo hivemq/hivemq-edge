@@ -32,7 +32,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
         header: t('rjsf.MqttTransformationField.listing.sources'),
       },
       {
-        accessorKey: 'tag',
+        accessorKey: 'tagName',
         cell: (info) => {
           const val = info.getValue<string>()
           return val ? <PLCTag tagTitle={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>

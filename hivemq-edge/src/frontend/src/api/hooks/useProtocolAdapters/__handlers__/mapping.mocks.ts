@@ -80,3 +80,13 @@ export const mappingHandlers = [
     }
   ),
 ]
+
+export const safeWritingSchemaHandlers = [
+  http.get<{ adapterId: string; tagName: string }>(
+    '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+    ({ params }) => {
+      const { tagName } = params
+      return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, tagName), { status: 200 })
+    }
+  ),
+]

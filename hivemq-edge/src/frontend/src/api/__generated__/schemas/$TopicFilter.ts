@@ -9,6 +9,10 @@ export const $TopicFilter = {
             type: 'string',
             description: `The name for this topic filter.`,
         },
+        schema: {
+            type: 'string',
+            description: `The optional json schema for this topic filter in the data uri format.`,
+        },
         topicFilter: {
             type: 'string',
             description: `The topic filter according to the MQTT specification.`,

@@ -16,18 +16,27 @@ interface MappingFormProps {
   onSubmit: () => void
   useManager: (adapterId: string) => MappingManagerType
   type: MappingType
+  showNativeWidgets?: boolean
 }
 
-const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type }) => {
+const MappingForm: FC<MappingFormProps> = ({
+  adapterId,
+  adapterType,
+  useManager,
+  type,
+  showNativeWidgets = false,
+  onSubmit,
+}) => {
   const { t } = useTranslation()
   const { context, onUpdateCollection } = useManager(adapterId)
   const validationSchemas = useState<FlatJSONSchema7[]>()
 
   const onFormSubmit = useCallback(
     (data: IChangeEvent<unknown>) => {
-      onUpdateCollection(data.formData)
+      const promise = onUpdateCollection(data.formData)
+      promise?.then(onSubmit)
     },
-    [onUpdateCollection]
+    [onSubmit, onUpdateCollection]
   )
 
   if (!context.schema) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
@@ -42,6 +51,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager,
 
   return (
     <ChakraRJSForm
+      showNativeWidgets={showNativeWidgets}
       id="adapter-mapping-form"
       schema={context.schema}
       uiSchema={context.uiSchema}

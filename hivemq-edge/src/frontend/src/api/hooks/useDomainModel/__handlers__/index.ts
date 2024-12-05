@@ -104,7 +104,7 @@ export const handlers = [
     const { tagName } = params
 
     try {
-      const realTag = atob(tagName)
+      const realTag = decodeURIComponent(tagName)
       if (realTag === MOCK_DEVICE_TAG_FAKE)
         return HttpResponse.json<ProblemDetails>({ title: 'The tag is not found', status: 404 }, { status: 404 })
       return HttpResponse.json<DomainTag>(
@@ -187,3 +187,17 @@ export const schemaHandlers = (onSampling?: (topicFilter: string) => Promise<MQT
     }),
   ]
 }
+
+export const safeTopicSchemaHandlers = [
+  http.get<{ topic: string }>('**/management/sampling/schema/:topic', ({ params }) => {
+    const { topic } = params
+
+    if (topic === MOCK_DEVICE_TAG_FAKE)
+      return HttpResponse.json<ProblemDetails>(
+        { title: 'The schema for the tags cannot be found', status: 404 },
+        { status: 404 }
+      )
+
+    return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, topic), { status: 200 })
+  }),
+]

@@ -16,10 +16,12 @@ export const useUpdateNorthboundMappings = () => {
     return appClient.protocolAdapters.updateAdapterNorthboundMappings(adapterId, requestBody)
   }
 
-  return useMutation<UpdateNorthboundMappingsProps, ApiError, UpdateNorthboundMappingsProps>({
+  return useMutation<unknown, ApiError, UpdateNorthboundMappingsProps>({
     mutationFn: updateProtocolAdapter,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, data.adapterId, QUERY_KEYS.NORTHBOUND_MAPPINGS] })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ADAPTERS, variables.adapterId, QUERY_KEYS.NORTHBOUND_MAPPINGS],
+      })
     },
   })
 }

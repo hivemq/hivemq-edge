@@ -2,11 +2,8 @@ import { UiSchema } from '@rjsf/utils'
 
 /* istanbul ignore next -- @preserve */
 const metadataWidget: UiSchema = {
-  'ui:widget': 'data-url',
-  // 'ui:widget': 'textarea',
-  // 'ui:widget': 'application/schema+json',
+  // 'ui:widget': 'data-url',
   'ui:options': {
-    // readonly: true,
     accept: '.json',
   },
 }
@@ -20,6 +17,7 @@ export const southboundMappingListUISchema: UiSchema = {
   items: {
     'ui:title': 'List of Southbound mappings',
     'ui:description': 'The list of all the mappings delivering messages from Edge to the device',
+    'ui:field': 'mqtt:transform',
     items: {
       'ui:order': ['topicFilter', 'tagName', '*'],
       'ui:collapsable': {

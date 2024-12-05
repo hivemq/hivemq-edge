@@ -27,7 +27,7 @@ describe('useSamplingForTopic', () => {
 
     expect(result.current.data).toStrictEqual<JsonNode>(
       expect.objectContaining({
-        title: 'dG9waWMvdGVzdA==',
+        title: encodeURIComponent(mockTopic),
         type: 'object',
       })
     )

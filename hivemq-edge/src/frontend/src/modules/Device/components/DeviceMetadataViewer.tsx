@@ -1,21 +1,5 @@
 import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  Avatar,
-  Box,
-  Card,
-  CardBody,
-  CardHeader,
-  Flex,
-  Heading,
-  Text,
-} from '@chakra-ui/react'
-import { LuUpload } from 'react-icons/lu'
-
-import IconButton from '@/components/Chakra/IconButton.tsx'
+import { Avatar, Box, Card, CardHeader, Flex, Heading, Text } from '@chakra-ui/react'
 import { DeviceMetadata } from '@/modules/Workspace/types.ts'
 
 interface DeviceMetadataProps {
@@ -23,8 +7,6 @@ interface DeviceMetadataProps {
 }
 
 const DeviceMetadataViewer: FC<DeviceMetadataProps> = ({ protocolAdapter }) => {
-  const { t } = useTranslation()
-
   return (
     <Card size="sm">
       <CardHeader>
@@ -36,15 +18,8 @@ const DeviceMetadataViewer: FC<DeviceMetadataProps> = ({ protocolAdapter }) => {
               <Text>{protocolAdapter?.category?.displayName}</Text>
             </Box>
           </Flex>
-          <IconButton aria-label={t('device.drawer.metadataPanel.cta.load')} icon={<LuUpload />} isDisabled />
         </Flex>
       </CardHeader>
-      <CardBody>
-        <Alert status="warning">
-          <AlertIcon />
-          <AlertDescription>{t('device.errors.noMetadataLoaded')}</AlertDescription>
-        </Alert>
-      </CardBody>
     </Card>
   )
 }

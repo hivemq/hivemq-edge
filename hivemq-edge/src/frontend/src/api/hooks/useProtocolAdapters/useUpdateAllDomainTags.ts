@@ -17,10 +17,10 @@ export const useUpdateAllDomainTags = () => {
     return appClient.protocolAdapters.updateAdapterDomainTags(adapterId, requestBody)
   }
 
-  return useMutation<UpdateAllDomainTagsProps, ApiError, UpdateAllDomainTagsProps>({
+  return useMutation<unknown, ApiError, UpdateAllDomainTagsProps>({
     mutationFn: updateAdapterDomainTags,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, data.adapterId, QUERY_KEYS.DISCOVERY_TAGS] })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, variables.adapterId, QUERY_KEYS.DISCOVERY_TAGS] })
     },
   })
 }

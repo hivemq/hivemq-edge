@@ -51,21 +51,24 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
         maxQoS: MOCK_MAX_QOS,
         fieldMapping: {
           instructions: [],
+          metadata: {
+            source: {},
+            destination: {},
+          },
         },
       },
     ])
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  const handleChange = (_id: keyof SouthboundMapping, _v: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChange = (id: keyof SouthboundMapping, v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
-      // const currentItem = old?.[selectedItem]
-      // TODO[⚠ 28441 ⚠] This will not work anymore because of nested structure. DO NOT MERGE AND FIX
-      // if (currentItem) {
-      //   // @ts-ignore
-      //   currentItem[id] = v
-      // }
+      const currentItem = old?.[selectedItem]
+      if (currentItem) {
+        // @ts-ignore
+        currentItem[id] = v
+      }
       return [...(old || [])]
     })
   }

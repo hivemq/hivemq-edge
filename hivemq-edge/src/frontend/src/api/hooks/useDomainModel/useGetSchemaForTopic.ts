@@ -9,7 +9,7 @@ export const useGetSchemaForTopic = (topic: string, hasBeenStarted = false) => {
 
   return useQuery<JsonNode, ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_PAYLOADS, topic, QUERY_KEYS.DISCOVERY_SCHEMAS],
-    queryFn: () => appClient.payloadSampling.getSchemaForTopic(btoa(topic)),
+    queryFn: () => appClient.payloadSampling.getSchemaForTopic(encodeURIComponent(topic)),
     enabled: hasBeenStarted,
     retry: 1,
   })

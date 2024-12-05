@@ -17,10 +17,10 @@ export const useDeleteDomainTags = () => {
     return appClient.protocolAdapters.deleteAdapterDomainTags(adapterId, tagId)
   }
 
-  return useMutation<DeleteDomainTagsProps, ApiError, DeleteDomainTagsProps>({
+  return useMutation<unknown, ApiError, DeleteDomainTagsProps>({
     mutationFn: deleteAdapterDomainTags,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, data.adapterId, QUERY_KEYS.DISCOVERY_TAGS] })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS, variables.adapterId, QUERY_KEYS.DISCOVERY_TAGS] })
     },
   })
 }

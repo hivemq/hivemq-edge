@@ -89,7 +89,8 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
                 if (!mappings) {
                   return
                 }
-                onChange('fieldMapping', mappings)
+                console.log('XXXXXX item.fieldMapping?.instructions', item.fieldMapping?.instructions)
+                onChange('fieldMapping', { instructions: [...(item.fieldMapping?.instructions || []), ...mappings] })
               }}
               onSchemaReady={onSchemaReadyHandler}
             />
