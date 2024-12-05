@@ -69,7 +69,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     @JsonProperty(value = "opcuaToMqtt")
     @ModuleConfigField(title = "OPC UA To MQTT Config",
                        description = "The configuration for a data stream from OPC UA to MQTT")
-    private final @Nullable OpcUaToMqttConfig opcuaToMqttConfig;
+    private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
@@ -85,7 +85,6 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
-
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
     }
 
