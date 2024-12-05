@@ -19,7 +19,14 @@ interface MappingFormProps {
   showNativeWidgets?: boolean
 }
 
-const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, useManager, type, showNativeWidgets = false }) => {
+const MappingForm: FC<MappingFormProps> = ({
+  adapterId,
+  adapterType,
+  useManager,
+  type,
+  showNativeWidgets = false,
+  onSubmit,
+}) => {
   const { t } = useTranslation()
   const { context, onUpdateCollection } = useManager(adapterId)
   const validationSchemas = useState<FlatJSONSchema7[]>()
