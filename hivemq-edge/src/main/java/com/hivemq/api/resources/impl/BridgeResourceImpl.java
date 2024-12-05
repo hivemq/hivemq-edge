@@ -78,7 +78,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         BridgeList list = new BridgeList(bridges.stream()
                 .map(m -> Bridge.convert(m, getStatusInternal(m.getId())))
                 .collect(Collectors.toList()));
-        return Response.status(200).entity(list).build();
+        return Response.ok(list).build();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             try {
                 MqttBridge mqttBridge = unconvert(bridge);
                 configurationService.bridgeConfiguration().addBridge(mqttBridge);
-                return Response.status(200).build();
+                return Response.ok().build();
             } finally {
                 executorService.submit(bridgeService::updateBridges);
             }
@@ -141,7 +141,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         } else {
             try {
                 configurationService.bridgeConfiguration().removeBridge(bridgeId);
-                return Response.status(200).build();
+                return Response.ok().build();
             } finally {
                 bridgeService.updateBridges();
             }
@@ -204,7 +204,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             configurationService.bridgeConfiguration().addBridge(newBridgeConfig);
             //-- Restart the new configuration on a new connection
             bridgeService.restartBridge(bridgeId, newBridgeConfig);
-            return Response.status(200).build();
+            return Response.ok().build();
         }
     }
 
@@ -220,7 +220,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
-            return Response.status(200).entity(getStatusInternal(bridgeId)).build();
+            return Response.ok(getStatusInternal(bridgeId)).build();
         }
     }
 
@@ -232,7 +232,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         for (MqttBridge bridge : bridges) {
             builder.add(getStatusInternal(bridge.getId()));
         }
-        return Response.status(200).entity(new StatusList(builder.build())).build();
+        return Response.ok(new StatusList(builder.build())).build();
     }
 
     protected @NotNull Status getStatusInternal(final @NotNull String bridgeId) {

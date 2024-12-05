@@ -17,13 +17,16 @@ package com.hivemq.api.utils;
 
 import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.ApiErrorMessages;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.Error;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.HttpConstants;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Simon L Johnson
@@ -78,32 +81,22 @@ public class ApiErrorUtils {
     }
 
     public static Response badRequest(final @NotNull String errorMessage){
-        final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(
-                ApiErrorMessage.from(errorMessage));
-        return Response.status(HttpConstants.SC_BAD_REQUEST)
-                .entity(messages)
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .build();
+        return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400, "Bad request", errorMessage, List.of());
     }
 
     public static Response badRequest(final @NotNull ApiErrorMessages apiErrorMessages){
-        return Response.status(HttpConstants.SC_BAD_REQUEST)
-                .entity(apiErrorMessages)
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .build();
+        final List<Error> errors = apiErrorMessages.getErrors()
+                .stream()
+                .map(error -> new Error(error.getTitle(), error.getFieldName()))
+                .collect(Collectors.toList());
+        return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400, "Bad request", "", errors);
     }
 
     public static Response notFound(final @Nullable String message){
         if(message != null){
-            final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer().addError(ApiErrorMessage.from(message));
-            return Response.status(HttpConstants.SC_NOT_FOUND)
-                    .entity(messages)
-                    .type(MediaType.APPLICATION_JSON_TYPE)
-                    .build();
+            return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Not found", message, List.of());
         } else {
-            return Response.status(HttpConstants.SC_NOT_FOUND)
-                    .type(MediaType.APPLICATION_JSON_TYPE)
-                    .build();
+            return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Not found", "", List.of());
         }
     }
 

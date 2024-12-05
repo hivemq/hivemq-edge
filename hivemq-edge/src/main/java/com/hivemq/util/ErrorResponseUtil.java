@@ -15,13 +15,14 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.http.error.Errors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author Christoph Schäbel
@@ -29,74 +30,114 @@ import javax.ws.rs.core.Response;
 public class ErrorResponseUtil {
 
     public static @NotNull Response errorResponse(
-            final int code, final @NotNull String title, final @Nullable String detail) {
+            final int code, final @NotNull String title, final @Nullable String detail, List<Error> errors) {
         return Response.status(code)
-                .entity(new Errors(new Error(title, detail)))
+                .entity(new Errors(null, title, detail, code, errors))
                 .header("Content-Type", "application/json;charset=utf-8")
                 .build();
     }
 
     public static @NotNull Response notFound(final @NotNull String type, final @NotNull String id) {
-            return errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", type + " with id '" + id + "' not found");
+            return errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", type + " with id '" + id + "' not found", List.of());
+    }
+
+    public static @NotNull Response notFoundWithMessage(final @NotNull String title, final @NotNull String details) {
+            return errorResponse(HttpStatus.NOT_FOUND_404, title, details, List.of());
     }
 
     public static @NotNull Response urlParameterRequired(final @NotNull String parameterName) {
         return errorResponse(HttpStatus.BAD_REQUEST_400,
                 "Required parameter missing",
-                "Required URL parameter '" + parameterName + "' is missing");
+                "",
+                List.of(new Error("Required URL parameter is missing", parameterName)));
     }
 
     public static @NotNull Response bodyParameterRequired(final @NotNull String parameterName) {
         return errorResponse(HttpStatus.BAD_REQUEST_400,
-                "Required parameter missing",
-                "Required request body parameter " + parameterName + " is missing");
+                "Required request body parameter missing",
+                "",
+                List.of(new Error("Required URL parameter is missing", parameterName)));
     }
 
     public static @NotNull Response invalidQueryParameter(final @NotNull String parameterName) {
         return errorResponse(HttpStatus.BAD_REQUEST_400,
                 "Parameter invalid",
-                "Query parameter '" + parameterName + "' is invalid");
+                "",
+                List.of(new Error("Query parameter is invalid", parameterName)));
     }
 
     public static @NotNull Response invalidQueryParameter(
             final @NotNull String parameterName, final @NotNull String reason) {
         return errorResponse(HttpStatus.BAD_REQUEST_400,
                 "Parameter invalid",
-                "Query parameter '" + parameterName + "' is invalid. " + reason);
+                "",
+                List.of(new Error(reason, parameterName)));
+    }
+
+    public static @NotNull Response validationErrors(final @NotNull String reason, final @NotNull List<Error> errors) {
+        return errorResponse(HttpStatus.BAD_REQUEST_400,
+                "Invalid input",
+                reason,
+                errors);
     }
 
     public static @NotNull Response invalidInput(final @NotNull String reason) {
-        return errorResponse(HttpStatus.BAD_REQUEST_400, "Invalid input", reason);
+        return errorResponse(HttpStatus.BAD_REQUEST_400,
+                "Invalid input",
+                reason,
+                List.of());
+    }
+
+    public static @NotNull Response unauthorized(final @NotNull String reason) {
+        return errorResponse(HttpStatus.BAD_REQUEST_400,
+                "Invalid input",
+                reason,
+                List.of());
     }
 
     public static @NotNull Response alreadyExists(final @NotNull String detail) {
-        return errorResponse(HttpStatus.FORBIDDEN_403, "The resource already exists", detail);
+        return errorResponse(HttpStatus.CONFLICT_409,
+                "The resource already exists",
+                detail,
+                List.of());
     }
 
-    public static @NotNull Response cursorInvalid() {
-        return errorResponse(HttpStatus.GONE_410,
-                "Cursor not valid anymore",
-                "The passed cursor is not valid anymore, you can request this resource without a cursor to start from the beginning");
+    public static @NotNull Response badRequest(final @NotNull String title, final @NotNull String details) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST_400,
+                title,
+                details,
+                List.of());
+    }
+
+    public static @NotNull Response insufficientStorage(final @NotNull String title, final @NotNull String details) {
+        return errorResponse(
+                HttpStatus.INSUFFICIENT_STORAGE_507,
+                title,
+                details,
+                List.of());
+    }
+
+    public static @NotNull Response preconditionFailed(final @NotNull String title, final @NotNull String details) {
+        return errorResponse(
+                HttpStatus.PRECONDITION_FAILED_412,
+                title,
+                details,
+                List.of());
     }
 
     public static @NotNull Response genericError(final @Nullable String detail) {
-        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR_500, "Internal error", detail);
-    }
-
-    public static @NotNull Response timedOut(final @NotNull String detail) {
-        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR_500, "Processing of request timed out", detail);
+        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR_500,
+                "Internal error",
+                detail,
+                List.of());
     }
 
     public static @NotNull Response temporarilyNotAvailable() {
         return errorResponse(HttpStatus.SERVICE_UNAVAILABLE_503,
                 "The endpoint is temporarily not available",
-                "The endpoint is temporarily not available, please try again later");
-    }
-
-    public static @NotNull Response notAllClusterNodesSupport() {
-        return errorResponse(HttpStatus.SERVICE_UNAVAILABLE_503,
-                "Endpoint not active yet",
-                "Not all cluster nodes support this endpoint yet, please try again later");
+                "The endpoint is temporarily not available, please try again later",
+                List.of());
     }
 
 }

@@ -55,7 +55,7 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         while (itr.hasNext()){
             builder.add(new Metric(itr.next()));
         }
-        return Response.status(200).entity(new MetricList(builder.build())).build();
+        return Response.ok(new MetricList(builder.build())).build();
     }
 
     @Override
@@ -70,11 +70,10 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
             Counter counter = metrics.get(metricName);
             if(counter != null){
                 DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
-                return Response.status(200).entity(dataPoint).build();
+                return Response.ok(dataPoint).build();
             } else {
                 DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
-                return Response.status(200).entity(dataPoint).build();
-//                return Response.status(Response.Status.NOT_FOUND).build();
+                return Response.ok(dataPoint).build();
             }
         }
     }

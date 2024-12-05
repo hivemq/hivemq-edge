@@ -60,8 +60,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                 return ErrorResponseUtil.alreadyExists("The topic filter '" +
                         name +
                         "' cannot be created since another item already exists with the same filter.");
+            default:
+                return ErrorResponseUtil.genericError("Internal error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -70,7 +71,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                 .stream()
                 .map(TopicFilterModel::fromTopicFilter)
                 .collect(Collectors.toList());
-        return Response.ok().entity(new TopicFilterModelList(topicFilterModelList)).build();
+        return Response.ok(new TopicFilterModelList(topicFilterModelList)).build();
     }
 
     @Override
@@ -83,8 +84,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                 return Response.ok().build();
             case NOT_FOUND:
                 return ErrorResponseUtil.notFound("topic filter", filter);
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -100,7 +102,8 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                             filterUriEncoded +
                             "')does not fit to the filter in the body '" +
                             topicFilterModel.getTopicFilter() +
-                            "',");
+                            "',",
+                    List.of());
         }
 
         final @NotNull TopicFilterUpdateResult updateResult =
@@ -109,9 +112,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             case SUCCESS:
                 return Response.ok().build();
             case INTERNAL_ERROR:
-                return Response.serverError().build();
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -126,8 +129,8 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             case SUCCESS:
                 return Response.ok().build();
             case INTERNAL_ERROR:
-                return Response.serverError().build();
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 }

@@ -74,7 +74,7 @@ public class SamplingResourceImpl implements SamplingApi {
         Collections.reverse(samples);
 
         samples.forEach(sample -> sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
-        return Response.ok().entity(new PayloadSampleList(sampleArrayList)).build();
+        return Response.ok(new PayloadSampleList(sampleArrayList)).build();
     }
 
     @Override
@@ -93,12 +93,12 @@ public class SamplingResourceImpl implements SamplingApi {
             } catch (final IOException e) {
                 log.warn("Parsing error while trying to create json samples from payload.");
                 log.debug("Original exception: ", e);
-                return Response.serverError().build();
+                return ErrorResponseUtil.genericError("Parsing error");
             }
         }
 
         final JsonNode inferredSchema = INFERRER.inferForSamples(jsonSamples);
-        return Response.ok().entity(inferredSchema).build();
+        return Response.ok(inferredSchema).build();
     }
 
     @Override
