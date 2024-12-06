@@ -21,8 +21,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.eclipse.milo.opcua.binaryschema.Struct;
-import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -59,9 +59,13 @@ public class OpcUaJsonPayloadConverter {
 
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
+    private static @NotNull PollingContext pollingContext;
+
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull SerializationContext serializationContext,
-            final @NotNull DataValue dataValue) {
+            final @NotNull DataValue dataValue,
+            final @NotNull PollingContext pollingContext) {
+        OpcUaJsonPayloadConverter.pollingContext = pollingContext;
         final Object value = dataValue.getValue().getValue();
         final boolean reversibleMode = false;
         final JsonObject jsonObject = new JsonObject();
@@ -69,6 +73,16 @@ public class OpcUaJsonPayloadConverter {
             addDataValueFields(dataValue, jsonObject, reversibleMode);
         }
         convertValue(value, jsonObject, reversibleMode, "value", serializationContext);
+
+        if (pollingContext.getIncludeTimestamp()) {
+            jsonObject.addProperty("timestamp", System.currentTimeMillis());
+        }
+
+        if (pollingContext.getIncludeTagNames()) {
+            jsonObject.addProperty("tag", pollingContext.getTagName());
+        }
+
+
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 
@@ -150,13 +164,16 @@ public class OpcUaJsonPayloadConverter {
         } else if (value instanceof ExtensionObject) {
             if (!reversibleMode) {
                 try {
-                    final Object decodedValue =
-                            ((ExtensionObject) value).decode(serializationContext);
+                    final Object decodedValue = ((ExtensionObject) value).decode(serializationContext);
                     convertValue(decodedValue, holder, reversibleMode, fieldName, serializationContext);
-                } catch (Throwable t) {
+                } catch (final Throwable t) {
                     log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
                             t);
-                    convertValue(((ExtensionObject) value).getBody(), holder, reversibleMode, fieldName, serializationContext);
+                    convertValue(((ExtensionObject) value).getBody(),
+                            holder,
+                            reversibleMode,
+                            fieldName,
+                            serializationContext);
                 }
 
             } else {
@@ -173,8 +190,7 @@ public class OpcUaJsonPayloadConverter {
                     }
                 }
 
-                final Object decodedValue =
-                        ((ExtensionObject) value).decode(serializationContext);
+                final Object decodedValue = ((ExtensionObject) value).decode(serializationContext);
                 convertValue(decodedValue, extensionObject, reversibleMode, "body", serializationContext);
                 holder.add(fieldName, extensionObject);
             }
@@ -197,7 +213,7 @@ public class OpcUaJsonPayloadConverter {
         } else if (value instanceof Struct) {
             final Struct struct = (Struct) value;
             final JsonObject structRoot = new JsonObject();
-            for (Struct.Member member : struct.getMembers().values()) {
+            for (final Struct.Member member : struct.getMembers().values()) {
                 convertValue(member.getValue(), structRoot, reversibleMode, member.getName(), serializationContext);
             }
             holder.add(fieldName, structRoot);
@@ -236,7 +252,7 @@ public class OpcUaJsonPayloadConverter {
 
     @NotNull
     private static JsonObject convertNodeId(
-            final @NotNull NodeId nodeId, boolean reversibleMode, @NotNull String fieldName) {
+            final @NotNull NodeId nodeId, final boolean reversibleMode, @NotNull final String fieldName) {
         final JsonObject nodeIdObj = new JsonObject();
 
         switch (nodeId.getType()) {
@@ -274,7 +290,7 @@ public class OpcUaJsonPayloadConverter {
 
     @NotNull
     private static JsonObject convertExpandedNodeId(
-            final @NotNull ExpandedNodeId nodeId, boolean reversibleMode, @NotNull String fieldName) {
+            final @NotNull ExpandedNodeId nodeId, final boolean reversibleMode, @NotNull final String fieldName) {
         final JsonObject nodeIdObj = new JsonObject();
 
         switch (nodeId.getType()) {
@@ -312,7 +328,7 @@ public class OpcUaJsonPayloadConverter {
         return nodeIdObj;
     }
 
-    private static @NotNull JsonObject convertDiagnosticInfo(DiagnosticInfo value, final boolean reversibleMode) {
+    private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value, final boolean reversibleMode) {
         final JsonObject diagnosticInfo = new JsonObject();
         diagnosticInfo.add("symbolicId", new JsonPrimitive(value.getSymbolicId()));
         diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.getNamespaceUri()));
