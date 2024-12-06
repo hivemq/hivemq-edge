@@ -57,7 +57,6 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
-import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
@@ -460,10 +459,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         "' cannot be created since another item already exists with the same id.");
             case ADAPTER_MISSING:
                 log.warn("Tags could not be added for adapter '{}' because the adapter was not found.", adapterId);
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404,
-                        "Adapter not found",
-                        "The adapter named '" + adapterId + "' does not exist.",
-                        List.of());
+                return ErrorResponseUtil.notFound(
+                        "Adapter",
+                        adapterId);
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
                 return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
@@ -564,10 +562,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     log.warn(
                             "Json Schema for tags for protocols of type '{}' could not be generated because the protocol id is unknown ton this edge instance.",
                             protocolId);
-                    return ErrorResponseUtil.errorResponse(404,
-                            "Missing protocol adapter for protocol id: " + protocolId,
-                            "No protocol adapter for protocol id " + protocolId + "is installed",
-                            List.of());
+                    return ErrorResponseUtil.notFound(
+                            "Protocol adapter",
+                            protocolId);
                 });
     }
 
@@ -587,10 +584,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (!(adapter instanceof WritingProtocolAdapter)) {
             log.warn("The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
                     adapterId);
-            return ErrorResponseUtil.errorResponse(404,
+            return ErrorResponseUtil.notFoundWithMessage(
                     "Operation not supported.",
-                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.",
-                    List.of());
+                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.");
         }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
@@ -605,9 +601,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
         } catch (final ExecutionException e) {
             if (e.getCause() instanceof UnsupportedOperationException) {
-                return ErrorResponseUtil.errorResponse(404, "Operation not supported", e.getCause().getMessage(), List.of());
+                return ErrorResponseUtil.notFoundWithMessage("Operation not supported", e.getCause().getMessage());
             } else if (e.getCause() instanceof IllegalStateException) {
-                return ErrorResponseUtil.errorResponse(404, "Adapter not started", e.getCause().getMessage(), List.of());
+                return ErrorResponseUtil.notFoundWithMessage("Adapter not started", e.getCause().getMessage());
             } else {
                 log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                 log.debug("Original exception: ", e);

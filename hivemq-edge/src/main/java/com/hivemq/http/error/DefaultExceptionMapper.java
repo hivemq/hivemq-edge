@@ -17,10 +17,9 @@ package com.hivemq.http.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.HttpStatus;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,32 +53,22 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null, List.of());
+                return ErrorResponseUtil.notFoundWithMessage( "Resource not found", "");
             } else if (exception instanceof BadRequestException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Bad request",
-                        exception.getMessage(),
-                        List.of());
+                return ErrorResponseUtil.badRequest("Bad request", exception.getMessage());
             } else if (exception instanceof NotAllowedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null, List.of());
+                return ErrorResponseUtil.methodNotAllowed();
             } else if (exception instanceof NotSupportedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415,
-                        "Unsupported Media Type",
-                        null,
-                        List.of());
+                return ErrorResponseUtil.unsupportedMediaType();
             }
             //build a new response to prevent additional information from being passed out to the http clients by the exception
-            return ErrorResponseUtil.errorResponse(status, "Internal error", null, List.of());
+            return ErrorResponseUtil.genericError("Internal error");
         }
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Invalid input",
-                        "Unrecognized field \"" +
-                                ((UnrecognizedPropertyException) exception).getPropertyName() +
-                                "\", not marked as ignorable",
-                        List.of());
+                return ErrorResponseUtil.validationErrors( "Invalid input",
+                        List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName())));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

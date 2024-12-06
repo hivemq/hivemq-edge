@@ -16,11 +16,13 @@
 package com.hivemq.api.error;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.hivemq.http.error.Error;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ErrorResponseUtil;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import java.util.List;
 
 public class CustomJsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
 
@@ -28,7 +30,7 @@ public class CustomJsonParseExceptionMapper implements ExceptionMapper<JsonParse
     public @NotNull Response toResponse(final JsonParseException exception) {
         final String originalMessage = exception.getOriginalMessage();
         if (originalMessage != null) {
-            return ErrorResponseUtil.invalidInput("Unable to parse JSON body: " + originalMessage);
+            return ErrorResponseUtil.validationErrors("Unable to parse JSON body", List.of(new Error("json", originalMessage)));
         } else {
             return ErrorResponseUtil.invalidInput("Unable to parse JSON body, please check the input format.");
         }
