@@ -1,6 +1,8 @@
 import { FormValidation } from '@rjsf/utils'
 import type { DomainTagList } from '@/api/__generated__'
 
+import i18n from '@/config/i18n.config.ts'
+
 export const customUniqueTagValidation =
   (allTags: string[]) => (formData: DomainTagList, errors: FormValidation<DomainTagList>) => {
     // initial names have already been checked and are excluded from the allTags
@@ -15,7 +17,9 @@ export const customUniqueTagValidation =
     }, [])
 
     for (const duplicate of localDuplicates) {
-      errors?.items?.[duplicate]?.name?.addError('This tag name is already used on this device')
+      errors?.items?.[duplicate]?.name?.addError(
+        i18n.t('validation.identifier.tag.uniqueDevice', { ns: 'translation' })
+      )
     }
 
     // Check for duplicate names across all devices
@@ -27,7 +31,7 @@ export const customUniqueTagValidation =
     }, [])
 
     for (const duplicate of edgeDuplicates) {
-      errors?.items?.[duplicate]?.name?.addError('This tag name is already used on another devices')
+      errors?.items?.[duplicate]?.name?.addError(i18n.t('validation.identifier.tag.uniqueEdge', { ns: 'translation' }))
     }
 
     return errors

@@ -887,9 +887,13 @@
     "minimum": "Should be at least {{ count }}",
     "maximum": "Should not be more than {{ count }}",
     "pattern": "Should match the regular expression {{ pattern }}",
-    "jsonSchema": {
-      "identifier": {
-        "unique": "must be unique"
+    "identifier": {
+      "adapter": {
+        "unique": "This identifier is already in use for another adapter"
+      },
+      "tag": {
+        "uniqueDevice": "This tag name is already used on this device",
+        "uniqueEdge": "This tag name is already used on another devices"
       }
     }
   },
