@@ -84,10 +84,11 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     public void accept(final @NotNull DataValue dataValue) {
         try {
 
-            final byte[] convertedPayload = convertPayload(dataValue, serializationContext);
+            final byte[] convertedPayload = convertPayload(dataValue, serializationContext, mapping);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(mapping.getMqttTopic())
-                    .withPayload(convertedPayload).withQoS(mapping.getMqttQos())
+                    .withPayload(convertedPayload)
+                    .withQoS(mapping.getMqttQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
             publishBuilder.withMessageExpiryInterval(mapping.getMessageExpiryInterval());
@@ -96,7 +97,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                 endpoint.ifPresent(ep -> {
                     publishBuilder.withContextInformation("opcua-server-endpoint-url", ep.getEndpointUrl());
                     publishBuilder.withContextInformation("opcua-server-application-uri",
-                    ep.getServer().getApplicationUri());
+                            ep.getServer().getApplicationUri());
                 });
             } catch (final Exception e) {
                 //ignore, but log
@@ -124,18 +125,21 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                 return null;
             });
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error on creating MQTT publish from OPC UA subscription for adapter {}", adapterId, e);
         }
     }
 
     private static byte @NotNull [] convertPayload(
             final @NotNull DataValue dataValue,
-            final @NotNull SerializationContext serializationContext) {
+            final @NotNull SerializationContext serializationContext,
+            final @NotNull PollingContext mapping) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
             return EMTPY_BYTES;
         }
-        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext, dataValue));
+        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext,
+                dataValue,
+                mapping));
     }
 }
