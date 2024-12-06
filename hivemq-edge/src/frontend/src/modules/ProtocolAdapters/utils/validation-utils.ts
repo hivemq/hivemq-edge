@@ -14,7 +14,6 @@ import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
  *
  * @param jsonSchema
  * @param existingAdapters
- * @param t
  *
  * The custom validation only exposes the form data and the UISchema configuration, NOT the JSONSchema.
  * This is potentially a gap when trying to create custom validation rules.
