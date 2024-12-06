@@ -11,7 +11,7 @@ export const registerEntitySelectWidget =
   // eslint-disable-next-line react/display-name
   (type: CustomFormat) => (props: WidgetProps<WidgetProps<unknown, RJSFSchema, MappingContext>>) => {
     const { chakraProps, label, id, disabled, readonly, onChange, required, rawErrors, value } = props
-    const { multiple } = getUiOptions(props.uiSchema)
+    const { multiple, create } = getUiOptions(props.uiSchema)
     const { adapterId } = props.formContext
 
     const Select = useMemo(() => {
@@ -33,7 +33,7 @@ export const registerEntitySelectWidget =
         <Select
           adapterId={adapterId as string}
           isMulti={Boolean(multiple)}
-          isCreatable={false}
+          isCreatable={Boolean(create)}
           id={id}
           value={value}
           onChange={onChange}
