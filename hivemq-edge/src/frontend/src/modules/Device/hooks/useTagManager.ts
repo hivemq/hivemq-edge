@@ -44,8 +44,6 @@ export const useTagManager = (adapterId: string) => {
       },
     }
 
-    console.log('XXXXXXXXXX safeSchema', safeSchema)
-
     return {
       // $schema: 'https://json-schema.org/draft/2020-12/schema',
       definitions: {
