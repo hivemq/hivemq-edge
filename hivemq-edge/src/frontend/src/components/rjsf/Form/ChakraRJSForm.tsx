@@ -20,6 +20,7 @@ import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 import { MqttTransformationField } from '@/components/rjsf/Fields'
 import { adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -103,8 +104,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       formData={defaultValues}
       formContext={context}
       templates={{
-        // TODO[NVL] This override was mostly for the tabs (not used in this context) but is wrongly rendering additionalProperties
-        // ObjectFieldTemplate,
+        ObjectFieldTemplate,
         FieldTemplate,
         BaseInputTemplate,
         ArrayFieldTemplate,
