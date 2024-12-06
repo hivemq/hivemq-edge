@@ -4950,9 +4950,15 @@ components:
         detail:
           type: string
           description: Detailed contextual description of this error
-        title:
+        note:
           type: string
-          description: The type of this error
+          description: Additional information
+        parameter:
+          type: string
+          description: The parameter causing the issue
+        trace:
+          type: string
+          description: Trace infomration for the error
     Errors:
       type: object
       properties:
