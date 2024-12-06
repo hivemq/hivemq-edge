@@ -123,7 +123,7 @@ class ProtocolAdaptersResourceImplTest {
                         "description",
                         objectMapper.valueToTree(Map.of("address", "addressy")))));
 
-        assertEquals(403, response.getStatus());
+        assertEquals(409, response.getStatus());
     }
 
     @Test

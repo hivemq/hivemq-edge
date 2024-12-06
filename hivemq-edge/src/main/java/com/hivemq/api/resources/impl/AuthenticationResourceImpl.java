@@ -23,16 +23,15 @@ import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
 import com.hivemq.api.error.ApiException;
-import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.core.UsernamePasswordRoles;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

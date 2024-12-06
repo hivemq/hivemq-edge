@@ -89,7 +89,7 @@ public class ErrorResponseUtil {
     }
 
     public static @NotNull Response unauthorized(final @NotNull String reason) {
-        return errorResponse(HttpStatus.BAD_REQUEST_400,
+        return errorResponse(HttpStatus.UNAUTHORIZED,
                 "Invalid input",
                 reason,
                 List.of());
