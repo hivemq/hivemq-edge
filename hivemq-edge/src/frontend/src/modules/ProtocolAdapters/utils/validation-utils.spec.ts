@@ -1,7 +1,7 @@
 import { describe, expect, vi } from 'vitest'
 import { FormValidation, RJSFSchema, UiSchema } from '@rjsf/utils'
 
-import { customValidate } from './validation-utils.ts'
+import { customUniqueAdapterValidate } from './validation-utils.ts'
 import { Adapter } from '@/api/__generated__'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
@@ -32,7 +32,7 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
     expect(addError).toHaveBeenCalledWith('validation.jsonSchema.identifier.unique')
@@ -56,7 +56,7 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
     expect(addError).not.toHaveBeenCalledWith('validation.jsonSchema.identifier.unique')
@@ -86,7 +86,7 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
     expect(addError).not.toHaveBeenCalled()
