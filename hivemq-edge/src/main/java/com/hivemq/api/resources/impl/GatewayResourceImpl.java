@@ -18,23 +18,16 @@ package com.hivemq.api.resources.impl;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.config.ApiListener;
-import com.hivemq.api.config.HttpsListener;
-import com.hivemq.api.model.components.*;
-import com.hivemq.api.resources.FrontendApi;
+import com.hivemq.api.model.components.Listener;
+import com.hivemq.api.model.components.ListenerList;
 import com.hivemq.api.resources.GatewayApi;
-import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.HiveMQEdgeRemoteService;
-import com.hivemq.edge.ModulesAndExtensionsService;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.protocols.ProtocolAdapterManager;
-import org.glassfish.jersey.internal.util.collection.StringIgnoreCaseKeyComparator;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStreamWriter;
-import java.util.Optional;
 
 /**
  * @author Simon L Johnson

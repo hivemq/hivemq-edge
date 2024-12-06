@@ -17,10 +17,9 @@ package com.hivemq.http.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.HttpStatus;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +33,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.EOFException;
+import java.util.List;
 
 
 @Provider
@@ -41,6 +41,9 @@ import java.io.EOFException;
 public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultExceptionMapper.class);
+
+    public static final @NotNull ErrorType ERROR_TYPE_NOT_FOUND = new ErrorType(null, "Not found", "Resource wasn't found.");
+    public static final @NotNull ErrorType ERROR_TYPE_VALIDATION_ERROR = new ErrorType(null, "Validatin failed", "JSON failed validation.");
 
     @NotNull
     @Override
@@ -53,29 +56,21 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null);
+                return ErrorResponseUtil.notFound(ERROR_TYPE_NOT_FOUND);
             } else if (exception instanceof BadRequestException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Bad request",
-                        exception.getMessage());
+                return ErrorResponseUtil.badRequest(exception.getMessage());
             } else if (exception instanceof NotAllowedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null);
+                return ErrorResponseUtil.methodNotAllowed();
             } else if (exception instanceof NotSupportedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415,
-                        "Unsupported Media Type",
-                        null);
+                return ErrorResponseUtil.unsupportedMediaType();
             }
             //build a new response to prevent additional information from being passed out to the http clients by the exception
-            return ErrorResponseUtil.errorResponse(status, "Internal error", null);
+            return ErrorResponseUtil.genericError("Internal error");
         }
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Invalid input",
-                        "Unrecognized field \"" +
-                                ((UnrecognizedPropertyException) exception).getPropertyName() +
-                                "\", not marked as ignorable");
+                return ErrorResponseUtil.validationErrors(ERROR_TYPE_VALIDATION_ERROR, List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName(), null, null)));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

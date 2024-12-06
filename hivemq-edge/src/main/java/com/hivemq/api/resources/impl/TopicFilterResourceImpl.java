@@ -18,6 +18,7 @@ package com.hivemq.api.resources.impl;
 import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.api.model.topicFilters.TopicFilterModelList;
 import com.hivemq.api.resources.TopicFilterApi;
+import com.hivemq.http.error.ErrorType;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.TopicFilter;
 import com.hivemq.persistence.topicfilter.TopicFilterAddResult;
@@ -36,6 +37,8 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class TopicFilterResourceImpl implements TopicFilterApi {
+    public static final @NotNull ErrorType
+            ERROR_TYPE_TOPIC_FILTER_NOT_FOUND = new ErrorType(null, "TopicFilter not found", "No TopicFilter with the given id was found");
 
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
@@ -60,8 +63,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                 return ErrorResponseUtil.alreadyExists("The topic filter '" +
                         name +
                         "' cannot be created since another item already exists with the same filter.");
+            default:
+                return ErrorResponseUtil.genericError("Internal error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -70,7 +74,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                 .stream()
                 .map(TopicFilterModel::fromTopicFilter)
                 .collect(Collectors.toList());
-        return Response.ok().entity(new TopicFilterModelList(topicFilterModelList)).build();
+        return Response.ok(new TopicFilterModelList(topicFilterModelList)).build();
     }
 
     @Override
@@ -82,9 +86,10 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
-                return ErrorResponseUtil.notFound("topic filter", filter);
+                return ErrorResponseUtil.notFound(ERROR_TYPE_TOPIC_FILTER_NOT_FOUND, filter);
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -92,15 +97,14 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             final @NotNull String filterUriEncoded, final @NotNull TopicFilterModel topicFilterModel) {
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
-            return ErrorResponseUtil.errorResponse(400,
-                    "Filter does not match",
+            return ErrorResponseUtil.badRequest(
                     "the filter in the path '" +
                             filter +
                             "' (uriEncoded: '" +
                             filterUriEncoded +
                             "')does not fit to the filter in the body '" +
                             topicFilterModel.getTopicFilter() +
-                            "',");
+                            "'");
         }
 
         final @NotNull TopicFilterUpdateResult updateResult =
@@ -109,9 +113,9 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             case SUCCESS:
                 return Response.ok().build();
             case INTERNAL_ERROR:
-                return Response.serverError().build();
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 
     @Override
@@ -126,8 +130,8 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             case SUCCESS:
                 return Response.ok().build();
             case INTERNAL_ERROR:
-                return Response.serverError().build();
+            default:
+                return ErrorResponseUtil.genericError("Internal Error");
         }
-        return Response.serverError().build();
     }
 }
