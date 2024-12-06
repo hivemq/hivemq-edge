@@ -43,7 +43,7 @@ export const useSouthboundMappingManager = (adapterId: string): MappingManagerTy
     return promise
   }
 
-  const context: ManagerContextType = {
+  const context: ManagerContextType<SouthboundMappingList> = {
     schema: southboundMappingListSchema,
     uiSchema: southboundMappingListUISchema,
     formData: data,

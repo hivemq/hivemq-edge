@@ -31,9 +31,7 @@ export const useTagManager = (adapterId: string) => {
 
     const { $schema: sc, ...rest } = tagSchema?.configSchema as RJSFSchema
     // TODO[28249] Handle manually until backend fixed
-    const { properties, required } = rest
-
-    const requiredProtocol = [...(required || []), 'protocolId']
+    const { properties } = rest
 
     const safeSchema = {
       ...rest,
@@ -44,7 +42,6 @@ export const useTagManager = (adapterId: string) => {
           default: protocol?.id,
         },
       },
-      required: requiredProtocol,
     }
 
     return {
@@ -110,7 +107,7 @@ export const useTagManager = (adapterId: string) => {
     )
   }
 
-  const context: ManagerContextType = {
+  const context: ManagerContextType<DomainTagList> = {
     schema: tagListSchema,
     uiSchema: {
       'ui:submitButtonOptions': {

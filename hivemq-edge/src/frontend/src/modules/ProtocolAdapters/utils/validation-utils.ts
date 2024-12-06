@@ -1,6 +1,7 @@
 import { FormValidation, RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils'
 import { Adapter, SouthboundMapping } from '@/api/__generated__'
-import { TFunction } from 'i18next'
+
+import i18n from '@/config/i18n.config.ts'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
 //
@@ -13,7 +14,6 @@ import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
  *
  * @param jsonSchema
  * @param existingAdapters
- * @param t
  *
  * The custom validation only exposes the form data and the UISchema configuration, NOT the JSONSchema.
  * This is potentially a gap when trying to create custom validation rules.
@@ -24,8 +24,8 @@ import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
  *   - then (last stand) on conditions from the property name (i.e. formData)
  *
  */
-export const customValidate =
-  (jsonSchema: RJSFSchema, existingAdapters: Adapter[] | undefined, t: TFunction) =>
+export const customUniqueAdapterValidate =
+  (jsonSchema: RJSFSchema, existingAdapters: Adapter[] | undefined) =>
   (formData: Record<string, unknown>, errors: FormValidation<AdapterConfig>, uiSchema?: UiSchema<AdapterConfig>) => {
     // Check for uniqueness of `id` ONLY if `format` = `identifier` and not `ui:disabled`
     if (
@@ -33,7 +33,7 @@ export const customValidate =
       (jsonSchema.properties?.['id'] as StrictRJSFSchema)?.format === 'identifier'
     ) {
       if (existingAdapters?.map((e) => e.id).includes(formData.id as string)) {
-        errors.id?.addError(t('validation.jsonSchema.identifier.unique'))
+        errors.id?.addError(i18n.t('validation.identifier.adapter.unique'))
       }
     }
     return errors

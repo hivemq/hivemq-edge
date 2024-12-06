@@ -2,9 +2,9 @@ import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
 import { ApiError } from '@/api/__generated__'
 
-export interface ManagerContextType {
+export interface ManagerContextType<T> {
   schema?: RJSFSchema
-  formData?: GenericObjectType
+  formData?: T
   uiSchema?: UiSchema
 }
 
@@ -14,8 +14,8 @@ export enum MappingType {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface MappingManagerType<T = any> {
-  context: ManagerContextType
+export interface MappingManagerType<T = any, U = any> {
+  context: ManagerContextType<U>
   data: T | undefined
   onUpdateCollection: (tags: T) => Promise<unknown> | undefined
   onClose: () => void
