@@ -94,7 +94,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
             final @NotNull String filterUriEncoded, final @NotNull TopicFilterModel topicFilterModel) {
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
-            return ErrorResponseUtil.errorResponse(400,
+            return ErrorResponseUtil.badRequest(
                     "Filter does not match",
                     "the filter in the path '" +
                             filter +
@@ -102,8 +102,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
                             filterUriEncoded +
                             "')does not fit to the filter in the body '" +
                             topicFilterModel.getTopicFilter() +
-                            "',",
-                    List.of());
+                            "'");
         }
 
         final @NotNull TopicFilterUpdateResult updateResult =

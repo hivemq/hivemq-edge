@@ -41,6 +41,14 @@ public class ErrorResponseUtil {
             return errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", type + " with id '" + id + "' not found", List.of());
     }
 
+    public static @NotNull Response methodNotAllowed() {
+            return errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", "", List.of());
+    }
+
+    public static @NotNull Response unsupportedMediaType() {
+            return errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415, "Unsupported Media Type", "", List.of());
+    }
+
     public static @NotNull Response notFoundWithMessage(final @NotNull String title, final @NotNull String details) {
             return errorResponse(HttpStatus.NOT_FOUND_404, title, details, List.of());
     }

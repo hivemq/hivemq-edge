@@ -17,7 +17,6 @@ package com.hivemq.api.utils;
 
 import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
@@ -81,7 +80,7 @@ public class ApiErrorUtils {
     }
 
     public static Response badRequest(final @NotNull String errorMessage){
-        return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400, "Bad request", errorMessage, List.of());
+        return ErrorResponseUtil.badRequest("Bad request", errorMessage);
     }
 
     public static Response badRequest(final @NotNull ApiErrorMessages apiErrorMessages){
@@ -89,14 +88,14 @@ public class ApiErrorUtils {
                 .stream()
                 .map(error -> new Error(error.getTitle(), error.getFieldName()))
                 .collect(Collectors.toList());
-        return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400, "Bad request", "", errors);
+        return ErrorResponseUtil.validationErrors("Bad request", errors);
     }
 
     public static Response notFound(final @Nullable String message){
         if(message != null){
-            return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Not found", message, List.of());
+            return ErrorResponseUtil.notFoundWithMessage( "Not found", message);
         } else {
-            return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Not found", "", List.of());
+            return ErrorResponseUtil.notFoundWithMessage( "Not found", "");
         }
     }
 
