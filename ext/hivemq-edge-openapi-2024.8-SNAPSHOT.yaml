@@ -131,14 +131,8 @@ paths:
         "401":
           content:
             application/json:
-              examples:
-                authentication-invalid:
-                  description: Unable to authenticate credentials
-                  summary: The requested credentials could not be authenticated
-                  value:
-                    title: Invalid username and/or password
               schema:
-                $ref: '#/components/schemas/ApiErrorMessage'
+                $ref: '#/components/schemas/Errors'
           description: The requested credentials could not be authenticated.
       summary: Authorize the presented user to obtain a secure token for use on the
         API.
@@ -166,14 +160,8 @@ paths:
         "401":
           content:
             application/json:
-              examples:
-                authentication-invalid:
-                  description: Unable to authenticate credentials
-                  summary: The requested credentials could not be authenticated
-                  value:
-                    title: Invalid username and/or password
               schema:
-                $ref: '#/components/schemas/ApiErrorMessage'
+                $ref: '#/components/schemas/Errors'
           description: The requested credentials could not be authenticated.
       summary: Obtain a fresh JWT for the previously authenticated user.
       tags:
@@ -2975,15 +2963,8 @@ paths:
         "405":
           content:
             application/xml:
-              examples:
-                export-not-allowed:
-                  description: Export is not allowed from gateway
-                  summary: Example export disabled
-                  value:
-                    message: An unknown error occurred processing your request
-                    cause: xml export not allowed
               schema:
-                $ref: '#/components/schemas/ApiErrorMessage'
+                $ref: '#/components/schemas/Errors'
           description: Error - function not supported
       summary: Obtain HiveMQ Edge Configuration
       tags:
@@ -4513,18 +4494,6 @@ components:
         token:
           type: string
           description: The token associated a set of authenticated credentials
-    ApiErrorMessage:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Detailed contextual description of this error
-        fieldName:
-          type: string
-          description: Application Error Code associate with this field
-        title:
-          type: string
-          description: The title of this error
     BehaviorPolicy:
       type: object
       description: A policy which is used to validate and execute certain actions
@@ -4987,10 +4956,20 @@ components:
     Errors:
       type: object
       properties:
+        detail:
+          type: string
         errors:
           type: array
           items:
             $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     Event:
       type: object
       description: List of result items that are returned by this endpoint
