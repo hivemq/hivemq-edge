@@ -108,7 +108,7 @@ class ProtocolAdaptersResourceImplTest {
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
                 DomainTagModel.fromDomainTag(new DomainTag("tag", "1",  "description", objectMapper.valueToTree(Map.of("address", "addressy")))));
 
-        assertEquals(403, response.getStatus());
+        assertEquals(409, response.getStatus());
     }
 
     @Test

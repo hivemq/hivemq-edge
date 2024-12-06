@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -134,10 +135,16 @@ public class BearerTokenAuthTests {
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
                         new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
                         CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should NOT be accepted", 401, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
-        ApiErrorMessage message = mapper.readValue(response.getResponseBody(), ApiErrorMessage.class);
-        Assert.assertEquals("Response should indicate correct failure message", "Invalid username and/or password", message.getTitle());
+
+        assertThat(response.getStatusCode())
+                .as("Resource should NOT be accepted")
+                .isEqualTo(401);
+        assertThat(response.getContentType())
+                .as("API authenticate response should be json")
+                .startsWith(MediaType.APPLICATION_JSON);
+        assertThat(mapper.readValue(response.getResponseBody(), ApiErrorMessage.class).getTitle())
+                .as("Response should indicate correct failure message")
+                .isEqualTo("Invalid username and/or password");
     }
 
     @Test
