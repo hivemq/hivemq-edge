@@ -114,7 +114,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   onSubmit={onValidate}
                   // TODO[NVL] Types need fixing
                   // @ts-ignore
-                  customValidate={customUniqueAdapterValidate(schema, allAdapters, t)}
+                  customValidate={customUniqueAdapterValidate(schema, allAdapters)}
                 />
               )}
             </DrawerBody>
