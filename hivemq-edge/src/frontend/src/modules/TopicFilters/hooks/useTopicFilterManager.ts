@@ -16,7 +16,7 @@ interface TopicFilterSchemas {
   schema: RJSFSchema
 }
 
-export const useTopicFilterOperations = () => {
+export const useTopicFilterManager = () => {
   const { t } = useTranslation()
   const toast = useToast()
 
@@ -85,7 +85,7 @@ export const useTopicFilterOperations = () => {
     toast.promise(updateCollectionMutator.mutateAsync({ requestBody: requestBody }), formatToast('updateCollection'))
   }
 
-  const context: ManagerContextType = {
+  const context: ManagerContextType<TopicFilterList> = {
     schema: topicFilterSchemas.schema,
     uiSchema: {
       'ui:submitButtonOptions': {

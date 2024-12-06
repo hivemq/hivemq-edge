@@ -6,7 +6,7 @@ import { Button, ButtonGroup, Card, CardBody, Text, useDisclosure } from '@chakr
 import { LuPencil, LuPlus, LuTrash, LuView } from 'react-icons/lu'
 
 import { TopicFilter, TopicFilterList } from '@/api/__generated__'
-import { useTopicFilterOperations } from '@/api/hooks/useTopicFilters/useTopicFilterOperations.ts'
+import { useTopicFilterManager } from '@/modules/TopicFilters/hooks/useTopicFilterManager.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -21,7 +21,7 @@ const TopicFilterManager: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { data, context, isLoading, isError, onUpdateCollection } = useTopicFilterOperations()
+  const { data, context, isLoading, isError, onUpdateCollection } = useTopicFilterManager()
 
   const handleClose = () => {
     onClose()
