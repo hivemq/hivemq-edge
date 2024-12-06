@@ -45,7 +45,7 @@ describe('TopicFilterManager', () => {
     cy.get('@body').find('td').eq(0).should('have.text', 'a / topic / + / filter')
     cy.get('@body').find('td').eq(1).should('have.text', 'This is a topic filter')
     cy.get('@body').find('td').eq(2).children().should('have.attr', 'data-status', 'success')
-    cy.get('@body').find('td').eq(6).children().should('have.attr', 'data-status', 'error')
+    cy.get('@body').find('td').eq(6).children().should('have.attr', 'data-status', 'success')
 
     cy.get('@body').find('td').eq(3).find('button').as('topicActions')
 
