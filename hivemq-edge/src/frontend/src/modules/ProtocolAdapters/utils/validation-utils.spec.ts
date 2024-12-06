@@ -9,7 +9,6 @@ import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
 
 describe('customValidate()', () => {
   it('should detect duplication of id', () => {
-    const mockT = (e: string): string => e
     const mockJSONSchemaId: RJSFSchema = {
       properties: {
         id: {
@@ -32,14 +31,13 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
-    expect(addError).toHaveBeenCalledWith('validation.jsonSchema.identifier.unique')
+    expect(addError).toHaveBeenCalledWith('This identifier is already in use for another adapter')
   })
 
   it('should NOT check for id', () => {
-    const mockT = (e: string): string => e
     const mockJSONSchemaId: RJSFSchema = {
       properties: {},
     }
@@ -56,14 +54,13 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
     expect(addError).not.toHaveBeenCalledWith('validation.jsonSchema.identifier.unique')
   })
 
   it('should NOT throw error when id is unique', () => {
-    const mockT = (e: string): string => e
     const mockJSONSchemaId: RJSFSchema = {
       properties: {
         id: {
@@ -86,7 +83,7 @@ describe('customValidate()', () => {
     }
 
     // @ts-ignore
-    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters, mockT)
+    const customValidateFn = customUniqueAdapterValidate(mockJSONSchemaId, mockExistingAdapters)
     expect(customValidateFn).toBeTypeOf('function')
     customValidateFn({ id: MOCK_ADAPTER_ID }, errors, mockUiSchemaId)
     expect(addError).not.toHaveBeenCalled()
