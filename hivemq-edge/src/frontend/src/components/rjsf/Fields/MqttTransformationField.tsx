@@ -52,8 +52,8 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
         fieldMapping: {
           instructions: [],
           metadata: {
-            source: {},
-            destination: {},
+            source: { properties: {} },
+            destination: { properties: {} },
           },
         },
       },
