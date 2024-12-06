@@ -42,6 +42,9 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultExceptionMapper.class);
 
+    public static final @NotNull ErrorType ERROR_TYPE_NOT_FOUND = new ErrorType(null, "Not found", "Resource wasn't found.");
+    public static final @NotNull ErrorType ERROR_TYPE_VALIDATION_ERROR = new ErrorType(null, "Validatin failed", "JSON failed validation.");
+
     @NotNull
     @Override
     public Response toResponse(final @NotNull Throwable exception) {
@@ -53,9 +56,9 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.notFoundWithMessage( "Resource not found", "");
+                return ErrorResponseUtil.notFound(ERROR_TYPE_NOT_FOUND);
             } else if (exception instanceof BadRequestException) {
-                return ErrorResponseUtil.badRequest("Bad request", exception.getMessage());
+                return ErrorResponseUtil.badRequest(exception.getMessage());
             } else if (exception instanceof NotAllowedException) {
                 return ErrorResponseUtil.methodNotAllowed();
             } else if (exception instanceof NotSupportedException) {
@@ -67,8 +70,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.validationErrors( "Invalid input",
-                        List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName())));
+                return ErrorResponseUtil.validationErrors(ERROR_TYPE_VALIDATION_ERROR, List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName(), null, null)));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

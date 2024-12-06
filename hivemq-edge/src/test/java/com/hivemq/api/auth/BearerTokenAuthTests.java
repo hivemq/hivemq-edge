@@ -24,7 +24,6 @@ import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
-import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
@@ -35,6 +34,7 @@ import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
+import com.hivemq.http.error.Errors;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -142,7 +142,7 @@ public class BearerTokenAuthTests {
         assertThat(response.getContentType())
                 .as("API authenticate response should be json")
                 .startsWith(MediaType.APPLICATION_JSON);
-        assertThat(mapper.readValue(response.getResponseBody(), ApiErrorMessage.class).getTitle())
+        assertThat(mapper.readValue(response.getResponseBody(), Errors.class).getErrors().get(0).getDetail())
                 .as("Response should indicate correct failure message")
                 .isEqualTo("Invalid username and/or password");
     }

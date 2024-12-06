@@ -79,26 +79,6 @@ public class ApiErrorUtils {
         apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Invalid user supplied data", details));
     }
 
-    public static Response badRequest(final @NotNull String errorMessage){
-        return ErrorResponseUtil.badRequest("Bad request", errorMessage);
-    }
-
-    public static Response badRequest(final @NotNull ApiErrorMessages apiErrorMessages){
-        final List<Error> errors = apiErrorMessages.getErrors()
-                .stream()
-                .map(error -> new Error(error.getTitle(), error.getFieldName()))
-                .collect(Collectors.toList());
-        return ErrorResponseUtil.validationErrors("Bad request", errors);
-    }
-
-    public static Response notFound(final @Nullable String message){
-        if(message != null){
-            return ErrorResponseUtil.notFoundWithMessage( "Not found", message);
-        } else {
-            return ErrorResponseUtil.notFoundWithMessage( "Not found", "");
-        }
-    }
-
     public static boolean hasRequestErrors(final @NotNull ApiErrorMessages apiErrorMessages){
         return !apiErrorMessages.getErrors().isEmpty();
     }

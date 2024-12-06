@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
+import com.hivemq.http.error.ErrorType;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.ErrorResponseUtil;
@@ -43,7 +44,8 @@ import java.util.List;
 
 @Singleton
 public class SamplingResourceImpl implements SamplingApi {
-
+    public static final @NotNull ErrorType
+            ERROR_TYPE_NO_SAMPLES_FOUND = new ErrorType(null, "No samples found", "No samples found");
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SamplingResourceImpl.class);
     private static final @NotNull JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
@@ -83,7 +85,7 @@ public class SamplingResourceImpl implements SamplingApi {
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
             log.info("No samples were found for the requested topic '{}'.", topic);
-            return ErrorResponseUtil.notFound("samples", topic);
+            return ErrorResponseUtil.notFound(ERROR_TYPE_NO_SAMPLES_FOUND, topic);
         }
 
         final ArrayList<JsonNode> jsonSamples = new ArrayList<>();

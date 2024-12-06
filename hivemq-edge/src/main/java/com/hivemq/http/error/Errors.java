@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 
 public class Errors {
 
@@ -74,5 +75,40 @@ public class Errors {
 
     public int getStatus() {
         return status;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Errors errors1 = (Errors) o;
+        return status == errors1.status &&
+                Objects.equals(type, errors1.type) &&
+                Objects.equals(title, errors1.title) &&
+                Objects.equals(detail, errors1.detail) &&
+                Objects.equals(errors, errors1.errors);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, title, detail, status, errors);
+    }
+
+    @Override
+    public String toString() {
+        return "Errors{" +
+                "type=" +
+                type +
+                ", title='" +
+                title +
+                '\'' +
+                ", detail='" +
+                detail +
+                '\'' +
+                ", status=" +
+                status +
+                ", errors=" +
+                errors +
+                '}';
     }
 }

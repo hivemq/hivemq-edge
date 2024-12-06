@@ -26,6 +26,7 @@ import com.hivemq.api.model.metrics.Metric;
 import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -63,7 +64,7 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
         if(ApiErrorUtils.hasRequestErrors(messages)){
-            return ApiErrorUtils.badRequest(messages);
+            return ErrorResponseUtil.urlParameterRequired("metricName");
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
             SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
