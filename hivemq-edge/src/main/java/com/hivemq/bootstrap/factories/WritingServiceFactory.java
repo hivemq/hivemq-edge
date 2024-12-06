@@ -16,6 +16,7 @@
 package com.hivemq.bootstrap.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
@@ -24,9 +25,9 @@ import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
 public interface WritingServiceFactory {
 
-    @NotNull
-    InternalProtocolAdapterWritingService build(
+    @NotNull InternalProtocolAdapterWritingService build(
             @NotNull ObjectMapper objectMapper,
             @NotNull LocalTopicTree localTopicTree,
-            @NotNull SingleWriterService singleWriterService);
+            @NotNull SingleWriterService singleWriterService,
+            @NotNull TopicFilterPersistence topicFilterPersistence);
 }

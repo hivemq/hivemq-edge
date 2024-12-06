@@ -16,6 +16,7 @@
 package com.hivemq.persistence.topicfilter;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -38,5 +39,6 @@ public interface TopicFilterPersistence {
     @NotNull
     List<TopicFilter> getTopicFilters();
 
-    @NotNull TopicFilter getTag(@NotNull String filter);
+    @Nullable
+    TopicFilter getTopicFilter(@NotNull String filter);
 }

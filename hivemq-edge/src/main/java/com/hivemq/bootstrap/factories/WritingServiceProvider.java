@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
@@ -39,17 +40,20 @@ public class WritingServiceProvider {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull SingleWriterService singleWriterService;
+    private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
     @Inject
     public WritingServiceProvider(
             final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull SingleWriterService singleWriterService) {
+            final @NotNull SingleWriterService singleWriterService,
+            final @NotNull TopicFilterPersistence topicFilterPersistence) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
         this.objectMapper = objectMapper;
         this.localTopicTree = localTopicTree;
         this.singleWriterService = singleWriterService;
+        this.topicFilterPersistence = topicFilterPersistence;
     }
 
     public @NotNull InternalProtocolAdapterWritingService get() {
@@ -59,7 +63,9 @@ public class WritingServiceProvider {
         }
         return writingServiceFactory.build(objectMapper,
                 localTopicTree,
-                singleWriterService);
+                singleWriterService,
+                topicFilterPersistence
+                );
     }
 
 
