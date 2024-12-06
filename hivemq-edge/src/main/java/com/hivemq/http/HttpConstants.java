@@ -15,6 +15,8 @@
  */
 package com.hivemq.http;
 
+import com.hivemq.http.error.ErrorType;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -116,4 +118,6 @@ public interface HttpConstants {
         put("webmanifest", "application/manifest+json");
     }};
 
+
+    public ErrorType ERROR_TYPE_UNABLE_TO_PARS_JSON = new ErrorType(null, "Unparseable JSON", "Unable to parse JSON body");
 }

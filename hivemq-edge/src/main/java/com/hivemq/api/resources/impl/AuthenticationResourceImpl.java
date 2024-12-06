@@ -29,6 +29,8 @@ import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ErrorType;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -43,6 +46,9 @@ import java.util.Optional;
  */
 @Singleton
 public class AuthenticationResourceImpl extends AbstractApi implements AuthenticationApi {
+
+    public static final @NotNull ErrorType ERROR_TYPE_AUTHENTICATION_VALIDATION =
+            new ErrorType(null, "Authentication request failed validation", "Parameters were missing in the authenticatio nrequest");
 
     private final @NotNull ITokenGenerator tokenGenerator;
     private final @NotNull ITokenVerifier tokenVerifier;
@@ -62,7 +68,8 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
         // check the parent object first and return early to avoid NPEs
         if (credentials == null) {
-            return ApiErrorUtils.badRequest("Request body must contain credentials, none were found.");
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_AUTHENTICATION_VALIDATION,
+                    List.of(new Error("Request body must contain credentials, none were found.", null, null, null)));
         }
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
@@ -70,7 +77,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         ApiErrorUtils.validateRequiredField(errorMessages, "password", credentials.getPassword(), false);
 
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_AUTHENTICATION_VALIDATION, errorMessages.toErrorList());
         } else {
             final String userName = credentials.getUserName();
             final String password = credentials.getPassword();

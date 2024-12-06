@@ -22,6 +22,8 @@ import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.http.error.ErrorType;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
@@ -33,6 +35,8 @@ import javax.ws.rs.core.Response;
  * @author Simon L Johnson
  */
 public class UnsResourceImpl extends AbstractApi implements UnsApi {
+
+    public static final @NotNull ErrorType ERROR_TYPE_UNS_VALIDATION = new ErrorType(null, "ISA95 failed validation", "");
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull UnifiedNamespaceService unifiedNamespaceService;
@@ -76,7 +80,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
         }
 
         if(ApiErrorUtils.hasRequestErrors(errorMessages)){
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_UNS_VALIDATION, errorMessages.toErrorList());
         } else {
             unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
             return Response.ok().build();

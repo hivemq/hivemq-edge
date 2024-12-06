@@ -41,6 +41,9 @@ import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ErrorType;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,6 +58,11 @@ import java.util.stream.Collectors;
  * @author Simon L Johnson
  */
 public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
+
+    private static final @NotNull ErrorType ERROR_TYPE_BRIDGE_VALIDATION =
+            new ErrorType(null, "Bridge failed validation", "The provided bridge configuration could not be validated");
+    private static final @NotNull ErrorType ERROR_TYPE_BRIDGE_MISSING =
+            new ErrorType(null, "Bridge was not found", "No bridge with the given id was found");
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
@@ -85,12 +93,13 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     public @NotNull Response addBridge(final @NotNull Bridge bridge) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        validateBridge(errorMessages, bridge);
         if (checkBridgeExists(bridge.getId())) {
-            ApiErrorUtils.addValidationError(errorMessages, "bridge", "Bridge already existed");
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION,
+                    List.of(new Error("Bridge already existed", "bridge", null, null)));
         }
+        validateBridge(errorMessages, bridge);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             try {
                 MqttBridge mqttBridge = unconvert(bridge);
@@ -109,10 +118,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
         if (!checkBridgeExists(bridgeId)) {
-            return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+            return ErrorResponseUtil.notFound(ERROR_TYPE_BRIDGE_MISSING, String.format("Bridge not found by id '%s'", bridgeId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             Optional<MqttBridge> bridge = configurationService.bridgeConfiguration()
                     .getBridges()
@@ -123,7 +132,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 MqttBridge mqttBridge = bridge.get();
                 return Response.ok(Bridge.convert(mqttBridge, getStatusInternal(bridgeId))).build();
             } else {
-                return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+                return ErrorResponseUtil.notFound(ERROR_TYPE_BRIDGE_MISSING, String.format("Bridge not found by id '%s'", bridgeId));
             }
         }
     }
@@ -134,10 +143,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
         if (!checkBridgeExists(bridgeId)) {
-            return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+            return ErrorResponseUtil.notFound(ERROR_TYPE_BRIDGE_MISSING, String.format("Bridge not found by id '%s'", bridgeId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             try {
                 configurationService.bridgeConfiguration().removeBridge(bridgeId);
@@ -157,10 +166,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
         ApiErrorUtils.validateRequiredEntity(errorMessages, "command", command);
         if (!checkBridgeExists(bridgeId)) {
-            return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+            return ErrorResponseUtil.notFound(ERROR_TYPE_BRIDGE_MISSING, String.format("Bridge not found by id '%s'", bridgeId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             switch (command.getCommand()) {
                 case START:
@@ -196,7 +205,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             ApiErrorUtils.addValidationError(errorMessages, "bridge", "Bridge did not exist to update");
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             //-- Modify the configuration
             configurationService.bridgeConfiguration().removeBridge(bridgeId);
@@ -215,10 +224,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
         if (!checkBridgeExists(bridgeId)) {
-            return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+            return ErrorResponseUtil.notFound(ERROR_TYPE_BRIDGE_MISSING, String.format("Bridge not found by id '%s'", bridgeId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.validationErrors(ERROR_TYPE_BRIDGE_VALIDATION, errorMessages.toErrorList());
         } else {
             return Response.ok(getStatusInternal(bridgeId)).build();
         }
