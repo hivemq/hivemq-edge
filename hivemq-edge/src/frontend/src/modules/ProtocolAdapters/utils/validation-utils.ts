@@ -24,7 +24,7 @@ import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
  *   - then (last stand) on conditions from the property name (i.e. formData)
  *
  */
-export const customValidate =
+export const customUniqueAdapterValidate =
   (jsonSchema: RJSFSchema, existingAdapters: Adapter[] | undefined, t: TFunction) =>
   (formData: Record<string, unknown>, errors: FormValidation<AdapterConfig>, uiSchema?: UiSchema<AdapterConfig>) => {
     // Check for uniqueness of `id` ONLY if `format` = `identifier` and not `ui:disabled`
