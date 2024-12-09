@@ -20,7 +20,7 @@ import com.hivemq.mqtt.message.QoS;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
-@Schema(name = "QoS")
+@Schema(name = "QoS", enumAsRef=true)
 public enum QoSModel {
 
     /**
