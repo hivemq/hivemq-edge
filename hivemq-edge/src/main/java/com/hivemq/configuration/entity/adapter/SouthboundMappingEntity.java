@@ -35,9 +35,6 @@ public class SouthboundMappingEntity {
     @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "maxQos", required = true)
-    private final int qos;
-
     @XmlElement(name = "fieldMapping")
     private final @Nullable FieldMappingEntity fieldMapping;
 
@@ -45,18 +42,15 @@ public class SouthboundMappingEntity {
     public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
-        qos = 1;
         fieldMapping = null;
     }
 
     public SouthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final int maxQoS,
             final @Nullable FieldMappingEntity fieldMapping) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
-        this.qos = maxQoS;
         this.fieldMapping = fieldMapping;
     }
 
@@ -66,10 +60,6 @@ public class SouthboundMappingEntity {
 
     public @NotNull String getTopicFilter() {
         return topicFilter;
-    }
-
-    public int getMaxQos() {
-        return qos;
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
@@ -82,11 +72,10 @@ public class SouthboundMappingEntity {
     }
 
 
-    public @NotNull SouthboundMapping to(ObjectMapper mapper) {
+    public @NotNull SouthboundMapping to(final @NotNull ObjectMapper mapper) {
         return new SouthboundMapping(
                 this.getTagName(),
                 this.getTopicFilter(),
-                this.getMaxQos(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
     }
 
@@ -94,7 +83,6 @@ public class SouthboundMappingEntity {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                southboundMapping.getMaxQoS(),
                 FieldMappingEntity.from(southboundMapping.getFieldMapping())
         );
     }

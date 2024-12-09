@@ -25,17 +25,14 @@ public class SouthboundMapping implements WritingContext {
 
     private final @NotNull String topicFilter;
     private final @NotNull String tagName;
-    private final int maxQoS;
     private final @Nullable FieldMapping fieldMapping;
 
     public SouthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final int maxQoS,
             final @Nullable FieldMapping fieldMapping) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
-        this.maxQoS = maxQoS;
         this.fieldMapping = fieldMapping;
     }
 
@@ -47,10 +44,6 @@ public class SouthboundMapping implements WritingContext {
         return tagName;
     }
 
-    public int getMaxQoS() {
-        return maxQoS;
-    }
-
     public @Nullable FieldMapping getFieldMapping() {
         return fieldMapping;
     }
@@ -60,7 +53,6 @@ public class SouthboundMapping implements WritingContext {
         return new SouthboundMapping(
                 writingContext.getTagName(),
                 writingContext.getTopicFilter(),
-                writingContext.getMaxQoS(),
                 writingContext.getFieldMapping());
     }
 
@@ -75,8 +67,6 @@ public class SouthboundMapping implements WritingContext {
                 ", tagName='" +
                 tagName +
                 '\'' +
-                ", maxQoS=" +
-                maxQoS +
                 '}';
     }
 }

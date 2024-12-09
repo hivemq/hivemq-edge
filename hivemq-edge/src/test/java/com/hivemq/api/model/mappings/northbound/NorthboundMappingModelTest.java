@@ -17,6 +17,7 @@ package com.hivemq.api.model.mappings.northbound;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.api.model.JavaScriptConstants;
+import com.hivemq.api.model.QoSModel;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class NorthboundMappingModelTest {
                 false,
                 false,
                 List.of(),
-                2,
+                QoSModel.EXACTLY_ONCE,
                 Long.MAX_VALUE);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
@@ -51,7 +52,7 @@ class NorthboundMappingModelTest {
                 false,
                 false,
                 List.of(),
-                2,
+                QoSModel.EXACTLY_ONCE,
                 Long.MAX_VALUE);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
