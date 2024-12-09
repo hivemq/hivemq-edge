@@ -24,7 +24,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-import { customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { customUniqueAdapterValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
@@ -114,7 +114,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   onSubmit={onValidate}
                   // TODO[NVL] Types need fixing
                   // @ts-ignore
-                  customValidate={customValidate(schema, allAdapters, t)}
+                  customValidate={customUniqueAdapterValidate(schema, allAdapters)}
                 />
               )}
             </DrawerBody>

@@ -1,4 +1,6 @@
 import { UiSchema } from '@rjsf/utils'
+import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 
 /* istanbul ignore next -- @preserve */
 export const northboundMappingListUISchema: UiSchema = {
@@ -13,6 +15,15 @@ export const northboundMappingListUISchema: UiSchema = {
       'ui:order': ['tagName', 'topic', '*'],
       'ui:collapsable': {
         titleKey: 'tagName',
+      },
+      tagName: {
+        'ui:widget': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
+      },
+      topic: {
+        'ui:widget': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
+        'ui:options': {
+          create: true,
+        },
       },
       'ui:addButton': 'Add a mapping',
       userProperties: {
