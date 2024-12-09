@@ -1,9 +1,15 @@
 package com.hivemq.api.format;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+@JsonSerialize(using = DataUrl.Serializer.class)
 public class DataUrl {
 
     public static final String BASE64_TOKEN = ";base64";
@@ -74,5 +80,23 @@ public class DataUrl {
     @Override
     public @NotNull String toString() {
         return "data:" + mimeType + ";" + encoding + "," + data;
+    }
+
+
+    public static class Serializer extends StdSerializer<DataUrl> {
+
+        public Serializer() {
+            this(null);
+        }
+
+        public Serializer(final @NotNull Class<DataUrl> t) {
+            super(t);
+        }
+
+        @Override
+        public void serialize(final DataUrl value, final JsonGenerator gen, final SerializerProvider provider)
+                throws IOException {
+            gen.writeString(value.toString());
+        }
     }
 }

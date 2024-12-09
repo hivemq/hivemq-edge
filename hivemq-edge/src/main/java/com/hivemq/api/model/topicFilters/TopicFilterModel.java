@@ -38,7 +38,7 @@ public class TopicFilterModel {
     private final @NotNull String description;
 
     @JsonProperty("schema")
-    @Schema(description = "The optional json schema for this topic filter in the data uri format.")
+    @Schema(description = "The optional json schema for this topic filter in the data uri format.", format = "data-url")
     private final @Nullable String schema;
 
 
@@ -66,8 +66,12 @@ public class TopicFilterModel {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         final TopicFilterModel that = (TopicFilterModel) o;
         return topicFilter.equals(that.topicFilter) &&

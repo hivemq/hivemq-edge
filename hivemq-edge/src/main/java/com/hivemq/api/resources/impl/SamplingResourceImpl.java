@@ -17,7 +17,6 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
@@ -99,9 +98,7 @@ public class SamplingResourceImpl implements SamplingApi {
         }
 
         final JsonNode inferredSchema = INFERRER.inferForSamples(jsonSamples);
-
-        final DataUrl dataUrl = DataUrl.createBase64JsonDataUrl(inferredSchema.asText());
-        return Response.ok().entity(dataUrl).build();
+        return Response.ok().entity(inferredSchema).build();
     }
 
     @Override
