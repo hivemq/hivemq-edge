@@ -110,11 +110,9 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(0);
         }, mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubbb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(0);
         });
     }
 
@@ -158,7 +156,6 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(1);
         });
     }
 
@@ -270,10 +267,10 @@ class OpcUaProtocolAdapterConfigTest {
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
-        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        final OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
+        final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
         when(manager.get("opcua")).thenReturn(Optional.of(protocolAdapterFactory));
-        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
+        final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
         return converter;
     }
 
