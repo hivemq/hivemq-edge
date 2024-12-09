@@ -1021,7 +1021,7 @@
           "aria-label": "Delete Topic Filter"
         },
         "add": {
-          "aria-label": "Add a new Topic Filter"
+          "aria-label": "Edit the topic Filters"
         }
       }
     },
