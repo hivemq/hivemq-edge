@@ -56,15 +56,15 @@ export const useTopicFilterManager = () => {
   // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
     success: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
+      title: t(`topicFilter.toast.${operation}.title`),
       description: t(`topicFilter.toast.${operation}.description`, { context: 'success' }),
     },
     error: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
+      title: t(`topicFilter.toast.${operation}.title`),
       description: t(`topicFilter.toast.${operation}.description`, { context: 'error' }),
     },
     loading: {
-      title: t(`device.drawer.tagList.toast.${operation}.title`),
+      title: t(`topicFilter.toast.${operation}.title`),
       description: t('topicFilter.toast.description', { context: 'loading' }),
     },
   })

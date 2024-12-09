@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import type { TopicFilterList } from '@/api/__generated__'
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
-import { handlers } from '@/api/hooks/useTopicFilters/__handlers__'
+import { handlers, MOCK_TOPIC_FILTER_SCHEMA_VALID } from '@/api/hooks/useTopicFilters/__handlers__'
 
 describe('useListTopicFilters', () => {
   beforeEach(() => {
@@ -27,6 +27,7 @@ describe('useListTopicFilters', () => {
         {
           description: 'This is a topic filter',
           topicFilter: 'a/topic/+/filter',
+          schema: MOCK_TOPIC_FILTER_SCHEMA_VALID,
         },
       ],
     })
