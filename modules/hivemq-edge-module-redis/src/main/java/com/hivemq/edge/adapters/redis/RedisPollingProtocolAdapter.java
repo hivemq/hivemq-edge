@@ -89,44 +89,19 @@ public class RedisPollingProtocolAdapter implements PollingProtocolAdapter<Redis
 
     @Override
     public void poll(final @NotNull PollingInput<RedisPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        boolean broken = false;
-        Jedis jedis = null;
-
-        /* Connect to the database and get the key */
+        /* Connect to Redis and get the key */
         try {
             if(jedisPool.isClosed()){
                initJedisPool();
             }
-            /* Get resource from the Pool*/
-            jedis = jedisPool.getResource();
-            String result = jedis.get(pollingInput.getPollingContext().getKey());
-
-            /* Publish datapoint */
-            if(result != null) {
+            /* Get resource from the Pool */
+            try (Jedis jedis = jedisPool.getResource();){
+                String result = jedis.get(pollingInput.getPollingContext().getKey());
+                /* Publish datapoint */
                 pollingOutput.addDataPoint("keyValue", result);
-            } else {
-                pollingOutput.addDataPoint("keyValue", null);
             }
-
         } catch (Exception e) {
-            broken = true;
-            try {
-                jedisPool.close();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            if(broken)
-            {
-                jedisPool.returnBrokenResource(jedis);
-            }
-            else if(jedis != null)
-            {
-                jedisPool.returnResource(jedis);
-            }
         }
         pollingOutput.finish();
     }
@@ -150,9 +125,9 @@ public class RedisPollingProtocolAdapter implements PollingProtocolAdapter<Redis
     public void initJedisPool() throws Exception {
         JedisPoolConfig jedisPoolConfig = buildPoolConfig();
         if(!adapterConfig.getPassword().isEmpty()) {
-            jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),Integer.parseInt(adapterConfig.getPort()),60,adapterConfig.getPassword());
+            jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60,adapterConfig.getPassword());
         } else {
-            jedisPool = new JedisPool(jedisPoolConfig, adapterConfig.getServer(), Integer.parseInt(adapterConfig.getPort()), 60);
+            jedisPool = new JedisPool(jedisPoolConfig, adapterConfig.getServer(), adapterConfig.getPort(), 60);
         }
     }
 }

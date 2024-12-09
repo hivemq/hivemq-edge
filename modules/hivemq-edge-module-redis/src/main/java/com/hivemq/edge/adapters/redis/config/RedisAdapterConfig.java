@@ -54,24 +54,23 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
-            description = "Server port",
+            description = "Server port (usually 6379)",
             format = ModuleConfigField.FieldType.UNSPECIFIED,
             required = true,
             stringPattern = ID_REGEX,
             stringMinLength = 1,
-            stringMaxLength = 6,
-            defaultValue = "6379")
-    protected @NotNull String port;
+            stringMaxLength = 6)
+    protected @NotNull Integer port;
 
-    @JsonProperty(value = "password", required = true)
+    @JsonProperty(value = "password", required = false)
     @ModuleConfigField(title = "Password",
             description = "Password for the connection to the database",
             format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
+            required = false,
             stringPattern = ID_REGEX,
-            stringMinLength = 1,
+            stringMinLength = 0,
             stringMaxLength = 1024)
-    protected @NotNull String password;
+    protected String password;
 
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
@@ -96,7 +95,7 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
     public RedisAdapterConfig() {
         id = "";
         server = "";
-        port = "";
+        port = 6379;
         password = "";
     }
 
@@ -107,9 +106,9 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull String getServer() {return server;}
 
-    public @NotNull String getPort() {return port;}
+    public @NotNull Integer getPort() {return port;}
 
-    public @NotNull String getPassword() {return password;}
+    public String getPassword() {return password;}
 
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;
