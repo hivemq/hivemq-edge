@@ -1028,6 +1028,17 @@
     },
     "schema": {
       "header": "Manage the schemas of the topic filter",
+      "prompt": "You can upload a schema or try to automatically infer a schema from the MQTT traffic on your installation",
+      "actions": {
+        "remove": "Remove assigned schema",
+        "assign": "Assign schema",
+        "upload": "Upload a JSON-Schema file"
+      },
+      "tabs": {
+        "current": "Current Schema",
+        "upload": "Upload a new schema",
+        "infer": "Infer a schema"
+      },
       "submit": {
         "label": "OK"
       },
