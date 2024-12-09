@@ -113,11 +113,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public @NotNull TopicFilter getTag(final @NotNull String filter) {
-        final TopicFilter topicFilter = filterToTopicFilter.get(filter);
-        if (topicFilter == null) {
-            throw new TagNotFoundException("TopicFilter for filter '" + filter + "' was not found in the persistence.");
-        }
-        return topicFilter;
+    public @NotNull TopicFilter getTopicFilter(final @NotNull String filter) {
+        return filterToTopicFilter.get(filter);
     }
 }

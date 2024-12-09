@@ -30,32 +30,19 @@ public class FieldMappingModel {
     @Schema(description = "List of instructions to be applied to incoming data")
     private final @NotNull List<InstructionModel> instructions;
 
-    @JsonProperty(value = "metadata", required = true)
-    @Schema(description = "Metadata for the whole mapping")
-    private final @NotNull MetadataModel metadata;
-
     public FieldMappingModel(
-            @JsonProperty(value = "instructions", required = true) final @NotNull List<InstructionModel> instructions,
-            @JsonProperty(value = "metadata", required = true) final @NotNull MetadataModel metadata) {
+            @JsonProperty(value = "instructions", required = true) final @NotNull List<InstructionModel> instructions) {
         this.instructions = instructions;
-        this.metadata = metadata;
     }
 
     public @NotNull List<InstructionModel> getInstructions() {
         return instructions;
     }
 
-    public @NotNull MetadataModel getMetadata() {
-        return metadata;
-    }
-
-    public static FieldMappingModel from(final FieldMapping fieldMapping) {
-        if(fieldMapping == null) {
-            return null;
-        }
-        return new FieldMappingModel(
-                fieldMapping.getInstructions().stream().map(InstructionModel::from)
-                        .collect(Collectors.toList()),
-                MetadataModel.from(fieldMapping.getMetaData()));
+    public static @NotNull FieldMappingModel from(final @NotNull FieldMapping fieldMapping) {
+        return new FieldMappingModel(fieldMapping.getInstructions()
+                .stream()
+                .map(InstructionModel::from)
+                .collect(Collectors.toList()));
     }
 }

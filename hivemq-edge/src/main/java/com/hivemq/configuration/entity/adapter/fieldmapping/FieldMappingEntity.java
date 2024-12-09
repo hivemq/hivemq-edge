@@ -16,9 +16,9 @@
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -33,28 +33,18 @@ public class FieldMappingEntity {
     @XmlElement(name = "instruction")
     private final @NotNull List<InstructionEntity> instructions;
 
-    @XmlElement(name = "metadata")
-    private final @NotNull MetadataEntity metaData;
-
     //no arg constructor for JaxB
-    public FieldMappingEntity() {;
+    public FieldMappingEntity() {
         instructions = new ArrayList<>();
-        metaData = new MetadataEntity();
     }
 
     public FieldMappingEntity(
-            final @NotNull List<InstructionEntity> instructions,
-            final @NotNull MetadataEntity metaData) {
+            final @NotNull List<InstructionEntity> instructions) {
         this.instructions = instructions;
-        this.metaData = metaData;
     }
 
     public @NotNull List<InstructionEntity> getInstructions() {
         return instructions;
-    }
-
-    public @NotNull MetadataEntity getMetaData() {
-        return metaData;
     }
 
     public static @NotNull FieldMappingEntity from(final @NotNull FieldMapping model) {
@@ -63,15 +53,12 @@ public class FieldMappingEntity {
         }
         final List<InstructionEntity> fieldMappingEntityList =
                 model.getInstructions().stream().map(InstructionEntity::from).collect(Collectors.toList());
-        return new FieldMappingEntity(fieldMappingEntityList,
-                MetadataEntity.from(model.getMetaData()));
+        return new FieldMappingEntity(fieldMappingEntityList);
     }
 
     public @NotNull FieldMapping to(final @NotNull ObjectMapper mapper) {
         final List<Instruction> instructions =
                 getInstructions().stream().map(InstructionEntity::to).collect(Collectors.toList());
-        return new FieldMapping(
-                instructions,
-                getMetaData().to(mapper));
+        return new FieldMapping(instructions);
     }
 }

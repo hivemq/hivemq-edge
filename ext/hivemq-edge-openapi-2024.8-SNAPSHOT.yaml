@@ -5090,11 +5090,8 @@ components:
           description: List of instructions to be applied to incoming data
           items:
             $ref: '#/components/schemas/Instruction'
-        metadata:
-          $ref: '#/components/schemas/Metadata'
       required:
       - instructions
-      - metadata
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5383,17 +5380,6 @@ components:
       - destination
       - filters
       - maxQoS
-    Metadata:
-      type: object
-      description: Metadata for the whole mapping
-      properties:
-        destination:
-          $ref: '#/components/schemas/JsonNode'
-        source:
-          $ref: '#/components/schemas/JsonNode'
-      required:
-      - destination
-      - source
     Metric:
       type: object
       description: List of result items that are returned by this endpoint
