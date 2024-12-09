@@ -8,7 +8,6 @@ import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 import { ACCEPT_JSON_SCHEMA } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 
 interface SchemaUploaderProps {
-  id?: string
   onUpload: (s: string) => void
 }
 
@@ -58,7 +57,7 @@ const SchemaUploader: FC<SchemaUploaderProps> = ({ onUpload }) => {
       alignItems="center"
       id="dropzone"
     >
-      <input {...getInputProps()} data-testid="batch-load-dropzone" />
+      <input {...getInputProps()} data-testid="schema-dropzone" />
       {isDragActive && <Text>{t('rjsf.batchUpload.dropZone.dropping', { ns: 'components' })}</Text>}
       {loading && <Text>{t('rjsf.batchUpload.dropZone.loading', { ns: 'components' })}</Text>}
       {!isDragActive && !loading && (
