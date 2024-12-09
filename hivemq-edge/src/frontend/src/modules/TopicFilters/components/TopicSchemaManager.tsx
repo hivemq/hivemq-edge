@@ -40,6 +40,10 @@ const TopicSchemaManager: FC<CurrentSchemaProps> = ({ topicFilter }) => {
     onUpdate(topicFilter.topicFilter, { ...topicFilter, schema: dataUri })
   }
 
+  const onHandleClear = () => {
+    onUpdate(topicFilter.topicFilter, { ...topicFilter, schema: undefined })
+  }
+
   return (
     <VStack>
       <ErrorMessage message={schemaHandler.error} status={schemaHandler.status} type={schemaHandler.message} />
@@ -64,7 +68,9 @@ const TopicSchemaManager: FC<CurrentSchemaProps> = ({ topicFilter }) => {
                       <JsonSchemaBrowser schema={schemaHandler.schema} />
                     </CardBody>
                     <CardFooter justifyContent="flex-end">
-                      <Button isDisabled>{t('topicFilter.schema.actions.remove')}</Button>
+                      <Button isDisabled={Boolean(!topicFilter.schema)} onClick={onHandleClear}>
+                        {t('topicFilter.schema.actions.remove')}
+                      </Button>
                     </CardFooter>
                   </Card>
                 )}
