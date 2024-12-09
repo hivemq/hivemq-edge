@@ -4,6 +4,8 @@ import { Accept } from 'react-dropzone'
 import validator from '@rjsf/validator-ajv8'
 
 import i18n from '@/config/i18n.config.ts'
+import type { JSONSchema7 } from 'json-schema'
+import type { AlertStatus } from '@chakra-ui/react'
 
 export const MIMETYPE_JSON = 'application/json'
 export const MIMETYPE_JSON_SCHEMA = 'application/schema+json'
@@ -52,5 +54,40 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
     if (error instanceof SyntaxError) throw new Error(i18n.t('topicFilter.error.schema.noBase64Data'))
     if (error instanceof DOMException) throw new Error(i18n.t('topicFilter.error.schema.noJSON'))
     if (error instanceof Error) throw new Error(error.message)
+  }
+}
+
+export interface SchemaHandler {
+  schema?: JSONSchema7
+  error?: string
+  status: AlertStatus
+  message: string
+}
+
+export const validateSchemaFromDataURI = (topicFilterSchema: string | undefined): SchemaHandler => {
+  if (!topicFilterSchema)
+    return {
+      status: 'warning',
+      message: i18n.t('topicFilter.schema.status.missing'),
+    }
+  try {
+    const schema = decodeDataUriJsonSchema(topicFilterSchema)
+    if (!schema?.body)
+      return {
+        error: 'no body from the base64 payload',
+        status: 'error',
+        message: i18n.t('topicFilter.schema.status.internalError'),
+      }
+    return {
+      schema: schema.body,
+      status: 'success',
+      message: i18n.t('topicFilter.schema.status.success'),
+    }
+  } catch (e) {
+    return {
+      error: (e as Error).message,
+      status: 'error',
+      message: i18n.t('topicFilter.schema.status.success'),
+    }
   }
 }
