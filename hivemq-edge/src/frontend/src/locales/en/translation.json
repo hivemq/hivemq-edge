@@ -1071,6 +1071,11 @@
         "description_success": "The Topic Filter has been deleted from the Edge",
         "description_error": "The Topic Filter could not be deleted"
       },
+      "update": {
+        "title": "Update Topic Filter",
+        "description_success": "The Topic Filter has been updated on the Edge",
+        "description_error": "The Topic Filter could not be updated"
+      },
       "updateCollection": {
         "title": "Edit the Topic Filters",
         "description_success": "The Topic Filters have been modified on the Edge",
