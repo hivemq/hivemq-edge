@@ -35,12 +35,10 @@
                 <southboundMapping>
                     <tagName>tag3</tagName>
                     <topicFilter>my/#</topicFilter>
-                    <maxQos>0</maxQos>
                 </southboundMapping>
                 <southboundMapping>
                     <tagName>tag4</tagName>
                     <topicFilter>my/#</topicFilter>
-                    <maxQos>1</maxQos>
                 </southboundMapping>
             </southboundMappings>
             <northboundMappings>
