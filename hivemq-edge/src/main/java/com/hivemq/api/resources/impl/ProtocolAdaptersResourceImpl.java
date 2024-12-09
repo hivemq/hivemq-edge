@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.adapters.AdapterConfigModel;
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;

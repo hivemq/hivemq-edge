@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,12 +24,12 @@ public class TopicFilterMapper {
     public static @NotNull TopicFilter topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
         return new TopicFilter(topicFilterXmlEntity.getTopicFilter(),
                 topicFilterXmlEntity.getDescription(),
-                topicFilterXmlEntity.getSchema());
+                topicFilterXmlEntity.getSchema() != null ? DataUrl.create(topicFilterXmlEntity.getSchema()) : null);
     }
 
     public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilter topicFilter) {
         return new TopicFilterXmlEntity(topicFilter.getTopicFilter(),
                 topicFilter.getDescription(),
-                topicFilter.getSchema());
+                topicFilter.getSchema() != null ? topicFilter.getSchema().toString() : null);
     }
 }
