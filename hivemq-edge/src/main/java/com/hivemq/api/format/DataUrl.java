@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 
 public class DataUrl {
 
+    public static final String BASE64_TOKEN = ";base64";
+
     private final @NotNull String mimeType;
     private final @NotNull String encoding;
     private final @NotNull String charset;
@@ -22,21 +24,26 @@ public class DataUrl {
         this.data = data;
     }
 
+    public static @NotNull DataUrl createBase64JsonDataUrl(final @NotNull String data) {
+        return new DataUrl("application/json", StandardCharsets.US_ASCII.displayName(), "base64", data);
+    }
+
+
     public static @NotNull DataUrl create(final @NotNull String dataUrlAsString) {
         // remove data:
         final String dataUrlWithoutDataPrefix = dataUrlAsString.substring(5);
         // split meta data and data  on the ','
-        final String[] metaDataAndDataSplit = dataUrlAsString.split(",");
+        final String[] metaDataAndDataSplit = dataUrlWithoutDataPrefix.split(",");
         if (metaDataAndDataSplit.length != 2) {
             throw new IllegalArgumentException(dataUrlAsString +
                     " is not a valid data URL, because it did not contain metadata and data separated by exactly one ','.");
         }
         final String metadata = metaDataAndDataSplit[0];
         final String data = metaDataAndDataSplit[1];
-        if (!metadata.contains(",base64")) {
+        if (!metadata.contains(BASE64_TOKEN)) {
             throw new IllegalArgumentException("Only base64 encoding is allowed for data URLs.");
         }
-        final String metaDataWithoutEncoding = metadata.replaceAll(",base64", "");
+        final String metaDataWithoutEncoding = metadata.replaceAll(BASE64_TOKEN, "");
         if (metaDataWithoutEncoding.contains(";charset=")) {
             final String[] mimeAndCharSetSplit = metaDataWithoutEncoding.split(";charset=");
             final String mimeType = mimeAndCharSetSplit[0];

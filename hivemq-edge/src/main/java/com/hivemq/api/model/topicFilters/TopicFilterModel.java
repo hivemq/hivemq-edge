@@ -17,10 +17,10 @@ package com.hivemq.api.model.topicFilters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.topicfilter.TopicFilter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -72,14 +72,14 @@ public class TopicFilterModel {
         final TopicFilterModel that = (TopicFilterModel) o;
         return topicFilter.equals(that.topicFilter) &&
                 description.equals(that.description) &&
-                schema.equals(that.schema);
+                Objects.equals(schema, that.schema);
     }
 
     @Override
     public int hashCode() {
         int result = topicFilter.hashCode();
         result = 31 * result + description.hashCode();
-        result = 31 * result + schema.hashCode();
+        result = 31 * result + Objects.hashCode(schema);
         return result;
     }
 
@@ -99,6 +99,8 @@ public class TopicFilterModel {
     }
 
     public static @NotNull TopicFilterModel fromTopicFilter(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterModel(topicFilter.getTopicFilter(), topicFilter.getDescription(), topicFilter.getSchema());
+        return new TopicFilterModel(topicFilter.getTopicFilter(),
+                topicFilter.getDescription(),
+                topicFilter.getSchema() != null ? topicFilter.getSchema().toString() : null);
     }
 }

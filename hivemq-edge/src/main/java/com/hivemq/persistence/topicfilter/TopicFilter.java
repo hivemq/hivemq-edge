@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
@@ -25,11 +26,11 @@ public class TopicFilter {
 
     private final @NotNull String description;
     private final @NotNull String topicFilter;
-    private final @Nullable String schema;
+    private final @Nullable DataUrl schema;
 
 
     public TopicFilter(
-            final @NotNull String topicFilter, final @NotNull String description, final @Nullable String schema) {
+            final @NotNull String topicFilter, final @NotNull String description, final @Nullable DataUrl schema) {
         this.description = description;
         this.topicFilter = topicFilter;
         this.schema = schema;
@@ -37,7 +38,9 @@ public class TopicFilter {
 
     public static @NotNull TopicFilter fromTopicFilterModel(
             final @NotNull TopicFilterModel topicFilter) {
-        return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription(), topicFilter.getSchema());
+        return new TopicFilter(topicFilter.getTopicFilter(),
+                topicFilter.getDescription(),
+                topicFilter.getSchema() != null ? DataUrl.create(topicFilter.getSchema()) : null);
     }
 
     public @NotNull String getDescription() {
@@ -48,7 +51,7 @@ public class TopicFilter {
         return topicFilter;
     }
 
-    public @Nullable String getSchema() {
+    public @Nullable DataUrl getSchema() {
         return schema;
     }
 
