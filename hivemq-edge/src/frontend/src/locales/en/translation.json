@@ -1030,6 +1030,12 @@
       "header": "Manage the schemas of the topic filter",
       "submit": {
         "label": "OK"
+      },
+      "status": {
+        "success": "Your topic filter is currently assigned a valid schema",
+        "missing": "Your topic filter is currently not assigned a schema",
+        "invalid": "Your topic filter is currently assigned a schema that is not valid",
+        "internalError": "Internal error - cannot extract your schema"
       }
     },
     "error": {
