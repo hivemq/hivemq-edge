@@ -25,10 +25,6 @@ export const $NorthboundMapping = {
             isRequired: true,
             format: 'int64',
         },
-        messageHandlingOptions: {
-            type: 'Enum',
-            isRequired: true,
-        },
         tagName: {
             type: 'string',
             description: `The tag for which values hould be collected and sent out.`,
