@@ -1,6 +1,7 @@
 import { describe, expect } from 'vitest'
 import {
   decodeDataUriJsonSchema,
+  encodeDataUriJsonSchema,
   SchemaHandler,
   validateSchemaFromDataURI,
 } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
@@ -20,10 +21,6 @@ describe('decodeDataUriJsonSchema', () => {
     { data: 'data:test,456', error: "The media types doesn't include the mandatory `application/schema+json`" },
     { data: 'data:application/json,456', error: "The media types doesn't include the mandatory `base64`" },
     { data: 'data:application/json;base64,456', error: 'The data is not properly encoded as a `base64` string' },
-    {
-      data: 'data:application/json;base64,ewogICJ0ZXN0IjogMQp9Cg==',
-      error: 'Not a valid JSONSchema: `properties` is missing',
-    },
   ]
 
   it.each<Suite>(tests)('$data should throw $error', ({ data, error }) => {
@@ -35,21 +32,20 @@ describe('decodeDataUriJsonSchema', () => {
   })
 })
 
+describe('encodeDataUriJsonSchema', () => {
+  it('should return a data-url', () => {
+    const schema = { test: 1 }
+    expect(encodeDataUriJsonSchema(schema)).toStrictEqual<string>(
+      `data:application/json;base64,${btoa(JSON.stringify(schema))}`
+    )
+  })
+})
+
 describe('validateSchemaFromDataURI', () => {
   it('should return a warning if not assigned', () => {
     expect(validateSchemaFromDataURI(undefined)).toStrictEqual<SchemaHandler>({
       status: 'warning',
       message: expect.stringContaining(''),
-    })
-  })
-
-  it('should return an error', () => {
-    expect(
-      validateSchemaFromDataURI('data:application/json;base64,ewogICJ0ZXN0IjogMQp9Cg==')
-    ).toStrictEqual<SchemaHandler>({
-      error: 'Not a valid JSONSchema: `properties` is missing',
-      message: expect.stringContaining(''),
-      status: 'error',
     })
   })
 

@@ -41,19 +41,19 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
     const json: RJSFSchema = JSON.parse(decoded)
 
     // This will take care of some of the basic json error but not of a valid JSONSchema
-    const validate = validator.ajv.compile(json)
-    if (validate.errors?.length) throw new Error(i18n.t('topicFilter.error.schema.ajvValidationFails'))
-    // const valid = validate({})
+    validator.ajv.compile(json)
 
+    // TODO[NVL] We need to decide what we want to require on the schema
     const { properties } = json
-
     if (!properties) throw new Error(i18n.t('topicFilter.error.schema.ajvNoProperties'))
 
     return { mimeType: MIMETYPE_JSON, options, body: json } as UriInfo
   } catch (error) {
     if (error instanceof SyntaxError) throw new Error(i18n.t('topicFilter.error.schema.noBase64Data'))
     if (error instanceof DOMException) throw new Error(i18n.t('topicFilter.error.schema.noJSON'))
-    if (error instanceof Error) throw new Error(error.message)
+    if (error instanceof Error) {
+      throw new Error(`${error.message}`)
+    }
   }
 }
 
@@ -91,7 +91,7 @@ export const validateSchemaFromDataURI = (topicFilterSchema: string | undefined)
     return {
       error: (e as Error).message,
       status: 'error',
-      message: i18n.t('topicFilter.schema.status.success'),
+      message: i18n.t('topicFilter.schema.status.invalid'),
     }
   }
 }
