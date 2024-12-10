@@ -50,7 +50,8 @@ const TopicSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ topicFilter, trigger })
           <DrawerBody>
             <Card size="sm">
               <CardHeader>
-                Topic Filter: <Topic tagTitle={topicFilter.topicFilter} mr={3} />
+                <Text as="span">{t('topicFilter.schema.title')}</Text>{' '}
+                <Topic tagTitle={topicFilter.topicFilter} mr={3} />
               </CardHeader>
               <CardBody>
                 <TopicSchemaManager topicFilter={topicFilter} />
