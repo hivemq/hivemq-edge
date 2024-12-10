@@ -34,13 +34,6 @@ export const northboundMappingListUISchema: UiSchema = {
       maxQoS: {
         'ui:enumNames': ['At most once (QoS 0)', 'At least once (QoS 1)', 'Exactly once (QoS 2)'],
       },
-
-      messageHandlingOptions: {
-        'ui:enumNames': [
-          'MQTT Message Per Device Tag',
-          'MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)',
-        ],
-      },
     },
   },
 }
