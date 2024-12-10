@@ -5468,9 +5468,7 @@ components:
           type: boolean
           description: Should the timestamp be included when sent out.
         maxQoS:
-          type: integer
-          format: int32
-          description: The maximum MQTT-QoS for the outgoing messages.
+          $ref: '#/components/schemas/QoS'
         messageExpiryInterval:
           type: integer
           format: int64
@@ -5722,6 +5720,13 @@ components:
             $ref: '#/components/schemas/ProtocolAdapter'
       required:
       - items
+    QoS:
+      type: string
+      description: The maximum MQTT-QoS for the outgoing messages.
+      enum:
+      - AT_MOST_ONCE
+      - AT_LEAST_ONCE
+      - EXACTLY_ONCE
     Schema:
       type: object
       properties:
@@ -5825,10 +5830,6 @@ components:
       properties:
         fieldMapping:
           $ref: '#/components/schemas/FieldMapping'
-        maxQoS:
-          type: integer
-          format: int32
-          description: The maximum MQTT-QoS for the outgoing messages.
         tagName:
           type: string
           format: mqtt-tag
@@ -5837,7 +5838,6 @@ components:
           type: string
           description: The filter defining what topics we will receive messages from.
       required:
-      - maxQoS
       - tagName
       - topicFilter
     SouthboundMappingList:

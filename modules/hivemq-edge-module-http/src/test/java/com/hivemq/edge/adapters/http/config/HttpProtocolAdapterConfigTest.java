@@ -133,7 +133,6 @@ public class HttpProtocolAdapterConfigTest {
         final SouthboundMappingEntity mqttToHttpMapping = adapter.getSouthboundMappingEntities().get(0);
         assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag2");
         assertThat(mqttToHttpMapping.getTopicFilter()).isEqualTo("my/#");
-        assertThat(mqttToHttpMapping.getMaxQos()).isEqualTo(1);
     }
 
     @Test
@@ -218,11 +217,9 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("tag3");
             assertThat(mapping.getTopicFilter()).isEqualTo("my/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(0);
         }, mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("tag4");
             assertThat(mapping.getTopicFilter()).isEqualTo("my/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(1);
         });
 
         assertThat(protocolAdapterConfig.getTags().stream().map(tag -> (HttpTag)tag).collect(Collectors.toList()))
@@ -410,10 +407,10 @@ public class HttpProtocolAdapterConfigTest {
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(mockInput);
-        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(mockInput);
+        final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
         when(manager.get("http")).thenReturn(Optional.of(httpProtocolAdapterFactory));
-        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
+        final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
         return converter;
     }
 

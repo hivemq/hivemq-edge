@@ -8,12 +8,6 @@ export const $SouthboundMapping = {
         fieldMapping: {
             type: 'FieldMapping',
         },
-        maxQoS: {
-            type: 'number',
-            description: `The maximum MQTT-QoS for the outgoing messages.`,
-            isRequired: true,
-            format: 'int32',
-        },
         tagName: {
             type: 'string',
             description: `The tag for which values hould be collected and sent out.`,
