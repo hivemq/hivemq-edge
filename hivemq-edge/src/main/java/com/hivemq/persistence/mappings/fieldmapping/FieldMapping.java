@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
 
 public class FieldMapping {
 
+    public static @NotNull FieldMapping DEFAULT_FIELD_MAPPING =
+            new FieldMapping(List.of(new Instruction("value", "value")));
+
     private final @NotNull List<Instruction> instructions;
 
     public FieldMapping(final @NotNull List<Instruction> instructions) {

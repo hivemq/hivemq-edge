@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -35,29 +34,29 @@ public class SouthboundMappingEntity {
     @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "fieldMapping")
-    private final @Nullable FieldMappingEntity fieldMapping;
+    @XmlElement(name = "fieldMapping", required = true)
+    private final @NotNull FieldMappingEntity fieldMapping;
 
-    @XmlElement(name = "schema", required = true)
-    private final @NotNull String schema;
+    @XmlElement(name = "fromNorthSchema", required = true)
+    private final @NotNull String fromNorthSchema;
 
     // no-arg constructor for JaxB
     public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
         fieldMapping = null;
-        schema = "";
+        fromNorthSchema = "";
     }
 
     public SouthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final @Nullable FieldMappingEntity fieldMapping,
-            final @NotNull String schema) {
+            final @NotNull FieldMappingEntity fieldMapping,
+            final @NotNull String fromNorthSchema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMapping = fieldMapping;
-        this.schema = schema;
+        this.fromNorthSchema = fromNorthSchema;
     }
 
     public @NotNull String getTagName() {
@@ -82,7 +81,7 @@ public class SouthboundMappingEntity {
         return new SouthboundMapping(this.getTagName(),
                 this.getTopicFilter(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
-                this.schema);
+                this.fromNorthSchema);
     }
 
     public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {

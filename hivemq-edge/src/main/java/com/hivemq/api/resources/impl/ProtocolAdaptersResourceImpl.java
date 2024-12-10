@@ -654,7 +654,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<SouthboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
                     .stream()
-                    .map(this::enrichModelWithSchema)
+                    .map(this::parseAndEnrichWithSchema)
                     .collect(Collectors.toList());
 
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
@@ -766,7 +766,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final Set<String> requiredTags = new HashSet<>();
             final List<SouthboundMapping> converted = southboundMappingListModel.getItems().stream().map(mapping -> {
                 requiredTags.add(mapping.getTagName());
-                return enrichModelWithSchema(mapping);
+                return parseAndEnrichWithSchema(mapping);
             }).collect(Collectors.toList());
             adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
@@ -788,7 +788,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
-    private @NotNull SouthboundMapping enrichModelWithSchema(final @NotNull SouthboundMappingModel model) {
+    private @NotNull SouthboundMapping parseAndEnrichWithSchema(final @NotNull SouthboundMappingModel model) {
         final TopicFilter topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
         if (topicFilter == null) {
             throw new IllegalStateException("Southbound mapping contained a topic filter '" +
