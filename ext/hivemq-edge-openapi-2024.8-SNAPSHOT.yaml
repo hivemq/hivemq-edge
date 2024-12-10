@@ -128,11 +128,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiBearerToken'
           description: Username & Password Credentials to Authenticate as.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationValidationError'
+          description: Error in request.
         "401":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/UnauthorizedError'
           description: The requested credentials could not be authenticated.
       summary: Authorize the presented user to obtain a secure token for use on the
         API.
@@ -181,6 +187,10 @@ paths:
         "200":
           description: The token was valid
         "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
           description: The token was invalid
       summary: Authorize the presented user to obtain a secure token for use on the
         API.
@@ -361,18 +371,9 @@ paths:
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporarily not available
       summary: Get all policies
       tags:
       - Data Hub - Behavior Policies
@@ -458,77 +459,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
-                policy-id-already-in-use:
-                  description: Example response when the policy uses an already existing
-                    id.
-                  summary: The given policy ID is already in use
-                  value:
-                    errors:
-                    - title: Policy id already used
-                      detail: The given policy id 'policy-id' is already in use.
-                policy-not-parsable:
-                  description: Example response when the submitted policy could not
-                    be parsed as JSON.
-                  summary: The submitted policy cannot be parsed.
-                  value:
-                    errors:
-                    - title: Policy not parsable
-                      detail: The submitted policy 'policy' can not be parsed.
-                policy-not-valid:
-                  description: "Example response when the policy is invalid, because\
-                    \ a field is missing."
-                  summary: The submitted policy is not valid
-                  value:
-                    errors:
-                    - title: Policy is not valid
-                      detail: Required body entity parameter is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/PolicyCreationFailed'
+          description: Policy creation failed
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlreadyExistsError'
+          description: Already exists
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal error
         "503":
           content:
             application/json:
-              examples:
-                referenced-incompatible-policy-functions:
-                  description: Example response when not all cluster nodes support
-                    the referenced script functions yet.
-                  summary: At least one referenced script function is not yet supported
-                    by all cluster nodes
-                  value:
-                    errors:
-                    - title: Incompatible policy
-                      detail: "The policy with id 'policy' could not be added because\
-                        \ its functions [fn:my-transform.js:1, fn:my-transform.js:2]\
-                        \ require at least HiveMQ version 4.23.0, but not all cluster\
-                        \ nodes have been updated to this version yet. Please try\
-                        \ again later."
-                temporarily-not-available:
-                  description: The endpoint is temporarily not available
-                  summary: Temporarily not available
-                  value:
-                    errors:
-                    - title: The endpoint is temporarily not available
-                      detail: "The endpoint is temporarily not available, please try\
-                        \ again later"
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Temporarily not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporarily unavailable
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage error
       summary: Create a new policy
       tags:
       - Data Hub - Behavior Policies
@@ -550,46 +507,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Policy not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Policy not found
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreconditionFailedError'
+          description: Precondition failed
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporarily not available
       summary: Delete a behavior policy
       tags:
       - Data Hub - Behavior Policies
@@ -656,31 +600,15 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Invalid query parameter
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Policy not found
       summary: Get a  policy
       tags:
       - Data Hub - Behavior Policies
@@ -773,88 +701,39 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
-                policy-not-parsable:
-                  description: The submitted policy cannot be parsed.
-                  summary: The submitted policy can not be parsed
-                  value:
-                    errors:
-                    - title: Policy not parsable
-                      detail: The submitted policy 'policy' can not be parsed.
-                policy-not-valid:
-                  description: "Example response when the policy is invalid, because\
-                    \ a field is missing."
-                  summary: The submitted policy is not valid
-                  value:
-                    errors:
-                    - title: Policy is not valid
-                      detail: Required body entity parameter is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/PolicyCreationFailed'
+          description: Policy creation failed
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Policy not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Referenced policy not found
-                      detail: The referenced policy with id 'policyId' was not found.
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/PolicyNotFoundError'
           description: Policy not found
         "412":
           content:
             application/json:
-              examples:
-                etag-not-matching:
-                  description: Precondition failed
-                  summary: Etag not matching
-                  value:
-                    errors:
-                    - title: Precondition Failed
-                      detail: Policy does not match the given etag '123456789'.
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal error
         "503":
           content:
             application/json:
-              examples:
-                referenced-incompatible-policy-functions:
-                  description: Example response when not all cluster nodes support
-                    the referenced script functions yet.
-                  summary: At least one referenced script function is not yet supported
-                    by all cluster nodes
-                  value:
-                    errors:
-                    - title: Incompatible policy
-                      detail: "The policy with id 'policy' could not be added because\
-                        \ its functions [fn:my-transform.js:1, fn:my-transform.js:2]\
-                        \ require at least HiveMQ version 4.23.0, but not all cluster\
-                        \ nodes have been updated to this version yet. Please try\
-                        \ again later."
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporarily unavailable
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage error
       summary: Update an existing policy
       tags:
       - Data Hub - Behavior Policies
@@ -900,73 +779,21 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
         "404":
           content:
             application/json:
-              examples:
-                client-disconnected:
-                  description: Example response when client is disconnected
-                  summary: "Target client is not connected at the moment, but a session\
-                    \ is present."
-                  value: |-
-                    {
-                      "errors": [
-                        {
-                          "title": "Client disconnected
-                          "detail": "The client 'client' is disconnected."
-                        }
-                      ]
-                    }
-                client-not-found:
-                  description: Example response when client identifier is unknown
-                    to the broker
-                  summary: "Target client is not known to the broker, because there\
-                    \ is no session present."
-                  value: |-
-                    {
-                      "errors": [
-                        {
-                          "title": "Client not found
-                          "detail": "The client '<clientId>' was not found."
-                        }
-                      ]
-                    }
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
-        "503":
+                $ref: '#/components/schemas/ClientDisconnectedError'
+          description: Client is disconnected
+        "500":
           content:
             application/json:
-              examples:
-                temporarily-not-available:
-                  description: The endpoint is temporarily not available
-                  summary: Temporarily not available
-                  value:
-                    errors:
-                    - title: The endpoint is temporarily not available
-                      detail: "The endpoint is temporarily not available, please try\
-                        \ again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Temporarily not available
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server error
       summary: Get the state of a client
       tags:
       - Data Hub - State
@@ -1233,21 +1060,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataPolicyList'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPolicyNotFoundError'
+          description: DataPolicy not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get all data policies
       tags:
       - Data Hub - Data Policies
@@ -1335,84 +1171,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
-                policy-id-already-in-use:
-                  description: Example response when the policy uses an already existing
-                    id.
-                  summary: The given policy identifier is already in use
-                  value:
-                    errors:
-                    - title: Policy id already used
-                      detail: The given policy id 'policy-id' is already in use.
-                policy-not-parsable:
-                  description: Example response when the submitted policy could not
-                    be parsed as JSON.
-                  summary: The submitted policy can not be parsed
-                  value:
-                    errors:
-                    - title: Policy not parsable
-                      detail: The submitted policy 'policy' can not be parsed.
-                policy-not-valid:
-                  description: "Example response when the policy is invalid, because\
-                    \ a field is missing."
-                  summary: The submitted policy is not valid
-                  value:
-                    errors:
-                    - title: Policy is not valid
-                      detail: Required body entity parameter is missing
-                referenced-schema-does-not-exist:
-                  description: Example response when a referenced schema was not found.
-                  summary: A schema that is referenced in the policy does not exist
-                  value:
-                    errors:
-                    - title: Referenced schema does not exist
-                      detail: The referenced schema with id 'schema-id' does not exist.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/DataPolicyCreationFailed'
+          description: DataPolicy creation failed
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
+          description: DataPolicy already present
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                referenced-incompatible-policy-functions:
-                  description: Example response when not all cluster nodes support
-                    the referenced script functions yet.
-                  summary: At least one referenced script function is not yet supported
-                    by all cluster nodes
-                  value:
-                    errors:
-                    - title: Incompatible policy
-                      detail: "The policy with id 'policy' could not be added because\
-                        \ its functions [fn:my-transform.js:1, fn:my-transform.js:2]\
-                        \ require at least HiveMQ version 4.23.0, but not all cluster\
-                        \ nodes have been updated to this version yet. Please try\
-                        \ again later."
-                temporarily-not-available:
-                  description: The endpoint is temporarily not available
-                  summary: Temporarily not available
-                  value:
-                    errors:
-                    - title: The endpoint is temporarily not available
-                      detail: "The endpoint is temporarily not available, please try\
-                        \ again later"
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
       summary: Create a new data policy
       tags:
       - Data Hub - Data Policies
@@ -1434,46 +1219,27 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/DataPolicyNotFoundError'
+          description: DataPolicy not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Delete a data policy
       tags:
       - Data Hub - Data Policies
@@ -1661,105 +1427,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
-                policy-not-parsable:
-                  description: Example response when the submitted policy could not
-                    be parsed as JSON.
-                  summary: The submitted policy can not be parsed
-                  value:
-                    errors:
-                    - title: Policy not parsable
-                      detail: The submitted policy 'policy' can not be parsed.
-                policy-not-valid:
-                  description: "Example response when the policy is invalid, because\
-                    \ a field is missing."
-                  summary: The submitted policy is not valid
-                  value:
-                    errors:
-                    - title: Policy is not valid
-                      detail: Required body entity parameter is missing
-                policy-topic-filter-not-matching:
-                  description: Example response when the given topic filter does not
-                    match the present one.
-                  summary: The policy topic filter does not match
-                  value:
-                    errors:
-                    - title: Topic filter does not match
-                      detail: The policy with id 'policyId' has a topic filter 'my/topic/filter'
-                        that does not match the topic filter of the current policy.
-                referenced-schema-does-not-exist:
-                  description: Example response when a referenced schema was not found.
-                  summary: A schema that is referenced in the policy does not exist
-                  value:
-                    errors:
-                    - title: Referenced schema does not exist
-                      detail: The referenced schema with id 'schema-id' does not exist.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/DataPolicyCreationFailed'
+          description: DataPolicy creation failed
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Policy not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Referenced policy not found
-                      detail: The referenced policy with id 'policyId' was not found.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Policy not found
-        "412":
+                $ref: '#/components/schemas/DataPolicyNotFoundError'
+          description: DataPolicy not found
+        "500":
           content:
             application/json:
-              examples:
-                etag-not-matching:
-                  description: Precondition failed
-                  summary: Etag not matching
-                  value:
-                    errors:
-                    - title: Precondition Failed
-                      detail: Policy does not match the given etag '123456789'.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Precondition failed
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                referenced-incompatible-policy-functions:
-                  description: Example response when not all cluster nodes support
-                    the referenced script functions yet.
-                  summary: At least one referenced script function is not yet supported
-                    by all cluster nodes
-                  value:
-                    errors:
-                    - title: Incompatible policy
-                      detail: "The policy with id 'policy' could not be added because\
-                        \ its functions [fn:my-transform.js:1, fn:my-transform.js:2]\
-                        \ require at least HiveMQ version 4.23.0, but not all cluster\
-                        \ nodes have been updated to this version yet. Please try\
-                        \ again later."
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
       summary: Update an existing data policy
       tags:
       - Data Hub - Data Policies
@@ -1850,20 +1544,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "404":
+        "500":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
       summary: Get all FSMs as a JSON Schema
       tags:
       - Data Hub - FSM
@@ -2037,20 +1723,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "404":
+        "500":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
       summary: Get all functions as a JSON Schema
       tags:
       - Data Hub - Functions
@@ -2192,18 +1870,9 @@ paths:
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get all schemas
       tags:
       - Data Hub - Schemas
@@ -2243,64 +1912,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                Schema-already-present:
-                  description: Example response when the schema is already present.
-                  summary: The given schema is already present as latest version
-                  value:
-                    errors:
-                    - title: Schema already present
-                      detail: The given schema is already present as the latest version
-                        for the schema id 'schemaId'.
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
-                schema-not-parsable:
-                  description: Example response when the submitted schema could not
-                    be parsed as JSON.
-                  summary: The submitted schema can not be parsed
-                  value:
-                    errors:
-                    - title: Schema not parsable
-                      detail: The submitted schema 'schema' can not be parsed.
-                schema-type-not-supported:
-                  description: Example response when the specified schema type is
-                    not supported.
-                  summary: The submitted schema type is not supported
-                  value:
-                    errors:
-                    - title: Schema type not supported
-                      detail: The submitted schema type 'schema-type' is not supported
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
-        "503":
+                $ref: '#/components/schemas/SchemaInvalidError'
+          description: Schema could not be validatetd
+        "409":
           content:
             application/json:
-              examples:
-                temporarily-not-available:
-                  description: The endpoint is temporarily not available
-                  summary: Temporarily not available
-                  value:
-                    errors:
-                    - title: The endpoint is temporarily not available
-                      detail: "The endpoint is temporarily not available, please try\
-                        \ again later"
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/SchemaAlreadyPresentError'
+          description: Schema already exists
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaEtagMismatch'
+          description: Mismatch between schema and etag
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
       summary: Create a new schema
       tags:
       - Data Hub - Schemas
@@ -2323,46 +1961,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/SchemaReferencedError'
+          description: Schema referenced
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/SchemaNotFoundError'
+          description: Schema not found
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaEtagMismatch'
+          description: Mismatch between schema and etag
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Delete all versions of the schema
       tags:
       - Data Hub - Schemas
@@ -2406,31 +2031,21 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: A url parameter is missing
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/SchemaNotFoundError'
+          description: Schema not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
       summary: Get a schema
       tags:
       - Data Hub - Schemas
@@ -2563,18 +2178,9 @@ paths:
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporary not available
       summary: Get all scripts
       tags:
       - Data Hub - Scripts
@@ -2614,40 +2220,39 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                input-cannot-be-parsed:
-                  description: Example response when input cannot be parsed.
-                  summary: Unable to parse JSON body
-                  value:
-                    errors:
-                    - title: Invalid input
-                      detail: Unable to parse JSON body
-                script-already-present:
-                  description: Example response when the script is already present.
-                  summary: The given script is identical to the latest version
-                  value:
-                    errors:
-                    - title: Script already present
-                      detail: The given script is identical to the latest version
-                        of the script with id 'scriptId'.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/ScriptInvalidError'
+          description: Script is invalid
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScriptAlreadyPresentError'
+          description: Script is already present
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScriptEtagMismatch'
+          description: Script doesn't match etag
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporary not available
+        "507":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
       summary: Create a new script
       tags:
       - Data Hub - Scripts
@@ -2669,45 +2274,33 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                script-referenced:
-                  description: Bad request
-                  summary: Script was referenced recently
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/ScriptReferencedError'
+          description: Script is referenced
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/ScriptNotFoundError'
+          description: Script not found
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScriptEtagMismatch'
+          description: Script doesn't match etag
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server error
         "503":
           content:
             application/json:
-              examples:
-                version-check-failed:
-                  description: Version check failed
-                  summary: Version check failed
-                  value:
-                    errors:
-                    - title: Endpoint not active yet
-                      detail: "Not all cluster nodes support this endpoint yet, please\
-                        \ try again later"
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not all cluster nodes at minimum version
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporary not available
       summary: Delete a script
       tags:
       - Data Hub - Scripts
@@ -2750,31 +2343,27 @@ paths:
         "400":
           content:
             application/json:
-              examples:
-                param-missing:
-                  description: Bad request
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                    - title: Required parameter missing
-                      detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Bad request
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
         "404":
           content:
             application/json:
-              examples:
-                not-found:
-                  description: Resource not found
-                  summary: Not found
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Resource not found
+                $ref: '#/components/schemas/ScriptNotFoundError'
+          description: Script not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server error
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Temporary not available
       summary: Get a script
       tags:
       - Data Hub - Scripts
@@ -3100,6 +2689,12 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeFailedSchemaValidationError'
+          description: Bridge is invalid
       summary: Add a new Bridge
       tags:
       - Bridges
@@ -3140,6 +2735,18 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Query parameters invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeNotFoundError'
+          description: Bridge not found
       summary: Remove a Bridge
       tags:
       - Bridges
@@ -3203,6 +2810,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Bridge'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Query parameters invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeNotFoundError'
+          description: Bridge not found
       summary: Get a bridge by ID
       tags:
       - Bridges
@@ -3224,6 +2843,18 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Query parameters invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeNotFoundError'
+          description: Bridge not found
       summary: Update a Bridge
       tags:
       - Bridges
@@ -3253,6 +2884,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Query parameters invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeNotFoundError'
+          description: Bridge not found
       summary: Get the up to date status of a bridge
       tags:
       - Bridges
@@ -3288,6 +2931,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatusTransitionResult'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidQueryParameterError'
+          description: Query parameters invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeNotFoundError'
+          description: Bridge not found
       summary: Transition the runtime status of a bridge
       tags:
       - Bridges
@@ -3351,6 +3006,24 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedSchemaValidationError'
+          description: Adapter failed validation
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterTypeNotFoundError'
+          description: Adapter type not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Add a new Adapter and all related parts like e.g. tags
       tags:
       - Protocol Adapters
@@ -3405,6 +3078,12 @@ paths:
       responses:
         "200":
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Delete an adapter
       tags:
       - Protocol Adapters
@@ -3447,6 +3126,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Adapter'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Obtain the details for a configured adapter for the specified type
       tags:
       - Protocol Adapters
@@ -3468,6 +3153,24 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedSchemaValidationError'
+          description: Adapter is invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update an adapter
       tags:
       - Protocol Adapters
@@ -3525,7 +3228,23 @@ paths:
                 $ref: '#/components/schemas/ValuesTree'
           description: Success
         "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedValidationError'
           description: Protocol adapter does not support discovery
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
@@ -3547,6 +3266,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/NorthboundMappingList'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Get the mappings for northbound messages.
       tags:
       - Protocol Adapters
@@ -3568,12 +3293,24 @@ paths:
       responses:
         "200":
           description: Success
-        "403":
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
+                $ref: '#/components/schemas/BadRequestError'
+          description: Missing tags
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update the from mappings of an adapter.
       tags:
       - Protocol Adapters
@@ -3595,6 +3332,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/SouthboundMappingList'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Get the southbound mappings.
       tags:
       - Protocol Adapters
@@ -3616,12 +3359,24 @@ paths:
       responses:
         "200":
           description: Success
-        "403":
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
+                $ref: '#/components/schemas/BadRequestError'
+          description: Missing tags
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update the to southbound mappings of an adapter.
       tags:
       - Protocol Adapters
@@ -3651,6 +3406,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedSchemaValidationError'
+          description: Adapter is invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Get the up to date status of an adapter
       tags:
       - Protocol Adapters
@@ -3685,6 +3452,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatusTransitionResult'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedSchemaValidationError'
+          description: Adapter is invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Transition the runtime status of an adapter
       tags:
       - Protocol Adapters
@@ -3718,6 +3497,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
       summary: Get the domain tags for the device connected through this adapter.
       tags:
       - Protocol Adapters
@@ -3741,23 +3526,24 @@ paths:
       responses:
         "200":
           description: Success
-        "403":
+        "404":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case an tag is already present
-                    for this tagId.
-                  summary: An example response in case an tag is already present for
-                    this tagId.
-                  value:
-                    errors:
-                    - title: The resource already exists
-                      detail: The tag 'tag' cannot be created since another item already
-                        exists with the same id.
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Already Present
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlreadyExistsError'
+          description: Tag already exists
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Add a new domain tag to the specified adapter
       tags:
       - Protocol Adapters
@@ -3779,22 +3565,18 @@ paths:
       responses:
         "200":
           description: Success
-        "403":
+        "404":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no tag is present for this
-                    tagId.
-                  summary: An example response in case no tag is present for this
-                    tagId.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Tag with id 'tag1' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update the domain tag of an adapter.
       tags:
       - Protocol Adapters
@@ -3819,6 +3601,18 @@ paths:
       responses:
         "200":
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainTagNotFoundError'
+          description: Tag not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Delete an domain tag
       tags:
       - Protocol Adapters
@@ -3850,19 +3644,21 @@ paths:
         "403":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no tag is present for this
-                    tagId.
-                  summary: An example response in case no tag is present for this
-                    tagId.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: Tag with id 'tag1' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
+                $ref: '#/components/schemas/AdapterNotFound403Error'
+          description: Adapter not found
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainTagNotFoundError'
+          description: Tag not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update the domain tag of an adapter.
       tags:
       - Protocol Adapters
@@ -3887,6 +3683,18 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterFailedSchemaValidationError'
+          description: Adapter is invalid
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterTypeNotFoundError'
+          description: Adapter type not found
       summary: Add a new Adapter
       tags:
       - Protocol Adapters
@@ -3959,6 +3767,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/TagSchema'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterTypeNotFoundError'
+          description: Adapter type not found
       summary: Obtain the JSON schema for a tag for a specific protocol adapter.
       tags:
       - Protocol Adapters
@@ -4019,6 +3833,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/DomainTag'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainTagNotFoundError'
+          description: Tag not found
       summary: Get the domain tag with the given name in this Edge instance
       tags:
       - Protocol Adapters
@@ -4077,6 +3897,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdaptersList'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterTypeNotFoundError'
+          description: Adapter type not found
       summary: Obtain a list of configured adapters for the specified type
       tags:
       - Protocol Adapters
@@ -4120,6 +3946,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdapterNotFoundError'
+          description: Adapter not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Get a json schema that explains the json schema that is used to write
         to a PLC for the given tag name.
       tags:
@@ -4143,6 +3981,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoSamplesFoundError'
+          description: No samples found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Obtain a JsonSchema based in the stored samples for a given topic.
       tags:
       - Payload Sampling
@@ -4225,20 +4075,15 @@ paths:
         "403":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case a topic filter is already
-                    present for this filter.
-                  summary: An example response in case a topic filter is already present
-                    for this filter.
-                  value:
-                    errors:
-                    - title: The resource already exists
-                      detail: The topic filter 'filter' cannot be created since another
-                        item already exists with the same name.
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/AlreadyExistsError'
           description: Already Present
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Add a new topic filter
       tags:
       - Topic Filters
@@ -4253,6 +4098,12 @@ paths:
       responses:
         "200":
           description: Success
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update all topic filters.
       tags:
       - Topic Filters
@@ -4271,6 +4122,18 @@ paths:
       responses:
         "200":
           description: Success
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlreadyExistsError'
+          description: Already Present
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicFilterNotFoundError'
+          description: Topic filter not found
       summary: Delete an topic filter
       tags:
       - Topic Filters
@@ -4293,22 +4156,18 @@ paths:
       responses:
         "200":
           description: Success
-        "403":
+        "400":
           content:
             application/json:
-              examples:
-                already present example:
-                  description: An example response in case no topic filter is present
-                    for this filter.
-                  summary: An example response in case no topic filter is present
-                    for this filter.
-                  value:
-                    errors:
-                    - title: Resource not found
-                      detail: topic filter with id 'filter1' not found
               schema:
-                $ref: '#/components/schemas/Errors'
-          description: Not Found
+                $ref: '#/components/schemas/BadRequestError'
+          description: Topic filter failed validation
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server Error
       summary: Update a topic filter.
       tags:
       - Topic Filters
@@ -4351,6 +4210,12 @@ paths:
       responses:
         "200":
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: isa95 config failed validation
       summary: Set isa95 config
       tags:
       - UNS
@@ -4432,6 +4297,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataPoint'
           description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
       summary: Obtain the latest sample for the metric requested
       tags:
       - Metrics
@@ -4478,6 +4349,125 @@ components:
           description: The tags defined for this adapter
           items:
             $ref: '#/components/schemas/DomainTag'
+    AdapterFailedSchemaValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterFailedValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterNotFound403Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterOperationNotSupportedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterTypeNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    AdapterTypeReadOnlyError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     AdaptersList:
       type: object
       properties:
@@ -4488,12 +4478,63 @@ components:
             $ref: '#/components/schemas/Adapter'
       required:
       - items
+    AlreadyExistsError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     ApiBearerToken:
       type: object
       properties:
         token:
           type: string
           description: The token associated a set of authenticated credentials
+    AuthenticationValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    BadRequestError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     BehaviorPolicy:
       type: object
       description: A policy which is used to validate and execute certain actions
@@ -4616,6 +4657,23 @@ components:
       required:
       - fromState
       - toState
+    BodyParameterMissingError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     Bridge:
       type: object
       properties:
@@ -4733,6 +4791,23 @@ components:
       required:
       - key
       - value
+    BridgeFailedSchemaValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     BridgeList:
       type: object
       properties:
@@ -4743,6 +4818,23 @@ components:
             $ref: '#/components/schemas/Bridge'
       required:
       - items
+    BridgeNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     BridgeSubscription:
       type: object
       description: remoteSubscriptions associated with the bridge
@@ -4806,6 +4898,40 @@ components:
             $ref: '#/components/schemas/Capability'
       required:
       - items
+    ClientDisconnectedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    ClientNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     DataPoint:
       type: object
       properties:
@@ -4861,6 +4987,57 @@ components:
             \ operations in the pipeline are executed in-order."
           items:
             $ref: '#/components/schemas/PolicyOperation'
+    DataPolicyAlreadyPresentError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    DataPolicyCreationFailed:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    DataPolicyInvalidError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     DataPolicyList:
       type: object
       description: A listing of data policies.
@@ -4881,6 +5058,23 @@ components:
           description: The topic filter for which the policy is matched.
       required:
       - topicFilter
+    DataPolicyNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     DataPolicyValidation:
       type: object
       description: "The section of the policy that defines how incoming MQTT messages\
@@ -4933,6 +5127,23 @@ components:
             $ref: '#/components/schemas/DomainTag'
       required:
       - items
+    DomainTagNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -4945,6 +5156,18 @@ components:
             description: Map of properties that are returned by this endpoint
           description: Map of properties that are returned by this endpoint
     Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed contextual description of this error
+        note:
+          type: string
+          description: Additional information
+        trace:
+          type: string
+          description: Trace infomration for the error
+    ErrorWithParameter:
       type: object
       properties:
         detail:
@@ -5222,6 +5445,57 @@ components:
       required:
       - destination
       - source
+    InsufficientStorageError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    InternalServerError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    InvalidQueryParameterError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5442,6 +5716,23 @@ components:
       required:
       - name
       - value
+    NoSamplesFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     NorthboundMapping:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5592,6 +5883,40 @@ components:
             $ref: '#/components/schemas/PayloadSample'
       required:
       - items
+    PolicyCreationFailed:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    PolicyNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations
@@ -5611,6 +5936,23 @@ components:
       - arguments
       - functionId
       - id
+    PreconditionFailedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     ProtocolAdapter:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5743,6 +6085,74 @@ components:
       - id
       - schemaDefinition
       - type
+    SchemaAlreadyPresentError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    SchemaEtagMismatch:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    SchemaFailedValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    SchemaInvalidError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     SchemaList:
       type: object
       description: A listing of schemas.
@@ -5754,6 +6164,23 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Schema'
+    SchemaNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     SchemaReference:
       type: object
       description: A schema reference is a unique identifier for a schema.
@@ -5768,6 +6195,23 @@ components:
       required:
       - schemaId
       - version
+    SchemaReferencedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     Script:
       type: object
       properties:
@@ -5798,6 +6242,57 @@ components:
       - functionType
       - id
       - source
+    ScriptAlreadyPresentError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    ScriptEtagMismatch:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    ScriptInvalidError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     ScriptList:
       type: object
       description: A listing of scripts.
@@ -5809,6 +6304,40 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
+    ScriptNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    ScriptReferencedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     SouthboundMapping:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5921,6 +6450,23 @@ components:
         protocolId:
           type: string
           description: The id assigned to the protocol adapter type
+    TemporaryNotAvailableError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
@@ -6000,6 +6546,23 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
+    TopicFilterNotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     TypeIdentifier:
       type: object
       description: The unique id of the event object
@@ -6021,6 +6584,40 @@ components:
           - USER
       required:
       - type
+    UnauthorizedError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    UrlParameterMissingError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     UsernamePasswordCredentials:
       type: object
       properties:
@@ -6030,6 +6627,23 @@ components:
         userName:
           type: string
           description: The userName associated with the user
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorWithParameter'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
     ValuesTree:
       type: object
       properties:
