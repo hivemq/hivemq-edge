@@ -28,14 +28,6 @@ export const northboundMappingListSchema: JSONSchema7 = {
           description: 'Include the unix timestamp of the sample time in the resulting MQTT message',
           default: true,
         },
-        messageHandlingOptions: {
-          type: 'string',
-          enum: ['MQTTMessagePerTag', 'MQTTMessagePerSubscription'],
-          title: 'Message Handling Options',
-          description:
-            'This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample',
-          default: 'MQTTMessagePerTag',
-        },
         messageExpiryInterval: {
           type: 'number',
           description: `The message expiry interval.`,

@@ -32,7 +32,6 @@ describe('useNorthboundMappingManager', () => {
           includeTimestamp: true,
           maxQoS: MOCK_MAX_QOS,
           messageExpiryInterval: -1000,
-          messageHandlingOptions: 'MQTTMessagePerTag',
           tagName: 'my/tag',
           topic: 'my/topic',
         }),

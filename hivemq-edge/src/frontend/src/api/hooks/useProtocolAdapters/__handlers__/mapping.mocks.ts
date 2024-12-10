@@ -21,7 +21,6 @@ export const MOCK_NORTHBOUND_MAPPING: NorthboundMapping = {
   includeTimestamp: true,
   maxQoS: MOCK_MAX_QOS,
   messageExpiryInterval: -1000,
-  messageHandlingOptions: NorthboundMapping.messageHandlingOptions.MQTTMESSAGE_PER_TAG,
 }
 
 export const mappingHandlers = [
