@@ -1,6 +1,5 @@
 import TopicFilterManager from '@/modules/TopicFilters/TopicFilterManager.tsx'
-import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
-import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
+import { MOCK_TOPIC_FILTER, MOCK_TOPIC_FILTER_SCHEMA_INVALID } from '@/api/hooks/useTopicFilters/__handlers__'
 
 describe('TopicFilterManager', () => {
   beforeEach(() => {
@@ -11,18 +10,10 @@ describe('TopicFilterManager', () => {
         {
           topicFilter: 'another/filter',
           description: 'This is a topic filter',
+          schema: MOCK_TOPIC_FILTER_SCHEMA_INVALID,
         },
       ],
     }).as('getTopicFilters')
-
-    cy.intercept('/api/v1/management/sampling/schema/**', (req) => {
-      if (req.url.includes(btoa('another/filter'))) req.reply({ statusCode: 400 })
-      else req.reply(GENERATE_DATA_MODELS(true, req.query.topics as string))
-    })
-
-    cy.intercept('/api/v1/management/sampling/topic/**', (req) => {
-      req.reply({ items: [] })
-    })
   })
 
   // TODO[NVL] There is a problem with re-rendering in Cypress. Redesign the component
@@ -45,7 +36,7 @@ describe('TopicFilterManager', () => {
     cy.get('@body').find('td').eq(0).should('have.text', 'a / topic / + / filter')
     cy.get('@body').find('td').eq(1).should('have.text', 'This is a topic filter')
     cy.get('@body').find('td').eq(2).children().should('have.attr', 'data-status', 'success')
-    cy.get('@body').find('td').eq(6).children().should('have.attr', 'data-status', 'success')
+    cy.get('@body').find('td').eq(6).children().should('have.attr', 'data-status', 'error')
 
     cy.get('@body').find('td').eq(3).find('button').as('topicActions')
 
