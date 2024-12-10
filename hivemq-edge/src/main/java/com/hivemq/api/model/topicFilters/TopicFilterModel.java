@@ -17,10 +17,10 @@ package com.hivemq.api.model.topicFilters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.topicfilter.TopicFilter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -38,7 +38,7 @@ public class TopicFilterModel {
     private final @NotNull String description;
 
     @JsonProperty("schema")
-    @Schema(description = "The optional json schema for this topic filter in the data uri format.")
+    @Schema(description = "The optional json schema for this topic filter in the data uri format.", format = "data-url")
     private final @Nullable String schema;
 
 
@@ -66,20 +66,24 @@ public class TopicFilterModel {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         final TopicFilterModel that = (TopicFilterModel) o;
         return topicFilter.equals(that.topicFilter) &&
                 description.equals(that.description) &&
-                schema.equals(that.schema);
+                Objects.equals(schema, that.schema);
     }
 
     @Override
     public int hashCode() {
         int result = topicFilter.hashCode();
         result = 31 * result + description.hashCode();
-        result = 31 * result + schema.hashCode();
+        result = 31 * result + Objects.hashCode(schema);
         return result;
     }
 
@@ -99,6 +103,8 @@ public class TopicFilterModel {
     }
 
     public static @NotNull TopicFilterModel fromTopicFilter(final @NotNull TopicFilter topicFilter) {
-        return new TopicFilterModel(topicFilter.getTopicFilter(), topicFilter.getDescription(), topicFilter.getSchema());
+        return new TopicFilterModel(topicFilter.getTopicFilter(),
+                topicFilter.getDescription(),
+                topicFilter.getSchema() != null ? topicFilter.getSchema().toString() : null);
     }
 }
