@@ -17,9 +17,9 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -38,20 +38,26 @@ public class SouthboundMappingEntity {
     @XmlElement(name = "fieldMapping")
     private final @Nullable FieldMappingEntity fieldMapping;
 
+    @XmlElement(name = "schema", required = true)
+    private final @NotNull String schema;
+
     // no-arg constructor for JaxB
     public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
         fieldMapping = null;
+        schema = "";
     }
 
     public SouthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final @Nullable FieldMappingEntity fieldMapping) {
+            final @Nullable FieldMappingEntity fieldMapping,
+            final @NotNull String schema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMapping = fieldMapping;
+        this.schema = schema;
     }
 
     public @NotNull String getTagName() {
@@ -73,18 +79,17 @@ public class SouthboundMappingEntity {
 
 
     public @NotNull SouthboundMapping to(final @NotNull ObjectMapper mapper) {
-        return new SouthboundMapping(
-                this.getTagName(),
+        return new SouthboundMapping(this.getTagName(),
                 this.getTopicFilter(),
-                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
+                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
+                this.schema);
     }
 
     public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {
-        return new SouthboundMappingEntity(
-                southboundMapping.getTagName(),
+        return new SouthboundMappingEntity(southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping())
-        );
+                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                southboundMapping.getSchema());
     }
 
 }

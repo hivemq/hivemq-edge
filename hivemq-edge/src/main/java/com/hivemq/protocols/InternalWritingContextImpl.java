@@ -34,6 +34,11 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     }
 
     @Override
+    public @NotNull String getSchema() {
+        return southboundMapping.getSchema();
+    }
+
+    @Override
     public @NotNull String getTagName() {
         return southboundMapping.getTagName();
     }
