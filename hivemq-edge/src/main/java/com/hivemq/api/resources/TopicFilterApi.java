@@ -67,11 +67,11 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = InternalServerError.class))),
+                                                       schema = @Schema(implementation = Errors.class))),
                        @ApiResponse(responseCode = "403",
                                     description = "Already Present",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = AlreadyExistsError.class)))}
+                                                       schema = @Schema(implementation = Errors.class)))}
 
     )
     @NotNull
@@ -111,11 +111,11 @@ public interface TopicFilterApi {
                             @ApiResponse(responseCode = "404",
                                          description = "Topic filter not found",
                                          content = @Content(mediaType = APPLICATION_JSON,
-                                                            schema = @Schema(implementation = TopicFilterNotFoundError.class))),
+                                                            schema = @Schema(implementation = Errors.class))),
                             @ApiResponse(responseCode = "403",
                                          description = "Already Present",
                                          content = @Content(mediaType = APPLICATION_JSON,
-                                                            schema = @Schema(implementation = AlreadyExistsError.class)))
+                                                            schema = @Schema(implementation = Errors.class)))
                })
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -138,11 +138,11 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "400",
                                     description = "Topic filter failed validation",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = BadRequestError.class))),
+                                                       schema = @Schema(implementation = Errors.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = InternalServerError.class)))
+                                                       schema = @Schema(implementation = Errors.class)))
                })
     @NotNull
     Response updateTopicFilter(
@@ -164,7 +164,7 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = InternalServerError.class)))
+                                                       schema = @Schema(implementation = Errors.class)))
                })
     @NotNull
     Response updateTopicFilters(

@@ -15,8 +15,6 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.errors.authentication.AuthenticationValidationError;
-import com.hivemq.api.errors.authentication.UnauthorizedError;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
@@ -69,11 +67,11 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "400",
                                     description = "Error in request.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = AuthenticationValidationError.class))),
+                                                       schema = @Schema(implementation = Errors.class))),
                        @ApiResponse(responseCode = "401",
                                     description = "The requested credentials could not be authenticated.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = UnauthorizedError.class)))})
+                                                       schema = @Schema(implementation = Errors.class)))})
     Response authenticate(final @NotNull UsernamePasswordCredentials credentials);
 
 
@@ -89,7 +87,7 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "401",
                                     description = "The token was invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                            schema = @Schema(implementation = UnauthorizedError.class)))})
+                                            schema = @Schema(implementation = Errors.class)))})
     Response validate(final @NotNull ApiBearerToken token);
 
     @POST

@@ -15,10 +15,9 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.errors.ValidationError;
 import com.hivemq.api.model.uns.ISA95ApiBean;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.error.Errors;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -27,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -77,7 +77,7 @@ public interface UnsApi {
                        @ApiResponse(responseCode = "400",
                                     description = "isa95 config failed validation",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ValidationError.class))),
+                                                       schema = @Schema(implementation = Errors.class))),
                })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response setIsa95(@Parameter(name = "isa95",
