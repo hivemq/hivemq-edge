@@ -5996,6 +5996,7 @@ components:
           description: The name for this topic filter.
         schema:
           type: string
+          format: data-url
           description: The optional json schema for this topic filter in the data
             uri format.
         topicFilter:
