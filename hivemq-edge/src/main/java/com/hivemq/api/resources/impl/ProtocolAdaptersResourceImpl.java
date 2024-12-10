@@ -88,6 +88,7 @@ import javax.ws.rs.core.Response;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -679,7 +680,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
-
     @Override
     public Response getNorthboundMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
@@ -790,10 +790,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     private @NotNull SouthboundMapping enrichModelWithSchema(final @NotNull SouthboundMappingModel model) {
         final TopicFilter topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
-        if(topicFilter == null){
-            throw new IllegalStateException("Southbound mapping contained a topic filter '" + model.getTopicFilter() + "', which is unknown to Edge. Southbound mapping can not be created.");
+        if (topicFilter == null) {
+            throw new IllegalStateException("Southbound mapping contained a topic filter '" +
+                    model.getTopicFilter() +
+                    "', which is unknown to Edge. Southbound mapping can not be created.");
         }
 
-        return model.toToEdgeMapping(topicFilter.getSchema());
+        final DataUrl schemaAsDataUrl = topicFilter.getSchema();
+        if (schemaAsDataUrl == null) {
+            throw new IllegalStateException("Southbound mapping contained a topic filter '" +
+                    model.getTopicFilter() +
+                    "', which has no schema attached. Southbound mapping can not be created.");
+        }
+
+        final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()));
+        return model.toToEdgeMapping(schema);
     }
 }
