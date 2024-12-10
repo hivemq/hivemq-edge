@@ -64,6 +64,8 @@ import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.persistence.topicfilter.TopicFilter;
+import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -106,6 +108,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterConfigConverter configConverter;
+    private final @NotNull TopicFilterPersistence topicFilterPersistence;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
@@ -118,7 +121,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull VersionProvider versionProvider,
-            final @NotNull ProtocolAdapterConfigConverter configConverter) {
+            final @NotNull ProtocolAdapterConfigConverter configConverter,
+            final @NotNull TopicFilterPersistence topicFilterPersistence) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
@@ -126,6 +130,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         this.versionProvider = versionProvider;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.configConverter = configConverter;
+        this.topicFilterPersistence = topicFilterPersistence;
     }
 
     @Override
@@ -645,9 +650,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     .map(NorthboundMappingModel::to)
                     .collect(Collectors.toList());
 
+
             final List<SouthboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
                     .stream()
-                    .map(SouthboundMappingModel::toToEdgeMapping)
+                    .map(this::enrichModelWithSchema)
                     .collect(Collectors.toList());
 
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
@@ -671,6 +677,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         return Response.ok().build();
     }
+
+
 
     @Override
     public Response getNorthboundMappingsForAdapter(final @NotNull String adapterId) {
@@ -758,7 +766,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final Set<String> requiredTags = new HashSet<>();
             final List<SouthboundMapping> converted = southboundMappingListModel.getItems().stream().map(mapping -> {
                 requiredTags.add(mapping.getTagName());
-                return mapping.toToEdgeMapping();
+                return enrichModelWithSchema(mapping);
             }).collect(Collectors.toList());
             adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
@@ -777,5 +785,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return Response.status(500).build();
             }
         }).orElseGet(() -> ApiErrorUtils.notFound("Adapter not found"));
+    }
+
+
+    private @NotNull SouthboundMapping enrichModelWithSchema(final @NotNull SouthboundMappingModel model) {
+        final TopicFilter topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
+        if(topicFilter == null){
+            throw new IllegalStateException("Southbound mapping contained a topic filter '" + model.getTopicFilter() + "', which is unknown to Edge. Southbound mapping can not be created.");
+        }
+
+        return model.toToEdgeMapping(topicFilter.getSchema());
     }
 }

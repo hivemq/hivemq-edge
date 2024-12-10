@@ -61,10 +61,11 @@ public class SouthboundMappingModel {
         return fieldMapping;
     }
 
-    public @NotNull SouthboundMapping toToEdgeMapping() {
+    public @NotNull SouthboundMapping toToEdgeMapping(final String schema) {
         return new SouthboundMapping(this.tagName,
                 this.topicFilter,
-                this.fieldMapping != null ? FieldMapping.fromModel(this.fieldMapping) : null);
+                this.fieldMapping != null ? FieldMapping.fromModel(this.fieldMapping) : null,
+                schema);
     }
 
     public static SouthboundMappingModel from(final @NotNull SouthboundMapping southboundMapping) {
