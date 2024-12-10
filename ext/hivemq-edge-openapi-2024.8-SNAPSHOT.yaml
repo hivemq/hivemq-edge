@@ -5310,6 +5310,8 @@ components:
           type: integer
           format: int64
           description: The message expiry interval.
+          maximum: 9007199254740991
+          minimum: 0
         messageHandlingOptions:
           type: string
           description: How collected tags should or shouldnÖT be aggregated.

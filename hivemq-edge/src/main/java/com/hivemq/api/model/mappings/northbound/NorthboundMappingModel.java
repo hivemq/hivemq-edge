@@ -62,7 +62,9 @@ public class NorthboundMappingModel {
     private final @NotNull QoSModel maxQoS;
 
     @JsonProperty(value = "messageExpiryInterval", required = true)
-    @Schema(description = "The message expiry interval.")
+    @Schema(description = "The message expiry interval.",
+            minimum = "0",
+            maximum = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER)
     private final long messageExpiryInterval;
 
     @JsonCreator
