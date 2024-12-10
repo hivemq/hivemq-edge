@@ -28,6 +28,17 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.adapters.AdapterConfigModel;
 import com.hivemq.api.format.DataUrl;
+import com.hivemq.api.errors.AlreadyExistsError;
+import com.hivemq.api.errors.BadRequestError;
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.adapters.AdapterFailedSchemaValidationError;
+import com.hivemq.api.errors.adapters.AdapterFailedValidationError;
+import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
+import com.hivemq.api.errors.adapters.AdapterNotFoundError;
+import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
+import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
+import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
+import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -57,8 +68,6 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
-import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorType;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
@@ -104,14 +113,6 @@ import java.util.stream.Collectors;
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
-
-    public static final @NotNull ErrorType ERROR_TYPE_ADAPTER_VALIDATION = new ErrorType(null, "Adapter failed validation", "The provided adapter was invalid");
-    public static final @NotNull ErrorType ERROR_TYPE_ADAPTER_TYPE_NOT_FOUND = new ErrorType(null, "Adapter type not found", "No adapter type found with the provided id");
-    public static final @NotNull ErrorType ERROR_TYPE_ADAPTER_NOT_WRITING = new ErrorType(null, "Adapter type doesn't support writing", "");
-    public static final @NotNull ErrorType ERROR_TYPE_ADAPTER_NOT_SUPPORTED = new ErrorType(null, "Adapter type doesn't support the operation", "");
-    public static final @NotNull ErrorType ERROR_TYPE_ADAPTER_NOT_FOUND = new ErrorType(null, "Adapter not found", "No adapter found with the provided id");
-    public static final @NotNull ErrorType ERROR_TYPE_TAG_NOT_FOUND = new ErrorType(null, "Tag not found", "No tag found with the provided id");
-    public static final @NotNull String INTERNAL_ERROR_PLEASE_CHECK_LOGS = "Internal error, please check logs.";
 
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
@@ -189,7 +190,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_TYPE_NOT_FOUND, String.format("Adapter not found '%s'", adapterType));
+            return ErrorResponseUtil.errorResponse(new AdapterTypeNotFoundError(String.format("Adapter not found '%s'", adapterType)));
         }
         final List<Adapter> adapters = protocolAdapterManager.getProtocolAdapters()
                 .values()
@@ -205,7 +206,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
         return Response.ok(convertToAdapter(instance.get())).build();
     }
@@ -233,13 +234,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
 
         final ProtocolAdapterWrapper adapterInstance = instance.get();
         if (!adapterInstance.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION,
-                    List.of(new Error("Adapter does not support discovery", null, null, null)));
+            return ErrorResponseUtil.errorResponse(new AdapterFailedValidationError("Adapter does not support discovery"));
         }
         final ProtocolAdapterDiscoveryOutputImpl output = new ProtocolAdapterDiscoveryOutputImpl();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -262,14 +262,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } catch (final ExecutionException e) {
             final Throwable cause = e.getCause();
             log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
-            return ErrorResponseUtil.genericError("Exception during discovery.");
+            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during discovery."));
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
-            return ErrorResponseUtil.genericError("Exception during discovery.");
+            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during discovery."));
         } catch (final Exception e) {
             log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
-            return ErrorResponseUtil.genericError("Exception during discovery.");
+            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during discovery."));
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -283,17 +283,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_TYPE_NOT_FOUND, String.format("Adapter not found '%s'", adapterType));
+            return ErrorResponseUtil.errorResponse(new AdapterTypeNotFoundError(String.format("Adapter not found '%s'", adapterType)));
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         validateAdapterSchema(errorMessages, adapter);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
             final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
@@ -304,7 +304,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
                         "Unknown field on adapter configuration");
             }
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getId());
@@ -316,12 +316,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         validateAdapterSchema(errorMessages, adapter);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
@@ -332,7 +332,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } catch (final Exception e) {
             log.error("Exception during update of adapter '{}'.", adapterId);
             log.debug("Original Exception:", e);
-            return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+            return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
         return Response.ok().build();
     }
@@ -341,7 +341,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response deleteAdapter(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Deleting adapter \"{}\".", adapterId);
@@ -359,10 +359,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
         ApiErrorUtils.validateRequiredEntity(errorMessages, "command", command);
         if (protocolAdapterManager.getAdapterById(adapterId).isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         } else {
             switch (command.getCommand()) {
                 case START:
@@ -388,10 +388,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         if (protocolAdapterManager.getAdapterById(adapterId).isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
         return Response.ok(getStatusInternal(adapterId)).build();
     }
@@ -450,7 +450,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
                 return Response.ok(new DomainTagModelList(domainTagModels)).build();
             }
-        }).orElse(ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId)));
+        }).orElse(ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId))));
     }
 
     @Override
@@ -463,15 +463,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return Response.ok().build();
             case ALREADY_EXISTS:
                 final @NotNull String tagName = domainTag.getName();
-                return ErrorResponseUtil.alreadyExists("The tag '" +
+                return ErrorResponseUtil.errorResponse(new AlreadyExistsError("The tag '" +
                         tagName +
-                        "' cannot be created since another item already exists with the same id.");
+                        "' cannot be created since another item already exists with the same id."));
             case ADAPTER_MISSING:
                 log.warn("Tags could not be added for adapter '{}' because the adapter was not found.", adapterId);
-                return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+                return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
             default:
                 log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
 
@@ -486,10 +486,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
-                return ErrorResponseUtil.notFound(ERROR_TYPE_TAG_NOT_FOUND, decodedTagName);
+                return ErrorResponseUtil.errorResponse(new DomainTagNotFoundError(decodedTagName));
             default:
                 log.error("Unhandled DELETE-status: {}", domainTagDeleteResult.getDomainTagDeleteStatus());
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
 
@@ -504,11 +504,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ADAPTER_NOT_FOUND:
-                return ErrorResponseUtil.badRequest("Adapter not found");
+                return ErrorResponseUtil.errorResponse(new AdapterNotFound403Error("Adapter not found"));
             case INTERNAL_ERROR:
             default:
                 log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
 
@@ -525,17 +525,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ADAPTER_NOT_FOUND:
-                return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+                return ErrorResponseUtil.errorResponse(new AdapterNotFoundError("Adapter not found"));
             case ALREADY_USED_BY_ANOTHER_ADAPTER:
                 //noinspection DataFlowIssue cant be null here.
                 final @NotNull String tagName = domainTagUpdateResult.getErrorMessage();
-                return ErrorResponseUtil.alreadyExists("The tag '" +
+                return ErrorResponseUtil.errorResponse(new DomainTagNotFoundError("The tag '" +
                         tagName +
-                        "' cannot be created since another item already exists with the same id.");
+                        "' cannot be created since another item already exists with the same id."));
             case INTERNAL_ERROR:
             default:
                 log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
 
@@ -556,7 +556,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         return protocolAdapterManager.getDomainTagByName(decodedTagName)
                 .map(tag -> Response.ok(DomainTagModel.fromDomainTag(tag)).build())
-                .orElse(ErrorResponseUtil.notFound(ERROR_TYPE_TAG_NOT_FOUND, decodedTagName));
+                .orElse(ErrorResponseUtil.errorResponse(new DomainTagNotFoundError(decodedTagName)));
     }
 
     @Override
@@ -569,7 +569,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     log.warn(
                             "Json Schema for tags for protocols of type '{}' could not be generated because the protocol id is unknown ton this edge instance.",
                             protocolId);
-                    return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_TYPE_NOT_FOUND, String.format("Adapter not found '%s'", protocolId));
+                    return ErrorResponseUtil.errorResponse(new AdapterTypeNotFoundError(String.format("Adapter not found '%s'", protocolId)));
                 });
     }
 
@@ -581,7 +581,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getAdapterById(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
             log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId));
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId)));
         }
 
         final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter = optionalProtocolAdapterWrapper.get().getAdapter();
@@ -589,7 +589,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (!(adapter instanceof WritingProtocolAdapter)) {
             log.warn("The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
                     adapterId);
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_WRITING, "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs.");
+            return ErrorResponseUtil.errorResponse(new AdapterTypeReadOnlyError("The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs."));
         }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
@@ -601,16 +601,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } catch (final InterruptedException e) {
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
             log.debug("Original exception: ", e);
-            return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+            return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         } catch (final ExecutionException e) {
             if (e.getCause() instanceof UnsupportedOperationException) {
-                return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_SUPPORTED, "Operation not supported" + e.getCause().getMessage());
+                return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Operation not supported '%s'", e.getCause().getMessage())));
             } else if (e.getCause() instanceof IllegalStateException) {
-                return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_SUPPORTED, "Adapter not started: " + e.getCause().getMessage());
+                return ErrorResponseUtil.errorResponse(new AdapterOperationNotSupportedError(String.format("Adapter not started '%s'", e.getCause().getMessage())));
             } else {
                 log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                 log.debug("Original exception: ", e);
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(null));
             }
         }
     }
@@ -624,18 +624,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterInformation.isEmpty()) {
-            return ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_TYPE_NOT_FOUND, String.format("Adapter not found '%s'", adapterType));
+            return ErrorResponseUtil.errorResponse(new AdapterTypeNotFoundError(String.format("Adapter not found '%s'", adapterType)));
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         final String adapterId = adapter.getAdapter().getId();
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         validateAdapterSchema(errorMessages, adapter.getAdapter());
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
             final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getAdapter().getConfig());
@@ -675,7 +675,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             } else {
                 log.error("Error processing incoming request", e);
             }
-            return ErrorResponseUtil.validationErrors(ERROR_TYPE_ADAPTER_VALIDATION, errorMessages.toErrorList());
+            return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getAdapter().getId());
@@ -685,7 +685,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
 
     @Override
-    public Response getNorthboundMappingsForAdapter(final @NotNull String adapterId) {
+    public @NotNull Response getNorthboundMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getFromEdgeMappings()
                         .stream()
@@ -693,7 +693,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .collect(Collectors.toList()))
                 .map(NorthboundMappingListModel::new)
                 .map(mappingsList -> Response.ok(mappingsList).build())
-                .orElseGet(() -> ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId)));
+                .orElseGet(() -> ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId))));
     }
 
 
@@ -740,19 +740,19 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     return Response.ok(northboundMappingListModel).build();
                 } else {
                     log.error("Something went wrong updating the adapter {}", adapterId);
-                    return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                    return ErrorResponseUtil.errorResponse(new InternalServerError(null));
                 }
             } else {
                 log.error("The following tags were missing for updating the northbound mappings for adapter {}: {}",
                         adapterId,
                         requiredTags);
-                return ErrorResponseUtil.badRequest("Tags were missing for updating the northbound mappings" + requiredTags);
+                return ErrorResponseUtil.errorResponse(new BadRequestError("Tags were missing for updating the northbound mappings" + requiredTags));
             }
-        }).orElseGet(() -> ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId)));
+        }).orElseGet(() -> ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId))));
     }
 
     @Override
-    public Response getSouthboundMappingsForAdapter(final @NotNull String adapterId) {
+    public @NotNull Response getSouthboundMappingsForAdapter(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getToEdgeMappings()
                         .stream()
@@ -760,11 +760,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .collect(Collectors.toList()))
                 .map(SouthboundMappingListModel::new)
                 .map(mappingsList -> Response.ok(mappingsList).build())
-                .orElseGet(() -> ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId)));
+                .orElseGet(() -> ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId))));
     }
 
     @Override
-    public Response updateSouthboundMappingsForAdapter(
+    public @NotNull Response updateSouthboundMappingsForAdapter(
             final @NotNull String adapterId, final @NotNull SouthboundMappingListModel southboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId).map(adapter -> {
             final Set<String> requiredTags = new HashSet<>();
@@ -780,15 +780,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     return Response.ok(southboundMappingListModel).build();
                 } else {
                     log.error("Something went wrong updating the adapter {}", adapterId);
-                    return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                    return ErrorResponseUtil.errorResponse(new InternalServerError(null));
                 }
             } else {
-                log.error("The following tags were missing for updating the fromMappings for adapter {}: {}",
+                log.error("The following tags were missing for updating the southbound mappings for adapter {}: {}",
                         adapterId,
                         requiredTags);
-                return ErrorResponseUtil.genericError(INTERNAL_ERROR_PLEASE_CHECK_LOGS);
+                return ErrorResponseUtil.errorResponse(new BadRequestError("Tags were missing for updating the southbound mappings" + requiredTags));
             }
-        }).orElseGet(() -> ErrorResponseUtil.notFound(ERROR_TYPE_ADAPTER_NOT_FOUND, String.format("Adapter not found '%s'", adapterId)));
+        }).orElseGet(() -> ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'", adapterId))));
     }
 
 

@@ -118,6 +118,4 @@ public interface HttpConstants {
         put("webmanifest", "application/manifest+json");
     }};
 
-
-    public ErrorType ERROR_TYPE_UNABLE_TO_PARS_JSON = new ErrorType(null, "Unparseable JSON", "Unable to parse JSON body");
 }

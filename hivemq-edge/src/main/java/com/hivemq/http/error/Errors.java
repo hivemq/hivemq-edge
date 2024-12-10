@@ -24,12 +24,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
-public class Errors {
-
-    public static final URI GENERIC_BAD_REQUEST = URI.create("/error/generic-bad-request");
+public abstract class Errors<T extends Error> {
 
     @JsonProperty("type")
-    private final @NotNull URI type;
+    private final @NotNull String type;
 
     @JsonProperty("title")
     private final @NotNull String title;
@@ -41,15 +39,15 @@ public class Errors {
     private final int status;
 
     @JsonProperty("errors")
-    private final @NotNull List<@NotNull Error> errors;
+    private final @NotNull List<T> errors;
 
     @JsonCreator
     public Errors(
-            @JsonProperty("type") final @NotNull URI type,
+            @JsonProperty("type") final @NotNull String type,
             @JsonProperty("title") final @NotNull String title,
             @JsonProperty("detail") final @Nullable String detail,
             @JsonProperty("status") final int status,
-            @JsonProperty("errors") final @NotNull List<Error> errors) {
+            @JsonProperty("errors") final @NotNull List<T> errors) {
         this.type = type;
         this.title = title;
         this.detail = detail;
@@ -57,12 +55,12 @@ public class Errors {
         this.errors = errors;
     }
 
-    public @NotNull List<Error> getErrors() {
+    public @NotNull List<T> getErrors() {
         return errors;
     }
 
     public @NotNull URI getType() {
-        return type;
+        return URI.create("http://nowhere/" + type);
     }
 
     public @NotNull String getTitle() {

@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.UrlParameterMissingError;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.Metric;
@@ -64,7 +65,7 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
         if(ApiErrorUtils.hasRequestErrors(messages)){
-            return ErrorResponseUtil.urlParameterRequired("metricName");
+            return ErrorResponseUtil.errorResponse(new UrlParameterMissingError("metricName"));
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
             SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));

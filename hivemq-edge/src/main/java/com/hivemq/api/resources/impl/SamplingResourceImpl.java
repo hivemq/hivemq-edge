@@ -17,6 +17,9 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.NotFoundError;
+import com.hivemq.api.errors.samples.NoSamplesFoundError;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
@@ -44,8 +47,6 @@ import java.util.List;
 
 @Singleton
 public class SamplingResourceImpl implements SamplingApi {
-    public static final @NotNull ErrorType
-            ERROR_TYPE_NO_SAMPLES_FOUND = new ErrorType(null, "No samples found", "No samples found");
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SamplingResourceImpl.class);
     private static final @NotNull JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
@@ -85,7 +86,7 @@ public class SamplingResourceImpl implements SamplingApi {
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
             log.info("No samples were found for the requested topic '{}'.", topic);
-            return ErrorResponseUtil.notFound(ERROR_TYPE_NO_SAMPLES_FOUND, topic);
+            return ErrorResponseUtil.errorResponse(new NoSamplesFoundError(topic));
         }
 
         final ArrayList<JsonNode> jsonSamples = new ArrayList<>();
@@ -95,7 +96,7 @@ public class SamplingResourceImpl implements SamplingApi {
             } catch (final IOException e) {
                 log.warn("Parsing error while trying to create json samples from payload.");
                 log.debug("Original exception: ", e);
-                return ErrorResponseUtil.genericError("Parsing error");
+                return ErrorResponseUtil.errorResponse(new InternalServerError("Parsing error"));
             }
         }
 

@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources;
 
+import com.hivemq.api.errors.UrlParameterMissingError;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
@@ -87,7 +88,12 @@ public interface MetricsApi {
                                                                               name = "metric-sample",
                                                                               summary = "Metric Sample",
                                                                               value = ApiBodyExamples.EXAMPLE_DATAPOINT_JSON)
-                                                       }))})
+                                                       })),
+                       @ApiResponse(responseCode = "400",
+                                    description = "URL parameter missing",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = UrlParameterMissingError.class))),
+               })
     Response getSample(final @NotNull @Parameter(name = "metricName",
                                                  description = "The metric to search for.",
                                                  required = true,

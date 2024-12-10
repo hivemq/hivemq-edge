@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources;
 
+import com.hivemq.api.errors.ValidationError;
 import com.hivemq.api.model.uns.ISA95ApiBean;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +73,12 @@ public interface UnsApi {
                description = "Set isa95 config.",
                responses = {
                        @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                                    description = "Success"),
+                       @ApiResponse(responseCode = "400",
+                                    description = "isa95 config failed validation",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ValidationError.class))),
+               })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response setIsa95(@Parameter(name = "isa95",
                                           description = "The updated isa95 configuration.",
