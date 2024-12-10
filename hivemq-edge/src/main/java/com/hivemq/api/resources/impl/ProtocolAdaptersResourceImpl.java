@@ -672,7 +672,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     .map(DomainTag::toTagMap)
                     .collect(Collectors.toList());
 
-            final List<? extends Tag> tags = configConverter.mapsToTags(adapterType, domainTags);
+            final List<? extends Tag> tags;
+            try {
+                tags = configConverter.mapsToTags(adapterType, domainTags);
+            } catch (final IllegalArgumentException illegalArgumentException) {
+                log.warn("Unable to parse tags for adapter '{}'", adapterName);
+                log.debug("Original Exception: ", illegalArgumentException);
+                return ErrorResponseUtil.invalidInput(
+                        "Exception during parsing of tags for the adapter. See log for further information.");
+            }
 
             final List<NorthboundMapping> northboundMappings = adapter.getNorthboundMappingModels()
                     .stream()
