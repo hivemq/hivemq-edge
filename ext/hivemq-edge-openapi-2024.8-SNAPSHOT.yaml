@@ -460,7 +460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PolicyCreationFailed'
+                $ref: '#/components/schemas/Errors'
           description: Policy creation failed
         "409":
           content:
@@ -702,7 +702,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PolicyCreationFailed'
+                $ref: '#/components/schemas/Errors'
           description: Policy creation failed
         "404":
           content:
@@ -1172,7 +1172,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataPolicyCreationFailed'
+                $ref: '#/components/schemas/Errors'
           description: DataPolicy creation failed
         "409":
           content:
@@ -1428,7 +1428,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataPolicyCreationFailed'
+                $ref: '#/components/schemas/Errors'
           description: DataPolicy creation failed
         "404":
           content:
@@ -1925,7 +1925,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SchemaEtagMismatch'
+                $ref: '#/components/schemas/Errors'
           description: Mismatch between schema and etag
         "500":
           content:
@@ -1974,7 +1974,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SchemaEtagMismatch'
+                $ref: '#/components/schemas/Errors'
           description: Mismatch between schema and etag
         "500":
           content:
@@ -2233,7 +2233,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScriptEtagMismatch'
+                $ref: '#/components/schemas/Errors'
           description: Script doesn't match etag
         "500":
           content:
@@ -2287,7 +2287,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScriptEtagMismatch'
+                $ref: '#/components/schemas/Errors'
           description: Script doesn't match etag
         "500":
           content:
@@ -4732,23 +4732,6 @@ components:
             \ operations in the pipeline are executed in-order."
           items:
             $ref: '#/components/schemas/PolicyOperation'
-    DataPolicyCreationFailed:
-      type: object
-      properties:
-        detail:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
     DataPolicyList:
       type: object
       description: A listing of data policies.
@@ -5480,23 +5463,6 @@ components:
             $ref: '#/components/schemas/PayloadSample'
       required:
       - items
-    PolicyCreationFailed:
-      type: object
-      properties:
-        detail:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations
@@ -5648,23 +5614,6 @@ components:
       - id
       - schemaDefinition
       - type
-    SchemaEtagMismatch:
-      type: object
-      properties:
-        detail:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
     SchemaList:
       type: object
       description: A listing of schemas.
@@ -5720,23 +5669,6 @@ components:
       - functionType
       - id
       - source
-    ScriptEtagMismatch:
-      type: object
-      properties:
-        detail:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
     ScriptList:
       type: object
       description: A listing of scripts.
