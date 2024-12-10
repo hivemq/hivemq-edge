@@ -2,11 +2,11 @@ package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class AdapterNotFound403Error extends ErrorsWithoutParameter {
+public class AdapterNotFound403Error extends Errors {
     public AdapterNotFound403Error(String error) {
         super(
                 "AdapterNotFound",

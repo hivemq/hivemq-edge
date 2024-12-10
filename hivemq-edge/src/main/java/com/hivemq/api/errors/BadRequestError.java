@@ -2,12 +2,12 @@ package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class BadRequestError extends ErrorsWithoutParameter {
+public class BadRequestError extends Errors {
     public BadRequestError(
             final @Nullable String error) {
         super(

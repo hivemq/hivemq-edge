@@ -44,7 +44,7 @@ import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.http.error.ErrorWithParameter;
+import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +91,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         if (checkBridgeExists(bridge.getId())) {
-            return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(List.of(new ErrorWithParameter("Bridge already existed", "id", null, null))));
+            return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(List.of(new Error("Bridge already existed", "id", null, null))));
         }
         validateBridge(errorMessages, bridge);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {

@@ -2,11 +2,11 @@ package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class AdapterOperationNotSupportedError extends ErrorsWithoutParameter {
+public class AdapterOperationNotSupportedError extends Errors {
     public AdapterOperationNotSupportedError(String error) {
         super(
                 "AdapterTypeOperationNotSupported",

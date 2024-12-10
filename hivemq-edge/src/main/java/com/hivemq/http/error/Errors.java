@@ -24,7 +24,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class Errors<T extends Error> {
+public class Errors {
 
     @JsonProperty("type")
     private final @NotNull String type;
@@ -39,7 +39,7 @@ public abstract class Errors<T extends Error> {
     private final int status;
 
     @JsonProperty("errors")
-    private final @NotNull List<T> errors;
+    private final @NotNull List<Error> errors;
 
     @JsonCreator
     public Errors(
@@ -47,7 +47,7 @@ public abstract class Errors<T extends Error> {
             @JsonProperty("title") final @NotNull String title,
             @JsonProperty("detail") final @Nullable String detail,
             @JsonProperty("status") final int status,
-            @JsonProperty("errors") final @NotNull List<T> errors) {
+            @JsonProperty("errors") final @NotNull List<Error> errors) {
         this.type = type;
         this.title = title;
         this.detail = detail;
@@ -55,7 +55,7 @@ public abstract class Errors<T extends Error> {
         this.errors = errors;
     }
 
-    public @NotNull List<T> getErrors() {
+    public @NotNull List<Error> getErrors() {
         return errors;
     }
 

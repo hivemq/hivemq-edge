@@ -1,13 +1,13 @@
 package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.ErrorWithParameter;
-import com.hivemq.http.error.ErrorsWithParameter;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class InvalidQueryParameterErrors extends ErrorsWithParameter {
-    public InvalidQueryParameterErrors(List<ErrorWithParameter> errors) {
+public class InvalidQueryParameterErrors extends Errors {
+    public InvalidQueryParameterErrors(List<Error> errors) {
         super(
                 "InvalidQueryParameter",
                 "Query parameter is invalid",

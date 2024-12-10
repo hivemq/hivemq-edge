@@ -2,11 +2,11 @@ package com.hivemq.api.errors.topicfilters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class TopicFilterNotFoundError extends ErrorsWithoutParameter {
+public class TopicFilterNotFoundError extends Errors {
     public TopicFilterNotFoundError(String error) {
         super(
                 "TopicFilterNotFound",

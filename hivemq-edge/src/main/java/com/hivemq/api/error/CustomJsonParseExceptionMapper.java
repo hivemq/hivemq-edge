@@ -18,7 +18,7 @@ package com.hivemq.api.error;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.hivemq.api.errors.InvalidInputError;
 import com.hivemq.api.errors.ValidationError;
-import com.hivemq.http.error.ErrorWithParameter;
+import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class CustomJsonParseExceptionMapper implements ExceptionMapper<JsonParse
     public @NotNull Response toResponse(final JsonParseException exception) {
         final String originalMessage = exception.getOriginalMessage();
         if (originalMessage != null) {
-            return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new ErrorWithParameter(originalMessage, null, null, null))));
+            return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(originalMessage, null, null, null))));
         } else {
             return ErrorResponseUtil.errorResponse(new InvalidInputError("Unable to parse JSON body, please check the input format."));
         }

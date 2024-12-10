@@ -1,13 +1,13 @@
 package com.hivemq.api.errors.bridge;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.ErrorWithParameter;
-import com.hivemq.http.error.ErrorsWithParameter;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class BridgeFailedSchemaValidationError extends ErrorsWithParameter {
-    public BridgeFailedSchemaValidationError(List<ErrorWithParameter> errors) {
+public class BridgeFailedSchemaValidationError extends Errors {
+    public BridgeFailedSchemaValidationError(List<Error> errors) {
         super(
                 "BridgeFailedSchemaValidation",
                 "The provided bridge configuration could not be validated",

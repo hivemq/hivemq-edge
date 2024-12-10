@@ -2,16 +2,16 @@ package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorWithParameter;
-import com.hivemq.http.error.ErrorsWithParameter;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.Errors;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ValidationError extends ErrorsWithParameter {
+public class ValidationError extends Errors {
     public ValidationError(
-            final @Nullable List<ErrorWithParameter> errors) {
+            final @Nullable List<Error> errors) {
         super(
                 "ValidationError",
                 "Validatin failed",

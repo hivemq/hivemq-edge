@@ -1,13 +1,13 @@
 package com.hivemq.api.errors.authentication;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.ErrorWithParameter;
-import com.hivemq.http.error.ErrorsWithParameter;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class AuthenticationValidationError extends ErrorsWithParameter {
-    public AuthenticationValidationError(List<ErrorWithParameter> errors) {
+public class AuthenticationValidationError extends Errors {
+    public AuthenticationValidationError(List<Error> errors) {
         super(
                 "AuthenticationValidationError",
                 "Authentication request failed validation",

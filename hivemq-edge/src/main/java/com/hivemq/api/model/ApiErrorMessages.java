@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorWithParameter;
+import com.hivemq.http.error.Error;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -56,10 +56,10 @@ public class ApiErrorMessages {
     }
 
     @JsonIgnore
-    public List<ErrorWithParameter> toErrorList(){
+    public List<Error> toErrorList(){
         return errors
                 .stream()
-                .map(error -> new ErrorWithParameter(error.getTitle(), error.getFieldName(), null, null))
+                .map(error -> new Error(error.getTitle(), error.getFieldName(), null, null))
                 .collect(Collectors.toList());
     }
 }

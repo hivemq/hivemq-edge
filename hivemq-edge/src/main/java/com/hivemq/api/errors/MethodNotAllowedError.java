@@ -1,11 +1,11 @@
 package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class MethodNotAllowedError extends ErrorsWithoutParameter {
+public class MethodNotAllowedError extends Errors {
     public MethodNotAllowedError() {
         super(
                 "MethodNotAllowedError",

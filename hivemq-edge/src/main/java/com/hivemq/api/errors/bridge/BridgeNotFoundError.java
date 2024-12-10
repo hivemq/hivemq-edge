@@ -2,11 +2,11 @@ package com.hivemq.api.errors.bridge;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 
 import java.util.List;
 
-public class BridgeNotFoundError extends ErrorsWithoutParameter {
+public class BridgeNotFoundError extends Errors {
     public BridgeNotFoundError(String error) {
         super(
                 "BridgeNotFound",

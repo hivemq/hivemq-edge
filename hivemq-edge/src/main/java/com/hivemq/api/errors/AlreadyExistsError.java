@@ -2,12 +2,12 @@ package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.ErrorsWithoutParameter;
+import com.hivemq.http.error.Errors;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class AlreadyExistsError extends ErrorsWithoutParameter {
+public class AlreadyExistsError extends Errors {
     public AlreadyExistsError(
             final @Nullable String error) {
         super(
