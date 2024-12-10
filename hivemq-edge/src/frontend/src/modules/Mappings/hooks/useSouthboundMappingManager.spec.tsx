@@ -6,7 +6,6 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import { useSouthboundMappingManager } from '@/modules/Mappings/hooks/useSouthboundMappingManager.ts'
 import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 import { type FieldMapping, SouthboundMappingList } from '@/api/__generated__'
-import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 
 describe('useSouthboundMappingManager', () => {
   beforeEach(() => {
@@ -27,7 +26,6 @@ describe('useSouthboundMappingManager', () => {
     expect(result.current.data).toStrictEqual<SouthboundMappingList>({
       items: [
         expect.objectContaining({
-          maxQoS: MOCK_MAX_QOS,
           tagName: 'my/tag',
           topicFilter: 'my/filter',
           fieldMapping: expect.objectContaining<FieldMapping>({

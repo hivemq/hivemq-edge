@@ -8,7 +8,6 @@ import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 export const MOCK_SOUTHBOUND_MAPPING: SouthboundMapping = {
   topicFilter: 'my/filter',
   tagName: 'my/tag',
-  maxQoS: MOCK_MAX_QOS,
   fieldMapping: {
     instructions: [{ source: 'dropped-property', destination: 'lastName' }],
     metadata: { destination: GENERATE_DATA_MODELS(true, 'my/filter'), source: GENERATE_DATA_MODELS(true, 'my/tag') },
