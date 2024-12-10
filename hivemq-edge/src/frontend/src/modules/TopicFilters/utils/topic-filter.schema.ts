@@ -57,6 +57,10 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
   }
 }
 
+export const encodeDataUriJsonSchema = (schema: RJSFSchema) => {
+  return `data:${MIMETYPE_JSON};base64,${btoa(JSON.stringify(schema))}`
+}
+
 export interface SchemaHandler {
   schema?: JSONSchema7
   error?: string
