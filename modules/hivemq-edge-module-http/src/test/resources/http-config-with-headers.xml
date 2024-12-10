@@ -35,10 +35,12 @@
                 <southboundMapping>
                     <tagName>tag3</tagName>
                     <topicFilter>my/#</topicFilter>
+                    <fromNorthSchema>{}</fromNorthSchema>
                 </southboundMapping>
                 <southboundMapping>
                     <tagName>tag4</tagName>
                     <topicFilter>my/#</topicFilter>
+                    <fromNorthSchema>{}</fromNorthSchema>
                 </southboundMapping>
             </southboundMappings>
             <northboundMappings>

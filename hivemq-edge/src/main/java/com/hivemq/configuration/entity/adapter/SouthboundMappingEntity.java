@@ -17,9 +17,8 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -35,23 +34,29 @@ public class SouthboundMappingEntity {
     @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = "fieldMapping")
-    private final @Nullable FieldMappingEntity fieldMapping;
+    @XmlElement(name = "fieldMapping", required = true)
+    private final @NotNull FieldMappingEntity fieldMapping;
+
+    @XmlElement(name = "fromNorthSchema", required = true)
+    private final @NotNull String fromNorthSchema;
 
     // no-arg constructor for JaxB
     public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
         fieldMapping = null;
+        fromNorthSchema = "";
     }
 
     public SouthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final @Nullable FieldMappingEntity fieldMapping) {
+            final @NotNull FieldMappingEntity fieldMapping,
+            final @NotNull String fromNorthSchema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMapping = fieldMapping;
+        this.fromNorthSchema = fromNorthSchema;
     }
 
     public @NotNull String getTagName() {
@@ -69,22 +74,24 @@ public class SouthboundMappingEntity {
         if (tagName == null || tagName.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
         }
+        if (fromNorthSchema == null || fromNorthSchema.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "fromNorthSchema is missing", null));
+        }
     }
 
 
     public @NotNull SouthboundMapping to(final @NotNull ObjectMapper mapper) {
-        return new SouthboundMapping(
-                this.getTagName(),
+        return new SouthboundMapping(this.getTagName(),
                 this.getTopicFilter(),
-                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null);
+                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
+                this.fromNorthSchema);
     }
 
     public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {
-        return new SouthboundMappingEntity(
-                southboundMapping.getTagName(),
+        return new SouthboundMappingEntity(southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping())
-        );
+                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                southboundMapping.getSchema());
     }
 
 }
