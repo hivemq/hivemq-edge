@@ -74,6 +74,9 @@ public class SouthboundMappingEntity {
         if (tagName == null || tagName.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
         }
+        if (fromNorthSchema == null || fromNorthSchema.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "fromNorthSchema is missing", null));
+        }
     }
 
 
