@@ -19,7 +19,7 @@ import { TopicFilter } from '@/api/__generated__'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader.tsx'
-import SchemaManager from '@/modules/TopicFilters/components/SchemaManager.tsx'
+import SchemaSampler from '@/modules/TopicFilters/components/SchemaSampler.tsx'
 import { useTopicFilterManager } from '@/modules/TopicFilters/hooks/useTopicFilterManager.ts'
 import { SchemaHandler, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 import { useTranslation } from 'react-i18next'
@@ -46,7 +46,7 @@ const TopicSchemaManager: FC<CurrentSchemaProps> = ({ topicFilter }) => {
 
   return (
     <VStack>
-      <ErrorMessage message={schemaHandler.error} status={schemaHandler.status} type={schemaHandler.message} />
+      <ErrorMessage status={schemaHandler.status} type={schemaHandler.message} />
 
       <Card size="sm">
         <CardHeader>
@@ -56,39 +56,31 @@ const TopicSchemaManager: FC<CurrentSchemaProps> = ({ topicFilter }) => {
           <Tabs isLazy>
             <TabList>
               <Tab>{t('topicFilter.schema.tabs.current')}</Tab>
-              <Tab>{t('topicFilter.schema.tabs.upload')}</Tab>
               <Tab>{t('topicFilter.schema.tabs.infer')}</Tab>
+              <Tab>{t('topicFilter.schema.tabs.upload')}</Tab>
             </TabList>
 
             <TabPanels>
               <TabPanel>
-                {schemaHandler.schema && (
-                  <Card>
-                    <CardBody>
-                      <JsonSchemaBrowser schema={schemaHandler.schema} />
-                    </CardBody>
-                    <CardFooter justifyContent="flex-end">
-                      <Button isDisabled={Boolean(!topicFilter.schema)} onClick={onHandleClear}>
-                        {t('topicFilter.schema.actions.remove')}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                )}
-              </TabPanel>
-              <TabPanel>
-                <Card>
-                  <SchemaUploader onUpload={onHandleUpload} />
-                </Card>
-              </TabPanel>
-              <TabPanel>
                 <Card>
                   <CardBody>
-                    <SchemaManager topicFilter={topicFilter} />
+                    {schemaHandler.error && (
+                      <ErrorMessage message={schemaHandler.error} status={schemaHandler.status} />
+                    )}
+                    {schemaHandler.schema && <JsonSchemaBrowser schema={schemaHandler.schema} />}
                   </CardBody>
                   <CardFooter justifyContent="flex-end">
-                    <Button isDisabled>{t('topicFilter.schema.actions.assign')}</Button>
+                    <Button isDisabled={Boolean(!topicFilter.schema)} onClick={onHandleClear}>
+                      {t('topicFilter.schema.actions.remove')}
+                    </Button>
                   </CardFooter>
                 </Card>
+              </TabPanel>
+              <TabPanel>
+                <SchemaSampler topicFilter={topicFilter} onUpload={onHandleUpload} />
+              </TabPanel>
+              <TabPanel>
+                <SchemaUploader onUpload={onHandleUpload} />
               </TabPanel>
             </TabPanels>
           </Tabs>
