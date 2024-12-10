@@ -64,10 +64,9 @@ public class SouthboundMappingModel {
     public @NotNull SouthboundMapping toToEdgeMapping(final @NotNull String schema) {
         return new SouthboundMapping(this.tagName,
                 this.topicFilter,
-                this.fieldMapping != null ? FieldMapping.fromModel(this.fieldMapping) : null,
-                schema);
-                this.maxQoS,
-                this.fieldMapping != null ? FieldMapping.fromModel(this.fieldMapping) : DEFAULT_FIELD_MAPPING,
+                this.fieldMapping != null ?
+                        FieldMapping.fromModel(this.fieldMapping) :
+                        FieldMapping.DEFAULT_FIELD_MAPPING,
                 schema);
     }
 
