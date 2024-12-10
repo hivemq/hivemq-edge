@@ -409,7 +409,8 @@
     "overview": {
       "type": "Type:",
       "author": "Author:",
-      "documentation": "Documentation:"
+      "documentation": "Documentation:",
+      "installation": "This adapter needs to be installed separately. Check the instructions"
     },
     "error": {
       "loading": "We cannot load your adapters for the time being. Please try again later"
