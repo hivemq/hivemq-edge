@@ -16,10 +16,8 @@ export const $NorthboundMapping = {
             isRequired: true,
         },
         maxQoS: {
-            type: 'number',
-            description: `The maximum MQTT-QoS for the outgoing messages.`,
+            type: 'QoS',
             isRequired: true,
-            format: 'int32',
         },
         messageExpiryInterval: {
             type: 'number',

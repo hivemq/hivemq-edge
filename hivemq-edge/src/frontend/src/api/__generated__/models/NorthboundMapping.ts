@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { MqttUserProperty } from './MqttUserProperty';
+import type { QoS } from './QoS';
 
 /**
  * List of result items that are returned by this endpoint
@@ -17,10 +18,7 @@ export type NorthboundMapping = {
      * Should the timestamp be included when sent out.
      */
     includeTimestamp: boolean;
-    /**
-     * The maximum MQTT-QoS for the outgoing messages.
-     */
-    maxQoS: number;
+    maxQoS: QoS;
     /**
      * The message expiry interval.
      */
