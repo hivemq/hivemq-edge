@@ -45,7 +45,7 @@ export class DataHubSchemasService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Not all cluster nodes at minimum version`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -68,8 +68,11 @@ export class DataHubSchemasService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `Schema could not be validatetd`,
+                409: `Schema already exists`,
+                412: `Mismatch between schema and etag`,
+                500: `Internal server error`,
+                507: `Insufficient storage`,
             },
         });
     }
@@ -93,9 +96,11 @@ export class DataHubSchemasService {
                 'schemaId': schemaId,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `Schema referenced`,
+                404: `Schema not found`,
+                412: `Mismatch between schema and etag`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -126,8 +131,9 @@ export class DataHubSchemasService {
                 'fields': fields,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
+                400: `A url parameter is missing`,
+                404: `Schema not found`,
+                500: `Internal server error`,
             },
         });
     }

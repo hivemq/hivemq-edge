@@ -48,6 +48,11 @@ export class ProtocolAdaptersService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Adapter failed validation`,
+                404: `Adapter type not found`,
+                500: `Internal Server Error`,
+            },
         });
     }
 
@@ -80,6 +85,9 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
             },
+            errors: {
+                404: `Adapter not found`,
+            },
         });
     }
 
@@ -98,6 +106,9 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}',
             path: {
                 'adapterId': adapterId,
+            },
+            errors: {
+                404: `Adapter not found`,
             },
         });
     }
@@ -122,6 +133,11 @@ export class ProtocolAdaptersService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Adapter is invalid`,
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
+            },
         });
     }
 
@@ -151,6 +167,8 @@ export class ProtocolAdaptersService {
             },
             errors: {
                 400: `Protocol adapter does not support discovery`,
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -170,6 +188,9 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
             path: {
                 'adapterId': adapterId,
+            },
+            errors: {
+                404: `Adapter not found`,
             },
         });
     }
@@ -195,7 +216,9 @@ export class ProtocolAdaptersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Not Found`,
+                400: `Missing tags`,
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -215,6 +238,9 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
             path: {
                 'adapterId': adapterId,
+            },
+            errors: {
+                404: `Adapter not found`,
             },
         });
     }
@@ -240,7 +266,9 @@ export class ProtocolAdaptersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Not Found`,
+                400: `Missing tags`,
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -260,6 +288,10 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',
             path: {
                 'adapterId': adapterId,
+            },
+            errors: {
+                400: `Adapter is invalid`,
+                404: `Adapter not found`,
             },
         });
     }
@@ -284,6 +316,10 @@ export class ProtocolAdaptersService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Adapter is invalid`,
+                404: `Adapter not found`,
+            },
         });
     }
 
@@ -302,6 +338,9 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
             path: {
                 'adapterId': adapterId,
+            },
+            errors: {
+                404: `Adapter not found`,
             },
         });
     }
@@ -327,7 +366,9 @@ export class ProtocolAdaptersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Already Present`,
+                404: `Adapter not found`,
+                409: `Tag already exists`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -353,7 +394,8 @@ export class ProtocolAdaptersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Not Found`,
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -376,6 +418,10 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
+            },
+            errors: {
+                404: `Tag not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -404,7 +450,9 @@ export class ProtocolAdaptersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Not Found`,
+                403: `Adapter not found`,
+                404: `Tag not found`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -429,6 +477,10 @@ export class ProtocolAdaptersService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Adapter is invalid`,
+                404: `Adapter type not found`,
+            },
         });
     }
 
@@ -487,6 +539,9 @@ export class ProtocolAdaptersService {
             path: {
                 'protocolId': protocolId,
             },
+            errors: {
+                404: `Adapter type not found`,
+            },
         });
     }
 
@@ -518,6 +573,9 @@ export class ProtocolAdaptersService {
             url: '/api/v1/management/protocol-adapters/tags/{tagName}',
             path: {
                 'tagName': tagName,
+            },
+            errors: {
+                404: `Tag not found`,
             },
         });
     }
@@ -551,6 +609,9 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterType': adapterType,
             },
+            errors: {
+                404: `Adapter type not found`,
+            },
         });
     }
 
@@ -572,6 +633,10 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
+            },
+            errors: {
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
             },
         });
     }

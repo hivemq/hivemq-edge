@@ -22,7 +22,7 @@ export class DataHubFsmService {
             method: 'GET',
             url: '/api/v1/data-hub/fsm',
             errors: {
-                404: `Resource not found`,
+                500: `Internal server error`,
             },
         });
     }
