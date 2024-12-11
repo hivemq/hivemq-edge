@@ -56,9 +56,9 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        defaultValue = "false")
     private final boolean overrideUri;
 
-   // @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty("auth")
-    private final @NotNull Auth auth;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final @Nullable Auth auth;
 
     @JsonProperty("tls")
     private final @NotNull Tls tls;
@@ -94,7 +94,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return uri;
     }
 
-    public @NotNull Auth getAuth() {
+    public @Nullable Auth getAuth() {
         return auth;
     }
 
