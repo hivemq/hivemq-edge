@@ -34,37 +34,42 @@ import java.util.stream.Collectors;
 public class NorthboundMappingModel {
 
     @JsonProperty(value = "topic", required = true)
-    @Schema(description = "The target mqtt topic where received tags should be sent to.")
+    @Schema(description = "The target mqtt topic where received tags should be sent to.",
+            minLength = 1,
+            maxLength = 65_535)
     private final @NotNull String topic;
 
     @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.", format = "mqtt-tag")
+    @Schema(description = "The tag for which values hould be collected and sent out.",
+            format = "mqtt-tag",
+            minLength = 1)
     private final @NotNull String tagName;
 
-    @JsonProperty(value = "messageHandlingOptions", required = true)
-    @Schema(description = "How collected tags should or shouldnÖT be aggregated.")
+    @JsonProperty(value = "messageHandlingOptions")
+    @Schema(description = "How collected tags should or shouldnÖT be aggregated.", defaultValue = "MQTTMessagePerTag")
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
-    @JsonProperty(value = "includeTagNames", required = true)
-    @Schema(description = "Should tag names be included when sent out.")
+    @JsonProperty(value = "includeTagNames")
+    @Schema(description = "Should tag names be included when sent out.", defaultValue = "false")
     private final boolean includeTagNames;
 
-    @JsonProperty(value = "includeTimestamp", required = true)
-    @Schema(description = "Should the timestamp be included when sent out.")
+    @JsonProperty(value = "includeTimestamp")
+    @Schema(description = "Should the timestamp be included when sent out.", defaultValue = "false")
     private final boolean includeTimestamp;
 
     @JsonProperty(value = "userProperties")
     @Schema(description = "User properties to be added to each outgoing mqtt message.")
     private final @NotNull List<MqttUserPropertyModel> userProperties;
 
-    @JsonProperty(value = "maxQoS", required = true)
-    @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
+    @JsonProperty(value = "maxQoS")
+    @Schema(description = "The maximum MQTT-QoS for the outgoing messages.", defaultValue = "AT_LEAST_ONCE")
     private final @NotNull QoSModel maxQoS;
 
-    @JsonProperty(value = "messageExpiryInterval", required = true)
+    @JsonProperty(value = "messageExpiryInterval")
     @Schema(description = "The message expiry interval.",
             minimum = "0",
-            maximum = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER)
+            maximum = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER,
+            defaultValue = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER)
     private final long messageExpiryInterval;
 
     @JsonCreator
