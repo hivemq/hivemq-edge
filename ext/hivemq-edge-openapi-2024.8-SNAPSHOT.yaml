@@ -4927,8 +4927,6 @@ components:
           description: List of instructions to be applied to incoming data
           items:
             $ref: '#/components/schemas/Instruction'
-      required:
-      - instructions
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5068,9 +5066,15 @@ components:
           type: string
           description: The field in the output object where the data will be written
             to
+          maxLength: 2048
+          minLength: 1
         source:
           type: string
           description: The field in the input object where the data will be read from
+          maxLength: 2048
+          minLength: 1
+        transformation:
+          $ref: '#/components/schemas/TransformationModel'
       required:
       - destination
       - source
@@ -5300,20 +5304,24 @@ components:
       properties:
         includeTagNames:
           type: boolean
+          default: false
           description: Should tag names be included when sent out.
         includeTimestamp:
           type: boolean
+          default: false
           description: Should the timestamp be included when sent out.
         maxQoS:
           $ref: '#/components/schemas/QoS'
         messageExpiryInterval:
           type: integer
           format: int64
+          default: 9007199254740991
           description: The message expiry interval.
           maximum: 9007199254740991
           minimum: 0
         messageHandlingOptions:
           type: string
+          default: MQTTMessagePerTag
           description: How collected tags should or shouldnÖT be aggregated.
           enum:
           - MQTTMessagePerTag
@@ -5322,20 +5330,19 @@ components:
           type: string
           format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
+          minLength: 1
         topic:
           type: string
+          format: ' mqtt-topic'
           description: The target mqtt topic where received tags should be sent to.
+          maxLength: 65535
+          minLength: 1
         userProperties:
           type: array
           description: User properties to be added to each outgoing mqtt message.
           items:
             $ref: '#/components/schemas/MqttUserProperty'
       required:
-      - includeTagNames
-      - includeTimestamp
-      - maxQoS
-      - messageExpiryInterval
-      - messageHandlingOptions
       - tagName
       - topic
     NorthboundMappingList:
@@ -5583,6 +5590,7 @@ components:
       - items
     QoS:
       type: string
+      default: AT_LEAST_ONCE
       description: The maximum MQTT-QoS for the outgoing messages.
       enum:
       - AT_MOST_ONCE
@@ -5855,17 +5863,17 @@ components:
         description:
           type: string
           description: The name for this topic filter.
+        filter:
+          type: string
+          format: mqtt-topic-filter
+          description: The topic filter according to the MQTT specification.
         schema:
           type: string
           format: data-url
           description: The optional json schema for this topic filter in the data
             uri format.
-        topicFilter:
-          type: string
-          format: mqtt-topic-filter
-          description: The topic filter according to the MQTT specification.
       required:
-      - topicFilter
+      - filter
     TopicFilterList:
       type: object
       properties:
@@ -5876,6 +5884,9 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
+    TransformationModel:
+      type: object
+      description: The kind of transformation that is performed on the data.
     TypeIdentifier:
       type: object
       description: The unique id of the event object
