@@ -130,10 +130,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOverrideUri()).isFalse();
         assertThat(config.getSecurity().getPolicy()).isEqualTo(NONE);
 
-        assertThat(config.getAuth()).satisfies(auth -> {
-            assertThat(auth.getBasicAuth()).isNull();
-            assertThat(auth.getX509Auth()).isNull();
-        });
+        assertThat(config.getAuth()).isNull();
 
         assertThat(config.getTls()).satisfies(tls -> {
             assertThat(tls.isEnabled()).isFalse();
@@ -243,9 +240,7 @@ class OpcUaProtocolAdapterConfigTest {
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull(); // must be empty
 
-        final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
-        assertThat((Map<String, Object>) authMap.get("basic")).isNull();
-        assertThat((Map<String, Object>) authMap.get("x509")).isNull();
+        assertThat(config.get("auth")).isNull();
 
         final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
         assertThat(tlsMap.get("enabled")).isEqualTo(false);

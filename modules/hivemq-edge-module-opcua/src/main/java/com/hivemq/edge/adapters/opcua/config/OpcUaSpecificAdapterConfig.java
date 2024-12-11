@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
@@ -56,7 +57,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     private final boolean overrideUri;
 
     @JsonProperty("auth")
-    private final @NotNull Auth auth;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final @Nullable Auth auth;
 
     @JsonProperty("tls")
     private final @NotNull Tls tls;
@@ -79,7 +81,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             @JsonProperty("security") final @Nullable Security security) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
-        this.auth = requireNonNullElse(auth, new Auth(null, null));
+        this.auth = auth;
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
@@ -92,7 +94,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return uri;
     }
 
-    public @NotNull Auth getAuth() {
+    public @Nullable Auth getAuth() {
         return auth;
     }
 
