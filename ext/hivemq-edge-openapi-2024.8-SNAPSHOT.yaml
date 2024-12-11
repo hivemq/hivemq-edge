@@ -5321,8 +5321,6 @@ components:
           minimum: 0
         messageHandlingOptions:
           type: string
-          default: MQTTMessagePerTag
-          description: How collected tags should or shouldnÖT be aggregated.
           enum:
           - MQTTMessagePerTag
           - MQTTMessagePerSubscription
