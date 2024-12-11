@@ -28,6 +28,10 @@ export class PayloadSamplingService {
             path: {
                 'topic': topic,
             },
+            errors: {
+                404: `No samples found`,
+                500: `Internal Server Error`,
+            },
         });
     }
 

@@ -30,9 +30,9 @@ export class DataHubStateService {
                 'clientId': clientId,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
-                503: `Temporarily not available`,
+                400: `URL parameter missing`,
+                404: `Client is disconnected`,
+                500: `Internal Server error`,
             },
         });
     }

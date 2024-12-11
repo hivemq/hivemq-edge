@@ -7,10 +7,11 @@ export const $Error = {
         detail: {
             type: 'string',
             description: `Detailed contextual description of this error`,
+            isRequired: true,
         },
-        title: {
+        parameter: {
             type: 'string',
-            description: `The type of this error`,
+            description: `The parameter causing the issue`,
         },
     },
 } as const;

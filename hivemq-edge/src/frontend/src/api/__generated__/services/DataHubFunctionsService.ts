@@ -22,7 +22,7 @@ export class DataHubFunctionsService {
             method: 'GET',
             url: '/api/v1/data-hub/functions',
             errors: {
-                404: `Resource not found`,
+                500: `Internal server error`,
             },
         });
     }

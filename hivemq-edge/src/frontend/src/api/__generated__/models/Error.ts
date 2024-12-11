@@ -7,10 +7,10 @@ export type Error = {
     /**
      * Detailed contextual description of this error
      */
-    detail?: string;
+    detail: string;
     /**
-     * The type of this error
+     * The parameter causing the issue
      */
-    title?: string;
+    parameter?: string;
 };
 

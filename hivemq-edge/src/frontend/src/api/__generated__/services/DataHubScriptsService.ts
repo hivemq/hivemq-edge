@@ -41,7 +41,7 @@ export class DataHubScriptsService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Not all cluster nodes at minimum version`,
+                503: `Temporary not available`,
             },
         });
     }
@@ -62,8 +62,12 @@ export class DataHubScriptsService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `Script is invalid`,
+                409: `Script is already present`,
+                412: `Script doesn't match etag`,
+                500: `Internal server error`,
+                503: `Temporary not available`,
+                507: `Insufficient storage`,
             },
         });
     }
@@ -85,9 +89,11 @@ export class DataHubScriptsService {
                 'scriptId': scriptId,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `Script is referenced`,
+                404: `Script not found`,
+                412: `Script doesn't match etag`,
+                500: `Internal Server error`,
+                503: `Temporary not available`,
             },
         });
     }
@@ -114,8 +120,10 @@ export class DataHubScriptsService {
                 'fields': fields,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
+                400: `URL parameter missing`,
+                404: `Script not found`,
+                500: `Internal Server error`,
+                503: `Temporary not available`,
             },
         });
     }

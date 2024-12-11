@@ -48,7 +48,10 @@ export class DataHubDataPoliciesService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Not all cluster nodes at minimum version`,
+                400: `URL parameter missing`,
+                404: `DataPolicy not found`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -71,8 +74,11 @@ export class DataHubDataPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `DataPolicy creation failed`,
+                409: `DataPolicy already present`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
+                507: `Insufficient storage`,
             },
         });
     }
@@ -96,9 +102,10 @@ export class DataHubDataPoliciesService {
                 'policyId': policyId,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `URL parameter missing`,
+                404: `DataPolicy not found`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -160,10 +167,11 @@ export class DataHubDataPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
-                404: `Policy not found`,
-                412: `Precondition failed`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `DataPolicy creation failed`,
+                404: `DataPolicy not found`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
+                507: `Insufficient storage`,
             },
         });
     }
