@@ -52,8 +52,10 @@ public class BuiltinJsonSchema {
             classToJsonSchema.put(BuiltinDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", BuiltinDataType.Boolean));
 
-            classToJsonSchema.put(BuiltinDataType.SByte, createJsonSchemaForBuiltinType(" SByte JsonSchema", BuiltinDataType.SByte));
-            classToJsonSchema.put(BuiltinDataType.Byte, createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.Byte));
+            classToJsonSchema.put(BuiltinDataType.SByte,
+                    createJsonSchemaForBuiltinType(" SByte JsonSchema", BuiltinDataType.SByte));
+            classToJsonSchema.put(BuiltinDataType.Byte,
+                    createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.Byte));
 
             classToJsonSchema.put(BuiltinDataType.UInt64,
                     createJsonSchemaForBuiltinType("UInt64 JsonSchema", BuiltinDataType.UInt64));
@@ -110,8 +112,7 @@ public class BuiltinJsonSchema {
     }
 
     private @NotNull JsonNode createJsonSchemaForBuiltinType(
-            final @NotNull String title,
-            final @NotNull BuiltinDataType builtinDataType) {
+            final @NotNull String title, final @NotNull BuiltinDataType builtinDataType) {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
@@ -156,6 +157,10 @@ public class BuiltinJsonSchema {
             case LocalizedText:
                 nestedPropertiesNode.set("type", new TextNode("string"));
                 return;
+            case DateTime:
+                nestedPropertiesNode.set("type", new TextNode("string"));
+                nestedPropertiesNode.set("format", new TextNode("date-time"));
+                return;
             case Int16:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Short.MIN_VALUE));
@@ -177,7 +182,6 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(UInteger.MIN_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(UInteger.MAX_VALUE));
                 return;
-            case DateTime:
             case Int64:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(Long.MIN_VALUE));

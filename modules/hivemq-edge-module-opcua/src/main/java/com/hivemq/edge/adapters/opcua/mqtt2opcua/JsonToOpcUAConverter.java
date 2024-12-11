@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -359,8 +361,8 @@ public class JsonToOpcUAConverter {
     }
 
     private static DateTime extractDateTime(final JsonNode jsonNode) {
-        if (jsonNode.isLong()) {
-            return new DateTime(jsonNode.asLong());
+        if (jsonNode.isTextual()) {
+            return new DateTime(Date.from(Instant.parse(jsonNode.asText())));
         }
         throw createException(jsonNode, BuiltinDataType.DateTime.name());
     }
@@ -371,6 +373,7 @@ public class JsonToOpcUAConverter {
         }
         throw createException(jsonNode, BuiltinDataType.String.name());
     }
+
 
     static double extractDouble(final JsonNode jsonNode) {
         if (jsonNode.isDouble()) {
