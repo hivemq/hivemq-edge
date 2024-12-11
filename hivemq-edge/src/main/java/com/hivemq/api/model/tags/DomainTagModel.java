@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -29,25 +30,30 @@ import java.util.Objects;
 @Schema(name = "DomainTag")
 public class DomainTagModel {
 
-    @JsonProperty("name")
+    @JsonProperty(value = "name", required = true)
     @Schema(description = "The name of the tag that identifies it within this edge instance.",
             requiredMode = Schema.RequiredMode.REQUIRED,
+            minLength = 1,
+            maxLength = 65_535,
             format = "mqtt-tag")
     private final @NotNull String name;
 
-    @JsonProperty("description")
-    @Schema(description = "A user created description for this tag.")
+    @JsonProperty(value = "description", required = true)
+    @Schema(description = "A user created description for this tag.",
+            maxLength = 10_000,
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String description;
 
-    @JsonProperty("definition")
-    @Schema(description = "A user created description for this tag.", requiredMode = Schema.RequiredMode.REQUIRED)
+    @JsonProperty(value = "definition", required = true)
+    @Schema(description = "A user created description for this tag.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode definition;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
-            @JsonProperty("name") final @NotNull String name,
-            @JsonProperty("description") final @Nullable String description,
-            @JsonProperty("definition") final @Nullable JsonNode definition) {
+            @JsonProperty(value = "name", required = true) final @NotNull String name,
+            @JsonProperty(value = "description", required = true) final @Nullable String description,
+            @JsonProperty(value = "definition", required = true) final @Nullable JsonNode definition) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "");
         this.definition = Objects.requireNonNullElse(definition, JsonNodeFactory.instance.objectNode());

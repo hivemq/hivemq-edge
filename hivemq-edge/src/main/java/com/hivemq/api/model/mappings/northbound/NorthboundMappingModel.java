@@ -35,6 +35,7 @@ public class NorthboundMappingModel {
 
     @JsonProperty(value = "topic", required = true)
     @Schema(description = "The target mqtt topic where received tags should be sent to.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             format = " mqtt-topic",
             minLength = 1,
             maxLength = 65_535)
@@ -42,6 +43,7 @@ public class NorthboundMappingModel {
 
     @JsonProperty(value = "tagName", required = true)
     @Schema(description = "The tag for which values hould be collected and sent out.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             format = "mqtt-tag",
             minLength = 1,
             maxLength = 2048)

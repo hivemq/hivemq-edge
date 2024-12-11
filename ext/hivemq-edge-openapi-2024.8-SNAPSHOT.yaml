@@ -4787,12 +4787,16 @@ components:
         description:
           type: string
           description: A user created description for this tag.
+          maxLength: 10000
         name:
           type: string
           format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
+          maxLength: 65535
+          minLength: 1
       required:
       - definition
+      - description
       - name
     DomainTagList:
       type: object
@@ -4927,6 +4931,8 @@ components:
           description: List of instructions to be applied to incoming data
           items:
             $ref: '#/components/schemas/Instruction'
+      required:
+      - instructions
     FirstUseInformation:
       type: object
       description: Information relating to the firstuse experience
@@ -5293,8 +5299,12 @@ components:
       properties:
         name:
           type: string
+          description: Name of the associated property
+          title: Name
         value:
           type: string
+          description: Value of the associated property
+          title: Value
       required:
       - name
       - value
@@ -5738,6 +5748,9 @@ components:
         id:
           type: string
           description: The identifier of the object
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
         lastActivity:
           type: string
           format: date-time
@@ -5758,6 +5771,12 @@ components:
         type:
           type: string
           description: The type of the object
+          maxLength: 500
+      required:
+      - connection
+      - id
+      - runtime
+      - type
     StatusList:
       type: object
       properties:
@@ -5778,6 +5797,8 @@ components:
           - START
           - STOP
           - RESTART
+      required:
+      - command
     StatusTransitionResult:
       type: object
       properties:
@@ -5791,6 +5812,9 @@ components:
         identifier:
           type: string
           description: The identifier of the object in transition
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
         status:
           type: string
           description: The status to perform on the target connection.
@@ -5800,6 +5824,12 @@ components:
         type:
           type: string
           description: The type of the object in transition
+          maxLength: 500
+      required:
+      - callbackTimeoutMillis
+      - identifier
+      - status
+      - type
     TagSchema:
       type: object
       properties:
@@ -5808,6 +5838,10 @@ components:
         protocolId:
           type: string
           description: The id assigned to the protocol adapter type
+          maxLength: 100
+      required:
+      - configSchema
+      - protocolId
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
@@ -5866,16 +5900,21 @@ components:
         description:
           type: string
           description: The name for this topic filter.
+          maxLength: 65535
         filter:
           type: string
           format: mqtt-topic-filter
           description: The topic filter according to the MQTT specification.
+          maxLength: 65535
+          minLength: 1
         schema:
           type: string
           format: data-url
           description: The optional json schema for this topic filter in the data
             uri format.
+          nullable: true
       required:
+      - description
       - filter
     TopicFilterList:
       type: object
@@ -5917,9 +5956,14 @@ components:
         password:
           type: string
           description: The password associated with the user
+          maxLength: 1000
         userName:
           type: string
           description: The userName associated with the user
+          maxLength: 1000
+      required:
+      - password
+      - userName
     ValuesTree:
       type: object
       properties:

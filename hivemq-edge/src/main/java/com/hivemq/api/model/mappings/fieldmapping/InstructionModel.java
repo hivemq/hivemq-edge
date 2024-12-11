@@ -28,12 +28,14 @@ public class InstructionModel {
     @JsonProperty(value = "destination", required = true)
     @Schema(name = "destination",
             description = "The field in the output object where the data will be written to",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             minLength = 1,
             maxLength = 2048)
     private final @NotNull String destinationFieldName;
 
     @JsonProperty(value = "source", required = true)
     @Schema(name = "source", description = "The field in the input object where the data will be read from",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             minLength = 1,
             maxLength = 2048)
     private final @NotNull String sourceFieldName;

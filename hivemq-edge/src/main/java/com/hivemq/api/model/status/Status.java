@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.json.TimestampToDateConverter;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -45,16 +46,19 @@ public class Status {
         STOPPED
     }
 
-    @JsonProperty("connection")
+    @JsonProperty(value = "connection", required = true)
     @Schema(description = "A mandatory connection status field.")
     private final @NotNull CONNECTION_STATUS connection;
 
-    @JsonProperty("runtime")
+    @JsonProperty(value = "runtime", required = true)
     @Schema(description = "A object status field.")
     private final @NotNull RUNTIME_STATUS runtime;
 
-    @JsonProperty("id")
-    @Schema(description = "The identifier of the object")
+    @JsonProperty(value = "id", required = true)
+    @Schema(description = "The identifier of the object",
+            minLength = 1,
+            maxLength = HiveMQEdgeConstants.MAX_ID_LEN,
+            pattern = HiveMQEdgeConstants.ID_REGEX)
     private final @NotNull String id;
 
     @JsonProperty("message")
@@ -63,30 +67,33 @@ public class Status {
 
     @JsonProperty("startedAt")
     @Schema(description = "The datetime the object was 'started' in the system.",
-            format = "date-time", type = "string")
+            format = "date-time",
+            type = "string")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
     private @Nullable Long startedAt;
 
     @JsonProperty("lastActivity")
     @Schema(description = "The datetime of the last activity through this connection",
-            format = "date-time", type = "string")
+            format = "date-time",
+            type = "string")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
     private @Nullable Long lastActivity;
 
-    @JsonProperty("type")
-    @Schema(description = "The type of the object")
+    @JsonProperty(value = "type", required = true)
+    @Schema(description = "The type of the object",
+            maxLength = HiveMQEdgeConstants.MAX_ID_LEN)
     private final @NotNull String type;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public Status(@NotNull @JsonProperty("runtime") final RUNTIME_STATUS runtime,
-                  @NotNull @JsonProperty("connection") final CONNECTION_STATUS connection,
-                  @NotNull @JsonProperty("id") final String id,
-                  @NotNull @JsonProperty("type") final String type,
-                  @Nullable @JsonProperty("startedAt") final Long startedAt,
-                  @Nullable @JsonProperty("lastActivity") final Long lastActivity,
-                  @Nullable @JsonProperty("message") final String message) {
+    public Status(@JsonProperty(value = "runtime", required = true) final @NotNull RUNTIME_STATUS runtime,
+                  @JsonProperty(value = "connection", required = true) final @NotNull CONNECTION_STATUS connection,
+                  @JsonProperty(value = "id", required = true) final @NotNull String id,
+                  @JsonProperty(value = "type", required = true) final @NotNull String type,
+                  @JsonProperty(value = "startedAt", required = true) final @Nullable Long startedAt,
+                  @JsonProperty(value = "lastActivity", required = true) final @Nullable Long lastActivity,
+                  @JsonProperty(value = "message", required = true) final @Nullable String message) {
         this.runtime = runtime;
         this.connection = connection;
         this.id = id;

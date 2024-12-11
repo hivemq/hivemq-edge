@@ -28,12 +28,14 @@ import java.util.stream.Collectors;
 @Schema(name = "FieldMapping")
 public class FieldMappingModel {
 
-    @JsonProperty(value = "instructions")
-    @Schema(description = "List of instructions to be applied to incoming data")
+    @JsonProperty(value = "instructions",
+                  required = true)
+    @Schema(description = "List of instructions to be applied to incoming data",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull List<InstructionModel> instructions;
 
     public FieldMappingModel(
-            @JsonProperty(value = "instructions") final @Nullable List<InstructionModel> instructions) {
+            @JsonProperty(value = "instructions", required = true) final @Nullable List<InstructionModel> instructions) {
         this.instructions = Objects.requireNonNullElse(instructions, List.of());
     }
 

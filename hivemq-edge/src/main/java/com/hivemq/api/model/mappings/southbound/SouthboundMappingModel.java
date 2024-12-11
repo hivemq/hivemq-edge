@@ -29,12 +29,14 @@ public class SouthboundMappingModel {
 
     @JsonProperty(value = "topicFilter", required = true)
     @Schema(description = "The filter defining what topics we will receive messages from.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             minLength = 1,
             maxLength = 65_535)
     private final @NotNull String topicFilter;
 
     @JsonProperty(value = "tagName", required = true)
     @Schema(description = "The tag for which values hould be collected and sent out.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             format = "mqtt-tag",
             minLength = 1,
             maxLength = 2048)

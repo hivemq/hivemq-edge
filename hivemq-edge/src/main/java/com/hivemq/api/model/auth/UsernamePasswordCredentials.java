@@ -25,28 +25,32 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 public class UsernamePasswordCredentials {
 
-    @JsonProperty("userName")
-    @Schema(description = "The userName associated with the user")
+    @JsonProperty(value = "userName", required = true)
+    @Schema(description = "The userName associated with the user",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            maxLength = 1000)
     private final @NotNull String userName;
 
-    @JsonProperty("password")
-    @Schema(description = "The password associated with the user")
+    @JsonProperty(value = "password", required = true)
+    @Schema(description = "The password associated with the user",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            maxLength = 1000)
     private final @NotNull String password;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public UsernamePasswordCredentials(
-            @JsonProperty("userName") final @NotNull String userName,
-            @JsonProperty("password") final @NotNull String password) {
+            @JsonProperty(value = "userName", required = true) final @NotNull String userName,
+            @JsonProperty(value = "password", required = true) final @NotNull String password) {
 
         this.userName = userName;
         this.password = password;
     }
 
-    public String getUserName() {
+    public @NotNull String getUserName() {
         return userName;
     }
 
-    public String getPassword() {
+    public @NotNull String getPassword() {
         return password;
     }
 }

@@ -21,17 +21,20 @@ import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class TagSchema {
-    @JsonProperty("protocolId")
-    @Schema(description = "The id assigned to the protocol adapter type")
+    @JsonProperty(value = "protocolId", required = true)
+    @Schema(description = "The id assigned to the protocol adapter type",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            maxLength = 100)
     private final @NotNull String protocolId;
 
-    @JsonProperty("configSchema")
-    @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
+    @JsonProperty(value = "configSchema", required = true)
+    @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode configSchema;
 
     public TagSchema(
-            @JsonProperty("protocolId") final @NotNull String protocolId,
-            @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
+            @JsonProperty(value = "protocolId", required = true) final @NotNull String protocolId,
+            @JsonProperty(value = "configSchema", required = true) final @NotNull JsonNode configSchema) {
         this.protocolId = protocolId;
         this.configSchema = configSchema;
     }
