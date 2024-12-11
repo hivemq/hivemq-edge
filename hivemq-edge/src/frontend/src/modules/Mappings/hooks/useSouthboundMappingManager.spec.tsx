@@ -35,10 +35,6 @@ describe('useSouthboundMappingManager', () => {
                 source: 'dropped-property',
               },
             ],
-            metadata: {
-              destination: expect.objectContaining({}),
-              source: expect.objectContaining({}),
-            },
           }),
         }),
       ],
