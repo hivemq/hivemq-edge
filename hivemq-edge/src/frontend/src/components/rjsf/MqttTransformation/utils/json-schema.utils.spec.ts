@@ -107,7 +107,7 @@ describe('reducerSchemaExamples', () => {
       expect.objectContaining({
         properties: expect.objectContaining({
           age: {
-            examples: 1,
+            examples: [1],
             title: 'Age',
             type: 'integer',
           },
@@ -125,13 +125,13 @@ describe('reducerSchemaExamples', () => {
           nestedObject: expect.objectContaining({
             properties: expect.objectContaining({
               age: {
-                examples: 100,
+                examples: [100],
                 title: 'Age',
                 type: 'integer',
               },
               name: {
                 default: 'Default name',
-                examples: 'test2',
+                examples: ['test2'],
                 type: 'string',
               },
             }),
@@ -156,7 +156,7 @@ describe('payloadToSchema', () => {
       'test/topic1': {
         properties: {
           age: {
-            examples: 1,
+            examples: [1],
             type: 'integer',
           },
         },

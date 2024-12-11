@@ -3,7 +3,7 @@ import type { IconType } from 'react-icons'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { Badge, Code, HStack, Tooltip, Box, Icon } from '@chakra-ui/react'
+import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
@@ -13,6 +13,7 @@ interface PropertyItemProps {
   isDraggable?: boolean
   hasTooltip?: boolean
   hasExamples?: boolean
+  hasDescription?: boolean
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -20,6 +21,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
   isDraggable = false,
   hasTooltip = false,
   hasExamples = false,
+  hasDescription = false,
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
@@ -40,6 +42,9 @@ const PropertyItem: FC<PropertyItemProps> = ({
   const propertyName = property.title
   const path = [...property.path, property.key].join('.')
 
+  // TODO[NVL] Only extracting the first value of any examples. Might want to provide something more user-friendly
+  const examples = Array.isArray(property.examples) ? property.examples[0] : property.examples
+
   return (
     <HStack
       key={path}
@@ -48,6 +53,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
       tabIndex={isDraggable ? 0 : undefined}
       py="3px"
       justifyContent="flex-end"
+      alignItems="flex-start"
       role="group"
       aria-label={t('GenericSchema.structure.property')}
     >
@@ -74,20 +80,27 @@ const PropertyItem: FC<PropertyItemProps> = ({
           </Badge>
         </Tooltip>
       </HStack>
-      {property.examples && hasExamples && (
-        <Code
-          aria-label={t('GenericSchema.structure.example')}
-          data-testid="property-example"
-          size="xs"
-          variant="none"
-          fontSize="xs"
-          overflow="hidden"
-          textOverflow="ellipsis"
-          whiteSpace="nowrap"
-        >
-          {property.examples.toString()}
-        </Code>
-      )}
+      <VStack gap={0} alignItems="flex-end">
+        {examples && hasExamples && (
+          <Code
+            aria-label={t('GenericSchema.structure.example')}
+            data-testid="property-example"
+            size="xs"
+            variant="none"
+            fontSize="xs"
+            overflow="hidden"
+            textOverflow="ellipsis"
+            whiteSpace="nowrap"
+          >
+            {examples.toString()}
+          </Code>
+        )}
+        {hasDescription && (
+          <Text fontSize="sm" textAlign="end">
+            {property.description}
+          </Text>
+        )}
+      </VStack>
     </HStack>
   )
 }
