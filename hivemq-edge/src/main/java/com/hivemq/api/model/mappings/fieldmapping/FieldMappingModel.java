@@ -21,18 +21,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Schema(name = "FieldMapping")
 public class FieldMappingModel {
 
-    @JsonProperty(value = "instructions", required = true)
+    @JsonProperty(value = "instructions")
     @Schema(description = "List of instructions to be applied to incoming data")
     private final @NotNull List<InstructionModel> instructions;
 
     public FieldMappingModel(
-            @JsonProperty(value = "instructions", required = true) final @NotNull List<InstructionModel> instructions) {
-        this.instructions = instructions;
+            @JsonProperty(value = "instructions") final @NotNull List<InstructionModel> instructions) {
+        this.instructions = Objects.requireNonNullElse(instructions, List.of());
     }
 
     public @NotNull List<InstructionModel> getInstructions() {
