@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
@@ -50,8 +51,8 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull String adapterId;
 
-    public OpcUaClientConfigurator(final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
-                                   final @NotNull String adapterId) {
+    public OpcUaClientConfigurator(
+            final @NotNull OpcUaSpecificAdapterConfig adapterConfig, final @NotNull String adapterId) {
         this.adapterConfig = adapterConfig;
         this.adapterId = adapterId;
     }
@@ -112,10 +113,9 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
 
     private boolean checkAuthEnabled() {
         //check that at least one auth method (Basic or X509) is enabled
-        return adapterConfig.getAuth() != null &&
-                (adapterConfig.getAuth().getBasicAuth() != null ||
-                        (adapterConfig.getAuth().getX509Auth() != null &&
-                                adapterConfig.getAuth().getX509Auth().isEnabled()));
+        final Auth auth = adapterConfig.getAuth();
+        return auth != null &&
+                (auth.getBasicAuth() != null || (auth.getX509Auth() != null && auth.getX509Auth().isEnabled()));
     }
 
     private void configureIdentityProvider(
@@ -124,16 +124,20 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
             final @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain) {
 
         final ImmutableList.Builder<IdentityProvider> identityProviderBuilder = ImmutableList.builder();
-        final X509Auth x509Auth = adapterConfig.getAuth().getX509Auth();
-        final boolean x509AuthEnabled = x509Auth != null && x509Auth.isEnabled();
-        if (x509AuthEnabled && tlsEnabled && keyPairWithChain != null) {
-            identityProviderBuilder.add(new X509IdentityProvider(Arrays.asList(keyPairWithChain.getCertificateChain()),
-                    keyPairWithChain.getPrivateKey()));
-        }
+        final Auth auth = adapterConfig.getAuth();
 
-        if (adapterConfig.getAuth().getBasicAuth() != null) {
-            final BasicAuth basicAuth = adapterConfig.getAuth().getBasicAuth();
-            identityProviderBuilder.add(new UsernameProvider(basicAuth.getUsername(), basicAuth.getPassword()));
+        if (auth != null) {
+            final X509Auth x509Auth = auth.getX509Auth();
+            final boolean x509AuthEnabled = x509Auth != null && x509Auth.isEnabled();
+            if (x509AuthEnabled && tlsEnabled && keyPairWithChain != null) {
+                identityProviderBuilder.add(new X509IdentityProvider(Arrays.asList(keyPairWithChain.getCertificateChain()),
+                        keyPairWithChain.getPrivateKey()));
+            }
+
+            if (auth.getBasicAuth() != null) {
+                final BasicAuth basicAuth = auth.getBasicAuth();
+                identityProviderBuilder.add(new UsernameProvider(basicAuth.getUsername(), basicAuth.getPassword()));
+            }
         }
 
         final ImmutableList<IdentityProvider> identityProviders = identityProviderBuilder.build();
@@ -145,7 +149,7 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
     }
 
     @NotNull
-    private DefaultClientCertificateValidator createServerCertificateValidator(@NotNull Tls tlsConfig) {
+    private DefaultClientCertificateValidator createServerCertificateValidator(@NotNull final Tls tlsConfig) {
         final List<X509Certificate> trustedCerts;
         final boolean truststoreAvailable = checkTruststoreAvailable(tlsConfig);
         if (truststoreAvailable) {
