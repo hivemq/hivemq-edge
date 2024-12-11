@@ -44,7 +44,7 @@
       "title": "Extensions",
       "routes": {
         "modules": "Modules",
-        "namespace": "Unified Namespace"
+        "namespace": "UNS Prefix"
       }
     },
     "resources": {
@@ -649,11 +649,11 @@
     }
   },
   "unifiedNamespace": {
-    "title": "Unified Namespace",
+    "title": "Unified Namespace Prefix",
     "description": "Set your unified namespace architecture.",
     "standard": "ISA-95",
     "action": {
-      "define": "Modify the unified namespace"
+      "define": "Modify the UNS Prefix"
     },
     "error": {
       "loading": "We cannot load your namespace for the time being. Please try again later"
@@ -684,23 +684,23 @@
     },
     "enterprise": {
       "label": "Enterprise",
-      "helper": "Help text goes here to explain what it is"
+      "helper": "An enterprise is a collection of sites and areas and represents the top level of a role based equipment hierarchy."
     },
     "site": {
       "label": "Site",
-      "helper": "Help text goes here to explain what it is"
+      "helper": "A site is a physical, geographical, or logical grouping determined by the enterprise."
     },
     "area": {
       "label": "Area",
-      "helper": "Help text goes here to explain what it is"
+      "helper": "An area is a physical, geographical, or logical grouping determined by the site."
     },
     "productionLine": {
       "label": "Production Line",
-      "helper": "Help text goes here to explain what it is"
+      "helper": "Production lines are low levels of equipment scheduled for discrete manufacturing processes."
     },
     "workCell": {
       "label": "Work Cell",
-      "helper": "Help text goes here to explain what it is"
+      "helper": "Work Cell are low levels of equipment scheduled for discrete manufacturing processes."
     },
     "options": {
       "legend": "Options"
