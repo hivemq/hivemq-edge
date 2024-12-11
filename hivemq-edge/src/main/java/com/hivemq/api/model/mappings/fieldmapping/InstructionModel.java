@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Schema(name = "Instruction")
 public class InstructionModel {
@@ -37,12 +38,19 @@ public class InstructionModel {
             maxLength = 2048)
     private final @NotNull String sourceFieldName;
 
+    @JsonProperty(value = "transformation")
+    @Schema(name = "transformation", description = "The transformation that should be applied when the source and destination field get mapped.")
+    private final @Nullable TransformationModel transformationModel;
+
+
     @JsonCreator
     public InstructionModel(
             @JsonProperty(value = "source", required = true) final @NotNull String sourceFieldName,
-            @JsonProperty(value = "destination", required = true) final @NotNull String destinationFieldName) {
+            @JsonProperty(value = "destination", required = true) final @NotNull String destinationFieldName,
+            @JsonProperty(value = "transformation") final @Nullable TransformationModel transformationModel) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
+        this.transformationModel = transformationModel;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -53,7 +61,7 @@ public class InstructionModel {
         return sourceFieldName;
     }
 
-    public static InstructionModel from(final @NotNull Instruction instruction) {
-        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName());
+    public static @NotNull InstructionModel from(final @NotNull Instruction instruction) {
+        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName(), null);
     }
 }
