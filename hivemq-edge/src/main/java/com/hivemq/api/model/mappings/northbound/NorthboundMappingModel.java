@@ -35,6 +35,7 @@ public class NorthboundMappingModel {
 
     @JsonProperty(value = "topic", required = true)
     @Schema(description = "The target mqtt topic where received tags should be sent to.",
+            format = " mqtt-topic",
             minLength = 1,
             maxLength = 65_535)
     private final @NotNull String topic;
