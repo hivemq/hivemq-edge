@@ -379,6 +379,19 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isDouble()) {
             return jsonNode.asDouble();
         }
+
+        if (jsonNode.isInt()) {
+            final double parsedDouble = jsonNode.intValue();
+            final int parsedIntegerBack = (int) parsedDouble;
+            if (parsedIntegerBack != jsonNode.intValue()) {
+                throw new IllegalArgumentException(String.format(
+                        "An integer was supplied for a double node that is not representable without rounding. Input Integer: '%d', Output Double: '%f'. To avoid inaccuracies the publish will not be consumed.",
+                        jsonNode.intValue(),
+                        parsedDouble));
+            }
+            return parsedDouble;
+        }
+
         throw createException(jsonNode, BuiltinDataType.Double.name());
     }
 
