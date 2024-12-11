@@ -4328,7 +4328,9 @@ components:
           type: string
           description: The adapter type associated with this instance
       required:
+      - config
       - id
+      - type
     AdapterConfig:
       type: object
       properties:
