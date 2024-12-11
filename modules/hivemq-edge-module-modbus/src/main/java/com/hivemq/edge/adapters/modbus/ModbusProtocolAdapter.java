@@ -35,7 +35,6 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
@@ -45,10 +44,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
@@ -60,7 +59,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     private final @NotNull ModbusClient modbusClient;
-    private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
+    private final @NotNull Map<PollingContext, List<DataPoint>> lastSamples = new ConcurrentHashMap<>();
     private final @NotNull List<Tag> tags;
     private final @NotNull String adapterId;
 
@@ -91,6 +90,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+        lastSamples.clear();
         modbusClient.disconnect().whenComplete((unused, t) -> {
             if (t == null) {
                 output.stoppedSuccessfully();
@@ -114,7 +114,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     private void pollModbus(
-            @NotNull PollingInput pollingInput, @NotNull PollingOutput pollingOutput, @NotNull ModbusTag modbusTag) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput, final @NotNull ModbusTag modbusTag) {
         readRegisters(pollingInput.getPollingContext(),
                 modbusClient,
                 modbusTag).whenComplete((modbusdata, throwable) -> {
@@ -183,9 +183,9 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     private void calculateDelta(final @NotNull ModBusData modBusData, final @NotNull PollingOutput pollingOutput) {
-        final ModbusToMqttMapping subscription = (ModbusToMqttMapping) modBusData.getPollingContext();
+        final PollingContext pollingContext = modBusData.getPollingContext();
 
-        final List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
+        final List<DataPoint> previousSampleDataPoints = lastSamples.put(pollingContext, modBusData.getDataPoints());
         final List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
         final List<DataPoint> delta =
                 AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
