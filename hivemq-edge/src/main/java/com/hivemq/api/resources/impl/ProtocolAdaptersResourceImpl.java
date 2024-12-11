@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.adapters.AdapterConfigModel;
+import com.hivemq.api.errors.InvalidInputError;
 import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
@@ -654,8 +655,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             } catch (final IllegalArgumentException illegalArgumentException) {
                 log.warn("Unable to parse tags for adapter '{}'", adapterName);
                 log.debug("Original Exception: ", illegalArgumentException);
-                return ErrorResponseUtil.invalidInput(
-                        "Exception during parsing of tags for the adapter. See log for further information.");
+                return ErrorResponseUtil.errorResponse(new InvalidInputError(
+                        "Exception during parsing of tags for the adapter. See log for further information."));
             }
 
             final List<NorthboundMapping> northboundMappings = adapter.getNorthboundMappingModels()
