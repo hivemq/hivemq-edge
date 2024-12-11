@@ -2,11 +2,11 @@ package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class AdapterTypeReadOnlyError extends Errors {
+public class AdapterTypeReadOnlyError extends ProblemDetails {
     public AdapterTypeReadOnlyError(String error) {
         super(
                 "AdapterTypeReadOnly",

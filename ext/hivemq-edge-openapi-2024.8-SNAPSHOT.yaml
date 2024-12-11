@@ -132,13 +132,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Error in request.
         "401":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: The requested credentials could not be authenticated.
       summary: Authorize the presented user to obtain a secure token for use on the
         API.
@@ -167,7 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: The requested credentials could not be authenticated.
       summary: Obtain a fresh JWT for the previously authenticated user.
       tags:
@@ -190,7 +190,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: The token was invalid
       summary: Authorize the presented user to obtain a secure token for use on the
         API.
@@ -372,7 +372,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily not available
       summary: Get all policies
       tags:
@@ -460,31 +460,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Policy creation failed
         "409":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Already exists
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily unavailable
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage error
       summary: Create a new policy
       tags:
@@ -508,31 +508,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Policy not found
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Precondition failed
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily not available
       summary: Delete a behavior policy
       tags:
@@ -601,13 +601,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Invalid query parameter
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Policy not found
       summary: Get a  policy
       tags:
@@ -702,37 +702,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Policy creation failed
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Policy not found
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Precondition failed
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily unavailable
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage error
       summary: Update an existing policy
       tags:
@@ -780,19 +780,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Client is disconnected
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server error
       summary: Get the state of a client
       tags:
@@ -1064,25 +1064,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
       summary: Get all data policies
       tags:
@@ -1172,31 +1172,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy creation failed
         "409":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy already present
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage
       summary: Create a new data policy
       tags:
@@ -1220,25 +1220,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
       summary: Delete a data policy
       tags:
@@ -1316,7 +1316,7 @@ paths:
                     - title: Required parameter missing
                       detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bad request
         "404":
           content:
@@ -1330,7 +1330,7 @@ paths:
                     - title: Resource not found
                       detail: Resource with id 'my-resource-id' not found
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Resource not found
       summary: Get a data policy
       tags:
@@ -1428,31 +1428,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy creation failed
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage
       summary: Update an existing data policy
       tags:
@@ -1727,7 +1727,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
       summary: Get all functions as a JSON Schema
       tags:
@@ -1871,7 +1871,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
       summary: Get all schemas
       tags:
@@ -1913,31 +1913,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Schema could not be validatetd
         "409":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Schema already exists
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Mismatch between schema and etag
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage
       summary: Create a new schema
       tags:
@@ -1962,31 +1962,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Schema referenced
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Schema not found
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Mismatch between schema and etag
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
       summary: Delete all versions of the schema
       tags:
@@ -2032,19 +2032,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: A url parameter is missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Schema not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
       summary: Get a schema
       tags:
@@ -2179,7 +2179,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporary not available
       summary: Get all scripts
       tags:
@@ -2221,37 +2221,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script is invalid
         "409":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script is already present
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script doesn't match etag
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporary not available
         "507":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Insufficient storage
       summary: Create a new script
       tags:
@@ -2275,31 +2275,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script is referenced
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script not found
         "412":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script doesn't match etag
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporary not available
       summary: Delete a script
       tags:
@@ -2344,25 +2344,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Script not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server error
         "503":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Temporary not available
       summary: Get a script
       tags:
@@ -2553,7 +2553,7 @@ paths:
           content:
             application/xml:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Error - function not supported
       summary: Obtain HiveMQ Edge Configuration
       tags:
@@ -2693,7 +2693,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge is invalid
       summary: Add a new Bridge
       tags:
@@ -2739,13 +2739,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge not found
       summary: Remove a Bridge
       tags:
@@ -2814,13 +2814,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge not found
       summary: Get a bridge by ID
       tags:
@@ -2847,13 +2847,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge not found
       summary: Update a Bridge
       tags:
@@ -2888,13 +2888,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge not found
       summary: Get the up to date status of a bridge
       tags:
@@ -2935,13 +2935,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Bridge not found
       summary: Transition the runtime status of a bridge
       tags:
@@ -3010,19 +3010,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter failed validation
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Add a new Adapter and all related parts like e.g. tags
       tags:
@@ -3082,7 +3082,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Delete an adapter
       tags:
@@ -3130,7 +3130,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Obtain the details for a configured adapter for the specified type
       tags:
@@ -3157,19 +3157,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update an adapter
       tags:
@@ -3231,19 +3231,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Protocol adapter does not support discovery
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Discover a list of available data points
       tags:
@@ -3270,7 +3270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Get the mappings for northbound messages.
       tags:
@@ -3297,19 +3297,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Missing tags
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update the from mappings of an adapter.
       tags:
@@ -3336,7 +3336,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Get the southbound mappings.
       tags:
@@ -3363,19 +3363,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Missing tags
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update the to southbound mappings of an adapter.
       tags:
@@ -3410,13 +3410,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Get the up to date status of an adapter
       tags:
@@ -3456,13 +3456,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Transition the runtime status of an adapter
       tags:
@@ -3501,7 +3501,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
       summary: Get the domain tags for the device connected through this adapter.
       tags:
@@ -3530,19 +3530,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "409":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Tag already exists
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Add a new domain tag to the specified adapter
       tags:
@@ -3569,13 +3569,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update the domain tag of an adapter.
       tags:
@@ -3605,13 +3605,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Delete an domain tag
       tags:
@@ -3645,19 +3645,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update the domain tag of an adapter.
       tags:
@@ -3687,13 +3687,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
       summary: Add a new Adapter
       tags:
@@ -3771,7 +3771,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
       summary: Obtain the JSON schema for a tag for a specific protocol adapter.
       tags:
@@ -3837,7 +3837,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
       summary: Get the domain tag with the given name in this Edge instance
       tags:
@@ -3901,7 +3901,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
       summary: Obtain a list of configured adapters for the specified type
       tags:
@@ -3950,13 +3950,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Get a json schema that explains the json schema that is used to write
         to a PLC for the given tag name.
@@ -3985,13 +3985,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: No samples found
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Obtain a JsonSchema based in the stored samples for a given topic.
       tags:
@@ -4076,13 +4076,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Already Present
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Add a new topic filter
       tags:
@@ -4102,7 +4102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update all topic filters.
       tags:
@@ -4126,13 +4126,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Already Present
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Topic filter not found
       summary: Delete an topic filter
       tags:
@@ -4160,13 +4160,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Topic filter failed validation
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update a topic filter.
       tags:
@@ -4214,7 +4214,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: isa95 config failed validation
       summary: Set isa95 config
       tags:
@@ -4301,7 +4301,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
       summary: Obtain the latest sample for the metric requested
       tags:
@@ -4821,32 +4821,13 @@ components:
         detail:
           type: string
           description: Detailed contextual description of this error
-        note:
-          type: string
-          description: Additional information
         parameter:
           type: string
           description: The parameter causing the issue
-        trace:
-          type: string
-          description: Trace infomration for the error
+      required:
+      - detail
     Errors:
       type: object
-      properties:
-        detail:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
     Event:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5482,6 +5463,28 @@ components:
       - arguments
       - functionId
       - id
+    ProblemDetails:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Correlation id
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+      required:
+      - title
     ProtocolAdapter:
       type: object
       description: List of result items that are returned by this endpoint

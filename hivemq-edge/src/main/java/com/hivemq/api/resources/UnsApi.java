@@ -17,7 +17,7 @@ package com.hivemq.api.resources;
 
 import com.hivemq.api.model.uns.ISA95ApiBean;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -77,7 +77,7 @@ public interface UnsApi {
                        @ApiResponse(responseCode = "400",
                                     description = "isa95 config failed validation",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response setIsa95(@Parameter(name = "isa95",

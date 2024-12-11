@@ -15,7 +15,7 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.Response;
@@ -26,7 +26,7 @@ import javax.ws.rs.core.Response;
 public class ErrorResponseUtil {
 
 
-    public static @NotNull Response errorResponse(final @NotNull Errors errors) {
+    public static @NotNull Response errorResponse(final @NotNull ProblemDetails errors) {
         return Response.status(errors.getStatus())
                 .entity(errors)
                 .header("Content-Type", "application/json;charset=utf-8")

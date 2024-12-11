@@ -17,18 +17,6 @@ package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.adapters.AdapterConfigModel;
-import com.hivemq.api.errors.AlreadyExistsError;
-import com.hivemq.api.errors.BadRequestError;
-import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.NotFoundError;
-import com.hivemq.api.errors.adapters.AdapterFailedSchemaValidationError;
-import com.hivemq.api.errors.adapters.AdapterFailedValidationError;
-import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
-import com.hivemq.api.errors.adapters.AdapterNotFoundError;
-import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
-import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
-import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
-import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
@@ -44,7 +32,7 @@ import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
 import com.hivemq.api.resources.examples.TagResourceExamples;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -109,7 +97,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter type not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
     Response getTagSchema(
@@ -132,12 +120,12 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter type not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
 
                        @ApiResponse(responseCode = "400",
                                     description = "Adapter is invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @NotNull
     Response addAdapter(
@@ -160,15 +148,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter type not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Adapter failed validation",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     @NotNull
     Response addCompleteAdapter(
             @NotNull @Parameter(name = "adaptertype",
@@ -220,7 +208,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter type not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
 
                })
     @Produces(MediaType.APPLICATION_JSON)
@@ -249,7 +237,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
     })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
@@ -269,15 +257,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Adapter is invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
@@ -299,7 +287,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
@@ -327,15 +315,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Protocol adapter does not support discovery",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
@@ -369,11 +357,11 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Adapter is invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @NotNull
     Response getStatus(
@@ -400,11 +388,11 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Adapter is invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @NotNull
     Response changeStatus(
@@ -457,7 +445,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -478,15 +466,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "409",
                                     description = "Tag already exists",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
 
 
@@ -513,11 +501,11 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Tag not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -543,15 +531,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Tag not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "403",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     @NotNull
     Response updateDomainTag(
             @Parameter(name = "adapterId",
@@ -575,15 +563,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Tag not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     @NotNull
     Response updateDomainTags(
@@ -631,7 +619,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Tag not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTag(
@@ -659,19 +647,19 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter operation not supported",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter is readonly",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getWritingSchema(
@@ -715,7 +703,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     //TODO fix example
     @Produces(APPLICATION_JSON)
@@ -737,15 +725,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Missing tags",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                }) //TODO fix example
     @NotNull
     Response updateNorthboundMappingsForAdapter(
@@ -786,7 +774,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     //TODO fix example
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -808,15 +796,15 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Adapter not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Missing tags",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     //TODO fix example
     @NotNull
     Response updateSouthboundMappingsForAdapter(

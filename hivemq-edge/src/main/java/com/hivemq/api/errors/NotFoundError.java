@@ -1,13 +1,11 @@
 package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
-import org.jetbrains.annotations.Nullable;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class NotFoundError extends Errors {
+public class NotFoundError extends ProblemDetails {
     public NotFoundError() {
         super(
                 "NotFoundError",

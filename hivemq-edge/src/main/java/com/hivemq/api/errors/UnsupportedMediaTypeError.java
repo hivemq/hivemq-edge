@@ -1,11 +1,11 @@
 package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class UnsupportedMediaTypeError extends Errors {
+public class UnsupportedMediaTypeError extends ProblemDetails {
     public UnsupportedMediaTypeError() {
         super(
                 "UnsupportedMediaTypeError",

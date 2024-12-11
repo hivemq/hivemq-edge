@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -67,11 +67,11 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "400",
                                     description = "Error in request.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "401",
                                     description = "The requested credentials could not be authenticated.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))})
+                                                       schema = @Schema(implementation = ProblemDetails.class)))})
     Response authenticate(final @NotNull UsernamePasswordCredentials credentials);
 
 
@@ -87,7 +87,7 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "401",
                                     description = "The token was invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                            schema = @Schema(implementation = Errors.class)))})
+                                            schema = @Schema(implementation = ProblemDetails.class)))})
     Response validate(final @NotNull ApiBearerToken token);
 
     @POST
@@ -110,7 +110,7 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "401",
                                     description = "The requested credentials could not be authenticated.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))})
+                                                       schema = @Schema(implementation = ProblemDetails.class)))})
     Response reissueToken();
 
 }

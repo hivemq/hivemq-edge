@@ -74,7 +74,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName(), null, null))));
+                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName()))));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

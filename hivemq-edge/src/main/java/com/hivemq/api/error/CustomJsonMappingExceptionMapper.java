@@ -34,7 +34,7 @@ public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMap
     public @NotNull Response toResponse(final @NotNull JsonMappingException exception) {
         final String originalMessage = exception.getOriginalMessage();
         if (originalMessage != null) {
-            return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(originalMessage, null, null, null))));
+            return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(originalMessage, null))));
         } else {
             return ErrorResponseUtil.errorResponse(new InvalidInputError("Unable to parse JSON body, please check the input format."));
         }

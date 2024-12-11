@@ -2,11 +2,11 @@ package com.hivemq.api.errors.samples;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class NoSamplesFoundError extends Errors {
+public class NoSamplesFoundError extends ProblemDetails {
     public NoSamplesFoundError(String error) {
         super(
                 "NoSamplesFound",

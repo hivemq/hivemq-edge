@@ -2,11 +2,11 @@ package com.hivemq.api.errors.authentication;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class AuthenticationValidationError extends Errors {
+public class AuthenticationValidationError extends ProblemDetails {
     public AuthenticationValidationError(List<Error> errors) {
         super(
                 "AuthenticationValidationError",

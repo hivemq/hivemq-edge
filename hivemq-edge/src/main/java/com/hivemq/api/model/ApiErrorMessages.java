@@ -59,7 +59,7 @@ public class ApiErrorMessages {
     public List<Error> toErrorList(){
         return errors
                 .stream()
-                .map(error -> new Error(error.getTitle(), error.getFieldName(), null, null))
+                .map(error -> new Error(error.getTitle(), error.getFieldName()))
                 .collect(Collectors.toList());
     }
 }

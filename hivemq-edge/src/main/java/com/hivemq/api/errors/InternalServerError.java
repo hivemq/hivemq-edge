@@ -2,12 +2,12 @@ package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class InternalServerError extends Errors {
+public class InternalServerError extends ProblemDetails {
     public InternalServerError(
             final @Nullable String error) {
         super(

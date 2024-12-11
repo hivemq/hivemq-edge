@@ -15,15 +15,11 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.errors.AlreadyExistsError;
-import com.hivemq.api.errors.BadRequestError;
-import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.topicfilters.TopicFilterNotFoundError;
 import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.api.model.topicFilters.TopicFilterModelList;
 import com.hivemq.api.resources.examples.TopicFiltersResourceExamples;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -67,11 +63,11 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "403",
                                     description = "Already Present",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))}
+                                                       schema = @Schema(implementation = ProblemDetails.class)))}
 
     )
     @NotNull
@@ -111,11 +107,11 @@ public interface TopicFilterApi {
                             @ApiResponse(responseCode = "404",
                                          description = "Topic filter not found",
                                          content = @Content(mediaType = APPLICATION_JSON,
-                                                            schema = @Schema(implementation = Errors.class))),
+                                                            schema = @Schema(implementation = ProblemDetails.class))),
                             @ApiResponse(responseCode = "403",
                                          description = "Already Present",
                                          content = @Content(mediaType = APPLICATION_JSON,
-                                                            schema = @Schema(implementation = Errors.class)))
+                                                            schema = @Schema(implementation = ProblemDetails.class)))
                })
     @Produces(APPLICATION_JSON)
     @NotNull
@@ -138,11 +134,11 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "400",
                                     description = "Topic filter failed validation",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
                })
     @NotNull
     Response updateTopicFilter(
@@ -164,7 +160,7 @@ public interface TopicFilterApi {
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
                })
     @NotNull
     Response updateTopicFilters(

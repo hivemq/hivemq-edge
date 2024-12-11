@@ -15,10 +15,9 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.components.ListenerList;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -63,7 +62,7 @@ public interface GatewayApi {
                        @ApiResponse(responseCode = "405",
                                     description = "Error - function not supported",
                                     content = @Content(mediaType = MediaType.APPLICATION_XML,
-                                                       schema = @Schema(implementation = Errors.class)))})
+                                                       schema = @Schema(implementation = ProblemDetails.class)))})
     @Produces(MediaType.APPLICATION_XML)
     @NotNull Response getXmlConfiguration();
 

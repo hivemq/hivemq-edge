@@ -2,11 +2,11 @@ package com.hivemq.api.errors.bridge;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class BridgeFailedSchemaValidationError extends Errors {
+public class BridgeFailedSchemaValidationError extends ProblemDetails {
     public BridgeFailedSchemaValidationError(List<Error> errors) {
         super(
                 "BridgeFailedSchemaValidation",

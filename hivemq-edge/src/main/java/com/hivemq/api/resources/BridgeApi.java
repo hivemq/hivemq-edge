@@ -22,7 +22,7 @@ import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -88,7 +88,7 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "400",
                                     description = "Bridge is invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     Response addBridge(
             @Parameter(name = "bridge",
@@ -109,11 +109,11 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Bridge not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Query parameters invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     Response deleteBridge(
             @Parameter(name = "bridgeId",
@@ -134,11 +134,11 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Bridge not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Query parameters invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     Response updateBridge(
             @Parameter(name = "bridge",
                        description = "The bridge to update.",
@@ -168,11 +168,11 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Bridge not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Query parameters invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     Response getStatus(@Parameter(name = "bridgeId",
                                             description = "The name of the bridge to query.",
                                             required = true,
@@ -198,11 +198,11 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Bridge not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Query parameters invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),})
     Response changeStatus(
             @Parameter(name = "bridgeId",
                        description = "The id of the bridge whose runtime-status will change.",
@@ -234,11 +234,11 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "404",
                                     description = "Bridge not found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "400",
                                     description = "Query parameters invalid",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                })
     Response getBridgeByName(@Parameter(name = "bridgeId",
                                              description = "The id of the bridge to query.",

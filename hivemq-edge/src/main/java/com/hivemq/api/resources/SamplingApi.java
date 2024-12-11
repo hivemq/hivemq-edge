@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.samples.PayloadSampleList;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -80,11 +80,11 @@ public interface SamplingApi {
                        @ApiResponse(responseCode = "404",
                                     description = "No samples found",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class))),
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "500",
                                     description = "Internal Server Error",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class)))
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
                })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull

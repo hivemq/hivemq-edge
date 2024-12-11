@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.resources.examples.TagResourceExamples;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.error.Errors;
 import org.junit.jupiter.api.Test;
 
 class TagResourceExamplesTest {

@@ -16,7 +16,6 @@
 package com.hivemq.http.error;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,17 +32,9 @@ public class Error {
     public static final @NotNull String AT_LEAST_ONE_FIELD_MISSING_TITLE = "One of the fields must be present.";
     public static final @NotNull String EMPTY_STRING_TITLE = "String must not be empty";
 
-    @JsonProperty("detail")
+    @JsonProperty(value = "detail", required = true)
     @Schema(description = "Detailed contextual description of this error")
     private final @NotNull String detail;
-
-    @JsonProperty("note")
-    @Schema(description = "Additional information")
-    private final @Nullable String note;
-
-    @JsonProperty("trace")
-    @Schema(description = "Trace infomration for the error")
-    private final @Nullable String trace;
 
     @JsonProperty("parameter")
     @Schema(description = "The parameter causing the issue")
@@ -52,30 +43,15 @@ public class Error {
     @JsonCreator
     public Error(
             final @JsonProperty("detail") @NotNull String detail,
-            final @JsonProperty("parameter") @Nullable String parameter,
-            final @JsonProperty("note") @Nullable String note,
-            final @JsonProperty("trace") @Nullable String trace) {
-        this.detail = detail;
-        this.note = note;
-        this.trace = trace;
-        this.parameter = parameter;
-    }
-
-    public Error(
-            final @JsonProperty("detail") @NotNull String detail,
             final @JsonProperty("parameter") @Nullable String parameter) {
         this.parameter = parameter;
         this.detail = detail;
-        this.note = null;
-        this.trace = null;
     }
 
     public Error(
             final @JsonProperty("detail") @NotNull String detail) {
         this.detail = detail;
         this.parameter = null;
-        this.note = null;
-        this.trace = null;
     }
 
     public static @NotNull Error missingField(final @NotNull String field) {
@@ -96,9 +72,7 @@ public class Error {
 
         return new Error(
                 String.format("Field '%s' contains unknown variables: [%s].", field, String.join(", ", unknownVariables)),
-                field,
-                null,
-                null);
+                field);
     }
 
     public static @NotNull Error unsupportedType(
@@ -114,9 +88,7 @@ public class Error {
                 String.format("Unsupported type '%s'. Expected type was '%s'.",
                         actualType,
                         expectedType),
-                field,
-                null,
-                null);
+                field);
     }
 
     public static @NotNull Error unsupportedValue(
@@ -127,27 +99,21 @@ public class Error {
                 String.format("Unsupported value '%s'. Supported values are %s.",
                         actualValue,
                         supportedTypes),
-                field,
-                null,
-                null);
+                field);
     }
 
     public static @NotNull Error illegalValue(
             final @NotNull String field, final @NotNull String value, final @NotNull String errorMessage) {
         return new Error(
                 String.format("Illegal value '%s'. %s", value, errorMessage),
-                field,
-                null,
-                null);
+                field);
     }
 
     public static @NotNull Error illegalValue(
             final @NotNull String field, final @NotNull String errorMessage) {
         return new Error(
                 String.format("Illegal value: %s", errorMessage),
-                field,
-                null,
-                null);
+                field);
     }
 
     public static @NotNull Error functionsMustBePaired(
@@ -156,9 +122,7 @@ public class Error {
                 String.format("If '%s' function is present in the pipeline, '%s' function must be present as well.",
                         presentFunction,
                         missingFunction),
-                "function",
-                null,
-                null);
+                "function");
     }
 
     public static @NotNull Error atMostOneFunction(
@@ -168,9 +132,7 @@ public class Error {
                         function,
                         fields.size(),
                         fields),
-                "function",
-                null,
-                null);
+                "function");
     }
 
     public static @NotNull Error functionMustBeAfter(
@@ -182,10 +144,7 @@ public class Error {
                         falseField,
                         falseFieldFunctionId,
                         mustAfterField),
-                "function",
-                null,
-
-                null);
+                "function");
     }
 
     public static @NotNull Error functionMustBeBefore(
@@ -197,9 +156,7 @@ public class Error {
                         falseField,
                         falseFieldFunctionId,
                         mustBeforeField),
-                "function",
-                null,
-                null);
+                "function");
     }
 
     public @Nullable String getParameter() {
@@ -210,14 +167,6 @@ public class Error {
         return detail;
     }
 
-    public @Nullable String getNote() {
-        return note;
-    }
-
-    public @Nullable String getTrace() {
-        return trace;
-    }
-
     @Override
     public String toString() {
         return "Error{" +
@@ -226,12 +175,6 @@ public class Error {
             '\'' +
             ", parameter='" +
             parameter +
-            '\'' +
-            ", note='" +
-            getParameter() +
-            '\'' +
-            ", trace='" +
-            getTrace() +
             '\'' +
             '}';
     }

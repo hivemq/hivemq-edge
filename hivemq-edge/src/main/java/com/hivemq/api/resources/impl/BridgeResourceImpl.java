@@ -91,7 +91,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         if (checkBridgeExists(bridge.getId())) {
-            return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(List.of(new Error("Bridge already existed", "id", null, null))));
+            return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(List.of(new Error("Bridge already existed", "id"))));
         }
         validateBridge(errorMessages, bridge);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {

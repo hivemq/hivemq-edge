@@ -2,11 +2,11 @@ package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class AdapterTypeNotFoundError extends Errors {
+public class AdapterTypeNotFoundError extends ProblemDetails {
     public AdapterTypeNotFoundError(String error) {
         super(
                 "AdapterTypeNotFound",

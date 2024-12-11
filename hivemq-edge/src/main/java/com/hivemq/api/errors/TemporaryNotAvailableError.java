@@ -1,12 +1,11 @@
 package com.hivemq.api.errors;
 
 import com.hivemq.http.HttpStatus;
-import com.hivemq.http.error.Errors;
-import org.jetbrains.annotations.Nullable;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class TemporaryNotAvailableError extends Errors {
+public class TemporaryNotAvailableError extends ProblemDetails {
     public TemporaryNotAvailableError() {
         super(
                 "TemporaryUnavailable",
