@@ -62,6 +62,16 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
             stringMaxLength = 6)
     protected @NotNull Integer port;
 
+    @JsonProperty(value = "username", required = false)
+    @ModuleConfigField(title = "Username",
+            description = "Username for the connection to the database (can be empty if only password is required)",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = false,
+            stringPattern = ID_REGEX,
+            stringMinLength = 0,
+            stringMaxLength = 1024)
+    protected String username;
+
     @JsonProperty(value = "password", required = false)
     @ModuleConfigField(title = "Password",
             description = "Password for the connection to the database",
@@ -96,6 +106,7 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
         id = "";
         server = "";
         port = 6379;
+        username = "";
         password = "";
     }
 
@@ -109,6 +120,8 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
     public @NotNull Integer getPort() {return port;}
 
     public String getPassword() {return password;}
+
+    public String getUsername() {return username;}
 
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;

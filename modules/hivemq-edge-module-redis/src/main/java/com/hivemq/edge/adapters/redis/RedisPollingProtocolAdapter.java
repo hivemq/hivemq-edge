@@ -70,9 +70,8 @@ public class RedisPollingProtocolAdapter implements PollingProtocolAdapter<Redis
     }
 
     private JedisPoolConfig buildPoolConfig() {
-        final JedisPoolConfig poolConfig = new JedisPoolConfig();
         // Change settings here if needed.
-        return poolConfig;
+        return new JedisPoolConfig();
     }
 
     @Override
@@ -125,7 +124,11 @@ public class RedisPollingProtocolAdapter implements PollingProtocolAdapter<Redis
     public void initJedisPool() throws Exception {
         JedisPoolConfig jedisPoolConfig = buildPoolConfig();
         if(!adapterConfig.getPassword().isEmpty()) {
-            jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60,adapterConfig.getPassword());
+            if (!adapterConfig.getUsername().isEmpty()){
+                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60, adapterConfig.getUsername(),adapterConfig.getPassword());
+            } else {
+                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60,adapterConfig.getPassword());
+            }
         } else {
             jedisPool = new JedisPool(jedisPoolConfig, adapterConfig.getServer(), adapterConfig.getPort(), 60);
         }
