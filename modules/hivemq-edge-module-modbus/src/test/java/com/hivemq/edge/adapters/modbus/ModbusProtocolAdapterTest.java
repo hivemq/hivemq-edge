@@ -21,11 +21,13 @@ import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ModbusProtocolAdapterTest {
@@ -51,11 +53,13 @@ class ModbusProtocolAdapterTest {
         final ModBusData data2 = createSampleData();
         data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
 
-        AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
+        final List<DataPoint> dataPoints =
+                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
 
-        assertEquals(777,
-                ((DataPoint) data1.getDataPoints().get(5)).getTagValue(),
-                "Merged data should contain new value");
+        assertThat(dataPoints)
+                .hasSize(1)
+                .extracting(DataPoint::getTagValue, DataPoint::getTagName)
+                .containsExactly(Tuple.tuple(777, "register-5"));
     }
 
     protected static ModBusData createSampleData() {
