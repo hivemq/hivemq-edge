@@ -392,8 +392,10 @@ public class JsonToOpcUAConverter {
             final float parsedFloat = jsonNode.intValue();
             final int parsedIntegerBack = (int) parsedFloat;
             if (parsedIntegerBack != jsonNode.intValue()) {
-                log.warn(
-                        "An integer was supplied for a float node that is not representable without rounding. Input Integer: '{}', Output Float: '{}'", jsonNode.intValue(), parsedFloat);
+                throw new IllegalArgumentException(String.format(
+                        "An integer was supplied for a float node that is not representable without rounding. Input Integer: '%d', Output Float: '%f'. To avoid inaccuracies the publish will not be consumed.",
+                        jsonNode.intValue(),
+                        parsedFloat));
             }
             return parsedFloat;
         }
