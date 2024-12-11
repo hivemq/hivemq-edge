@@ -5074,7 +5074,7 @@ components:
           maxLength: 2048
           minLength: 1
         transformation:
-          $ref: '#/components/schemas/TransformationModel'
+          $ref: '#/components/schemas/Transformation'
       required:
       - destination
       - source
@@ -5330,6 +5330,7 @@ components:
           type: string
           format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
+          maxLength: 2048
           minLength: 1
         topic:
           type: string
@@ -5703,9 +5704,13 @@ components:
           type: string
           format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
+          maxLength: 2048
+          minLength: 1
         topicFilter:
           type: string
           description: The filter defining what topics we will receive messages from.
+          maxLength: 65535
+          minLength: 1
       required:
       - tagName
       - topicFilter
@@ -5884,7 +5889,7 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
-    TransformationModel:
+    Transformation:
       type: object
       description: The kind of transformation that is performed on the data.
     TypeIdentifier:
