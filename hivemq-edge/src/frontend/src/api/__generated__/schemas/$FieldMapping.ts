@@ -11,8 +11,5 @@ export const $FieldMapping = {
                 type: 'Instruction',
             },
         },
-        metadata: {
-            type: 'Metadata',
-        },
     },
 } as const;
