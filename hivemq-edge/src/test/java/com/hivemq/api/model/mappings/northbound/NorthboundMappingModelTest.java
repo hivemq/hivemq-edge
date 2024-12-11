@@ -33,7 +33,6 @@ class NorthboundMappingModelTest {
 
         final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("topic",
                 "tag",
-                MessageHandlingOptions.MQTTMessagePerSubscription,
                 false,
                 false,
                 List.of(),
@@ -48,7 +47,6 @@ class NorthboundMappingModelTest {
 
         final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("topic",
                 "tag",
-                MessageHandlingOptions.MQTTMessagePerSubscription,
                 false,
                 false,
                 List.of(),

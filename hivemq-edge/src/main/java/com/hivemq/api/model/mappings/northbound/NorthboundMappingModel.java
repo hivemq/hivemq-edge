@@ -47,10 +47,6 @@ public class NorthboundMappingModel {
             maxLength = 2048)
     private final @NotNull String tagName;
 
-    @JsonProperty(value = "messageHandlingOptions")
-    @Schema(description = "How collected tags should or shouldnÖT be aggregated.", defaultValue = "MQTTMessagePerTag")
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
-
     @JsonProperty(value = "includeTagNames")
     @Schema(description = "Should tag names be included when sent out.", defaultValue = "false")
     private final boolean includeTagNames;
@@ -78,7 +74,6 @@ public class NorthboundMappingModel {
     public NorthboundMappingModel(
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
@@ -86,8 +81,6 @@ public class NorthboundMappingModel {
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.topic = topic;
         this.tagName = tagName;
-        this.messageHandlingOptions =
-                Objects.requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
         this.includeTagNames = Objects.requireNonNullElse(includeTagNames, false);
         this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
@@ -106,7 +99,7 @@ public class NorthboundMappingModel {
     }
 
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return messageHandlingOptions;
+        return MessageHandlingOptions.MQTTMessagePerTag;
     }
 
     public boolean isIncludeTagNames() {
@@ -135,18 +128,15 @@ public class NorthboundMappingModel {
                 this.topic,
                 this.maxQoS.getQosNumber(),
                 messageExpiry,
-                this.messageHandlingOptions,
-                this.includeTagNames,
-                this.includeTimestamp,
-                userProperties.stream()
-                        .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()));
+                MessageHandlingOptions.MQTTMessagePerTag,
+        this.includeTagNames, this.includeTimestamp, userProperties.stream()
+                .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
+                .collect(Collectors.toList()));
     }
 
     public static NorthboundMappingModel from(final @NotNull NorthboundMapping northboundMapping) {
         return new NorthboundMappingModel(northboundMapping.getMqttTopic(),
                 northboundMapping.getTagName(),
-                northboundMapping.getMessageHandlingOptions(),
                 northboundMapping.getIncludeTagNames(),
                 northboundMapping.getIncludeTimestamp(),
                 northboundMapping.getUserProperties()
