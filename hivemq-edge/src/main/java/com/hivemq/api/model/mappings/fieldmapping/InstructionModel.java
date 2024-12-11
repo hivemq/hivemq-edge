@@ -39,7 +39,7 @@ public class InstructionModel {
     private final @NotNull String sourceFieldName;
 
     @JsonProperty(value = "transformation")
-    @Schema(name = "transformation", description = "The transformation that should be applied when the source and destination field get mapped.")
+    @Schema(name = "transformation", description = "The kind of transformation that is performed on the data.")
     private final @Nullable TransformationModel transformationModel;
 
 
