@@ -27,7 +27,7 @@ import java.util.Objects;
 @Schema(name = "TopicFilter")
 public class TopicFilterModel {
 
-    @JsonProperty("topicFilter")
+    @JsonProperty("filter")
     @Schema(format = "mqtt-topic-filter",
             description = "The topic filter according to the MQTT specification.",
             requiredMode = Schema.RequiredMode.REQUIRED)
@@ -44,7 +44,7 @@ public class TopicFilterModel {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TopicFilterModel(
-            @JsonProperty("topicFilter") final @NotNull String topicFilter,
+            @JsonProperty("filter") final @NotNull String topicFilter,
             @JsonProperty("description") final @Nullable String description,
             @JsonProperty("schema") final @Nullable String schema) {
         this.description = Objects.requireNonNullElse(description, "");
