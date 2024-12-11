@@ -19,7 +19,7 @@ import com.hivemq.api.model.topicFilters.TopicFilterModel;
 import com.hivemq.api.model.topicFilters.TopicFilterModelList;
 import com.hivemq.api.resources.examples.TopicFiltersResourceExamples;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.error.Errors;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -60,15 +60,14 @@ public interface TopicFilterApi {
                description = "Add a new topic filter.",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "500",
+                                    description = "Internal Server Error",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "403",
                                     description = "Already Present",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example response in case a topic filter is already present for this filter.",
-                                                                              name = "already present example",
-                                                                              summary = "An example response in case a topic filter is already present for this filter.",
-                                                                              value = TopicFiltersResourceExamples.EXAMPLE_ALREADY_PRESENT)}))}
+                                                       schema = @Schema(implementation = ProblemDetails.class)))}
 
     )
     @NotNull
@@ -103,7 +102,17 @@ public interface TopicFilterApi {
     @Operation(summary = "Delete an topic filter",
                operationId = "delete-topicFilter",
                description = "Delete the specified topic filter.",
-               responses = {@ApiResponse(responseCode = "200", description = "Success")})
+               responses = {@ApiResponse(responseCode = "200", description = "Success"),
+
+                            @ApiResponse(responseCode = "404",
+                                         description = "Topic filter not found",
+                                         content = @Content(mediaType = APPLICATION_JSON,
+                                                            schema = @Schema(implementation = ProblemDetails.class))),
+                            @ApiResponse(responseCode = "403",
+                                         description = "Already Present",
+                                         content = @Content(mediaType = APPLICATION_JSON,
+                                                            schema = @Schema(implementation = ProblemDetails.class)))
+               })
     @Produces(APPLICATION_JSON)
     @NotNull
     Response deleteTopicFilter(
@@ -121,15 +130,16 @@ public interface TopicFilterApi {
                operationId = "update-topicFilter",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
-                       @ApiResponse(responseCode = "403",
-                                    description = "Not Found",
+
+                       @ApiResponse(responseCode = "400",
+                                    description = "Topic filter failed validation",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Errors.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example response in case no topic filter is present for this filter.",
-                                                                              name = "already present example",
-                                                                              summary = "An example response in case no topic filter is present for this filter.",
-                                                                              value = TopicFiltersResourceExamples.EXAMPLE_NOT_PRESENT)}))})
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
+                       @ApiResponse(responseCode = "500",
+                                    description = "Internal Server Error",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
+               })
     @NotNull
     Response updateTopicFilter(
             @NotNull @Parameter(name = "filter",
@@ -145,7 +155,13 @@ public interface TopicFilterApi {
                description = "Update all topic filters",
                operationId = "update-topicFilters",
                responses = {
-                       @ApiResponse(responseCode = "200", description = "Success")})
+                       @ApiResponse(responseCode = "200", description = "Success"),
+
+                       @ApiResponse(responseCode = "500",
+                                    description = "Internal Server Error",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
+               })
     @NotNull
     Response updateTopicFilters(
             final @NotNull TopicFilterModelList topicFilterModelList);

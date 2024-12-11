@@ -13,31 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.http.error;
+package com.hivemq.api.errors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ProblemDetails;
 
-import java.util.Arrays;
 import java.util.List;
 
-public class Errors {
-
-    @JsonProperty("errors")
-    private final @NotNull List<@NotNull Error> errors;
-
-    public Errors(final @NotNull Error... errors) {
-        this.errors = Arrays.asList(errors);
+public class InvalidQueryParameterError extends ProblemDetails {
+    public InvalidQueryParameterError(String parameterName, String reason) {
+        super(
+                "InvalidQueryParameter",
+                "Query parameter is invalid",
+                "Query parameter is invalid",
+                HttpStatus.BAD_REQUEST_400,
+                List.of(new Error(String.format("Query parameter %s is invalid: %s",  parameterName, reason), parameterName)));
     }
-
-    @JsonCreator
-    public Errors(@JsonProperty("errors") final @NotNull List<Error> errors) {
-        this.errors = errors;
-    }
-
-    public @NotNull List<@NotNull Error> getErrors() {
-        return errors;
-    }
-
 }

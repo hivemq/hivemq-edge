@@ -15,6 +15,8 @@
  */
 package com.hivemq.http;
 
+import com.hivemq.http.error.ErrorType;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

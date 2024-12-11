@@ -36,14 +36,14 @@ public class HealthCheckResourceImpl extends AbstractApi implements HealthCheckA
     public Response liveness() {
         HealthStatus status = new HealthStatus();
         status.status = "UP";
-        return Response.status(200).entity(status).build();
+        return Response.ok(status).build();
     }
 
     @Override
     public Response readiness() {
         HealthStatus status = new HealthStatus();
         status.status = "UP";
-        return Response.status(200).entity(status).build();
+        return Response.ok(status).build();
     }
 
 

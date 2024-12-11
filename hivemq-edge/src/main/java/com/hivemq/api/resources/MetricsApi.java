@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -87,7 +88,12 @@ public interface MetricsApi {
                                                                               name = "metric-sample",
                                                                               summary = "Metric Sample",
                                                                               value = ApiBodyExamples.EXAMPLE_DATAPOINT_JSON)
-                                                       }))})
+                                                       })),
+                       @ApiResponse(responseCode = "400",
+                                    description = "URL parameter missing",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
+               })
     Response getSample(final @NotNull @Parameter(name = "metricName",
                                                  description = "The metric to search for.",
                                                  required = true,

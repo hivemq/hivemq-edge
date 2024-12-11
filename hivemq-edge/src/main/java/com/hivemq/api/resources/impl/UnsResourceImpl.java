@@ -16,12 +16,15 @@
 package com.hivemq.api.resources.impl;
 
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.ValidationError;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.uns.ISA95ApiBean;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.http.error.ErrorType;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
@@ -49,7 +52,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
     public Response getIsa95() {
         ISA95 isa95 = unifiedNamespaceService.getISA95();
         ISA95ApiBean isa95ApiBean = ISA95ApiBean.convert(isa95);
-        return Response.status(200).entity(isa95ApiBean).build();
+        return Response.ok(isa95ApiBean).build();
     }
 
     @Override
@@ -76,10 +79,10 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
         }
 
         if(ApiErrorUtils.hasRequestErrors(errorMessages)){
-            return ApiErrorUtils.badRequest(errorMessages);
+            return ErrorResponseUtil.errorResponse(new ValidationError(errorMessages.toErrorList()));
         } else {
             unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
-            return Response.status(200).build();
+            return Response.ok().build();
         }
     }
 }
