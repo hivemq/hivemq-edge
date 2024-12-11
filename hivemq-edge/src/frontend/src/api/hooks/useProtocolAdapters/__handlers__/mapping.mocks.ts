@@ -10,7 +10,6 @@ export const MOCK_SOUTHBOUND_MAPPING: SouthboundMapping = {
   tagName: 'my/tag',
   fieldMapping: {
     instructions: [{ source: 'dropped-property', destination: 'lastName' }],
-    metadata: { destination: GENERATE_DATA_MODELS(true, 'my/filter'), source: GENERATE_DATA_MODELS(true, 'my/tag') },
   },
 }
 
