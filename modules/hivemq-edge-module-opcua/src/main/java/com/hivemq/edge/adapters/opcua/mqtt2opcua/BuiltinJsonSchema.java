@@ -199,7 +199,7 @@ public class BuiltinJsonSchema {
                 return;
             case Double:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new DoubleNode(Double.MIN_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new DoubleNode(-Double.MAX_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new DoubleNode(Double.MAX_VALUE));
                 return;
             case QualifiedName:
