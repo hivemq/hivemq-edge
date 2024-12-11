@@ -28,11 +28,16 @@ import org.jetbrains.annotations.Nullable;
 public class SouthboundMappingModel {
 
     @JsonProperty(value = "topicFilter", required = true)
-    @Schema(description = "The filter defining what topics we will receive messages from.")
+    @Schema(description = "The filter defining what topics we will receive messages from.",
+            minLength = 1,
+            maxLength = 65_535)
     private final @NotNull String topicFilter;
 
     @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.", format = "mqtt-tag")
+    @Schema(description = "The tag for which values hould be collected and sent out.",
+            format = "mqtt-tag",
+            minLength = 1,
+            maxLength = 2048)
     private final @NotNull String tagName;
 
     @JsonProperty(value = "fieldMapping")

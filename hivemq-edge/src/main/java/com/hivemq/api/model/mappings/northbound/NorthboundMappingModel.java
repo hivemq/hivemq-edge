@@ -43,7 +43,8 @@ public class NorthboundMappingModel {
     @JsonProperty(value = "tagName", required = true)
     @Schema(description = "The tag for which values hould be collected and sent out.",
             format = "mqtt-tag",
-            minLength = 1)
+            minLength = 1,
+            maxLength = 2048)
     private final @NotNull String tagName;
 
     @JsonProperty(value = "messageHandlingOptions")
