@@ -433,6 +433,32 @@ export class ProtocolAdaptersService {
     }
 
     /**
+     * Get the mappings for northbound messages.
+     * Get all northbound mappings
+     * @returns NorthboundMappingList Success
+     * @throws ApiError
+     */
+    public getNorthboundMappings(): CancelablePromise<NorthboundMappingList> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/northboundMappings',
+        });
+    }
+
+    /**
+     * Get all  southbound mappings.
+     * Get all southbound mappings.
+     * @returns SouthboundMappingList Success
+     * @throws ApiError
+     */
+    public getSouthboundMappings(): CancelablePromise<SouthboundMappingList> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/southboundMappings',
+        });
+    }
+
+    /**
      * Get the status of all the adapters in the system.
      * Obtain the details.
      * @returns StatusList The Connection Details Verification Result.

@@ -12,6 +12,7 @@ export const $TopicFilter = {
         schema: {
             type: 'string',
             description: `The optional json schema for this topic filter in the data uri format.`,
+            format: 'data-url',
         },
         topicFilter: {
             type: 'string',

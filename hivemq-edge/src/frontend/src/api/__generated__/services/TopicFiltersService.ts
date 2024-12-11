@@ -67,7 +67,7 @@ export class TopicFiltersService {
     /**
      * Delete an topic filter
      * Delete the specified topic filter.
-     * @param filter The URL-encoded  filter of the topic filter that should be deleted.
+     * @param filter The URL-encoded filter of the topic filter that should be deleted.
      * @returns any Success
      * @throws ApiError
      */

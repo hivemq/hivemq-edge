@@ -59,7 +59,6 @@ export type { LinkList } from './models/LinkList';
 export { Listener } from './models/Listener';
 export type { ListenerList } from './models/ListenerList';
 export { LocalBridgeSubscription } from './models/LocalBridgeSubscription';
-export type { Metadata } from './models/Metadata';
 export type { Metric } from './models/Metric';
 export type { MetricList } from './models/MetricList';
 export type { Module } from './models/Module';
