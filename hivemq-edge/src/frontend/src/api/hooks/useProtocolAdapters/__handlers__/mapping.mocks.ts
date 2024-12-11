@@ -39,6 +39,14 @@ export const mappingHandlers = [
     return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
   }),
 
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/northboundMappings', () => {
+    return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/southboundMappings', () => {
+    return HttpResponse.json<SouthboundMappingList>({ items: [MOCK_SOUTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
   http.put<{ adapterId: string }>(
     '*/management/protocol-adapters/adapters/:adapterId/northboundMappings',
     async ({ params, request }) => {
