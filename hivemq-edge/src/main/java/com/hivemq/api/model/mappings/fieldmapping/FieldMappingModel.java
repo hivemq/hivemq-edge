@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +33,7 @@ public class FieldMappingModel {
     private final @NotNull List<InstructionModel> instructions;
 
     public FieldMappingModel(
-            @JsonProperty(value = "instructions") final @NotNull List<InstructionModel> instructions) {
+            @JsonProperty(value = "instructions") final @Nullable List<InstructionModel> instructions) {
         this.instructions = Objects.requireNonNullElse(instructions, List.of());
     }
 
