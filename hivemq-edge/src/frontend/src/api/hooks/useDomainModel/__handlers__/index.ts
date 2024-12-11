@@ -23,7 +23,7 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
         type: 'string',
         title: short ? 'First String' : 'firstName',
         default: 'Chuck',
-        examples: 'firstName',
+        examples: ['firstName'],
       },
       lastName: {
         type: 'string',
@@ -40,11 +40,11 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
       subItems: {
         type: 'object',
         title: 'subItems',
-        examples: 'subItems',
+        examples: ['subItems'],
 
         properties: {
           name: {
-            examples: 'name',
+            examples: ['name'],
             type: 'string',
             title: 'name',
             default: 'Default name',
