@@ -47,6 +47,11 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
     <>
       <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu}>
         <ToolbarButtonGroup>
+          <IconButton
+            icon={<Icon as={deviceCapabilityIcon['READ']} />}
+            aria-label={t('workspace.toolbar.command.mappings.northbound')}
+            onClick={() => navigate(`${adapterNavPath}/northbound`)}
+          />
           {bidirectional && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
@@ -54,11 +59,6 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
               onClick={() => navigate(`${adapterNavPath}/southbound`)}
             />
           )}
-          <IconButton
-            icon={<Icon as={deviceCapabilityIcon['READ']} />}
-            aria-label={t('workspace.toolbar.command.mappings.northbound')}
-            onClick={() => navigate(`${adapterNavPath}/northbound`)}
-          />
         </ToolbarButtonGroup>
       </ContextualToolbar>
       <NodeWrapper
