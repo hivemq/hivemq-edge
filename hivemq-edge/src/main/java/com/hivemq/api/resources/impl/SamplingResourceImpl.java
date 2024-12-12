@@ -85,7 +85,7 @@ public class SamplingResourceImpl implements SamplingApi {
         final String topic = URLDecoder.decode(topicUrlEncoded, StandardCharsets.UTF_8);
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
-            log.info("No samples were found for the requested topic '{}'.", topic);
+            log.debug("No samples were found for the requested topic '{}'.", topic);
             return ErrorResponseUtil.errorResponse(new NoSamplesFoundError(topic));
         }
 
