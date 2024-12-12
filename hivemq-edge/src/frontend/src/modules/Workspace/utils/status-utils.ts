@@ -1,13 +1,12 @@
 import { Edge, Instance, MarkerType, Node } from 'reactflow'
-import { GenericObjectType } from '@rjsf/utils'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
 import { Adapter, Bridge, ProtocolAdapter, Status } from '@/api/__generated__'
-import { CustomFormat } from '@/api/types/json-schema.ts'
 
 import { Group, NodeTypes } from '../types.ts'
-import { discoverAdapterTopics, getBridgeTopics } from './topics-utils.ts'
+import { getBridgeTopics } from './topics-utils.ts'
+import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 /**
  * @param theme
@@ -62,19 +61,28 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
 
 export type EdgeStyle = Pick<Edge, 'style' | 'animated' | 'markerEnd' | 'data'>
 
-export const getEdgeStatus = (isConnected: boolean, hasTopics: boolean, themeForStatus: string): EdgeStyle => {
+export const getEdgeStatus = (
+  isConnected: boolean,
+  hasTopics: boolean,
+  hasMarker: boolean,
+  themeForStatus: string
+): EdgeStyle => {
   const edge: EdgeStyle = {}
   edge.style = {
     strokeWidth: 1.5,
     stroke: themeForStatus,
   }
   edge.animated = isConnected && hasTopics
-  edge.markerEnd = {
-    type: MarkerType.ArrowClosed,
-    width: 20,
-    height: 20,
-    color: themeForStatus,
-  }
+
+  edge.markerEnd = hasMarker
+    ? {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: themeForStatus,
+      }
+    : undefined
+
   edge.data = {
     isConnected,
     hasTopics,
@@ -107,7 +115,7 @@ export const updateEdgesStatus = (
         connection: isConnected ? Status.connection.CONNECTED : Status.connection.DISCONNECTED,
       }
 
-      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, hasTopics, getThemeForStatus(theme, status)) })
+      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, hasTopics, true, getThemeForStatus(theme, status)) })
       return
     }
 
@@ -127,20 +135,15 @@ export const updateEdgesStatus = (
     if (source && source.type === NodeTypes.ADAPTER_NODE) {
       const type = adapterTypes?.find((e) => e.id === (source.data as Adapter).type)
       if (target?.type === NodeTypes.DEVICE_NODE) {
-        const topicFilters = type
-          ? discoverAdapterTopics(
-              type,
-              (source.data as Adapter).config as GenericObjectType,
-              CustomFormat.MQTT_TOPIC_FILTER
-            )
-          : []
         newEdges.push({
           ...edge,
-          ...getEdgeStatus(isConnected, !!topicFilters.length, getThemeForStatus(theme, status)),
+          ...getEdgeStatus(isConnected, false, isBidirectional(type), getThemeForStatus(theme, status)),
         })
       } else {
-        const topics = type ? discoverAdapterTopics(type, (source.data as Adapter).config as GenericObjectType) : []
-        newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) })
+        newEdges.push({
+          ...edge,
+          ...getEdgeStatus(isConnected, false, true, getThemeForStatus(theme, status)),
+        })
       }
 
       return
@@ -148,7 +151,7 @@ export const updateEdgesStatus = (
 
     if (source && source.type === NodeTypes.BRIDGE_NODE) {
       const { remote } = getBridgeTopics(source.data as Bridge)
-      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!remote.length, getThemeForStatus(theme, status)) })
+      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!remote.length, true, getThemeForStatus(theme, status)) })
       return
     }
     newEdges.push(edge)
