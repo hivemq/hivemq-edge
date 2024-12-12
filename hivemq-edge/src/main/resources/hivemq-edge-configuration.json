@@ -171,7 +171,7 @@
     },
     {
       "id" : "bacnetip",
-      "version" : "2024.8",
+      "version" : "2024.8 (alpha)",
       "name" : "BACnet/IP Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing BACnet/IP devices.",
       "author" : "HiveMQ",
