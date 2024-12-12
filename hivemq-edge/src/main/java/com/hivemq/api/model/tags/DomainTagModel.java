@@ -19,11 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.hivemq.edge.HiveMQEdgeConstants;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -38,10 +37,9 @@ public class DomainTagModel {
             format = "mqtt-tag")
     private final @NotNull String name;
 
-    @JsonProperty(value = "description", required = true)
+    @JsonProperty(value = "description")
     @Schema(description = "A user created description for this tag.",
-            maxLength = 10_000,
-            requiredMode = Schema.RequiredMode.REQUIRED)
+            maxLength = 10_000)
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
@@ -52,7 +50,7 @@ public class DomainTagModel {
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
-            @JsonProperty(value = "description", required = true) final @Nullable String description,
+            @JsonProperty(value = "description") final @Nullable String description,
             @JsonProperty(value = "definition", required = true) final @Nullable JsonNode definition) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "");
