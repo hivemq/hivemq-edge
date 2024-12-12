@@ -77,12 +77,9 @@ public class ProtocolAdapterApiUtils {
         Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
         //noinspection ConstantValue
-        System.out.println( "Before " + logoUrl);
         if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
-            System.out.println( "After " + logoUrl);
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
-            System.out.println( "Finally " + logoUrl);
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
             // so we should trust but validate and at least log.
