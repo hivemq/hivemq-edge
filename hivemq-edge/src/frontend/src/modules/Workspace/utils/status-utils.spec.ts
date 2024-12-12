@@ -237,7 +237,7 @@ describe('getEdgeStatus', () => {
       },
     },
   ])('should return the correct style for $isConnected and $hasTopics', ({ isConnected, hasTopics, expected }) => {
-    const edgeStyle = getEdgeStatus(isConnected, hasTopics, color)
+    const edgeStyle = getEdgeStatus(isConnected, hasTopics, true, color)
     expect(edgeStyle).toStrictEqual(expected)
   })
 })

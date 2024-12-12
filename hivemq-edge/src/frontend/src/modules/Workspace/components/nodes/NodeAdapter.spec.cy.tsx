@@ -1,9 +1,6 @@
-/// <reference types="cypress" />
-
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -11,6 +8,10 @@ import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import NodeAdapter from './NodeAdapter.tsx'
+import {
+  MOCK_NORTHBOUND_MAPPING,
+  MOCK_SOUTHBOUND_MAPPING,
+} from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 
 describe('NodeAdapter', () => {
   beforeEach(() => {
@@ -25,6 +26,14 @@ describe('NodeAdapter', () => {
         },
       ],
     })
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/northboundMappings', {
+      items: [MOCK_NORTHBOUND_MAPPING],
+    }).as('getNorthboundMappings')
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/southboundMappings', {
+      items: [MOCK_SOUTHBOUND_MAPPING],
+    }).as('getSouthboundMappings')
   })
 
   it('should render properly', () => {
@@ -32,10 +41,7 @@ describe('NodeAdapter', () => {
 
     cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
     cy.getByTestId('connection-status').should('contain.text', 'Connected')
-    cy.getByTestId('topics-container')
-      .should('be.visible')
-      .should('contain.text', formatTopicString(MOCK_TOPIC_REF1))
-      .should('contain.text', formatTopicString(MOCK_TOPIC_REF2))
+    cy.getByTestId('topics-container').should('be.visible').should('contain.text', formatTopicString('my/topic'))
   })
 
   it('should render the selected adapter properly', () => {
