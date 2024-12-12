@@ -79,6 +79,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
         final TopicFilter removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
         if (removed != null) {
             this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
+            topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
             return TopicFilterUpdateResult.success();
         } else {
             return TopicFilterUpdateResult.failed(TopicFilterUpdateResult.TopicFilterUpdateStatus.NOT_FOUND,
