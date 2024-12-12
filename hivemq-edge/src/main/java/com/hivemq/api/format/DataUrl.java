@@ -28,6 +28,8 @@ import java.nio.charset.StandardCharsets;
 public class DataUrl {
 
     public static final String BASE64_TOKEN = ";base64";
+    public static final String DATA_TOKEN = "data:";
+
 
     private final @NotNull String mimeType;
     private final @NotNull String encoding;
@@ -51,9 +53,11 @@ public class DataUrl {
 
 
     public static @NotNull DataUrl create(final @NotNull String dataUrlAsString) {
+        checkDataPrefix(dataUrlAsString);
         // remove data:
         final String dataUrlWithoutDataPrefix = dataUrlAsString.substring(5);
         // split meta data and data  on the ','
+        checkSeparator(dataUrlWithoutDataPrefix, dataUrlAsString);
         final String[] metaDataAndDataSplit = dataUrlWithoutDataPrefix.split(",");
         if (metaDataAndDataSplit.length != 2) {
             throw new IllegalArgumentException(dataUrlAsString +
@@ -72,6 +76,25 @@ public class DataUrl {
             return new DataUrl(mimeType, charset, "base64", data);
         } else {
             return new DataUrl(metaDataWithoutEncoding, StandardCharsets.US_ASCII.displayName(), "base64", data);
+        }
+    }
+
+    private static void checkDataPrefix(final @NotNull String dataUrlAsString) {
+        if (!dataUrlAsString.startsWith(DATA_TOKEN)) {
+            throw new IllegalArgumentException("The supplied String '" +
+                    dataUrlAsString +
+                    "' does not start with the required prefix '" +
+                    DATA_TOKEN +
+                    "'.");
+        }
+    }
+
+    private static void checkSeparator(
+            final @NotNull String dataUrlWithoutDataPrefix, final @NotNull String dataUrlAsString) {
+        if (!dataUrlWithoutDataPrefix.contains(",")) {
+            throw new IllegalArgumentException("The supplied String '" +
+                    dataUrlAsString +
+                    "' does not contain the necessary ',' as separator between metadata and data.");
         }
     }
 

@@ -31,12 +31,13 @@ public class StatusTransitionCommand {
         RESTART
     }
 
-    @JsonProperty("command")
-    @Schema(description = "The command to perform on the target connection.")
+    @JsonProperty(value = "command", required = true)
+    @Schema(description = "The command to perform on the target connection.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull COMMAND command;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public StatusTransitionCommand(@NotNull @JsonProperty("command") final COMMAND command){
+    public StatusTransitionCommand(@NotNull @JsonProperty(value = "command", required = true) final COMMAND command){
         this.command = command;
     }
 

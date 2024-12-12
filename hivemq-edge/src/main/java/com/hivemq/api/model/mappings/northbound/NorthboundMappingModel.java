@@ -34,42 +34,48 @@ import java.util.stream.Collectors;
 public class NorthboundMappingModel {
 
     @JsonProperty(value = "topic", required = true)
-    @Schema(description = "The target mqtt topic where received tags should be sent to.")
+    @Schema(description = "The target mqtt topic where received tags should be sent to.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            format = " mqtt-topic",
+            minLength = 1,
+            maxLength = 65_535)
     private final @NotNull String topic;
 
     @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.", format = "mqtt-tag")
+    @Schema(description = "The tag for which values hould be collected and sent out.",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            format = "mqtt-tag",
+            minLength = 1,
+            maxLength = 2048)
     private final @NotNull String tagName;
 
-    @JsonProperty(value = "messageHandlingOptions", required = true)
-    @Schema(description = "How collected tags should or shouldnÖT be aggregated.")
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
-
-    @JsonProperty(value = "includeTagNames", required = true)
-    @Schema(description = "Should tag names be included when sent out.")
+    @JsonProperty(value = "includeTagNames")
+    @Schema(description = "Should tag names be included when sent out.", defaultValue = "false")
     private final boolean includeTagNames;
 
-    @JsonProperty(value = "includeTimestamp", required = true)
-    @Schema(description = "Should the timestamp be included when sent out.")
+    @JsonProperty(value = "includeTimestamp")
+    @Schema(description = "Should the timestamp be included when sent out.", defaultValue = "false")
     private final boolean includeTimestamp;
 
     @JsonProperty(value = "userProperties")
     @Schema(description = "User properties to be added to each outgoing mqtt message.")
     private final @NotNull List<MqttUserPropertyModel> userProperties;
 
-    @JsonProperty(value = "maxQoS", required = true)
-    @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
+    @JsonProperty(value = "maxQoS")
+    @Schema(description = "The maximum MQTT-QoS for the outgoing messages.", defaultValue = "AT_LEAST_ONCE")
     private final @NotNull QoSModel maxQoS;
 
-    @JsonProperty(value = "messageExpiryInterval", required = true)
-    @Schema(description = "The message expiry interval.")
+    @JsonProperty(value = "messageExpiryInterval")
+    @Schema(description = "The message expiry interval.",
+            minimum = "0",
+            maximum = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER,
+            defaultValue = "" + JavaScriptConstants.JS_MAX_SAFE_INTEGER)
     private final long messageExpiryInterval;
 
     @JsonCreator
     public NorthboundMappingModel(
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
@@ -77,8 +83,6 @@ public class NorthboundMappingModel {
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.topic = topic;
         this.tagName = tagName;
-        this.messageHandlingOptions =
-                Objects.requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
         this.includeTagNames = Objects.requireNonNullElse(includeTagNames, false);
         this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
@@ -97,7 +101,7 @@ public class NorthboundMappingModel {
     }
 
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return messageHandlingOptions;
+        return MessageHandlingOptions.MQTTMessagePerTag;
     }
 
     public boolean isIncludeTagNames() {
@@ -126,18 +130,15 @@ public class NorthboundMappingModel {
                 this.topic,
                 this.maxQoS.getQosNumber(),
                 messageExpiry,
-                this.messageHandlingOptions,
-                this.includeTagNames,
-                this.includeTimestamp,
-                userProperties.stream()
-                        .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()));
+                MessageHandlingOptions.MQTTMessagePerTag,
+        this.includeTagNames, this.includeTimestamp, userProperties.stream()
+                .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
+                .collect(Collectors.toList()));
     }
 
     public static NorthboundMappingModel from(final @NotNull NorthboundMapping northboundMapping) {
         return new NorthboundMappingModel(northboundMapping.getMqttTopic(),
                 northboundMapping.getTagName(),
-                northboundMapping.getMessageHandlingOptions(),
                 northboundMapping.getIncludeTagNames(),
                 northboundMapping.getIncludeTimestamp(),
                 northboundMapping.getUserProperties()

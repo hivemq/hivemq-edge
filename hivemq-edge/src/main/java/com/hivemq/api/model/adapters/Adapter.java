@@ -26,23 +26,25 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Adapter {
 
-    @JsonProperty("id")
+    @JsonProperty(value = "id", required = true)
     @Schema(name = "id",
             description = "The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.",
             format = "string",
             minLength = 1,
-            required = true,
+            requiredMode = Schema.RequiredMode.REQUIRED,
             maxLength = HiveMQEdgeConstants.MAX_ID_LEN,
             pattern = HiveMQEdgeConstants.ID_REGEX)
     private final @NotNull String id;
 
-    @JsonProperty("type")
+    @JsonProperty(value = "type", required = true)
     @Schema(name = "type",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             description = "The adapter type associated with this instance")
     private final @NotNull String protocolAdapterType;
 
-    @JsonProperty("config")
+    @JsonProperty(value = "config", required = true)
     @Schema(name = "config",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             description = "The adapter configuration associated with this instance")
     private final @NotNull JsonNode config;
 
@@ -53,9 +55,9 @@ public class Adapter {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Adapter(
-            @JsonProperty("id") final @NotNull String id,
-            @JsonProperty("type") final @NotNull String protocolAdapterType,
-            @JsonProperty("config") final @NotNull JsonNode config,
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "type", required = true) final @NotNull String protocolAdapterType,
+            @JsonProperty(value = "config", required = true) final @NotNull JsonNode config,
             @JsonProperty("status") final @Nullable Status status) {
         this.id = id;
         this.protocolAdapterType = protocolAdapterType;

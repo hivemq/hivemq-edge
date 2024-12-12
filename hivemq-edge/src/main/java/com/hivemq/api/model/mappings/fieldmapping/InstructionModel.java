@@ -20,24 +20,39 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Schema(name = "Instruction")
 public class InstructionModel {
 
     @JsonProperty(value = "destination", required = true)
-    @Schema(name = "destination", description = "The field in the output object where the data will be written to")
+    @Schema(name = "destination",
+            description = "The field in the output object where the data will be written to",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            minLength = 1,
+            maxLength = 2048)
     private final @NotNull String destinationFieldName;
 
     @JsonProperty(value = "source", required = true)
-    @Schema(name = "source", description = "The field in the input object where the data will be read from")
+    @Schema(name = "source", description = "The field in the input object where the data will be read from",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            minLength = 1,
+            maxLength = 2048)
     private final @NotNull String sourceFieldName;
+
+    @JsonProperty(value = "transformation")
+    @Schema(name = "transformation", description = "The kind of transformation that is performed on the data.")
+    private final @Nullable TransformationModel transformationModel;
+
 
     @JsonCreator
     public InstructionModel(
             @JsonProperty(value = "source", required = true) final @NotNull String sourceFieldName,
-            @JsonProperty(value = "destination", required = true) final @NotNull String destinationFieldName) {
+            @JsonProperty(value = "destination", required = true) final @NotNull String destinationFieldName,
+            @JsonProperty(value = "transformation") final @Nullable TransformationModel transformationModel) {
         this.destinationFieldName = destinationFieldName;
         this.sourceFieldName = sourceFieldName;
+        this.transformationModel = transformationModel;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -48,7 +63,7 @@ public class InstructionModel {
         return sourceFieldName;
     }
 
-    public static InstructionModel from(final @NotNull Instruction instruction) {
-        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName());
+    public static @NotNull InstructionModel from(final @NotNull Instruction instruction) {
+        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName(), null);
     }
 }

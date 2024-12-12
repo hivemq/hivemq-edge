@@ -34,6 +34,7 @@ public interface HiveMQEdgeConstants {
     int MAX_NAME_LEN = 256;
     String NAME_REGEX = "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"; //-- alpha-num with spaces, underscore and hyphen (but NOT starting or ending with spaces)
     int MAX_UINT16 = 65535;
+    int MAX_MQTT_TOPIC_LENGTH = 65535;
     String MAX_UINT16_String = "65535";
     String HOSTNAME_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
