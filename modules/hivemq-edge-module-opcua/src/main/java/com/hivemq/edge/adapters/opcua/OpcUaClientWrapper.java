@@ -147,7 +147,7 @@ public class OpcUaClientWrapper {
                     log.error("Exception while writing to opcua node '{}'", writeContext.getTagName(), throwable);
                     writingOutput.fail(throwable, null);
                 } else {
-                    log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                    log.debug("Wrote '{}' to nodeId={}", variant, nodeId);
                     writingOutput.finish();
                 }
             });
