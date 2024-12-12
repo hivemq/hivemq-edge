@@ -42,7 +42,7 @@ public class NorthboundMappingModel {
     private final @NotNull String tagName;
 
     @JsonProperty(value = "messageHandlingOptions", required = true)
-    @Schema(description = "How collected tags should or shouldnÖT be aggregated.")
+    @Schema(description = "How collected tags should or shouldn't be aggregated.")
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
     @JsonProperty(value = "includeTagNames", required = true)
