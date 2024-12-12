@@ -3,11 +3,12 @@ import { renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { useSouthboundMappingManager } from '@/modules/Mappings/hooks/useSouthboundMappingManager.ts'
-import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
-import { type FieldMapping, SouthboundMappingList } from '@/api/__generated__'
+import { type NorthboundMappingList } from '@/api/__generated__'
 
-describe('useSouthboundMappingManager', () => {
+import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
+import { useListDomainSouthboundMappings } from '@/api/hooks/useDomainModel/useListDomainSouthboundMappings.ts'
+
+describe('useListDomainNorthboundMappings', () => {
   beforeEach(() => {
     server.use(...mappingHandlers)
   })
@@ -16,26 +17,25 @@ describe('useSouthboundMappingManager', () => {
     server.resetHandlers()
   })
 
-  it('should do it', async () => {
-    const { result } = renderHook(() => useSouthboundMappingManager('my-adapter'), { wrapper })
-    expect(result.current.isLoading).toBeTruthy()
+  it('should load the data', async () => {
+    const { result } = renderHook(() => useListDomainSouthboundMappings(), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
+      expect(result.current.isSuccess).toBeTruthy()
     })
-
-    expect(result.current.data).toStrictEqual<SouthboundMappingList>({
+    expect(result.current.data).toStrictEqual<NorthboundMappingList>({
       items: [
         expect.objectContaining({
-          tagName: 'my/tag',
-          topicFilter: 'my/filter',
-          fieldMapping: expect.objectContaining<FieldMapping>({
+          fieldMapping: {
             instructions: [
               {
                 destination: 'lastName',
                 source: 'dropped-property',
               },
             ],
-          }),
+          },
+          tagName: 'my/tag',
+          topicFilter: 'my/filter',
         }),
       ],
     })

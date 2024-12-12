@@ -3,12 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $Errors = {
-    properties: {
-        errors: {
-            type: 'array',
-            contains: {
-                type: 'Error',
-            },
+    type: 'dictionary',
+    contains: {
+        properties: {
         },
     },
 } as const;

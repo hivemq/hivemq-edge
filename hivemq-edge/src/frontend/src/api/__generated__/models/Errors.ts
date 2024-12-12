@@ -3,9 +3,4 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { Error } from './Error';
-
-export type Errors = {
-    errors?: Array<Error>;
-};
-
+export type Errors = Record<string, any>;

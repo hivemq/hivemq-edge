@@ -44,6 +44,9 @@ export class BridgesService {
             url: '/api/v1/management/bridges',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bridge is invalid`,
+            },
         });
     }
 
@@ -76,6 +79,10 @@ export class BridgesService {
             path: {
                 'bridgeId': bridgeId,
             },
+            errors: {
+                400: `Query parameters invalid`,
+                404: `Bridge not found`,
+            },
         });
     }
 
@@ -94,6 +101,10 @@ export class BridgesService {
             url: '/api/v1/management/bridges/{bridgeId}',
             path: {
                 'bridgeId': bridgeId,
+            },
+            errors: {
+                400: `Query parameters invalid`,
+                404: `Bridge not found`,
             },
         });
     }
@@ -118,6 +129,10 @@ export class BridgesService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Query parameters invalid`,
+                404: `Bridge not found`,
+            },
         });
     }
 
@@ -136,6 +151,10 @@ export class BridgesService {
             url: '/api/v1/management/bridges/{bridgeId}/connection-status',
             path: {
                 'bridgeId': bridgeId,
+            },
+            errors: {
+                400: `Query parameters invalid`,
+                404: `Bridge not found`,
             },
         });
     }
@@ -160,6 +179,10 @@ export class BridgesService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Query parameters invalid`,
+                404: `Bridge not found`,
+            },
         });
     }
 
