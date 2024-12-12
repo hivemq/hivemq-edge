@@ -77,9 +77,12 @@ public class ProtocolAdapterApiUtils {
         Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
         //noinspection ConstantValue
+        System.out.println( "Before " + logoUrl);
         if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
+            System.out.println( "After " + logoUrl);
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+            System.out.println( "Finally " + logoUrl);
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
             // so we should trust but validate and at least log.
@@ -171,7 +174,7 @@ public class ProtocolAdapterApiUtils {
         final String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
         final String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
+            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
         return new ProtocolAdapter(module.getId(),
