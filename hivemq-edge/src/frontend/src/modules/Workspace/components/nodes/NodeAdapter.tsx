@@ -6,12 +6,13 @@ import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui
 
 import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
-import { CustomFormat } from '@/api/types/json-schema.ts'
+import { useListNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useListNorthboundMappings.ts'
+import { useListSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useListSouthboundMappings.ts'
+
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
-import { discoverAdapterTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import { deviceCapabilityIcon, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
@@ -25,17 +26,18 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
   const { options } = useEdgeFlowContext()
+  const { data: northMappings } = useListNorthboundMappings(adapter.id)
+  const { data: southMappings } = useListSouthboundMappings(adapter.id)
 
-  const topicFilters = useMemo<string[]>(() => {
-    if (!adapterProtocol) return []
-    if (!adapter.config) return []
-    return discoverAdapterTopics(adapterProtocol, adapter.config, CustomFormat.MQTT_TOPIC_FILTER)
-  }, [adapter.config, adapterProtocol])
-  const topics = useMemo<string[]>(() => {
-    if (!adapterProtocol) return []
-    if (!adapter.config) return []
-    return discoverAdapterTopics(adapterProtocol, adapter.config)
-  }, [adapter.config, adapterProtocol])
+  const northFlags = useMemo(() => {
+    return northMappings?.items?.map((mapping) => mapping.topic) || []
+  }, [northMappings?.items])
+
+  const southFlags = useMemo(() => {
+    const sss = southMappings?.items?.map((mapping) => mapping.topicFilter) || []
+    return sss.filter((item) => item) as string[]
+  }, [southMappings?.items])
+
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
   const navigate = useNavigate()
   const showSkeleton = useStore(selectorIsSkeletonZoom)
@@ -70,7 +72,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {bidirectional && <MappingBadge destinations={topicFilters} isTag />}
+            {bidirectional && <MappingBadge destinations={southFlags} />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
@@ -83,7 +85,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
                 <ConnectionStatusBadge status={adapter.status} />
               </Box>
             )}
-            {options.showTopics && <MappingBadge destinations={topics} />}
+            {options.showTopics && <MappingBadge destinations={northFlags} />}
           </VStack>
         )}
         {showSkeleton && (
@@ -93,7 +95,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
             </Box>
             <Box w="100%">
               <SkeletonText
-                noOfLines={topics.length ? 2 : 1}
+                noOfLines={northFlags.length ? 2 : 1}
                 spacing="4"
                 skeletonHeight="2"
                 startColor="gray.500"
