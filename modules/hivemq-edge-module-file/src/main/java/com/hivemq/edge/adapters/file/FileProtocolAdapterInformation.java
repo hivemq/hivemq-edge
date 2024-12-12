@@ -72,7 +72,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getVersion() {
-        return "${edge-version} (ALPHA)";
+        return "${edge-version}";
     }
 
     @Override
