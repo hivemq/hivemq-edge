@@ -76,7 +76,7 @@
     },
     {
       "id" : "http",
-      "version" : "2024.7 (BETA)",
+      "version" : "2024.7",
       "name" : "HTTP(s) to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.",
       "author" : "HiveMQ",
@@ -152,7 +152,7 @@
     },
     {
       "id" : "file_input",
-      "version" : "2024.7 (ALPHA)",
+      "version" : "2024.7",
       "name" : "File Input Adapter",
       "description" : "This adapter polls and publishes the content of files on regular basis.",
       "author" : "HiveMQ",
@@ -166,6 +166,25 @@
       },
       "logoUrl" : {
         "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-file/src/main/resources/httpd/images/file.png",
+        "external" : true
+      }
+    },
+    {
+      "id" : "bacnetip",
+      "version" : "2024.8",
+      "name" : "BACnet/IP Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to existing BACnet/IP devices.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#bacnetip",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/images/bacnet-adapter-logo.png",
         "external" : true
       }
     }
