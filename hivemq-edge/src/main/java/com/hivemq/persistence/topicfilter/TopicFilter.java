@@ -38,9 +38,13 @@ public class TopicFilter {
 
     public static @NotNull TopicFilter fromTopicFilterModel(
             final @NotNull TopicFilterModel topicFilter) {
-        return new TopicFilter(topicFilter.getTopicFilter(),
-                topicFilter.getDescription(),
-                topicFilter.getSchema() != null ? DataUrl.create(topicFilter.getSchema()) : null);
+        if (topicFilter.getSchema() == null || topicFilter.getSchema().isBlank()) {
+            return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription(), null);
+        } else {
+            return new TopicFilter(topicFilter.getTopicFilter(),
+                    topicFilter.getDescription(),
+                    DataUrl.create(topicFilter.getSchema()));
+        }
     }
 
     public @NotNull String getDescription() {
