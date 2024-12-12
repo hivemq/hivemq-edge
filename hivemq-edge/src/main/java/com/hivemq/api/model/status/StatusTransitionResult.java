@@ -17,6 +17,7 @@ package com.hivemq.api.model.status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -30,27 +31,33 @@ public class StatusTransitionResult {
         COMPLETE
     }
 
-    @JsonProperty("status")
-    @Schema(description = "The status to perform on the target connection.")
+    @JsonProperty(value = "status", required = true)
+    @Schema(description = "The status to perform on the target connection.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull STATUS status;
 
-    @JsonProperty("callbackTimeoutMillis")
+    @JsonProperty(value = "callbackTimeoutMillis", required = true)
     @Schema(description = "The callback timeout specifies the minimum amount of time (in milliseconds) that the API advises the client to backoff before rechecking the (runtime or connection) status of this object. This is only applicable when the status is 'PENDING'.")
     private final @NotNull Integer callbackTimeoutMillis;
 
-    @JsonProperty("identifier")
-    @Schema(description = "The identifier of the object in transition")
+    @JsonProperty(value = "identifier", required = true)
+    @Schema(description = "The identifier of the object in transition",
+            minLength = 1,
+            maxLength = HiveMQEdgeConstants.MAX_ID_LEN,
+            pattern = HiveMQEdgeConstants.ID_REGEX)
     private final @NotNull String identifier;
 
-    @JsonProperty("type")
-    @Schema(description = "The type of the object in transition")
+    @JsonProperty(value = "type", required = true)
+    @Schema(description = "The type of the object in transition",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            maxLength = HiveMQEdgeConstants.MAX_ID_LEN)
     private final @NotNull String type;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public StatusTransitionResult(@JsonProperty("type") final String type,
-                                  @JsonProperty("identifier") final String identifier,
-                                  @JsonProperty("status") final STATUS status,
-                                  @JsonProperty("callbackTimeoutMillis") final Integer callbackTimeoutMillis) {
+    public StatusTransitionResult(@JsonProperty(value = "type", required = true) final @NotNull String type,
+                                  @JsonProperty(value = "identifier", required = true) final @NotNull String identifier,
+                                  @JsonProperty(value = "status", required = true) final @NotNull STATUS status,
+                                  @JsonProperty(value = "callbackTimeoutMillis",required = true) final @NotNull Integer callbackTimeoutMillis) {
         this.type = type;
         this.status = status;
         this.identifier = identifier;

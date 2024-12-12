@@ -28,11 +28,15 @@ import java.util.Objects;
 public class MqttUserPropertyModel {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "Name", description = "Name of the associated property", required = true)
+    @Schema(title = "Name",
+            description = "Name of the associated property",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String name;
 
     @JsonProperty(value = "value", required = true)
-    @ModuleConfigField(title = "Value", description = "Value of the associated property", required = true)
+    @Schema(title = "Value",
+            description = "Value of the associated property",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String value;
 
     @JsonCreator

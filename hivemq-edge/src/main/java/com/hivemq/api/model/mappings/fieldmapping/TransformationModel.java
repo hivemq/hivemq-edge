@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.factories;
+package com.hivemq.api.model.mappings.fieldmapping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import org.jetbrains.annotations.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-public interface WritingServiceFactory {
+@Schema(name = "Transformation")
+public class TransformationModel {
 
-    @NotNull InternalProtocolAdapterWritingService build(
-            @NotNull ObjectMapper objectMapper,
-            @NotNull LocalTopicTree localTopicTree,
-            @NotNull SingleWriterService singleWriterService);
+
+
 }

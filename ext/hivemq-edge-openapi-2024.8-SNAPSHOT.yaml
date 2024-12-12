@@ -4328,7 +4328,9 @@ components:
           type: string
           description: The adapter type associated with this instance
       required:
+      - config
       - id
+      - type
     AdapterConfig:
       type: object
       properties:
@@ -4684,7 +4686,6 @@ components:
           type: string
           format: date-time
           description: Time the data-point was generated
-          nullable: true
         value:
           type: integer
           format: int64
@@ -4787,10 +4788,13 @@ components:
         description:
           type: string
           description: A user created description for this tag.
+          maxLength: 10000
         name:
           type: string
           format: mqtt-tag
           description: The name of the tag that identifies it within this edge instance.
+          maxLength: 65535
+          minLength: 1
       required:
       - definition
       - name
@@ -5068,9 +5072,15 @@ components:
           type: string
           description: The field in the output object where the data will be written
             to
+          maxLength: 2048
+          minLength: 1
         source:
           type: string
           description: The field in the input object where the data will be read from
+          maxLength: 2048
+          minLength: 1
+        transformation:
+          $ref: '#/components/schemas/Transformation'
       required:
       - destination
       - source
@@ -5289,8 +5299,12 @@ components:
       properties:
         name:
           type: string
+          description: Name of the associated property
+          title: Name
         value:
           type: string
+          description: Value of the associated property
+          title: Value
       required:
       - name
       - value
@@ -5300,19 +5314,23 @@ components:
       properties:
         includeTagNames:
           type: boolean
+          default: false
           description: Should tag names be included when sent out.
         includeTimestamp:
           type: boolean
+          default: false
           description: Should the timestamp be included when sent out.
         maxQoS:
           $ref: '#/components/schemas/QoS'
         messageExpiryInterval:
           type: integer
           format: int64
+          default: 9007199254740991
           description: The message expiry interval.
+          maximum: 9007199254740991
+          minimum: 0
         messageHandlingOptions:
           type: string
-          description: How collected tags should or shouldnÖT be aggregated.
           enum:
           - MQTTMessagePerTag
           - MQTTMessagePerSubscription
@@ -5320,20 +5338,20 @@ components:
           type: string
           format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
+          maxLength: 2048
+          minLength: 1
         topic:
           type: string
+          format: ' mqtt-topic'
           description: The target mqtt topic where received tags should be sent to.
+          maxLength: 65535
+          minLength: 1
         userProperties:
           type: array
           description: User properties to be added to each outgoing mqtt message.
           items:
             $ref: '#/components/schemas/MqttUserProperty'
       required:
-      - includeTagNames
-      - includeTimestamp
-      - maxQoS
-      - messageExpiryInterval
-      - messageHandlingOptions
       - tagName
       - topic
     NorthboundMappingList:
@@ -5581,6 +5599,7 @@ components:
       - items
     QoS:
       type: string
+      default: AT_LEAST_ONCE
       description: The maximum MQTT-QoS for the outgoing messages.
       enum:
       - AT_MOST_ONCE
@@ -5693,9 +5712,13 @@ components:
           type: string
           format: mqtt-tag
           description: The tag for which values hould be collected and sent out.
+          maxLength: 2048
+          minLength: 1
         topicFilter:
           type: string
           description: The filter defining what topics we will receive messages from.
+          maxLength: 65535
+          minLength: 1
       required:
       - tagName
       - topicFilter
@@ -5725,6 +5748,9 @@ components:
         id:
           type: string
           description: The identifier of the object
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
         lastActivity:
           type: string
           format: date-time
@@ -5745,6 +5771,12 @@ components:
         type:
           type: string
           description: The type of the object
+          maxLength: 500
+      required:
+      - connection
+      - id
+      - runtime
+      - type
     StatusList:
       type: object
       properties:
@@ -5765,6 +5797,8 @@ components:
           - START
           - STOP
           - RESTART
+      required:
+      - command
     StatusTransitionResult:
       type: object
       properties:
@@ -5778,6 +5812,9 @@ components:
         identifier:
           type: string
           description: The identifier of the object in transition
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
         status:
           type: string
           description: The status to perform on the target connection.
@@ -5787,6 +5824,12 @@ components:
         type:
           type: string
           description: The type of the object in transition
+          maxLength: 500
+      required:
+      - callbackTimeoutMillis
+      - identifier
+      - status
+      - type
     TagSchema:
       type: object
       properties:
@@ -5795,6 +5838,10 @@ components:
         protocolId:
           type: string
           description: The id assigned to the protocol adapter type
+          maxLength: 100
+      required:
+      - configSchema
+      - protocolId
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
@@ -5853,17 +5900,21 @@ components:
         description:
           type: string
           description: The name for this topic filter.
+          maxLength: 65535
+        filter:
+          type: string
+          format: mqtt-topic-filter
+          description: The topic filter according to the MQTT specification.
+          maxLength: 65535
+          minLength: 1
         schema:
           type: string
           format: data-url
           description: The optional json schema for this topic filter in the data
             uri format.
-        topicFilter:
-          type: string
-          format: mqtt-topic-filter
-          description: The topic filter according to the MQTT specification.
+          nullable: true
       required:
-      - topicFilter
+      - filter
     TopicFilterList:
       type: object
       properties:
@@ -5874,6 +5925,9 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
       - items
+    Transformation:
+      type: object
+      description: The kind of transformation that is performed on the data.
     TypeIdentifier:
       type: object
       description: The unique id of the event object
@@ -5901,9 +5955,14 @@ components:
         password:
           type: string
           description: The password associated with the user
+          maxLength: 1000
         userName:
           type: string
           description: The userName associated with the user
+          maxLength: 1000
+      required:
+      - password
+      - userName
     ValuesTree:
       type: object
       properties:

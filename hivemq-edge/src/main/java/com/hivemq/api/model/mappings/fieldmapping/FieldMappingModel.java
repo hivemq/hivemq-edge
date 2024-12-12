@@ -19,20 +19,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Schema(name = "FieldMapping")
 public class FieldMappingModel {
 
-    @JsonProperty(value = "instructions", required = true)
-    @Schema(description = "List of instructions to be applied to incoming data")
+    @JsonProperty(value = "instructions",
+                  required = true)
+    @Schema(description = "List of instructions to be applied to incoming data",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull List<InstructionModel> instructions;
 
     public FieldMappingModel(
-            @JsonProperty(value = "instructions", required = true) final @NotNull List<InstructionModel> instructions) {
-        this.instructions = instructions;
+            @JsonProperty(value = "instructions", required = true) final @Nullable List<InstructionModel> instructions) {
+        this.instructions = Objects.requireNonNullElse(instructions, List.of());
     }
 
     public @NotNull List<InstructionModel> getInstructions() {

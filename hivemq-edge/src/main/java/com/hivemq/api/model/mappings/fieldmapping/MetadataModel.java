@@ -26,11 +26,15 @@ import org.jetbrains.annotations.NotNull;
 public class MetadataModel {
 
     @JsonProperty(value = "destination", required = true)
-    @Schema(name = "destination", description = "The schema used for the write target")
+    @Schema(name = "destination",
+            description = "The schema used for the write target",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode destinationJsonSchema;
 
     @JsonProperty(value = "source", required = true)
-    @Schema(name = "source", description = "The schema used for the incoming data")
+    @Schema(name = "source",
+            description = "The schema used for the incoming data",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull JsonNode sourceJsonSchema;
 
     @JsonCreator

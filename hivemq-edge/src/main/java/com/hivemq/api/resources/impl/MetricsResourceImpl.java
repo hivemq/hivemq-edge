@@ -33,7 +33,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
-import java.util.Iterator;
 import java.util.SortedMap;
 
 /**
@@ -50,31 +49,30 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
     }
 
     @Override
-    public Response getMetrics() {
+    public @NotNull Response getMetrics() {
         logger.trace("Metrics API obtaining metrics listing");
-        ImmutableList.Builder<Metric> builder = new ImmutableList.Builder<>();
-        Iterator<String> itr = metricsRegistry.getMetrics().keySet().iterator();
-        while (itr.hasNext()){
-            builder.add(new Metric(itr.next()));
+        final ImmutableList.Builder<Metric> builder = new ImmutableList.Builder<>();
+        for (final String s : metricsRegistry.getMetrics().keySet()) {
+            builder.add(new Metric(s));
         }
         return Response.ok(new MetricList(builder.build())).build();
     }
 
     @Override
-    public Response getSample(final String metricName) {
-        ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
+    public @NotNull Response getSample(final @NotNull String metricName) {
+        final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
         if(ApiErrorUtils.hasRequestErrors(messages)){
             return ErrorResponseUtil.errorResponse(new UrlParameterMissingError("metricName"));
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
-            SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
-            Counter counter = metrics.get(metricName);
+            final SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
+            final Counter counter = metrics.get(metricName);
             if(counter != null){
-                DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
+                final DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
                 return Response.ok(dataPoint).build();
             } else {
-                DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
+                final DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
                 return Response.ok(dataPoint).build();
             }
         }

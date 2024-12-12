@@ -20,13 +20,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.api.json.TimestampToDateConverter;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bean to transport metric DataPoints across the API
+ *
  * @author Simon L Johnson
  */
+// this class is only used during serialization, so the fields are not used outside of Jackson
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class DataPoint {
 
     @JsonProperty("value")
@@ -36,24 +39,14 @@ public class DataPoint {
     @JsonProperty("sampleTime")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
-    @Schema(type = "string",
-            format = "date-time",
-            description = "Time the data-point was generated",
-            nullable = true)
+    @Schema(type = "string", format = "date-time", description = "Time the data-point was generated")
     private final @NotNull Long sampleTime;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public DataPoint(@JsonProperty("sampleTime") final @NotNull Long sampleTime,
-                     @JsonProperty("value") final @NotNull Long value) {
+    public DataPoint(
+            @JsonProperty("sampleTime") final @NotNull Long sampleTime,
+            @JsonProperty("value") final @NotNull Long value) {
         this.sampleTime = sampleTime;
         this.value = value;
-    }
-
-    public Long getValue() {
-        return value;
-    }
-
-    public Long getSampleTime() {
-        return sampleTime;
     }
 }
