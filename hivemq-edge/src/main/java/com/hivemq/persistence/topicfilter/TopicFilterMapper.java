@@ -22,9 +22,10 @@ import org.jetbrains.annotations.NotNull;
 public class TopicFilterMapper {
 
     public static @NotNull TopicFilter topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
+        final String schema = topicFilterXmlEntity.getSchema();
         return new TopicFilter(topicFilterXmlEntity.getTopicFilter(),
                 topicFilterXmlEntity.getDescription(),
-                topicFilterXmlEntity.getSchema() != null ? DataUrl.create(topicFilterXmlEntity.getSchema()) : null);
+                schema != null && !schema.isBlank() ? DataUrl.create(schema) : null);
     }
 
     public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilter topicFilter) {

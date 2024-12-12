@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 public class DataUrl {
 
     public static final String BASE64_TOKEN = ";base64";
+    public static final String DATA_TOKEN = "data:";
+
 
     private final @NotNull String mimeType;
     private final @NotNull String encoding;
@@ -51,9 +54,11 @@ public class DataUrl {
 
 
     public static @NotNull DataUrl create(final @NotNull String dataUrlAsString) {
+        checkDataPrefix(dataUrlAsString);
         // remove data:
         final String dataUrlWithoutDataPrefix = dataUrlAsString.substring(5);
         // split meta data and data  on the ','
+        checkSeparator(dataUrlWithoutDataPrefix, dataUrlAsString);
         final String[] metaDataAndDataSplit = dataUrlWithoutDataPrefix.split(",");
         if (metaDataAndDataSplit.length != 2) {
             throw new IllegalArgumentException(dataUrlAsString +
@@ -72,6 +77,46 @@ public class DataUrl {
             return new DataUrl(mimeType, charset, "base64", data);
         } else {
             return new DataUrl(metaDataWithoutEncoding, StandardCharsets.US_ASCII.displayName(), "base64", data);
+        }
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final DataUrl dataUrl = (DataUrl) o;
+        return mimeType.equals(dataUrl.mimeType) &&
+                encoding.equals(dataUrl.encoding) &&
+                charset.equals(dataUrl.charset) &&
+                data.equals(dataUrl.data);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mimeType.hashCode();
+        result = 31 * result + encoding.hashCode();
+        result = 31 * result + charset.hashCode();
+        result = 31 * result + data.hashCode();
+        return result;
+    }
+
+    private static void checkDataPrefix(final @NotNull String dataUrlAsString) {
+        if (!dataUrlAsString.startsWith(DATA_TOKEN)) {
+            throw new IllegalArgumentException("The supplied String '" +
+                    dataUrlAsString +
+                    "' does not start with the required prefix '" +
+                    DATA_TOKEN +
+                    "'.");
+        }
+    }
+
+    private static void checkSeparator(
+            final @NotNull String dataUrlWithoutDataPrefix, final @NotNull String dataUrlAsString) {
+        if (!dataUrlWithoutDataPrefix.contains(",")) {
+            throw new IllegalArgumentException("The supplied String '" +
+                    dataUrlAsString +
+                    "' does not contain the necessary ',' as separator between metadata and data.");
         }
     }
 

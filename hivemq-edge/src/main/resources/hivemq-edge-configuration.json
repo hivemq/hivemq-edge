@@ -151,9 +151,9 @@
       }
     },
     {
-      "id" : "file_input",
+      "id" : "file",
       "version" : "2024.7",
-      "name" : "File Input Adapter",
+      "name" : "File Adapter",
       "description" : "This adapter polls and publishes the content of files on regular basis.",
       "author" : "HiveMQ",
       "documentationLink" : {

@@ -26,7 +26,8 @@ public class Security {
 
     @JsonProperty("policy")
     @ModuleConfigField(title = "OPC UA security policy",
-                       description = "Security policy to use for communication with the server.")
+                       description = "Security policy to use for communication with the server.",
+                       defaultValue = "NONE")
     private final @NotNull SecPolicy policy;
 
     public Security(@JsonProperty("policy") final @Nullable SecPolicy policy) {

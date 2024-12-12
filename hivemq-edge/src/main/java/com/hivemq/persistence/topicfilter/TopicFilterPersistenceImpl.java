@@ -15,7 +15,6 @@
  */
 package com.hivemq.persistence.topicfilter;
 
-import com.hivemq.adapter.sdk.api.exceptions.TagNotFoundException;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -79,6 +78,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
         final TopicFilter removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
         if (removed != null) {
             this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
+            topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
             return TopicFilterUpdateResult.success();
         } else {
             return TopicFilterUpdateResult.failed(TopicFilterUpdateResult.TopicFilterUpdateStatus.NOT_FOUND,
@@ -92,7 +92,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
         for (final TopicFilter topicFilter : topicFilters) {
             filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
         }
-       topicFilterPersistenceReaderWriter.writePersistence(topicFilters);
+        topicFilterPersistenceReaderWriter.writePersistence(topicFilters);
         return TopicFilterUpdateResult.success();
     }
 
@@ -103,6 +103,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
             return TopicFilterDeleteResult.failed(TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
                     "No topic filter with name '{}' was found.");
         } else {
+            topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
             return TopicFilterDeleteResult.success();
         }
     }

@@ -171,7 +171,7 @@ public class ProtocolAdapterApiUtils {
         final String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
         final String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
+            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
         return new ProtocolAdapter(module.getId(),
