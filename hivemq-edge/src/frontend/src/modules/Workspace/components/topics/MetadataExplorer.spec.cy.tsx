@@ -33,7 +33,7 @@ describe('MetadataExplorer', () => {
 
     // cy.get('button').should('have.attr', 'aria-label', 'Load samples').should('have.attr', 'disabled', 'disabled')
 
-    cy.get('[role="alert"]').should('have.attr', 'data-status', 'error').should('have.text', 'Not Found')
+    cy.get('[role="alert"]').should('have.attr', 'data-status', 'error').should('have.text', 'No samples found')
   })
 
   it('should be accessible', () => {
