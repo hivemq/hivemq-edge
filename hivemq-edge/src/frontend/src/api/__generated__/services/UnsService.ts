@@ -39,6 +39,9 @@ export class UnsService {
             url: '/api/v1/management/uns/isa95',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `isa95 config failed validation`,
+            },
         });
     }
 

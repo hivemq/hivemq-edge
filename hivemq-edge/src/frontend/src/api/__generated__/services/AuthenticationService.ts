@@ -28,6 +28,7 @@ export class AuthenticationService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Error in request.`,
                 401: `The requested credentials could not be authenticated.`,
             },
         });

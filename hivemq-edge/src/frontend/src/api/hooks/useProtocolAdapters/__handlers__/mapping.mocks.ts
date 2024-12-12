@@ -10,7 +10,6 @@ export const MOCK_SOUTHBOUND_MAPPING: SouthboundMapping = {
   tagName: 'my/tag',
   fieldMapping: {
     instructions: [{ source: 'dropped-property', destination: 'lastName' }],
-    metadata: { destination: GENERATE_DATA_MODELS(true, 'my/filter'), source: GENERATE_DATA_MODELS(true, 'my/tag') },
   },
 }
 
@@ -38,6 +37,14 @@ export const mappingHandlers = [
 
   http.get<{ adapterId: string }>('*/management/protocol-adapters/adapters/:adapterId/northboundMappings', () => {
     return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/northboundMappings', () => {
+    return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/southboundMappings', () => {
+    return HttpResponse.json<SouthboundMappingList>({ items: [MOCK_SOUTHBOUND_MAPPING] }, { status: 200 })
   }),
 
   http.put<{ adapterId: string }>(

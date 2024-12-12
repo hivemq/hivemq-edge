@@ -42,6 +42,7 @@ export class TopicFiltersService {
             mediaType: 'application/json',
             errors: {
                 403: `Already Present`,
+                500: `Internal Server Error`,
             },
         });
     }
@@ -61,13 +62,16 @@ export class TopicFiltersService {
             url: '/api/v1/management/topic-filters',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                500: `Internal Server Error`,
+            },
         });
     }
 
     /**
      * Delete an topic filter
      * Delete the specified topic filter.
-     * @param filter The URL-encoded  filter of the topic filter that should be deleted.
+     * @param filter The URL-encoded filter of the topic filter that should be deleted.
      * @returns any Success
      * @throws ApiError
      */
@@ -79,6 +83,10 @@ export class TopicFiltersService {
             url: '/api/v1/management/topic-filters/{filter}',
             path: {
                 'filter': filter,
+            },
+            errors: {
+                403: `Already Present`,
+                404: `Topic filter not found`,
             },
         });
     }
@@ -104,7 +112,8 @@ export class TopicFiltersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                403: `Not Found`,
+                400: `Topic filter failed validation`,
+                500: `Internal Server Error`,
             },
         });
     }

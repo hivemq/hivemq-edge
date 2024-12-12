@@ -41,6 +41,9 @@ export class MetricsEndpointService {
             path: {
                 'metricName': metricName,
             },
+            errors: {
+                400: `URL parameter missing`,
+            },
         });
     }
 

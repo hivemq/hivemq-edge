@@ -45,7 +45,7 @@ export class DataHubBehaviorPoliciesService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Not all cluster nodes at minimum version`,
+                503: `Temporarily not available`,
             },
         });
     }
@@ -68,8 +68,11 @@ export class DataHubBehaviorPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
-                503: `Temporarily not available`,
+                400: `Policy creation failed`,
+                409: `Already exists`,
+                500: `Internal error`,
+                503: `Temporarily unavailable`,
+                507: `Insufficient storage error`,
             },
         });
     }
@@ -93,9 +96,11 @@ export class DataHubBehaviorPoliciesService {
                 'policyId': policyId,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
-                503: `Not all cluster nodes at minimum version`,
+                400: `URL parameter missing`,
+                404: `Policy not found`,
+                412: `Precondition failed`,
+                500: `Internal error`,
+                503: `Temporarily not available`,
             },
         });
     }
@@ -126,8 +131,8 @@ export class DataHubBehaviorPoliciesService {
                 'fields': fields,
             },
             errors: {
-                400: `Bad request`,
-                404: `Resource not found`,
+                400: `Invalid query parameter`,
+                404: `Policy not found`,
             },
         });
     }
@@ -156,10 +161,12 @@ export class DataHubBehaviorPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request`,
+                400: `Policy creation failed`,
                 404: `Policy not found`,
                 412: `Precondition failed`,
-                503: `Not all cluster nodes at minimum version`,
+                500: `Internal error`,
+                503: `Temporarily unavailable`,
+                507: `Insufficient storage error`,
             },
         });
     }
