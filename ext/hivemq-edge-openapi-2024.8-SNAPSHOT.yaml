@@ -5312,7 +5312,7 @@ components:
           description: The message expiry interval.
         messageHandlingOptions:
           type: string
-          description: How collected tags should or shouldnÖT be aggregated.
+          description: How collected tags should or shouldn't be aggregated.
           enum:
           - MQTTMessagePerTag
           - MQTTMessagePerSubscription
