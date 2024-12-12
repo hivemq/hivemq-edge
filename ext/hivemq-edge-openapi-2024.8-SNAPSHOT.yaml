@@ -4686,7 +4686,6 @@ components:
           type: string
           format: date-time
           description: Time the data-point was generated
-          nullable: true
         value:
           type: integer
           format: int64
@@ -5916,7 +5915,6 @@ components:
             uri format.
           nullable: true
       required:
-      - description
       - filter
     TopicFilterList:
       type: object

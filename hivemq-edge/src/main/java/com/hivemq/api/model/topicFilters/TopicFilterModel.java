@@ -37,7 +37,6 @@ public class TopicFilterModel {
 
     @JsonProperty("description")
     @Schema(description = "The name for this topic filter.",
-            requiredMode = Schema.RequiredMode.REQUIRED,
             maxLength = 65_535)
     private final @NotNull String description;
 
@@ -51,7 +50,7 @@ public class TopicFilterModel {
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TopicFilterModel(
             @JsonProperty(value = "filter", required = true) final @NotNull String topicFilter,
-            @JsonProperty(value = "description", required = true) final @Nullable String description,
+            @JsonProperty(value = "description") final @Nullable String description,
             @JsonProperty("schema") final @Nullable String schema) {
         this.description = Objects.requireNonNullElse(description, "");
         this.topicFilter = topicFilter;
