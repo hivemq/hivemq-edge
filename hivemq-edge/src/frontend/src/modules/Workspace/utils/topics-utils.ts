@@ -110,6 +110,9 @@ const getTopicsFromPath = (path: string, instance: GenericObjectType): string[] 
   return getTopicsFromPath(rest.join('.'), instance?.[property])
 }
 
+/**
+ * @deprecated This is not in use anymore; check the north and south mappings
+ */
 export const discoverAdapterTopics = (
   protocol: ProtocolAdapter,
   instance: GenericObjectType,
