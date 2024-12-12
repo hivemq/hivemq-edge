@@ -88,17 +88,16 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             synchronized (this) {
                 if (opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(
-                                adapterId,
+                        OpcUaClientWrapper.createAndConnect(adapterId,
                                 adapterConfig,
-                                tags, northboundMappings,
+                                tags,
+                                northboundMappings,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
                                 moduleServices.adapterPublishService(),
                                 adapterInformation.getProtocolId(),
                                 protocolAdapterMetricsService,
-                                output)
-                                .thenApply(wrapper -> {
+                                output).thenApply(wrapper -> {
                             protocolAdapterState.setConnectionStatus(CONNECTED);
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;
@@ -188,8 +187,14 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                     .findFirst()
                     .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
                             () -> {
-                                //FIXME needs logging
-                                output.adapterNotStarted();
+                                log.warn(
+                                        "The tag '{}' was not found during creation of schema for tags on remote plc. Available tags: {}",
+                                        input.getTagName(),
+                                        tags);
+                                output.tagNotFound(String.format(
+                                        "The tag '%s' was not found during creation of schema for tags on remote plc. Available tags: '%s'",
+                                        input.getTagName(),
+                                        tags));
                             });
         } else {
             output.adapterNotStarted();

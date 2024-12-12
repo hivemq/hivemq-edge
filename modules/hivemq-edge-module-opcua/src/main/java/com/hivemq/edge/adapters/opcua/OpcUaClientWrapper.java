@@ -62,16 +62,16 @@ public class OpcUaClientWrapper {
 
     private final String adapterId;
     public final @NotNull OpcUaClient client;
-    public final @NotNull Optional<JsonToOpcUAConverter> jsonToOpcUAConverter;
-    public final @NotNull Optional<JsonSchemaGenerator> jsonSchemaGenerator;
+    public final @NotNull JsonToOpcUAConverter jsonToOpcUAConverter;
+    public final @NotNull JsonSchemaGenerator jsonSchemaGenerator;
     public final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle;
 
     public OpcUaClientWrapper(
             final @NotNull String adapterId,
             final @NotNull OpcUaClient client,
             final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle,
-            final @NotNull Optional<JsonToOpcUAConverter> jsonToOpcUAConverter,
-            final @NotNull Optional<JsonSchemaGenerator> jsonSchemaGenerator) {
+            final @NotNull JsonToOpcUAConverter jsonToOpcUAConverter,
+            final @NotNull JsonSchemaGenerator jsonSchemaGenerator) {
         this.adapterId = adapterId;
         this.client = client;
         this.jsonToOpcUAConverter = jsonToOpcUAConverter;
@@ -88,14 +88,7 @@ public class OpcUaClientWrapper {
             final @NotNull OpcuaTag tag, final @NotNull TagSchemaCreationOutput output) {
 
         final String nodeId = tag.getDefinition().getNode();
-        jsonSchemaGenerator.ifPresentOrElse(gen -> gen.createJsonSchema(NodeId.parse(nodeId))
-                .whenComplete((jsonNode, throwable) -> {
-                    if (throwable != null) {
-                        output.fail(throwable, null);
-                    } else {
-                        output.finish(jsonNode);
-                    }
-                }), () -> output.fail(new IllegalArgumentException("Missing JSON Schema generator"), null));
+        jsonSchemaGenerator.createJsonSchema(NodeId.parse(nodeId), output);
     }
 
     public void discoverValues(
@@ -145,23 +138,19 @@ public class OpcUaClientWrapper {
         final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
 
         try {
-            jsonToOpcUAConverter.map(conv -> conv.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId))
-                    .ifPresentOrElse(opcUaObject -> {
-                        final Variant variant = new Variant(opcUaObject);
-                        final DataValue dataValue = new DataValue(variant, null, null);
-                        final CompletableFuture<StatusCode> writeFuture = client.writeValue(nodeId, dataValue);
-                        writeFuture.whenComplete((statusCode, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Exception while writing to opcua node '{}'",
-                                        writeContext.getTagName(),
-                                        throwable);
-                                writingOutput.fail(throwable, null);
-                            } else {
-                                log.info("Wrote '{}' to nodeId={}", variant, nodeId);
-                                writingOutput.finish();
-                            }
-                        });
-                    }, () -> writingOutput.fail("JsonToOpcUaConverter not available"));
+            final Object opcuaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId);
+            final Variant variant = new Variant(opcuaObject);
+            final DataValue dataValue = new DataValue(variant, null, null);
+            final CompletableFuture<StatusCode> writeFuture = client.writeValue(nodeId, dataValue);
+            writeFuture.whenComplete((statusCode, throwable) -> {
+                if (throwable != null) {
+                    log.error("Exception while writing to opcua node '{}'", writeContext.getTagName(), throwable);
+                    writingOutput.fail(throwable, null);
+                } else {
+                    log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                    writingOutput.finish();
+                }
+            });
         } catch (final Exception e) {
             writingOutput.fail(e, null);
         }
@@ -281,8 +270,7 @@ public class OpcUaClientWrapper {
         });
 
         return opcUaClient.connect().thenCompose(uaClient -> {
-            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
-                    opcUaClient,
+            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(opcUaClient,
                     adapterId,
                     protocolId,
                     protocolAdapterMetricsService,
@@ -294,17 +282,16 @@ public class OpcUaClientWrapper {
             opcUaClient.getSubscriptionManager().addSubscriptionListener(opcUaSubscriptionLifecycle);
 
             try {
-                final Optional<JsonToOpcUAConverter> jsonToOpcUAConverterOpt =
-                        Optional.of(new JsonToOpcUAConverter(opcUaClient));
-                final Optional<JsonSchemaGenerator> jsonSchemaGeneratorOpt =
-                        Optional.of(new JsonSchemaGenerator(opcUaClient, new ObjectMapper()));
+                final JsonToOpcUAConverter jsonToOpcUAConverter = new JsonToOpcUAConverter(opcUaClient);
+                final JsonSchemaGenerator jsonSchemaGenerator =
+                        new JsonSchemaGenerator(opcUaClient, new ObjectMapper());
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
                     return opcUaSubscriptionLifecycle.subscribeAll(northboundsMappings)
                             .thenApply(ignored -> new OpcUaClientWrapper(adapterId,
                                     opcUaClient,
                                     opcUaSubscriptionLifecycle,
-                                    jsonToOpcUAConverterOpt,
-                                    jsonSchemaGeneratorOpt));
+                                    jsonToOpcUAConverter,
+                                    jsonSchemaGenerator));
                 } else {
                     return CompletableFuture.completedFuture(null);
                 }
