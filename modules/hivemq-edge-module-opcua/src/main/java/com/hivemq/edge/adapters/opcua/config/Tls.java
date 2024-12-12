@@ -28,7 +28,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 public class Tls {
 
     @JsonProperty("enabled")
-    @ModuleConfigField(title = "Enable TLS", description = "Enables TLS encrypted connection", defaultValue = "true")
+    @ModuleConfigField(title = "Enable TLS", description = "Enables TLS encrypted connection", defaultValue = "false")
     private final boolean enabled;
 
     @JsonProperty("keystore")
@@ -48,7 +48,7 @@ public class Tls {
             @JsonProperty("enabled") final @Nullable Boolean enabled,
             @JsonProperty("keystore") final @Nullable Keystore keystore,
             @JsonProperty("truststore") final @Nullable Truststore truststore) {
-        this.enabled = Objects.requireNonNullElse(enabled, true);
+        this.enabled = Objects.requireNonNullElse(enabled, false);
         this.keystore = keystore;
         this.truststore = truststore;
     }
