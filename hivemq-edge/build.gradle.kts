@@ -104,7 +104,6 @@ repositories {
         }
         filter {
             includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.saasquatch")
         }
     }
 }

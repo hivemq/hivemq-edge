@@ -39,7 +39,7 @@ public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
     public static final String PROPERTY_REMOTE_RACK = "remoteRack";
     public static final String PROPERTY_REMOTE_SLOT = "remoteSlot";
     public static final String PROPERTY_PDU_LENGTH = "pduLength";
-    public static final String PROPERTY_S_7_TO_MQTT_MAPPINGS = "s7ToMqttMappings";
+    public static final String PROPERTY_S_7_TO_MQTT = "s7ToMqtt";
 
     public enum ControllerType {
         S7_200,
@@ -89,7 +89,7 @@ public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
                        description = "")
     private final Integer pduLength;
 
-    @JsonProperty(value = PROPERTY_S_7_TO_MQTT_MAPPINGS, required = true)
+    @JsonProperty(value = PROPERTY_S_7_TO_MQTT, required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
                        required = true)
@@ -104,7 +104,7 @@ public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
             @JsonProperty(value = PROPERTY_REMOTE_RACK) final @Nullable Integer remoteRack,
             @JsonProperty(value = PROPERTY_REMOTE_SLOT) final @Nullable Integer remoteSlot,
             @JsonProperty(value = PROPERTY_PDU_LENGTH) final @Nullable Integer pduLength,
-            @JsonProperty(value = PROPERTY_S_7_TO_MQTT_MAPPINGS, required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
+            @JsonProperty(value = PROPERTY_S_7_TO_MQTT, required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
         this.host = host;
         this.controllerType = controllerType;
         this.port = port;

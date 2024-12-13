@@ -30,6 +30,12 @@
                     </s7ToMqttMapping>
                 </s7ToMqttMappings>
             </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <tagName>tag-name</tagName>
+                </northboundMapping>
+            </northboundMappings>
             <tags>
                 <tag>
                     <name>tag-name</name>
