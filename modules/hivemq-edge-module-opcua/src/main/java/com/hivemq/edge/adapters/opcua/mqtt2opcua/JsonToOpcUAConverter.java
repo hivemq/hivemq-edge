@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.mqtt2opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
@@ -46,9 +47,13 @@ import org.opcfoundation.opcua.binaryschema.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -110,7 +115,11 @@ public class JsonToOpcUAConverter {
                     rootNode);
 
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                return parsetoOpcUAObject(builtinType, rootNode);
+                if(rootNode.isArray()) {
+                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
+                } else {
+                    return parsetoOpcUAObject(builtinType, rootNode);
+                }
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
@@ -574,5 +583,19 @@ public class JsonToOpcUAConverter {
                 "' cannot be concerted to " +
                 intendedClass +
                 "due to underflow.");
+    }
+
+    private Object[] generateArrayFromArrayNode(final @NotNull ArrayNode arrayNode, final @NotNull BuiltinDataType type) {
+        Object[] ret = (Object[])Array.newInstance(type.getBackingClass(), arrayNode.size());
+
+        for (int i = 0; i < arrayNode.size(); i++) {
+            JsonNode arrayEntry = arrayNode.get(i);
+            if (arrayEntry.isArray()) {
+                ret[i] = generateArrayFromArrayNode((ArrayNode) arrayEntry, type);
+            } else {
+                ret[i] = parsetoOpcUAObject(type, arrayEntry);
+            }
+        }
+        return ret;
     }
 }

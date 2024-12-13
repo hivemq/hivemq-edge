@@ -79,7 +79,6 @@ public class JsonSchemaGenerator {
             final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
             if (builtinType != BuiltinDataType.ExtensionObject) {
                 if(dimensions != null && dimensions.length > 0) {
-                    System.out.println("HMM " + builtinJsonSchema.getJsonSchema(builtinType, dimensions));
                     output.finish(builtinJsonSchema.getJsonSchema(builtinType, dimensions));
                 } else {
                     output.finish(builtinJsonSchema.getJsonSchema(builtinType));
