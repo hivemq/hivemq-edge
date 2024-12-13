@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image } from '@chakra-ui/react'
-import { LuInspect } from 'react-icons/lu'
 
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
