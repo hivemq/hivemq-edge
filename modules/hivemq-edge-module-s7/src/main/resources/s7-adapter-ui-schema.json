@@ -1,0 +1,70 @@
+{
+  "ui:tabs" : [
+    {
+      "id" : "coreFields",
+      "title" : "Connection",
+      "properties" : [
+        "id",
+        "host",
+        "port"
+      ]
+    },
+    {
+      "id" : "subFields",
+      "title" : "S7 To MQTT",
+      "properties" : [
+        "s7ToMqtt"
+      ]
+    },
+    {
+      "id" : "s7-new",
+      "title" : "S7 Device",
+      "properties" : [
+        "controllerType",
+        "remoteRack",
+        "remoteSlot",
+        "remoteTsap",
+        "remoteRack2",
+        "remoteSlot2"
+      ]
+    }
+  ],
+  "id" : {
+    "ui:disabled" : false
+  },
+  "port" : {
+    "ui:widget" : "updown"
+  },
+  "ui:order" : [
+    "id",
+    "host",
+    "port",
+    "*"
+  ],
+  "s7ToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "s7ToMqttMappings",
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "*"
+    ],
+    "s7ToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "tagName",
+          "tagAddress",
+          "dataType",
+          "mqttTopic",
+          "mqttQos",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
+      }
+    }
+  }
+}
