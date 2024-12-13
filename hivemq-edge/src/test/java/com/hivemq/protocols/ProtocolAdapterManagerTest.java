@@ -330,12 +330,12 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
             return null;
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
             return null;
         }
     }

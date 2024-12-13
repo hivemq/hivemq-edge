@@ -125,12 +125,12 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return HttpSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return BidirectionalHttpSpecificAdapterConfig.class;
     }
 }

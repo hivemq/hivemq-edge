@@ -108,7 +108,7 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
             return null;
         }
@@ -121,12 +121,12 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return SimulationSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return SimulationSpecificAdapterConfig.class;
     }
 }

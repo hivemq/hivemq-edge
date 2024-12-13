@@ -124,12 +124,12 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return EipSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return EipSpecificAdapterConfig.class;
     }
 }

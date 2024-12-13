@@ -40,7 +40,6 @@ import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
-import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -430,8 +429,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager = new ProtocolAdapterSchemaManager(objectMapper,
                 protocolAdapterWritingService.writingEnabled() ?
-                        information.configurationClassWritingAndReading() :
-                        information.configurationClassReading());
+                        information.configurationClassNorthAndSouthbound() :
+                        information.configurationClassNorthbound());
         final ProtocolAdapterValidator validator =
                 (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =
