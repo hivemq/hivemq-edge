@@ -133,7 +133,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       isVisible={Boolean(mainNodes?.id === id && !dragging)}
       position={Position.Top}
       role="toolbar"
-      aria-label={t('workspace.toolbar.container.right')}
+      aria-label={t('workspace.toolbar.container.label')}
     >
       <HStack
         sx={{
@@ -150,8 +150,8 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         }}
         height="50px"
       >
-        <Icon as={BsGripVertical} boxSize={7} />
-        <Text>{title || id}</Text>
+        <Icon as={BsGripVertical} boxSize={7} aria-hidden={true} />
+        <Text data-testid="toolbar-title">{title || id}</Text>
         {children && (
           <>
             <Divider orientation="vertical" />
