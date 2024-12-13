@@ -5,6 +5,7 @@ import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.s7.S7ProtocolAdapterFactory;
@@ -36,7 +37,7 @@ class S7AdapterConfigTest {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+        final ProtocolAdapterEntity adapter = configEntity.getProtocolAdapterConfig().get(0);
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);

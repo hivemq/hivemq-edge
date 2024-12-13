@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.s7.config.S7AdapterConfig;
 import com.hivemq.edge.adapters.s7.config.S7Tag;
@@ -127,12 +128,12 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return S7AdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolAdapterConfig> configurationClassWriting() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return S7AdapterConfig.class;
     }
 }
