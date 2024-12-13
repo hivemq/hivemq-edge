@@ -35,7 +35,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class BuiltinJsonSchema {
 
@@ -44,6 +46,9 @@ public class BuiltinJsonSchema {
     private static final @NotNull String MINIMUM_KEY_WORD = "minimum";
     private static final @NotNull String MAXIMUM_KEY_WORD = "maximum";
     public static final @NotNull String INTEGER_DATA_TYPE = "integer";
+    public static final @NotNull String ARRAY_DATA_TYPE = "array";
+    public static final @NotNull String ARRAY_ITEMS = "items";
+    public static final @NotNull String ARRAY_MAX_TIMES = "maxItems";
 
     private final @NotNull HashMap<BuiltinDataType, JsonNode> classToJsonSchema = new HashMap<>();
 
@@ -111,6 +116,10 @@ public class BuiltinJsonSchema {
         return classToJsonSchema.get(builtinDataType);
     }
 
+    public @NotNull JsonNode getJsonSchemaForArray(final @NotNull BuiltinDataType builtinDataType) {
+        return classToJsonSchema.get(builtinDataType);
+    }
+
     private @NotNull JsonNode createJsonSchemaForBuiltinType(
             final @NotNull String title, final @NotNull BuiltinDataType builtinDataType) {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
@@ -128,6 +137,30 @@ public class BuiltinJsonSchema {
         rootNode.set("required", requiredAttributes);
 
         return rootNode;
+    }
+
+    public static void populatePropertiesForArray(final @NotNull ObjectNode propertiesNode,
+                                                  final @NotNull BuiltinDataType builtinDataType,
+                                                  final @NotNull ObjectMapper objectMapper,
+                                                  final @NotNull UInteger[] dimensions) {
+            final long maxSize = dimensions[0].longValue();
+
+            propertiesNode.set("type", new TextNode(ARRAY_DATA_TYPE));
+
+            //0 for a dimension means unlimited
+            if(maxSize > 0) {
+                propertiesNode.set("maxItems", new LongNode(maxSize));
+            }
+            final ObjectNode itemsNode = objectMapper.createObjectNode();
+            propertiesNode.set("items", itemsNode);
+
+            if (dimensions.length == 1) { //we are the last element
+                //last element, we can now set the array type
+                populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
+            } else {
+                //nesting deeper
+                populatePropertiesForArray(itemsNode, builtinDataType, objectMapper, Arrays.copyOfRange(dimensions, 1, dimensions.length));
+            }
     }
 
     public static void populatePropertiesForBuiltinType(
