@@ -122,12 +122,12 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return FileSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return FileSpecificAdapterConfig.class;
     }
 }
