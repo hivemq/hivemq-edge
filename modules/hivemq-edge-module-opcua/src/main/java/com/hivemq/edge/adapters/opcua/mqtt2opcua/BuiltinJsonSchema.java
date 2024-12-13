@@ -116,10 +116,6 @@ public class BuiltinJsonSchema {
         return classToJsonSchema.get(builtinDataType);
     }
 
-    public @NotNull JsonNode getJsonSchemaForArray(final @NotNull BuiltinDataType builtinDataType) {
-        return classToJsonSchema.get(builtinDataType);
-    }
-
     private @NotNull JsonNode createJsonSchemaForBuiltinType(
             final @NotNull String title, final @NotNull BuiltinDataType builtinDataType) {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
@@ -136,6 +132,25 @@ public class BuiltinJsonSchema {
         requiredAttributes.add("value");
         rootNode.set("required", requiredAttributes);
 
+        return rootNode;
+    }
+
+    public @NotNull JsonNode getJsonSchema(final @NotNull BuiltinDataType builtinDataType,
+                                           final @NotNull UInteger[] dimensions) {
+
+        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
+        rootNode.set("type", new TextNode("object"));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+        populatePropertiesForArray(valueNode, builtinDataType, OBJECT_MAPPER, dimensions);
+
+        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
         return rootNode;
     }
 
