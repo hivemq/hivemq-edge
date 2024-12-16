@@ -7,10 +7,12 @@ import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
+import { formatItemName } from '@/components/rjsf/utils/array-items.utils.ts'
 
 // TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
 interface ArrayFieldItemCollapsableUISchema {
   titleKey: string
+  name: string
 }
 
 // TODO[NVL] This is driven by subscription handling; use uiSchema to allow configuration for individual array property
@@ -49,9 +51,9 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     const childrenFormData = collapsableItems?.titleKey
       ? children.props.formData[collapsableItems?.titleKey]
       : undefined
-    if (childrenFormData) return `${children.props.name} - ${childrenFormData}`
-    return children.props.name
-  }, [children.props.formData, children.props.name, collapsableItems?.titleKey])
+
+    return formatItemName(collapsableItems?.name, children.props.index, childrenFormData)
+  }, [children.props.formData, children.props.index, collapsableItems?.name, collapsableItems?.titleKey])
 
   useEffect(() => {
     if (props.children.props.idSchema.$id === expandItems.join('_')) onOpen()
@@ -81,6 +83,12 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     )
   }
   const { hidden, ...rest } = getDisclosureProps()
+
+  // This is to override the hardcoded rendering of the item's indexed names
+  const childrenWithCustomTitle = {
+    ...children,
+    props: { ...children.props, title: formatItemName(collapsableItems?.name, children.props.index) },
+  }
 
   return (
     <HStack flexDirection="row-reverse" alignItems="flex-start" py={1} role="listitem">
@@ -136,7 +144,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
       )}
 
       <Box w="100%" {...rest}>
-        {!collapsableItems || isOpen ? children : renderCollapsed()}
+        {!collapsableItems || isOpen ? childrenWithCustomTitle : renderCollapsed()}
       </Box>
     </HStack>
   )
