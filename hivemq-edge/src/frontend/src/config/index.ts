@@ -4,6 +4,9 @@ interface configType {
   environment: string
   apiBaseUrl: string
 
+  isDevMode: boolean
+  isProdMode: boolean
+
   version: string
   documentationUrl: string
 
@@ -27,6 +30,9 @@ interface configType {
 
 const config: configType = {
   environment: import.meta.env.MODE,
+
+  isDevMode: import.meta.env.MODE === 'development',
+  isProdMode: import.meta.env.MODE === 'production',
 
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
 

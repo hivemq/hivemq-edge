@@ -1,13 +1,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import MainApp from './modules/App/MainApp.tsx'
+import config from '@/config'
 
 import './config/sentry.config'
 import './config/i18n.config'
 import { ConditionalWrapper } from '@/components/ConditonalWrapper.tsx'
 import { PrivateMqttClientProvider } from '@/hooks/usePrivateMqttClient/PrivateMqttClientProvider.tsx'
 
-if (import.meta.env.MODE === 'development') {
+if (config.isDevMode) {
   import(/* webpackChunkName: "hivemq-dev-chunk" */ './__test-utils__/dev-console')
 }
 
