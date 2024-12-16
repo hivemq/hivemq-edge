@@ -10,23 +10,11 @@ import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 
-import config from '@/config'
-
 import { NavLinksBlockType } from '../types.ts'
 
 const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => {
   const { t } = useTranslation()
   const { data, isSuccess } = useGetConfiguration()
-
-  const workspaceLink = config.features.WORKSPACE_FLOW_PANEL
-    ? [
-        {
-          icon: <WorkspaceIcon boxSize={4} />,
-          href: '/workspace',
-          label: t('translation:navigation.gateway.routes.workspace'),
-        },
-      ]
-    : []
 
   const menu = [
     {
@@ -37,7 +25,11 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           href: '/',
           label: t('translation:navigation.gateway.routes.home'),
         },
-        ...workspaceLink,
+        {
+          icon: <WorkspaceIcon boxSize={4} />,
+          href: '/workspace',
+          label: t('translation:navigation.gateway.routes.workspace'),
+        },
         {
           icon: <Icon as={PiBridgeThin} fontSize="20px" />,
           href: '/mqtt-bridges',
