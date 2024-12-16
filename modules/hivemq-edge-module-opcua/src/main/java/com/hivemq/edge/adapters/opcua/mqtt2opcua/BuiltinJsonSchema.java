@@ -165,6 +165,7 @@ public class BuiltinJsonSchema {
             //0 for a dimension means unlimited
             if(maxSize > 0) {
                 propertiesNode.set("maxItems", new LongNode(maxSize));
+                propertiesNode.set("minItems", new LongNode(maxSize));
             }
             final ObjectNode itemsNode = objectMapper.createObjectNode();
             propertiesNode.set("items", itemsNode);
