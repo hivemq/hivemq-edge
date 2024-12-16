@@ -25,7 +25,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
 
   return (
     <>
-      <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu} />
+      <ContextualToolbar id={id} title={bridge.id} dragging={dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
         onDoubleClick={onContextMenu}

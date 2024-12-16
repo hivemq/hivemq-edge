@@ -47,7 +47,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
 
   return (
     <>
-      <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu}>
+      <ContextualToolbar id={id} title={adapter.id} dragging={dragging} onOpenPanel={onContextMenu}>
         <ToolbarButtonGroup>
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}

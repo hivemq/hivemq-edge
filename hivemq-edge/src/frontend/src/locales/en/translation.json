@@ -773,8 +773,7 @@
     },
     "toolbar": {
       "container": {
-        "left": "First Toolbar",
-        "right": "Second Toolbar"
+        "label": "Node toolbar"
       },
       "command": {
         "overview": "Open the overview panel",

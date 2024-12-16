@@ -26,7 +26,7 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, draggin
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu} dragging={dragging} hasNoOverview>
+      <ContextualToolbar id={id} title={data.protocol} onOpenPanel={onContextMenu} dragging={dragging} hasNoOverview>
         <ToolbarButtonGroup>
           <IconButton
             icon={<PLCTagIcon />}
