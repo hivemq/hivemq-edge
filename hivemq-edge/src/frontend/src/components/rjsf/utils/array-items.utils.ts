@@ -1,7 +1,10 @@
 const FORMAT_INDEX_MARKER = '#'
 const FORMAT_SEPARATOR = '-'
 
-export const formatItemName = (stub: string, index: number, description?: string) => {
-  if (!description) return `${stub} ${FORMAT_INDEX_MARKER}${index}`
-  return `${stub} ${FORMAT_INDEX_MARKER}${index} ${FORMAT_SEPARATOR} ${description}`
+import i18n from '@/config/i18n.config.ts'
+
+export const formatItemName = (stub: string | undefined, index: number, description?: string) => {
+  const token = stub || i18n.t('rjsf.ArrayFieldItem.item', { ns: 'components' })
+  if (!description) return `${token} ${FORMAT_INDEX_MARKER}${index}`
+  return `${token} ${FORMAT_INDEX_MARKER}${index} ${FORMAT_SEPARATOR} ${description}`
 }
