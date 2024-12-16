@@ -2,6 +2,8 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack, ButtonGroup } from '@chakra-ui/react'
 
+import config from '@/config'
+
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import Tool from '@datahub/components/controls/Tool.tsx'
 import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
@@ -11,8 +13,7 @@ export const ToolboxNodes: FC<DesignerToolBoxProps> = () => {
   const { t } = useTranslation('datahub')
   const { nodes, status } = useDataHubDraftStore()
 
-  const isEditEnabled =
-    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || status === DesignerStatus.DRAFT
+  const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || status === DesignerStatus.DRAFT
   const isDraftEmpty = nodes.length === 0
 
   return (

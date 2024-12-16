@@ -4,6 +4,8 @@ import { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Box, Button, HStack, Icon, Stack, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
+import config from '@/config'
+
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
@@ -57,8 +59,7 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
   const createBehaviorPolicy = useCreateBehaviorPolicy()
   const toast = useToast()
 
-  const isEditEnabled =
-    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
+  const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || statusDraft === DesignerStatus.DRAFT
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
   const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {

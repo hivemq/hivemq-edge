@@ -3,6 +3,8 @@ import { Node } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Box, Button, HStack, Icon, Stack } from '@chakra-ui/react'
 
+import config from '@/config'
+
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
 import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
@@ -34,8 +36,7 @@ export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode
   } = usePolicyChecksStore()
 
   const CheckIcon = useMemo(() => getDryRunStatusIcon(status), [status])
-  const isEditEnabled =
-    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
+  const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || statusDraft === DesignerStatus.DRAFT
 
   const handleCheckPolicy = () => {
     if (!selectedNode) return
