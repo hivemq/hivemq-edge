@@ -18,6 +18,8 @@ interface configType {
 
   features: {
     DEV_MOCK_SERVER: boolean
+    DATAHUB_FSM_REACT_FLOW: boolean
+    DATAHUB_EDIT_POLICY_ENABLED: boolean
   }
 
   documentation: {
@@ -61,6 +63,16 @@ const config: configType = {
      * DEV-only. Runs the mock server, including the MQTT client-based sampling
      */
     DEV_MOCK_SERVER: import.meta.env.VITE_FLAG_MOCK_SERVER === 'true',
+
+    /**
+     * Visualise FSM using React Flow. If false, use Mermaid
+     */
+    DATAHUB_FSM_REACT_FLOW: import.meta.env.VITE_FLAG_DATAHUB_FSM_REACTFLOW === 'true',
+
+    /**
+     * Allow the editing of a policy
+     */
+    DATAHUB_EDIT_POLICY_ENABLED: import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true',
   },
 
   documentation: {
