@@ -169,7 +169,7 @@ public class BuiltinJsonSchema {
             final ObjectNode itemsNode = objectMapper.createObjectNode();
             propertiesNode.set("items", itemsNode);
 
-            if (dimensions.length == 1) { //we are the last element
+            if (dimensions.length == 1) {
                 //last element, we can now set the array type
                 populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
             } else {
