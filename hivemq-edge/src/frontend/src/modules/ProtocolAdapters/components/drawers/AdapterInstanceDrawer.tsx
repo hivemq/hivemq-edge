@@ -14,8 +14,6 @@ import {
   DrawerHeader,
   DrawerOverlay,
   Flex,
-  HStack,
-  Image,
   Text,
 } from '@chakra-ui/react'
 
@@ -29,6 +27,8 @@ import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.u
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -96,12 +96,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
               <Text>
                 {isNewAdapter ? t('protocolAdapter.drawer.title.create') : t('protocolAdapter.drawer.title.update')}
               </Text>
-              <HStack>
-                <Image boxSize="30px" objectFit="scale-down" src={logo} aria-label={name} />
-                <Text fontSize="md" fontWeight="500">
-                  {name}
-                </Text>
-              </HStack>
+              <NodeNameCard name={name} type={NodeTypes.ADAPTER_NODE} icon={logo} />
             </DrawerHeader>
             <DrawerBody>
               {schema && (

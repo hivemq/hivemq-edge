@@ -16,6 +16,8 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 import TopicSchemaDrawer from '@/modules/TopicFilters/components/TopicSchemaDrawer.tsx'
 import SchemaValidationMark from '@/modules/TopicFilters/components/SchemaValidationMark.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 const TopicFilterManager: FC = () => {
   const { t } = useTranslation()
@@ -115,6 +117,7 @@ const TopicFilterManager: FC = () => {
   return (
     <ExpandableDrawer
       header={t('topicFilter.manager.header')}
+      subHeader={<NodeNameCard type={NodeTypes.EDGE_NODE} name={t('branding.appName')} />}
       isOpen={isOpen}
       onClose={handleClose}
       closeOnOverlayClick={false}
