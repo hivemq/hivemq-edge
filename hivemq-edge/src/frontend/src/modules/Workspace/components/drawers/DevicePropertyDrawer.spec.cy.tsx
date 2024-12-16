@@ -75,7 +75,6 @@ describe('DevicePropertyDrawer', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     cy.get('header').should('contain.text', 'Device Overview')
-    cy.get('h2').eq(0).should('contain.text', 'simulation')
-    cy.get('h2').eq(1).should('contain.text', 'List of Device Tags')
+    cy.get('h2').eq(0).should('contain.text', 'List of Device Tags')
   })
 })

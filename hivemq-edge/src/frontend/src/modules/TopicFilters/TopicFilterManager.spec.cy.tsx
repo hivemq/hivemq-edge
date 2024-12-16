@@ -22,7 +22,7 @@ describe('TopicFilterManager', () => {
 
     cy.mountWithProviders(<TopicFilterManager />)
 
-    cy.get('header').should('have.text', 'Manage topic filters')
+    cy.get('header > p').should('have.text', 'Manage topic filters')
     cy.get('table').should('be.visible')
 
     cy.get('table').as('table').should('have.attr', 'aria-label', 'List of topic filters')
