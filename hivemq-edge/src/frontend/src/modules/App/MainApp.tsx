@@ -12,6 +12,7 @@ import { routes } from '@/modules/App/routes.tsx'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
 import PrivacyConsentBanner from '@/modules/Trackers/PrivacyConsentBanner.tsx'
+import config from '@/config'
 
 const MainApp: FC = () => {
   return (
@@ -22,9 +23,7 @@ const MainApp: FC = () => {
         </AuthProvider>
         <PrivacyConsentBanner />
       </ChakraProvider>
-      {import.meta.env.MODE === 'development' && (
-        <ReactQueryDevtools position="bottom" buttonPosition="top-left" initialIsOpen={false} />
-      )}
+      {config.isDevMode && <ReactQueryDevtools position="bottom" buttonPosition="top-left" initialIsOpen={false} />}
     </QueryClientProvider>
   )
 }

@@ -2,6 +2,7 @@ import { isRouteErrorResponse, Link as RouterLink, useRouteError } from 'react-r
 import { chakra as Chakra, Heading, VStack, Text, Button, Box } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { FaHome } from 'react-icons/fa'
+import config from '@/config'
 
 interface ErrorResponse {
   status: number
@@ -36,7 +37,7 @@ const ErrorPage = () => {
           {t('error.backHome')}
         </Button>
       </VStack>
-      {import.meta.env.MODE === 'development' && stack && (
+      {config.isDevMode && stack && (
         <Box
           overflow="auto"
           tabIndex={0}
