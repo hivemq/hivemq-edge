@@ -57,6 +57,10 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     if (props.children.props.idSchema.$id === expandItems.join('_')) onOpen()
   }, [expandItems, onOpen, props.children.props.idSchema.$id])
 
+  const hasErrors = Boolean(props.children.props.errorSchema)
+  const errorStyle =
+    hasErrors && collapsableItems && !isOpen ? { borderColor: '#E53E3E', boxShadow: '0 0 0 1px #E53E3E' } : undefined
+
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
   const onRemoveClick = useMemo(() => onDropIndexClick(index), [index, onDropIndexClick])
   const onArrowUpClick = useMemo(() => onReorderClick(index, index - 1), [index, onReorderClick])
@@ -65,7 +69,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   const renderCollapsed = () => {
     const TitleFieldTemplate = getTemplate<'TitleFieldTemplate'>('TitleFieldTemplate', registry, uiOptions)
     return (
-      <FormControl variant="hivemq">
+      <FormControl variant="hivemq" sx={errorStyle}>
         <TitleFieldTemplate
           title={name}
           id={children.props.name}
