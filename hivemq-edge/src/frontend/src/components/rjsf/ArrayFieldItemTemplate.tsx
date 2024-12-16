@@ -52,7 +52,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
       ? children.props.formData[collapsableItems?.titleKey]
       : undefined
 
-    return formatItemName(collapsableItems?.name as string, children.props.index, childrenFormData)
+    return formatItemName(collapsableItems?.name, children.props.index, childrenFormData)
   }, [children.props.formData, children.props.index, collapsableItems?.name, collapsableItems?.titleKey])
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   // This is to override the hardcoded rendering of the item's indexed names
   const childrenWithCustomTitle = {
     ...children,
-    props: { ...children.props, title: formatItemName(collapsableItems?.name as string, children.props.index) },
+    props: { ...children.props, title: formatItemName(collapsableItems?.name, children.props.index) },
   }
 
   return (
