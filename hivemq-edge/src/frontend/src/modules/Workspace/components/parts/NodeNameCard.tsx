@@ -20,15 +20,25 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
   const EntityIcon = useMemo(() => {
     switch (type) {
       case NodeTypes.ADAPTER_NODE:
-        // return <Icon data-testid="node-type-icon" data-nodeicon={type} as={PiPlugsConnectedFill} fontSize="24px" />
-        return <Image aria-label={type} boxSize="20px" objectFit="scale-down" src={icon} />
+        return (
+          <Image
+            aria-label={type}
+            boxSize="20px"
+            objectFit="scale-down"
+            src={icon}
+            data-testid="node-type-icon"
+            data-nodeicon={type}
+          />
+        )
 
       case NodeTypes.BRIDGE_NODE:
         return <Icon data-testid="node-type-icon" data-nodeicon={type} as={PiBridgeThin} fontSize="24px" />
       case NodeTypes.CLUSTER_NODE:
         return <Icon data-testid="node-type-icon" data-nodeicon={type} as={ImMakeGroup} fontSize="24px" />
       case NodeTypes.EDGE_NODE:
-        return <Image objectFit="cover" w="24px" src={edgeLogo} alt="SS" />
+        return (
+          <Image data-testid="node-type-icon" data-nodeicon={type} objectFit="cover" w="24px" src={edgeLogo} alt="SS" />
+        )
 
       case NodeTypes.DEVICE_NODE:
         return (
@@ -50,12 +60,16 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
         <HStack divider={<StackDivider />}>
           {EntityIcon}
           <VStack alignItems="flex-start" gap={0}>
-            <Text data-testid="node-name" noOfLines={1}>
-              {name}
-            </Text>
-            <Text data-testid="node-description" noOfLines={1} fontWeight="normal">
-              {description}
-            </Text>
+            {name && (
+              <Text data-testid="node-name" noOfLines={1}>
+                {name}
+              </Text>
+            )}
+            {description && (
+              <Text data-testid="node-description" noOfLines={1} fontWeight="normal">
+                {description}
+              </Text>
+            )}
           </VStack>
         </HStack>
       </CardBody>
