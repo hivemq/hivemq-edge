@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class BuiltinJsonSchema {
 
@@ -158,6 +159,9 @@ public class BuiltinJsonSchema {
                                                   final @NotNull BuiltinDataType builtinDataType,
                                                   final @NotNull ObjectMapper objectMapper,
                                                   final @NotNull UInteger[] dimensions) {
+            if(dimensions.length == 0) {
+                throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
+            }
             final long maxSize = dimensions[0].longValue();
 
             propertiesNode.set("type", new TextNode(ARRAY_DATA_TYPE));
