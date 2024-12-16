@@ -3,6 +3,7 @@ import { ButtonGroup } from '@chakra-ui/react'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { useTranslation } from 'react-i18next'
 import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
+import config from '@/config'
 
 interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
@@ -13,7 +14,7 @@ interface DataHubListActionProps {
 
 const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, onDownload, isAccessDisabled = false }) => {
   const { t } = useTranslation('datahub')
-  const isEditEnabled = import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true'
+  const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED
 
   return (
     <ButtonGroup size="sm" isAttached>
