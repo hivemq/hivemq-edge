@@ -272,7 +272,7 @@ tasks.resolve {
 
     doFirst {
         delete(outputDir)
-        outputDir.mkdir()
+        mkdir(outputDir)
     }
 }
 
