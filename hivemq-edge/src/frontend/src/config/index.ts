@@ -17,10 +17,7 @@ interface configType {
   }
 
   features: {
-    TOPIC_EDITOR_SHOW_BRANCHES: boolean
-    WORKSPACE_FLOW_PANEL: boolean
-    PROTOCOL_ADAPTER_FACET: boolean
-    METRICS_SHOW_EDITOR: boolean
+    DEV_MOCK_SERVER: boolean
   }
 
   documentation: {
@@ -60,19 +57,10 @@ const config: configType = {
   },
 
   features: {
-    TOPIC_EDITOR_SHOW_BRANCHES: import.meta.env.VITE_FLAG_TOPIC_EDITOR_SHOW_BRANCHES === 'true',
     /**
-     * Enable the workspace flow for the edge
+     * DEV-only. Runs the mock server, including the MQTT client-based sampling
      */
-    WORKSPACE_FLOW_PANEL: import.meta.env.VITE_FLAG_WORKSPACE_FLOW_PANEL === 'true',
-    /**
-     * Show the search and filter panel for the Protocol Adapter
-     */
-    PROTOCOL_ADAPTER_FACET: import.meta.env.VITE_FLAG_FACET_SEARCH === 'true',
-    /**
-     * Show the metrics editor in the workspace panels
-     */
-    METRICS_SHOW_EDITOR: true,
+    DEV_MOCK_SERVER: import.meta.env.VITE_FLAG_MOCK_SERVER === 'true',
   },
 
   documentation: {
