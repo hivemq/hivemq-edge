@@ -60,10 +60,15 @@ public class ProtocolAdapterFactoryManager {
     }
 
     public @NotNull Map<String, ProtocolAdapterInformation> getAllAvailableAdapterTypes() {
-        return factoryMap.values()
-                .stream()
-                .map(ProtocolAdapterFactory::getInformation)
-                .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
+        final Map<String, ProtocolAdapterInformation> protocolIdToInformation = new HashMap<>();
+        for (final ProtocolAdapterFactory<?> factory : factoryMap.values()) {
+            final ProtocolAdapterInformation information = factory.getInformation();
+            protocolIdToInformation.put(information.getProtocolId(), information);
+            for (final String legacyProtocolId : information.getLegacyProtocolIds()) {
+                protocolIdToInformation.put(legacyProtocolId, information);
+            }
+        }
+        return protocolIdToInformation;
     }
 
     public void writingEnabledChanged(final boolean writingEnabled) {
@@ -75,7 +80,7 @@ public class ProtocolAdapterFactoryManager {
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull EventService eventService,
             final boolean writingEnabled) {
-        Map<String, ProtocolAdapterFactory<?>> factoryMap = new HashMap<>();
+        final Map<String, ProtocolAdapterFactory<?>> factoryMap = new HashMap<>();
         final List<Class<? extends ProtocolAdapterFactory>> implementations =
                 moduleLoader.findImplementations(ProtocolAdapterFactory.class);
 
@@ -90,6 +95,9 @@ public class ProtocolAdapterFactoryManager {
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
+                for (final String legacyProtocolId : information.getLegacyProtocolIds()) {
+                    factoryMap.put(legacyProtocolId, protocolAdapterFactory);
+                }
             } catch (final InvocationTargetException | InstantiationException | IllegalAccessException |
                            NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}.", e.getMessage());
