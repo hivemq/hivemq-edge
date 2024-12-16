@@ -29,7 +29,7 @@ plugins {
 
     id("jacoco")
     id("pmd")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.25"
+    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.27"
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
 
