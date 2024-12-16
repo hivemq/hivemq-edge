@@ -30,6 +30,8 @@ import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { useSouthboundMappingManager } from '@/modules/Mappings/hooks/useSouthboundMappingManager.ts'
 import { MappingType } from './types'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 
 interface AdapterMappingManagerProps {
   type: MappingType
@@ -47,6 +49,12 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ADAPTER_NODE) as Node<Adapter> | undefined
   }, [nodeId, nodes])
+
+  const { data: protocols } = useGetAdapterTypes()
+  const adapterProtocol =
+    selectedNode?.type === NodeTypes.ADAPTER_NODE
+      ? protocols?.items?.find((e) => e.id === (selectedNode as Node<Adapter>).data.type)
+      : undefined
 
   const handleClose = () => {
     onClose()
@@ -70,6 +78,12 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
           <Text>{t('protocolAdapter.mapping.manager.header', { context: type })}</Text>
+          <NodeNameCard
+            name={selectedNode?.data.id}
+            type={selectedNode?.type as NodeTypes}
+            icon={adapterProtocol?.logoUrl}
+            description={adapterProtocol?.name}
+          />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}

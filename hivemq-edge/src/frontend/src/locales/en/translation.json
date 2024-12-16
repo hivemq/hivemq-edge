@@ -765,7 +765,9 @@
     "device": {
       "type_ADAPTER_NODE": "adapter",
       "type_BRIDGE_NODE": "bridge",
-      "type_EDGE_NODE": "edge"
+      "type_EDGE_NODE": "edge",
+      "type_DEVICE_NODE": "device",
+      "type_CLUSTER_NODE": "Group"
     },
     "layout": {
       "HORIZONTAL": "Horizontal",

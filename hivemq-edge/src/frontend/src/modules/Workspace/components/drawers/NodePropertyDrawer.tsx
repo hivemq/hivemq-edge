@@ -30,7 +30,8 @@ import { ChartType } from '@/modules/Metrics/types.ts'
 
 import { NodeTypes } from '../../types.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
-import NodeNameCard from '../parts/NodeNameCard.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 
 interface NodePropertyDrawerProps {
   nodeId: string
@@ -42,6 +43,11 @@ interface NodePropertyDrawerProps {
 
 const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose, onEditEntity }) => {
   const { t } = useTranslation()
+  const { data: protocols } = useGetAdapterTypes()
+  const adapterProtocol =
+    selectedNode.type === NodeTypes.ADAPTER_NODE
+      ? protocols?.items?.find((e) => e.id === (selectedNode as Node<Adapter>).data.type)
+      : undefined
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
@@ -49,10 +55,15 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
       <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type })}>
         <DrawerCloseButton />
         <DrawerHeader>
-          <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
+          <Text>{t('workspace.property.header', { context: selectedNode.type })}</Text>
+          <NodeNameCard
+            name={selectedNode.data.id}
+            type={selectedNode.type as NodeTypes}
+            icon={adapterProtocol?.logoUrl}
+            description={adapterProtocol?.name}
+          />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          <NodeNameCard selectedNode={selectedNode} />
           <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}

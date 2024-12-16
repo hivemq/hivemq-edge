@@ -1,49 +1,54 @@
-/// <reference types="cypress" />
-
-import { Node } from 'reactflow'
-
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE } from '@/__test-utils__/react-flow/nodes.ts'
-import { Adapter, Bridge } from '@/api/__generated__'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import anyLogo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
 import NodeNameCard from './NodeNameCard.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-const mockNodeAdapter: Node<Bridge | Adapter> = {
-  position: { x: 0, y: 0 },
-  id: 'adapter@fgffgf',
-  type: NodeTypes.ADAPTER_NODE,
-  data: MOCK_NODE_ADAPTER.data,
-}
-
-const mockNodeBridg: Node<Bridge | Adapter> = {
-  position: { x: 0, y: 0 },
-  id: 'adapter@fgffgf',
-  type: NodeTypes.BRIDGE_NODE,
-  data: MOCK_NODE_BRIDGE.data,
-}
-
 describe('NodeNameCard', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig1')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig')
   })
 
   it('should render adapter properly', () => {
-    cy.mountWithProviders(<NodeNameCard selectedNode={mockNodeAdapter} />)
+    cy.mountWithProviders(
+      <NodeNameCard type={NodeTypes.ADAPTER_NODE} name="The adapter" description="The adapter type" icon={anyLogo} />
+    )
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.ADAPTER_NODE)
-    cy.getByTestId('node-type-text').should('contain.text', 'adapter')
-    cy.getByTestId('node-adapter-type').should('contain.text', 'Simulated Edge Device')
-    cy.getByTestId('node-name').should('contain.text', 'my-adapter')
+    cy.getByTestId('node-name').should('contain.text', 'The adapter')
+    cy.getByTestId('node-description').should('contain.text', 'The adapter type')
   })
 
   it('should render bridge properly', () => {
-    cy.mountWithProviders(<NodeNameCard selectedNode={mockNodeBridg} />)
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.BRIDGE_NODE} name="The Bridge" description="Bridge" />)
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.BRIDGE_NODE)
-    cy.getByTestId('node-type-text').should('contain.text', 'bridge')
-    cy.getByTestId('node-adapter-type').should('not.exist')
-    cy.getByTestId('node-name').should('contain.text', 'bridge-id-01')
+    cy.getByTestId('node-name').should('contain.text', 'The Bridge')
+    cy.getByTestId('node-description').should('contain.text', 'Bridge')
+  })
+
+  it('should render groups properly', () => {
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.CLUSTER_NODE} name="The Group" description="Group" />)
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.CLUSTER_NODE)
+    cy.getByTestId('node-name').should('contain.text', 'The Group')
+    cy.getByTestId('node-description').should('contain.text', 'Group')
+  })
+
+  it('should render the edge properly', () => {
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.EDGE_NODE} name="The Edge" />)
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.EDGE_NODE)
+    cy.getByTestId('node-name').should('contain.text', 'The Edge')
+    cy.getByTestId('node-description').should('not.exist')
+  })
+
+  it('should render the devices properly', () => {
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.DEVICE_NODE} />)
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.DEVICE_NODE)
+    cy.getByTestId('node-name').should('not.exist')
+    cy.getByTestId('node-description').should('not.exist')
   })
 })

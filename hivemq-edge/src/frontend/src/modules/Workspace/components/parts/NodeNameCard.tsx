@@ -1,55 +1,75 @@
 import { FC, useMemo } from 'react'
-import { Node } from 'reactflow'
-import { Card, CardBody, HStack, Icon, StackDivider, Tag, Text, VStack } from '@chakra-ui/react'
-import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
-import { useTranslation } from 'react-i18next'
+import { Card, CardBody, HStack, Icon, Image, StackDivider, Text, VStack } from '@chakra-ui/react'
+import { PiBridgeThin } from 'react-icons/pi'
+import { GrStatusUnknown } from 'react-icons/gr'
+import { ImMakeGroup } from 'react-icons/im'
 
-import { Adapter, Bridge } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import edgeLogo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
-import { NodeTypes } from '../../types.ts'
+import { deviceCategoryIcon, ProtocolAdapterCategoryName } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface NodeNameCardProps {
-  selectedNode: Node<Bridge | Adapter>
+  type: NodeTypes
+  name?: string
+  description?: string
+  icon?: string
 }
 
-const NodeNameCard: FC<NodeNameCardProps> = ({ selectedNode }) => {
-  const { t } = useTranslation()
-  const { data } = useGetAdapterTypes()
-  const { type } = selectedNode
-
-  const adapterType = useMemo(() => {
-    if (!data) return undefined
-    if (type === NodeTypes.BRIDGE_NODE) return undefined
-
-    const adapterType = (selectedNode as Node<Adapter>).data.type
-    return data?.items?.find((e) => e.id === adapterType)
-  }, [data, selectedNode, type])
-
+const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) => {
   const EntityIcon = useMemo(() => {
-    if (type === NodeTypes.BRIDGE_NODE)
-      return (
-        <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.BRIDGE_NODE} as={PiBridgeThin} fontSize="40px" />
-      )
-    return <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.ADAPTER_NODE} as={PiPlugsConnectedFill} />
-  }, [type])
+    switch (type) {
+      case NodeTypes.ADAPTER_NODE:
+        return (
+          <Image
+            aria-label={type}
+            boxSize="20px"
+            objectFit="scale-down"
+            src={icon}
+            data-testid="node-type-icon"
+            data-nodeicon={type}
+          />
+        )
+
+      case NodeTypes.BRIDGE_NODE:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={PiBridgeThin} fontSize="24px" />
+      case NodeTypes.CLUSTER_NODE:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={ImMakeGroup} fontSize="24px" />
+      case NodeTypes.EDGE_NODE:
+        return (
+          <Image data-testid="node-type-icon" data-nodeicon={type} objectFit="cover" w="24px" src={edgeLogo} alt="SS" />
+        )
+
+      case NodeTypes.DEVICE_NODE:
+        return (
+          <Icon
+            data-testid="node-type-icon"
+            data-nodeicon={type}
+            as={deviceCategoryIcon[ProtocolAdapterCategoryName.SIMULATION]}
+            fontSize="24px"
+          />
+        )
+      default:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={GrStatusUnknown} />
+    }
+  }, [icon, type])
 
   return (
-    <Card size="sm" direction="row">
+    <Card size="sm" direction="row" fontSize="sm">
       <CardBody>
         <HStack divider={<StackDivider />}>
-          <VStack>
-            {EntityIcon}
-            <Tag data-testid="node-type-text" textTransform="uppercase">
-              {t('workspace.device.type', { context: type })}{' '}
-            </Tag>
-          </VStack>
-
-          <VStack alignItems="flex-start">
-            {adapterType && <Text data-testid="node-adapter-type">{adapterType.name}</Text>}
-            <Text data-testid="node-name" noOfLines={1}>
-              {selectedNode.data.id}
-            </Text>
+          {EntityIcon}
+          <VStack alignItems="flex-start" gap={0}>
+            {name && (
+              <Text data-testid="node-name" noOfLines={1}>
+                {name}
+              </Text>
+            )}
+            {description && (
+              <Text data-testid="node-description" noOfLines={1} fontWeight="normal">
+                {description}
+              </Text>
+            )}
           </VStack>
         </HStack>
       </CardBody>

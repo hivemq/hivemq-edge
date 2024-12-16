@@ -43,8 +43,6 @@ describe('GroupPropertyDrawer', () => {
     cy.wait('@getMetricForX')
 
     cy.getByTestId('group-panel-title').should('contain.text', 'Group Observability')
-    cy.getByTestId('group-panel-keys').find('p').eq(0).should('contain.text', 'adapter: bridge-id-01')
-    cy.getByTestId('group-panel-keys').find('p').eq(1).should('contain.text', 'adapter: my-adapter')
 
     cy.get('dt').eq(0).should('contain.text', 'bridge-id-01')
     cy.get('dt').eq(1).should('contain.text', 'my-adapter')
