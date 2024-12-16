@@ -9,8 +9,6 @@ import { ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
-import config from '@/config'
-
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 
@@ -78,9 +76,7 @@ const ProtocolIntegrationStore: FC = () => {
           : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
       </Text>
       <Flex flexDirection="row" alignItems="flex-start" gap={6}>
-        {config.features.PROTOCOL_ADAPTER_FACET && (
-          <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
-        )}
+        <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
         <ProtocolsBrowser items={safeData} facet={facet} onCreate={handleCreateInstance} isLoading={isLoading} />
       </Flex>
     </Flex>
