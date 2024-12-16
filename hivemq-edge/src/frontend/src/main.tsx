@@ -20,7 +20,7 @@ if (body) {
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ConditionalWrapper
-      condition={import.meta.env.VITE_FLAG_MOCK_SERVER === 'true'}
+      condition={config.features.DEV_MOCK_SERVER && config.isDevMode}
       wrapper={(children) => <PrivateMqttClientProvider>{children}</PrivateMqttClientProvider>}
     >
       <MainApp />
