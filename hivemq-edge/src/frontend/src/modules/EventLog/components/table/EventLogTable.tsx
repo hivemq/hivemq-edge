@@ -22,22 +22,32 @@ import SeverityBadge from '../SeverityBadge.tsx'
 
 interface EventLogTableProps {
   onOpen?: (t: Event) => void
-  globalSourceFilter?: string
+  globalSourceFilter?: string[]
+  maxEvents?: number
   variant?: 'full' | 'summary'
+  isSingleSource?: boolean
 }
 
-const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, variant = 'full' }) => {
+const EventLogTable: FC<EventLogTableProps> = ({
+  onOpen,
+  globalSourceFilter,
+  variant = 'full',
+  maxEvents = 5,
+  isSingleSource = false,
+}) => {
   const { t } = useTranslation()
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData = useMemo<Event[]>(() => {
     if (!data || !data?.items) return [...mockEdgeEvent(5)]
     if (globalSourceFilter) {
-      return data.items.filter((e: Event) => e.source?.identifier === globalSourceFilter).slice(0, 5)
+      return data.items
+        .filter((e: Event) => globalSourceFilter.includes(e.source?.identifier || ''))
+        .slice(0, maxEvents)
     }
 
     return data.items
-  }, [data, globalSourceFilter])
+  }, [data, globalSourceFilter, maxEvents])
 
   const columns = useMemo<ColumnDef<Event>[]>(() => {
     return [
@@ -121,7 +131,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
   }
 
   // TODO[NVL] Not the best approach; destructure within memo
-  const [, a, b, , c] = columns
+  const [, a, b, d, c] = columns
 
   return (
     <>
@@ -142,8 +152,9 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
       <PaginatedTable<Event>
         aria-label={t('eventLog.title')}
         data={safeData}
-        columns={variant === 'full' ? columns : [a, b, c]}
-        enablePagination={variant === 'full'}
+        columns={variant === 'full' ? columns : isSingleSource ? [a, b, c] : [a, d, b, c]}
+        enablePaginationGoTo={variant === 'full'}
+        enablePaginationSizes={variant === 'full'}
         enableColumnFilters={variant === 'full'}
         // getRowStyles={(row) => {
         //   return { backgroundColor: theme.colors.blue[50] }
