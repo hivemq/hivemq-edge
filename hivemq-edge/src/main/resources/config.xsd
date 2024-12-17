@@ -23,6 +23,7 @@
 
     <xs:complexType name="hiveMQConfigEntity">
         <xs:all>
+            <xs:element name="config-version" type="xs:integer" minOccurs="0"/>
             <xs:element name="mqtt-listeners" type="mqttListenersEntity" minOccurs="0"/>
             <xs:element name="mqtt-sn-listeners" type="mqttsnListenersEntity" minOccurs="0"/>
             <xs:element name="mqtt" type="mqttConfigEntity" minOccurs="0"/>
@@ -861,7 +862,7 @@
                                                         <xs:complexType>
                                                             <xs:choice>
                                                                 <xs:element name="mqtt-topic-filter"
-                                                                            type="nonEmptyString" minOccurs="1"
+                                                                            type="nonEmptyString"
                                                                             maxOccurs="unbounded"/>
                                                             </xs:choice>
                                                         </xs:complexType>
