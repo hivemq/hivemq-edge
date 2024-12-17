@@ -46,6 +46,7 @@ swagger-annotations = "2.2.27"
 victools-jsonschema = "4.37.0"
 wiremock = "3.0.1"
 zeroAllocationHashing = "0.16"
+openApiGeneratorVersion="7.10.0"
 
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
@@ -133,6 +134,7 @@ license = { id = "com.github.hierynomus.license", version = "0.16.1" }
 shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
 forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.8" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openApiGeneratorVersion" }
 
 
 
