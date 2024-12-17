@@ -1,12 +1,22 @@
 import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins.withId("com.hivemq.edge-version-updater") {
     project.ext.set(
         "versionUpdaterFiles",
         arrayOf("src/main/resources/hivemq-edge-configuration.json", "gradle.properties")
     )
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.openapitools:openapi-generator-gradle-plugin")
+    }
 }
 
 plugins {
@@ -26,10 +36,10 @@ plugins {
     alias(libs.plugins.spotbugs)
     alias(libs.plugins.forbiddenApis)
 
+    alias(libs.plugins.openapi.generator)
 
     id("jacoco")
     id("pmd")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.27"
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
 
@@ -260,40 +270,29 @@ tasks.test {
 }
 
 /* ******************** OpenAPI ******************** */
+val buildDirectory = layout.buildDirectory.get()
+tasks.register<GenerateTask>("genJaxRs") {
+    inputSpec.set("${projectDir}/../ext/hivemq-edge-openapi-2024.8.yaml")
+    outputDir.set("${buildDirectory}/generated/openapi")
+    generatorName.set("jaxrs-jersey")
+    apiPackage.set("com.hivemq.edge.api")
+    modelPackage.set("com.hivemq.edge.api.model")
+    generateApiTests.set(false)
+    configOptions.set(
+        hashMapOf(
+            "generateControllerAsAbstract" to "true",
+            "useAuth" to "true"
+        )
+    )
+}
 
-tasks.resolve {
-    outputDir = temporaryDir
-    outputFileName = "hivemq-edge-openapi"
-    outputFormat = io.swagger.v3.plugins.gradle.tasks.ResolveTask.Format.YAML
-    classpath = sourceSets.main.get().runtimeClasspath
-    resourcePackages = setOf("com.hivemq.api.resources")
-    openApiFile = file("src/openapi/openapi-base.yaml")
-    sortOutput = true
-
-    doFirst {
-        delete(outputDir)
-        mkdir(outputDir)
+sourceSets {
+    main {
+        java {
+            srcDirs("${buildDirectory}/generated/openapi/src/gen/java")
+            srcDirs("${buildDirectory}/generated/openapi/src/main/java")
+        }
     }
-}
-
-val openApiSpec by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI yaml specification"
-
-    from(tasks.resolve)
-    into(layout.buildDirectory.dir("openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
-}
-
-
-val openApiDoc by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI html documentation"
-
-    from(openApiSpec)
-    from("src/openapi/index.html")
-    into(layout.buildDirectory.dir("docs/openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
 }
 
 /* ******************** distribution ******************** */
