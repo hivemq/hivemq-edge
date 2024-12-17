@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -104,14 +104,16 @@ public class ProtocolAdapterFactoryManager {
             }
         }
 
+
+        final Set<String> uniqueProtocolNames = factoryMap.values()
+                .stream()
+                .map(protocolAdapterFactory -> "'" + protocolAdapterFactory.getInformation().getProtocolName() + "'")
+                .collect(Collectors.toSet());
+
+
         log.info("Discovered {} protocol adapter-type(s): [{}].",
-                factoryMap.size(),
-                factoryMap.values()
-                        .stream()
-                        .map(protocolAdapterFactory -> "'" +
-                                protocolAdapterFactory.getInformation().getProtocolName() +
-                                "'")
-                        .collect(Collectors.joining(", ")));
+                uniqueProtocolNames.size(),
+                String.join(", ", uniqueProtocolNames));
         return factoryMap;
     }
 
