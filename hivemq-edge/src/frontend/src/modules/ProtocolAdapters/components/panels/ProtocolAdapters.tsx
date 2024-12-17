@@ -8,7 +8,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.ts'
-import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.ts'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -17,7 +16,6 @@ import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
@@ -36,16 +34,9 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import { AdapterStatusContainer } from '@/modules/ProtocolAdapters/components/adapters/AdapterStatusContainer.tsx'
 
 const DEFAULT_PER_PAGE = 10
-
-const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
-  const { data: connections } = useGetAdaptersStatus()
-
-  const connection = connections?.items?.find((e) => e.id === id)
-
-  return <ConnectionStatusBadge status={connection} />
-}
 
 const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {
   return (
