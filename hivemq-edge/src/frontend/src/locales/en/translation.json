@@ -817,6 +817,15 @@
         "ungroup": "Ungroup"
       },
       "editor": {
+        "tabs": {
+          "config": "Configuration",
+          "events": "Events",
+          "metrics": "Metrics"
+        },
+        "eventLog": {
+          "header": "The 5 most recent events for devices in the group",
+          "showMore": "Show more in the Event Log"
+        },
         "title": "Configure the group",
         "input-title": "Title",
         "input-color": "Group colour",
