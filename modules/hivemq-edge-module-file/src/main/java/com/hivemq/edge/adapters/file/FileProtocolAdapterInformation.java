@@ -50,6 +50,11 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("file_input", "file_polling_protocol");
+    }
+
+    @Override
     public @NotNull String getProtocolId() {
         return PROTOCOL_ID;
     }

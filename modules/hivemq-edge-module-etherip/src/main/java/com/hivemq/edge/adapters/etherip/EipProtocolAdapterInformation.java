@@ -55,6 +55,11 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("ethernet-ip");
+    }
+
+    @Override
     public @NotNull String getDisplayName() {
         return "Ethernet IP Protocol Adapter";
     }

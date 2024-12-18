@@ -56,6 +56,11 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("opc-ua-client");
+    }
+
+    @Override
     public @NotNull String getDisplayName() {
         return "OPC UA Protocol Adapter";
     }
