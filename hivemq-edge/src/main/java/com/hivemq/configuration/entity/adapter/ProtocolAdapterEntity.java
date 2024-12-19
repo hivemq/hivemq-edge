@@ -43,7 +43,7 @@ public class ProtocolAdapterEntity {
     private @NotNull String protocolId;
 
     @XmlElement(name = "protocolId")
-    private @NotNull Integer configVersion;
+    private @Nullable Integer configVersion;
 
     @XmlElement(name = "config")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -77,7 +77,7 @@ public class ProtocolAdapterEntity {
         this.adapterId = adapterId;
         this.config = config;
         // if no config version is present, we assume it is the oldest possible version
-        this.configVersion = configVersion != null ? configVersion : 1;
+        this.configVersion = configVersion;
         this.northboundMappingEntities = northboundMappingEntities;
         this.protocolId = protocolId;
         this.tags = tags;
@@ -109,7 +109,11 @@ public class ProtocolAdapterEntity {
     }
 
     public @NotNull Integer getConfigVersion() {
-        return configVersion;
+        if (configVersion == null) {
+            return 1;
+        } else {
+            return configVersion;
+        }
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
