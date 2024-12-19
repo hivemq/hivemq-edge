@@ -11,6 +11,7 @@ export const northboundMappingListUISchema: UiSchema = {
   items: {
     'ui:title': 'List of northbound mappings',
     'ui:description': 'The list of all the mappings delivering messages from this adapter onto the Edge',
+    'ui:batchMode': true,
     items: {
       'ui:order': ['tagName', 'topic', '*'],
       'ui:collapsable': {
