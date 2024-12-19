@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
@@ -109,11 +110,7 @@ public class ProtocolAdapterEntity {
     }
 
     public @NotNull Integer getConfigVersion() {
-        if (configVersion == null) {
-            return 1;
-        } else {
-            return configVersion;
-        }
+        return Objects.requireNonNullElse(configVersion, 1);
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
