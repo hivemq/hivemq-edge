@@ -43,7 +43,7 @@ public class ProtocolAdapterEntity {
     @XmlElement(name = "protocolId", required = true)
     private @NotNull String protocolId;
 
-    @XmlElement(name = "protocolId")
+    @XmlElement(name = "configVersion")
     private @Nullable Integer configVersion;
 
     @XmlElement(name = "config")
