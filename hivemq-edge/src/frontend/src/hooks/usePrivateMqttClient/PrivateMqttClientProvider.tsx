@@ -2,6 +2,7 @@ import { FC, PropsWithChildren, useCallback, useEffect, useRef, useState } from 
 import { setupWorker } from 'msw/browser'
 import mqtt, { ErrorWithReasonCode, MqttClient } from 'mqtt'
 import debug from 'debug'
+import config from '@/config'
 
 import { createHandlersWithMQTTClient } from '@/__test-utils__/msw/handlers.ts'
 import { MqttClientStatus, MQTTSample, PrivateMqttClientType } from '@/hooks/usePrivateMqttClient/type.ts'
@@ -160,7 +161,7 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
   useEffect(() => {
     if (!client) return
 
-    if (import.meta.env.VITE_FLAG_MOCK_SERVER === 'true') {
+    if (config.features.DEV_MOCK_SERVER && config.isDevMode) {
       const worker = setupWorker(...createHandlersWithMQTTClient(onSampling))
       worker.start({ onUnhandledRequest: 'bypass' }).then(() => worker.listHandlers())
     }

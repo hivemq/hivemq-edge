@@ -15,8 +15,6 @@ import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
-import config from '@/config'
-
 import { ChartType, MetricDefinition } from './types.ts'
 import useMetricsStore from './hooks/useMetricsStore.ts'
 import { extractMetricInfo } from './utils/metrics-name.utils.ts'
@@ -46,8 +44,6 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, d
   const { addMetrics, getMetricsFor, removeMetrics } = useMetricsStore()
   const { colors } = useTheme()
 
-  const showEditor = config.features.METRICS_SHOW_EDITOR
-
   // TODO[NVL] Should go to some kind of reusable routine, with verification
   const colorKeys = Object.keys(colors)
   const chartTheme = defaultColorSchemes.filter((color) => colorKeys.includes(color))
@@ -75,35 +71,33 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, d
 
   return (
     <>
-      {showEditor && (
-        <Card size="sm">
-          <Accordion
-            allowToggle
-            onChange={(expandedIndex) => {
-              if (expandedIndex === -1) onClose()
-              else onOpen()
-            }}
-          >
-            <AccordionItem>
-              <AccordionButton data-testid="metrics-toggle">
-                <Box as="span" flex="1" textAlign="left">
-                  {t('metrics.editor.title')}
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
+      <Card size="sm">
+        <Accordion
+          allowToggle
+          onChange={(expandedIndex) => {
+            if (expandedIndex === -1) onClose()
+            else onOpen()
+          }}
+        >
+          <AccordionItem>
+            <AccordionButton data-testid="metrics-toggle">
+              <Box as="span" flex="1" textAlign="left">
+                {t('metrics.editor.title')}
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
 
-              <AccordionPanel pb={4}>
-                <MetricEditor
-                  filter={adapterIDs}
-                  selectedMetrics={metrics.map((e) => e.metrics)}
-                  selectedChart={defaultChartType}
-                  onSubmit={handleCreateMetrics}
-                />
-              </AccordionPanel>
-            </AccordionItem>
-          </Accordion>
-        </Card>
-      )}
+            <AccordionPanel pb={4}>
+              <MetricEditor
+                filter={adapterIDs}
+                selectedMetrics={metrics.map((e) => e.metrics)}
+                selectedChart={defaultChartType}
+                onSubmit={handleCreateMetrics}
+              />
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+      </Card>
 
       <SimpleGrid
         spacing={4}
