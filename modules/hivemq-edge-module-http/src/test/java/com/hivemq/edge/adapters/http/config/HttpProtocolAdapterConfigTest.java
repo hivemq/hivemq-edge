@@ -25,10 +25,7 @@ import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
-import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpHeader;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.persistence.mappings.NorthboundMapping;
@@ -93,8 +90,8 @@ public class HttpProtocolAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(mockInput);
 
-        final BidirectionalHttpSpecificAdapterConfig config =
-                (BidirectionalHttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), true);
+        final HttpSpecificAdapterConfig config =
+                (HttpSpecificAdapterConfig)httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), true);
 
         final List<Map<String, Object>> tagMaps =
                 adapter.getTags().stream().map(tagEntity -> tagEntity.toMap()).collect(Collectors.toList());
@@ -153,7 +150,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+        final HttpSpecificAdapterConfig config = (HttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
@@ -182,7 +179,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.missingTags())
                 .isEmpty();
 
-        final BidirectionalHttpSpecificAdapterConfig config = (BidirectionalHttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+        final HttpSpecificAdapterConfig config = (HttpSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
@@ -281,7 +278,7 @@ public class HttpProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_full() throws Exception {
 
-        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+        final HttpSpecificAdapterConfig httpAdapterConfig = new HttpSpecificAdapterConfig(
                 50,
                 new HttpToMqttConfig(
                         1337,
@@ -289,29 +286,6 @@ public class HttpProtocolAdapterConfigTest {
                         true,
                         true
                 ),
-                new MqttToHttpConfig(List.of(
-                        new MqttToHttpMapping(
-                        "tag3",
-                        "my0/#",
-                        1,
-                            POST,
-                            12,
-                            List.of(
-                                    new HttpHeader("foo 1", "bar 1"),
-                                    new HttpHeader("foo 2", "bar 2")
-                            )
-                        ),
-                        new MqttToHttpMapping(
-                                "tag4",
-                                "my1/#",
-                                2,
-                                POST,
-                                11,
-                                List.of(
-                                        new HttpHeader("foo 1", "bar 1"),
-                                        new HttpHeader("foo 2", "bar 2")
-                                )
-                        ))),
                 true
                 );
 
@@ -345,7 +319,7 @@ public class HttpProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_defaults() {
 
-        final BidirectionalHttpSpecificAdapterConfig httpAdapterConfig = new BidirectionalHttpSpecificAdapterConfig(
+        final HttpSpecificAdapterConfig httpAdapterConfig = new HttpSpecificAdapterConfig(
                 null,
                 new HttpToMqttConfig(
                         null,
@@ -353,15 +327,6 @@ public class HttpProtocolAdapterConfigTest {
                         null,
                         null
                 ),
-                new MqttToHttpConfig(List.of(
-                    new MqttToHttpMapping(
-                            "tag1",
-                            "my/#",
-                            null,
-                            null,
-                            null,
-                            null
-                    ))),
                 null
         );
 

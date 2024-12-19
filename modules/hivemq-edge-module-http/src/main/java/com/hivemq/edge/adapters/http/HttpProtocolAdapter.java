@@ -77,7 +77,7 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLA
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProtocolAdapter {
+public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -303,7 +303,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
         return adapterConfig.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 
-    @Override
+    //Deactivated for now
     public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
         if (httpClient == null) {
             writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
@@ -371,11 +371,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter, WritingProto
             final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
         output.finish(JsonSchema.createJsonSchema());
-    }
-
-    @Override
-    public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
-        return HttpPayload.class;
     }
 
     private static boolean isSuccessStatusCode(final int statusCode) {
