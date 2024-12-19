@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -49,7 +50,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
+import java.util.Arrays;
 import java.util.UUID;
 
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
@@ -67,12 +68,12 @@ public class OpcUaJsonPayloadConverter {
             final @NotNull PollingContext pollingContext) {
         OpcUaJsonPayloadConverter.pollingContext = pollingContext;
         final Object value = dataValue.getValue().getValue();
-        final boolean reversibleMode = false;
         final JsonObject jsonObject = new JsonObject();
-        if (reversibleMode) {
-            addDataValueFields(dataValue, jsonObject, reversibleMode);
+
+        if  (value instanceof DataValue) {
+            addDataValueFields((DataValue) value, jsonObject);
         }
-        convertValue(value, jsonObject, reversibleMode, "value", serializationContext);
+        jsonObject.add("value", convertValue(value, serializationContext));
 
         if (pollingContext.getIncludeTimestamp()) {
             jsonObject.addProperty("timestamp", System.currentTimeMillis());
@@ -82,63 +83,56 @@ public class OpcUaJsonPayloadConverter {
             jsonObject.addProperty("tag", pollingContext.getTagName());
         }
 
-
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
-
-    private static void convertValue(
+    
+    private static JsonElement convertValue(
             final @NotNull Object value,
-            final @NotNull JsonObject holder,
-            final boolean reversibleMode,
-            final @NotNull String fieldName,
             final @NotNull SerializationContext serializationContext) {
         if (value instanceof DataValue) {
-            addDataValueFields((DataValue) value, holder, reversibleMode);
-            convertValue(((DataValue) value).getValue(), holder, reversibleMode, fieldName, serializationContext);
+            return convertValue(((DataValue) value).getValue(), serializationContext);
         } else if (value instanceof Boolean) {
-            holder.add(fieldName, new JsonPrimitive((Boolean) value));
+            return new JsonPrimitive((Boolean) value);
         } else if (value instanceof Byte) {
-            holder.add(fieldName, new JsonPrimitive((Byte) value));
+            return new JsonPrimitive((Byte) value);
         } else if (value instanceof UByte) {
-            holder.add(fieldName, new JsonPrimitive(((UByte) value).intValue()));
+            return new JsonPrimitive(((UByte) value).intValue());
         } else if (value instanceof Short) {
-            holder.add(fieldName, new JsonPrimitive((Short) value));
+            return new JsonPrimitive((Short) value);
         } else if (value instanceof UShort) {
-            holder.add(fieldName, new JsonPrimitive(((UShort) value).intValue()));
+            return new JsonPrimitive(((UShort) value).intValue());
         } else if (value instanceof Integer) {
-            holder.add(fieldName, new JsonPrimitive(((Integer) value)));
+            return new JsonPrimitive(((Integer) value));
         } else if (value instanceof UInteger) {
-            holder.add(fieldName, new JsonPrimitive((((UInteger) value).longValue())));
+            return new JsonPrimitive((((UInteger) value).longValue()));
         } else if (value instanceof Long) {
-            holder.add(fieldName, new JsonPrimitive(((Long) value)));
+            return new JsonPrimitive(((Long) value));
         } else if (value instanceof ULong) {
-            holder.add(fieldName, new JsonPrimitive((((ULong) value).toBigInteger())));
+            return new JsonPrimitive((((ULong) value).toBigInteger()));
         } else if (value instanceof Float) {
-            holder.add(fieldName, new JsonPrimitive(((Float) value)));
+            return new JsonPrimitive(((Float) value));
         } else if (value instanceof Double) {
-            holder.add(fieldName, new JsonPrimitive(((Double) value)));
+            return new JsonPrimitive(((Double) value));
         } else if (value instanceof String) {
-            holder.add(fieldName, new JsonPrimitive(((String) value)));
+            return new JsonPrimitive(((String) value));
         } else if (value instanceof DateTime) {
-            holder.add(fieldName,
-                    new JsonPrimitive((DateTimeFormatter.ISO_INSTANT.format(((DateTime) value).getJavaInstant()))));
+            return new JsonPrimitive((DateTimeFormatter.ISO_INSTANT.format(((DateTime) value).getJavaInstant())));
         } else if (value instanceof UUID) {
-            holder.add(fieldName, new JsonPrimitive(value.toString()));
+            return new JsonPrimitive(value.toString());
         } else if (value instanceof ByteString) {
-            final JsonPrimitive base64value = convertByteString((ByteString) value);
-            holder.add(fieldName, base64value);
+            return convertByteString((ByteString) value);
         } else if (value instanceof XmlElement) {
             final String fragment = ((XmlElement) value).getFragment();
             if (fragment != null) {
-                holder.add(fieldName, new JsonPrimitive(fragment));
+                return new JsonPrimitive(fragment);
             }
+            return null;
         } else if (value instanceof NodeId) {
-            final JsonObject nodeIdObj = convertNodeId((NodeId) value, reversibleMode, fieldName);
-            holder.add(fieldName, nodeIdObj);
+            return convertNodeId((NodeId) value);
         } else if (value instanceof ExpandedNodeId) {
-            holder.add(fieldName, new JsonPrimitive(((ExpandedNodeId) value).toParseableString()));
+            return new JsonPrimitive(((ExpandedNodeId) value).toParseableString());
         } else if (value instanceof StatusCode) {
-            holder.add(fieldName, convertStatusCode((StatusCode) value, reversibleMode));
+            return convertStatusCode((StatusCode) value);
         } else if (value instanceof QualifiedName) {
             final JsonObject qualifiedName = new JsonObject();
             final String name = ((QualifiedName) value).getName();
@@ -149,7 +143,7 @@ public class OpcUaJsonPayloadConverter {
             if (nsIdx > 0) {
                 qualifiedName.add("uri", new JsonPrimitive(nsIdx));
             }
-            holder.add(fieldName, qualifiedName);
+            return qualifiedName;
         } else if (value instanceof LocalizedText) {
             final JsonObject localizedText = new JsonObject();
             final String locale = ((LocalizedText) value).getLocale();
@@ -160,87 +154,48 @@ public class OpcUaJsonPayloadConverter {
             if (text != null) {
                 localizedText.add("text", new JsonPrimitive(text));
             }
-            holder.add(fieldName, localizedText);
+            return localizedText;
         } else if (value instanceof ExtensionObject) {
-            if (!reversibleMode) {
-                try {
-                    final Object decodedValue = ((ExtensionObject) value).decode(serializationContext);
-                    convertValue(decodedValue, holder, reversibleMode, fieldName, serializationContext);
-                } catch (final Throwable t) {
-                    log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
-                            t);
-                    convertValue(((ExtensionObject) value).getBody(),
-                            holder,
-                            reversibleMode,
-                            fieldName,
-                            serializationContext);
-                }
-
-            } else {
-                final JsonObject extensionObject = new JsonObject();
-                extensionObject.add("typeId",
-                        new JsonPrimitive(((ExtensionObject) value).getEncodingId().toParseableString()));
-                final ExtensionObject.BodyType bodyType = ((ExtensionObject) value).getBodyType();
-                if (bodyType != null) {
-                    switch (bodyType) {
-                        case ByteString:
-                            extensionObject.add("encoding", new JsonPrimitive(1));
-                        case XmlElement:
-                            extensionObject.add("encoding", new JsonPrimitive(2));
-                    }
-                }
-
+            try {
                 final Object decodedValue = ((ExtensionObject) value).decode(serializationContext);
-                convertValue(decodedValue, extensionObject, reversibleMode, "body", serializationContext);
-                holder.add(fieldName, extensionObject);
+                return convertValue(decodedValue, serializationContext);
+            } catch (final Throwable t) {
+                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
+                        t);
+                return convertValue(((ExtensionObject) value).getBody(), serializationContext);
             }
         } else if (value instanceof Variant) {
-            if (!reversibleMode) {
-                convertValue(((Variant) value).getValue(), holder, reversibleMode, fieldName, serializationContext);
-            } else {
-                final JsonObject variant = new JsonObject();
-                final Optional<ExpandedNodeId> dataType = ((Variant) value).getDataType();
-                if (dataType.isPresent()) {
-                    final Number typeId = dataType.get().getNamespaceIndex();
-                    variant.add("type", new JsonPrimitive(typeId));
-                }
-                convertValue(((Variant) value).getValue(), variant, reversibleMode, "body", serializationContext);
-                holder.add(fieldName, variant);
-            }
+            return convertValue(((Variant) value).getValue(), serializationContext);
         } else if (value instanceof DiagnosticInfo) {
-            final JsonObject diagnosticInfo = convertDiagnosticInfo((DiagnosticInfo) value, reversibleMode);
-            holder.add(fieldName, diagnosticInfo);
+            return convertDiagnosticInfo((DiagnosticInfo) value);
         } else if (value instanceof Struct) {
             final Struct struct = (Struct) value;
             final JsonObject structRoot = new JsonObject();
-            for (final Struct.Member member : struct.getMembers().values()) {
-                convertValue(member.getValue(), structRoot, reversibleMode, member.getName(), serializationContext);
-            }
-            holder.add(fieldName, structRoot);
+            struct.getMembers()
+                    .values()
+                    .forEach(member -> structRoot.add(member.getName(), convertValue(member.getValue(), serializationContext)));
+            return structRoot;
+        } else if(value.getClass().isArray()) {
+            final Object[] values = (Object[])value;
+            final JsonArray ret = new JsonArray();
+            Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
+            return ret;
         } else {
-            //fallback, best effort
-            if (log.isTraceEnabled()) {
-                log.trace("No explicit converter for OPC UA type " +
-                        value.getClass().getSimpleName() +
-                        " falling back to best effort json");
-            }
-            holder.add(fieldName, GSON.toJsonTree(value));
+            log.warn("No explicit converter for OPC UA type " +
+                    value.getClass().getSimpleName() +
+                    " falling back to best effort json");
+            return GSON.toJsonTree(value);
         }
     }
 
     @NotNull
-    private static JsonElement convertStatusCode(final @NotNull StatusCode value, final boolean reversibleMode) {
-        if (reversibleMode) {
-            return new JsonPrimitive(value.getValue());
-        }
-
+    private static JsonElement convertStatusCode(final @NotNull StatusCode value) {
         final JsonObject statusCode = new JsonObject();
         final long statusCodeNr = value.getValue();
         statusCode.add("code", new JsonPrimitive(statusCodeNr));
-        final Optional<String[]> statusNamingOptional = StatusCodes.lookup(statusCodeNr);
-        if (statusNamingOptional.isPresent()) {
-            statusCode.add("symbol", new JsonPrimitive(statusNamingOptional.get()[0]));
-        }
+        StatusCodes
+                .lookup(statusCodeNr)
+                .ifPresent(code -> statusCode.add("symbol", new JsonPrimitive(code[0])));
         return statusCode;
     }
 
@@ -252,7 +207,7 @@ public class OpcUaJsonPayloadConverter {
 
     @NotNull
     private static JsonObject convertNodeId(
-            final @NotNull NodeId nodeId, final boolean reversibleMode, @NotNull final String fieldName) {
+            final @NotNull NodeId nodeId) {
         final JsonObject nodeIdObj = new JsonObject();
 
         switch (nodeId.getType()) {
@@ -274,61 +229,15 @@ public class OpcUaJsonPayloadConverter {
         }
 
         final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
-        if (reversibleMode) {
-            if (namespaceIndex != 0) {
-                nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
-            }
+        if (namespaceIndex == 1) { // 1 is always encoded as a number
+            nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
         } else {
-            if (namespaceIndex == 1) { // 1 is always encoded as a number
-                nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
-            } else {
-                nodeIdObj.add("namespace", new JsonPrimitive(nodeId.toParseableString()));
-            }
+            nodeIdObj.add("namespace", new JsonPrimitive(nodeId.toParseableString()));
         }
         return nodeIdObj;
     }
 
-    @NotNull
-    private static JsonObject convertExpandedNodeId(
-            final @NotNull ExpandedNodeId nodeId, final boolean reversibleMode, @NotNull final String fieldName) {
-        final JsonObject nodeIdObj = new JsonObject();
-
-        switch (nodeId.getType()) {
-            case Numeric:
-                nodeIdObj.add("id", new JsonPrimitive((Number) nodeId.getIdentifier()));
-                break;
-            case String:
-                nodeIdObj.add("idType", new JsonPrimitive(1));
-                nodeIdObj.add("id", new JsonPrimitive((String) nodeId.getIdentifier()));
-                break;
-            case Guid:
-                nodeIdObj.add("idType", new JsonPrimitive(2));
-                nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString())); //UUID.toString()
-                break;
-            case Opaque: //ByteString
-                nodeIdObj.add("idType", new JsonPrimitive(3));
-                nodeIdObj.add("id", convertByteString((ByteString) nodeId.getIdentifier())); //UUID.toString()
-                break;
-        }
-
-        final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
-        if (reversibleMode) {
-            if (namespaceIndex != 0) {
-                nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
-            }
-        } else {
-            if (namespaceIndex == 1) { // 1 is always encoded as a number
-                nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
-            } else {
-                nodeIdObj.add("namespace", new JsonPrimitive(nodeId.toParseableString()));
-            }
-        }
-
-        nodeIdObj.add("serverUri", new JsonPrimitive(nodeId.getServerIndex().longValue()));
-        return nodeIdObj;
-    }
-
-    private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value, final boolean reversibleMode) {
+    private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value) {
         final JsonObject diagnosticInfo = new JsonObject();
         diagnosticInfo.add("symbolicId", new JsonPrimitive(value.getSymbolicId()));
         diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.getNamespaceUri()));
@@ -338,17 +247,17 @@ public class OpcUaJsonPayloadConverter {
             diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.getAdditionalInfo()));
         }
         if (value.getInnerStatusCode() != null) {
-            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.getInnerStatusCode(), reversibleMode));
+            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.getInnerStatusCode()));
         }
         if (value.getInnerDiagnosticInfo() != null) {
             diagnosticInfo.add("innerDiagnosticInfo",
-                    convertDiagnosticInfo(value.getInnerDiagnosticInfo(), reversibleMode));
+                    convertDiagnosticInfo(value.getInnerDiagnosticInfo()));
         }
         return diagnosticInfo;
     }
 
     private static void addDataValueFields(
-            final @NotNull DataValue dataValue, final @NotNull JsonObject jsonObject, final boolean reversibleMode) {
+            final @NotNull DataValue dataValue, final @NotNull JsonObject jsonObject) {
         if (dataValue.getServerTime() != null) {
             final Instant javaInstant = dataValue.getServerTime().getJavaInstant();
             jsonObject.add("serverTimestamp", new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(javaInstant)));
@@ -364,7 +273,7 @@ public class OpcUaJsonPayloadConverter {
             jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
         }
         if (dataValue.getStatusCode() != null && dataValue.getStatusCode().getValue() > 0) {
-            jsonObject.add("status", convertStatusCode(dataValue.getStatusCode(), reversibleMode));
+            jsonObject.add("status", convertStatusCode(dataValue.getStatusCode()));
         }
     }
 }

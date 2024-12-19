@@ -35,7 +35,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 public class BuiltinJsonSchema {
 
@@ -44,6 +47,9 @@ public class BuiltinJsonSchema {
     private static final @NotNull String MINIMUM_KEY_WORD = "minimum";
     private static final @NotNull String MAXIMUM_KEY_WORD = "maximum";
     public static final @NotNull String INTEGER_DATA_TYPE = "integer";
+    public static final @NotNull String ARRAY_DATA_TYPE = "array";
+    public static final @NotNull String ARRAY_ITEMS = "items";
+    public static final @NotNull String ARRAY_MAX_TIMES = "maxItems";
 
     private final @NotNull HashMap<BuiltinDataType, JsonNode> classToJsonSchema = new HashMap<>();
 
@@ -128,6 +134,53 @@ public class BuiltinJsonSchema {
         rootNode.set("required", requiredAttributes);
 
         return rootNode;
+    }
+
+    public @NotNull JsonNode getJsonSchema(final @NotNull BuiltinDataType builtinDataType,
+                                           final @NotNull UInteger[] dimensions) {
+
+        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
+        rootNode.set("type", new TextNode("object"));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+        populatePropertiesForArray(valueNode, builtinDataType, OBJECT_MAPPER, dimensions);
+
+        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
+        return rootNode;
+    }
+
+    public static void populatePropertiesForArray(final @NotNull ObjectNode propertiesNode,
+                                                  final @NotNull BuiltinDataType builtinDataType,
+                                                  final @NotNull ObjectMapper objectMapper,
+                                                  final @NotNull UInteger[] dimensions) {
+            if(dimensions.length == 0) {
+                throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
+            }
+            final long maxSize = dimensions[0].longValue();
+
+            propertiesNode.set("type", new TextNode(ARRAY_DATA_TYPE));
+
+            //0 for a dimension means unlimited
+            if(maxSize > 0) {
+                propertiesNode.set("maxItems", new LongNode(maxSize));
+                propertiesNode.set("minItems", new LongNode(maxSize));
+            }
+            final ObjectNode itemsNode = objectMapper.createObjectNode();
+            propertiesNode.set("items", itemsNode);
+
+            if (dimensions.length == 1) {
+                //last element, we can now set the array type
+                populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
+            } else {
+                //nesting deeper
+                populatePropertiesForArray(itemsNode, builtinDataType, objectMapper, Arrays.copyOfRange(dimensions, 1, dimensions.length));
+            }
     }
 
     public static void populatePropertiesForBuiltinType(

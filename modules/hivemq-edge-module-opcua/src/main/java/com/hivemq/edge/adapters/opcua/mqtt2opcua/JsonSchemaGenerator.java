@@ -31,6 +31,7 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.serialization.codecs.DataTypeCodec;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.opcfoundation.opcua.binaryschema.FieldType;
@@ -67,27 +68,33 @@ public class JsonSchemaGenerator {
                 output.tagNotFound("No node was found for the given node id '" + destinationNodeId + "'");
                 return;
             }
+
             final NodeId dataTypeNodeId = uaVariableNode.getDataType();
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
+            final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
             if (dataType == null) {
                 output.fail("Unable to find the data type for the given node id '" + destinationNodeId + "'.");
                 return;
             }
             final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                output.finish(builtinJsonSchema.getJsonSchema(builtinType));
+                if(dimensions != null && dimensions.length > 0) {
+                    output.finish(builtinJsonSchema.getJsonSchema(builtinType, dimensions));
+                } else {
+                    output.finish(builtinJsonSchema.getJsonSchema(builtinType));
+                }
             } else {
                 final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
                 if (binaryEncodingId == null) {
                     output.fail("No encoding was present for the complex data type: '" + dataType + "'.");
                 }
-                output.finish(jsonSchemaFromNodeId(binaryEncodingId));
+                output.finish(jsonSchemaFromNodeId(binaryEncodingId, dimensions));
             }
         });
     }
 
     public void addNestedStructureInformation(
-            final @NotNull ObjectNode propertiesNode, final @NotNull FieldType fieldType) {
+            final @NotNull ObjectNode propertiesNode, final @NotNull FieldType fieldType, final @NotNull UInteger[] dimensions) {
         final BuiltinDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
 
         final ObjectNode nestedPropertiesNode = objectMapper.createObjectNode();
@@ -95,6 +102,8 @@ public class JsonSchemaGenerator {
 
         if (builtinDataType != BuiltinDataType.ExtensionObject) {
             BuiltinJsonSchema.populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, objectMapper);
+        } else if(dimensions != null && dimensions.length > 0) {
+            BuiltinJsonSchema.populatePropertiesForArray(nestedPropertiesNode, builtinDataType, objectMapper, dimensions);
         } else {
             nestedPropertiesNode.set("type", new TextNode("object"));
             final ObjectNode innerProperties = objectMapper.createObjectNode();
@@ -128,13 +137,13 @@ public class JsonSchemaGenerator {
             final ArrayNode requiredAttributesArray = objectMapper.createArrayNode();
             for (final Map.Entry<String, FieldType> entry : embeddedFields.entrySet()) {
                 requiredAttributesArray.add(entry.getValue().getName());
-                addNestedStructureInformation(innerProperties, entry.getValue());
+                addNestedStructureInformation(innerProperties, entry.getValue(), dimensions);
             }
             nestedPropertiesNode.set("required", requiredAttributesArray);
         }
     }
 
-    private @NotNull JsonNode jsonSchemaFromNodeId(final @Nullable NodeId binaryEncodingId) {
+    private @NotNull JsonNode jsonSchemaFromNodeId(final @Nullable NodeId binaryEncodingId, final @NotNull UInteger[] dimensions) {
         if (binaryEncodingId == null) {
             throw new RuntimeException("Binary encoding id was null for nested struct.");
         }
@@ -157,7 +166,7 @@ public class JsonSchemaGenerator {
         for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
             requiredAttributesArray.add(entry.getValue().getName());
             final FieldType fieldType = entry.getValue();
-            addNestedStructureInformation(propertiesNode, fieldType);
+            addNestedStructureInformation(propertiesNode, fieldType, dimensions);
         }
         valueNode.set("required", requiredAttributesArray);
 
