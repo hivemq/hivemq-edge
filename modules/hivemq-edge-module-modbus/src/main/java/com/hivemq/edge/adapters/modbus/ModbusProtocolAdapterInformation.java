@@ -37,6 +37,7 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     public static final ProtocolAdapterInformation INSTANCE = new ModbusProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterInformation.class);
     public static final @NotNull String PROTOCOL_ID = "modbus";
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
     protected ModbusProtocolAdapterInformation() {
     }
@@ -105,6 +106,11 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
             log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 
     @Override
