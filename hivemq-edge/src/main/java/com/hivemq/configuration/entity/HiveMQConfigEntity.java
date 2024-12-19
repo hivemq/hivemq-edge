@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Dominik Obermaier
@@ -43,6 +44,11 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class HiveMQConfigEntity {
+
+    public static final int CURRENT_CONFIG_VERSION = 1;
+
+    @XmlElement(name = "config-version", defaultValue = "" + CURRENT_CONFIG_VERSION)
+    private int version = CURRENT_CONFIG_VERSION;
 
     @XmlElementWrapper(name = "mqtt-listeners", required = true)
     @XmlElementRef(required = false)
@@ -95,11 +101,12 @@ public class HiveMQConfigEntity {
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
 
     // no-arg constructor as JaxB does need one
-    public HiveMQConfigEntity(){
+    public HiveMQConfigEntity() {
 
     }
 
     public HiveMQConfigEntity(
+            final @NotNull Integer version,
             final @NotNull AdminApiEntity api,
             final @NotNull DynamicConfigEntity gateway,
             final @NotNull Map<String, Object> moduleConfigs,
@@ -114,6 +121,7 @@ public class HiveMQConfigEntity {
             final @NotNull SecurityConfigEntity security,
             final @NotNull UnsConfigEntity uns,
             final @NotNull UsageTrackingConfigEntity usageTracking) {
+        this.version = Objects.requireNonNullElse(version, CURRENT_CONFIG_VERSION);
         this.api = api;
         this.gateway = gateway;
         this.moduleConfigs = moduleConfigs;
@@ -174,9 +182,13 @@ public class HiveMQConfigEntity {
         return moduleConfigs;
     }
 
-    public @NotNull UnsConfigEntity getUns() { return uns; }
+    public @NotNull UnsConfigEntity getUns() {
+        return uns;
+    }
 
-    public @NotNull DynamicConfigEntity getGatewayConfig() { return gateway;}
+    public @NotNull DynamicConfigEntity getGatewayConfig() {
+        return gateway;
+    }
 
     public @NotNull UsageTrackingConfigEntity getUsageTracking() {
         return usageTracking;
@@ -184,5 +196,9 @@ public class HiveMQConfigEntity {
 
     public @NotNull InternalConfigEntity getInternal() {
         return internal;
+    }
+
+    public int getVersion() {
+        return version;
     }
 }

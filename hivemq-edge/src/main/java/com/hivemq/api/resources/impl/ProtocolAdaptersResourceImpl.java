@@ -696,6 +696,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(adapterId,
                     adapterType,
+                    protocolAdapterInformation.get().getCurrentConfigVersion(),
                     protocolSpecificAdapterConfig,
                     southboundMappings,
                     northboundMappings,

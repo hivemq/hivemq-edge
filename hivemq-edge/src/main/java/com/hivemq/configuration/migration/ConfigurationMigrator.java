@@ -32,8 +32,8 @@ import com.hivemq.configuration.reader.LegacyConfigFileReaderWriter;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +85,9 @@ public class ConfigurationMigrator {
     }
 
     @VisibleForTesting
-    public ConfigurationMigrator(final @NotNull ConfigurationFile configurationFile, final @NotNull ModuleLoader moduleLoader) {
+    public ConfigurationMigrator(
+            final @NotNull ConfigurationFile configurationFile,
+            final @NotNull ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
         this.configurationFile = configurationFile;
         this.legacyConfigFileReaderWriter = new LegacyConfigFileReaderWriter<>(configurationFile,
@@ -99,8 +101,7 @@ public class ConfigurationMigrator {
             final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             final Map<String, ProtocolAdapterFactory<?>> factoryMap =
                     ProtocolAdapterFactoryManager.findAllAdapters(moduleLoader, eventService, true);
-            migrateIfNeeded(factoryMap)
-                    .ifPresent(legacyConfigFileReaderWriter::writeConfigToXML);
+            migrateIfNeeded(factoryMap).ifPresent(legacyConfigFileReaderWriter::writeConfigToXML);
         } catch (final Exception e) {
             log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
             log.debug("Original Exception:", e);
@@ -156,12 +157,13 @@ public class ConfigurationMigrator {
                     .collect(Collectors.toList());
 
             final List<TagEntity> tagEntities = configTagsTuple.getTags()
-                    .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
+                    .stream()
+                    .map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                     .collect(Collectors.toList());
 
-            return Optional.of(new ProtocolAdapterEntity(
-                    configTagsTuple.getAdapterId(),
+            return Optional.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
                     protocolId,
+                    protocolAdapterFactory.getInformation().getCurrentConfigVersion(),
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
                     northboundMappingEntities,
