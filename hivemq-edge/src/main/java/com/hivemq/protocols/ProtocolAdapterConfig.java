@@ -32,18 +32,21 @@ public class ProtocolAdapterConfig {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
+    private final int configVersion;
     private final @NotNull List<SouthboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
+            final int configVersion,
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
             final @NotNull List<SouthboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull List<? extends Tag> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
+        this.configVersion = configVersion;
         this.southboundMappings = southboundMappings;
         this.northboundMappings = northboundMappings;
         this.adapterConfig = protocolSpecificConfig;
@@ -89,5 +92,9 @@ public class ProtocolAdapterConfig {
 
     public @NotNull List<SouthboundMapping> getToEdgeMappings() {
         return southboundMappings;
+    }
+
+    public int getConfigVersion() {
+        return configVersion;
     }
 }
