@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.s7.config;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -55,6 +57,7 @@ public enum S7DataType {
 
     TIME(Long.class, 32, List.of(S7_300, S7_400, S7_1200, S7_1500), "IEC Time (ms)", "https://support.industry.siemens.com/cs/mdm/109054417?c=61085966091&lc=en-GE"),
     LTIME(BigInteger.class, 64, List.of(S7_1500), "IEC Time (ns)", "https://support.industry.siemens.com/cs/mdm/109054417?c=61410814475&lc=en-GE"),
+    //TODO S5TIME https://support.industry.siemens.com/cs/mdm/109054417?c=63689295627&lc=en-GE
 
     DATE(Short.class, 8, List.of(S7_300, S7_400, S7_1200, S7_1500), "IEC Date, since 01-01-1990 (Year-Month-Day)", "https://support.industry.siemens.com/cs/mdm/109054417?c=46522046859&lc=en-GE"),
     TOD(Long.class, 32, List.of(S7_300, S7_400, S7_1200, S7_1500), "Time Of Day (hours:minutes:seconds.milliseconds)", "https://support.industry.siemens.com/cs/mdm/109054417?c=64869849355&lc=en-GE"),
@@ -62,38 +65,20 @@ public enum S7DataType {
     DT(BigInteger.class, 64, List.of(S7_1500), "Date and time (year-month-day-hour:minute:second:millisecond)", "https://support.industry.siemens.com/cs/mdm/109054417?c=61473284875&lc=en-GE"),
     LDT(BigInteger.class, 64, List.of(S7_1500), "Date and time (year-month-day-hour:minute:second:nanoseconds)", "https://support.industry.siemens.com/cs/mdm/109054417?c=71834521483&lc=en-GE"),
     DTL(BigInteger.class, 64, List.of(S7_1500), "Date and time (year-month-day-hour:minute:second:nanoseconds)", "https://support.industry.siemens.com/cs/mdm/109054417?c=64682916235&lc=en-GE"),
+    ARRAY(Byte[].class, -1, List.of(S7_300, S7_400, S7_1200, S7_1500), "Array of type", "https://support.industry.siemens.com/cs/mdm/109054417?c=52352205963&lc=en-GE");
+    //RAW_BYTE_ARRAY TODO: it's not an actual type but is there in the old implementation
 
-
-    /**
-     * UNSUPPORTED
-     * S5TIME https://support.industry.siemens.com/cs/mdm/109054417?c=63689295627&lc=en-GE
-     */
-
-    BYTE_ARRAY(Byte[].class),
-    INT16(Short.class),
-    UINT16(Short.class),
-    INT32(Integer.class),
-    UINT32(Integer.class),
-    INT64(Long.class),
-    REAL(Float.class),
-    LREAL(Double.class),
-    STRING(String.class),
-    DATE(LocalDate.class),
-    TIME_OF_DAY(LocalTime.class),
-    DATE_AND_TIME(LocalDateTime.class),
-    TIME(Long.class);
-
-    S7DataType(Class<?> javaType, int lengthInBits, List<S7Versions> availableOn, String description, String docs){
+    S7DataType(final @NotNull Class<?> javaType, final @NotNull int lengthInBits, final @NotNull List<S7Versions> availableOn, final @NotNull String description, final @NotNull String docs){
         this.javaType = javaType;
         this.lengthInBits = lengthInBits;
         this.availableOn = availableOn;
         this.description = description;
         this.docs = docs;
     }
-    private Class<?> javaType;
-    private final int lengthInBits;
-    private final List<S7Versions> availableOn;
-    private final String description;
+    private final @NotNull Class<?> javaType;
+    private final @NotNull int lengthInBits;
+    private final @NotNull List<S7Versions> availableOn;
+    private final @NotNull String description;
     private final String docs;
 
     public Class<?> getJavaType() {
