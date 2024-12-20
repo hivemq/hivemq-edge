@@ -18,6 +18,7 @@ import {
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
+import { DeviceMetadata } from '@/modules/Workspace/types.ts'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -206,6 +207,11 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   tags: ['tag1', 'tag2', 'tag3'],
   configSchema: mockJSONSchema,
   uiSchema: mockUISchema,
+}
+
+export const mockDeviceFromAdapter: DeviceMetadata = {
+  ...mockProtocolAdapter,
+  sourceAdapterId: 'my-adapter',
 }
 
 export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
