@@ -32,8 +32,9 @@ import com.hivemq.configuration.reader.LegacyConfigFileReaderWriter;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -85,8 +88,10 @@ public class ConfigurationMigrator {
     }
 
     @VisibleForTesting
-    public ConfigurationMigrator(final @NotNull ConfigurationFile configurationFile, final @NotNull ModuleLoader moduleLoader) {
+    public ConfigurationMigrator(
+            final @NotNull ConfigurationFile configurationFile, final @NotNull ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
+        moduleLoader.loadModules();
         this.configurationFile = configurationFile;
         this.legacyConfigFileReaderWriter = new LegacyConfigFileReaderWriter<>(configurationFile,
                 LegacyHiveMQConfigEntity.class,
@@ -99,8 +104,7 @@ public class ConfigurationMigrator {
             final EventServiceDelegateImpl eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
             final Map<String, ProtocolAdapterFactory<?>> factoryMap =
                     ProtocolAdapterFactoryManager.findAllAdapters(moduleLoader, eventService, true);
-            migrateIfNeeded(factoryMap)
-                    .ifPresent(legacyConfigFileReaderWriter::writeConfigToXML);
+            migrateIfNeeded(factoryMap).ifPresent(legacyConfigFileReaderWriter::writeConfigToXML);
         } catch (final Exception e) {
             log.error("[CONFIG MIGRATION] An exception was raised during automatic migration of the configuration file.");
             log.debug("Original Exception:", e);
@@ -119,9 +123,7 @@ public class ConfigurationMigrator {
             final Map<String, Object> protocolAdapterConfig = legacyHiveMQConfigEntity.getProtocolAdapterConfig();
             final List<ProtocolAdapterEntity> protocolAdapterEntities = protocolAdapterConfig.entrySet()
                     .stream()
-                    .map(entry -> parseProtocolAdapterEntity(entry, factoryMap))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(entry -> parseProtocolAdapterEntity(entry, factoryMap).stream())
                     .collect(Collectors.toList());
 
             return Optional.of(legacyHiveMQConfigEntity.to(protocolAdapterEntities));
@@ -132,7 +134,7 @@ public class ConfigurationMigrator {
         return Optional.empty();
     }
 
-    private @NotNull Optional<ProtocolAdapterEntity> parseProtocolAdapterEntity(
+    private @NotNull List<ProtocolAdapterEntity> parseProtocolAdapterEntity(
             final Map.Entry<String, Object> stringObjectEntry,
             final Map<String, ProtocolAdapterFactory<?>> factoryMap) {
         final String protocolId = stringObjectEntry.getKey();
@@ -142,25 +144,49 @@ public class ConfigurationMigrator {
             log.error(
                     "[CONFIG MIGRATION] While migration the configuration, no protocol factory for protocolId '{}' was found. This adapter will be skipped and must be migrated by hand.",
                     protocolId);
-            return Optional.empty();
+            return List.of();
         }
 
         if (protocolAdapterFactory instanceof LegacyConfigConversion) {
             final LegacyConfigConversion adapterFactory = (LegacyConfigConversion) protocolAdapterFactory;
-            final ConfigTagsTuple configTagsTuple = adapterFactory.tryConvertLegacyConfig(objectMapper,
-                    (Map<String, Object>) stringObjectEntry.getValue());
+            final Object value = stringObjectEntry.getValue();
 
+            if (value instanceof List) {
+                // this means that the config had two adapters with the same protocol id. We need to recursively call and add it to a collection
+                final List<ProtocolAdapterEntity> parsedEntries = new ArrayList<>();
+                for (final Object adapterEntry : (List) value) {
+                    if (adapterEntry instanceof Map) {
+                        final List<ProtocolAdapterEntity> parsed =
+                                parseProtocolAdapterEntity(new AbstractMap.SimpleEntry<>(protocolId, adapterEntry),
+                                        factoryMap);
+                        parsedEntries.addAll(parsed);
+                    } else {
+                        log.error("List contained unexpected object of class '{}', 'Map' was expected",
+                                adapterEntry.getClass().getSimpleName());
+                        throw new UnrecoverableException(false);
+                    }
+                }
+                return parsedEntries;
+            }
+
+            if (!(value instanceof Map)) {
+                throw new IllegalArgumentException();
+            }
+
+
+            final ConfigTagsTuple configTagsTuple =
+                    adapterFactory.tryConvertLegacyConfig(objectMapper, (Map<String, Object>) value);
             final List<NorthboundMappingEntity> northboundMappingEntities = configTagsTuple.getPollingContexts()
                     .stream()
                     .map(NorthboundMappingEntity::fromPollingContext)
                     .collect(Collectors.toList());
 
             final List<TagEntity> tagEntities = configTagsTuple.getTags()
-                    .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
+                    .stream()
+                    .map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                     .collect(Collectors.toList());
 
-            return Optional.of(new ProtocolAdapterEntity(
-                    configTagsTuple.getAdapterId(),
+            return List.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
                     protocolId,
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
@@ -172,7 +198,7 @@ public class ConfigurationMigrator {
                     "[CONFIG MIGRATION] A legacy config for protocolId '{}' was found during migration, but the adapter factory does not implement the necessary interface '{}' for automatic migration.",
                     protocolId,
                     LegacyConfigConversion.class.getSimpleName());
-            return Optional.empty();
+            return List.of();
         }
     }
 
