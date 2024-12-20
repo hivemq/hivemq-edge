@@ -10,9 +10,15 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1200;
+import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1500;
+import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_300;
+import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_400;
 
 public class S7Client {
 
@@ -48,20 +54,34 @@ public class S7Client {
             log.trace("Reading data from addresses {} with type {}", addresses, type);
         }
         switch (type) {
-            case BYTE: throw new IllegalArgumentException("Byte data type not supported by this method, use readBytes");
             case BOOL: return combine(dataPointFactory, addresses, s7PLC.readBoolean(addresses));
-            case INT16: return combine(dataPointFactory, addresses, s7PLC.readInt16(addresses));
-            case UINT16: return combine(dataPointFactory, addresses, s7PLC.readUInt16(addresses));
-            case INT32: return combine(dataPointFactory, addresses, s7PLC.readInt32(addresses));
-            case UINT32: return combine(dataPointFactory, addresses, s7PLC.readUInt32(addresses));
-            case INT64: return combine(dataPointFactory, addresses, s7PLC.readInt64(addresses));
+            case BYTE: throw new IllegalArgumentException("Byte data type not supported by this method, use readBytes");
+            case WORD: return null;
+            case DWORD: return null;
+            case LWORD: return null;
+            case USINT: return combine(dataPointFactory, addresses, s7PLC.readUInt16(addresses));
+            case UINT: return null;
+            case UDINT: return combine(dataPointFactory, addresses, s7PLC.readUInt32(addresses));
+            case ULINT: return null;
+            case SINT: return null;
+            case INT: return combine(dataPointFactory, addresses, s7PLC.readInt16(addresses));
+            case DINT: return combine(dataPointFactory, addresses, s7PLC.readInt32(addresses));
+            case LINT: return combine(dataPointFactory, addresses, s7PLC.readInt64(addresses));
             case REAL: return combine(dataPointFactory, addresses, s7PLC.readFloat32(addresses));
             case LREAL: return combine(dataPointFactory, addresses, s7PLC.readFloat64(addresses));
+            case CHAR: return null;
+            case WCHAR: return null;
             case STRING: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readString).collect(Collectors.toList()));
-            case DATE: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDate).collect(Collectors.toList()));
-            case TIME_OF_DAY: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTimeOfDay).collect(Collectors.toList()));
+            case WSTRING: return null;
             case TIME: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTime).collect(Collectors.toList()));
-            case DATE_AND_TIME: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDTL).collect(Collectors.toList()));
+            case LTIME: return null;
+            case DATE: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDate).collect(Collectors.toList()));
+            case TOD: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTimeOfDay).collect(Collectors.toList()));
+            case LTOD: return null;
+            case DT: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDTL).collect(Collectors.toList()));
+            case LDT: return null;
+            case DTL: return null;
+            case ARRAY: return null;
             default: {
                 log.error("Unspported tag-type {} at address {}", type, addresses);
                 throw new IllegalArgumentException("Unspported tag-type " + type + " at address " + addresses);
