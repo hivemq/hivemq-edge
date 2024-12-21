@@ -69,7 +69,7 @@ jobs:
         run: pnpm run build
 
       - name: Upload artifact
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -105,7 +105,7 @@ jobs:
       # after the test run completes store videos
       - name: 💾 Upload Component videos
         if: failure()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4
         with:
           name: cypress-component-videos
           path: hivemq-edge/src/frontend/cypress/videos
@@ -139,7 +139,7 @@ jobs:
           quiet: false
       - name: 💾 Upload E2E videos
         if: failure()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4
         with:
           name: cypress-e2e-videos
           path: hivemq-edge/src/frontend/cypress/videos
