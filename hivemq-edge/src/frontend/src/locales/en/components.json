@@ -118,6 +118,7 @@
       }
     },
     "ArrayFieldItem": {
+      "item": "item",
       "Buttons": {
         "expanded_true": "Collapse Item",
         "expanded_false": "Expand Item"
