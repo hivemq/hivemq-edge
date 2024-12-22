@@ -27,25 +27,26 @@ public class PostgreSQLAdapterTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",
-                       description = "Name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+            description = "Name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
-    @ModuleConfigField(title = "description", description = "Description of the tag")
+    @ModuleConfigField(title = "description",
+            description = "Description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "definition", description = "The actual definition of the tag for PostgreSQL Query")
+    @ModuleConfigField(title = "definition",
+            description = "The actual definition of the tag for PostgreSQL Query")
     private final @NotNull PostgreSQLAdapterTagDefinition definition;
 
 
     public PostgreSQLAdapterTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
             @JsonProperty(value = "description") final @Nullable String description,
-            @JsonProperty(value = "definition",
-                          required = true) final @NotNull PostgreSQLAdapterTagDefinition definition) {
+            @JsonProperty(value = "definition", required = true) final @NotNull PostgreSQLAdapterTagDefinition definition) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definition;
@@ -68,12 +69,8 @@ public class PostgreSQLAdapterTag implements Tag {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         final PostgreSQLAdapterTag postgreSQLAdapterTag = (PostgreSQLAdapterTag) o;
         return Objects.equals(name, postgreSQLAdapterTag.name) &&
                 Objects.equals(description, postgreSQLAdapterTag.description) &&

@@ -21,8 +21,6 @@ import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 public class PostgreSQLAdapterTagDefinition implements TagDefinition {
     @JsonProperty(value = "query", required = true)
     @ModuleConfigField(title = "Query",
@@ -48,24 +46,19 @@ public class PostgreSQLAdapterTagDefinition implements TagDefinition {
     public PostgreSQLAdapterTagDefinition(
             @JsonProperty(value = "query") final @Nullable String query,
             @JsonProperty(value = "rowLimit") final @Nullable Integer rowLimit,
-            @JsonProperty(value = "spiltLinesInIndividualMessages") final @Nullable Boolean spiltLinesInIndividualMessages) {
+            @JsonProperty(value = "spiltLinesInIndividualMessages") final @Nullable Boolean spiltLinesInIndividualMessages){
         this.query = query;
         assert rowLimit != null;
         this.rowLimit = rowLimit;
-        this.spiltLinesInIndividualMessages = Objects.requireNonNullElse(spiltLinesInIndividualMessages, false);
+        assert spiltLinesInIndividualMessages != null;
+        this.spiltLinesInIndividualMessages = spiltLinesInIndividualMessages;
     }
 
-    public @Nullable String getQuery() {
-        return query;
-    }
+    public @Nullable String getQuery(){return query;}
 
-    public int getRowLimit() {
-        return rowLimit;
-    }
+    public int getRowLimit() {return rowLimit;}
 
-    public @NotNull Boolean getSpiltLinesInIndividualMessages() {
-        return spiltLinesInIndividualMessages;
-    }
+    public @NotNull Boolean getSpiltLinesInIndividualMessages() {return spiltLinesInIndividualMessages;}
 
 
 }
