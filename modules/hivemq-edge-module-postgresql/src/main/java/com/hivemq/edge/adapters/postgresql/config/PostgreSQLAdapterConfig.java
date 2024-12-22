@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-present HiveMQ GmbH
+ * Copyright 2024-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,18 +18,15 @@ package com.hivemq.edge.adapters.postgresql.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({
         "url",
         "destination"})
-public class PostgreSQLAdapterConfig implements ProtocolAdapterConfig {
+public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -61,7 +58,7 @@ public class PostgreSQLAdapterConfig implements ProtocolAdapterConfig {
             stringMinLength = 1,
             stringMaxLength = 6,
             defaultValue = "5432")
-    protected @NotNull String port;
+    protected @NotNull Integer port;
 
     @JsonProperty(value = "database", required = true)
     @ModuleConfigField(title = "Database",
@@ -98,8 +95,8 @@ public class PostgreSQLAdapterConfig implements ProtocolAdapterConfig {
             description = "Time in millisecond that this endpoint will be polled",
             numberMin = 1,
             required = true,
-            defaultValue = "10000")
-    private int pollingIntervalMillis = 10000;
+            defaultValue = "1000")
+    private int pollingIntervalMillis = 1000;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
@@ -109,29 +106,20 @@ public class PostgreSQLAdapterConfig implements ProtocolAdapterConfig {
     private int maxPollingErrorsBeforeRemoval = 10;
 
 
-    @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "subscription", description = "Map your SQL data to a MQTT Topic")
-    private @NotNull List<PostgreSQLPollingContext> pollingContexts = new ArrayList<>();
-
     public PostgreSQLAdapterConfig() {
         id = "";
-        server = "";
-        port = "";
-        database = "";
-        username = "";
         password = "";
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return id;
+        username = "";
+        database = "";
+        port = 5432;
+        server = "";
     }
 
     public @NotNull String getServer() {return server;}
 
     public @NotNull String getDatabase() {return database;}
 
-    public @NotNull String getPort() {return port;}
+    public @NotNull Integer getPort() {return port;}
 
     public @NotNull String getUsername() {return username;}
 
@@ -144,9 +132,5 @@ public class PostgreSQLAdapterConfig implements ProtocolAdapterConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<PostgreSQLPollingContext> getPollingContexts() {
-        return pollingContexts;
     }
 }
