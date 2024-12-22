@@ -13,13 +13,6 @@
       ]
     },
     {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": [
-        "subscriptions"
-      ]
-    },
-    {
       "id": "publishing",
       "title": "Publishing",
       "properties": [
@@ -28,6 +21,9 @@
       ]
     }
   ],
+  "port": {
+  "type": "integer"
+  },
   "password": {
     "ui:widget": "password"
   },
@@ -36,22 +32,5 @@
     "server",
     "port",
     "*"
-  ],
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": [
-        "query",
-        "rowLimit",
-        "spiltLinesInIndividualMessages",
-        "destination",
-        "qos",
-        "*",
-        "userProperties"
-      ],
-      "ui:collapsable": {
-        "titleKey": "destination"
-      }
-    }
-  }
+  ]
 }

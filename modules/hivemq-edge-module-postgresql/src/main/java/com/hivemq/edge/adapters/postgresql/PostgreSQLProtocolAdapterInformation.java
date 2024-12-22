@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-present HiveMQ GmbH
+ * Copyright 2024-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,11 +20,16 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterConfig;
+import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +47,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getProtocolName() {
         // the returned string will be used for logging information on the protocol adapter
-        return "PostgreSQL";
+        return "PostgreSQL Protocol";
     }
 
     @Override
@@ -61,7 +66,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getDescription() {
         // the description that will be shown for this protocol adapter within edge's ui
-        return "This protocol adapter allow you to execute SQL query on a database, retrieve the result and send it via MQTT.";
+        return "This protocol adapter allow you to execute SQL query on a PostgreSQL database, retrieve the result and send it via MQTT.";
     }
 
     @Override
@@ -74,7 +79,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getVersion() {
         // the version of this protocol adapter, the usage of semantic versioning is advised.
-        return "2024.7 (Alpha)";
+        return "2024.9 ALPHA";
     }
 
     @Override
@@ -92,7 +97,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getAuthor() {
         // your name/nick
-        return "Anthony O. (HiveMQ)";
+        return "HiveMQ";
     }
 
     @Override
@@ -109,6 +114,8 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
                 ProtocolAdapterTag.AUTOMATION);
     }
 
+
+
     @Override
     public @Nullable String getUiSchema() {
         try (final InputStream is = this.getClass()
@@ -124,4 +131,22 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
             return null;
         }
     }
+
+    @Override
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
+        return PostgreSQLAdapterTag.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
+        return PostgreSQLAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
+        return PostgreSQLAdapterConfig.class;
+    }
+
+
+
 }

@@ -8,7 +8,7 @@ plugins {
 
 
 group = "com.hivemq"
-version = "2024.7-ALPHA"
+version = "2024.9-ALPHA"
 
 repositories {
     mavenLocal()
@@ -19,10 +19,10 @@ repositories {
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
     compileOnly("commons-io:commons-io:${property("commons-io.version")}")
-    implementation("org.postgresql:postgresql:42.7.3")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.18.1")
     compileOnly("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     compileOnly("org.slf4j:slf4j-api:${property("slf4j.version")}")
+    implementation("org.postgresql:postgresql:${property("postgresql.version")}")
+    implementation("com.fasterxml.jackson.core:jackson-core:${property("jackson.version")}")
 }
 
 dependencies {
