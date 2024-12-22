@@ -17,23 +17,45 @@ package com.hivemq.edge.adapters.postgresql;
 
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class PostgreSQLPollingProtocolAdapterTest {
+
+    @TempDir
+    @NotNull
+    File temporaryDir;
+
     private final @NotNull ProtocolAdapterInput<PostgreSQLAdapterConfig> adapterInput = mock();
     private final @NotNull PostgreSQLAdapterConfig config = mock();
 
     @Test
-    void test_poll_queryDatabaseWithFakeData() {
-        // TO BE WRITTEN
-        // Faking test
-        var result = 0;
-        assertEquals(0, result);
+    void test_poll_whenFileIsPresent_thenFileContentsAreSetInOutput() throws IOException {
+        final File fileWithData = new File(temporaryDir, "data.txt");
+        Files.write(fileWithData.toPath(), "Hello World".getBytes(StandardCharsets.UTF_8));
+        when(adapterInput.getConfig()).thenReturn(config);
+        PollingInput pollingInput = mock();
+        when(pollingInput.getPollingContext()).thenReturn(mock());
+        TestPollingOutput pollingOutput = new TestPollingOutput();
+
+        PostgreSQLPollingProtocolAdapter adapter = new PostgreSQLPollingProtocolAdapter(new PostgreSQLProtocolAdapterInformation(), adapterInput);
+
+        adapter.poll(pollingInput, pollingOutput);
+
+        assertEquals(42, pollingOutput.getDataPoints().get("dataPoint1"));
+        assertEquals(1337, pollingOutput.getDataPoints().get("dataPoint2"));
 
     }
 }
