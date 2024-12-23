@@ -21,6 +21,7 @@ dependencies {
     compileOnly("commons-io:commons-io:${property("commons-io.version")}")
     compileOnly("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     compileOnly("org.slf4j:slf4j-api:${property("slf4j.version")}")
+    implementation("org.slf4j:slf4j-log4j12:${property("slf4jfull.version")}")
     implementation("org.postgresql:postgresql:${property("postgresql.version")}")
     implementation("com.fasterxml.jackson.core:jackson-core:${property("jackson.version")}")
 }
