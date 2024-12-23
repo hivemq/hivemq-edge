@@ -54,7 +54,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     public @NotNull String getProtocolId() {
         // this id is very important as this is how the adapters configurations in the config.xml are linked to the adapter implementations.
         // any change here means you will need to edit the config.xml
-        return "PostgreSQL_Protocol";
+        return "postgresql";
     }
 
     @Override
