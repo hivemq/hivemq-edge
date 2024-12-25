@@ -74,7 +74,12 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
           <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
-            adapterIDs={adapterIDs.map((e) => e?.data.id)}
+            adapterIDs={adapterIDs.reduce<string[]>((acc, cur) => {
+              if (cur && cur.type === NodeTypes.ADAPTER_NODE) {
+                acc.push(cur.data.id)
+              }
+              return acc
+            }, [])}
             initMetrics={metrics}
             defaultChartType={showConfig ? ChartType.SAMPLE : undefined}
           />
