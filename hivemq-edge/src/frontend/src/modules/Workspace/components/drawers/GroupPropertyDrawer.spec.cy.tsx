@@ -5,18 +5,29 @@ import { Group, NodeTypes } from '../../types.ts'
 import GroupPropertyDrawer from './GroupPropertyDrawer.tsx'
 import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { MetricList } from '@/api/__generated__'
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE } from '@/__test-utils__/react-flow/nodes.ts'
+import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
+import { MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2 } from '@/__test-utils__/mocks.ts'
 
 const mockNode: Node<Group> = {
   position: { x: 0, y: 0 },
-  id: 'adapter@fgffgf',
+  id: 'adapter@group',
   type: NodeTypes.CLUSTER_NODE,
-  data: { childrenNodeIds: ['bridge-id-01', 'my-adapter'], title: 'dfdf', isOpen: true },
+  data: { childrenNodeIds: [MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2], title: 'the group', isOpen: true },
 }
 
-const mockNodes: Node<NodeTypes.BRIDGE_NODE | NodeTypes.ADAPTER_NODE>[] = [
-  { ...MOCK_NODE_BRIDGE, id: 'bridge-id-01', position: { x: 0, y: 0 } },
-  { ...MOCK_NODE_ADAPTER, id: 'my-adapter', position: { x: 0, y: 0 } },
+const mockNodes: Node<NodeTypes.ADAPTER_NODE>[] = [
+  {
+    ...MOCK_NODE_ADAPTER,
+    id: MOCK_ADAPTER_ID,
+    data: { ...MOCK_NODE_ADAPTER.data, id: MOCK_ADAPTER_ID },
+    position: { x: 0, y: 0 },
+  },
+  {
+    ...MOCK_NODE_ADAPTER,
+    id: MOCK_ADAPTER_ID2,
+    data: { ...MOCK_NODE_ADAPTER.data, id: MOCK_ADAPTER_ID2 },
+    position: { x: 0, y: 0 },
+  },
 ]
 
 describe('GroupPropertyDrawer', () => {
