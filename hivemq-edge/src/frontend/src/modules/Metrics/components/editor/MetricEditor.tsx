@@ -42,7 +42,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filters, selectedMetric
     const groupedMetrics = filters
       .map((filter) => {
         const metrics: MetricNameOption[] = items
-          .filter((metric) => metric.name && metric.name.includes(adapter))
+          .filter((metric) => {
+            const structure = extractMetricInfo(metric.name as string)
+            return filter.id === structure.id
+          })
           .map((metric) => {
             const { device, suffix } = extractMetricInfo(metric.name as string)
             return {
