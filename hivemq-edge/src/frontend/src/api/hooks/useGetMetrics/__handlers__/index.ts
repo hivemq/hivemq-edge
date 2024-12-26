@@ -1,6 +1,6 @@
 import { DataPoint, Metric, MetricList } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
-import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2 } from '@/__test-utils__/mocks.ts'
 import { DateTime } from 'luxon'
 import { http, HttpResponse } from 'msw'
 
@@ -42,6 +42,10 @@ export const MOCK_METRICS: Array<Metric> = [
   { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.connection.success.count` },
   { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.failed.count` },
   { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.success.count` },
+  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID2}.connection.failed.count` },
+  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID2}.connection.success.count` },
+  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID2}.read.publish.failed.count` },
+  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID2}.read.publish.success.count` },
   { name: `com.hivemq.edge.sessions.overall.current` },
   { name: `com.hivemq.edge.subscriptions.overall.current` },
   { name: `com.hivemq.messages.governance.count` },

@@ -18,3 +18,4 @@ export const MOCK_NAMESPACE: ISA95ApiBean = {
 
 export const MOCK_BRIDGE_ID = 'first-bridge'
 export const MOCK_ADAPTER_ID = 'my-adapter'
+export const MOCK_ADAPTER_ID2 = 'my-adapter2'
