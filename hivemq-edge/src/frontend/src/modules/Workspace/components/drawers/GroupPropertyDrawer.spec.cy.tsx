@@ -55,7 +55,7 @@ describe('GroupPropertyDrawer', () => {
 
     cy.getByTestId('group-panel-title').should('contain.text', 'Group Observability')
 
-    cy.get('dt').eq(0).should('contain.text', 'bridge-id-01')
+    cy.get('dt').eq(0).should('contain.text', 'my-adapter')
     cy.get('dt').eq(1).should('contain.text', 'my-adapter')
 
     // check the panel control
