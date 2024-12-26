@@ -67,7 +67,15 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
           <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
-            adapterIDs={[selectedNode.data.id]}
+            filters={[
+              {
+                id: selectedNode.data.id,
+                type:
+                  selectedNode.type === NodeTypes.ADAPTER_NODE
+                    ? `com.hivemq.edge.protocol-adapters.${(selectedNode as Node<Adapter>).data.type}`
+                    : 'com.hivemq.edge.bridge',
+              },
+            ]}
             initMetrics={getDefaultMetricsFor(selectedNode)}
             defaultChartType={ChartType.SAMPLE}
           />

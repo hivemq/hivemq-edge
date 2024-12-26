@@ -7,6 +7,11 @@ export enum ChartType {
   BAR_CHART = 'BAR_CHART',
 }
 
+export interface MetricsFilter {
+  type: string
+  id: string
+}
+
 export interface MetricNameOption {
   label: string
   value: string

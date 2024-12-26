@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
-import { ChartType, MetricDefinition } from './types.ts'
+import { ChartType, MetricDefinition, MetricsFilter } from './types.ts'
 import useMetricsStore from './hooks/useMetricsStore.ts'
 import { extractMetricInfo } from './utils/metrics-name.utils.ts'
 import MetricEditor from './components/editor/MetricEditor.tsx'
@@ -25,7 +25,7 @@ import Sample from './components/container/Sample.tsx'
 interface MetricsProps {
   nodeId: string
   type: NodeTypes
-  adapterIDs: string[]
+  filters: MetricsFilter[]
   initMetrics?: string[]
   defaultChartType?: ChartType
 }
@@ -38,7 +38,7 @@ export interface MetricSpecStorage {
 // TODO[NVL] Should go to some kind of reusable routine, with verification
 const defaultColorSchemes = ['blue', 'green', 'orange', 'pink', 'purple', 'red', 'teal', 'yellow', 'cyan']
 
-const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultChartType }) => {
+const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defaultChartType }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { addMetrics, getMetricsFor, removeMetrics } = useMetricsStore()
@@ -89,7 +89,7 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, d
 
             <AccordionPanel pb={4}>
               <MetricEditor
-                filter={adapterIDs}
+                filters={filters}
                 selectedMetrics={metrics.map((e) => e.metrics)}
                 selectedChart={defaultChartType}
                 onSubmit={handleCreateMetrics}
@@ -107,7 +107,7 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, d
       >
         {metrics.map((e) => {
           const { id } = extractMetricInfo(e.metrics)
-          const colorSchemeIndex = adapterIDs.indexOf(id as string)
+          const colorSchemeIndex = filters.findIndex((e) => e.id === id)
 
           if (!e.chart || e.chart === ChartType.SAMPLE)
             return (

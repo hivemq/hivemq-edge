@@ -17,7 +17,7 @@ import { Group, NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import GroupMetadataEditor from '../parts/GroupMetadataEditor.tsx'
-import { ChartType } from '@/modules/Metrics/types.ts'
+import { ChartType, MetricsFilter } from '@/modules/Metrics/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 interface GroupPropertyDrawerProps {
@@ -74,9 +74,9 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
           <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
-            adapterIDs={adapterIDs.reduce<string[]>((acc, cur) => {
+            filters={adapterIDs.reduce<MetricsFilter[]>((acc, cur) => {
               if (cur && cur.type === NodeTypes.ADAPTER_NODE) {
-                acc.push(cur.data.id)
+                acc.push({ id: cur.data.id, type: `com.hivemq.edge.protocol-adapters.${cur.data.type}` })
               }
               return acc
             }, [])}
