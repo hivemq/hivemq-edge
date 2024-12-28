@@ -20,8 +20,11 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.redis.config.RedisAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.io.File;
+import java.io.IOException;
+
 import static org.mockito.Mockito.mock;
 
 class RedisPollingProtocolAdapterTest {
@@ -29,11 +32,8 @@ class RedisPollingProtocolAdapterTest {
     private final @NotNull RedisAdapterConfig config = mock();
 
     @Test
-    void test_poll_queryDatabaseWithFakeData() {
-        // TO BE WRITTEN
-        // Faking test
-        var result = 0;
-        assertEquals(0, result);
+    void test_poll_whenFileIsPresent_thenFileContentsAreSetInOutput() throws IOException {
+        // To be implemented
 
     }
 }

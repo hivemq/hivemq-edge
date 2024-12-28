@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,11 +20,16 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.redis.config.RedisAdapterConfig;
+import com.hivemq.edge.adapters.redis.config.RedisAdapterTag;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +54,7 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
     public @NotNull String getProtocolId() {
         // this id is very important as this is how the adapters configurations in the config.xml are linked to the adapter implementations.
         // any change here means you will need to edit the config.xml
-        return "Redis_Protocol";
+        return "redis";
     }
 
     @Override
@@ -61,20 +66,20 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
     @Override
     public @NotNull String getDescription() {
         // the description that will be shown for this protocol adapter within edge's ui
-        return "This protocol adapter allow you to query Redis keys, retrieve the result and send it via MQTT.";
+        return "This protocol adapter allow you to get values from Redis.";
     }
 
     @Override
     public @NotNull String getUrl() {
         // this url will be displayed in the ui as a link to further documentation on this protocol adapter.
         // e.g. this could be a link to the source code and a readme
-        return "TO BE DEFINED";
+        return "TBD";
     }
 
     @Override
     public @NotNull String getVersion() {
         // the version of this protocol adapter, the usage of semantic versioning is advised.
-        return "2024.7 (Alpha)";
+        return "1.0.0";
     }
 
     @Override
@@ -92,7 +97,7 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
     @Override
     public @NotNull String getAuthor() {
         // your name/nick
-        return "Anthony O. (HiveMQ)";
+        return "HiveMQ";
     }
 
     @Override
@@ -106,8 +111,10 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
         // here you can set which Tags should be applied to this protocol adapter
         return List.of(ProtocolAdapterTag.INTERNET,
                 ProtocolAdapterTag.TCP,
-                ProtocolAdapterTag.AUTOMATION);
+                ProtocolAdapterTag.WEB);
     }
+
+
 
     @Override
     public @Nullable String getUiSchema() {
@@ -124,4 +131,22 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
             return null;
         }
     }
+
+    @Override
+    public @NotNull Class<? extends Tag> tagConfigurationClass() {
+        return RedisAdapterTag.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
+        return RedisAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
+        return RedisAdapterConfig.class;
+    }
+
+
+
 }

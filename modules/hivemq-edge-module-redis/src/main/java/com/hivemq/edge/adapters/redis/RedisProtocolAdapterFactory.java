@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -33,11 +33,4 @@ public class RedisProtocolAdapterFactory implements ProtocolAdapterFactory<Redis
     public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<RedisAdapterConfig> input) {
         return new RedisPollingProtocolAdapter(adapterInformation, input);
     }
-
-
-    @Override
-    public @NotNull Class<RedisAdapterConfig> getConfigClass() {
-        return RedisAdapterConfig.class;
-    }
-
 }

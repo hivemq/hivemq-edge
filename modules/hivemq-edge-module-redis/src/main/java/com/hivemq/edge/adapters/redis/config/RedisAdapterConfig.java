@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,21 +15,19 @@
  */
 package com.hivemq.edge.adapters.redis.config;
 
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({
         "url",
         "destination"})
-public class RedisAdapterConfig implements ProtocolAdapterConfig {
+public class RedisAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
@@ -85,10 +83,10 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
             description = "Time in millisecond that this endpoint will be polled",
-            numberMin = 1,
+            numberMin = 100,
             required = true,
-            defaultValue = "2000")
-    private int pollingIntervalMillis = 10000;
+            defaultValue = "1000")
+    private int pollingIntervalMillis = 1000;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
@@ -98,21 +96,12 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
     private int maxPollingErrorsBeforeRemoval = 10;
 
 
-    @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "subscription", description = "Map your Redis data to a MQTT Topic")
-    private @NotNull List<RedisPollingContext> pollingContexts = new ArrayList<>();
-
     public RedisAdapterConfig() {
         id = "";
         server = "";
         port = 6379;
         username = "";
         password = "";
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return id;
     }
 
     public @NotNull String getServer() {return server;}
@@ -129,9 +118,5 @@ public class RedisAdapterConfig implements ProtocolAdapterConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<RedisPollingContext> getPollingContexts() {
-        return pollingContexts;
     }
 }

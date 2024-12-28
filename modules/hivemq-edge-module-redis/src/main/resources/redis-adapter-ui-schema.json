@@ -12,13 +12,6 @@
       ]
     },
     {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": [
-        "subscriptions"
-      ]
-    },
-    {
       "id": "publishing",
       "title": "Publishing",
       "properties": [
@@ -30,25 +23,25 @@
   "password": {
     "ui:widget": "password"
   },
+  "type":  {
+    "ui:widget": "select"
+  },
   "ui:order": [
     "id",
     "server",
     "port",
     "*"
   ],
-  "subscriptions": {
-    "ui:batchMode": true,
+  "definition" : {
+    "ui:batchMode" : true,
     "items": {
-      "ui:order": [
+      "ui:order" : [
         "key",
-        "destination",
-        "qos",
-        "*",
-        "userProperties"
-      ],
-      "ui:collapsable": {
-        "titleKey": "destination"
-      }
+        "type",
+        "field",
+        "getall",
+        "*"
+      ]
     }
   }
 }

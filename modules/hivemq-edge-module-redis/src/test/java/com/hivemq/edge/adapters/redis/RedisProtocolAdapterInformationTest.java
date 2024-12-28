@@ -19,18 +19,19 @@ import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RedisProtocolAdapterInformationTest {
+
     @Test
     void getProtocolId_MustNotContainWhiteSpaces() {
         final RedisProtocolAdapterInformation information = new RedisProtocolAdapterInformation();
         assertFalse(information.getProtocolId().contains(" "));
     }
 
+
     @Test
-    void getProtocolId_MustBeAlphaNumericalOrUnderscore() {
+    void getProtocolId_MustBeAlphaNummercialOrUnderscore() {
         final String ALPHA_NUM = "[A-Za-z0-9_]*";
         final Pattern alphaNumPattern = Pattern.compile(ALPHA_NUM);
         final RedisProtocolAdapterInformation information = new RedisProtocolAdapterInformation();

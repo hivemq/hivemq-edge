@@ -21,9 +21,11 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.*;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.redis.config.RedisAdapterConfig;
+import com.hivemq.edge.adapters.redis.helpers.RedisHelpers;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.JedisPool;
 
 @SuppressWarnings({"FieldCanBeLocal", "unused", "EmptyTryBlock"})
 public class RedisSubscribingProtocolAdapter implements ProtocolAdapter {
@@ -33,27 +35,44 @@ public class RedisSubscribingProtocolAdapter implements ProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull String adapterId;
+    private final @NotNull RedisHelpers redisHelpers;
+    private JedisPool jedisPool;
 
     public RedisSubscribingProtocolAdapter(
-            final @NotNull ProtocolAdapterInformation adapterInformation, final @NotNull ProtocolAdapterInput<RedisAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation, final @NotNull ProtocolAdapterInput<RedisAdapterConfig> input, @NotNull RedisHelpers redisHelpers) {
+        this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
+        this.redisHelpers = new RedisHelpers();
     }
+
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return adapterId;
     }
 
     @Override
     public void start(@NotNull ProtocolAdapterStartInput input, @NotNull ProtocolAdapterStartOutput output) {
+        /* Test connection to the database when starting the adapter. */
         try {
-            // connect and subscribe your client here
-            output.startedSuccessfully();
+            // Start Initialization
+            jedisPool = redisHelpers.initJedisPool(adapterConfig);
+
+            if(!jedisPool.isClosed()){
+                output.startedSuccessfully();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                jedisPool.close();
+            } else {
+                output.failStart(new Throwable("Error connecting Redis server, please check the configuration"), "Error connecting Redis server, please check the configuration");
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            }
         } catch (final Exception e) {
-            // error handling like logging and signaling edge that the start failed
+            jedisPool.close();
             output.failStart(e, null);
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
 
