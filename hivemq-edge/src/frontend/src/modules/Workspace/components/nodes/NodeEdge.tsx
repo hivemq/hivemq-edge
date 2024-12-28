@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image } from '@chakra-ui/react'
@@ -10,7 +11,6 @@ import { TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
-import { useNavigate } from 'react-router-dom'
 
 const NodeEdge: FC<NodeProps> = (props) => {
   const { t } = useTranslation()
@@ -19,7 +19,12 @@ const NodeEdge: FC<NodeProps> = (props) => {
 
   return (
     <>
-      <ContextualToolbar id={props.id} dragging={props.dragging} onOpenPanel={onContextMenu}>
+      <ContextualToolbar
+        id={props.id}
+        title={t('branding.appName')}
+        dragging={props.dragging}
+        onOpenPanel={onContextMenu}
+      >
         <ToolbarButtonGroup>
           <IconButton
             icon={<Icon as={TopicIcon} />}

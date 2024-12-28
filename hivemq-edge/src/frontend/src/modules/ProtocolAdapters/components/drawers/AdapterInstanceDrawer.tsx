@@ -14,8 +14,6 @@ import {
   DrawerHeader,
   DrawerOverlay,
   Flex,
-  HStack,
-  Image,
   Text,
 } from '@chakra-ui/react'
 
@@ -24,11 +22,13 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-import { customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { customUniqueAdapterValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -96,12 +96,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
               <Text>
                 {isNewAdapter ? t('protocolAdapter.drawer.title.create') : t('protocolAdapter.drawer.title.update')}
               </Text>
-              <HStack>
-                <Image boxSize="30px" objectFit="scale-down" src={logo} aria-label={name} />
-                <Text fontSize="md" fontWeight="500">
-                  {name}
-                </Text>
-              </HStack>
+              <NodeNameCard name={name} type={NodeTypes.ADAPTER_NODE} icon={logo} />
             </DrawerHeader>
             <DrawerBody>
               {schema && (
@@ -114,7 +109,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   onSubmit={onValidate}
                   // TODO[NVL] Types need fixing
                   // @ts-ignore
-                  customValidate={customValidate(schema, allAdapters, t)}
+                  customValidate={customUniqueAdapterValidate(schema, allAdapters)}
                 />
               )}
             </DrawerBody>

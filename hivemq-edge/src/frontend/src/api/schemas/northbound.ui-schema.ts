@@ -1,4 +1,6 @@
 import { UiSchema } from '@rjsf/utils'
+import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 
 /* istanbul ignore next -- @preserve */
 export const northboundMappingListUISchema: UiSchema = {
@@ -14,6 +16,15 @@ export const northboundMappingListUISchema: UiSchema = {
       'ui:collapsable': {
         titleKey: 'tagName',
       },
+      tagName: {
+        'ui:widget': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
+      },
+      topic: {
+        'ui:widget': registerEntitySelectWidget(CustomFormat.MQTT_TOPIC),
+        'ui:options': {
+          create: true,
+        },
+      },
       'ui:addButton': 'Add a mapping',
       userProperties: {
         items: {
@@ -22,13 +33,6 @@ export const northboundMappingListUISchema: UiSchema = {
       },
       maxQoS: {
         'ui:enumNames': ['At most once (QoS 0)', 'At least once (QoS 1)', 'Exactly once (QoS 2)'],
-      },
-
-      messageHandlingOptions: {
-        'ui:enumNames': [
-          'MQTT Message Per Device Tag',
-          'MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)',
-        ],
       },
     },
   },

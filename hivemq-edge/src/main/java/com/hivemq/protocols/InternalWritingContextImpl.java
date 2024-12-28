@@ -34,6 +34,11 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     }
 
     @Override
+    public @NotNull String getSchema() {
+        return southboundMapping.getSchema();
+    }
+
+    @Override
     public @NotNull String getTagName() {
         return southboundMapping.getTagName();
     }
@@ -42,12 +47,6 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     public @NotNull String getTopicFilter() {
         return southboundMapping.getTopicFilter();
     }
-
-    @Override
-    public int getMaxQoS() {
-        return southboundMapping.getMaxQoS();
-    }
-
 
     @Override
     public @NotNull String toString() {

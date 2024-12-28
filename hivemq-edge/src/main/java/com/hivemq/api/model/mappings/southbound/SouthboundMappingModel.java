@@ -18,13 +18,11 @@ package com.hivemq.api.model.mappings.southbound;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Schema(name = "SouthboundMapping")
 public class SouthboundMappingModel {
@@ -34,13 +32,8 @@ public class SouthboundMappingModel {
     private final @NotNull String topicFilter;
 
     @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.",
-            format = "mqtt-tag")
+    @Schema(description = "The tag for which values hould be collected and sent out.", format = "mqtt-tag")
     private final @NotNull String tagName;
-
-    @JsonProperty(value = "maxQoS", required = true)
-    @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
-    private final int maxQoS;
 
     @JsonProperty(value = "fieldMapping")
     @Schema(description = "Defines how incoming data should be transformed before being sent out.")
@@ -50,11 +43,9 @@ public class SouthboundMappingModel {
     public SouthboundMappingModel(
             @JsonProperty(value = "topicFilter", required = true) final @NotNull String topicFilter,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
             @JsonProperty(value = "fieldMapping") final @Nullable FieldMappingModel fieldMapping) {
         this.topicFilter = topicFilter;
         this.tagName = tagName;
-        this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
         this.fieldMapping = fieldMapping;
     }
 
@@ -66,27 +57,22 @@ public class SouthboundMappingModel {
         return tagName;
     }
 
-    public int getMaxQoS() {
-        return maxQoS;
-    }
-
     public @Nullable FieldMappingModel getFieldMapping() {
         return fieldMapping;
     }
 
-    public SouthboundMapping toToEdgeMapping() {
-        return new SouthboundMapping(
-                this.tagName,
+    public @NotNull SouthboundMapping toToEdgeMapping(final @NotNull String schema) {
+        return new SouthboundMapping(this.tagName,
                 this.topicFilter,
-                this.maxQoS, FieldMapping.fromModel(this.fieldMapping)
-                );
+                this.fieldMapping != null ?
+                        FieldMapping.fromModel(this.fieldMapping) :
+                        FieldMapping.DEFAULT_FIELD_MAPPING,
+                schema);
     }
 
-    public static SouthboundMappingModel from(SouthboundMapping southboundMapping) {
-        return new SouthboundMappingModel(
-                southboundMapping.getTopicFilter(),
+    public static SouthboundMappingModel from(final @NotNull SouthboundMapping southboundMapping) {
+        return new SouthboundMappingModel(southboundMapping.getTopicFilter(),
                 southboundMapping.getTagName(),
-                southboundMapping.getMaxQoS(),
                 FieldMappingModel.from(southboundMapping.getFieldMapping()));
     }
 }

@@ -3,7 +3,6 @@ import { renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
 import { useListSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useListSouthboundMappings.ts'
 
@@ -26,7 +25,6 @@ describe('useListSouthboundMappings', () => {
         expect.objectContaining({
           topicFilter: 'my/filter',
           tagName: 'my/tag',
-          maxQoS: MOCK_MAX_QOS,
         }),
       ],
     })

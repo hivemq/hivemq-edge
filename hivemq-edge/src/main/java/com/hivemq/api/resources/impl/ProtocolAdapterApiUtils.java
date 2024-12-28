@@ -93,7 +93,7 @@ public class ProtocolAdapterApiUtils {
         }
 
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
-                new ProtocolAdapterSchemaManager(objectMapper, adapterManager.writingEnabled() ? info.configurationClassWritingAndReading() : info.configurationClassReading());
+                new ProtocolAdapterSchemaManager(objectMapper, adapterManager.writingEnabled() ? info.configurationClassNorthAndSouthbound() : info.configurationClassNorthbound());
 
 
         final String rawVersion = info.getVersion();
@@ -126,7 +126,7 @@ public class ProtocolAdapterApiUtils {
         if (uiSchemaAsString != null) {
             try {
                 return objectMapper.reader().withFeatures(JsonParser.Feature.ALLOW_COMMENTS).readTree(uiSchemaAsString);
-            } catch (JsonProcessingException e) {
+            } catch (final JsonProcessingException e) {
                 LOG.warn("Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
                         info.getDisplayName(),
                         e);
@@ -136,7 +136,7 @@ public class ProtocolAdapterApiUtils {
 
         try {
             return objectMapper.readTree(DEFAULT_SCHEMA);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             LOG.error("Exception during parsing of default schema: ", e);
             // this should never happen as we control the input (default schema)
             throw new RuntimeException(e);
@@ -171,7 +171,7 @@ public class ProtocolAdapterApiUtils {
         final String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
         final String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
+            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
         return new ProtocolAdapter(module.getId(),

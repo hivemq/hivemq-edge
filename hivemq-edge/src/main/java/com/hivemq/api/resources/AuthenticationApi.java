@@ -15,17 +15,17 @@
  */
 package com.hivemq.api.resources;
 
-import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.examples.ApiBodyExamples;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -64,14 +64,14 @@ public interface AuthenticationApi {
                                                                               summary = "Example authentication",
                                                                               value = ApiBodyExamples.EXAMPLE_AUTHENTICATION_JSON)
                                     })),
+                       @ApiResponse(responseCode = "400",
+                                    description = "Error in request.",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
                        @ApiResponse(responseCode = "401",
                                     description = "The requested credentials could not be authenticated.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ApiErrorMessage.class),
-                                                       examples = @ExampleObject(description = "Unable to authenticate credentials",
-                                                                                 name = "authentication-invalid",
-                                                                                 summary = "The requested credentials could not be authenticated",
-                                                                                 value = ApiBodyExamples.EXAMPLE_AUTHENTICATION_ERROR_JSON)))})
+                                                       schema = @Schema(implementation = ProblemDetails.class)))})
     Response authenticate(final @NotNull UsernamePasswordCredentials credentials);
 
 
@@ -85,7 +85,9 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "200",
                                     description = "The token was valid"),
                        @ApiResponse(responseCode = "401",
-                                    description = "The token was invalid")})
+                                    description = "The token was invalid",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                            schema = @Schema(implementation = ProblemDetails.class)))})
     Response validate(final @NotNull ApiBearerToken token);
 
     @POST
@@ -108,11 +110,7 @@ public interface AuthenticationApi {
                        @ApiResponse(responseCode = "401",
                                     description = "The requested credentials could not be authenticated.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ApiErrorMessage.class),
-                                                       examples = @ExampleObject(description = "Unable to authenticate credentials",
-                                                                                 name = "authentication-invalid",
-                                                                                 summary = "The requested credentials could not be authenticated",
-                                                                                 value = ApiBodyExamples.EXAMPLE_AUTHENTICATION_ERROR_JSON)))})
+                                                       schema = @Schema(implementation = ProblemDetails.class)))})
     Response reissueToken();
 
 }

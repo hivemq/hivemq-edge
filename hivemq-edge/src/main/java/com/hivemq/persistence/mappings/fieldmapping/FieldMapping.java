@@ -23,27 +23,20 @@ import java.util.stream.Collectors;
 
 public class FieldMapping {
 
+    public static @NotNull FieldMapping DEFAULT_FIELD_MAPPING =
+            new FieldMapping(List.of(new Instruction("value", "value")));
+
     private final @NotNull List<Instruction> instructions;
 
-    private final @NotNull Metadata metadata;
-
-
-    public FieldMapping(final List<Instruction> instructions, final Metadata metadata) {
+    public FieldMapping(final @NotNull List<Instruction> instructions) {
         this.instructions = instructions;
-        this.metadata = metadata;
     }
 
     public @NotNull List<Instruction> getInstructions() {
         return instructions;
     }
 
-    public Metadata getMetaData() {
-        return metadata;
-    }
-
     public static @NotNull FieldMapping fromModel(final @NotNull FieldMappingModel model) {
-        return new FieldMapping(
-                model.getInstructions().stream().map(Instruction::from).collect(Collectors.toList()),
-                Metadata.from(model.getMetadata()));
+        return new FieldMapping(model.getInstructions().stream().map(Instruction::from).collect(Collectors.toList()));
     }
 }

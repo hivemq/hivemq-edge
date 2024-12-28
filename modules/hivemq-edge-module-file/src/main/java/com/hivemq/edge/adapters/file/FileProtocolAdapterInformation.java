@@ -46,7 +46,12 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getProtocolName() {
-        return "File Input Protocol";
+        return "File Protocol";
+    }
+
+    @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("file_input", "file_polling_protocol");
     }
 
     @Override
@@ -72,7 +77,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getVersion() {
-        return "${edge-version} (ALPHA)";
+        return "${edge-version}";
     }
 
     @Override
@@ -122,12 +127,12 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return FileSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return FileSpecificAdapterConfig.class;
     }
 }

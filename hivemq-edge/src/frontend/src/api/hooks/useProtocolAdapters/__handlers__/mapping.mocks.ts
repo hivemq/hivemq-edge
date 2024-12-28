@@ -8,10 +8,8 @@ import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 export const MOCK_SOUTHBOUND_MAPPING: SouthboundMapping = {
   topicFilter: 'my/filter',
   tagName: 'my/tag',
-  maxQoS: MOCK_MAX_QOS,
   fieldMapping: {
     instructions: [{ source: 'dropped-property', destination: 'lastName' }],
-    metadata: { destination: GENERATE_DATA_MODELS(true, 'my/filter'), source: GENERATE_DATA_MODELS(true, 'my/tag') },
   },
 }
 
@@ -22,7 +20,6 @@ export const MOCK_NORTHBOUND_MAPPING: NorthboundMapping = {
   includeTimestamp: true,
   maxQoS: MOCK_MAX_QOS,
   messageExpiryInterval: -1000,
-  messageHandlingOptions: NorthboundMapping.messageHandlingOptions.MQTTMESSAGE_PER_TAG,
 }
 
 export const mappingHandlers = [
@@ -40,6 +37,14 @@ export const mappingHandlers = [
 
   http.get<{ adapterId: string }>('*/management/protocol-adapters/adapters/:adapterId/northboundMappings', () => {
     return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/northboundMappings', () => {
+    return HttpResponse.json<NorthboundMappingList>({ items: [MOCK_NORTHBOUND_MAPPING] }, { status: 200 })
+  }),
+
+  http.get<{ adapterId: string }>('*/management/protocol-adapters/southboundMappings', () => {
+    return HttpResponse.json<SouthboundMappingList>({ items: [MOCK_SOUTHBOUND_MAPPING] }, { status: 200 })
   }),
 
   http.put<{ adapterId: string }>(

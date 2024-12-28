@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button, ButtonGroup, Card, CardBody, Text, useDisclosure } from '@chakra-ui/react'
-import { LuPencil, LuPlus, LuTrash, LuView } from 'react-icons/lu'
+import { LuClipboardEdit, LuPencil, LuTrash, LuView } from 'react-icons/lu'
 
 import { TopicFilter, TopicFilterList } from '@/api/__generated__'
-import { useTopicFilterOperations } from '@/api/hooks/useTopicFilters/useTopicFilterOperations.ts'
+import { useTopicFilterManager } from '@/modules/TopicFilters/hooks/useTopicFilterManager.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -16,12 +16,14 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ArrayItemDrawer from '@/components/rjsf/SplitArrayEditor/components/ArrayItemDrawer.tsx'
 import TopicSchemaDrawer from '@/modules/TopicFilters/components/TopicSchemaDrawer.tsx'
 import SchemaValidationMark from '@/modules/TopicFilters/components/SchemaValidationMark.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 const TopicFilterManager: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { data, context, isLoading, isError, onUpdateCollection } = useTopicFilterOperations()
+  const { data, context, isLoading, isError, onUpdateCollection } = useTopicFilterManager()
 
   const handleClose = () => {
     onClose()
@@ -100,7 +102,7 @@ const TopicFilterManager: FC = () => {
               }}
               trigger={({ onOpen: onOpenArrayDrawer }) => (
                 <ButtonGroup isAttached size="sm">
-                  <Button leftIcon={<LuPlus />} onClick={onOpenArrayDrawer}>
+                  <Button leftIcon={<LuClipboardEdit />} onClick={onOpenArrayDrawer}>
                     {t('topicFilter.listing.action.add.aria-label')}
                   </Button>
                 </ButtonGroup>
@@ -115,6 +117,7 @@ const TopicFilterManager: FC = () => {
   return (
     <ExpandableDrawer
       header={t('topicFilter.manager.header')}
+      subHeader={<NodeNameCard type={NodeTypes.EDGE_NODE} name={t('branding.appName')} />}
       isOpen={isOpen}
       onClose={handleClose}
       closeOnOverlayClick={false}

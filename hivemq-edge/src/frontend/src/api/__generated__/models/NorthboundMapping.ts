@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { MqttUserProperty } from './MqttUserProperty';
+import type { QoS } from './QoS';
 
 /**
  * List of result items that are returned by this endpoint
@@ -17,18 +18,11 @@ export type NorthboundMapping = {
      * Should the timestamp be included when sent out.
      */
     includeTimestamp: boolean;
-    /**
-     * The maximum MQTT-QoS for the outgoing messages.
-     */
-    maxQoS: number;
+    maxQoS: QoS;
     /**
      * The message expiry interval.
      */
     messageExpiryInterval: number;
-    /**
-     * How collected tags should or shouldnÖT be aggregated.
-     */
-    messageHandlingOptions: NorthboundMapping.messageHandlingOptions;
     /**
      * The tag for which values hould be collected and sent out.
      */
@@ -42,17 +36,4 @@ export type NorthboundMapping = {
      */
     userProperties?: Array<MqttUserProperty>;
 };
-
-export namespace NorthboundMapping {
-
-    /**
-     * How collected tags should or shouldnÖT be aggregated.
-     */
-    export enum messageHandlingOptions {
-        MQTTMESSAGE_PER_TAG = 'MQTTMessagePerTag',
-        MQTTMESSAGE_PER_SUBSCRIPTION = 'MQTTMessagePerSubscription',
-    }
-
-
-}
 

@@ -17,9 +17,13 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.NotFoundError;
+import com.hivemq.api.errors.samples.NoSamplesFoundError;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
+import com.hivemq.http.error.ErrorType;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.ErrorResponseUtil;
@@ -43,7 +47,6 @@ import java.util.List;
 
 @Singleton
 public class SamplingResourceImpl implements SamplingApi {
-
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SamplingResourceImpl.class);
     private static final @NotNull JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
@@ -74,7 +77,7 @@ public class SamplingResourceImpl implements SamplingApi {
         Collections.reverse(samples);
 
         samples.forEach(sample -> sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
-        return Response.ok().entity(new PayloadSampleList(sampleArrayList)).build();
+        return Response.ok(new PayloadSampleList(sampleArrayList)).build();
     }
 
     @Override
@@ -82,8 +85,8 @@ public class SamplingResourceImpl implements SamplingApi {
         final String topic = URLDecoder.decode(topicUrlEncoded, StandardCharsets.UTF_8);
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
-            log.info("No samples were found for the requested topic '{}'.", topic);
-            return ErrorResponseUtil.notFound("samples", topic);
+            log.debug("No samples were found for the requested topic '{}'.", topic);
+            return ErrorResponseUtil.errorResponse(new NoSamplesFoundError(topic));
         }
 
         final ArrayList<JsonNode> jsonSamples = new ArrayList<>();
@@ -93,12 +96,12 @@ public class SamplingResourceImpl implements SamplingApi {
             } catch (final IOException e) {
                 log.warn("Parsing error while trying to create json samples from payload.");
                 log.debug("Original exception: ", e);
-                return Response.serverError().build();
+                return ErrorResponseUtil.errorResponse(new InternalServerError("Parsing error"));
             }
         }
 
         final JsonNode inferredSchema = INFERRER.inferForSamples(jsonSamples);
-        return Response.ok().entity(inferredSchema).build();
+        return Response.ok(inferredSchema).build();
     }
 
     @Override

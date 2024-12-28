@@ -47,7 +47,7 @@ describe('PropertyItem', () => {
 
   it('should render examples properly', () => {
     cy.mountWithProviders(
-      <PropertyItem property={{ ...MOCK_PROPERTY, examples: 'this is a sample' }} isDraggable={false} hasExamples />
+      <PropertyItem property={{ ...MOCK_PROPERTY, examples: ['this is a sample'] }} isDraggable={false} hasExamples />
     )
 
     cy.getByAriaLabel('Property').should('have.attr', 'data-type', 'object')

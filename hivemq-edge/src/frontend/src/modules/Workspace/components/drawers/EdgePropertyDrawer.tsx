@@ -14,6 +14,8 @@ import {
 
 import TopicExplorer from '@/modules/Workspace/components/topics/TopicExplorer.tsx'
 import MetadataExplorer from '@/modules/Workspace/components/topics/MetadataExplorer.tsx'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface NodePropertyDrawerProps {
   nodeId: string
@@ -35,6 +37,7 @@ const EdgePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
+          <NodeNameCard type={NodeTypes.EDGE_NODE} name={t('branding.appName')} />{' '}
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <TopicExplorer onSelect={(topic) => setSelectedTopic(topic)} />

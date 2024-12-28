@@ -18,7 +18,7 @@ package com.hivemq.api.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.samples.PayloadSampleList;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.error.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -75,7 +76,16 @@ public interface SamplingApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = JsonNode.class)))})
+                                                       schema = @Schema(implementation = JsonNode.class))),
+                       @ApiResponse(responseCode = "404",
+                                    description = "No samples found",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class))),
+                       @ApiResponse(responseCode = "500",
+                                    description = "Internal Server Error",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = ProblemDetails.class)))
+               })
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull
     Response getSchemaForTopic(

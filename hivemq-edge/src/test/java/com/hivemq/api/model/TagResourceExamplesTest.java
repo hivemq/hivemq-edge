@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.resources.examples.TagResourceExamples;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.error.Errors;
 import org.junit.jupiter.api.Test;
 
 class TagResourceExamplesTest {
@@ -31,7 +30,5 @@ class TagResourceExamplesTest {
     @Test
     void assertThatExamplesAreParsable() throws JsonProcessingException {
         objectMapper.readValue(TagResourceExamples.EXAMPLE_OPC_UA, DomainTagModelList.class);
-        objectMapper.readValue(TagResourceExamples.EXAMPLE_ALREADY_PRESENT, Errors.class);
-        objectMapper.readValue(TagResourceExamples.EXAMPLE_NOT_PRESENT, Errors.class);
     }
 }

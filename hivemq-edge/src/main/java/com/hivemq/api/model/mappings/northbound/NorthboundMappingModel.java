@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.api.model.JavaScriptConstants;
+import com.hivemq.api.model.QoSModel;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +42,7 @@ public class NorthboundMappingModel {
     private final @NotNull String tagName;
 
     @JsonProperty(value = "messageHandlingOptions", required = true)
-    @Schema(description = "How collected tags should or shouldnÖT be aggregated.")
+    @Schema(description = "How collected tags should or shouldn't be aggregated.")
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
     @JsonProperty(value = "includeTagNames", required = true)
@@ -58,7 +59,7 @@ public class NorthboundMappingModel {
 
     @JsonProperty(value = "maxQoS", required = true)
     @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
-    private final int maxQoS;
+    private final @NotNull QoSModel maxQoS;
 
     @JsonProperty(value = "messageExpiryInterval", required = true)
     @Schema(description = "The message expiry interval.")
@@ -72,7 +73,7 @@ public class NorthboundMappingModel {
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
-            @JsonProperty(value = "maxQoS") final @Nullable Integer maxQoS,
+            @JsonProperty(value = "maxQoS") final @Nullable QoSModel maxQoS,
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.topic = topic;
         this.tagName = tagName;
@@ -81,7 +82,7 @@ public class NorthboundMappingModel {
         this.includeTagNames = Objects.requireNonNullElse(includeTagNames, false);
         this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
-        this.maxQoS = Objects.requireNonNullElse(maxQoS, 1);
+        this.maxQoS = Objects.requireNonNullElse(maxQoS, QoSModel.AT_LEAST_ONCE);
         // we must set a upper limit for the expiry interval as JS otherwise will wrongly round it which leads to an exception when sending it back to the backend
         this.messageExpiryInterval = Math.min(Objects.requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE),
                 JavaScriptConstants.JS_MAX_SAFE_INTEGER);
@@ -111,23 +112,19 @@ public class NorthboundMappingModel {
         return userProperties;
     }
 
-    public int getMaxQoS() {
-        return maxQoS;
-    }
-
     public long getMessageExpiryInterval() {
         return messageExpiryInterval;
     }
 
     public @NotNull NorthboundMapping to() {
         // re-translate the max safe js value to the max java value.
-       final long messageExpiry = messageExpiryInterval == JavaScriptConstants.JS_MAX_SAFE_INTEGER ?
+        final long messageExpiry = messageExpiryInterval == JavaScriptConstants.JS_MAX_SAFE_INTEGER ?
                 Long.MAX_VALUE :
                 messageExpiryInterval;
 
         return new NorthboundMapping(this.tagName,
                 this.topic,
-                this.maxQoS,
+                this.maxQoS.getQosNumber(),
                 messageExpiry,
                 this.messageHandlingOptions,
                 this.includeTagNames,
@@ -147,7 +144,7 @@ public class NorthboundMappingModel {
                         .stream()
                         .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
                         .collect(Collectors.toList()),
-                northboundMapping.getMqttQos(),
+                QoSModel.fromNumber(northboundMapping.getMqttQos()),
                 northboundMapping.getMessageExpiryInterval());
     }
 }

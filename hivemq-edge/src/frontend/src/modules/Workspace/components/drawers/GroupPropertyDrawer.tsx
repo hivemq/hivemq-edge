@@ -2,7 +2,6 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Node } from 'reactflow'
 import {
-  Box,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -19,6 +18,7 @@ import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import GroupMetadataEditor from '../parts/GroupMetadataEditor.tsx'
 import { ChartType } from '@/modules/Metrics/types.ts'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 interface GroupPropertyDrawerProps {
   nodeId: string
@@ -56,14 +56,11 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
 
         <DrawerHeader>
           <Text data-testid="group-panel-title">{panelTitle}</Text>
-          <Box data-testid="group-panel-keys">
-            {selectedNode.data.childrenNodeIds.map((e) => (
-              <Text key={e}>
-                {t('workspace.device.type', { context: NodeTypes.ADAPTER_NODE })}:{' '}
-                {nodes.find((x) => x.id === e)?.data.id}
-              </Text>
-            ))}
-          </Box>
+          <NodeNameCard
+            description={t('workspace.device.type', { context: selectedNode.type })}
+            type={selectedNode.type as NodeTypes}
+            name={selectedNode.data.title}
+          />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {showConfig && (

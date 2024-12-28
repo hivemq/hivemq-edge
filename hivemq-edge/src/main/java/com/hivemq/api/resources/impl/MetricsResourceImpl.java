@@ -20,12 +20,14 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.UrlParameterMissingError;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.Metric;
 import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -55,7 +57,7 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         while (itr.hasNext()){
             builder.add(new Metric(itr.next()));
         }
-        return Response.status(200).entity(new MetricList(builder.build())).build();
+        return Response.ok(new MetricList(builder.build())).build();
     }
 
     @Override
@@ -63,18 +65,17 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
         if(ApiErrorUtils.hasRequestErrors(messages)){
-            return ApiErrorUtils.badRequest(messages);
+            return ErrorResponseUtil.errorResponse(new UrlParameterMissingError("metricName"));
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
             SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
             Counter counter = metrics.get(metricName);
             if(counter != null){
                 DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
-                return Response.status(200).entity(dataPoint).build();
+                return Response.ok(dataPoint).build();
             } else {
                 DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
-                return Response.status(200).entity(dataPoint).build();
-//                return Response.status(Response.Status.NOT_FOUND).build();
+                return Response.ok(dataPoint).build();
             }
         }
     }

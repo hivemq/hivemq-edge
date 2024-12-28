@@ -16,12 +16,16 @@
 package com.hivemq.api.error;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.api.errors.InvalidInputError;
+import com.hivemq.api.errors.ValidationError;
+import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Priority;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import java.util.List;
 
 @Priority(1)
 public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
@@ -30,9 +34,9 @@ public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMap
     public @NotNull Response toResponse(final @NotNull JsonMappingException exception) {
         final String originalMessage = exception.getOriginalMessage();
         if (originalMessage != null) {
-            return ErrorResponseUtil.invalidInput("Unable to parse JSON body: " + originalMessage);
+            return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(originalMessage, null))));
         } else {
-            return ErrorResponseUtil.invalidInput("Unable to parse JSON body, please check the input format.");
+            return ErrorResponseUtil.errorResponse(new InvalidInputError("Unable to parse JSON body, please check the input format."));
         }
     }
 }

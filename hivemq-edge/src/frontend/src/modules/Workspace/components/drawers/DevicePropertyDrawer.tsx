@@ -15,10 +15,10 @@ import { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import DeviceMetadataViewer from '@/modules/Device/components/DeviceMetadataViewer.tsx'
 import DeviceTagList from '@/modules/Device/components/DeviceTagList.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { DeviceMetadata } from '@/modules/Workspace/types.ts'
+import { DeviceMetadata, NodeTypes } from '@/modules/Workspace/types.ts'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 interface DevicePropertyDrawerProps {
   nodeId: string
@@ -48,12 +48,14 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
+          <NodeNameCard
+            name={selectedNode.data.name}
+            type={selectedNode.type as NodeTypes}
+            description={selectedNode.data.id}
+          />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          <DrawerBody display="flex" flexDirection="column" gap={6}>
-            <DeviceMetadataViewer protocolAdapter={protocol} />
-            <DeviceTagList adapter={adapter} />
-          </DrawerBody>
+          <DeviceTagList adapter={adapter} />
         </DrawerBody>
       </DrawerContent>
     </Drawer>

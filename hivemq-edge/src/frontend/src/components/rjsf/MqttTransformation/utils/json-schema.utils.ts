@@ -92,7 +92,7 @@ export const reducerSchemaExamples = (state: RJSFSchema, event: JsonNode) =>
     })
     .with(P._, ([allStates, examples]) => {
       if (!examples) return allStates
-      return { ...allStates, examples: examples }
+      return { ...allStates, examples: [examples] }
     })
     .exhaustive()
 

@@ -55,6 +55,11 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("ethernet-ip");
+    }
+
+    @Override
     public @NotNull String getDisplayName() {
         return "Ethernet IP Protocol Adapter";
     }
@@ -124,12 +129,12 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return EipSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return EipSpecificAdapterConfig.class;
     }
 }

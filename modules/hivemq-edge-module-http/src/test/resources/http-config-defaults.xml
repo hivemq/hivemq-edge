@@ -27,6 +27,7 @@
                 <southboundMapping>
                     <tagName>tag2</tagName>
                     <topicFilter>my/#</topicFilter>
+                    <fromNorthSchema>{}</fromNorthSchema>
                 </southboundMapping>
             </southboundMappings>
             <northboundMappings>

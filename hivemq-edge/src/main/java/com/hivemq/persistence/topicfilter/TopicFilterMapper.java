@@ -15,20 +15,22 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import org.jetbrains.annotations.NotNull;
 
 public class TopicFilterMapper {
 
     public static @NotNull TopicFilter topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
+        final String schema = topicFilterXmlEntity.getSchema();
         return new TopicFilter(topicFilterXmlEntity.getTopicFilter(),
                 topicFilterXmlEntity.getDescription(),
-                topicFilterXmlEntity.getSchema());
+                schema != null && !schema.isBlank() ? DataUrl.create(schema) : null);
     }
 
     public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilter topicFilter) {
         return new TopicFilterXmlEntity(topicFilter.getTopicFilter(),
                 topicFilter.getDescription(),
-                topicFilter.getSchema());
+                topicFilter.getSchema() != null ? topicFilter.getSchema().toString() : null);
     }
 }

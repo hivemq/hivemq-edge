@@ -110,11 +110,9 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(0);
         }, mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubbb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(0);
         });
     }
 
@@ -132,10 +130,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOverrideUri()).isFalse();
         assertThat(config.getSecurity().getPolicy()).isEqualTo(NONE);
 
-        assertThat(config.getAuth()).satisfies(auth -> {
-            assertThat(auth.getBasicAuth()).isNull();
-            assertThat(auth.getX509Auth()).isNull();
-        });
+        assertThat(config.getAuth()).isNull();
 
         assertThat(config.getTls()).satisfies(tls -> {
             assertThat(tls.isEnabled()).isFalse();
@@ -158,7 +153,6 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
-            assertThat(mapping.getMaxQoS()).isEqualTo(1);
         });
     }
 
@@ -246,9 +240,7 @@ class OpcUaProtocolAdapterConfigTest {
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull(); // must be empty
 
-        final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
-        assertThat((Map<String, Object>) authMap.get("basic")).isNull();
-        assertThat((Map<String, Object>) authMap.get("x509")).isNull();
+        assertThat(config.get("auth")).isNull();
 
         final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
         assertThat(tlsMap.get("enabled")).isEqualTo(false);
@@ -270,10 +262,10 @@ class OpcUaProtocolAdapterConfigTest {
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(true);
 
-        OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
-        ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        final OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
+        final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
         when(manager.get("opcua")).thenReturn(Optional.of(protocolAdapterFactory));
-        ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
+        final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
         return converter;
     }
 

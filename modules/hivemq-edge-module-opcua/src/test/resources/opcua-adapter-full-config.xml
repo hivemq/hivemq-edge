@@ -70,12 +70,12 @@
                 <southboundMapping>
                     <tagName>ns=1;i=1004</tagName>
                     <topicFilter>test/blubb/#</topicFilter>
-                    <maxQos>0</maxQos>
+                    <fromNorthSchema>{}</fromNorthSchema>
                 </southboundMapping>
                 <southboundMapping>
                     <tagName>ns=2;i=1004</tagName>
                     <topicFilter>test/blubbb/#</topicFilter>
-                    <maxQos>0</maxQos>
+                    <fromNorthSchema>{}</fromNorthSchema>
                 </southboundMapping>
             </southboundMappings>
             <tags>

@@ -89,11 +89,6 @@ public class MqttToHttpMapping implements WritingContext {
         return mqttTopicFilter;
     }
 
-    @Override
-    public int getMaxQoS() {
-        return mqttMaxQos;
-    }
-
     public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }

@@ -10,9 +10,10 @@ import {
   getOutgoers,
 } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '@chakra-ui/react'
+import { Divider, HStack, Icon, Text, useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
+import { BsGripVertical } from 'react-icons/bs'
 
 import { Adapter, Status } from '@/api/__generated__'
 import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
@@ -28,10 +29,12 @@ interface ContextualToolbarProps extends SelectedNodeProps {
   onOpenPanel?: MouseEventHandler | undefined
   children?: React.ReactNode
   hasNoOverview?: boolean
+  title?: string
 }
 
 const ContextualToolbar: FC<ContextualToolbarProps> = ({
   id,
+  title,
   onOpenPanel,
   children,
   hasNoOverview = false,
@@ -126,46 +129,62 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const isGroupable = selectedGroupCandidates
 
   return (
-    <>
-      {!hasNoOverview && (
-        <NodeToolbar
-          isVisible={Boolean(mainNodes?.id === id && !dragging)}
-          position={Position.Right}
-          role="toolbar"
-          aria-label={t('workspace.toolbar.container.right')}
-        >
-          <ToolbarButtonGroup>
-            <IconButton
-              data-testid="node-group-toolbar-panel"
-              icon={<LuPanelRightOpen />}
-              aria-label={t('workspace.toolbar.command.overview')}
-              onClick={onOpenPanel}
-            />
-          </ToolbarButtonGroup>
-        </NodeToolbar>
-      )}
-      {(children || isGroupable) && (
-        <NodeToolbar
-          isVisible={Boolean(mainNodes?.id === id && !dragging)}
-          position={Position.Left}
-          role="toolbar"
-          aria-label={t('workspace.toolbar.container.left')}
-          style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
-        >
-          {children}
-          {isGroupable && (
+    <NodeToolbar
+      isVisible={Boolean(mainNodes?.id === id && !dragging)}
+      position={Position.Top}
+      role="toolbar"
+      aria-label={t('workspace.toolbar.container.label')}
+    >
+      <HStack
+        sx={{
+          borderColor: 'var(--chakra-colors-chakra-border-color)',
+          _dark: {
+            borderWidth: 1,
+          },
+          // paddingLeft: 2,
+          paddingRight: 2,
+          borderRadius: 'var(--chakra-radii-md)',
+          backgroundColor: 'var(--chakra-colors-chakra-body-bg)',
+          boxShadow:
+            'rgba(17, 17, 26, 0.1) 0px 4px 16px, rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 56px;',
+        }}
+        height="50px"
+      >
+        <Icon as={BsGripVertical} boxSize={7} aria-hidden={true} />
+        <Text data-testid="toolbar-title">{title || id}</Text>
+        {children && (
+          <>
+            <Divider orientation="vertical" />
+            {children}
+          </>
+        )}
+
+        <Divider orientation="vertical" />
+        <ToolbarButtonGroup>
+          <IconButton
+            isDisabled={!isGroupable}
+            data-testid="node-group-toolbar-group"
+            icon={<ImMakeGroup />}
+            aria-label={t('workspace.toolbar.command.group')}
+            onClick={onCreateGroup}
+          />
+        </ToolbarButtonGroup>
+
+        {!hasNoOverview && (
+          <>
+            <Divider orientation="vertical" />
             <ToolbarButtonGroup>
               <IconButton
-                data-testid="node-group-toolbar-group"
-                icon={<ImMakeGroup />}
-                aria-label={t('workspace.toolbar.command.group')}
-                onClick={onCreateGroup}
+                data-testid="node-group-toolbar-panel"
+                icon={<LuPanelRightOpen />}
+                aria-label={t('workspace.toolbar.command.overview')}
+                onClick={onOpenPanel}
               />
             </ToolbarButtonGroup>
-          )}
-        </NodeToolbar>
-      )}
-    </>
+          </>
+        )}
+      </HStack>
+    </NodeToolbar>
   )
 }
 

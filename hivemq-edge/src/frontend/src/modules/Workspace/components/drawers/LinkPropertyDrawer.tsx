@@ -1,13 +1,14 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Node } from 'reactflow'
-import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
+import { Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
-
-import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
-import { NodeTypes } from '../../types.ts'
+import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { getDefaultMetricsFor } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 interface LinkPropertyDrawerProps {
   nodeId: string
@@ -19,20 +20,25 @@ interface LinkPropertyDrawerProps {
 
 const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose }) => {
   const { t } = useTranslation()
+  const { data: protocols } = useGetAdapterTypes()
+  const adapterProtocol =
+    selectedNode.type === NodeTypes.ADAPTER_NODE
+      ? protocols?.items?.find((e) => e.id === (selectedNode as Node<Adapter>).data.type)
+      : undefined
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
-      {/*<DrawerOverlay />*/}
       <DrawerContent>
         <DrawerCloseButton />
 
         <DrawerHeader>
-          <Box>
-            <Text>{t('workspace.observability.header', { context: selectedNode.type })}</Text>
-            <Text>
-              {t('workspace.device.type', { context: selectedNode.type })}: {selectedNode.data.id}
-            </Text>
-          </Box>
+          <Text>{t('workspace.observability.header', { context: selectedNode.type })}</Text>
+          <NodeNameCard
+            name={selectedNode.data.id}
+            type={selectedNode.type as NodeTypes}
+            icon={adapterProtocol?.logoUrl}
+            description={adapterProtocol?.name}
+          />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <MetricsContainer

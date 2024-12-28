@@ -21,7 +21,7 @@ describe('ToolbarButtonGroup', () => {
       }
     )
 
-    cy.get('[role="group"]').should('have.attr', 'data-orientation', 'vertical')
+    cy.get('[role="group"]').should('have.attr', 'data-orientation', 'horizontal')
     cy.getByAriaLabel('second button').should('be.visible')
     cy.getByAriaLabel('first button').should('be.visible')
   })

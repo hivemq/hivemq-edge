@@ -19,7 +19,7 @@ import {
 
 import { TopicFilter } from '@/api/__generated__'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
-import SchemaManager from '@/modules/TopicFilters/components/SchemaManager.tsx'
+import TopicSchemaManager from '@/modules/TopicFilters/components/TopicSchemaManager.tsx'
 
 interface TopicSchemaDrawerProps {
   topicFilter: TopicFilter
@@ -39,7 +39,7 @@ const TopicSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ topicFilter, trigger })
   return (
     <>
       {trigger(props)}
-      <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} closeOnOverlayClick={false}>
+      <Drawer isOpen={isOpen} placement="right" size="lg" onClose={onClose} closeOnOverlayClick={false}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
@@ -48,12 +48,13 @@ const TopicSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ topicFilter, trigger })
           </DrawerHeader>
 
           <DrawerBody>
-            <Card>
+            <Card size="sm">
               <CardHeader>
+                <Text as="span">{t('topicFilter.schema.title')}</Text>{' '}
                 <Topic tagTitle={topicFilter.topicFilter} mr={3} />
               </CardHeader>
               <CardBody>
-                <SchemaManager topicFilter={topicFilter} />
+                <TopicSchemaManager topicFilter={topicFilter} />
               </CardBody>
             </Card>
           </DrawerBody>

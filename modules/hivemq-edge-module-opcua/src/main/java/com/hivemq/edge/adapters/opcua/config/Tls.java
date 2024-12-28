@@ -16,24 +16,29 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
 public class Tls {
 
     @JsonProperty("enabled")
-    @ModuleConfigField(title = "Enable TLS", description = "Enables TLS encrypted connection", defaultValue = "true")
+    @ModuleConfigField(title = "Enable TLS", description = "Enables TLS encrypted connection", defaultValue = "false")
     private final boolean enabled;
 
     @JsonProperty("keystore")
+    @JsonInclude(NON_NULL)
     @ModuleConfigField(title = "Keystore",
                        description = "Keystore that contains the client certificate including the chain. Required for X509 authentication.")
     private final @Nullable Keystore keystore;
 
     @JsonProperty("truststore")
+    @JsonInclude(NON_NULL)
     @ModuleConfigField(title = "Truststore",
                        description = "Truststore wich contains the trusted server certificates or trusted intermediates.")
     private final @Nullable Truststore truststore;
@@ -43,7 +48,7 @@ public class Tls {
             @JsonProperty("enabled") final @Nullable Boolean enabled,
             @JsonProperty("keystore") final @Nullable Keystore keystore,
             @JsonProperty("truststore") final @Nullable Truststore truststore) {
-        this.enabled = Objects.requireNonNullElse(enabled, true);
+        this.enabled = Objects.requireNonNullElse(enabled, false);
         this.keystore = keystore;
         this.truststore = truststore;
     }

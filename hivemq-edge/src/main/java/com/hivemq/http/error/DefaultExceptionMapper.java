@@ -17,10 +17,16 @@ package com.hivemq.http.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.HttpStatus;
+import com.hivemq.api.errors.BadRequestError;
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.InvalidInputError;
+import com.hivemq.api.errors.MethodNotAllowedError;
+import com.hivemq.api.errors.NotFoundError;
+import com.hivemq.api.errors.UnsupportedMediaTypeError;
+import com.hivemq.api.errors.ValidationError;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +40,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.EOFException;
+import java.util.List;
 
 
 @Provider
@@ -53,33 +60,25 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null);
+                return ErrorResponseUtil.errorResponse(new NotFoundError());
             } else if (exception instanceof BadRequestException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Bad request",
-                        exception.getMessage());
+                return ErrorResponseUtil.errorResponse(new BadRequestError(exception.getMessage()));
             } else if (exception instanceof NotAllowedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null);
+                return ErrorResponseUtil.errorResponse(new MethodNotAllowedError());
             } else if (exception instanceof NotSupportedException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415,
-                        "Unsupported Media Type",
-                        null);
+                return ErrorResponseUtil.errorResponse(new UnsupportedMediaTypeError());
             }
             //build a new response to prevent additional information from being passed out to the http clients by the exception
-            return ErrorResponseUtil.errorResponse(status, "Internal error", null);
+            return ErrorResponseUtil.errorResponse(new InternalServerError("Internal error"));
         }
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
-                        "Invalid input",
-                        "Unrecognized field \"" +
-                                ((UnrecognizedPropertyException) exception).getPropertyName() +
-                                "\", not marked as ignorable");
+                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName()))));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);
-            return ErrorResponseUtil.invalidInput("Unable to parse JSON body");
+            return ErrorResponseUtil.errorResponse(new InvalidInputError("Unparseable JSOn: " +exception.getMessage()));
         }
 
         //handle EOF exception if connection is closed while the request/response is in progress
@@ -87,11 +86,11 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             log.trace("EOF in REST API, connection has been closed before request/response could complete");
             //build a new response to prevent additional information from being passed out to the http clients by the exception
             //response code does not really matter here as it cannot be transmitted anyway
-            return ErrorResponseUtil.genericError(null);
+            return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
 
         log.debug("Uncaught exception in REST API", exception);
         Exceptions.rethrowError(exception);
-        return ErrorResponseUtil.genericError(null);
+        return ErrorResponseUtil.errorResponse(new InternalServerError(null));
     }
 }

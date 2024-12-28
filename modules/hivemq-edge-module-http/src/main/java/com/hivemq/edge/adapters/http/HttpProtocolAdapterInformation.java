@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.http.config.BidirectionalHttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.apache.commons.io.IOUtils;
@@ -75,7 +74,7 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getVersion() {
-        return "${edge-version} (BETA)";
+        return "${edge-version}";
     }
 
     @Override
@@ -125,12 +124,12 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return HttpSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
-        return BidirectionalHttpSpecificAdapterConfig.class;
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
+        return HttpSpecificAdapterConfig.class;
     }
 }

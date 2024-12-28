@@ -18,8 +18,8 @@ import { DomainTagList } from '@/api/__generated__'
 import DeviceTagForm from '@/modules/Device/components/DeviceTagForm.tsx'
 import { ManagerContextType } from '@/modules/Mappings/types.ts'
 
-interface DeviceTagDrawerProps {
-  context: ManagerContextType
+interface DeviceTagDrawerProps<T> {
+  context: ManagerContextType<T>
   // TODO[NVL] Make the component generic and pass the type
   onSubmit?: (data: unknown) => void
   trigger: (disclosureProps: UseDisclosureProps) => JSX.Element
@@ -27,7 +27,8 @@ interface DeviceTagDrawerProps {
   submitLabel?: string
 }
 
-const ArrayItemDrawer: FC<DeviceTagDrawerProps> = ({ header, context, onSubmit, trigger, submitLabel }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ArrayItemDrawer: FC<DeviceTagDrawerProps<any>> = ({ header, context, onSubmit, trigger, submitLabel }) => {
   const { t } = useTranslation('components')
   const props = useDisclosure()
   const { isOpen, onClose } = props

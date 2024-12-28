@@ -26,4 +26,6 @@ public interface InternalWritingContext extends WritingContext {
    @NotNull
    FieldMapping getFieldMapping();
 
+   @NotNull
+    String getSchema();
 }

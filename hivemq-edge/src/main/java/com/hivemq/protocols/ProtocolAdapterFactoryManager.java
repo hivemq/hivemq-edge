@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -60,10 +60,15 @@ public class ProtocolAdapterFactoryManager {
     }
 
     public @NotNull Map<String, ProtocolAdapterInformation> getAllAvailableAdapterTypes() {
-        return factoryMap.values()
-                .stream()
-                .map(ProtocolAdapterFactory::getInformation)
-                .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
+        final Map<String, ProtocolAdapterInformation> protocolIdToInformation = new HashMap<>();
+        for (final ProtocolAdapterFactory<?> factory : factoryMap.values()) {
+            final ProtocolAdapterInformation information = factory.getInformation();
+            protocolIdToInformation.put(information.getProtocolId(), information);
+            for (final String legacyProtocolId : information.getLegacyProtocolIds()) {
+                protocolIdToInformation.put(legacyProtocolId, information);
+            }
+        }
+        return protocolIdToInformation;
     }
 
     public void writingEnabledChanged(final boolean writingEnabled) {
@@ -75,7 +80,7 @@ public class ProtocolAdapterFactoryManager {
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull EventService eventService,
             final boolean writingEnabled) {
-        Map<String, ProtocolAdapterFactory<?>> factoryMap = new HashMap<>();
+        final Map<String, ProtocolAdapterFactory<?>> factoryMap = new HashMap<>();
         final List<Class<? extends ProtocolAdapterFactory>> implementations =
                 moduleLoader.findImplementations(ProtocolAdapterFactory.class);
 
@@ -90,20 +95,25 @@ public class ProtocolAdapterFactoryManager {
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
+                for (final String legacyProtocolId : information.getLegacyProtocolIds()) {
+                    factoryMap.put(legacyProtocolId, protocolAdapterFactory);
+                }
             } catch (final InvocationTargetException | InstantiationException | IllegalAccessException |
                            NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}.", e.getMessage());
             }
         }
 
+
+        final Set<String> uniqueProtocolNames = factoryMap.values()
+                .stream()
+                .map(protocolAdapterFactory -> "'" + protocolAdapterFactory.getInformation().getProtocolName() + "'")
+                .collect(Collectors.toSet());
+
+
         log.info("Discovered {} protocol adapter-type(s): [{}].",
-                factoryMap.size(),
-                factoryMap.values()
-                        .stream()
-                        .map(protocolAdapterFactory -> "'" +
-                                protocolAdapterFactory.getInformation().getProtocolName() +
-                                "'")
-                        .collect(Collectors.joining(", ")));
+                uniqueProtocolNames.size(),
+                String.join(", ", uniqueProtocolNames));
         return factoryMap;
     }
 

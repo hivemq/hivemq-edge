@@ -56,6 +56,11 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return List.of("opc-ua-client");
+    }
+
+    @Override
     public @NotNull String getDisplayName() {
         return "OPC UA Protocol Adapter";
     }
@@ -123,12 +128,12 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
         return OpcUaSpecificAdapterConfig.class;
     }
 
     @Override
-    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassWritingAndReading() {
+    public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return BidirectionalOpcUaSpecificAdapterConfig.class;
     }
 }

@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
-import { Box, Button, Card, CardBody, CardFooter, SimpleGrid, Skeleton } from '@chakra-ui/react'
-import { ArrowForwardIcon } from '@chakra-ui/icons'
+import { Box, Button, Card, CardBody, CardFooter, Link, SimpleGrid, Skeleton } from '@chakra-ui/react'
+import { ArrowForwardIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
 import { ProtocolAdapter } from '@/api/__generated__'
@@ -61,6 +61,11 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
                 >
                   {t('protocolAdapter.action.createInstance')}
                 </Button>
+              )}
+              {!e.installed && (
+                <Link href={e.url} isExternal data-testid="protocol-install-adapter">
+                  {t('protocolAdapter.overview.installation')} <ExternalLinkIcon />
+                </Link>
               )}
             </Skeleton>
           </CardFooter>

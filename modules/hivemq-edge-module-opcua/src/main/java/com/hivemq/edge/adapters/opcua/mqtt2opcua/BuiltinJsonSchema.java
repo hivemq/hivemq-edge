@@ -35,7 +35,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 public class BuiltinJsonSchema {
 
@@ -44,6 +47,9 @@ public class BuiltinJsonSchema {
     private static final @NotNull String MINIMUM_KEY_WORD = "minimum";
     private static final @NotNull String MAXIMUM_KEY_WORD = "maximum";
     public static final @NotNull String INTEGER_DATA_TYPE = "integer";
+    public static final @NotNull String ARRAY_DATA_TYPE = "array";
+    public static final @NotNull String ARRAY_ITEMS = "items";
+    public static final @NotNull String ARRAY_MAX_TIMES = "maxItems";
 
     private final @NotNull HashMap<BuiltinDataType, JsonNode> classToJsonSchema = new HashMap<>();
 
@@ -52,8 +58,10 @@ public class BuiltinJsonSchema {
             classToJsonSchema.put(BuiltinDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", BuiltinDataType.Boolean));
 
-            classToJsonSchema.put(BuiltinDataType.SByte, createJsonSchemaForBuiltinType(" SByte JsonSchema", BuiltinDataType.SByte));
-            classToJsonSchema.put(BuiltinDataType.Byte, createJsonSchemaForBuiltinType(" Byte JsonSchema", BuiltinDataType.Byte));
+            classToJsonSchema.put(BuiltinDataType.SByte,
+                    createJsonSchemaForBuiltinType("SByte JsonSchema", BuiltinDataType.SByte));
+            classToJsonSchema.put(BuiltinDataType.Byte,
+                    createJsonSchemaForBuiltinType("Byte JsonSchema", BuiltinDataType.Byte));
 
             classToJsonSchema.put(BuiltinDataType.UInt64,
                     createJsonSchemaForBuiltinType("UInt64 JsonSchema", BuiltinDataType.UInt64));
@@ -110,8 +118,7 @@ public class BuiltinJsonSchema {
     }
 
     private @NotNull JsonNode createJsonSchemaForBuiltinType(
-            final @NotNull String title,
-            final @NotNull BuiltinDataType builtinDataType) {
+            final @NotNull String title, final @NotNull BuiltinDataType builtinDataType) {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
@@ -127,6 +134,53 @@ public class BuiltinJsonSchema {
         rootNode.set("required", requiredAttributes);
 
         return rootNode;
+    }
+
+    public @NotNull JsonNode getJsonSchema(final @NotNull BuiltinDataType builtinDataType,
+                                           final @NotNull UInteger[] dimensions) {
+
+        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
+        rootNode.set("type", new TextNode("object"));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+        populatePropertiesForArray(valueNode, builtinDataType, OBJECT_MAPPER, dimensions);
+
+        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
+        return rootNode;
+    }
+
+    public static void populatePropertiesForArray(final @NotNull ObjectNode propertiesNode,
+                                                  final @NotNull BuiltinDataType builtinDataType,
+                                                  final @NotNull ObjectMapper objectMapper,
+                                                  final @NotNull UInteger[] dimensions) {
+            if(dimensions.length == 0) {
+                throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
+            }
+            final long maxSize = dimensions[0].longValue();
+
+            propertiesNode.set("type", new TextNode(ARRAY_DATA_TYPE));
+
+            //0 for a dimension means unlimited
+            if(maxSize > 0) {
+                propertiesNode.set("maxItems", new LongNode(maxSize));
+                propertiesNode.set("minItems", new LongNode(maxSize));
+            }
+            final ObjectNode itemsNode = objectMapper.createObjectNode();
+            propertiesNode.set("items", itemsNode);
+
+            if (dimensions.length == 1) {
+                //last element, we can now set the array type
+                populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
+            } else {
+                //nesting deeper
+                populatePropertiesForArray(itemsNode, builtinDataType, objectMapper, Arrays.copyOfRange(dimensions, 1, dimensions.length));
+            }
     }
 
     public static void populatePropertiesForBuiltinType(
@@ -156,6 +210,10 @@ public class BuiltinJsonSchema {
             case LocalizedText:
                 nestedPropertiesNode.set("type", new TextNode("string"));
                 return;
+            case DateTime:
+                nestedPropertiesNode.set("type", new TextNode("string"));
+                nestedPropertiesNode.set("format", new TextNode("date-time"));
+                return;
             case Int16:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Short.MIN_VALUE));
@@ -177,7 +235,6 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(UInteger.MIN_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(UInteger.MAX_VALUE));
                 return;
-            case DateTime:
             case Int64:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(Long.MIN_VALUE));
@@ -195,7 +252,7 @@ public class BuiltinJsonSchema {
                 return;
             case Double:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new DoubleNode(Double.MIN_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new DoubleNode(-Double.MAX_VALUE));
                 nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new DoubleNode(Double.MAX_VALUE));
                 return;
             case QualifiedName:

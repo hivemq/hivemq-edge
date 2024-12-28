@@ -27,8 +27,9 @@ import java.util.List;
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class FilePayload {
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("timestamp")
-    private final @NotNull Long timestamp;
+    private final @Nullable Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private final @Nullable List<MqttUserProperty> userProperties;
@@ -36,15 +37,19 @@ public class FilePayload {
     @JsonProperty("value")
     private final @NotNull Object value;
 
-    @JsonProperty("tagName")
-    private final @NotNull String tagName;
-
     @JsonProperty("contentType")
     private final @NotNull String contentType;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("tagName")
+    private final @Nullable String tagName;
+
     public FilePayload(
-            final @NotNull Long timestamp, final @NotNull List<MqttUserProperty> userProperties,
-            final @NotNull Object value, final @NotNull String tagName, final @NotNull ContentType contentType) {
+            final @NotNull List<MqttUserProperty> userProperties,
+            final @NotNull Object value,
+            final @NotNull ContentType contentType,
+            final @Nullable String tagName,
+            final @Nullable Long timestamp) {
         this.timestamp = timestamp;
         this.userProperties = userProperties;
         this.value = value;

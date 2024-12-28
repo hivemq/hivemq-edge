@@ -21,22 +21,22 @@ import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SouthboundMapping implements WritingContext {
+public class SouthboundMapping implements InternalWritingContext {
 
     private final @NotNull String topicFilter;
     private final @NotNull String tagName;
-    private final int maxQoS;
-    private final @Nullable FieldMapping fieldMapping;
+    private final @NotNull FieldMapping fieldMapping;
+    private final @NotNull String schema;
 
     public SouthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final int maxQoS,
-            final @Nullable FieldMapping fieldMapping) {
+            final @NotNull FieldMapping fieldMapping,
+            final @NotNull String schema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
-        this.maxQoS = maxQoS;
         this.fieldMapping = fieldMapping;
+        this.schema = schema;
     }
 
     public @NotNull String getTopicFilter() {
@@ -47,21 +47,13 @@ public class SouthboundMapping implements WritingContext {
         return tagName;
     }
 
-    public int getMaxQoS() {
-        return maxQoS;
-    }
-
-    public @Nullable FieldMapping getFieldMapping() {
+    public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }
 
-    public static @NotNull SouthboundMapping from(
-            final @NotNull InternalWritingContext writingContext) {
-        return new SouthboundMapping(
-                writingContext.getTagName(),
-                writingContext.getTopicFilter(),
-                writingContext.getMaxQoS(),
-                writingContext.getFieldMapping());
+    @Override
+    public @NotNull String getSchema() {
+        return schema;
     }
 
     @Override
@@ -75,8 +67,6 @@ public class SouthboundMapping implements WritingContext {
                 ", tagName='" +
                 tagName +
                 '\'' +
-                ", maxQoS=" +
-                maxQoS +
                 '}';
     }
 }

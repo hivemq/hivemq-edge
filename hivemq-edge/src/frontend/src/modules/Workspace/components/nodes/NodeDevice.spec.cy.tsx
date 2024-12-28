@@ -30,7 +30,7 @@ describe('NodeDevice', () => {
       />
     )
     cy.getByTestId('device-description').should('contain', 'Simulation')
-    cy.get('[role="toolbar"] button').should('have.length', 1)
+    cy.get('[role="toolbar"] button').should('have.length', 2)
     cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Edit device tags')
 
     cy.getByTestId('test-navigate-pathname').should('have.text', '/')

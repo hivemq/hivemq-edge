@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.mqtt2opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
@@ -46,7 +47,13 @@ import org.opcfoundation.opcua.binaryschema.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -108,7 +115,11 @@ public class JsonToOpcUAConverter {
                     rootNode);
 
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                return parsetoOpcUAObject(builtinType, rootNode);
+                if(rootNode.isArray()) {
+                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
+                } else {
+                    return parsetoOpcUAObject(builtinType, rootNode);
+                }
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
@@ -359,8 +370,8 @@ public class JsonToOpcUAConverter {
     }
 
     private static DateTime extractDateTime(final JsonNode jsonNode) {
-        if (jsonNode.isLong()) {
-            return new DateTime(jsonNode.asLong());
+        if (jsonNode.isTextual()) {
+            return new DateTime(Date.from(Instant.parse(jsonNode.asText())));
         }
         throw createException(jsonNode, BuiltinDataType.DateTime.name());
     }
@@ -372,10 +383,24 @@ public class JsonToOpcUAConverter {
         throw createException(jsonNode, BuiltinDataType.String.name());
     }
 
+
     static double extractDouble(final JsonNode jsonNode) {
         if (jsonNode.isDouble()) {
             return jsonNode.asDouble();
         }
+
+        if (jsonNode.isInt()) {
+            final double parsedDouble = jsonNode.intValue();
+            final int parsedIntegerBack = (int) parsedDouble;
+            if (parsedIntegerBack != jsonNode.intValue()) {
+                throw new IllegalArgumentException(String.format(
+                        "An integer was supplied for a double node that is not representable without rounding. Input Integer: '%d', Output Double: '%f'. To avoid inaccuracies the publish will not be consumed.",
+                        jsonNode.intValue(),
+                        parsedDouble));
+            }
+            return parsedDouble;
+        }
+
         throw createException(jsonNode, BuiltinDataType.Double.name());
     }
 
@@ -387,6 +412,19 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isFloat()) {
             return jsonNode.floatValue();
         }
+
+        if (jsonNode.isInt()) {
+            final float parsedFloat = jsonNode.intValue();
+            final int parsedIntegerBack = (int) parsedFloat;
+            if (parsedIntegerBack != jsonNode.intValue()) {
+                throw new IllegalArgumentException(String.format(
+                        "An integer was supplied for a float node that is not representable without rounding. Input Integer: '%d', Output Float: '%f'. To avoid inaccuracies the publish will not be consumed.",
+                        jsonNode.intValue(),
+                        parsedFloat));
+            }
+            return parsedFloat;
+        }
+
         throw createException(jsonNode, BuiltinDataType.Float.name());
     }
 
@@ -545,5 +583,19 @@ public class JsonToOpcUAConverter {
                 "' cannot be concerted to " +
                 intendedClass +
                 "due to underflow.");
+    }
+
+    private Object[] generateArrayFromArrayNode(final @NotNull ArrayNode arrayNode, final @NotNull BuiltinDataType type) {
+        Object[] ret = (Object[])Array.newInstance(type.getBackingClass(), arrayNode.size());
+
+        for (int i = 0; i < arrayNode.size(); i++) {
+            JsonNode arrayEntry = arrayNode.get(i);
+            if (arrayEntry.isArray()) {
+                ret[i] = generateArrayFromArrayNode((ArrayNode) arrayEntry, type);
+            } else {
+                ret[i] = parsetoOpcUAObject(type, arrayEntry);
+            }
+        }
+        return ret;
     }
 }

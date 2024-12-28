@@ -17,11 +17,11 @@ package com.hivemq.edge.adapters.file.payload;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.adapters.file.FilePollingProtocolAdapter;
-import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,18 +37,22 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
     @Override
     public @NotNull List<byte[]> convertToJson(
             final @NotNull ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
-        List<byte[]> payloads = new ArrayList<>();
-        for (DataPoint dataPoint : sample.getDataPoints()) {
+        final List<byte[]> payloads = new ArrayList<>();
+        for (final DataPoint dataPoint : sample.getDataPoints()) {
             try {
-                FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
-                final FilePayload value = new FilePayload(System.currentTimeMillis(),
-                        sample.getPollingContext().getUserProperties(),
+
+                final PollingContext pollingContext = sample.getPollingContext();
+
+                final FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
+                final FilePayload value = new FilePayload(pollingContext.getUserProperties(),
                         dataPoint.getTagValue(),
-                        dataPoint.getTagName(),
-                        fileDataPoint.getTag().getDefinition().getContentType());
+                        fileDataPoint.getTag().getDefinition().getContentType(),
+                        pollingContext.getIncludeTagNames() ? dataPoint.getTagName() : null,
+                        pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null);
+
 
                 payloads.add(objectMapper.writeValueAsBytes(value));
-            } catch (JsonProcessingException e) {
+            } catch (final JsonProcessingException e) {
                 LOG.warn("Unable to create payload for data data point '{}'. Skipping this data point.", dataPoint);
             }
         }
