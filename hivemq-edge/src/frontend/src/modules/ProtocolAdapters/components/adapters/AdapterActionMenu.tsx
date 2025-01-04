@@ -65,7 +65,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({
           </MenuItem>
           {capabilities?.includes('READ') && (
             <MenuItem
-              data-testid="adapter-action-mappings"
+              data-testid="adapter-action-mappings-northbound"
               onClick={() => onViewWorkspace?.(id, type as string, WorkspaceAdapterCommand.MAPPINGS)}
               icon={<Icon as={deviceCapabilityIcon['READ']} />}
             >
@@ -74,21 +74,21 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({
           )}
           {capabilities?.includes('WRITE') && (
             <MenuItem
-              data-testid="adapter-action-mappings"
+              data-testid="adapter-action-mappings-southbound"
               onClick={() => onViewWorkspace?.(id, type as string, WorkspaceAdapterCommand.MAPPINGS)}
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
             >
               {t('protocolAdapter.table.actions.workspace.mappings.south')}
             </MenuItem>
           )}
+          <MenuItem
+            data-testid="adapter-action-workspace"
+            onClick={() => onViewWorkspace?.(id, type as string, WorkspaceAdapterCommand.VIEW)}
+            icon={<WorkspaceIcon />}
+          >
+            {t('protocolAdapter.table.actions.workspace.view')}
+          </MenuItem>
         </MenuGroup>
-        <MenuItem
-          data-testid="adapter-action-workspace"
-          onClick={() => onViewWorkspace?.(id, type as string, WorkspaceAdapterCommand.VIEW)}
-          icon={<WorkspaceIcon />}
-        >
-          {t('protocolAdapter.table.actions.workspace.view')}
-        </MenuItem>
         <MenuDivider />
         <MenuItem data-testid="adapter-action-export" onClick={() => onExport?.(id, type as string)}>
           {t('protocolAdapter.table.actions.export')}
