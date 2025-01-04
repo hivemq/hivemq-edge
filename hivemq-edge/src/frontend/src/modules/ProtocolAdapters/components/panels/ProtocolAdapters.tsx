@@ -23,7 +23,11 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import {
+  AdapterNavigateState,
+  ProtocolAdapterTabIndex,
+  WorkspaceAdapterCommand,
+} from '@/modules/ProtocolAdapters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -92,8 +96,8 @@ const ProtocolAdapters: FC = () => {
       onConfirmDeleteOpen()
     }
 
-    const handleViewWorkspace = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type } } })
+    const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceAdapterCommand) => {
+      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type, command } } })
     }
 
     const handleExport = (adapterId: string, type: string) => {
@@ -147,9 +151,11 @@ const ProtocolAdapters: FC = () => {
         cell: (info) => {
           const { id, type } = info.row.original
           const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
+          const protocol = allAdapters?.items?.find((e) => e.id === info.row.original.type)
           return (
             <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
+                protocol={protocol}
                 adapter={info.row.original}
                 onCreate={handleCreateInstance}
                 onEdit={handleEditInstance}
@@ -161,8 +167,8 @@ const ProtocolAdapters: FC = () => {
                 <IconButton
                   size="sm"
                   ml={2}
-                  onClick={() => handleViewWorkspace(id, type as string)}
-                  aria-label={t('protocolAdapter.table.actions.workspace')}
+                  onClick={() => handleViewWorkspace(id, type as string, WorkspaceAdapterCommand.VIEW)}
+                  aria-label={t('protocolAdapter.table.actions.workspace.view')}
                   icon={<WorkspaceIcon />}
                 />
               )}
