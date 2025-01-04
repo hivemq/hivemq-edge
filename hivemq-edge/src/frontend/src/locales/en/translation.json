@@ -486,9 +486,12 @@
         "delete": "Delete",
         "workspace": {
           "group": "Manage from Workspace",
-          "view": "View on workspace",
+          "view": "Adapter and Device",
           "tags": "Device tags",
-          "mappings": "Mappings",
+          "mappings": {
+            "north": "Northbound mappings",
+            "south": "Southbound mappings"
+          },
           "topicFilters": "Topic filters"
         },
         "export": "Export"

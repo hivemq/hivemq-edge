@@ -28,5 +28,5 @@ export const ClientIcon: FC<IconProps> = (props) => {
 
 export const WorkspaceIcon: FC<IconProps> = (props) => {
   const { t } = useTranslation('components')
-  return <Icon as={PiGraphFill} boxSize={6} aria-label={t('iconLabel.workspace')} {...props} />
+  return <Icon as={PiGraphFill} boxSize={4} aria-label={t('iconLabel.workspace')} {...props} />
 }
