@@ -15,6 +15,7 @@ export const northboundMappingListUISchema: UiSchema = {
       'ui:order': ['tagName', 'topic', '*'],
       'ui:collapsable': {
         titleKey: 'tagName',
+        name: 'Mapping',
       },
       tagName: {
         'ui:widget': registerEntitySelectWidget(CustomFormat.MQTT_TAG),
