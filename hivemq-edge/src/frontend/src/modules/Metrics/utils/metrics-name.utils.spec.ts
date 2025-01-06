@@ -48,7 +48,7 @@ describe('extractMetricInfo', () => {
       },
     },
     {
-      metricName: MOCK_METRICS[38].name as string,
+      metricName: MOCK_METRICS[42].name as string,
       expected: {
         device: 'subscriptions',
         id: 'current',
