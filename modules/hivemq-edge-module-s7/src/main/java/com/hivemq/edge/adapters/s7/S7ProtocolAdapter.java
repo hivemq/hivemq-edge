@@ -129,12 +129,7 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter {
         S7TagDefinition tagDefinition = tagToRead.getDefinition();
         //Every S7 address starts with a % but the iot-communications lib doesn't like it, so we are stripping it.
         final String tagAddress = tagDefinition.getAddress().replace("%","");
-        final DataPoint dataPoint;
-        if(tagDefinition.getDataType() == S7DataType.BYTE) {
-            dataPoint = s7Client.readByte(tagAddress);
-        } else {
-            dataPoint = s7Client.read(tagDefinition.getDataType(), List.of(tagAddress)).get(0);
-        }
+        final DataPoint dataPoint = s7Client.read(tagDefinition.getDataType(), List.of(tagAddress)).get(0);
 
         if(adapterConfig.getS7ToMqttConfig().getPublishChangedDataOnly()) {
             if(dataPoints.containsKey(tagAddress)) {

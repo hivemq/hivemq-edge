@@ -22,8 +22,8 @@ public class MainTest {
         S7Client s7Client = new S7Client(eplcType, "172.16.10.53", 102,
                 eplcType.getRack(), eplcType.getSlot(), eplcType.getPduLength(), DataPointImpl::new);
         s7Client.connect();
-        final DataPoint dataPoint = s7Client.readBytes("IB1", 1);
-        System.out.println(((byte[])dataPoint.getTagValue())[0]); // => 122
+        final List<DataPoint> dataPoint = s7Client.read(S7DataType.BYTE, List.of("IB1"));
+        System.out.println(dataPoint.get(0).getTagValue()); // => 122
         s7Client.disconnect();
     }
 
