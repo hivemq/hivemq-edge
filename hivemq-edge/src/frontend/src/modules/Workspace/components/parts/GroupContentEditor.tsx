@@ -25,6 +25,9 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
       {
         accessorKey: 'type',
         header: t('workspace.grouping.editor.content.header.type'),
+        cell: (info) => {
+          return t('workspace.device.type', { context: info.getValue<string>() })
+        },
       },
       {
         accessorKey: 'data.status',
@@ -83,7 +86,7 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
 
   return (
     <Card size="sm">
-      <CardHeader> {t('Content Management')}</CardHeader>
+      <CardHeader data-testid="group-content-header">{t('Content Management')}</CardHeader>
       <CardBody>
         <PaginatedTable<Node>
           aria-label={t('eventLog.title')}
