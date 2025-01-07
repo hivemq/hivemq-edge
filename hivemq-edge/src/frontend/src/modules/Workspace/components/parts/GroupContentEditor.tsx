@@ -1,14 +1,16 @@
 import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
-import { Group } from '@/modules/Workspace/types.ts'
-import { ButtonGroup, Card, CardBody, CardFooter, CardHeader } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { ColumnDef } from '@tanstack/react-table'
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import IconButton from '@/components/Chakra/IconButton.tsx'
+import { ButtonGroup, Card, CardBody, CardFooter, CardHeader, Icon } from '@chakra-ui/react'
 import { MdPlayArrow, MdRestartAlt, MdStop } from 'react-icons/md'
+
+import IconButton from '@/components/Chakra/IconButton.tsx'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { Group } from '@/modules/Workspace/types.ts'
 import { AdapterStatusContainer } from '@/modules/ProtocolAdapters/components/adapters/AdapterStatusContainer.tsx'
+import { ImUngroup } from 'react-icons/im'
 
 interface GroupContentEditorProps {
   group: Node<Group>
@@ -22,19 +24,22 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
     return [
       {
         accessorKey: 'type',
+        header: t('workspace.grouping.editor.content.header.type'),
       },
       {
         accessorKey: 'data.status',
+        header: t('workspace.grouping.editor.content.header.status'),
         cell: (info) => {
           return <AdapterStatusContainer id={info.row.original.data.id} />
         },
       },
       {
         accessorKey: 'data.id',
+        header: t('workspace.grouping.editor.content.header.id'),
       },
       {
         id: 'actions',
-        header: t('topicFilter.listing.column.action'),
+        header: t('workspace.grouping.editor.content.header.actions'),
         sortingFn: undefined,
         cell: () => {
           return (
