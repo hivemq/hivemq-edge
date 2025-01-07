@@ -1,4 +1,4 @@
-rootProject.name = "hivemq-postgresql-protocol-adapter"
+rootProject.name = "hivemq-edge-module-postgresql"
 
 pluginManagement {
     includeBuild("../../edge-plugins")
