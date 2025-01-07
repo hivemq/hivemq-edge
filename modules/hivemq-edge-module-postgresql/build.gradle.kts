@@ -13,7 +13,6 @@ plugins {
 
 
 group = "com.hivemq"
-version = "2024.9-ALPHA"
 
 repositories {
     mavenCentral()
