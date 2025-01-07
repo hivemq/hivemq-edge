@@ -18,8 +18,9 @@ package com.hivemq.configuration.entity.adapter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
@@ -40,6 +42,9 @@ public class ProtocolAdapterEntity {
 
     @XmlElement(name = "protocolId", required = true)
     private @NotNull String protocolId;
+
+    @XmlElement(name = "configVersion")
+    private @Nullable Integer configVersion;
 
     @XmlElement(name = "config")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -65,12 +70,15 @@ public class ProtocolAdapterEntity {
     public ProtocolAdapterEntity(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
+            final @Nullable Integer configVersion,
             final @NotNull Map<String, Object> config,
             final @NotNull List<NorthboundMappingEntity> northboundMappingEntities,
             final @NotNull List<SouthboundMappingEntity> southboundMappingEntities,
             final @NotNull List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.config = config;
+        // if no config version is present, we assume it is the oldest possible version
+        this.configVersion = configVersion;
         this.northboundMappingEntities = northboundMappingEntities;
         this.protocolId = protocolId;
         this.tags = tags;
@@ -99,6 +107,10 @@ public class ProtocolAdapterEntity {
 
     public @NotNull String getAdapterId() {
         return adapterId;
+    }
+
+    public @NotNull Integer getConfigVersion() {
+        return Objects.requireNonNullElse(configVersion, 1);
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
@@ -130,16 +142,17 @@ public class ProtocolAdapterEntity {
                 .collect(Collectors.toList());
 
         final List<TagEntity> tagEntities = protocolAdapterConfig.getTags()
-                .stream().map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
+                .stream()
+                .map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                 .collect(Collectors.toList());
 
         final Map<String, Object> configAsMaps =
                 objectMapper.convertValue(protocolAdapterConfig.getAdapterConfig(), new TypeReference<>() {
                 });
 
-        return new ProtocolAdapterEntity(
-                protocolAdapterConfig.getAdapterId(),
+        return new ProtocolAdapterEntity(protocolAdapterConfig.getAdapterId(),
                 protocolAdapterConfig.getProtocolId(),
+                protocolAdapterConfig.getConfigVersion(),
                 configAsMaps,
                 northboundMappings,
                 southboundMappings,

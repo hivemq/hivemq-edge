@@ -421,7 +421,8 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(adapterId);
         Preconditions.checkNotNull(config);
 
-        if (getAdapterTypeById(adapterType).isEmpty()) {
+        final Optional<ProtocolAdapterInformation> adapterInformationOptional = getAdapterTypeById(adapterType);
+        if (adapterInformationOptional.isEmpty()) {
             throw new IllegalArgumentException("invalid adapter type '" + adapterType + "'");
         }
         if (getAdapterById(adapterId).isPresent()) {
@@ -436,6 +437,7 @@ public class ProtocolAdapterManager {
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(
                 adapterId,
                 adapterType,
+                adapterInformationOptional.get().getCurrentConfigVersion(),
                 protocolSpecificAdapterConfig,
                 List.of(),
                 List.of(),
@@ -498,6 +500,7 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                     adapterType,
+                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
                     protocolSpecificAdapterConfig,
                     oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
@@ -516,6 +519,7 @@ public class ProtocolAdapterManager {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
+                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
                     oldInstance.getConfigObject(),
                     oldInstance.getToEdgeMappings(),
                     oldInstance.getFromEdgeMappings(),
@@ -533,6 +537,7 @@ public class ProtocolAdapterManager {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
+                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
                     oldInstance.getConfigObject(),
                     oldInstance.getToEdgeMappings(), northboundMappings,
                     oldInstance.getTags());
@@ -556,6 +561,7 @@ public class ProtocolAdapterManager {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
+                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
                     oldInstance.getConfigObject(), southboundMappings,
                     oldInstance.getFromEdgeMappings(),
                     oldInstance.getTags());

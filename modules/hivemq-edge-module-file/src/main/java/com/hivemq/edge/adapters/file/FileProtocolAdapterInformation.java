@@ -38,8 +38,11 @@ import java.util.List;
 public class FileProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new FileProtocolAdapterInformation();
-    private static final @NotNull Logger LOG = LoggerFactory.getLogger(FileProtocolAdapterInformation.class);
     public static final String PROTOCOL_ID = "file";
+
+    private static final @NotNull Logger LOG = LoggerFactory.getLogger(FileProtocolAdapterInformation.class);
+    private static final int CURRENT_CONFIG_VERSION = 1;
+
 
     protected FileProtocolAdapterInformation() {
     }
@@ -134,5 +137,10 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return FileSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }
