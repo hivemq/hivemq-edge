@@ -69,12 +69,12 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
     }
 
     public ElementMap marshalInternal(final @NotNull Map<String, Object> v, final String parentName) {
-        List elements = new ArrayList();
-        for (Map.Entry<String, Object> property : v.entrySet()) {
-            String key = property.getKey();
+        final List elements = new ArrayList();
+        for (final Map.Entry<String, Object> property : v.entrySet()) {
+            final String key = property.getKey();
             readChildren(key, property.getValue(), elements, parentName);
         }
-        ElementMap el = new ElementMap();
+        final ElementMap el = new ElementMap();
         el.elements = elements;
         return el;
     }
@@ -92,7 +92,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                     ElementMap.class,
                     marshalInternal((Map) value, currentKeyName)));
         } else if (value instanceof List) {
-            List list = (List) value;
+            final List list = (List) value;
             if ("mqttUserProperties".equals(currentKeyName)) {
                 final List children = new ArrayList();
                 readChildren("mqttUserProperty", list, children, currentKeyName);
@@ -111,17 +111,26 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
-            } else if (parentName != null && currentKeyName.endsWith("s")) {
-                List children = new ArrayList();
+            } else if ("httpHeaders".equals(currentKeyName)) {
+                final List children = new ArrayList();
+                readChildren("httpHeader", list, children, currentKeyName);
+                final ElementMap elementMap = new ElementMap();
+                elementMap.elements = children;
+                if (!children.isEmpty()) {
+                    // add the plural
+                    currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
+                }
+            }else if (parentName != null && currentKeyName.endsWith("s")) {
+                final List children = new ArrayList();
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
-                ElementMap elementMap = new ElementMap();
+                final ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
                 if (!children.isEmpty()) {
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
             } else {
-                for (Object listElement : list) {
+                for (final Object listElement : list) {
                     //-- Recurse point
                     readChildren(currentKeyName, listElement, currentEl, currentKeyName);
                 }
@@ -139,15 +148,15 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
     @Override
     public @NotNull Map<String, Object> unmarshal(final @NotNull ElementMap elementMap) throws Exception {
-        HashMap<String, Object> map = new HashMap<>();
-        for (Element element : elementMap.elements) {
+        final HashMap<String, Object> map = new HashMap<>();
+        for (final Element element : elementMap.elements) {
             convertElement(map, element, null);
         }
         return map;
     }
 
     private static void convertElement(
-            final @NotNull HashMap<String, Object> map, Node node, final @Nullable String parentName) {
+            final @NotNull HashMap<String, Object> map, final Node node, final @Nullable String parentName) {
         if (node.hasChildNodes() && node.getChildNodes().item(0).hasChildNodes()) {
             final NodeList childNodes = node.getChildNodes();
             final HashMap<String, Object> childMap = new HashMap<>();
