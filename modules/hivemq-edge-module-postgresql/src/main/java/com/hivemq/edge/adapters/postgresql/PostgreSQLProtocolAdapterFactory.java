@@ -30,7 +30,9 @@ public class PostgreSQLProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<PostgreSQLAdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<PostgreSQLAdapterConfig> input) {
         return new PostgreSQLPollingProtocolAdapter(adapterInformation, input);
     }
 }
