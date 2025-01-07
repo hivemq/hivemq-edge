@@ -50,7 +50,7 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
   }, [t])
 
   const data = useMemo<Node[]>(() => {
-    return group.data.childrenNodeIds.map((e) => nodes.find((x) => x.id === e)) as Node[]
+    return group.data.childrenNodeIds.map((e) => nodes.find((x) => x.id === e)).filter((e) => Boolean(e)) as Node[]
   }, [group.data.childrenNodeIds, nodes])
 
   return (
