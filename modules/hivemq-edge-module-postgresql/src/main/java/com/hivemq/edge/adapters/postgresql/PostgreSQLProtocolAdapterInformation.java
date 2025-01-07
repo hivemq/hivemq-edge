@@ -78,7 +78,7 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     @Override
     public @NotNull String getVersion() {
         // the version of this protocol adapter, the usage of semantic versioning is advised.
-        return "2024.9 ALPHA";
+        return "${edge-version}-ALPHA";
     }
 
     @Override
