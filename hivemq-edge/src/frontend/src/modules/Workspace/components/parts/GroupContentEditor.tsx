@@ -36,12 +36,35 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
         id: 'actions',
         header: t('topicFilter.listing.column.action'),
         sortingFn: undefined,
+        cell: () => {
+          return (
+            <ButtonGroup isAttached size="xs" isDisabled>
+              <IconButton
+                aria-label={t('workspace.grouping.editor.content.actions.ungroup')}
+                icon={<Icon as={ImUngroup} />}
+                onClick={() => undefined}
+              />
+            </ButtonGroup>
+          )
+        },
         footer: () => {
           return (
-            <ButtonGroup isAttached size="sm" colorScheme="red">
-              <IconButton aria-label={t('Stop all')} icon={<MdPlayArrow />} onClick={() => undefined} />
-              <IconButton aria-label={t('Stop all')} icon={<MdStop />} onClick={() => undefined} />
-              <IconButton aria-label={t('Restart all')} icon={<MdRestartAlt />} onClick={() => undefined} />
+            <ButtonGroup isAttached size="xs" isDisabled>
+              <IconButton
+                aria-label={t('workspace.grouping.editor.content.actions.startAll')}
+                icon={<MdPlayArrow />}
+                onClick={() => undefined}
+              />
+              <IconButton
+                aria-label={t('workspace.grouping.editor.content.actions.stopAll')}
+                icon={<MdStop />}
+                onClick={() => undefined}
+              />
+              <IconButton
+                aria-label={t('workspace.grouping.editor.content.actions.restartAll')}
+                icon={<MdRestartAlt />}
+                onClick={() => undefined}
+              />
             </ButtonGroup>
           )
         },
