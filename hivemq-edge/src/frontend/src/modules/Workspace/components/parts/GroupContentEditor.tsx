@@ -57,7 +57,13 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
     <Card size="sm">
       <CardHeader> {t('Content Management')}</CardHeader>
       <CardBody>
-        <PaginatedTable<Node> aria-label={t('eventLog.title')} data={data} columns={columns} />
+        <PaginatedTable<Node>
+          aria-label={t('eventLog.title')}
+          data={data}
+          columns={columns}
+          enablePaginationSizes={false}
+          enablePaginationGoTo={false}
+        />
       </CardBody>
       <CardFooter justifyContent="flex-end"></CardFooter>
     </Card>
