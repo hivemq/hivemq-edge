@@ -22,17 +22,16 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
+import java.util.Objects;
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
 
-    public static final String DEFAULT_S7_PORT = "102";
+    public static final int DEFAULT_S7_PORT = 102;
     public static final String DEFAULT_CONTROLER_TYPE = "S7_300";
 
-    public static final String PROPERTY_ID = "id";
     public static final String PROPERTY_PORT = "port";
     public static final String PROPERTY_HOST = "host";
     public static final String PROPERTY_CONTROLLER_TYPE = "controllerType";
@@ -51,14 +50,14 @@ public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
         SINUMERIK_828D
     }
 
-    @JsonProperty(value = PROPERTY_PORT, required = true)
+    @JsonProperty(value = PROPERTY_PORT)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",
                        required = true,
-                       defaultValue = DEFAULT_S7_PORT,
+                       defaultValue = "" + DEFAULT_S7_PORT,
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX)
-    private final int port;
+    private final @NotNull Integer port;
 
     @JsonProperty(value = PROPERTY_HOST, required = true)
     @ModuleConfigField(title = "Host",
@@ -91,27 +90,30 @@ public class S7AdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty(value = PROPERTY_S_7_TO_MQTT, required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
-                       description = "The configuration for a data stream from S7 to MQTT",
-                       required = true)
+                       description = "The configuration for a data stream from S7 to MQTT")
     private final @NotNull S7ToMqttConfig s7ToMqttConfig;
 
     @JsonCreator
     public S7AdapterConfig(
-            @JsonProperty(value = PROPERTY_ID, required = true) final @NotNull String id,
-            @JsonProperty(value = PROPERTY_PORT, required = true) final Integer port,
+            @JsonProperty(value = PROPERTY_PORT) final Integer port,
             @JsonProperty(value = PROPERTY_HOST, required = true) final @NotNull String host,
             @JsonProperty(value = PROPERTY_CONTROLLER_TYPE, required = true) final @NotNull ControllerType controllerType,
             @JsonProperty(value = PROPERTY_REMOTE_RACK) final @Nullable Integer remoteRack,
             @JsonProperty(value = PROPERTY_REMOTE_SLOT) final @Nullable Integer remoteSlot,
             @JsonProperty(value = PROPERTY_PDU_LENGTH) final @Nullable Integer pduLength,
-            @JsonProperty(value = PROPERTY_S_7_TO_MQTT, required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
+            @JsonProperty(value = PROPERTY_S_7_TO_MQTT) final @Nullable S7ToMqttConfig s7ToMqttConfig) {
         this.host = host;
         this.controllerType = controllerType;
-        this.port = port;
+        this.port = Objects.requireNonNullElse(port, DEFAULT_S7_PORT);
         this.remoteRack = remoteRack;
         this.remoteSlot = remoteSlot;
         this.pduLength = pduLength;
-        this.s7ToMqttConfig = s7ToMqttConfig;
+
+        if (s7ToMqttConfig == null) {
+            this.s7ToMqttConfig = new S7ToMqttConfig(null, null, null);
+        } else {
+            this.s7ToMqttConfig = s7ToMqttConfig;
+        }
     }
 
     public int getPort() {

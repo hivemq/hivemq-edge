@@ -18,7 +18,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,7 +52,7 @@ class S7AdapterConfigTest {
                     assertThat(t)
                             .isInstanceOf(S7Tag.class)
                             .extracting(Tag::getName, Tag::getDescription, Tag::getDefinition)
-                            .contains("tag-name", "description", new S7TagDefinition("%IB1", S7DataType.INT32));
+                            .contains("tag-name", "description", new S7TagDefinition("%IB1", S7DataType.INT));
                 });
     }
 
@@ -67,7 +66,7 @@ class S7AdapterConfigTest {
                 .isEmpty();
 
         assertThat(config).isNotNull();
-        assertThat(config.getPort()).isEqualTo(1234);
+        assertThat(config.getPort()).isEqualTo(102);
         assertThat(config.getHost()).isEqualTo("my.s7-server.com");
         assertThat(config.getControllerType()).isEqualTo(S7AdapterConfig.ControllerType.S7_400);
         assertThat(config.getS7ToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -92,7 +91,6 @@ class S7AdapterConfigTest {
         );
 
         final S7AdapterConfig s7AdapterConfig = new S7AdapterConfig(
-                "my-s7-adapter",
                 14,
                 "my.host.com",
                 S7AdapterConfig.ControllerType.S7_1500,
@@ -107,30 +105,15 @@ class S7AdapterConfigTest {
         final Map<String, Object> config =
                 s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 
-        assertThat(config.get("id")).isEqualTo("my-s7-adapter");
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
         assertThat(config.get("controllerType")).isEqualTo("S7_1500");
         assertThat(config.get("remoteRack")).isEqualTo(1);
         assertThat(config.get("remoteSlot")).isEqualTo(2);
-        assertThat(config.get("pollingIntervalMillis")).isEqualTo(4);
-        assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(5);
-        assertThat(config.get("publishChangedDataOnly")).isEqualTo(false);
 
-        assertThat((List<Map<String, Object>>) config.get("s7ToMqttMappings")).satisfiesExactly((mapping) -> {
-
-            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("mqttQos")).isEqualTo(1);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
-            assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
-            assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("jsonPayloadCreator")).isNull();
-            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
-                assertThat(userProperty.get("name")).isEqualTo("my-name");
-                assertThat(userProperty.get("value")).isEqualTo("my-value");
-            });
-        });
+        assertThat((Map<String, Object>) config.get("s7ToMqtt"))
+                .extracting("pollingIntervalMillis", "maxPollingErrorsBeforeRemoval", "publishChangedDataOnly")
+                .containsExactly(3000, 1, false);
     }
 
     private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws

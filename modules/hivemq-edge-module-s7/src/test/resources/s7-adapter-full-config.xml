@@ -21,6 +21,8 @@
             <protocolId>s7-new</protocolId>
             <adapterId>my-s7-protocol-adapter</adapterId>
             <config>
+                <host>my.s7-server.com</host>
+                <port>1234</port>
                 <controllerType>S7_400</controllerType>
                 <remoteRack>1</remoteRack>
                 <remoteSlot>3</remoteSlot>
@@ -69,12 +71,14 @@
                 </northboundMapping>
             </northboundMappings>
             <tags>
-                <name>tag-name</name>
-                <description>description</description>
-                <definition>
-                    <address>%IB1</address>
-                    <dataType>INT32</dataType>
-                </definition>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <address>%IB1</address>
+                        <dataType>INT</dataType>
+                    </definition>
+                </tag>
             </tags>
         </protocol-adapter>
     </protocol-adapters>

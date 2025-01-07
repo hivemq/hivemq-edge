@@ -16,19 +16,14 @@
 
 -->
 <hivemq>
+
     <protocol-adapters>
-        <s7-new>
+        <protocol-adapter>
+            <protocolId>s7-new</protocolId>
+            <adapterId>my-s7-protocol-adapter</adapterId>
             <config>
-                <id>my-s7-protocol-adapter</id>
-                <port>1234</port>
                 <host>my.s7-server.com</host>
                 <controllerType>S7_400</controllerType>
-                <s7ToMqttMappings>
-                    <s7ToMqttMapping>
-                        <mqttTopic>my/topic</mqttTopic>
-                        <tagName>tag-name</tagName>
-                    </s7ToMqttMapping>
-                </s7ToMqttMappings>
             </config>
             <northboundMappings>
                 <northboundMapping>
@@ -46,6 +41,6 @@
                     </definition>
                 </tag>
             </tags>
-        </s7-new>
+        </protocol-adapter>
     </protocol-adapters>
 </hivemq>
