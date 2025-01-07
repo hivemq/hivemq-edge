@@ -24,85 +24,84 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({
-        "url",
-        "destination"})
+        "url", "destination"})
 public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
-            description = "Unique identifier for this protocol adapter",
-            format = ModuleConfigField.FieldType.IDENTIFIER,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
     protected @NotNull String id;
 
     @JsonProperty(value = "server", required = true)
     @ModuleConfigField(title = "Server",
-            description = "Server address",
-            format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
+                       description = "Server address",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = true,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
     protected @NotNull String server;
 
     @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
-            description = "Server port",
-            format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 6,
-            defaultValue = "5432")
+                       description = "Server port",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 6,
+                       defaultValue = "5432")
     protected @NotNull Integer port;
 
     @JsonProperty(value = "database", required = true)
     @ModuleConfigField(title = "Database",
-            description = "Database name",
-            format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
+                       description = "Database name",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
     protected @NotNull String database;
 
     @JsonProperty(value = "username", required = true)
     @ModuleConfigField(title = "Username",
-            description = "Username for the connection to the database",
-            format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
+                       description = "Username for the connection to the database",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
     protected @NotNull String username;
 
     @JsonProperty(value = "password", required = true)
     @ModuleConfigField(title = "Password",
-            description = "Password for the connection to the database",
-            format = ModuleConfigField.FieldType.UNSPECIFIED,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
+                       description = "Password for the connection to the database",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
     protected @NotNull String password;
 
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
-            description = "Time in millisecond that this endpoint will be polled",
-            numberMin = 1,
-            required = true,
-            defaultValue = "1000")
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
     private int pollingIntervalMillis = 1000;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
-            description = "Max. errors polling the endpoint before the polling daemon is stopped",
-            numberMin = 3,
-            defaultValue = "10")
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 3,
+                       defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = 10;
 
 
@@ -115,15 +114,25 @@ public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
         server = "";
     }
 
-    public @NotNull String getServer() {return server;}
+    public @NotNull String getServer() {
+        return server;
+    }
 
-    public @NotNull String getDatabase() {return database;}
+    public @NotNull String getDatabase() {
+        return database;
+    }
 
-    public @NotNull Integer getPort() {return port;}
+    public @NotNull Integer getPort() {
+        return port;
+    }
 
-    public @NotNull String getUsername() {return username;}
+    public @NotNull String getUsername() {
+        return username;
+    }
 
-    public @NotNull String getPassword() {return password;}
+    public @NotNull String getPassword() {
+        return password;
+    }
 
 
     public int getPollingIntervalMillis() {
