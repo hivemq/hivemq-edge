@@ -43,6 +43,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 
 public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter {
@@ -148,51 +149,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
             tags.stream()
                     .filter(tag -> tag.getName().equals(pollingContext.getTagName()))
                     .findFirst()
-                    .ifPresentOrElse(def -> {
-                                try {
-                                    log.debug("Getting tag definition");
-                                    /* Get the tag definition (Query, RowLimit and Split Lines)*/
-                                    final PostgreSQLAdapterTagDefinition definition =
-                                            (PostgreSQLAdapterTagDefinition) def.getDefinition();
-
-                                    log.debug("Cleaning query");
-                                    /* Rework the query to protect against big data volumes (basically removing possible LIMIT XX in the query and replacing with defined limit in the sub setting). */
-                                    final String query =
-                                            postgreSQLHelpers.removeLimitFromQuery(Objects.requireNonNull(definition.getQuery()),
-                                                    "LIMIT") + " LIMIT " + definition.getRowLimit() + ";";
-                                    log.debug("Cleaned Tag Query : {}", query);
-
-                                    /* Execute query and handle result */
-                                    final ResultSet result = (databaseConnection.createStatement()).executeQuery(query);
-                                    assert result != null;
-                                    final ArrayList<ObjectNode> resultObject = new ArrayList<>();
-                                    final ResultSetMetaData resultSetMD = result.getMetaData();
-                                    while (result.next()) {
-                                        final int numColumns = resultSetMD.getColumnCount();
-                                        final ObjectNode node = OBJECT_MAPPER.createObjectNode();
-                                        for (int i = 1; i <= numColumns; i++) {
-                                            final String column_name = resultSetMD.getColumnName(i);
-                                            node.put(column_name, result.getString(column_name));
-                                        }
-
-                                        /* Publish datapoint with a single line if split is required */
-                                        if (definition.getSpiltLinesInIndividualMessages()) {
-                                            log.debug("Splitting lines in multiple messages");
-                                            pollingOutput.addDataPoint("queryResult", node);
-                                        } else {
-                                            resultObject.add(node);
-                                        }
-                                    }
-
-                                    /* Publish datapoint with all lines if no split is required */
-                                    if (!definition.getSpiltLinesInIndividualMessages()) {
-                                        log.debug("Publishing all lines in a single message");
-                                        pollingOutput.addDataPoint("queryResult", resultObject);
-                                    }
-                                } catch (final Exception e) {
-                                    pollingOutput.fail(e, null);
-                                }
-                            },
+                    .ifPresentOrElse(loadDataFromDB(pollingOutput),
                             () -> pollingOutput.fail(
                                     "Polling for PostgreSQL protocol adapter failed because the used tag '" +
                                             pollingInput.getPollingContext().getTagName() +
@@ -203,6 +160,55 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
             return;
         }
         pollingOutput.finish();
+    }
+
+    private @NotNull Consumer<Tag> loadDataFromDB(final @NotNull PollingOutput pollingOutput) {
+        return def -> {
+            try {
+                log.debug("Getting tag definition");
+                /* Get the tag definition (Query, RowLimit and Split Lines)*/
+                final PostgreSQLAdapterTagDefinition definition = (PostgreSQLAdapterTagDefinition) def.getDefinition();
+
+                log.debug("Cleaning query");
+                /* Rework the query to protect against big data volumes (basically removing possible LIMIT XX in the query and replacing with defined limit in the sub setting). */
+                final String query =
+                        postgreSQLHelpers.removeLimitFromQuery(Objects.requireNonNull(definition.getQuery()), "LIMIT") +
+                                " LIMIT " +
+                                definition.getRowLimit() +
+                                ";";
+                log.debug("Cleaned Tag Query : {}", query);
+
+                /* Execute query and handle result */
+                final ResultSet result = (databaseConnection.createStatement()).executeQuery(query);
+                assert result != null;
+                final ArrayList<ObjectNode> resultObject = new ArrayList<>();
+                final ResultSetMetaData resultSetMD = result.getMetaData();
+                while (result.next()) {
+                    final int numColumns = resultSetMD.getColumnCount();
+                    final ObjectNode node = OBJECT_MAPPER.createObjectNode();
+                    for (int i = 1; i <= numColumns; i++) {
+                        final String column_name = resultSetMD.getColumnName(i);
+                        node.put(column_name, result.getString(column_name));
+                    }
+
+                    /* Publish datapoint with a single line if split is required */
+                    if (definition.getSpiltLinesInIndividualMessages()) {
+                        log.debug("Splitting lines in multiple messages");
+                        pollingOutput.addDataPoint("queryResult", node);
+                    } else {
+                        resultObject.add(node);
+                    }
+                }
+
+                /* Publish datapoint with all lines if no split is required */
+                if (!definition.getSpiltLinesInIndividualMessages()) {
+                    log.debug("Publishing all lines in a single message");
+                    pollingOutput.addDataPoint("queryResult", resultObject);
+                }
+            } catch (final Exception e) {
+                pollingOutput.fail(e, null);
+            }
+        };
     }
 
     @Override
