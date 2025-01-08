@@ -398,6 +398,8 @@
     "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
     "list": "List of protocol adapters",
     "action": {
+      "goCatalog": "Add a new adapter",
+      "goAdapter": "Back to active adapters",
       "add": "Add",
       "delete": "Delete",
       "create": "Create",
