@@ -49,6 +49,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(PostgreSQLPollingProtocolAdapter.class);
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final int TIMEOUT = 30;
 
     private final @NotNull PostgreSQLAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -96,7 +97,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
         try {
             log.debug("Starting connection to the database instance");
             databaseConnection = postgreSQLHelpers.connectDatabase(compiledUri, username, password);
-            if (databaseConnection.isValid(0)) {
+            if (databaseConnection.isValid(TIMEOUT)) {
                 output.startedSuccessfully();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             } else {
@@ -138,7 +139,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
         /* Connect to the database and execute the query */
         try {
             log.debug("Checking database connection state");
-            if (!databaseConnection.isValid(0)) {
+            if (!databaseConnection.isValid(TIMEOUT)) {
                 log.debug("Connecting to the database");
                 databaseConnection = postgreSQLHelpers.connectDatabase(compiledUri, username, password);
             }
@@ -198,7 +199,8 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
                                             "' was not found. For the polling to work the tag must be created via REST API or the UI."));
         } catch (final SQLException e) {
             log.debug(e.getMessage());
-            throw new RuntimeException(e);
+            pollingOutput.fail(e, null);
+            return;
         }
         pollingOutput.finish();
     }
