@@ -1,14 +1,15 @@
 import { FC, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ControlProps, Panel, useReactFlow, useStore, useStoreApi } from 'reactflow'
+import { ControlProps, useReactFlow, useStore, useStoreApi } from 'reactflow'
 import { ButtonGroup } from '@chakra-ui/react'
 import { shallow } from 'zustand/shallow'
 import { IoMdOptions } from 'react-icons/io'
 import { LuBoxSelect } from 'react-icons/lu'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import Panel from '@/components/react-flow/Panel.tsx'
+import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import {
   CONFIG_ZOOM_MAX,
   CONFIG_ZOOM_MIN,
