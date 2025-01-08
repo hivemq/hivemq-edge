@@ -17,6 +17,9 @@ describe('ProtocolAdapters', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ProtocolAdapters />)
 
+    cy.getByTestId('heading-adapters-list').find('h2').should('have.text', 'Active Adapters')
+    cy.getByTestId('heading-adapters-list').find('h2 + p').should('have.text', 'Seeing 1 of 1 adapters')
+
     cy.wait('@getAdapters')
     cy.get('tbody').find('tr').should('have.length', 1)
     cy.get('tbody').find('tr').find('td').eq(0).should('contain.text', MOCK_ADAPTER_ID)
