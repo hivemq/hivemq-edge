@@ -1,6 +1,6 @@
 import { FC, type HTMLAttributes, type ReactNode } from 'react'
 import { Panel as ReactFlowPanel, PanelPosition } from 'reactflow'
-import { HStack } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 
 // ReactFlow PanelProps is not exported
 export type PanelProps = HTMLAttributes<HTMLDivElement> & {
@@ -11,7 +11,7 @@ export type PanelProps = HTMLAttributes<HTMLDivElement> & {
 const Panel: FC<PanelProps> = ({ children, ...props }) => {
   return (
     <ReactFlowPanel {...props}>
-      <HStack
+      <Box
         sx={{
           borderColor: 'var(--chakra-colors-chakra-border-color)',
           borderWidth: 1,
@@ -24,7 +24,7 @@ const Panel: FC<PanelProps> = ({ children, ...props }) => {
         }}
       >
         {children}
-      </HStack>
+      </Box>
     </ReactFlowPanel>
   )
 }
