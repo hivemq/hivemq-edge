@@ -1,9 +1,9 @@
 import { FC, useMemo } from 'react'
-import { Panel } from 'reactflow'
 import { Tag, TagLabel, TagLeftIcon } from '@chakra-ui/react'
 import { LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { PiPencilSimpleLineFill, PiPencilSimpleSlashFill } from 'react-icons/pi'
 
+import Panel from '@/components/react-flow/Panel.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DesignerStatus } from '@datahub/types.ts'
 
