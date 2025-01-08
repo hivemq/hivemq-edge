@@ -16,6 +16,7 @@ import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from
 import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
 import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 
 const ProtocolIntegrationStore: FC = () => {
   const { t } = useTranslation()
@@ -31,7 +32,7 @@ const ProtocolIntegrationStore: FC = () => {
       protocolAdapterType: adapterId,
       // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
     }
-    navigate(`/protocol-adapters/new/${adapterId}`, {
+    navigate(`/protocol-adapters/catalog/new/${adapterId}`, {
       state: adapterNavigateState,
     })
   }
@@ -82,6 +83,7 @@ const ProtocolIntegrationStore: FC = () => {
         <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
         <ProtocolsBrowser items={safeData} facet={facet} onCreate={handleCreateInstance} isLoading={isLoading} />
       </Flex>
+      <SuspenseOutlet />
     </Flex>
   )
 }
