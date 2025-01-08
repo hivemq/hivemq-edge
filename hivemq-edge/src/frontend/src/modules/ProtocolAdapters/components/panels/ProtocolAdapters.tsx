@@ -234,7 +234,7 @@ const ProtocolAdapters: FC = () => {
 
   return (
     <Flex flexDirection="column" gap={4}>
-      <Box>
+      <Box data-testid="heading-adapters-list">
         <Heading size="md">{t('protocolAdapter.tabs.adapters')}</Heading>
         <Text>
           {!isLoading
