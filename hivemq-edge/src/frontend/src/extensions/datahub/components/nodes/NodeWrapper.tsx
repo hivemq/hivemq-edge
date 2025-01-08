@@ -1,7 +1,9 @@
 import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NodeProps, NodeToolbar, Position } from 'reactflow'
+import { NodeProps } from 'reactflow'
 import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
+
+import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 
 import NodeDatahubToolbar from '@datahub/components/nodes/NodeDatahubToolbar.tsx'
 import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
