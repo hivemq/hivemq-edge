@@ -19,23 +19,25 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
-    compileOnly("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    compileOnly("org.slf4j:slf4j-api:${property("slf4j.version")}")
-    implementation("org.slf4j:slf4j-log4j12:${property("slf4jfull.version")}")
-    implementation("org.postgresql:postgresql:${property("postgresql.version")}")
-    implementation("com.fasterxml.jackson.core:jackson-core:${property("jackson.version")}")
+    implementation(libs.hikari)
+    compileOnly(libs.hivemq.edge.adapterSdk)
+    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.jackson.databind)
+    compileOnly(libs.slf4j.api)
+    implementation(libs.postgresql)
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
-    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
+    testImplementation("com.hivemq:hivemq-edge")
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.junit.jupiter)
+
+    testImplementation(libs.milo.server)
+    testImplementation(libs.assertj)
+    testImplementation(libs.awaitility)
 }
 
 tasks.test {
