@@ -93,7 +93,6 @@ public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
-                       required = true,
                        defaultValue = "1000")
     private int pollingIntervalMillis = 1000;
 

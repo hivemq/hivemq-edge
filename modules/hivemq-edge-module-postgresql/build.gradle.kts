@@ -14,6 +14,12 @@ plugins {
 
 group = "com.hivemq"
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
