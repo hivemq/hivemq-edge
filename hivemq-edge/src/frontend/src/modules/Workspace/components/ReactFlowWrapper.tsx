@@ -24,7 +24,7 @@ import {
   NodeDevice,
 } from '@/modules/Workspace/components/nodes'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { proOptions } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
