@@ -14,9 +14,9 @@ import { Box } from '@chakra-ui/react'
 import styles from './PolicyEditor.module.scss'
 
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
+import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
-import Minimap from '@datahub/components/controls/Minimap.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
@@ -33,6 +33,7 @@ export type OnConnectStartParams = {
   handleId: string | null
   handleType: HandleType | null
 }
+
 interface OnConnectStartParamsNode extends OnConnectStartParams {
   type: string | undefined
 }
@@ -189,7 +190,7 @@ const PolicyEditor: FC = () => {
             <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <DesignerToolbox />
             <CanvasControls />
-            <Minimap />
+            <MiniMap />
           </Box>
         </ReactFlow>
         <SuspenseOutlet />
