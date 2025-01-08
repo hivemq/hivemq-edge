@@ -16,7 +16,20 @@ group = "com.hivemq"
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = uri("https://jitpack.io")
+            }
+        }
+        filter {
+            includeGroup("com.github.simon622.mqtt-sn")
+            includeGroup("com.github.simon622")
+        }
+    }
 }
+
 
 dependencies {
     implementation(libs.hikari)
