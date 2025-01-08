@@ -13,6 +13,7 @@ import { Box } from '@chakra-ui/react'
 
 import styles from './PolicyEditor.module.scss'
 
+import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
@@ -176,6 +177,8 @@ const PolicyEditor: FC = () => {
           isValidConnection={checkValidity}
           deleteKeyCode={[]}
           nodesConnectable={isEditable}
+          proOptions={proOptions}
+
           // nodesDraggable={isEditable}
           // elementsSelectable={isEditable}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
