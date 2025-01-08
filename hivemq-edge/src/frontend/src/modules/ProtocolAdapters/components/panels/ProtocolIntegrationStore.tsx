@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
@@ -70,11 +70,14 @@ const ProtocolIntegrationStore: FC = () => {
 
   return (
     <Flex flexDirection="column" gap={4}>
-      <Text>
-        {isLoading
-          ? t('protocolAdapter.loading.protocolAdapters')
-          : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
-      </Text>
+      <Box>
+        <Heading size="md">{t('protocolAdapter.tabs.protocols')}</Heading>
+        <Text>
+          {isLoading
+            ? t('protocolAdapter.loading.protocolAdapters')
+            : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
+        </Text>
+      </Box>
       <Flex flexDirection="row" alignItems="flex-start" gap={6}>
         <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
         <ProtocolsBrowser items={safeData} facet={facet} onCreate={handleCreateInstance} isLoading={isLoading} />

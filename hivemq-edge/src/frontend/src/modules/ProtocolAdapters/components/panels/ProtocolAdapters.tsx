@@ -1,5 +1,16 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, Image, Skeleton, Text, useColorModeValue, useDisclosure, useToken } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  Heading,
+  HStack,
+  Image,
+  Skeleton,
+  Text,
+  useColorModeValue,
+  useDisclosure,
+  useToken,
+} from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -221,15 +232,18 @@ const ProtocolAdapters: FC = () => {
     )
 
   return (
-    <>
-      <Text>
-        {!isLoading
-          ? t('protocolAdapter.table.pagination.summary', {
-              count: Math.min(DEFAULT_PER_PAGE, safeData.length),
-              total: safeData.length,
-            })
-          : t('protocolAdapter.loading.activeAdapters')}
-      </Text>
+    <Flex flexDirection="column" gap={4}>
+      <Box>
+        <Heading size="md">{t('protocolAdapter.tabs.adapters')}</Heading>
+        <Text>
+          {!isLoading
+            ? t('protocolAdapter.table.pagination.summary', {
+                count: Math.min(DEFAULT_PER_PAGE, safeData.length),
+                total: safeData.length,
+              })
+            : t('protocolAdapter.loading.activeAdapters')}
+        </Text>
+      </Box>
       <PaginatedTable<Adapter>
         aria-label={t('protocolAdapter.tabs.adapters')}
         data={safeData}
