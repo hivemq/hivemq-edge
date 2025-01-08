@@ -12,7 +12,7 @@ interface NodeToolbarProps extends ButtonGroupProps {
   onEdit?: (event: React.BaseSyntheticEvent) => void
 }
 
-const NodeDatahubToolbar: FC<NodeToolbarProps> = (props) => {
+const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ...props }) => {
   const { t } = useTranslation('datahub')
 
   return (
@@ -21,20 +21,20 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = (props) => {
         icon={<LuFileEdit />}
         data-testid="node-toolbar-edit"
         aria-label={t('Listings.action.edit')}
-        onClick={props.onEdit}
+        onClick={onEdit}
       />
       <IconButton
         icon={<LuCopy />}
         data-testid="node-toolbar-copy"
         aria-label={t('Listings.action.copy')}
-        onClick={props.onCopy}
+        onClick={onCopy}
       />
       <IconButton
         icon={<LuDelete />}
         data-testid="node-toolbar-delete"
         aria-label={t('Listings.action.delete')}
         colorScheme="red"
-        onClick={props.onDelete}
+        onClick={onDelete}
       />
     </ToolbarButtonGroup>
   )
