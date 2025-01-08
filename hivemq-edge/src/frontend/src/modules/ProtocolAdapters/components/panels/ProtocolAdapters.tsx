@@ -43,6 +43,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -87,7 +88,7 @@ const ProtocolAdapters: FC = () => {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
-      navigate(`/protocol-adapters/new/${type}`, { state: adapterNavigateState })
+      navigate(`/protocol-adapters/catalog/new/${type}`, { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
@@ -266,7 +267,8 @@ const ProtocolAdapters: FC = () => {
         message={t('modals.generics.confirmation')}
         header={t('modals.deleteProtocolAdapterDialog.header')}
       />
-    </>
+      <SuspenseOutlet />
+    </Flex>
   )
 }
 
