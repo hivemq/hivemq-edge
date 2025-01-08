@@ -14,7 +14,7 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
 
   return (
     <Flex flexDirection="column" p={4} pt={6} flexGrow={1}>
-      <Flex gap="50px">
+      <Flex gap="50px" data-testid="page-container-header">
         <Box maxW="50vw" pb={6}>
           <Heading as="h1">
             {title ? (
@@ -27,7 +27,7 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
           </Heading>
           {subtitle && <Text fontSize="md">{subtitle}</Text>}
         </Box>
-        <Box flexGrow={1} alignItems="flex-end">
+        <Box flexGrow={1} alignItems="flex-end" data-testid="page-container-cta">
           {cta}
         </Box>
       </Flex>
