@@ -71,12 +71,12 @@ const ProtocolIntegrationStore: FC = () => {
 
   return (
     <Flex flexDirection="column" gap={4}>
-      <Box>
+      <Box data-testid="heading-protocols-list">
         <Heading size="md">{t('protocolAdapter.tabs.protocols')}</Heading>
         <Text>
           {isLoading
             ? t('protocolAdapter.loading.protocolAdapters')
-            : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
+            : t('protocolAdapter.protocols.description', { count: safeData.length })}
         </Text>
       </Box>
       <Flex flexDirection="row" alignItems="flex-start" gap={6}>
