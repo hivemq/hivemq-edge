@@ -89,6 +89,13 @@ public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
                        stringMaxLength = 1024)
     protected @NotNull String password;
 
+    @JsonProperty(value = "connectionTimeoutSeconds")
+    @ModuleConfigField(title = "connectionTimeoutSeconds",
+                       description = "The timeout for connection establishment to the database.",
+                       numberMax = 0,
+                       defaultValue = "30")
+    protected int connectionTimeoutSeconds = 30;
+
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
@@ -99,7 +106,7 @@ public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
+                       numberMin = -1,
                        defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = 10;
 
@@ -140,5 +147,9 @@ public class PostgreSQLAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeoutSeconds;
     }
 }
