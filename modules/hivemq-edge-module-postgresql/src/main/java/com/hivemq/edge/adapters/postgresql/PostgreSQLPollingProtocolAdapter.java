@@ -97,30 +97,12 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
         databaseConnection.connect(compiledUri, username, password);
 
         try {
-            for (final PollingContext pollingContext : pollingContexts) {
-                final Optional<Tag> optDomainTag =
-                        tags.stream().filter(tag -> tag.getName().equals(pollingContext.getTagName())).findFirst();
-                if (optDomainTag.isPresent()) {
-                    final PostgreSQLAdapterTagDefinition definition =
-                            (PostgreSQLAdapterTagDefinition) optDomainTag.get().getDefinition();
-                    final PreparedStatement preparedStatement =
-                            databaseConnection.getConnection().prepareStatement(definition.getQuery());
-                    tagNameToPreparedStatement.put(pollingContext.getTagName(), preparedStatement);
-                } else {
-                    output.failStart(new IllegalStateException(
-                                    "Polling for PostgreSQL protocol adapter failed because the used tag '" +
-                                            pollingContext.getTagName() +
-                                            "' was not found. For the polling to work the tag must be created via REST API or the UI."),
-                            null);
-                }
-            }
+            preparePreparedStatements(output);
         } catch (final SQLException e) {
             output.failStart(e, null);
+            return;
         }
 
-
-
-        /* Test connection to the database when starting the adapter. */
         try {
             log.debug("Starting connection to the database instance");
             if (databaseConnection.getConnection().isValid(TIMEOUT)) {
@@ -134,6 +116,26 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
         } catch (final Exception e) {
             output.failStart(e, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    private void preparePreparedStatements(final @NotNull ProtocolAdapterStartOutput output) throws SQLException {
+        for (final PollingContext pollingContext : pollingContexts) {
+            final Optional<Tag> optDomainTag =
+                    tags.stream().filter(tag -> tag.getName().equals(pollingContext.getTagName())).findFirst();
+            if (optDomainTag.isPresent()) {
+                final PostgreSQLAdapterTagDefinition definition =
+                        (PostgreSQLAdapterTagDefinition) optDomainTag.get().getDefinition();
+                final PreparedStatement preparedStatement =
+                        databaseConnection.getConnection().prepareStatement(definition.getQuery());
+                tagNameToPreparedStatement.put(pollingContext.getTagName(), preparedStatement);
+            } else {
+                output.failStart(new IllegalStateException(
+                                "Polling for PostgreSQL protocol adapter failed because the used tag '" +
+                                        pollingContext.getTagName() +
+                                        "' was not found. For the polling to work the tag must be created via REST API or the UI."),
+                        null);
+            }
         }
     }
 
