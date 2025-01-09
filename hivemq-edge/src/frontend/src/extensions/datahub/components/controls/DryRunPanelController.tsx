@@ -28,9 +28,9 @@ const DryRunPanelController = () => {
   const { state } = useLocation()
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { fitView } = useReactFlow()
   const { nodes } = useDataHubDraftStore()
   const { status, getErrors } = usePolicyChecksStore()
-  const { fitView } = useReactFlow()
 
   const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
 
