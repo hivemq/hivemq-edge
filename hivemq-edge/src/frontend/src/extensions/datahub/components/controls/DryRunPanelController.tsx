@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useReactFlow, Node } from 'reactflow'
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -22,8 +23,10 @@ import { PolicyDryRunStatus } from '@datahub/types.ts'
 
 import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
 import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish.tsx'
+import { useTranslation } from 'react-i18next'
 
 const DryRunPanelController = () => {
+  const { t } = useTranslation('datahub')
   const { policyType } = useParams()
   const { state } = useLocation()
   const navigate = useNavigate()
@@ -62,7 +65,7 @@ const DryRunPanelController = () => {
         <DrawerBody>
           <Card size="sm">
             <CardHeader>
-              <PolicySummaryReport status={status || PolicyDryRunStatus.FAILURE} />
+              <PolicySummaryReport status={status} />
             </CardHeader>
             <CardBody>
               <PolicyErrorReport
