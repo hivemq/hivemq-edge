@@ -32,18 +32,17 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterConfig;
 import com.hivemq.edge.adapters.postgresql.config.PostgreSQLAdapterTagDefinition;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.Optional;
 
 
 public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter {
@@ -55,13 +54,14 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
     private final @NotNull PostgreSQLAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull PostgreSQLHelpers postgreSQLHelpers = new PostgreSQLHelpers();
     private final @NotNull String adapterId;
     private final @NotNull List<Tag> tags;
     private final @NotNull String compiledUri;
     private final @NotNull String username;
     private final @NotNull String password;
-    private volatile @Nullable Connection databaseConnection;
+    private final @NotNull DatabaseConnection databaseConnection = new DatabaseConnection();
+    private final @NotNull List<PollingContext> pollingContexts;
+    private final @NotNull HashMap<String, PreparedStatement> tagNameToPreparedStatement = new HashMap<>();
 
     public PostgreSQLPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -77,6 +77,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
                 adapterConfig.getDatabase());
         this.username = adapterConfig.getUsername();
         this.password = adapterConfig.getPassword();
+        this.pollingContexts = input.getPollingContexts();
     }
 
     @Override
@@ -93,12 +94,36 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
             output.failStart(e, null);
             return;
         }
+        databaseConnection.connect(compiledUri, username, password);
+
+        try {
+            for (final PollingContext pollingContext : pollingContexts) {
+                final Optional<Tag> optDomainTag =
+                        tags.stream().filter(tag -> tag.getName().equals(pollingContext.getTagName())).findFirst();
+                if (optDomainTag.isPresent()) {
+                    final PostgreSQLAdapterTagDefinition definition =
+                            (PostgreSQLAdapterTagDefinition) optDomainTag.get().getDefinition();
+                    final PreparedStatement preparedStatement =
+                            databaseConnection.getConnection().prepareStatement(definition.getQuery());
+                    tagNameToPreparedStatement.put(pollingContext.getTagName(), preparedStatement);
+                } else {
+                    output.failStart(new IllegalStateException(
+                                    "Polling for PostgreSQL protocol adapter failed because the used tag '" +
+                                            pollingContext.getTagName() +
+                                            "' was not found. For the polling to work the tag must be created via REST API or the UI."),
+                            null);
+                }
+            }
+        } catch (final SQLException e) {
+            output.failStart(e, null);
+        }
+
+
 
         /* Test connection to the database when starting the adapter. */
         try {
             log.debug("Starting connection to the database instance");
-            databaseConnection = postgreSQLHelpers.connectDatabase(compiledUri, username, password);
-            if (databaseConnection.isValid(TIMEOUT)) {
+            if (databaseConnection.getConnection().isValid(TIMEOUT)) {
                 output.startedSuccessfully();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             } else {
@@ -116,13 +141,7 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
-        try {
-            log.debug("Closing database connection");
-            databaseConnection.close();
-        } catch (final SQLException e) {
-            protocolAdapterStopOutput.failStop(e, null);
-            return;
-        }
+        databaseConnection.close();
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
 
@@ -138,77 +157,55 @@ public class PostgreSQLPollingProtocolAdapter implements PollingProtocolAdapter 
         final PollingContext pollingContext = pollingInput.getPollingContext();
 
         /* Connect to the database and execute the query */
-        try {
-            log.debug("Checking database connection state");
-            if (!databaseConnection.isValid(TIMEOUT)) {
-                log.debug("Connecting to the database");
-                databaseConnection = postgreSQLHelpers.connectDatabase(compiledUri, username, password);
-            }
-
-            log.debug("Handling tags for the adapter");
-            tags.stream()
-                    .filter(tag -> tag.getName().equals(pollingContext.getTagName()))
-                    .findFirst()
-                    .ifPresentOrElse(loadDataFromDB(pollingOutput),
-                            () -> pollingOutput.fail(
-                                    "Polling for PostgreSQL protocol adapter failed because the used tag '" +
-                                            pollingInput.getPollingContext().getTagName() +
-                                            "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-        } catch (final SQLException e) {
-            log.debug(e.getMessage());
-            pollingOutput.fail(e, null);
-            return;
-        }
+        log.debug("Checking database connection state");
+        log.debug("Handling tags for the adapter");
+        tags.stream()
+                .filter(tag -> tag.getName().equals(pollingContext.getTagName()))
+                .findFirst()
+                .ifPresentOrElse(def -> loadDataFromDB(pollingOutput, def),
+                        () -> pollingOutput.fail("Polling for PostgreSQL protocol adapter failed because the used tag '" +
+                                pollingInput.getPollingContext().getTagName() +
+                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
         pollingOutput.finish();
     }
 
-    private @NotNull Consumer<Tag> loadDataFromDB(final @NotNull PollingOutput pollingOutput) {
-        return def -> {
-            try {
-                log.debug("Getting tag definition");
-                /* Get the tag definition (Query, RowLimit and Split Lines)*/
-                final PostgreSQLAdapterTagDefinition definition = (PostgreSQLAdapterTagDefinition) def.getDefinition();
+    private void loadDataFromDB(final @NotNull PollingOutput pollingOutput, final @NotNull Tag tag) {
+        try {
+            log.debug("Getting tag definition");
+            /* Get the tag definition (Query, RowLimit and Split Lines)*/
+            final PostgreSQLAdapterTagDefinition definition = (PostgreSQLAdapterTagDefinition) tag.getDefinition();
 
-                log.debug("Cleaning query");
-                /* Rework the query to protect against big data volumes (basically removing possible LIMIT XX in the query and replacing with defined limit in the sub setting). */
-                final String query =
-                        postgreSQLHelpers.removeLimitFromQuery(Objects.requireNonNull(definition.getQuery()), "LIMIT") +
-                                " LIMIT " +
-                                definition.getRowLimit() +
-                                ";";
-                log.debug("Cleaned Tag Query : {}", query);
-
-                /* Execute query and handle result */
-                final ResultSet result = (databaseConnection.createStatement()).executeQuery(query);
-                assert result != null;
-                final ArrayList<ObjectNode> resultObject = new ArrayList<>();
-                final ResultSetMetaData resultSetMD = result.getMetaData();
-                while (result.next()) {
-                    final int numColumns = resultSetMD.getColumnCount();
-                    final ObjectNode node = OBJECT_MAPPER.createObjectNode();
-                    for (int i = 1; i <= numColumns; i++) {
-                        final String column_name = resultSetMD.getColumnName(i);
-                        node.put(column_name, result.getString(column_name));
-                    }
-
-                    /* Publish datapoint with a single line if split is required */
-                    if (definition.getSpiltLinesInIndividualMessages()) {
-                        log.debug("Splitting lines in multiple messages");
-                        pollingOutput.addDataPoint("queryResult", node);
-                    } else {
-                        resultObject.add(node);
-                    }
+            /* Execute query and handle result */
+            final PreparedStatement preparedStatement = tagNameToPreparedStatement.get(tag.getName());
+            final ResultSet result = preparedStatement.executeQuery();
+            assert result != null;
+            final ArrayList<ObjectNode> resultObject = new ArrayList<>();
+            final ResultSetMetaData resultSetMD = result.getMetaData();
+            while (result.next()) {
+                final int numColumns = resultSetMD.getColumnCount();
+                final ObjectNode node = OBJECT_MAPPER.createObjectNode();
+                for (int i = 1; i <= numColumns; i++) {
+                    final String column_name = resultSetMD.getColumnName(i);
+                    node.put(column_name, result.getString(column_name));
                 }
 
-                /* Publish datapoint with all lines if no split is required */
-                if (!definition.getSpiltLinesInIndividualMessages()) {
-                    log.debug("Publishing all lines in a single message");
-                    pollingOutput.addDataPoint("queryResult", resultObject);
+                /* Publish datapoint with a single line if split is required */
+                if (definition.getSpiltLinesInIndividualMessages()) {
+                    log.debug("Splitting lines in multiple messages");
+                    pollingOutput.addDataPoint("queryResult", node);
+                } else {
+                    resultObject.add(node);
                 }
-            } catch (final Exception e) {
-                pollingOutput.fail(e, null);
             }
-        };
+
+            /* Publish datapoint with all lines if no split is required */
+            if (!definition.getSpiltLinesInIndividualMessages()) {
+                log.debug("Publishing all lines in a single message");
+                pollingOutput.addDataPoint("queryResult", resultObject);
+            }
+        } catch (final Exception e) {
+            pollingOutput.fail(e, null);
+        }
     }
 
     @Override
