@@ -10,21 +10,19 @@ import java.sql.SQLException;
 
 public class DatabaseConnection {
 
-    private final @NotNull HikariConfig config;
     private @Nullable HikariDataSource ds;
 
-    public DatabaseConnection(final @NotNull String jdbcUrl, final @NotNull String username, final @NotNull String password, final int connectionTimeout) {
-        config = new HikariConfig();
+    public DatabaseConnection() {
+    }
+
+    public void connect(final @NotNull String jdbcUrl, final @NotNull String username, final @NotNull String password) {
+        final HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(username);
         config.setPassword(password);
-        config.setConnectionTimeout(connectionTimeout * 1000L);
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-    }
-
-    public void connect() {
         this.ds = new HikariDataSource(config);
     }
 
