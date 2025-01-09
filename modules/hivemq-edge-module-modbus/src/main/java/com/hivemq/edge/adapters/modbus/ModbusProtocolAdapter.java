@@ -63,6 +63,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull List<Tag> tags;
     private final @NotNull String adapterId;
 
+
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
@@ -100,6 +101,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
             }
         });
     }
+
+
 
     @Override
     public void poll(

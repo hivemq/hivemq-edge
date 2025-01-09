@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -59,8 +60,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     @Override
-    public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
+    public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler, @NotNull ExecutorService executorService) {
+        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService, executorService, nanoTimeProvider);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }

@@ -17,12 +17,8 @@ package com.hivemq.common.executors.ioc;
 
 import dagger.Module;
 import dagger.Provides;
-import org.apache.commons.lang3.ThreadUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
-import javax.swing.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,14 +36,14 @@ public abstract class ExecutorsModule {
     private static final ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
     @Provides
     @Singleton
-    static ScheduledExecutorService scheduledExecutor() {
+    public static ScheduledExecutorService scheduledExecutor() {
         return Executors.newScheduledThreadPool(4,
                 new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
     }
 
     @Provides
     @Singleton
-    static ExecutorService executorService() {
+    public static ExecutorService executorService() {
         return Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
     }
 

@@ -50,7 +50,6 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
@@ -58,6 +57,7 @@ import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -74,6 +74,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
@@ -86,6 +91,9 @@ import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdat
 @Singleton
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
+
+    static final String GROUP_NAME = "hivemq-edge-polling-group";
+    private static final ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
 
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
@@ -292,7 +300,7 @@ public class ProtocolAdapterManager {
                         adapterSubscription,
                         eventService,
                         jsonPayloadDefaultCreator);
-                protocolAdapterPollingService.schedulePolling(sampler);
+                protocolAdapterPollingService.schedulePolling(sampler, protocolAdapterWrapper.getPollingExecutorService());
             });
         }
     }
@@ -641,7 +649,13 @@ public class ProtocolAdapterManager {
                     config.getAdapterConfig(),
                     config.getTags(),
                     config.getToEdgeMappings(),
-                    config.getFromEdgeMappings());
+                    config.getFromEdgeMappings(),
+                    new ThreadPoolExecutor(0,
+                            Integer.MAX_VALUE,
+                            60L,
+                            TimeUnit.SECONDS,
+                            new SynchronousQueue<>(),
+                            new PollingThreadFactory(protocolAdapter.getProtocolAdapterInformation().getProtocolId() + "-" + protocolAdapter.getId())));
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -940,6 +954,25 @@ public class ProtocolAdapterManager {
             Thread.currentThread().interrupt();
         } catch (final ExecutionException e) {
             log.error("Exception happened while async execution: ", e.getCause());
+        }
+    }
+
+    static class PollingThreadFactory implements ThreadFactory {
+        private final String factoryName;
+        private final ThreadGroup group;
+        private AtomicLong counter = new AtomicLong();
+
+        public PollingThreadFactory(final String factoryName) {
+            this.factoryName = factoryName;
+            this.group = new ThreadGroup(coreGroup,  factoryName);
+        }
+
+        @Override
+        public Thread newThread(final Runnable r) {
+            synchronized (group) {
+                Thread thread = new Thread(coreGroup, r, String.format(factoryName + "-%d", counter.incrementAndGet()));
+                return thread;
+            }
         }
     }
 }

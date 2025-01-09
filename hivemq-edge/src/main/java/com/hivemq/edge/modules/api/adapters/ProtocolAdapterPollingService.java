@@ -18,6 +18,8 @@ package com.hivemq.edge.modules.api.adapters;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.ExecutorService;
+
 /**
  * The Polling Service allows Protocol Adapters to use a centrally managed and tracked Scheduler
  * which means all processes can be managed via API / UX.
@@ -26,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ProtocolAdapterPollingService {
 
-    void schedulePolling(@NotNull ProtocolAdapterPollingSampler input);
+    void schedulePolling(@NotNull ProtocolAdapterPollingSampler input, @NotNull ExecutorService executorService);
 
     void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
 }
