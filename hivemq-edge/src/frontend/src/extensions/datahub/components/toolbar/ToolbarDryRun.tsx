@@ -43,6 +43,8 @@ export const ToolbarDryRun: FC = () => {
     })
   }
 
+  console.log('XXXXXX status', status)
+
   return (
     <ToolbarButtonGroup variant="outline">
       <Button
@@ -52,13 +54,14 @@ export const ToolbarDryRun: FC = () => {
         loadingText={t('workspace.dryRun.toolbar.checking')}
         onClick={handleCheckPolicy}
         isDisabled={!selectedNode || !isEditEnabled}
+        data-status={status}
       >
         {t('workspace.toolbar.policy.check')}
       </Button>
       {report && (
         <IconButton
           icon={<Icon as={CloseIcon} boxSize="12px" />}
-          data-testid="node-toolbar-delete"
+          data-testid="toolbox-policy-clear"
           aria-label={t('Clear Validity Report')}
           onClick={handleClearPolicy}
         />
