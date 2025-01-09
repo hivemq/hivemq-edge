@@ -22,6 +22,7 @@ import {
   ResourceState,
   ResourceWorkingVersion,
 } from '@datahub/types.ts'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -57,6 +58,8 @@ export const ToolbarPublish: FC = () => {
   const createDataPolicy = useCreateDataPolicy()
   const createBehaviorPolicy = useCreateBehaviorPolicy()
   const toast = useToast()
+  const { state, pathname } = useLocation()
+  const navigate = useNavigate()
 
   const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || statusDraft === DesignerStatus.DRAFT
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
@@ -152,6 +155,7 @@ export const ToolbarPublish: FC = () => {
       .finally(() => {
         reset()
         setNode(selectedNode)
+        navigate(state?.origin || pathname, { replace: true })
       })
   }
 
