@@ -161,6 +161,7 @@ export const ToolbarPublish: FC = () => {
 
   return (
     <Button
+      variant="primary"
       leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
       onClick={handlePublish}
       isDisabled={!isValid || !isEditEnabled}
