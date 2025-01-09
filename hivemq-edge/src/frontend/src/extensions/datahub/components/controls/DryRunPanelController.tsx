@@ -60,7 +60,7 @@ const DryRunPanelController = () => {
     <Drawer size="sm" isOpen={isOpen} placement="right" onClose={onDrawerClose}>
       <DrawerContent data-testid="node-editor-content">
         <DrawerCloseButton />
-        <DrawerHeader>Policy Dry Run</DrawerHeader>
+        <DrawerHeader>{t('workspace.dryRun.report.header')}</DrawerHeader>
 
         <DrawerBody>
           <Card size="sm">
@@ -82,7 +82,10 @@ const DryRunPanelController = () => {
             </CardBody>
           </Card>
         </DrawerBody>
-        <DrawerFooter borderTopWidth="1px"> {status === PolicyDryRunStatus.SUCCESS && <ToolbarPublish />}</DrawerFooter>
+        <DrawerFooter justifyContent="space-between">
+          {status === PolicyDryRunStatus.SUCCESS && <ToolbarPublish />}
+          <Button onClick={onDrawerClose}>{t('workspace.dryRun.report.cta.close')}</Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
