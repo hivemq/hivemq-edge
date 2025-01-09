@@ -6,7 +6,7 @@ import { HStack, Text, VStack } from '@chakra-ui/react'
 import { DataHubNodeType, DataPolicyData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeIcon } from '@datahub/components/helpers'
-import PolicyToolbar from '@datahub/components/controls/PolicyToolbar.tsx'
+import PolicyToolbar from '@datahub/components/toolbar/PolicyToolbar.tsx'
 
 export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
   const { t } = useTranslation('datahub')

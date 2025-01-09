@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
-import { Box, Button, HStack, Icon, Stack, useToast } from '@chakra-ui/react'
+import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
 import config from '@/config'
@@ -10,7 +10,6 @@ import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
-import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
@@ -49,7 +48,7 @@ const resourceReducer =
     return accumulator
   }
 
-export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
+export const ToolbarPublish: FC = () => {
   const { t } = useTranslation('datahub')
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const { status: statusDraft } = useDataHubDraftStore()
@@ -153,24 +152,17 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
       .finally(() => {
         reset()
         setNode(selectedNode)
-        onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_NODES)
       })
   }
 
   return (
-    <Stack maxW={500}>
-      <HStack>
-        <Box>
-          <Button
-            leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
-            onClick={handlePublish}
-            isDisabled={!isValid || !isEditEnabled}
-            isLoading={createSchema.isPending}
-          >
-            {t('workspace.toolbar.policy.publish')}
-          </Button>
-        </Box>
-      </HStack>
-    </Stack>
+    <Button
+      leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
+      onClick={handlePublish}
+      isDisabled={!isValid || !isEditEnabled}
+      isLoading={createSchema.isPending}
+    >
+      {t('workspace.toolbar.policy.publish')}
+    </Button>
   )
 }

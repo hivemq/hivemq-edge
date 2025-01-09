@@ -1,14 +1,14 @@
 /// <reference types="cypress" />
 
-import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
+import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish.tsx'
 
-describe('ToolboxPublish', () => {
+describe('ToolbarPublish', () => {
   beforeEach(() => {
     cy.viewport(800, 250)
   })
 
   it('should renders properly', () => {
-    cy.mountWithProviders(<ToolboxPublish />)
+    cy.mountWithProviders(<ToolbarPublish />)
     cy.get('button').should('have.text', 'Publish')
   })
 })
