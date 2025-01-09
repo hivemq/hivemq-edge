@@ -1,5 +1,5 @@
 import { type FC, MouseEventHandler, useMemo } from 'react'
-import { type NodeProps, type NodeToolbarProps, Position, Node, Edge, MarkerType, getOutgoers } from 'reactflow'
+import { Edge, getOutgoers, MarkerType, Node, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
@@ -117,8 +117,6 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   // TODO[NVL] Weird side effect if first node has no toolbar; get the first suitable node instead?
   const [mainNodes] = selectedNodes
 
-  const isGroupable = selectedGroupCandidates
-
   return (
     <NodeToolbar
       isVisible={Boolean(mainNodes?.id === id && !dragging)}
@@ -136,7 +134,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       <Divider orientation="vertical" />
       <ToolbarButtonGroup>
         <IconButton
-          isDisabled={!isGroupable}
+          isDisabled={!selectedGroupCandidates}
           data-testid="node-group-toolbar-group"
           icon={<ImMakeGroup />}
           aria-label={t('workspace.toolbar.command.group')}
