@@ -6,10 +6,9 @@ import config from '@/config'
 
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import Tool from '@datahub/components/controls/Tool.tsx'
-import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
-export const ToolboxNodes: FC<DesignerToolBoxProps> = () => {
+export const ToolboxNodes: FC = () => {
   const { t } = useTranslation('datahub')
   const { nodes, status } = useDataHubDraftStore()
 
