@@ -24,7 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.function.Try;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,8 +38,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,17 +81,15 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(2)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(2)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
+        reset(mockedExecutor);
         executorService.shutdownNow();
     }
 
@@ -101,18 +104,10 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        await().until(() -> {
-            try {
-                verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
-            } catch (Exception e) {
-                return false;
-            }
-            return true;
-        });
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
 
         pollingTask.run();
-        Thread.sleep(500);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, after(500).times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -126,12 +121,10 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
 
         pollingTask.run();
-        Thread.sleep(100);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -144,9 +137,8 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(100);
 
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -159,9 +151,8 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(100);
 
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -174,14 +165,7 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, executorService, nanoTimeProvider);
 
         pollingTask.run();
-        await().until(() -> {
-            try {
-                verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
-            } catch (Exception e) {
-                return false;
-            }
-            return true;
-        });
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -194,7 +178,7 @@ class PollingTaskTest {
 
         pollingTask.schedule(1);
 
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(1L), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(1L), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -207,7 +191,7 @@ class PollingTaskTest {
 
         pollingTask.schedule(1);
 
-        verify(mockedExecutor, never()).schedule(same(pollingTask), eq(1L), eq(TimeUnit.MILLISECONDS));
+        await().pollDelay(500, TimeUnit.MILLISECONDS).until(verifyAssertion(() -> verify(mockedExecutor, never()).schedule(same(pollingTask), eq(1L), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
@@ -225,9 +209,20 @@ class PollingTaskTest {
 
         pollingTask.run();
 
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(expectedDelay), eq(TimeUnit.MILLISECONDS));
+        await().until(verifyAssertion(() -> verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(expectedDelay), eq(TimeUnit.MILLISECONDS))));
         executorService.shutdownNow();
     }
 
+
+    public Callable<Boolean> verifyAssertion(Runnable runny) {
+        return () -> {
+            try {
+                runny.run();
+            } catch (Exception e) {
+                return false;
+            }
+            return true;
+        };
+    }
 
 }
