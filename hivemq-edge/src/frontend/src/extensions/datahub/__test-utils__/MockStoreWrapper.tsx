@@ -73,9 +73,5 @@ export const MockChecksStoreWrapper: FC<MockChecksStoreWrapperProps> = ({ config
     if (report) setReport(report)
   }, [config, onAddNodes, setNode, setReport])
 
-  return (
-    <>
-      <ReactFlowProvider>{children}</ReactFlowProvider>
-    </>
-  )
+  return <ReactFlowProvider>{children}</ReactFlowProvider>
 }
