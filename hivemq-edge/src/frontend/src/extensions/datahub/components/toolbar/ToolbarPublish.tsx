@@ -66,14 +66,13 @@ export const ToolbarPublish: FC = () => {
 
   const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {
     try {
-      const data = await promise
+      await promise
       toast({
         ...dataHubToastOption,
         title: t('error.publish.title', { source: type }),
         description: t('error.publish.description', { source: type }),
         status: 'success',
       })
-      return Promise.resolve(data)
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message
@@ -84,7 +83,6 @@ export const ToolbarPublish: FC = () => {
         description: message,
         status: 'error',
       })
-      return Promise.reject(error)
     }
   }
 
