@@ -71,6 +71,74 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
     ? t('workspace.property.header', { context: selectedNode.type })
     : t('workspace.observability.header', { context: selectedNode.type })
 
+  const renderMetricsContainer = () => (
+    <MetricsContainer
+      nodeId={nodeId}
+      type={selectedNode.type as NodeTypes}
+      filters={adapterIDs.reduce<MetricsFilter[]>((acc, cur) => {
+        if (cur && cur.type === NodeTypes.ADAPTER_NODE) {
+          acc.push({ id: cur.data.id, type: `com.hivemq.edge.protocol-adapters.${cur.data.type}` })
+        }
+        return acc
+      }, [])}
+      initMetrics={metrics}
+      defaultChartType={showConfig ? ChartType.SAMPLE : undefined}
+    />
+  )
+
+  const renderGroupTabs = () => (
+    <Tabs>
+      <TabList>
+        <Tab>{t('workspace.grouping.editor.tabs.config')}</Tab>
+        <Tab>{t('workspace.grouping.editor.tabs.events')}</Tab>
+        <Tab>{t('workspace.grouping.editor.tabs.metrics')}</Tab>
+      </TabList>
+
+      <TabPanels>
+        <TabPanel px={0} as={VStack} alignItems="stretch">
+          <GroupMetadataEditor
+            group={selectedNode}
+            onSubmit={(group) => {
+              onGroupSetData(nodeId, group)
+            }}
+          />
+          <GroupContentEditor group={selectedNode} />
+        </TabPanel>
+        <TabPanel px={0} as={VStack} alignItems="stretch">
+          <Card size="sm">
+            <CardHeader>
+              <Text>{t('workspace.grouping.editor.eventLog.header')}</Text>
+            </CardHeader>
+            <CardBody>
+              <EventLogTable
+                globalSourceFilter={adapterIDs.map((e) => e?.data.id)}
+                variant="summary"
+                maxEvents={10}
+                isSingleSource={false}
+              />
+            </CardBody>
+            <CardFooter justifyContent="flex-end" pt={0}>
+              <Button
+                data-testid="navigate-eventLog-filtered"
+                variant="link"
+                as={RouterLink}
+                // URL options not yet supported
+                to={linkEventLog}
+                rightIcon={<MdOutlineEventNote />}
+                size="sm"
+              >
+                {t('workspace.grouping.editor.eventLog.showMore')}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabPanel>
+        <TabPanel px={0} as={VStack} alignItems="stretch">
+          {renderMetricsContainer()}
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
+  )
+
   return (
     <Drawer isOpen={isOpen} placement="right" size="lg" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
@@ -86,79 +154,8 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          {showConfig && (
-            <Tabs>
-              <TabList>
-                <Tab>{t('workspace.grouping.editor.tabs.config')}</Tab>
-                <Tab>{t('workspace.grouping.editor.tabs.events')}</Tab>
-                <Tab>{t('workspace.grouping.editor.tabs.metrics')}</Tab>
-              </TabList>
-
-              <TabPanels>
-                <TabPanel px={0} as={VStack} alignItems="stretch">
-                  <GroupMetadataEditor
-                    group={selectedNode}
-                    onSubmit={(group) => {
-                      onGroupSetData(nodeId, group)
-                    }}
-                  />
-                  <GroupContentEditor group={selectedNode} />
-                </TabPanel>
-                <TabPanel px={0} as={VStack} alignItems="stretch">
-                  <Card size="sm">
-                    <CardHeader>
-                      <Text>{t('workspace.grouping.editor.eventLog.header')}</Text>
-                    </CardHeader>
-                    <CardBody>
-                      <EventLogTable
-                        globalSourceFilter={adapterIDs.map((e) => e?.data.id)}
-                        variant="summary"
-                        maxEvents={10}
-                        isSingleSource={false}
-                      />
-                    </CardBody>
-                    <CardFooter justifyContent="flex-end" pt={0}>
-                      <Button
-                        data-testid="navigate-eventLog-filtered"
-                        variant="link"
-                        as={RouterLink}
-                        // URL options not yet supported
-                        to={linkEventLog}
-                        rightIcon={<MdOutlineEventNote />}
-                        size="sm"
-                      >
-                        {t('workspace.grouping.editor.eventLog.showMore')}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </TabPanel>
-                <TabPanel px={0} as={VStack} alignItems="stretch">
-                  <MetricsContainer
-                    nodeId={nodeId}
-                    type={selectedNode.type as NodeTypes}
-                    adapterIDs={adapterIDs.map((e) => e?.data.id)}
-                    initMetrics={metrics}
-                    defaultChartType={showConfig ? ChartType.SAMPLE : undefined}
-                  />
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          )}
-
-          {!showConfig && (
-            <MetricsContainer
-              nodeId={nodeId}
-              type={selectedNode.type as NodeTypes}
-              filters={adapterIDs.reduce<MetricsFilter[]>((acc, cur) => {
-              if (cur && cur.type === NodeTypes.ADAPTER_NODE) {
-                acc.push({ id: cur.data.id, type: `com.hivemq.edge.protocol-adapters.${cur.data.type}` })
-              }
-              return acc
-            }, [])}
-              initMetrics={metrics}
-              defaultChartType={showConfig ? ChartType.SAMPLE : undefined}
-            />
-          )}
+          {showConfig && renderGroupTabs()}
+          {!showConfig && renderMetricsContainer()}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
