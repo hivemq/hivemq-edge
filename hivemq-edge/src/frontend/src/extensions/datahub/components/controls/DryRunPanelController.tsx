@@ -58,7 +58,7 @@ const DryRunPanelController = () => {
 
   return (
     <Drawer size="sm" isOpen={isOpen} placement="right" onClose={onDrawerClose}>
-      <DrawerContent data-testid="node-editor-content">
+      <DrawerContent data-testid="policy-validity-report" aria-label={t('workspace.dryRun.report.header')}>
         <DrawerCloseButton />
         <DrawerHeader>{t('workspace.dryRun.report.header')}</DrawerHeader>
 
