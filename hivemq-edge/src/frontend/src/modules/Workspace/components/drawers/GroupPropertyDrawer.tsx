@@ -61,7 +61,9 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
 
   const linkEventLog = useMemo(() => {
     const searchParams = new URLSearchParams()
-    for (const node of adapterIDs) if (node) searchParams.append('source', node.data.id)
+    for (const node of adapterIDs) {
+      if (node) searchParams.append('source', node.data.id)
+    }
     return `/event-logs?${searchParams.toString()}`
   }, [adapterIDs])
 
