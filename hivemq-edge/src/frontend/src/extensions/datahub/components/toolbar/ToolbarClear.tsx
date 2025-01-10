@@ -13,7 +13,7 @@ export const ToolbarClear: FC = () => {
   const { t } = useTranslation('datahub')
 
   const { nodes, onUpdateNodes } = useDataHubDraftStore()
-  const { node: selectedNode, setNode, reset } = usePolicyChecksStore()
+  const { node: selectedNode, setNode, reset, report } = usePolicyChecksStore()
 
   const handleClearPolicy = () => {
     reset()
@@ -32,6 +32,7 @@ export const ToolbarClear: FC = () => {
       data-testid="toolbox-policy-clear"
       aria-label={t('Clear Validity Report')}
       onClick={handleClearPolicy}
+      isDisabled={!report}
     />
   )
 }
