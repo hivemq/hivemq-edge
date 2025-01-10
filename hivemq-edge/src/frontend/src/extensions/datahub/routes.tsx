@@ -6,6 +6,7 @@ const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPa
 const PolicyEditorLoader = lazy(() => import('@datahub/components/pages/PolicyEditorLoader.tsx'))
 const DataHubListings = lazy(() => import('@datahub/components/pages/DataHubListings.tsx'))
 const PropertyPanelController = lazy(() => import('@datahub/components/controls/PropertyPanelController.tsx'))
+const DryRunPanelController = lazy(() => import('@datahub/components/controls/DryRunPanelController.tsx'))
 
 export const dataHubRoutes: RouteObject = {
   path: 'datahub/',
@@ -20,6 +21,7 @@ export const dataHubRoutes: RouteObject = {
       path: ':policyType/:policyId?',
       element: <PolicyEditorLoader />,
       children: [
+        { path: 'validation/', element: <DryRunPanelController /> },
         {
           path: 'node/:type/:nodeId',
           element: <PropertyPanelController />,

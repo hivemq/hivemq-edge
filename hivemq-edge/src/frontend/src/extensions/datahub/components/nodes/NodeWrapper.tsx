@@ -1,9 +1,11 @@
 import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NodeProps, NodeToolbar, Position } from 'reactflow'
+import { NodeProps } from 'reactflow'
 import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
 
-import NodeDatahubToolbar from '@datahub/components/nodes/NodeDatahubToolbar.tsx'
+import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
+
+import NodeDatahubToolbar from '@datahub/components/toolbar/NodeDatahubToolbar.tsx'
 import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { parseHotkey } from '@datahub/utils/hotkeys.utils.ts'
@@ -14,9 +16,10 @@ interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
   children: ReactNode
   route: string
   wrapperProps?: CardBodyProps
+  toolbar?: React.ReactNode
 }
 
-export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, wrapperProps, data }) => {
+export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar, route, wrapperProps, data }) => {
   const { nodes } = useDataHubDraftStore()
   const [internalSelection, setInternalSelection] = useState(false)
   const navigate = useNavigate()
@@ -66,8 +69,10 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
 
   return (
     <>
-      <NodeToolbar isVisible={selected && isSingleSelect} position={Position.Top} offset={8}>
-        <NodeDatahubToolbar onCopy={onHandleCopy} onDelete={onHandleDelete} onEdit={onHandleEdit} />
+      <NodeToolbar isVisible={selected && isSingleSelect} offset={16}>
+        <NodeDatahubToolbar onCopy={onHandleCopy} onDelete={onHandleDelete} onEdit={onHandleEdit}>
+          {toolbar}
+        </NodeDatahubToolbar>
       </NodeToolbar>
 
       <Card

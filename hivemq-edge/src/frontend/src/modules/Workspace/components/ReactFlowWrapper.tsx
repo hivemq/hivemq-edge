@@ -1,11 +1,12 @@
 import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import ReactFlow, { Background, getIncomers, getOutgoers, MiniMap, Node, NodePositionChange } from 'reactflow'
+import ReactFlow, { Background, getIncomers, getOutgoers, Node, NodePositionChange } from 'reactflow'
 import { Box } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
 import './reactflow-chakra.fix.css'
 
+import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
@@ -24,7 +25,7 @@ import {
   NodeDevice,
 } from '@/modules/Workspace/components/nodes'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { proOptions } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -107,7 +108,6 @@ const ReactFlowWrapper = () => {
         <Background />
         <CanvasControls />
         <MiniMap
-          style={{ backgroundColor: 'var(--chakra-colors-chakra-body-bg)', margin: 0 }}
           zoomable
           pannable
           nodeClassName={(node) => node.type || ''}

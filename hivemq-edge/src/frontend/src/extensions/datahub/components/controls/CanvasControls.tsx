@@ -1,11 +1,12 @@
 import { FC } from 'react'
-import { ControlProps, Panel, ReactFlowState, useReactFlow, useStore, useStoreApi } from 'reactflow'
+import { ControlProps, ReactFlowState, useReactFlow, useStore, useStoreApi } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { ButtonGroup } from '@chakra-ui/react'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 import { LuBoxSelect } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import Panel from '@/components/react-flow/Panel.tsx'
 import DesignerCheatSheet from '@datahub/components/controls/DesignerCheatSheet.tsx'
 
 import 'reactflow/dist/style.css'
