@@ -34,6 +34,7 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class ProtocolAdapterWrapper {
 
@@ -46,6 +47,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull List<SouthboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
+    private final @NotNull ExecutorService pollingExecutorService;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -57,7 +59,8 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolSpecificAdapterConfig configObject,
             final @NotNull List<? extends Tag> tags,
             final @NotNull List<SouthboundMapping> southboundMappings,
-            final @NotNull List<NorthboundMapping> northboundMappings) {
+            final @NotNull List<NorthboundMapping> northboundMappings,
+            final @NotNull ExecutorService pollingExecutorService) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
@@ -67,6 +70,7 @@ public class ProtocolAdapterWrapper {
         this.tags = tags;
         this.southboundMappings = southboundMappings;
         this.northboundMappings = northboundMappings;
+        this.pollingExecutorService = pollingExecutorService;
     }
 
     public void start(
@@ -77,6 +81,7 @@ public class ProtocolAdapterWrapper {
 
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         adapter.stop(input, output);
+        pollingExecutorService.shutdown();
     }
 
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
@@ -150,5 +155,9 @@ public class ProtocolAdapterWrapper {
 
     public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
         protocolAdapterState.setRuntimeStatus(runtimeStatus);
+    }
+
+    public @NotNull ExecutorService getPollingExecutorService() {
+        return pollingExecutorService;
     }
 }

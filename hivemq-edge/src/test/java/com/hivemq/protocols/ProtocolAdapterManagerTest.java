@@ -29,7 +29,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -59,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -132,7 +130,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -156,7 +155,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -184,7 +184,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
@@ -211,7 +212,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
@@ -237,7 +239,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
@@ -263,7 +266,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                mock());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 

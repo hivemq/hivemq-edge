@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
@@ -44,6 +45,7 @@ public class PollingTask implements Runnable {
     private final @NotNull NanoTimeProvider nanoTimeProvider;
     private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger();
     private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
+    private final @NotNull ExecutorService executorService;
 
     private volatile long nanosOfLastPolling;
     private final @NotNull AtomicBoolean continueScheduling = new AtomicBoolean(true);
@@ -53,10 +55,12 @@ public class PollingTask implements Runnable {
             final @NotNull ProtocolAdapterPollingSampler sampler,
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull EventService eventService,
+            final @NotNull ExecutorService executorService,
             final @NotNull NanoTimeProvider nanoTimeProvider) {
         this.sampler = sampler;
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
+        this.executorService = executorService;
         this.nanoTimeProvider = nanoTimeProvider;
     }
 
@@ -67,22 +71,34 @@ public class PollingTask implements Runnable {
             if (!continueScheduling.get()) {
                 return;
             }
-            final CompletableFuture<?> localExecutionFuture = sampler.execute()
-                    .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
-                            TimeUnit.MILLISECONDS);
-            localExecutionFuture.whenComplete((aVoid, throwable) -> {
-                if (throwable == null) {
-                    resetErrorStats();
-                    reschedule(0);
-                } else {
-                    if (ExceptionUtils.isInterruptedException(throwable)) {
-                        handleInterruptionException(throwable);
-                    } else {
-                        handleExceptionDuringPolling(throwable);
-                    }
-                }
-            });
-        } catch (Throwable t) {
+
+            CompletableFuture
+                    .runAsync(() -> {
+                        final CompletableFuture<?> localExecutionFuture = sampler.execute()
+                                .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
+                                        TimeUnit.MILLISECONDS);
+                        localExecutionFuture.whenComplete((aVoid, throwable) -> {
+                            if (throwable == null) {
+                                resetErrorStats();
+                                reschedule(0);
+                            } else {
+                                if (ExceptionUtils.isInterruptedException(throwable)) {
+                                    handleInterruptionException(throwable);
+                                } else {
+                                    handleExceptionDuringPolling(throwable);
+                                }
+                            }
+                        });
+                    }, executorService)
+                    .handle((result, ex) -> {
+                        if (ex == null) {
+                            return result;
+                        } else {
+                            handleExceptionDuringPolling(ex);
+                            return result;
+                        }
+                    });
+        } catch (final Throwable t) {
             // the sampler shouldn't throw a exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
             handleExceptionDuringPolling(t);
         }
