@@ -18,7 +18,12 @@ describe('MetricsContainer', () => {
       <MetricsContainer
         nodeId="bridge@bridge-id-01"
         initMetrics={[]}
-        adapterIDs={[mockBridgeId]}
+        filters={[
+          {
+            id: mockBridgeId,
+            type: 'com.hivemq.edge.bridge',
+          },
+        ]}
         type={NodeTypes.BRIDGE_NODE}
       />
     )

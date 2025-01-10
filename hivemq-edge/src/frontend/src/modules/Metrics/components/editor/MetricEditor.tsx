@@ -8,13 +8,13 @@ import { BiAddToQueue } from 'react-icons/bi'
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.ts'
 
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
-import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption } from '../../types.ts'
+import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption, MetricsFilter } from '../../types.ts'
 
 interface MetricEditorProps {
   onSubmit: SubmitHandler<MetricDefinition>
   selectedMetrics: string[]
   selectedChart?: ChartType
-  filter: string[]
+  filters: MetricsFilter[]
 }
 
 const chartTypeOptions: ChartTypeOption[] = [
@@ -23,7 +23,7 @@ const chartTypeOptions: ChartTypeOption[] = [
   { value: ChartType.SAMPLE, label: 'Stat' },
 ]
 
-const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics, selectedChart }) => {
+const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filters, selectedMetrics, selectedChart }) => {
   const { t } = useTranslation()
   const { data } = useGetMetrics()
   const {
@@ -39,10 +39,13 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
     if (!data || !data.items) return []
     const { items } = data
 
-    const groupedMetrics = filter
-      .map((adapter) => {
+    const groupedMetrics = filters
+      .map((filter) => {
         const metrics: MetricNameOption[] = items
-          .filter((metric) => metric.name && metric.name.includes(adapter))
+          .filter((metric) => {
+            const structure = extractMetricInfo(metric.name as string)
+            return filter.id === structure.id
+          })
           .map((metric) => {
             const { device, suffix } = extractMetricInfo(metric.name as string)
             return {
@@ -54,14 +57,14 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
           .sort((a, b) => a.label.localeCompare(b.label))
 
         return {
-          label: adapter,
+          label: filter.id,
           options: metrics,
         }
       })
       .sort((a, b) => a.label.localeCompare(b.label))
 
     return groupedMetrics.length === 1 ? groupedMetrics[0].options : groupedMetrics
-  }, [data, filter, selectedMetrics, t])
+  }, [data, filters, selectedMetrics, t])
 
   useEffect(() => {
     if (isSubmitted) {

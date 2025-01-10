@@ -19,7 +19,12 @@ describe('MetricEditor', () => {
       const onSubmit = cy.stub().as('onSubmit')
       cy.mountWithProviders(
         <MetricSelector
-          filter={[mockBridgeId]}
+          filters={[
+            {
+              id: mockBridgeId,
+              type: 'com.hivemq.edge.bridge',
+            },
+          ]}
           onSubmit={onSubmit}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
@@ -55,7 +60,12 @@ describe('MetricEditor', () => {
       cy.injectAxe()
       cy.mountWithProviders(
         <MetricSelector
-          filter={[mockBridgeId]}
+          filters={[
+            {
+              id: mockBridgeId,
+              type: 'com.hivemq.edge.bridge',
+            },
+          ]}
           onSubmit={cy.stub()}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
@@ -71,7 +81,16 @@ describe('MetricEditor', () => {
       const onSubmit = cy.stub().as('onSubmit')
       cy.mountWithProviders(
         <MetricSelector
-          filter={[mockBridgeId, MOCK_ADAPTER_ID]}
+          filters={[
+            {
+              id: mockBridgeId,
+              type: 'com.hivemq.edge.bridge',
+            },
+            {
+              id: MOCK_ADAPTER_ID,
+              type: 'com.hivemq.edge.protocol-adapters',
+            },
+          ]}
           onSubmit={onSubmit}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[1].name as string]}
