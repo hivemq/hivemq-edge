@@ -41,7 +41,7 @@ describe('PaginatedTable', () => {
     cy.get('th').should('have.length', 2)
     cy.get('th').eq(0).should('contain.text', 'item')
     cy.get('th').eq(1).should('contain.text', 'value')
-    cy.get('tr').should('have.length', 10 + 1)
+    cy.get('tr').should('have.length', 5 + 1)
 
     cy.get('[aria-label="Go to the first page"]').should('be.visible')
   })

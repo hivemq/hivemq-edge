@@ -2,6 +2,7 @@ import { theme as baseTheme } from '@chakra-ui/react'
 
 const colors = {
   status: {
+    unknown: baseTheme.colors.gray,
     error: baseTheme.colors.red,
     connected: baseTheme.colors.green,
     disconnected: baseTheme.colors.orange,

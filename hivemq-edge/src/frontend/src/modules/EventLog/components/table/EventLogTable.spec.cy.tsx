@@ -28,10 +28,10 @@ describe('EventLogTable', () => {
       identifier: { identifier: 'EVENT-0', type: TypeIdentifier.type.EVENT },
     } as Partial<Event>)
 
-    cy.getByAriaLabel('View details of event').eq(7).click()
+    cy.getByAriaLabel('View details of event').eq(4).click()
 
     cy.get('@onOpen').should('have.been.calledWithMatch', {
-      identifier: { identifier: 'EVENT-7', type: TypeIdentifier.type.EVENT },
+      identifier: { identifier: 'EVENT-4', type: TypeIdentifier.type.EVENT },
     } as Partial<Event>)
   })
 

@@ -47,7 +47,7 @@ export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
 export const statusMapping = {
   [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
   [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
-  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.error' },
+  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.unknown' },
   [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
   [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
   [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },

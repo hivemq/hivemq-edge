@@ -86,7 +86,11 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
               </Text>
             </CardHeader>
             <CardBody>
-              <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant="summary" />
+              <EventLogTable
+                globalSourceFilter={[(selectedNode?.data as Adapter).id]}
+                variant="summary"
+                isSingleSource
+              />
             </CardBody>
             <CardFooter justifyContent="flex-end" pt={0}>
               <Button

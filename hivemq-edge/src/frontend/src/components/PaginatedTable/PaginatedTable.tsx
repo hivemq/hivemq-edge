@@ -75,6 +75,7 @@ const PaginatedTable = <T,>({
   const table = useReactTable({
     data: data,
     columns,
+    initialState: { pagination: { pageSize: 5 } },
     state: {
       columnFilters,
       globalFilter,

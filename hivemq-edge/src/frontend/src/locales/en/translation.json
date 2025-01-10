@@ -817,6 +817,29 @@
         "ungroup": "Ungroup"
       },
       "editor": {
+        "tabs": {
+          "config": "Configuration",
+          "events": "Events",
+          "metrics": "Metrics"
+        },
+        "content": {
+          "header": {
+            "type": "Type",
+            "status": "Status",
+            "id": "Id",
+            "actions": "Actions"
+          },
+          "actions": {
+            "ungroup": "Remove from group",
+            "startAll": "Start all",
+            "stopAll": "Stop all",
+            "restartAll": "Restart all"
+          }
+        },
+        "eventLog": {
+          "header": "The 5 most recent events for devices in the group",
+          "showMore": "Show more in the Event Log"
+        },
         "title": "Configure the group",
         "input-title": "Title",
         "input-color": "Group colour",
