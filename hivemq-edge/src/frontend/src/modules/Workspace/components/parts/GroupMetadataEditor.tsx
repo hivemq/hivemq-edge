@@ -27,7 +27,7 @@ const GroupMetadataEditor: FC<GroupMetadataEditorProps> = ({ group, onSubmit }) 
 
   return (
     <Card size="sm">
-      <CardHeader data-testid="group-metadata-header"> {t('workspace.grouping.editor.title')}</CardHeader>
+      <CardHeader data-testid="group-metadata-header">{t('workspace.grouping.editor.title')}</CardHeader>
       <CardBody>
         <form
           id="group-form"
