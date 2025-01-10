@@ -17,7 +17,7 @@ export const ToolbarShowReport: FC = () => {
   return (
     <IconButton
       icon={<Icon as={RiPassportLine} boxSize="24px" />}
-      data-testid="node-toolbar-clear"
+      data-testid="toolbox-policy-report"
       aria-label={t('Show Validity Report')}
       isDisabled={!report}
       onClick={() => navigate('validation/', { state: { origin: pathname } })}
