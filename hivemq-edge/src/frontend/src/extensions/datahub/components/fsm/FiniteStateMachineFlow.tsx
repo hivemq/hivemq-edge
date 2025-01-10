@@ -1,14 +1,16 @@
 import { FC } from 'react'
 import { Box } from '@chakra-ui/react'
+import { ReactFlowProvider } from 'reactflow'
+
+import config from '@/config'
 
 import { FiniteStateMachine } from '@datahub/types.ts'
 
 import { MermaidRenderer } from '@datahub/components/fsm/MermaidRenderer.tsx'
 import { ReactFlowRenderer } from '@datahub/components/fsm/ReactFlowRenderer.tsx'
-import { ReactFlowProvider } from 'reactflow'
 
 export const FiniteStateMachineFlow: FC<FiniteStateMachine> = (props) => {
-  if (import.meta.env.VITE_FLAG_DATAHUB_FSM_REACTFLOW === 'true')
+  if (config.features.DATAHUB_FSM_REACT_FLOW)
     return (
       <Box w="100%" height="400px">
         <ReactFlowProvider>

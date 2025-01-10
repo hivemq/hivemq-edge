@@ -4,6 +4,9 @@ interface configType {
   environment: string
   apiBaseUrl: string
 
+  isDevMode: boolean
+  isProdMode: boolean
+
   version: string
   documentationUrl: string
 
@@ -14,10 +17,9 @@ interface configType {
   }
 
   features: {
-    TOPIC_EDITOR_SHOW_BRANCHES: boolean
-    WORKSPACE_FLOW_PANEL: boolean
-    PROTOCOL_ADAPTER_FACET: boolean
-    METRICS_SHOW_EDITOR: boolean
+    DEV_MOCK_SERVER: boolean
+    DATAHUB_FSM_REACT_FLOW: boolean
+    DATAHUB_EDIT_POLICY_ENABLED: boolean
   }
 
   documentation: {
@@ -27,6 +29,9 @@ interface configType {
 
 const config: configType = {
   environment: import.meta.env.MODE,
+
+  isDevMode: import.meta.env.MODE === 'development',
+  isProdMode: import.meta.env.MODE === 'production',
 
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
 
@@ -54,19 +59,20 @@ const config: configType = {
   },
 
   features: {
-    TOPIC_EDITOR_SHOW_BRANCHES: import.meta.env.VITE_FLAG_TOPIC_EDITOR_SHOW_BRANCHES === 'true',
     /**
-     * Enable the workspace flow for the edge
+     * DEV-only. Runs the mock server, including the MQTT client-based sampling
      */
-    WORKSPACE_FLOW_PANEL: import.meta.env.VITE_FLAG_WORKSPACE_FLOW_PANEL === 'true',
+    DEV_MOCK_SERVER: import.meta.env.VITE_FLAG_MOCK_SERVER === 'true',
+
     /**
-     * Show the search and filter panel for the Protocol Adapter
+     * Visualise FSM using React Flow. If false, use Mermaid
      */
-    PROTOCOL_ADAPTER_FACET: import.meta.env.VITE_FLAG_FACET_SEARCH === 'true',
+    DATAHUB_FSM_REACT_FLOW: import.meta.env.VITE_FLAG_DATAHUB_FSM_REACTFLOW === 'true',
+
     /**
-     * Show the metrics editor in the workspace panels
+     * Allow the editing of a policy
      */
-    METRICS_SHOW_EDITOR: true,
+    DATAHUB_EDIT_POLICY_ENABLED: import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true',
   },
 
   documentation: {
