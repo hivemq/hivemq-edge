@@ -1,6 +1,4 @@
-/// <reference types="cypress" />
-
-import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockDeviceFromAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import DeviceMetadataViewer from '@/modules/Device/components/DeviceMetadataViewer.tsx'
 
 describe('DeviceMetadataViewer', () => {
@@ -9,7 +7,7 @@ describe('DeviceMetadataViewer', () => {
   })
 
   it('should render the form', () => {
-    cy.mountWithProviders(<DeviceMetadataViewer protocolAdapter={mockProtocolAdapter} />)
+    cy.mountWithProviders(<DeviceMetadataViewer device={mockDeviceFromAdapter} />)
 
     cy.getByTestId('device-metadata-header').should('be.visible')
     cy.getByTestId('device-metadata-header').find('h2').should('contain.text', 'simulation')

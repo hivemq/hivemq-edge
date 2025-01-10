@@ -77,5 +77,5 @@ export interface TopicTreeMetadata {
 }
 
 export interface DeviceMetadata extends ProtocolAdapter {
-  sourceAdapterId?: string
+  sourceAdapterId: string
 }

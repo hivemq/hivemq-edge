@@ -18,9 +18,9 @@ const MAX_ADAPTERS = 10
 
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
   [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, 200, 'target'],
-  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -125, 'target'],
+  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -175, 'target'],
   [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, -200, 'source'],
-  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 125, 'source'],
+  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 175, 'source'],
 }
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
