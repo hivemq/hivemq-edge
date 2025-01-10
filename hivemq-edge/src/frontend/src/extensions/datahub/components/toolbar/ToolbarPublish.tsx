@@ -159,6 +159,7 @@ export const ToolbarPublish: FC = () => {
 
   return (
     <Button
+      data-testid="toolbox-policy-publish"
       variant="primary"
       leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
       onClick={handlePublish}

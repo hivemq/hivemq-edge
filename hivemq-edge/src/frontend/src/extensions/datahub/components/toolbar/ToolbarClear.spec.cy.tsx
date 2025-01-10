@@ -24,6 +24,4 @@ describe('ToolbarClear', () => {
 
     cy.checkAccessibility()
   })
-
-  // TODO
 })
