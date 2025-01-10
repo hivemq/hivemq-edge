@@ -1,13 +1,24 @@
 import { FC, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrayFieldTemplateItemType, getTemplate, getUiOptions } from '@rjsf/utils'
-import { Box, ButtonGroup, FormControl, HStack, useDisclosure, VStack } from '@chakra-ui/react'
+import {
+  Box,
+  ButtonGroup,
+  FormControl,
+  HStack,
+  useColorModeValue,
+  useDisclosure,
+  useTheme,
+  VStack,
+} from '@chakra-ui/react'
+import { getColor } from '@chakra-ui/theme-tools'
 import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 import { formatItemName } from '@/components/rjsf/utils/array-items.utils.ts'
+import { hasNestedError } from '@/components/rjsf/utils/errors.utils.ts'
 
 // TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
 interface ArrayFieldItemCollapsableUISchema {
@@ -36,6 +47,8 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   const { t } = useTranslation('components')
   const uiOptions = getUiOptions(uiSchema)
   const { expandItems } = useFormControlStore()
+  const theme = useTheme()
+  const color = useColorModeValue('red.500', 'red.300')
 
   const collapsableItems: ArrayFieldItemCollapsableUISchema | undefined = useMemo(() => {
     return uiOptions.collapsable as ArrayFieldItemCollapsableUISchema | undefined
@@ -59,9 +72,11 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     if (props.children.props.idSchema.$id === expandItems.join('_')) onOpen()
   }, [expandItems, onOpen, props.children.props.idSchema.$id])
 
-  const hasErrors = Boolean(props.children.props.errorSchema)
+  const hasErrors = hasNestedError(props.children.props.errorSchema)
   const errorStyle =
-    hasErrors && collapsableItems && !isOpen ? { borderColor: '#E53E3E', boxShadow: '0 0 0 1px #E53E3E' } : undefined
+    hasErrors && collapsableItems && !isOpen
+      ? { borderColor: color, boxShadow: `0 0 0 1px ${getColor(theme, color)}` }
+      : undefined
 
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
   const onRemoveClick = useMemo(() => onDropIndexClick(index), [index, onDropIndexClick])
