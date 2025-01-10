@@ -484,7 +484,16 @@
         "create": "Create similar",
         "edit": "Edit",
         "delete": "Delete",
-        "workspace": "View on workspace",
+        "workspace": {
+          "group": "Manage from Workspace",
+          "view": "Adapter and Device",
+          "tags": "Device tags",
+          "mappings": {
+            "north": "Northbound mappings",
+            "south": "Southbound mappings"
+          },
+          "topicFilters": "Topic filters"
+        },
         "export": "Export"
       }
     },
