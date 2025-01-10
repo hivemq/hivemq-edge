@@ -49,7 +49,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
     return data.items
   }, [data, globalSourceFilter, maxEvents])
 
-  const columns = useMemo<ColumnDef<Event>[]>(() => {
+  const allColumns = useMemo<ColumnDef<Event>[]>(() => {
     return [
       {
         accessorKey: 'identifier.identifier',
@@ -119,6 +119,13 @@ const EventLogTable: FC<EventLogTableProps> = ({
     ]
   }, [isLoading, onOpen, t])
 
+  const displayColumns = useMemo(() => {
+    const [, createdColumn, severityColumn, idColumn, messageColumn] = allColumns
+    if (variant === 'full') return allColumns
+    if (isSingleSource) return [createdColumn, severityColumn, messageColumn]
+    else return [createdColumn, idColumn, severityColumn, messageColumn]
+  }, [allColumns, isSingleSource, variant])
+
   if (error) {
     return (
       <Box mt="20%" mx="20%" alignItems="center">
@@ -129,9 +136,6 @@ const EventLogTable: FC<EventLogTableProps> = ({
       </Box>
     )
   }
-
-  // TODO[NVL] Not the best approach; destructure within memo
-  const [, a, b, d, c] = columns
 
   return (
     <>
@@ -152,7 +156,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
       <PaginatedTable<Event>
         aria-label={t('eventLog.title')}
         data={safeData}
-        columns={variant === 'full' ? columns : isSingleSource ? [a, b, c] : [a, d, b, c]}
+        columns={displayColumns}
         enablePaginationGoTo={variant === 'full'}
         enablePaginationSizes={variant === 'full'}
         enableColumnFilters={variant === 'full'}
