@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
@@ -16,6 +16,7 @@ import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from
 import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
 import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 
 const ProtocolIntegrationStore: FC = () => {
   const { t } = useTranslation()
@@ -31,7 +32,7 @@ const ProtocolIntegrationStore: FC = () => {
       protocolAdapterType: adapterId,
       // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
     }
-    navigate(`/protocol-adapters/new/${adapterId}`, {
+    navigate(`/protocol-adapters/catalog/new/${adapterId}`, {
       state: adapterNavigateState,
     })
   }
@@ -70,15 +71,19 @@ const ProtocolIntegrationStore: FC = () => {
 
   return (
     <Flex flexDirection="column" gap={4}>
-      <Text>
-        {isLoading
-          ? t('protocolAdapter.loading.protocolAdapters')
-          : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
-      </Text>
+      <Box data-testid="heading-protocols-list">
+        <Heading size="md">{t('protocolAdapter.tabs.protocols')}</Heading>
+        <Text>
+          {isLoading
+            ? t('protocolAdapter.loading.protocolAdapters')
+            : t('protocolAdapter.protocols.description', { count: safeData.length })}
+        </Text>
+      </Box>
       <Flex flexDirection="row" alignItems="flex-start" gap={6}>
         <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
         <ProtocolsBrowser items={safeData} facet={facet} onCreate={handleCreateInstance} isLoading={isLoading} />
       </Flex>
+      <SuspenseOutlet />
     </Flex>
   )
 }
