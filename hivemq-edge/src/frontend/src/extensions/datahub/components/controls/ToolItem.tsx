@@ -11,7 +11,7 @@ interface ToolProps extends ButtonProps {
   nodeType: DataHubNodeType
 }
 
-const Tool: FC<ToolProps> = ({ nodeType, isDisabled }) => {
+const ToolItem: FC<ToolProps> = ({ nodeType, isDisabled }) => {
   const { t } = useTranslation('datahub')
 
   const onButtonDragStart = useCallback(
@@ -38,4 +38,4 @@ const Tool: FC<ToolProps> = ({ nodeType, isDisabled }) => {
   )
 }
 
-export default Tool
+export default ToolItem
