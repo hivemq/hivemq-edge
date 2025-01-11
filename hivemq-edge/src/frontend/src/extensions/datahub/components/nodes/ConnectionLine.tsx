@@ -4,6 +4,8 @@ import { Tag } from '@chakra-ui/react'
 
 import { getConnectedNodeFrom } from '@datahub/utils/node.utils.ts'
 import { NodeIcon } from '@datahub/components/helpers'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 
 const ICON_SIZE = 50
 const ICON_OFFSET = 20
@@ -17,9 +19,16 @@ const ConnectionLine: FC<ConnectionLineComponentProps> = ({
   toX,
   ...props
 }) => {
+  const { isPolicyInDraft } = useDataHubDraftStore()
   const droppedNode = useMemo(() => {
-    return getConnectedNodeFrom(fromNode?.type, fromHandle?.id)
-  }, [fromHandle?.id, fromNode?.type])
+    const droppedNode = getConnectedNodeFrom(fromNode?.type, fromHandle?.id)
+    if (
+      droppedNode?.type === DataHubNodeType.DATA_POLICY ||
+      (droppedNode?.type === DataHubNodeType.BEHAVIOR_POLICY && isPolicyInDraft())
+    )
+      return undefined
+    return droppedNode
+  }, [fromHandle?.id, fromNode?.type, isPolicyInDraft])
 
   const pathParams = {
     sourceX: fromX,

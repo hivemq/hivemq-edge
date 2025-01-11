@@ -42,7 +42,8 @@ const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
-  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
+  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes, isPolicyInDraft } =
+    useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
