@@ -219,6 +219,8 @@
       "policy": {
         "check": "Check",
         "publish": "Publish",
+        "showReport": "Show Validity Report",
+        "clearReport": "Show Validity Report",
         "delete": "Delete Policy"
       }
     },
