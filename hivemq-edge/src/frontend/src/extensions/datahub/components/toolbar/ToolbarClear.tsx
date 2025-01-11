@@ -30,7 +30,7 @@ export const ToolbarClear: FC = () => {
     <IconButton
       icon={<Icon as={CloseIcon} boxSize="12px" />}
       data-testid="toolbox-policy-clear"
-      aria-label={t('Clear Validity Report')}
+      aria-label={t('workspace.toolbar.policy.clearReport')}
       onClick={handleClearPolicy}
       isDisabled={!report}
     />
