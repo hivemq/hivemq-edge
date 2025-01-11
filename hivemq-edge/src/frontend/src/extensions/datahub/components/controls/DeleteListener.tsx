@@ -45,6 +45,8 @@ const DeleteListener: FC = () => {
     const canDeleteEdges = selectedEdges.map((edge) => canDeleteEdge(edge, nodes))
 
     const allElements = [...canDeleteNodes, ...canDeleteEdges]
+    if (allElements.length === 0) return
+
     const canDeleteElements = allElements.every((element) => Boolean(element.delete))
     if (canDeleteElements) {
       return onOpen()
