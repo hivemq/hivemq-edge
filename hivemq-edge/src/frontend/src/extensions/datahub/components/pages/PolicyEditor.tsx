@@ -26,7 +26,7 @@ import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 import { CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { DesignerStatus } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -110,6 +110,14 @@ const PolicyEditor: FC = () => {
         const { type, handleId, nodeId } = edgeConnectStart.current
 
         const droppedNode = getConnectedNodeFrom(type, handleId)
+        if (!droppedNode) return
+
+        if (
+          droppedNode.type === DataHubNodeType.DATA_POLICY ||
+          (droppedNode.type === DataHubNodeType.BEHAVIOR_POLICY && isPolicyInDraft())
+        )
+          return
+
         if (droppedNode) {
           const id = getNodeId()
           const newNode: Node = {
