@@ -60,6 +60,7 @@ export interface WorkspaceAction {
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 
   isDirty: () => boolean
+  isPolicyInDraft: () => boolean
 
   setStatus: (
     status: DesignerStatus,
