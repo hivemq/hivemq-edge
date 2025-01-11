@@ -735,6 +735,9 @@
     }
   },
   "workspace": {
+    "canvas": {
+      "aria-label": "Edge Workspace"
+    },
     "controls": {
       "aria-label": "Workspace toolbar",
       "zoomIn": "Zoom in",

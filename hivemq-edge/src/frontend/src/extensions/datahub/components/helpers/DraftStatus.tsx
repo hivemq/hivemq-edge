@@ -28,11 +28,11 @@ const DraftStatus: FC = () => {
 
   return (
     <HStack alignItems="center" sx={{ textWrap: 'nowrap' }} gap={4}>
-      <HStack>
+      <HStack role="group" aria-label={t('workspace.toolbars.status.aria-label')}>
         <NodeIcon type={DataHubNodeType.DATA_POLICY} />
         <Text>{t('workspace.toolbox.draft.status', { context: status, name: name, type })}</Text>
       </HStack>
-      <ButtonGroup>
+      <ButtonGroup role="group" aria-label={t('workspace.toolbars.edit.aria-label')}>
         <IconButton
           isDisabled={isEditable}
           data-testid="designer-edit-"

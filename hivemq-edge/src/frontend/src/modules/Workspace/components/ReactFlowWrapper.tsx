@@ -101,6 +101,8 @@ const ReactFlowWrapper = () => {
       nodesConnectable={false}
       deleteKeyCode={null}
       proOptions={proOptions}
+      role="region"
+      aria-label={t('workspace.canvas.aria-label')}
     >
       <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
         <SelectionListener />

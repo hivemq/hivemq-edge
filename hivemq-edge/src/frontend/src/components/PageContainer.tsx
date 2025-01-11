@@ -1,6 +1,6 @@
 import { FC, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Box, Text, Flex, Heading, VisuallyHidden } from '@chakra-ui/react'
+import { Box, Text, Flex, Heading, VisuallyHidden, chakra as Chakra } from '@chakra-ui/react'
 
 interface PageContainerProps {
   title?: string
@@ -14,8 +14,8 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
 
   return (
     <Flex flexDirection="column" p={4} pt={6} flexGrow={1}>
-      <Flex gap="50px" data-testid="page-container-header">
-        <Box maxW="50vw" pb={6}>
+      <Flex gap="50px">
+        <Chakra.header maxW="50vw" pb={6}>
           <Heading as="h1">
             {title ? (
               title
@@ -26,8 +26,8 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
             )}
           </Heading>
           {subtitle && <Text fontSize="md">{subtitle}</Text>}
-        </Box>
-        <Box flexGrow={1} alignItems="flex-end" data-testid="page-container-cta">
+        </Chakra.header>
+        <Box flexGrow={1} alignItems="flex-end">
           {cta}
         </Box>
       </Flex>

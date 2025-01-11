@@ -94,7 +94,27 @@
     }
   },
   "workspace": {
-    "aria-label": "Workspace toolbar",
+    "canvas": {
+      "aria-label": "Policy Designer"
+    },
+    "toolbars": {
+      "aria-label": "Policy Designer toolbars",
+      "clipboard": {
+        "aria-label": "Clipboard controls",
+        "content_zero": "No items copied in the clipboard",
+        "content_one": "1 items in the clipboard",
+        "content_many": "{{ count }} items in the clipboard"
+      },
+      "draft": {
+        "aria-label": "Draft controls"
+      },
+      "status": {
+        "aria-label": "Status"
+      },
+      "edit": {
+        "aria-label": "Edit Operations"
+      }
+    },
     "controls": {
       "aria-label": "Canvas controls",
       "zoomIn": "Zoom in",
@@ -105,11 +125,13 @@
       "edit": "Edit the policy",
       "shortcuts": "Help using the Designer"
     },
+
     "toolbox": {
       "aria-label": "Policy controls",
       "trigger_open": "Open the toolbox",
       "trigger_close": "Close the toolbox",
       "panel": {
+        "helper": "Drag elements on the canvas then connect them",
         "build": {
           "title": "Build",
           "description": "Build your policy on the canvas"

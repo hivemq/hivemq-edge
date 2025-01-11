@@ -165,7 +165,7 @@ const PolicyEditor: FC = () => {
       <ReactFlowProvider>
         <ReactFlow
           ref={reactFlowWrapper}
-          id="edge-workspace-canvas"
+          id="edge-datahub-canvas"
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -188,17 +188,18 @@ const PolicyEditor: FC = () => {
           deleteKeyCode={[]}
           nodesConnectable={isEditable}
           proOptions={proOptions}
-
+          role="region"
+          aria-label={t('workspace.canvas.aria-label')}
           // nodesDraggable={isEditable}
           // elementsSelectable={isEditable}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
-          <Box role="toolbar" aria-label={t('workspace.aria-label')} aria-controls="edge-workspace-canvas">
-            <ToolboxSelectionListener />
+          <Box role="toolbar" aria-label={t('workspace.toolbars.aria-label')} aria-controls="edge-datahub-canvas">
             <DeleteListener />
-            <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
+            <ToolboxSelectionListener />
             <DesignerToolbox />
             <CanvasControls />
+            <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <MiniMap />
           </Box>
         </ReactFlow>
