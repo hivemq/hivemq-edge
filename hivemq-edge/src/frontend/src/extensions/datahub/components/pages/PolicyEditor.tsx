@@ -149,7 +149,7 @@ const PolicyEditor: FC = () => {
         }
       }
     },
-    [onAddNodes, onConnect, reactFlowInstance]
+    [isPolicyInDraft, onAddNodes, onConnect, reactFlowInstance]
   )
 
   const onConnectNodes = useCallback(
