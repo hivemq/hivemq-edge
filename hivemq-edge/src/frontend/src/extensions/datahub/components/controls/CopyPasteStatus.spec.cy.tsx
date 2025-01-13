@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import { ReactFlowProvider } from 'reactflow'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
@@ -38,15 +36,10 @@ describe('CopyPasteStatus', () => {
     cy.getByTestId('copy-paste-status').should('contain.text', '2')
   })
 
-  it('should render properly the readonly status', () => {
-    cy.mountWithProviders(<CopyPasteStatus nbCopied={2} />, { wrapper: getWrapperWith(DesignerStatus.LOADED) })
-    cy.getByTestId('edit-status').should('be.visible')
-    cy.getByTestId('edit-status').find('svg').should('have.attr', 'data-readonly', 'true')
-  })
-
-  it('should render properly the editable status', () => {
+  it('should be accessible', () => {
+    cy.injectAxe()
     cy.mountWithProviders(<CopyPasteStatus nbCopied={2} />, { wrapper: getWrapperWith(DesignerStatus.DRAFT) })
-    cy.getByTestId('edit-status').should('be.visible')
-    cy.getByTestId('edit-status').find('svg').should('have.attr', 'data-readonly', 'false')
+
+    cy.checkAccessibility()
   })
 })
