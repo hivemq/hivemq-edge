@@ -36,7 +36,13 @@ public class FieldMapping {
         return instructions;
     }
 
-    public static @NotNull FieldMapping fromModel(final @NotNull FieldMappingModel model) {
+    public static @NotNull FieldMapping fromModel(final @NotNull com.hivemq.edge.api.model.FieldMapping model) {
         return new FieldMapping(model.getInstructions().stream().map(Instruction::from).collect(Collectors.toList()));
+    }
+
+    public @NotNull com.hivemq.edge.api.model.FieldMapping toModel() {
+        final List<com.hivemq.edge.api.model.Instruction> instructions =
+                this.instructions.stream().map(Instruction::toModel).collect(Collectors.toList());
+        return new com.hivemq.edge.api.model.FieldMapping().instructions(instructions);
     }
 }

@@ -18,6 +18,7 @@ package com.hivemq.api.resources.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -26,12 +27,10 @@ import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.adapters.AdapterConfigModel;
-import com.hivemq.api.errors.InvalidInputError;
-import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.InvalidInputError;
 import com.hivemq.api.errors.adapters.AdapterFailedSchemaValidationError;
 import com.hivemq.api.errors.adapters.AdapterFailedValidationError;
 import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
@@ -40,36 +39,36 @@ import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdapterStatusModelConversionUtils;
-import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
-import com.hivemq.api.model.mappings.southbound.SouthboundMappingListModel;
-import com.hivemq.api.model.mappings.southbound.SouthboundMappingModel;
-import com.hivemq.api.model.status.Status;
-import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
-import com.hivemq.api.model.tags.DomainTagModel;
-import com.hivemq.api.model.tags.DomainTagModelList;
-import com.hivemq.api.model.tags.TagSchema;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.api.model.Adapter;
+import com.hivemq.edge.api.model.AdapterConfig;
+import com.hivemq.edge.api.model.AdaptersList;
+import com.hivemq.edge.api.model.DomainTag;
+import com.hivemq.edge.api.model.DomainTagList;
+import com.hivemq.edge.api.model.SouthboundMappingList;
+import com.hivemq.edge.api.model.Status;
+import com.hivemq.edge.api.model.StatusList;
+import com.hivemq.edge.api.model.TagSchema;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
-import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
@@ -111,7 +110,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
+public class ProtocolAdaptersResourceImpl extends AbstractApi {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
 
@@ -183,7 +182,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .stream()
                 .map(this::convertToAdapter)
                 .collect(Collectors.toUnmodifiableList());
-        return Response.ok(new AdaptersList(adapters)).build();
+        return Response.ok(new AdaptersList().items(adapters)).build();
     }
 
     @Override
@@ -201,7 +200,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .map(this::convertToAdapter)
                 .collect(Collectors.toUnmodifiableList());
 
-        return Response.ok(new AdaptersList(adapters)).build();
+        return Response.ok(new AdaptersList().items(adapters)).build();
     }
 
     @Override
@@ -225,10 +224,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
-        return new Adapter(value.getId(),
-                value.getAdapterInformation().getProtocolId(),
-                objectMapper.valueToTree(configObject),
-                getStatusInternal(value.getId()));
+        return new Adapter().id(value.getId())
+                .type(value.getAdapterInformation().getProtocolId())
+                .config(objectMapper.valueToTree(configObject))
+                .status(getStatusInternal(value.getId()));
     }
 
     @Override
@@ -301,7 +300,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
-            final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
+            final Map<String, Object> config = configConverter.convertConfigToMaps((JsonNode) adapter.getConfig());
             protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
@@ -332,9 +331,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
-        final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getConfig());
+        final Map<String, Object> config = configConverter.convertConfigToMaps((JsonNode) adapter.getConfig());
         try {
-            protocolAdapterManager.updateAdapterConfig(adapter.getProtocolAdapterType(), adapterId, config);
+            protocolAdapterManager.updateAdapterConfig(adapter.getType(), adapterId, config);
         } catch (final Exception e) {
             log.error("Exception during update of adapter '{}'.", adapterId);
             log.debug("Original Exception:", e);
@@ -409,13 +408,26 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterWrapper> optionalAdapterInstance =
                 protocolAdapterManager.getAdapterById(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
-                .orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
+                .orElseGet(() -> unknown(Status.RuntimeEnum.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
+
+    public static @NotNull Status unknown(
+            final @NotNull Status.RuntimeEnum runtimeStatus,
+            final @NotNull String connectionType,
+            final @NotNull String entityId) {
+        Preconditions.checkNotNull(connectionType);
+        Preconditions.checkNotNull(entityId);
+        return new Status().runtime(runtimeStatus)
+                .connection(Status.ConnectionEnum.UNKNOWN)
+                .id(entityId)
+                .type(connectionType);
+    }
+
 
     protected void validateAdapterSchema(
             final @NotNull ApiErrorMessages apiErrorMessages, final @NotNull Adapter adapter) {
         final ProtocolAdapterInformation information =
-                protocolAdapterManager.getAllAvailableAdapterTypes().get(adapter.getProtocolAdapterType());
+                protocolAdapterManager.getAllAvailableAdapterTypes().get(adapter.getType());
         if (information == null) {
             ApiErrorUtils.addValidationError(apiErrorMessages,
                     "config",
@@ -445,7 +457,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         for (final ProtocolAdapterWrapper instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
-        return Response.ok(new StatusList(builder.build())).build();
+        return Response.ok(new StatusList().items(builder.build())).build();
     }
 
 
@@ -454,11 +466,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return protocolAdapterManager.getTagsForAdapter(adapterId)
                 .map(tags -> {
                     if (tags.isEmpty()) {
-                        return Response.ok(new DomainTagModelList(List.of())).build();
+                        return Response.ok(new DomainTagList().items(List.of())).build();
                     } else {
-                        final List<DomainTagModel> domainTagModels =
-                                tags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
-                        return Response.ok(new DomainTagModelList(domainTagModels)).build();
+                        final List<DomainTag> domainTagModels = tags.stream()
+                                .map(com.hivemq.persistence.domain.DomainTag::toModel)
+                                .collect(Collectors.toList());
+                        return Response.ok(new DomainTagList().items(domainTagModels)).build();
                     }
                 })
                 .orElse(ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
@@ -467,9 +480,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response addAdapterDomainTag(
-            final @NotNull String adapterId, final @NotNull DomainTagModel domainTag) {
-        final DomainTagAddResult domainTagAddResult =
-                protocolAdapterManager.addDomainTag(adapterId, DomainTag.fromDomainTagEntity(domainTag, adapterId));
+            final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
+        final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addDomainTag(adapterId,
+                com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(domainTag, adapterId));
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -508,11 +521,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateDomainTag(
-            final @NotNull String adapterId, final @NotNull String tagName, final @NotNull DomainTagModel domainTag) {
+            final @NotNull String adapterId, final @NotNull String tagName, final @NotNull DomainTag domainTag) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         log.info("Updating tag with name {}", decodedTagName);
         final DomainTagUpdateResult domainTagUpdateResult =
-                protocolAdapterManager.updateDomainTag(DomainTag.fromDomainTagEntity(domainTag, adapterId));
+                protocolAdapterManager.updateDomainTag(com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(
+                        domainTag,
+                        adapterId));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -527,10 +542,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateDomainTags(
-            final @NotNull String adapterId, final @NotNull DomainTagModelList domainTagList) {
-        final Set<DomainTag> domainTags = domainTagList.getItems()
+            final @NotNull String adapterId, final @NotNull DomainTagList domainTagList) {
+        final Set<com.hivemq.persistence.domain.DomainTag> domainTags = domainTagList.getItems()
                 .stream()
-                .map(e -> DomainTag.fromDomainTagEntity(e, adapterId))
+                .map(e -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(e, adapterId))
                 .collect(Collectors.toSet());
         final DomainTagUpdateResult domainTagUpdateResult =
                 protocolAdapterManager.updateDomainTags(adapterId, domainTags);
@@ -554,29 +569,30 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getDomainTags() {
-        final List<DomainTag> domainTags = protocolAdapterManager.getDomainTags();
+        final List<com.hivemq.persistence.domain.DomainTag> domainTags = protocolAdapterManager.getDomainTags();
         if (domainTags.isEmpty()) {
             // empty list is also 200 as discussed.
-            return Response.ok(new DomainTagModelList(List.of())).build();
+            return Response.ok(new DomainTagList().items(List.of())).build();
         }
-        final List<DomainTagModel> domainTagModels =
-                domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
-        return Response.ok(new DomainTagModelList(domainTagModels)).build();
+        final List<DomainTag> domainTagModels =
+                domainTags.stream().map(com.hivemq.persistence.domain.DomainTag::toModel).collect(Collectors.toList());
+        return Response.ok(new DomainTagList().items(domainTagModels)).build();
     }
 
     @Override
     public @NotNull Response getDomainTag(final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         return protocolAdapterManager.getDomainTagByName(decodedTagName)
-                .map(tag -> Response.ok(DomainTagModel.fromDomainTag(tag)).build())
+                .map(tag -> Response.ok(com.hivemq.persistence.domain.DomainTag.toModel(tag)).build())
                 .orElse(ErrorResponseUtil.errorResponse(new DomainTagNotFoundError(decodedTagName)));
     }
 
     @Override
     public @NotNull Response getTagSchema(final @NotNull String protocolId) {
         return protocolAdapterManager.getAdapterTypeById(protocolId)
-                .map(info -> Response.ok(new TagSchema(protocolId,
-                        customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass()))).build())
+                .map(info -> Response.ok(new TagSchema().protocolId(protocolId)
+                                .configSchema(customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
+                        .build())
                 .orElseGet(() -> {
                     log.warn(
                             "Json Schema for tags for protocols of type '{}' could not be generated because the protocol id is unknown ton this edge instance.",
@@ -644,7 +660,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response addCompleteAdapter(
             final @NotNull String adapterType,
             final @NotNull String adapterName,
-            final @NotNull AdapterConfigModel adapter) {
+            final @NotNull AdapterConfig adapterConfig) {
         final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterInformation.isEmpty()) {
@@ -652,44 +668,44 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     adapterType)));
         }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        final String adapterId = adapter.getAdapter().getId();
+        final String adapterId = adapterConfig.getConfig().getId();
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
-        validateAdapterSchema(errorMessages, adapter.getAdapter());
+        validateAdapterSchema(errorMessages, adapterConfig.getConfig());
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
-            final Map<String, Object> config = configConverter.convertConfigToMaps(adapter.getAdapter().getConfig());
+            final Map<String, Object> config = configConverter.convertConfigToMaps((JsonNode) adapterConfig.getConfig().getConfig());
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     configConverter.convertAdapterConfig(adapterType, config, protocolAdapterManager.writingEnabled());
 
-            final List<Map<String, Object>> domainTags = adapter.getDomainTagModels()
+            final List<Map<String, Object>> domainTags = adapterConfig.getTags()
                     .stream()
-                    .map(dtm -> DomainTag.fromDomainTagEntity(dtm, adapterId))
-                    .map(DomainTag::toTagMap)
+                    .map(dtm -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(dtm, adapterId))
+                    .map(com.hivemq.persistence.domain.DomainTag::toTagMap)
                     .collect(Collectors.toList());
 
             final List<? extends Tag> tags;
             try {
                 tags = configConverter.mapsToTags(adapterType, domainTags);
             } catch (final IllegalArgumentException illegalArgumentException) {
-                log.warn("Unable to parse tags for adapter '{}'", adapterName);
+                log.warn("Unable to parse tags for adapterConfig '{}'", adapterName);
                 log.debug("Original Exception: ", illegalArgumentException);
                 return ErrorResponseUtil.errorResponse(new InvalidInputError(
-                        "Exception during parsing of tags for the adapter. See log for further information."));
+                        "Exception during parsing of tags for the adapterConfig. See log for further information."));
             }
 
-            final List<NorthboundMapping> northboundMappings = adapter.getNorthboundMappingModels()
+            final List<NorthboundMapping> northboundMappings = adapterConfig.getNorthboundMappings()
                     .stream()
-                    .map(NorthboundMappingModel::to)
+                    .map(NorthboundMapping::fromModel)
                     .collect(Collectors.toList());
 
 
-            final List<SouthboundMapping> southboundMappings = adapter.getSouthboundMappingModels()
+            final List<SouthboundMapping> southboundMappings = adapterConfig.getSouthboundMappings()
                     .stream()
                     .map(this::parseAndEnrichWithSchema)
                     .collect(Collectors.toList());
@@ -704,14 +720,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
                         ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
-                        "Unknown field on adapter configuration");
+                        "Unknown field on adapterConfig configuration");
             } else {
                 log.error("Error processing incoming request", e);
             }
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getAdapter().getId());
+            logger.debug("Added protocol adapterConfig of type {} with ID {}.", adapterType, adapterConfig.getConfig().getId());
         }
         return Response.ok().build();
     }
@@ -745,12 +761,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAllSouthboundMappings() {
-        final List<SouthboundMappingModel> southboundMappingModels = protocolAdapterManager.getProtocolAdapters()
+        final List<com.hivemq.edge.api.model.SouthboundMapping> southboundMappingModels = protocolAdapterManager.getProtocolAdapters()
                 .values()
                 .stream()
-                .flatMap(adapter -> adapter.getToEdgeMappings().stream().map(SouthboundMappingModel::from))
+                .flatMap(adapter -> adapter.getToEdgeMappings().stream().map(SouthboundMapping::toModel))
                 .collect(Collectors.toList());
-        return Response.status(200).entity(new SouthboundMappingListModel(southboundMappingModels)).build();
+        return Response.status(200).entity(new SouthboundMappingList().items(southboundMappingModels)).build();
     }
 
     @Override
@@ -798,9 +814,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> adapter.getToEdgeMappings()
                         .stream()
-                        .map(SouthboundMappingModel::from)
+                        .map(SouthboundMapping::toModel)
                         .collect(Collectors.toList()))
-                .map(SouthboundMappingListModel::new)
+                .map(southboundMappings -> new SouthboundMappingList().items(southboundMappings))
                 .map(mappingsList -> Response.ok(mappingsList).build())
                 .orElseGet(() -> ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format(
                         "Adapter not found '%s'",
@@ -809,7 +825,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateSouthboundMappingsForAdapter(
-            final @NotNull String adapterId, final @NotNull SouthboundMappingListModel southboundMappingListModel) {
+            final @NotNull String adapterId, final @NotNull SouthboundMappingList southboundMappingListModel) {
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
@@ -843,7 +859,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
-    private @NotNull SouthboundMapping parseAndEnrichWithSchema(final @NotNull SouthboundMappingModel model) {
+    private @NotNull SouthboundMapping parseAndEnrichWithSchema(final @NotNull com.hivemq.edge.api.model.SouthboundMapping model) {
         final TopicFilter topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
         if (topicFilter == null) {
             throw new IllegalStateException("Southbound mapping contained a topic filter '" +
@@ -859,6 +875,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
 
         final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()));
-        return model.toToEdgeMapping(schema);
+        return SouthboundMapping.fromModel(model, schema);
     }
 }
