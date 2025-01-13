@@ -354,7 +354,7 @@
       "Selected": "Selected Nodes"
     },
     "keys": {
-      "ESC": "Cancel the node selection and the copy",
+      "ESC": "Cancel the node selection and clear the content of the clipboard",
       "TAB": "Nodes, connections and toolbars are all focusable by using the TAB key",
       "ENTER": "Select the focused node",
       "Meta+ENTER": "Add the focused node to the selection (or remove it if selected)",
