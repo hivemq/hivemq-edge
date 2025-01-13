@@ -4,12 +4,12 @@ import { Edge, MarkerType } from 'reactflow'
 export const styleDefaultEdge: Pick<Edge, 'markerEnd' | 'markerStart' | 'style'> = {
   markerEnd: {
     type: MarkerType.ArrowClosed,
-    width: 20,
+    width: 15,
     height: 20,
-    color: '#008c2d',
+    color: 'var(--chakra-colors-gray-500)',
   },
   style: {
     strokeWidth: 2,
-    stroke: 'var(--chakra-colors-green-500)',
+    stroke: 'var(--chakra-colors-gray-500)',
   },
 }
