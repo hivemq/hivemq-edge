@@ -26,7 +26,6 @@ import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
 import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.resources.AuthenticationApi;
-import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.resources.EventApi;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
@@ -48,6 +47,7 @@ import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.api.BridgesApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
@@ -72,7 +72,7 @@ public abstract class ApiModule {
     @Binds
     abstract @NotNull AuthenticationApi authenticationApi(@NotNull AuthenticationResourceImpl authenticationResource);
     @Binds
-    abstract @NotNull BridgeApi bridgeApi(@NotNull BridgeResourceImpl bridgeResource);
+    abstract @NotNull BridgesApi bridgeApi(@NotNull BridgeResourceImpl bridgeResource);
     @Binds
     abstract @NotNull MetricsApi metricsApi(@NotNull MetricsResourceImpl metricsResource);
     @Binds

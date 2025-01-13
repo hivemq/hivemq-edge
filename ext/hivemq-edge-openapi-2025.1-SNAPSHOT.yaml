@@ -4565,7 +4565,7 @@ components:
             $ref: '#/components/schemas/BridgeSubscription'
         sessionExpiry:
           type: integer
-          format: int32
+          format: int64
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
           maximum: 4294967295

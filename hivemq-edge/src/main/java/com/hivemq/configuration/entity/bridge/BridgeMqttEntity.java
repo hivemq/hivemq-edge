@@ -34,7 +34,7 @@ public class BridgeMqttEntity {
     private boolean cleanStart = false;
 
     @XmlElement(name = "session-expiry", defaultValue = "3600")
-    private int sessionExpiry = 3600;
+    private long sessionExpiry = 3600;
 
     @XmlElement(name = "keep-alive", defaultValue = "60")
     private int keepAlive = 60;
@@ -47,7 +47,7 @@ public class BridgeMqttEntity {
         return cleanStart;
     }
 
-    public int getSessionExpiry() {
+    public long getSessionExpiry() {
         return sessionExpiry;
     }
 
@@ -63,7 +63,7 @@ public class BridgeMqttEntity {
         this.cleanStart = cleanStart;
     }
 
-    public void setSessionExpiry(final int sessionExpiry) {
+    public void setSessionExpiry(final long sessionExpiry) {
         this.sessionExpiry = sessionExpiry;
     }
 

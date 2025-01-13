@@ -24,10 +24,10 @@ import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
-import com.hivemq.api.model.auth.ApiBearerToken;
-import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.edge.api.model.ApiBearerToken;
+import com.hivemq.edge.api.model.UsernamePasswordCredentials;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
@@ -74,114 +74,122 @@ public class BearerTokenAuthTests {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
+        final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
 
-        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer","Test-Audience", 10, 2);
-        JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(configuration);
+        final ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
+        final JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(configuration);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BearerTokenAuthenticationHandler(jwtAuthenticationProvider));
 
-        ResourceConfig conf = new ResourceConfig(){{
+        final ResourceConfig conf = new ResourceConfig() {
+            {
                 register(new ApiAuthenticationFeature(authenticationHandlers));
-            }
-        };
+            }};
         conf.register(TestApiResource.class);
         conf.register(TestPermitAllApiResource.class);
         conf.register(TestResourceLevelRolesApiResource.class);
         conf.register(new AuthenticationResourceImpl(AuthTestUtils.createTestUsernamePasswordProvider(),
-                jwtAuthenticationProvider, jwtAuthenticationProvider));
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider));
         //-- ensure we supplied our own test mapper as this can effect output
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
 
     @AfterClass
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(String protocol, int port, String uri){
-        String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
+    protected static String getTestServerAddress(final String protocol, final int port, final String uri) {
+        final String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
         return url;
     }
 
     @Test
     public void testAuthenticateValidUser() throws IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "test");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final ObjectMapper mapper = new ObjectMapper();
+        final UsernamePasswordCredentials creds =
+                new UsernamePasswordCredentials().userName("testuser").password("test");
+        final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
-        ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        Assert.assertEquals("API authenticate response should be json",
+                MediaType.APPLICATION_JSON,
+                response.getContentType());
+        final ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
         Assert.assertNotNull("Response should contain a bearer token", token.getToken());
     }
 
     @Test
     public void testAuthenticateInvalidUser() throws IOException {
+        final ObjectMapper mapper = new ObjectMapper();
+        final UsernamePasswordCredentials creds =
+                new UsernamePasswordCredentials().userName("testuser").password("invalidpassword");
+        final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
 
-        ObjectMapper mapper = new ObjectMapper();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "invalidpassword");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
-
-        assertThat(response.getStatusCode())
-                .as("Resource should NOT be accepted")
-                .isEqualTo(401);
-        assertThat(response.getContentType())
-                .as("API authenticate response should be json")
+        assertThat(response.getStatusCode()).as("Resource should NOT be accepted").isEqualTo(401);
+        assertThat(response.getContentType()).as("API authenticate response should be json")
                 .startsWith(MediaType.APPLICATION_JSON);
-        assertThat(mapper.readValue(response.getResponseBody(), ProblemDetails.class).getErrors().get(0).getDetail())
-                .as("Response should indicate correct failure message")
+        assertThat(mapper.readValue(response.getResponseBody(), ProblemDetails.class)
+                .getErrors()
+                .get(0)
+                .getDetail()).as("Response should indicate correct failure message")
                 .isEqualTo("Invalid username and/or password");
     }
 
     @Test
     public void testAuthenticatedTokenAllowsApiAccess() throws IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "test");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final ObjectMapper mapper = new ObjectMapper();
+        final UsernamePasswordCredentials creds = new UsernamePasswordCredentials().userName("testuser").password("test");
+        HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
-        ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        Assert.assertEquals("API authenticate response should be json",
+                MediaType.APPLICATION_JSON,
+                response.getContentType());
+        final ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
         Assert.assertNotNull("Response should contain a bearer token", token.getToken());
 
         //-- now validate the token against the UNSECURE API which returns whether its valid
-        response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/validate-token"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(token)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/validate-token"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(token)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
 
         //-- finally use it as a bear token header against a secure endpoint
 
-        Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()), "Content-Type", "application/json",
-                "Accept", "application/json");
+        final Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
+                "Content-Type",
+                "application/json",
+                "Accept",
+                "application/json");
 
-        response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        response = HttpUrlConnectionClient.get(headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
+        final ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         Assert.assertEquals("Username should match that supplied at point of auth", "testuser", user.getName());
 
     }

@@ -49,10 +49,10 @@ public class DomainTag {
                 (JsonNode) domainTag.getDefinition());
     }
 
-    public static @NotNull com.hivemq.edge.api.model.DomainTag toModel(final @NotNull DomainTag domainTag) {
-        return new com.hivemq.edge.api.model.DomainTag().name(domainTag.getTagName())
-                .description(domainTag.getDescription())
-                .definition(domainTag.getDefinition());
+    public @NotNull com.hivemq.edge.api.model.DomainTag toModel() {
+        return new com.hivemq.edge.api.model.DomainTag().name(this.tagName)
+                .description(this.description)
+                .definition(this.definition);
     }
 
     public @NotNull String getTagName() {

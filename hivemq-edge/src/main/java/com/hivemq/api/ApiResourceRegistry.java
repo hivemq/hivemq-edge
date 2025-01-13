@@ -24,18 +24,18 @@ import com.hivemq.api.error.CustomJsonMappingExceptionMapper;
 import com.hivemq.api.error.CustomJsonParseExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.AuthenticationApi;
-import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.resources.EventApi;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
-import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.api.resources.TopicFilterApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.RootResource;
+import com.hivemq.edge.api.BridgesApi;
+import com.hivemq.edge.api.ProtocolAdaptersApi;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.error.DefaultExceptionMapper;
 import dagger.Lazy;
@@ -70,7 +70,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<MetricsApi> metricsApi;
     private final @NotNull Lazy<HealthCheckApi> healthCheckApi;
     private final @NotNull Lazy<AuthenticationApi> authenticationApi;
-    private final @NotNull Lazy<BridgeApi> bridgeApi;
+    private final @NotNull Lazy<BridgesApi> bridgeApi;
     private final @NotNull Lazy<MetricsApi> dashboardApi;
     private final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi;
     private final @NotNull Lazy<UnsApi> unsApi;
@@ -91,7 +91,7 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<MetricsApi> metricsApi,
             final @NotNull Lazy<HealthCheckApi> healthCheckApi,
             final @NotNull Lazy<AuthenticationApi> authenticationApi,
-            final @NotNull Lazy<BridgeApi> bridgeApi,
+            final @NotNull Lazy<BridgesApi> bridgeApi,
             final @NotNull Lazy<MetricsApi> dashboardApi,
             final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi,
             final @NotNull Lazy<UnsApi> unsApi,
