@@ -37,7 +37,12 @@ public class Instruction {
         return sourceFieldName;
     }
 
-    public static Instruction from(final @NotNull InstructionModel model) {
-        return new Instruction(model.getSourceFieldName(), model.getDestinationFieldName());
+    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
+        return new Instruction(model.getSource(), model.getDestination());
     }
+
+    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
+        return new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
+    }
+
 }

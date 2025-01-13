@@ -39,10 +39,5 @@ public class FieldMappingModel {
         return instructions;
     }
 
-    public static @NotNull FieldMappingModel from(final @NotNull FieldMapping fieldMapping) {
-        return new FieldMappingModel(fieldMapping.getInstructions()
-                .stream()
-                .map(InstructionModel::from)
-                .collect(Collectors.toList()));
-    }
+
 }

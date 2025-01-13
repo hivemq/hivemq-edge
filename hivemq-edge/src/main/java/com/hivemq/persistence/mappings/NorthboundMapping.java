@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class NorthboundMapping implements PollingContext{
+public class NorthboundMapping implements PollingContext {
 
     private final @NotNull String topic;
     private final @NotNull String tagName;
@@ -83,5 +83,15 @@ public class NorthboundMapping implements PollingContext{
 
     public @Nullable Long getMessageExpiryInterval() {
         return this.messageExpiryInterval;
+    }
+
+    public static NorthboundMapping fromModel(final com.hivemq.edge.api.model.NorthboundMapping model) {
+        return new NorthboundMapping(model.getTagName(),
+                model.getTopic(),
+                model.getMaxQoS().ordinal(),
+                model.getMessageExpiryInterval(),
+                MessageHandlingOptions.from(model.getMessageHandlingOptions()),
+                model.getIncludeTagNames(),
+                model.getIncludeTimestamp());
     }
 }

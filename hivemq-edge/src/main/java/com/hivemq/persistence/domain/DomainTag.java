@@ -16,7 +16,6 @@
 package com.hivemq.persistence.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,12 +42,17 @@ public class DomainTag {
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(
-            final @NotNull DomainTagModel domainTag,
-            final @NotNull String adapterId) {
+            final @NotNull com.hivemq.edge.api.model.DomainTag domainTag, final @NotNull String adapterId) {
         return new DomainTag(domainTag.getName(),
                 adapterId,
                 domainTag.getDescription(),
-                domainTag.getDefinition());
+                (JsonNode) domainTag.getDefinition());
+    }
+
+    public static @NotNull com.hivemq.edge.api.model.DomainTag toModel(final @NotNull DomainTag domainTag) {
+        return new com.hivemq.edge.api.model.DomainTag().name(domainTag.getTagName())
+                .description(domainTag.getDescription())
+                .definition(domainTag.getDefinition());
     }
 
     public @NotNull String getTagName() {
