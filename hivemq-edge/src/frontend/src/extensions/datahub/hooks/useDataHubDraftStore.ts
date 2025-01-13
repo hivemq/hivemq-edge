@@ -17,6 +17,7 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DesignerStatus,
+  EdgeTypes,
   FunctionSpecs,
   WorkspaceAction,
   WorkspaceState,
@@ -57,7 +58,8 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
           edges: addEdge(
             {
               ...connection,
-              ...styleDefaultEdge,
+              type: EdgeTypes.DATAHUB_EDGE,
+              markerEnd: styleDefaultEdge.markerEnd,
             },
             get().edges
           ),
