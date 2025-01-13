@@ -11,10 +11,10 @@ const ToolGroup: FC<ToolProps> = ({ title, id, children, ...props }) => {
   return (
     <ButtonGroup variant="outline" size="sm" aria-labelledby={id} {...props}>
       <VStack alignItems="flex-start">
-        <Heading as="h2" size="sm" id={id}>
+        <Heading as="h2" size="sm" id={id} data-testid="toolbox-group-title">
           {title}
         </Heading>
-        <HStack>{children}</HStack>
+        <HStack data-testid="toolbox-group-container">{children}</HStack>
       </VStack>
     </ButtonGroup>
   )
