@@ -1,5 +1,16 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, Image, Skeleton, Text, useColorModeValue, useDisclosure, useToken } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  Heading,
+  HStack,
+  Image,
+  Skeleton,
+  Text,
+  useColorModeValue,
+  useDisclosure,
+  useToken,
+} from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -34,6 +45,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import { AdapterStatusContainer } from '@/modules/ProtocolAdapters/components/adapters/AdapterStatusContainer.tsx'
 
 const DEFAULT_PER_PAGE = 10
@@ -71,7 +83,7 @@ const ProtocolAdapters: FC = () => {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
-      navigate(`/protocol-adapters/new/${type}`, { state: adapterNavigateState })
+      navigate(`/protocol-adapters/catalog/new/${type}`, { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
@@ -221,15 +233,18 @@ const ProtocolAdapters: FC = () => {
     )
 
   return (
-    <>
-      <Text>
-        {!isLoading
-          ? t('protocolAdapter.table.pagination.summary', {
-              count: Math.min(DEFAULT_PER_PAGE, safeData.length),
-              total: safeData.length,
-            })
-          : t('protocolAdapter.loading.activeAdapters')}
-      </Text>
+    <Flex flexDirection="column" gap={4}>
+      <Box data-testid="heading-adapters-list">
+        <Heading size="md">{t('protocolAdapter.tabs.adapters')}</Heading>
+        <Text>
+          {!isLoading
+            ? t('protocolAdapter.table.pagination.summary', {
+                count: Math.min(DEFAULT_PER_PAGE, safeData.length),
+                total: safeData.length,
+              })
+            : t('protocolAdapter.loading.activeAdapters')}
+        </Text>
+      </Box>
       <PaginatedTable<Adapter>
         aria-label={t('protocolAdapter.tabs.adapters')}
         data={safeData}
@@ -249,7 +264,8 @@ const ProtocolAdapters: FC = () => {
         message={t('modals.generics.confirmation')}
         header={t('modals.deleteProtocolAdapterDialog.header')}
       />
-    </>
+      <SuspenseOutlet />
+    </Flex>
   )
 }
 

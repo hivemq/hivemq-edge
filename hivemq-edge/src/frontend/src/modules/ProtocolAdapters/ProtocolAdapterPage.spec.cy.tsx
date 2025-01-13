@@ -1,57 +1,63 @@
-/// <reference types="cypress" />
+import { FC, PropsWithChildren } from 'react'
+import { Card, CardBody, CardHeader, Code } from '@chakra-ui/react'
+import { useLocation } from 'react-router-dom'
 
 import ProtocolAdapterPage from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
+
+const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+  const { pathname } = useLocation()
+
+  return (
+    <>
+      {children}
+      <Card mt={50} variant="filled">
+        <CardHeader>Testing Dashboard</CardHeader>
+        <CardBody data-testid="test-pathname" as={Code}>
+          {pathname}
+        </CardBody>
+      </Card>
+    </>
+  )
+}
 
 describe('ProtocolAdapterPage', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
-    cy.intercept('api/v1/management/protocol-adapters/status', { statusCode: 404 })
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
-    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
   })
 
-  it('should render adapters for returning users', () => {
-    cy.intercept('api/v1/frontend/configuration', mockGatewayConfiguration)
-    cy.mountWithProviders(<ProtocolAdapterPage />)
+  it('should render the page header', () => {
+    cy.mountWithProviders(<ProtocolAdapterPage />, {
+      wrapper: Wrapper,
+      routerProps: { initialEntries: [`/protocol-adapters`] },
+    })
 
-    cy.get("[role='tab']").eq(1).should('have.attr', 'aria-selected', 'true')
-  })
+    cy.getByTestId('page-container-header').find('h1').should('have.text', 'Protocol Adapters')
 
-  it('should render protocols for new users', () => {
-    const newUser = {
-      ...mockGatewayConfiguration,
-      firstUseInformation: { ...mockGatewayConfiguration, firstUse: true },
-    }
-    cy.intercept('api/v1/frontend/configuration', newUser)
-    cy.mountWithProviders(<ProtocolAdapterPage />)
+    cy.getByTestId('page-container-header')
+      .find('h1 + p')
+      .should(
+        'contain.text',
+        'Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices'
+      )
 
-    cy.get("[role='tab']").eq(1).should('have.attr', 'aria-selected', 'true')
+    cy.getByTestId('test-pathname').should('have.text', '/protocol-adapters')
+
+    cy.getByTestId('page-container-cta').find('button').should('have.text', 'Add a new adapter')
+    cy.getByTestId('page-container-cta').find('button').click()
+
+    cy.getByTestId('page-container-cta').find('button').should('have.text', 'Back to active adapters')
+    cy.getByTestId('test-pathname').should('have.text', '/protocol-adapters/catalog')
+
+    cy.getByTestId('page-container-cta').find('button').click()
+    cy.getByTestId('test-pathname').should('have.text', '/protocol-adapters')
   })
 
   it('should be accessible', () => {
-    const newUser = {
-      ...mockGatewayConfiguration,
-      firstUseInformation: { ...mockGatewayConfiguration, firstUse: true },
-    }
-    cy.intercept('api/v1/frontend/configuration', newUser).as('getConfig')
     cy.injectAxe()
-    cy.mountWithProviders(<ProtocolAdapterPage />)
-
-    cy.wait('@getConfig')
-    cy.wait('@getAdapters')
-    cy.wait('@getProtocols')
-    cy.checkAccessibility(undefined, {
-      rules: {
-        'color-contrast': { enabled: false },
-      },
+    cy.mountWithProviders(<ProtocolAdapterPage />, {
+      wrapper: Wrapper,
+      routerProps: { initialEntries: [`/protocol-adapters`] },
     })
-    cy.get("[role='tab']").eq(0).click()
-    cy.checkAccessibility(undefined, {
-      rules: {
-        'color-contrast': { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
   })
 })

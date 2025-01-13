@@ -19,6 +19,10 @@ const NodePanelController = lazy(() => import('@/modules/Workspace/components/co
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 const TopicFilterManager = lazy(() => import('@/modules/TopicFilters/TopicFilterManager.tsx'))
+const ProtocolIntegrationStore = lazy(
+  () => import('@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx')
+)
+const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
@@ -55,16 +59,28 @@ export const routes = createBrowserRouter(
           element: <ProtocolAdapterPage />,
           children: [
             {
-              path: 'new/:type',
-              element: <AdapterController isNew />,
+              path: '',
+              element: <ProtocolAdapters />,
+              children: [
+                {
+                  path: 'edit/:type/:adapterId',
+                  element: <AdapterController />,
+                },
+                {
+                  path: 'edit/:type/:adapterId/export',
+                  element: <ExportDrawer />,
+                },
+              ],
             },
             {
-              path: 'edit/:type/:adapterId',
-              element: <AdapterController />,
-            },
-            {
-              path: 'edit/:type/:adapterId/export',
-              element: <ExportDrawer />,
+              path: 'catalog',
+              element: <ProtocolIntegrationStore />,
+              children: [
+                {
+                  path: 'new/:type',
+                  element: <AdapterController isNew />,
+                },
+              ],
             },
           ],
         },
