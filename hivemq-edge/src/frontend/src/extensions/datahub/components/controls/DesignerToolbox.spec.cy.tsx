@@ -6,7 +6,7 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => <ReactFlowProvider>{chi
 
 describe('DesignerToolbox', () => {
   beforeEach(() => {
-    cy.viewport(850, 250)
+    cy.viewport(850, 600)
   })
 
   it('should renders properly', () => {

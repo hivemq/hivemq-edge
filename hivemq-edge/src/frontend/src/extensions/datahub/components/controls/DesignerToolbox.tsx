@@ -44,7 +44,7 @@ const DesignerToolbox: FC = () => {
                   px={2}
                 />
               </PopoverTrigger>
-              <PopoverContent width="unset" id="toolbox-content">
+              <PopoverContent width="unset" id="toolbox-content" data-testid="toolbox-container">
                 <PopoverArrow />
                 <PopoverCloseButton />
                 <PopoverHeader>Policy Toolbox</PopoverHeader>
