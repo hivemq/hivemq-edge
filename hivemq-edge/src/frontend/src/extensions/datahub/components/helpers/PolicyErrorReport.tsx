@@ -24,7 +24,7 @@ const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, onOp
   const { t } = useTranslation('datahub')
 
   return (
-    <Accordion allowToggle overflow="auto" maxHeight="180px">
+    <Accordion allowMultiple>
       {errors.map((problem, i) => {
         const { id, title, detail } = problem
         // ProblemDetailsExtended doesn't type the extensions!

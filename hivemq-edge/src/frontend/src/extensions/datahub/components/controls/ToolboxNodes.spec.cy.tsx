@@ -2,7 +2,7 @@
 
 import { ToolboxNodes } from './ToolboxNodes.tsx'
 
-describe('Toolbox', () => {
+describe('ToolboxNodes', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
   })
@@ -17,5 +17,12 @@ describe('Toolbox', () => {
     cy.get('@policyControlsGroups').eq(1).should('contain.text', 'Data Policy')
     cy.get('@policyControlsGroups').eq(2).should('contain.text', 'Behavior Policy')
     cy.get('@policyControlsGroups').eq(3).should('contain.text', 'Operation')
+  })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<ToolboxNodes />)
+
+    cy.checkAccessibility()
   })
 })

@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
-import { Box, Button, HStack, Icon, Stack, useToast } from '@chakra-ui/react'
+import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
 import config from '@/config'
@@ -10,7 +10,6 @@ import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
-import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
@@ -23,6 +22,7 @@ import {
   ResourceState,
   ResourceWorkingVersion,
 } from '@datahub/types.ts'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -49,7 +49,7 @@ const resourceReducer =
     return accumulator
   }
 
-export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
+export const ToolbarPublish: FC = () => {
   const { t } = useTranslation('datahub')
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const { status: statusDraft } = useDataHubDraftStore()
@@ -58,20 +58,21 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
   const createDataPolicy = useCreateDataPolicy()
   const createBehaviorPolicy = useCreateBehaviorPolicy()
   const toast = useToast()
+  const { state, pathname } = useLocation()
+  const navigate = useNavigate()
 
   const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || statusDraft === DesignerStatus.DRAFT
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
   const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {
     try {
-      const data = await promise
+      await promise
       toast({
         ...dataHubToastOption,
         title: t('error.publish.title', { source: type }),
         description: t('error.publish.description', { source: type }),
         status: 'success',
       })
-      return Promise.resolve(data)
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message
@@ -82,7 +83,6 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
         description: message,
         status: 'error',
       })
-      return Promise.reject(error)
     }
   }
 
@@ -153,24 +153,20 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
       .finally(() => {
         reset()
         setNode(selectedNode)
-        onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_NODES)
+        navigate(state?.origin || pathname, { replace: true })
       })
   }
 
   return (
-    <Stack maxW={500}>
-      <HStack>
-        <Box>
-          <Button
-            leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
-            onClick={handlePublish}
-            isDisabled={!isValid || !isEditEnabled}
-            isLoading={createSchema.isPending}
-          >
-            {t('workspace.toolbar.policy.publish')}
-          </Button>
-        </Box>
-      </HStack>
-    </Stack>
+    <Button
+      data-testid="toolbox-policy-publish"
+      variant="primary"
+      leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
+      onClick={handlePublish}
+      isDisabled={!isValid || !isEditEnabled}
+      isLoading={createSchema.isPending}
+    >
+      {t('workspace.toolbar.policy.publish')}
+    </Button>
   )
 }

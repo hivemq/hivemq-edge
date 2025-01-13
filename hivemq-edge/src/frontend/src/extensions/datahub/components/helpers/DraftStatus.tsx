@@ -27,21 +27,12 @@ const DraftStatus: FC = () => {
   }
 
   return (
-    <HStack
-      alignItems="flex-start"
-      p={2}
-      borderWidth={1}
-      bg="var(--chakra-colors-chakra-body-bg)"
-      borderRadius="var(--chakra-radii-base)"
-      boxShadow="var(--chakra-shadows-lg)"
-      sx={{ textWrap: 'nowrap' }}
-      gap={4}
-    >
+    <HStack alignItems="center" sx={{ textWrap: 'nowrap' }} gap={4}>
       <HStack>
         <NodeIcon type={DataHubNodeType.DATA_POLICY} />
         <Text>{t('workspace.toolbox.draft.status', { context: status, name: name, type })}</Text>
       </HStack>
-      <ButtonGroup size="xs">
+      <ButtonGroup>
         <IconButton
           isDisabled={isEditable}
           data-testid="designer-edit-"

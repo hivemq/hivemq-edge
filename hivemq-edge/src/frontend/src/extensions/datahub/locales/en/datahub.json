@@ -219,6 +219,8 @@
       "policy": {
         "check": "Check",
         "publish": "Publish",
+        "showReport": "Show Validity Report",
+        "clearReport": "Clear Validity Report",
         "delete": "Delete Policy"
       }
     },
@@ -227,6 +229,7 @@
         "checking": "Checking ..."
       },
       "report": {
+        "header": "Report on policy validity",
         "loading": {
           "title": "Checking the policy correctness",
           "description": "Please wait ..."
@@ -236,12 +239,15 @@
           "description": "Please wait ..."
         },
         "success": {
+          "title_error": "No information to display",
+          "description_error": "Run a check before trying to publish",
           "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
           "description_warning": "The following parts of the policy needs correction:",
           "title_success": "The policy is fully valid to run on your topology.",
           "description_success": "You can now publish it"
         },
         "cta": {
+          "close": "Close",
           "highlight": "Show in designer",
           "config": "Open configuration"
         }

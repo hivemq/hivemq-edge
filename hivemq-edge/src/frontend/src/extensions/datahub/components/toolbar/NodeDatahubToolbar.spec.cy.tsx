@@ -1,4 +1,4 @@
-import NodeDatahubToolbar from '@datahub/components/nodes/NodeDatahubToolbar.tsx'
+import NodeDatahubToolbar from '@datahub/components/toolbar/NodeDatahubToolbar.tsx'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 
 describe('NodeDatahubToolbar', () => {

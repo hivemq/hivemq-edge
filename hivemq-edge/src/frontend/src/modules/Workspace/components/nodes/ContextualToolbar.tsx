@@ -1,24 +1,15 @@
 import { type FC, MouseEventHandler, useMemo } from 'react'
-import {
-  NodeToolbar,
-  type NodeProps,
-  type NodeToolbarProps,
-  Position,
-  Node,
-  Edge,
-  MarkerType,
-  getOutgoers,
-} from 'reactflow'
+import { Edge, getOutgoers, MarkerType, Node, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { Divider, HStack, Icon, Text, useTheme } from '@chakra-ui/react'
+import { Divider, Text, useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
-import { BsGripVertical } from 'react-icons/bs'
 
 import { Adapter, Status } from '@/api/__generated__'
-import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
+import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
@@ -126,64 +117,44 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   // TODO[NVL] Weird side effect if first node has no toolbar; get the first suitable node instead?
   const [mainNodes] = selectedNodes
 
-  const isGroupable = selectedGroupCandidates
-
   return (
     <NodeToolbar
       isVisible={Boolean(mainNodes?.id === id && !dragging)}
       position={Position.Top}
-      role="toolbar"
       aria-label={t('workspace.toolbar.container.label')}
     >
-      <HStack
-        sx={{
-          borderColor: 'var(--chakra-colors-chakra-border-color)',
-          _dark: {
-            borderWidth: 1,
-          },
-          // paddingLeft: 2,
-          paddingRight: 2,
-          borderRadius: 'var(--chakra-radii-md)',
-          backgroundColor: 'var(--chakra-colors-chakra-body-bg)',
-          boxShadow:
-            'rgba(17, 17, 26, 0.1) 0px 4px 16px, rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 56px;',
-        }}
-        height="50px"
-      >
-        <Icon as={BsGripVertical} boxSize={7} aria-hidden={true} />
-        <Text data-testid="toolbar-title">{title || id}</Text>
-        {children && (
-          <>
-            <Divider orientation="vertical" />
-            {children}
-          </>
-        )}
+      <Text data-testid="toolbar-title">{title || id}</Text>
+      {children && (
+        <>
+          <Divider orientation="vertical" />
+          {children}
+        </>
+      )}
 
-        <Divider orientation="vertical" />
-        <ToolbarButtonGroup>
-          <IconButton
-            isDisabled={!isGroupable}
-            data-testid="node-group-toolbar-group"
-            icon={<ImMakeGroup />}
-            aria-label={t('workspace.toolbar.command.group')}
-            onClick={onCreateGroup}
-          />
-        </ToolbarButtonGroup>
+      <Divider orientation="vertical" />
+      <ToolbarButtonGroup>
+        <IconButton
+          isDisabled={!selectedGroupCandidates}
+          data-testid="node-group-toolbar-group"
+          icon={<ImMakeGroup />}
+          aria-label={t('workspace.toolbar.command.group')}
+          onClick={onCreateGroup}
+        />
+      </ToolbarButtonGroup>
 
-        {!hasNoOverview && (
-          <>
-            <Divider orientation="vertical" />
-            <ToolbarButtonGroup>
-              <IconButton
-                data-testid="node-group-toolbar-panel"
-                icon={<LuPanelRightOpen />}
-                aria-label={t('workspace.toolbar.command.overview')}
-                onClick={onOpenPanel}
-              />
-            </ToolbarButtonGroup>
-          </>
-        )}
-      </HStack>
+      {!hasNoOverview && (
+        <>
+          <Divider orientation="vertical" />
+          <ToolbarButtonGroup>
+            <IconButton
+              data-testid="node-group-toolbar-panel"
+              icon={<LuPanelRightOpen />}
+              aria-label={t('workspace.toolbar.command.overview')}
+              onClick={onOpenPanel}
+            />
+          </ToolbarButtonGroup>
+        </>
+      )}
     </NodeToolbar>
   )
 }
