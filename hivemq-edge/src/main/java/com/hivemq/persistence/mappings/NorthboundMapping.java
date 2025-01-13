@@ -101,8 +101,8 @@ public class NorthboundMapping implements PollingContext {
                 model.getMessageHandlingOptions() == null ?
                         DEFAULT_MESSAGE_HANDLING_OPTIONS :
                         MessageHandlingUtils.convert(model.getMessageHandlingOptions()),
-                model.getIncludeTagNames(),
-                model.getIncludeTimestamp(),
+                model.getIncludeTagNames() != null && model.getIncludeTagNames(),
+                model.getIncludeTimestamp() != null && model.getIncludeTimestamp(),
                 model.getUserProperties() == null ?
                         List.of() :
                         model.getUserProperties()
