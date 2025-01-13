@@ -19,7 +19,7 @@ describe('ShortcutRenderer', () => {
 
   it('should render multiple shortcuts', () => {
     cy.mountWithProviders(<ShortcutRenderer hotkeys="CTRL+C,Meta+V,ESC" description="This is a description" />)
-    const cmd = Cypress.platform === 'darwin' ? '⌘' : 'Ctrl'
+    const cmd = Cypress.platform === 'darwin' ? '⌘' : '^'
 
     cy.get('[role="term"]').should('contain.text', `CTRL + C , ${cmd} + V , ESC`)
     cy.get('kbd').should('have.length', 5)
