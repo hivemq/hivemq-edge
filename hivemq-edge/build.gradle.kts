@@ -409,6 +409,7 @@ license {
     exclude("*.json")
     exclude("**/*.xml")
     exclude("**/RollingList.java")
+    exclude("**/gen/**/*.java")
 }
 
 downloadLicenses {
