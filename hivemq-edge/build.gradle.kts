@@ -278,6 +278,7 @@ tasks.register<GenerateTask>("genJaxRs") {
     generatorName.set("jaxrs-spec")
     apiPackage.set("com.hivemq.edge.api")
     modelPackage.set("com.hivemq.edge.api.model")
+    invokerPackage.set("com.hivemq.edge.api")
     generateApiTests.set(false)
     configOptions.set(
         hashMapOf(
@@ -409,7 +410,7 @@ license {
     exclude("*.json")
     exclude("**/*.xml")
     exclude("**/RollingList.java")
-    exclude("**/gen/**/*.java")
+    exclude("**/api/**/*.java")
 }
 
 downloadLicenses {
