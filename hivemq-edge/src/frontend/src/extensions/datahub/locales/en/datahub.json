@@ -220,7 +220,7 @@
         "check": "Check",
         "publish": "Publish",
         "showReport": "Show Validity Report",
-        "clearReport": "Show Validity Report",
+        "clearReport": "Clear Validity Report",
         "delete": "Delete Policy"
       }
     },
