@@ -189,6 +189,8 @@ dependencies {
     implementation(libs.jersey.hk2)
     implementation(libs.jersey.media.json.jackson)
     implementation(libs.jersey.media.multipart)
+    implementation(libs.jersey.container.servlet.core)
+    implementation(libs.servlet.api)
 
     // Jackson
     implementation(libs.jackson.jaxrs.json.provider)
@@ -198,6 +200,7 @@ dependencies {
 
     //Open API
     implementation(libs.swagger.annotations)
+    implementation(libs.swagger.jaxrs)
 
     //JWT
     implementation(libs.jose4j)
@@ -274,16 +277,10 @@ val buildDirectory = layout.buildDirectory.get()
 tasks.register<GenerateTask>("genJaxRs") {
     inputSpec.set("${projectDir}/../ext/hivemq-edge-openapi-2024.8.yaml")
     outputDir.set("${buildDirectory}/generated/openapi")
-    generatorName.set("jaxrs-jersey")
+    generatorName.set("jaxrs-spec")
     apiPackage.set("com.hivemq.edge.api")
     modelPackage.set("com.hivemq.edge.api.model")
     generateApiTests.set(false)
-    configOptions.set(
-        hashMapOf(
-            "generateControllerAsAbstract" to "true",
-            "useAuth" to "true"
-        )
-    )
 }
 
 sourceSets {
