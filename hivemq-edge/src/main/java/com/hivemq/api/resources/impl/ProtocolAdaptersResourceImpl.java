@@ -334,7 +334,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
-        final Map<String, Object> config = configConverter.convertConfigToMaps((JsonNode) adapter.getConfig());
+        final Map<String, Object> config = (LinkedHashMap) adapter.getConfig();
         try {
             protocolAdapterManager.updateAdapterConfig(adapter.getType(), adapterId, config);
         } catch (final Exception e) {
