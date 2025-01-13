@@ -120,7 +120,7 @@ public class ProtocolAdapterWrapper {
         return tags;
     }
 
-    public @NotNull Long getTimeOfLastStartAttempt() {
+    public @Nullable Long getTimeOfLastStartAttempt() {
         return lastStartAttemptTime;
     }
 
