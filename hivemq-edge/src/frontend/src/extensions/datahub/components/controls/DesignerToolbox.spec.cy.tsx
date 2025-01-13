@@ -26,6 +26,7 @@ describe('DesignerToolbox', () => {
     cy.mountWithProviders(<DesignerToolbox />, { wrapper })
     cy.getByTestId('toolbox-trigger').click()
 
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(100) // Wait for dropdown (ugly)
 
     cy.checkAccessibility()
