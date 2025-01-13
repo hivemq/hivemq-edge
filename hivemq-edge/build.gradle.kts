@@ -286,6 +286,7 @@ tasks.register<GenerateTask>("genJaxRs") {
             "generatePom" to "false",
             "interfaceOnly" to "true",
             "useTags" to "true",
+            "returnResponse" to "true",
         )
     )
 }
