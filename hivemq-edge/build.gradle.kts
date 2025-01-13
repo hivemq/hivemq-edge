@@ -287,6 +287,7 @@ tasks.register<GenerateTask>("genJaxRs") {
             "interfaceOnly" to "true",
             "useTags" to "true",
             "returnResponse" to "true",
+            "openApiNullable" to  "false"
         )
     )
 }

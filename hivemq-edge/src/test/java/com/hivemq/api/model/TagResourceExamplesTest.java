@@ -17,8 +17,8 @@ package com.hivemq.api.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.resources.examples.TagResourceExamples;
+import com.hivemq.edge.api.model.DomainTagList;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +29,6 @@ class TagResourceExamplesTest {
 
     @Test
     void assertThatExamplesAreParsable() throws JsonProcessingException {
-        objectMapper.readValue(TagResourceExamples.EXAMPLE_OPC_UA, DomainTagModelList.class);
+        objectMapper.readValue(TagResourceExamples.EXAMPLE_OPC_UA, DomainTagList.class);
     }
 }

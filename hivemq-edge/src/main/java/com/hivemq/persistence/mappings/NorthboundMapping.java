@@ -18,10 +18,12 @@ package com.hivemq.persistence.mappings;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.api.utils.MessageHandlingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NorthboundMapping implements PollingContext {
 
@@ -90,8 +92,12 @@ public class NorthboundMapping implements PollingContext {
                 model.getTopic(),
                 model.getMaxQoS().ordinal(),
                 model.getMessageExpiryInterval(),
-                MessageHandlingOptions.from(model.getMessageHandlingOptions()),
+                MessageHandlingUtils.convert(model.getMessageHandlingOptions()),
                 model.getIncludeTagNames(),
-                model.getIncludeTimestamp());
+                model.getIncludeTimestamp(),
+                model.getUserProperties()
+                        .stream()
+                        .map(u -> new MqttUserProperty(u.getName(), u.getValue()))
+                        .collect(Collectors.toList()));
     }
 }

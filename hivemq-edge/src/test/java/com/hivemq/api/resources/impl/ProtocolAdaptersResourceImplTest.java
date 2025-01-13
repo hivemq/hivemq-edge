@@ -16,11 +16,10 @@
 package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.api.model.tags.DomainTagModel;
-import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagDeleteResult;
@@ -83,16 +82,16 @@ class ProtocolAdaptersResourceImplTest {
 
         when(protocolAdapterManager.getTagsForAdapter("adapter")).thenReturn(Optional.of(domainTags));
 
-        final Response response = protocolAdaptersResource.getDomainTagsForAdapter("adapter");
+        final Response response = protocolAdaptersResource.getAdapterDomainTags("adapter");
 
         final Object entity = response.getEntity();
 
-        assertInstanceOf(DomainTagModelList.class, entity);
-        final DomainTagModelList domainTagModelList = (DomainTagModelList) entity;
-        assertEquals(domainTags.size(), domainTagModelList.getItems().size());
+        assertInstanceOf(DomainTagList.class, entity);
+        final DomainTagList domainTagList = (DomainTagList) entity;
+        assertEquals(domainTags.size(), domainTagList.getItems().size());
         for (int i = 0; i < domainTags.size(); i++) {
             final DomainTag domainTag = domainTags.get(i);
-            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(i));
+            assertEquals(domainTag.toModel(), domainTagList.getItems().get(i));
         }
     }
 
@@ -101,11 +100,11 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(protocolAdapterManager.addDomainTag(eq("adapter"), any())).thenReturn(DomainTagAddResult.success());
 
-        final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                DomainTagModel.fromDomainTag(new DomainTag("tag",
+        final Response response = protocolAdaptersResource.addAdapterDomainTags("adapter",
+                (new DomainTag("tag",
                         "1",
                         "description",
-                        objectMapper.valueToTree(Map.of("address", "addressy")))));
+                        objectMapper.valueToTree(Map.of("address", "addressy"))).toModel()));
 
         assertEquals(200, response.getStatus());
     }
@@ -117,11 +116,11 @@ class ProtocolAdaptersResourceImplTest {
                 DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
                 "it exists"));
 
-        final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                DomainTagModel.fromDomainTag(new DomainTag("tag",
+        final Response response = protocolAdaptersResource.addAdapterDomainTags("adapter",
+                new DomainTag("tag",
                         "1",
                         "description",
-                        objectMapper.valueToTree(Map.of("address", "addressy")))));
+                        objectMapper.valueToTree(Map.of("address", "addressy"))).toModel());
 
         assertEquals(409, response.getStatus());
     }
@@ -133,7 +132,7 @@ class ProtocolAdaptersResourceImplTest {
                 eq("tag"))).thenReturn(DomainTagDeleteResult.success());
 
         final Response response =
-                protocolAdaptersResource.deleteDomainTag("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
+                protocolAdaptersResource.deleteAdapterDomainTags("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
 
         assertEquals(200, response.getStatus());
 
@@ -146,7 +145,7 @@ class ProtocolAdaptersResourceImplTest {
                 DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND));
 
         final Response response =
-                protocolAdaptersResource.deleteDomainTag("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
+                protocolAdaptersResource.deleteAdapterDomainTags("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
 
         assertEquals(404, response.getStatus());
 
@@ -157,12 +156,12 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.success());
 
-        final Response response = protocolAdaptersResource.updateDomainTag("adapter",
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                DomainTagModel.fromDomainTag(new DomainTag("tag",
+                new DomainTag("tag",
                         "1",
                         "description",
-                        objectMapper.valueToTree(Map.of("address", "addressy")))));
+                        objectMapper.valueToTree(Map.of("address", "addressy"))).toModel());
 
         assertEquals(200, response.getStatus());
     }
@@ -173,12 +172,12 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.failed(
                 DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND));
 
-        final Response response = protocolAdaptersResource.updateDomainTag("adapter",
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                DomainTagModel.fromDomainTag(new DomainTag("tag",
+                new DomainTag("tag",
                         "1",
                         "description",
-                        objectMapper.valueToTree(Map.of("address", "addressy")))));
+                        objectMapper.valueToTree(Map.of("address", "addressy"))).toModel());
 
         assertEquals(403, response.getStatus());
     }
@@ -200,12 +199,12 @@ class ProtocolAdaptersResourceImplTest {
 
         final Object entity = response.getEntity();
 
-        assertInstanceOf(DomainTagModelList.class, entity);
-        final DomainTagModelList domainTagModelList = (DomainTagModelList) entity;
-        assertEquals(domainTags.size(), domainTagModelList.getItems().size());
+        assertInstanceOf(DomainTagList.class, entity);
+        final DomainTagList domainTagList = (DomainTagList) entity;
+        assertEquals(domainTags.size(), domainTagList.getItems().size());
         for (int i = 0; i < domainTags.size(); i++) {
             final DomainTag domainTag = domainTags.get(i);
-            assertEquals(DomainTagModel.fromDomainTag(domainTag), domainTagModelList.getItems().get(i));
+            assertEquals(domainTag.toModel(), domainTagList.getItems().get(i));
         }
     }
 }
