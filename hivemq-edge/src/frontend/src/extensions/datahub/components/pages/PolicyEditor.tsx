@@ -23,7 +23,7 @@ import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListene
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
 import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
 import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
-import { CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
+import { CustomEdgeTypes, CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
@@ -46,7 +46,7 @@ const PolicyEditor: FC = () => {
     useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
-
+  const edgeTypes = useMemo(() => CustomEdgeTypes, [])
   const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   const checkValidity = useCallback(
@@ -169,6 +169,7 @@ const PolicyEditor: FC = () => {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           // onEdgeUpdate={onEdgeUpdate}
