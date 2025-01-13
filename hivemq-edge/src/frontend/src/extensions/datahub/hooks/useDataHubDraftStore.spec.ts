@@ -59,6 +59,64 @@ describe('useDataHubDraftStore', () => {
     expect(result.current.edges).toHaveLength(1)
   })
 
+  it('should check if a policy is already in the store', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useDataHubDraftStore)
+    const { nodes, edges } = result.current
+
+    expect(nodes).toHaveLength(0)
+    expect(edges).toHaveLength(0)
+
+    act(() => {
+      const { onNodesChange } = result.current
+      const item1: Node = { ...MOCK_NODE, id: '1', position: { x: 0, y: 0 } }
+      onNodesChange([{ item: item1, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { isPolicyInDraft } = result.current
+      expect(isPolicyInDraft()).toBeFalsy()
+    })
+
+    act(() => {
+      const { onNodesChange } = result.current
+      const item2: Node = { ...MOCK_NODE, type: DataHubNodeType.BEHAVIOR_POLICY, id: '2', position: { x: 0, y: 0 } }
+      onNodesChange([{ item: item2, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { isPolicyInDraft } = result.current
+      expect(isPolicyInDraft()).toBeTruthy()
+    })
+
+    act(() => {
+      const { reset } = result.current
+      reset()
+    })
+
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onNodesChange } = result.current
+      const item3: Node = { ...MOCK_NODE, type: DataHubNodeType.DATA_POLICY, id: '3', position: { x: 0, y: 0 } }
+      onNodesChange([{ item: item3, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { isPolicyInDraft } = result.current
+      expect(isPolicyInDraft()).toBeTruthy()
+    })
+  })
+
   it('should update the connection between two nodes', async () => {
     const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useDataHubDraftStore)
     expect(result.current.nodes).toHaveLength(0)
