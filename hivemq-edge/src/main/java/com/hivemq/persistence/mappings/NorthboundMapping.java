@@ -18,6 +18,7 @@ package com.hivemq.persistence.mappings;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.api.utils.MessageHandlingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NorthboundMapping implements PollingContext {
+
+    private static final int DEFAULT_QOS = 2;
+    private static final long DEFAULT_MESSAGE_EXPIRY = JavaScriptConstants.JS_MAX_SAFE_INTEGER;
+    public static final MessageHandlingOptions DEFAULT_MESSAGE_HANDLING_OPTIONS =
+            MessageHandlingOptions.MQTTMessagePerTag;
 
     private final @NotNull String topic;
     private final @NotNull String tagName;
@@ -90,14 +96,18 @@ public class NorthboundMapping implements PollingContext {
     public static NorthboundMapping fromModel(final com.hivemq.edge.api.model.NorthboundMapping model) {
         return new NorthboundMapping(model.getTagName(),
                 model.getTopic(),
-                model.getMaxQoS().ordinal(),
-                model.getMessageExpiryInterval(),
-                MessageHandlingUtils.convert(model.getMessageHandlingOptions()),
+                model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
+                model.getMessageExpiryInterval() == null ? DEFAULT_MESSAGE_EXPIRY : model.getMessageExpiryInterval(),
+                model.getMessageHandlingOptions() == null ?
+                        DEFAULT_MESSAGE_HANDLING_OPTIONS :
+                        MessageHandlingUtils.convert(model.getMessageHandlingOptions()),
                 model.getIncludeTagNames(),
                 model.getIncludeTimestamp(),
-                model.getUserProperties()
-                        .stream()
-                        .map(u -> new MqttUserProperty(u.getName(), u.getValue()))
-                        .collect(Collectors.toList()));
+                model.getUserProperties() == null ?
+                        List.of() :
+                        model.getUserProperties()
+                                .stream()
+                                .map(u -> new MqttUserProperty(u.getName(), u.getValue()))
+                                .collect(Collectors.toList()));
     }
 }

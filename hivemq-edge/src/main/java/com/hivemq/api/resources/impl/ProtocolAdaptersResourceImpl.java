@@ -101,6 +101,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -301,8 +302,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
-            final Map<String, Object> config = configConverter.convertConfigToMaps((JsonNode) adapter.getConfig());
-            protocolAdapterManager.addAdapterWithoutTags(adapterType, adapter.getId(), config);
+            protocolAdapterManager.addAdapterWithoutTags(adapterType,
+                    adapter.getId(),
+                    (LinkedHashMap) adapter.getConfig());
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -395,7 +397,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getAdapterStatus(final @NotNull String adapterId){
+    public @NotNull Response getAdapterStatus(final @NotNull String adapterId) {
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
@@ -487,7 +489,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response addAdapterDomainTags(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addDomainTag(adapterId,
-                com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(domainTag, adapterId));
+                com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(domainTag, adapterId, objectMapper));
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -532,7 +534,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final DomainTagUpdateResult domainTagUpdateResult =
                 protocolAdapterManager.updateDomainTag(com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(
                         domainTag,
-                        adapterId));
+                        adapterId,
+                        objectMapper));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -550,7 +553,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull String adapterId, final @NotNull DomainTagList domainTagList) {
         final Set<com.hivemq.persistence.domain.DomainTag> domainTags = domainTagList.getItems()
                 .stream()
-                .map(e -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(e, adapterId))
+                .map(e -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(e, adapterId, objectMapper))
                 .collect(Collectors.toSet());
         final DomainTagUpdateResult domainTagUpdateResult =
                 protocolAdapterManager.updateDomainTags(adapterId, domainTags);
@@ -690,7 +693,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final List<Map<String, Object>> domainTags = adapterConfig.getTags()
                     .stream()
-                    .map(dtm -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(dtm, adapterId))
+                    .map(dtm -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(dtm,
+                            adapterId,
+                            objectMapper))
                     .map(com.hivemq.persistence.domain.DomainTag::toTagMap)
                     .collect(Collectors.toList());
 
@@ -783,11 +788,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
-                    final List<NorthboundMapping> converted =
-                            northboundMappingList.getItems().stream().map(mapping -> {
-                                requiredTags.add(mapping.getTagName());
-                                return NorthboundMapping.fromModel(mapping);
-                            }).collect(Collectors.toList());
+                    final List<NorthboundMapping> converted = northboundMappingList.getItems().stream().map(mapping -> {
+                        requiredTags.add(mapping.getTagName());
+                        return NorthboundMapping.fromModel(mapping);
+                    }).collect(Collectors.toList());
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
                     // TODO for now simulation does not need tags
