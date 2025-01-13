@@ -1,8 +1,8 @@
 {
   "shortcuts": {
     "modifier": {
-      "META_MacOS": "Cmd (⌘)",
-      "META_Others": "CTRL"
+      "META_MacOS": "⌘",
+      "META_Others": "^"
     }
   },
   "iconLabel": {

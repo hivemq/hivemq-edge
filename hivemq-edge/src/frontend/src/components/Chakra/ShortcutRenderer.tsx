@@ -45,7 +45,7 @@ const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) =
               {localisedShortcut.map((element, indexElement) => (
                 <chakra.span key={`$${shortcut}-${indexShortcut}-${indexElement}`} aria-hidden="true">
                   {indexElement !== 0 && ' + '}
-                  <Kbd>{element}</Kbd>
+                  <Kbd fontSize="md">{element}</Kbd>
                 </chakra.span>
               ))}
             </Fragment>
