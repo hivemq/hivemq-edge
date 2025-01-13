@@ -314,6 +314,10 @@ tasks.jar {
     )
 }
 
+tasks.compileJava {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
 tasks.shadowJar {
     mergeServiceFiles()
     from(frontendBinary) {
