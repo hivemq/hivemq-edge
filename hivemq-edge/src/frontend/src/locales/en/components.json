@@ -1,4 +1,10 @@
 {
+  "shortcuts": {
+    "modifier": {
+      "META_MacOS": "Cmd (⌘)",
+      "META_Others": "CTRL"
+    }
+  },
   "iconLabel": {
     "topic": "Topic",
     "topic-filter": "Topic Filter",

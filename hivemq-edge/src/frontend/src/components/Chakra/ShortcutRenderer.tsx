@@ -1,9 +1,23 @@
 import { FC, Fragment } from 'react'
 import { chakra, Kbd, Text } from '@chakra-ui/react'
 
+import i18n from '@/config/i18n.config.ts'
+
+const PLATFORM_MACOS = 'MacOS'
+const PLATFORM_OTHERS = 'Others'
+
 interface ShortcutRendererProps {
   hotkeys: string
   description?: string
+}
+
+/**
+ * TODO: navigator.platform is deprecated/obsolete
+ *   We need tp build a common routine with `navigator.userAgentData.platform` (experimental) and `navigator.userAgent` (requires careful parsing)
+ */
+const getUserAgentPlatform = () => {
+  const os = window.navigator.platform
+  return os.startsWith('Mac') ? PLATFORM_MACOS : PLATFORM_OTHERS
 }
 
 const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) => {
@@ -14,12 +28,8 @@ const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) =
     const [modifier, ...rest] = shortcut
 
     if (modifier === 'Meta') {
-      const os = window.navigator.platform
-      if (os.startsWith('Mac')) {
-        return ['Command', ...rest]
-      } else {
-        return ['Ctrl', ...rest]
-      }
+      const modifier = i18n.t('shortcuts.modifier.META', { ns: 'components', context: getUserAgentPlatform() })
+      return [modifier, ...rest]
     }
     return shortcut
   }
