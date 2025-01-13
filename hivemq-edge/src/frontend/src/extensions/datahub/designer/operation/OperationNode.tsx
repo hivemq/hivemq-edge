@@ -1,17 +1,16 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NodeProps, Position } from 'reactflow'
-import { HStack, Text, VStack } from '@chakra-ui/react'
+import { Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
-import { NodeIcon } from '@datahub/components/helpers'
 import { NodeWrapper } from '@datahub/components/nodes/NodeWrapper.tsx'
 import NodeParams from '@datahub/components/helpers/NodeParams.tsx'
 import { CustomHandle } from '@datahub/components/nodes/CustomHandle.tsx'
 
 export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
   const { t } = useTranslation('datahub')
-  const { data, id, type } = props
+  const { data, id } = props
   const { functionId, metadata } = data
 
   const isTransform = metadata?.hasArguments && data.functionId === 'DataHub.transform'
@@ -23,8 +22,28 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
   return (
     <>
       <NodeWrapper route={`node/${DataHubNodeType.OPERATION}/${id}`} {...props}>
-        <VStack>
-          <HStack w="100%" justifyContent="space-around">
+        <VStack alignItems="flex-start">
+          {/*<HStack w="100%" justifyContent="space-around">*/}
+          {/*  {isSerialiser && (*/}
+          {/*    <Text fontSize="xs">{t('workspace.handles.operation', { context: OperationData.Handle.SCHEMA })}</Text>*/}
+          {/*  )}*/}
+          {/*  {isTransform && (*/}
+          {/*    <>*/}
+          {/*      <Text fontSize="xs">*/}
+          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.DESERIALISER })}*/}
+          {/*      </Text>*/}
+          {/*      <Text fontSize="xs">*/}
+          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.FUNCTION })}*/}
+          {/*      </Text>*/}
+          {/*      <Text fontSize="xs">*/}
+          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.SERIALISER })}*/}
+          {/*      </Text>*/}
+          {/*    </>*/}
+          {/*  )}*/}
+          {/*</HStack>*/}
+
+          <VStack data-testid="node-model" alignItems="flex-start">
+            <NodeParams value={functionId || t('error.noSet.select')} />
             {isSerialiser && (
               <Text fontSize="xs">{t('workspace.handles.operation', { context: OperationData.Handle.SCHEMA })}</Text>
             )}
@@ -41,36 +60,66 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
                 </Text>
               </>
             )}
-          </HStack>
-
-          <HStack>
-            <NodeIcon type={DataHubNodeType.OPERATION} />
-            <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
-            <VStack data-testid="node-model">
-              <NodeParams value={functionId || t('error.noSet.select')} />
-            </VStack>
-          </HStack>
+          </VStack>
         </VStack>
       </NodeWrapper>
-      <CustomHandle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
+      <CustomHandle
+        type="target"
+        position={Position.Left}
+        id={OperationData.Handle.INPUT}
+        style={{
+          top: `calc(var(--chakra-space-3) + 12px + 44px)`,
+          // background: 'green',
+        }}
+      />
       {!metadata?.isTerminal && (
-        <CustomHandle type="source" position={Position.Right} id={OperationData.Handle.OUTPUT} isConnectable={1} />
+        <CustomHandle
+          type="source"
+          position={Position.Right}
+          id={OperationData.Handle.OUTPUT}
+          isConnectable={1}
+          style={{
+            top: `calc(var(--chakra-space-3) + 12px + 44px)`,
+            // background: 'green',
+          }}
+        />
       )}
-      {isSerialiser && <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
+      {isSerialiser && (
+        <CustomHandle
+          type="target"
+          position={Position.Left}
+          id={OperationData.Handle.SCHEMA}
+          style={{
+            top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
+          }}
+        />
+      )}
       {isTransform && (
         <>
           <CustomHandle
             type="target"
-            position={Position.Top}
+            position={Position.Left}
             id={OperationData.Handle.DESERIALISER}
-            style={{ left: '20%' }}
+            style={{
+              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
+              // background: 'green',
+            }}
           />
-          <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.FUNCTION} />
           <CustomHandle
             type="target"
-            position={Position.Top}
+            position={Position.Left}
+            id={OperationData.Handle.FUNCTION}
+            style={{
+              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 1.5rem)`,
+            }}
+          />
+          <CustomHandle
+            type="target"
+            position={Position.Left}
             id={OperationData.Handle.SERIALISER}
-            style={{ left: '80%' }}
+            style={{
+              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 3rem)`,
+            }}
           />
         </>
       )}
