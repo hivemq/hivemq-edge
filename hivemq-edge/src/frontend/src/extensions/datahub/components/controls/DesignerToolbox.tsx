@@ -47,7 +47,7 @@ const DesignerToolbox: FC = () => {
               <PopoverContent width="unset" id="toolbox-content" data-testid="toolbox-container">
                 <PopoverArrow />
                 <PopoverCloseButton />
-                <PopoverHeader>Policy Toolbox</PopoverHeader>
+                <PopoverHeader>{t('workspace.toolbox.panel.aria-label')}</PopoverHeader>
                 <PopoverBody as={VStack} alignItems="flex-start" maxWidth="12rem">
                   <Text fontSize="sm">{t('workspace.toolbox.panel.helper')}</Text>
                   <ToolboxNodes direction="vertical" />

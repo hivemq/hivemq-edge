@@ -131,6 +131,7 @@
       "trigger_open": "Open the toolbox",
       "trigger_close": "Close the toolbox",
       "panel": {
+        "aria-label": "Policy Toolbox",
         "helper": "Drag elements on the canvas then connect them",
         "build": {
           "title": "Build",
