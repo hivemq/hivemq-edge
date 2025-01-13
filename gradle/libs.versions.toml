@@ -43,6 +43,7 @@ slf4j = "2.0.16"
 spotBugs = "4.8.5"
 stefanBirkner-systemRules = "1.19.0"
 swagger-annotations = "2.2.27"
+swagger-jaxrs = "1.6.14"
 victools-jsonschema = "4.37.0"
 wiremock = "3.0.1"
 zeroAllocationHashing = "0.16"
@@ -116,6 +117,7 @@ shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", versio
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 stefanBirkner-systemRules = { module = "com.github.stefanbirkner:system-rules", version.ref = "stefanBirkner-systemRules" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
+swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools-jsonschema" }
 victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools-jsonschema" }
 wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }
