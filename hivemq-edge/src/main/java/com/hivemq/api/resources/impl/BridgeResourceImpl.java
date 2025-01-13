@@ -391,7 +391,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                         List.of())
                 .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
                 .withWebsocketConfiguration(convertWebsocketConfig(bridge.getWebsocketConfiguration()))
-                .persist(bridge.getPersist());
+                .persist(bridge.getPersist() == null || bridge.getPersist());
         return builder.build();
     }
 
