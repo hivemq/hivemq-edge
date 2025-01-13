@@ -34,12 +34,19 @@ public class AdapterStatusModelConversionUtils {
 
     public static @NotNull Status getAdapterStatus(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
+
+
+        final OffsetDateTime offsetDateTime = protocolAdapterWrapper.getTimeOfLastStartAttempt() == null ?
+                null :
+                OffsetDateTime.ofInstant(Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()),
+                        ZoneOffset.UTC);
+
         return new Status().runtime(convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()))
                 .connection(convertConnectionStatus(protocolAdapterWrapper.getConnectionStatus()))
                 .id(protocolAdapterWrapper.getId())
                 .type(ApiConstants.ADAPTER_TYPE)
-                .startedAt(OffsetDateTime.ofInstant(Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()),
-                        ZoneOffset.UTC))
+                //TODO
+               // .startedAt(offsetDateTime)
                 .message(protocolAdapterWrapper.getErrorMessage());
     }
 

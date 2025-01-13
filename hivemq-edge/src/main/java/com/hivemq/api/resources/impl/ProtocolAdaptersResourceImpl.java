@@ -686,8 +686,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
-            final Map<String, Object> config =
-                    configConverter.convertConfigToMaps((JsonNode) adapterConfig.getConfig().getConfig());
+            final Map<String, Object> config = (LinkedHashMap) adapterConfig.getConfig().getConfig();
             final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
                     configConverter.convertAdapterConfig(adapterType, config, protocolAdapterManager.writingEnabled());
 
