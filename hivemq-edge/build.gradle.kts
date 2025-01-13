@@ -189,8 +189,6 @@ dependencies {
     implementation(libs.jersey.hk2)
     implementation(libs.jersey.media.json.jackson)
     implementation(libs.jersey.media.multipart)
-    implementation(libs.jersey.container.servlet.core)
-    implementation(libs.servlet.api)
 
     // Jackson
     implementation(libs.jackson.jaxrs.json.provider)
@@ -281,6 +279,15 @@ tasks.register<GenerateTask>("genJaxRs") {
     apiPackage.set("com.hivemq.edge.api")
     modelPackage.set("com.hivemq.edge.api.model")
     generateApiTests.set(false)
+    configOptions.set(
+        hashMapOf(
+            "dateLibrary" to "java8",
+            "generateBuilders" to "true",
+            "generatePom" to "false",
+            "interfaceOnly" to "true",
+
+        )
+    )
 }
 
 sourceSets {
