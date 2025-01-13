@@ -14,10 +14,10 @@ import { Box } from '@chakra-ui/react'
 import styles from './PolicyEditor.module.scss'
 
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
-import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
+import DesignerMiniMap from '@datahub/components/controls/DesignerMiniMap.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
@@ -201,7 +201,7 @@ const PolicyEditor: FC = () => {
             <DesignerToolbox />
             <CanvasControls />
             <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
-            <MiniMap />
+            <DesignerMiniMap />
           </Box>
         </ReactFlow>
         <SuspenseOutlet />
