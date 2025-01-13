@@ -32,7 +32,6 @@ import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
-import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.api.resources.TopicFilterApi;
 import com.hivemq.api.resources.UnsApi;
@@ -49,6 +48,7 @@ import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.api.ProtocolAdaptersApi;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -99,7 +99,7 @@ public abstract class ApiModule {
 
     @Provides
     @Singleton
-    static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(ApiConfigurationService apiConfigurationService) {
+    static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(final ApiConfigurationService apiConfigurationService) {
         return new JwtAuthenticationProvider(apiConfigurationService.getApiJwtConfiguration());
     }
 
@@ -124,7 +124,7 @@ public abstract class ApiModule {
     @Singleton
     static IUsernamePasswordProvider usernamePasswordProvider(final @NotNull ApiConfigurationService apiConfigurationService) {
         //Generic Credentials used by Both Authentication Handler
-        SimpleUsernamePasswordProviderImpl provider = new SimpleUsernamePasswordProviderImpl();
+        final SimpleUsernamePasswordProviderImpl provider = new SimpleUsernamePasswordProviderImpl();
         log.trace("Applying {} users to API access list", apiConfigurationService.getUserList().size());
         apiConfigurationService.getUserList().forEach(provider::add);
         return provider;
@@ -138,7 +138,7 @@ public abstract class ApiModule {
             final @NotNull ApiResourceRegistry registry) {
         final ImmutableList.Builder<JaxrsHttpServerConfiguration> builder = ImmutableList.builder();
 
-        for (ApiListener listener : apiConfigurationService.getListeners()) {
+        for (final ApiListener listener : apiConfigurationService.getListeners()) {
             final JaxrsHttpServerConfiguration jaxrsConfiguration =
                     JaxrsBootstrapFactory.createJaxrsConfiguration(apiConfigurationService, listener);
             builder.add(jaxrsConfiguration);

@@ -51,17 +51,18 @@ import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
-import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.model.Adapter;
 import com.hivemq.edge.api.model.AdapterConfig;
 import com.hivemq.edge.api.model.AdaptersList;
 import com.hivemq.edge.api.model.DomainTag;
 import com.hivemq.edge.api.model.DomainTagList;
+import com.hivemq.edge.api.model.NorthboundMappingList;
 import com.hivemq.edge.api.model.SouthboundMappingList;
 import com.hivemq.edge.api.model.Status;
 import com.hivemq.edge.api.model.StatusList;
@@ -110,7 +111,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-public class ProtocolAdaptersResourceImpl extends AbstractApi {
+public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
 
