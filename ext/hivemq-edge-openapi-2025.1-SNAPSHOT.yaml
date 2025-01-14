@@ -1213,6 +1213,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The entity tag
+        in: header
+        name: entityTag
+        required: false
+        schema:
+          type: string
       responses:
         "204":
           description: "Success, no response body"
@@ -4312,6 +4318,11 @@ paths:
       - Metrics
       - Metrics Endpoint
 components:
+  headers:
+    ETag:
+      description: 'Identifier for a specific version of a resource'
+      schema:
+        type: string
   schemas:
     Adapter:
       type: object
