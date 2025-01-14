@@ -21,8 +21,6 @@ import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { downloadJSON } from '@datahub/utils/download.utils.ts'
 
-type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
-
 const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()

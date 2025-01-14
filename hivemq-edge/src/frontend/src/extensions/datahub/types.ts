@@ -3,6 +3,7 @@ import {
   BehaviorPolicy,
   BehaviorPolicyOnTransition,
   DataPolicy,
+  type DataPolicyMatching,
   DataPolicyValidator,
   PolicyOperation,
   Schema,
@@ -391,3 +392,14 @@ export interface ValidDropConnection {
   handle: string | null
   isSource: boolean
 }
+
+export interface DraftPolicy {
+  readonly createdAt?: string
+  id: string
+  matching: DataPolicyMatching
+}
+
+export type CombinedPolicy =
+  | (DataPolicy & { type: PolicyType.DATA_POLICY })
+  | (BehaviorPolicy & { type: PolicyType.BEHAVIOR_POLICY })
+  | (DraftPolicy & { type: PolicyType.CREATE_POLICY })
