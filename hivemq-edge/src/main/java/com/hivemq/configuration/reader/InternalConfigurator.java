@@ -24,7 +24,7 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
 
     private final @NotNull InternalConfigurationService internalConfigurationService;
 
-    private volatile InternalConfigEntity internalConfigEntity;
+    private volatile InternalConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     public InternalConfigurator(final @NotNull InternalConfigurationService internalConfigurationService) {
@@ -32,14 +32,18 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull InternalConfigEntity internalConfigEntity) {
-        if(initialized && hasChanged(this.internalConfigEntity, internalConfigEntity)) {
-            return ConfigResult.NEEDS_RESTART;
+    public ConfigResult setConfig(final @NotNull InternalConfigEntity configEntity) {
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
-        this.internalConfigEntity = internalConfigEntity;
+        this.configEntity = configEntity;
         this.initialized = true;
 
-        for (final OptionEntity optionEntity : internalConfigEntity.getOptions()) {
+        for (final OptionEntity optionEntity : configEntity.getOptions()) {
             internalConfigurationService.set(optionEntity.getKey(), optionEntity.getValue());
         }
 

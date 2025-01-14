@@ -58,8 +58,12 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
 
     @Override
     public ConfigResult setConfig(final @NotNull AdminApiEntity configEntity) {
-        if(initialized && hasChanged(this.configEntity, configEntity)) {
-            return ConfigResult.NEEDS_RESTART;
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
         this.configEntity = configEntity;
         this.initialized = true;

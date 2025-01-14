@@ -43,8 +43,12 @@ public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
 
     @Override
     public ConfigResult setConfig(final @NotNull MqttSnConfigEntity configEntity) {
-        if(initialized && hasChanged(this.configEntity, configEntity)) {
-            return ConfigResult.NEEDS_RESTART;
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
         this.configEntity = configEntity;
         this.initialized = true;

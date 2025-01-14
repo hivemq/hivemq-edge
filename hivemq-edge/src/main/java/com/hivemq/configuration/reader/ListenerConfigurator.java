@@ -42,7 +42,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.Null;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +55,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull SystemInformation systemInformation;
-    private volatile Listeners listeners;
+    private volatile Listeners configEntity;
     private volatile boolean initialized = false;
 
     private final @NotNull List<String> chosenNames;
@@ -70,18 +69,22 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull Listeners listeners) {
-        if(initialized && hasChanged(this.listeners, listeners)) {
-            return ConfigResult.NEEDS_RESTART;
+    public ConfigResult setConfig(final @NotNull Listeners configEntity) {
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
-        this.listeners = listeners;
+        this.configEntity = configEntity;
         this.initialized = true;
 
-        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(listeners.mqttListeners);
+        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(configEntity.mqttListeners);
         for (final Listener listener : convertedMqttListeners) {
             listenerConfigurationService.addListener(listener);
         }
-        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(listeners.mqttsnListeners);
+        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(configEntity.mqttsnListeners);
         for (final Listener listener : convertedMqttsnListeners) {
             listenerConfigurationService.addListener(listener);
         }

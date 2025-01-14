@@ -35,8 +35,12 @@ public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapte
 
     @Override
     public ConfigResult setConfig(final @NotNull List<ProtocolAdapterEntity> configEntity) {
-        if(initialized && hasChanged(this.configEntity, configEntity)) {
-            return ConfigResult.NEEDS_RESTART;
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
         this.configEntity = configEntity;
         this.initialized = true;

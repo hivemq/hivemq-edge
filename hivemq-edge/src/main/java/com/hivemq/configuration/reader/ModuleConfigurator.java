@@ -36,8 +36,12 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
 
     @Override
     public ConfigResult setConfig(final @NotNull Map<String, Object> configEntity) {
-        if(initialized && hasChanged(this.configEntity, configEntity)) {
-            return ConfigResult.NEEDS_RESTART;
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
         this.configEntity = configEntity;
         this.initialized = true;

@@ -58,7 +58,7 @@ public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
 
     private final @NotNull BridgeConfigurationService bridgeConfigurationService;
 
-    private volatile List<MqttBridgeEntity> bridgeConfigs;
+    private volatile List<MqttBridgeEntity> configEntity;
     private volatile boolean initialized = false;
 
     @Inject
@@ -68,14 +68,18 @@ public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
     }
 
     @Override
-    public ConfigResult setConfig(@NotNull final List<MqttBridgeEntity> bridgeConfigs) {
-        if(initialized && hasChanged(this.bridgeConfigs, bridgeConfigs)) {
-            return ConfigResult.NEEDS_RESTART;
+    public ConfigResult setConfig(@NotNull final List<MqttBridgeEntity> configEntity) {
+        if(initialized) {
+            if (hasChanged(this.configEntity, configEntity)) {
+                return ConfigResult.NEEDS_RESTART;
+            } else {
+                return ConfigResult.NO_OP;
+            }
         }
-        this.bridgeConfigs = bridgeConfigs;
+        this.configEntity = configEntity;
         initialized = true;
 
-        for (final MqttBridgeEntity bridgeConfig : bridgeConfigs) {
+        for (final MqttBridgeEntity bridgeConfig : configEntity) {
             final RemoteBrokerEntity remoteBroker = bridgeConfig.getRemoteBroker();
             final MqttBridge.Builder builder = new MqttBridge.Builder();
 
