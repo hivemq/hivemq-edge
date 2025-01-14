@@ -1,6 +1,9 @@
 import { FC, Fragment } from 'react'
 import { chakra, Kbd, Text } from '@chakra-ui/react'
 
+import i18n from '@/config/i18n.config.ts'
+import { getUserAgentPlatform } from '@/utils/user-agent.utils.ts'
+
 interface ShortcutRendererProps {
   hotkeys: string
   description?: string
@@ -14,12 +17,8 @@ const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) =
     const [modifier, ...rest] = shortcut
 
     if (modifier === 'Meta') {
-      const os = window.navigator.platform
-      if (os.startsWith('Mac')) {
-        return ['Command', ...rest]
-      } else {
-        return ['Ctrl', ...rest]
-      }
+      const modifier = i18n.t('shortcuts.modifier.META', { ns: 'components', context: getUserAgentPlatform() })
+      return [modifier, ...rest]
     }
     return shortcut
   }
@@ -35,7 +34,7 @@ const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) =
               {localisedShortcut.map((element, indexElement) => (
                 <chakra.span key={`$${shortcut}-${indexShortcut}-${indexElement}`} aria-hidden="true">
                   {indexElement !== 0 && ' + '}
-                  <Kbd>{element}</Kbd>
+                  <Kbd fontSize="md">{element}</Kbd>
                 </chakra.span>
               ))}
             </Fragment>

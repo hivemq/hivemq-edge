@@ -54,7 +54,7 @@ const DesignerCheatSheet: FC = () => {
             <Text fontSize="md">{t(`shortcuts.header`)}</Text>
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody overflowY="scroll" tabIndex={0}>
             <HStack gap={4} alignItems="flex-start">
               {Object.entries(groupedKeys).map(([group, keys]) => (
                 <Card key={group} role="group" aria-labelledby={`group-${group}`} flex={1}>
