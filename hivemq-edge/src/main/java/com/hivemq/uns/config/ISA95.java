@@ -15,11 +15,13 @@
  */
 package com.hivemq.uns.config;
 
+import com.hivemq.edge.api.model.ISA95ApiBean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Example: //enterprise/site/area/production-line/work-cell
+ *
  * @author Simon L Johnson
  */
 public class ISA95 {
@@ -34,20 +36,20 @@ public class ISA95 {
     boolean enabled = false;
     boolean prefixAllTopics = false;
 
-    private @Nullable String enterprise;
-    private @Nullable String site;
-    private @Nullable String area;
-    private @Nullable String productionLine;
-    private @Nullable String workCell;
+    private final @Nullable String enterprise;
+    private final @Nullable String site;
+    private final @Nullable String area;
+    private final @Nullable String productionLine;
+    private final @Nullable String workCell;
 
     public ISA95(
             final boolean enabled,
             final boolean prefixAllTopics,
-            final String enterprise,
-            final String site,
-            final String area,
-            final String productionLine,
-            final String workCell) {
+            final @Nullable String enterprise,
+            final @Nullable String site,
+            final @Nullable String area,
+            final @Nullable String productionLine,
+            final @Nullable String workCell) {
         this.enabled = enabled;
         this.prefixAllTopics = prefixAllTopics;
         this.enterprise = enterprise;
@@ -57,29 +59,30 @@ public class ISA95 {
         this.workCell = workCell;
     }
 
-    public String getEnterprise() {
+    public @Nullable String getEnterprise() {
         return enterprise;
     }
 
-    public String getSite() {
+    public @Nullable String getSite() {
         return site;
     }
 
-    public String getArea() {
+    public @Nullable String getArea() {
         return area;
     }
 
-    public String getProductionLine() {
+    public @Nullable String getProductionLine() {
         return productionLine;
     }
 
-    public String getWorkCell() {
+    public @Nullable String getWorkCell() {
         return workCell;
     }
 
     public boolean isEnabled() {
         return enabled;
     }
+
     public boolean isPrefixAllTopics() {
         return prefixAllTopics;
     }
@@ -129,13 +132,27 @@ public class ISA95 {
         }
 
         public @NotNull ISA95 build() {
-            return new ISA95(enabled,
-                    prefixAllTopics,
-                    enterprise,
-                    site,
-                    area,
-                    productionLine,
-                    workCell);
+            return new ISA95(enabled, prefixAllTopics, enterprise, site, area, productionLine, workCell);
         }
+    }
+
+    public static @NotNull ISA95ApiBean convert(final @NotNull ISA95 isa95Entity) {
+        return new ISA95ApiBean().enabled(isa95Entity.isEnabled())
+                .prefixAllTopics(isa95Entity.isPrefixAllTopics())
+                .enterprise(isa95Entity.getEnterprise())
+                .site(isa95Entity.getSite())
+                .area(isa95Entity.getArea())
+                .productionLine(isa95Entity.getProductionLine())
+                .workCell(isa95Entity.getWorkCell());
+    }
+
+    public static @NotNull ISA95 unconvert(final @NotNull ISA95ApiBean apiBean) {
+        return  new ISA95(apiBean.getEnabled(),
+                apiBean.getPrefixAllTopics(),
+                apiBean.getEnterprise(),
+                apiBean.getSite(),
+                apiBean.getArea(),
+                apiBean.getProductionLine(),
+                apiBean.getWorkCell());
     }
 }

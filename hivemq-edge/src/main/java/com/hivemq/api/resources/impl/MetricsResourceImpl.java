@@ -25,8 +25,8 @@ import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.metrics.DataPoint;
 import com.hivemq.api.model.metrics.Metric;
 import com.hivemq.api.model.metrics.MetricList;
-import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,8 +52,8 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
     @Override
     public Response getMetrics() {
         logger.trace("Metrics API obtaining metrics listing");
-        ImmutableList.Builder<Metric> builder = new ImmutableList.Builder<>();
-        Iterator<String> itr = metricsRegistry.getMetrics().keySet().iterator();
+        final ImmutableList.Builder<Metric> builder = new ImmutableList.Builder<>();
+        final Iterator<String> itr = metricsRegistry.getMetrics().keySet().iterator();
         while (itr.hasNext()){
             builder.add(new Metric(itr.next()));
         }
@@ -62,19 +62,19 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
 
     @Override
     public Response getSample(final String metricName) {
-        ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
+        final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
         if(ApiErrorUtils.hasRequestErrors(messages)){
             return ErrorResponseUtil.errorResponse(new UrlParameterMissingError("metricName"));
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
-            SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
-            Counter counter = metrics.get(metricName);
+            final SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
+            final Counter counter = metrics.get(metricName);
             if(counter != null){
-                DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
+                final DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
                 return Response.ok(dataPoint).build();
             } else {
-                DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
+                final DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), 0L);
                 return Response.ok(dataPoint).build();
             }
         }

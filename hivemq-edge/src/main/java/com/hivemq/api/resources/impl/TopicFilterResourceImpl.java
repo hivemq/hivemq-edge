@@ -15,16 +15,15 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.topicfilters.TopicFilterNotFoundError;
-import com.hivemq.api.model.topicFilters.TopicFilterModel;
-import com.hivemq.api.model.topicFilters.TopicFilterModelList;
-import com.hivemq.api.resources.TopicFilterApi;
-import com.hivemq.http.error.ErrorType;
+import com.hivemq.edge.api.TopicFiltersApi;
+import com.hivemq.edge.api.model.TopicFilterList;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.persistence.topicfilter.TopicFilter;
 import com.hivemq.persistence.topicfilter.TopicFilterAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterDeleteResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
@@ -40,7 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
-public class TopicFilterResourceImpl implements TopicFilterApi {
+public class TopicFilterResourceImpl extends AbstractApi implements TopicFiltersApi {
 
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
@@ -49,10 +48,12 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
         this.topicFilterPersistence = topicFilterPersistence;
     }
 
+
+
     @Override
-    public @NotNull Response addTopicFilter(final @NotNull TopicFilterModel topicFilterModel) {
+    public @NotNull Response addTopicFilters(final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
         final @NotNull TopicFilterAddResult addResult =
-                topicFilterPersistence.addTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+                topicFilterPersistence.addTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
         final @NotNull String name = topicFilterModel.getDescription();
         switch (addResult.getTopicFilterPutStatus()) {
             case SUCCESS:
@@ -72,11 +73,11 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
 
     @Override
     public @NotNull Response getTopicFilters() {
-        final List<TopicFilterModel> topicFilterModelList = topicFilterPersistence.getTopicFilters()
+        final List<com.hivemq.edge.api.model.TopicFilter> topicFilterModelList = topicFilterPersistence.getTopicFilters()
                 .stream()
-                .map(TopicFilterModel::fromTopicFilter)
+                .map(TopicFilterPojo::toModel)
                 .collect(Collectors.toList());
-        return Response.ok(new TopicFilterModelList(topicFilterModelList)).build();
+        return Response.ok(new TopicFilterList().items(topicFilterModelList)).build();
     }
 
     @Override
@@ -96,7 +97,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
 
     @Override
     public @NotNull Response updateTopicFilter(
-            final @NotNull String filterUriEncoded, final @NotNull TopicFilterModel topicFilterModel) {
+            final @NotNull String filterUriEncoded, final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
             return ErrorResponseUtil.errorResponse(new BadRequestError(
@@ -110,7 +111,7 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
         }
 
         final @NotNull TopicFilterUpdateResult updateResult =
-                topicFilterPersistence.updateTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+                topicFilterPersistence.updateTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
         switch (updateResult.getTopicFilterUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -121,10 +122,10 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     }
 
     @Override
-    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterModelList topicFilterModelList) {
-        final List<TopicFilter> topicFilters = topicFilterModelList.getItems()
+    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterList topicFilterModelList) {
+        final List<TopicFilterPojo> topicFilters = topicFilterModelList.getItems()
                 .stream()
-                .map(TopicFilter::fromTopicFilterModel)
+                .map(TopicFilterPojo::fromModel)
                 .collect(Collectors.toList());
         final @NotNull TopicFilterUpdateResult updateResult =
                 topicFilterPersistence.updateAllTopicFilters(topicFilters);

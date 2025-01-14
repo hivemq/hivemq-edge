@@ -15,8 +15,10 @@
  */
 package com.hivemq.api.resources.impl;
 
+
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.resources.HealthCheckApi;
+import com.hivemq.edge.api.HealthCheckEndpointApi;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -25,23 +27,24 @@ import javax.ws.rs.core.Response;
 /**
  * Simple health check response that returns status code 200.
  */
+
 @Singleton
-public class HealthCheckResourceImpl extends AbstractApi implements HealthCheckApi {
+public class HealthCheckResourceImpl extends AbstractApi implements HealthCheckEndpointApi {
 
     @Inject
     public HealthCheckResourceImpl() {
     }
 
     @Override
-    public Response liveness() {
-        HealthStatus status = new HealthStatus();
+    public @NotNull Response liveness() {
+        final HealthStatus status = new HealthStatus();
         status.status = "UP";
         return Response.ok(status).build();
     }
 
     @Override
-    public Response readiness() {
-        HealthStatus status = new HealthStatus();
+    public @NotNull Response readiness() {
+        final HealthStatus status = new HealthStatus();
         status.status = "UP";
         return Response.ok(status).build();
     }
@@ -49,13 +52,14 @@ public class HealthCheckResourceImpl extends AbstractApi implements HealthCheckA
 
     public static class HealthStatus {
 
-        public String status;
+        public @NotNull String status;
 
         public HealthStatus() {
         }
 
-        public String getStatus() {
+        public @NotNull String getStatus() {
             return status;
         }
     }
+
 }

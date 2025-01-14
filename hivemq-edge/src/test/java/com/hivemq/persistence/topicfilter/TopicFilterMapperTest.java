@@ -24,7 +24,7 @@ class TopicFilterMapperTest {
 
     @Test
     void topicFilterFromDomainTagEntity_whenSchemaIsBlank_thenSchemaIsNull() {
-        final TopicFilter topicFilter =
+        final TopicFilterPojo topicFilter =
                 TopicFilterMapper.topicFilterFromDomainTagEntity(new TopicFilterXmlEntity("a", "b", ""));
         assertEquals("a", topicFilter.getTopicFilter());
         assertEquals("b", topicFilter.getDescription());

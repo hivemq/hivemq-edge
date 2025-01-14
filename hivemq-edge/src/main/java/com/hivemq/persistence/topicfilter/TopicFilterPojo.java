@@ -16,35 +16,41 @@
 package com.hivemq.persistence.topicfilter;
 
 import com.hivemq.api.format.DataUrl;
-import com.hivemq.api.model.topicFilters.TopicFilterModel;
+import com.hivemq.edge.api.model.TopicFilter;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Immutable
-public class TopicFilter {
+public class TopicFilterPojo {
 
     private final @NotNull String description;
     private final @NotNull String topicFilter;
     private final @Nullable DataUrl schema;
 
 
-    public TopicFilter(
+    public TopicFilterPojo(
             final @NotNull String topicFilter, final @NotNull String description, final @Nullable DataUrl schema) {
         this.description = description;
         this.topicFilter = topicFilter;
         this.schema = schema;
     }
 
-    public static @NotNull TopicFilter fromTopicFilterModel(
-            final @NotNull TopicFilterModel topicFilter) {
+    public static @NotNull TopicFilterPojo fromModel(
+            final @NotNull TopicFilter topicFilter) {
         if (topicFilter.getSchema() == null || topicFilter.getSchema().isBlank()) {
-            return new TopicFilter(topicFilter.getTopicFilter(), topicFilter.getDescription(), null);
+            return new TopicFilterPojo(topicFilter.getTopicFilter(), topicFilter.getDescription(), null);
         } else {
-            return new TopicFilter(topicFilter.getTopicFilter(),
+            return new TopicFilterPojo(topicFilter.getTopicFilter(),
                     topicFilter.getDescription(),
                     DataUrl.create(topicFilter.getSchema()));
         }
+    }
+
+    public @NotNull TopicFilter toModel() {
+        return new TopicFilter().topicFilter(this.topicFilter)
+                .description(this.description)
+                .schema(this.schema != null ? this.schema.toString() : null);
     }
 
     public @NotNull String getDescription() {
@@ -69,7 +75,7 @@ public class TopicFilter {
             return false;
         }
 
-        final TopicFilter that = (TopicFilter) o;
+        final TopicFilterPojo that = (TopicFilterPojo) o;
         return topicFilter.equals(that.topicFilter);
     }
 

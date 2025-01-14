@@ -58,12 +58,12 @@ public class TopicFilterPersistenceReaderWriter {
         xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
     }
 
-    public @NotNull List<TopicFilter> readPersistence() {
+    public @NotNull List<TopicFilterPojo> readPersistence() {
         final TopicFilterPersistenceEntity persistenceEntity = readPersistenceXml();
         return convertToTopicFilters(persistenceEntity);
     }
 
-    public synchronized void writePersistence(final @NotNull Collection<TopicFilter> topicFilters) {
+    public synchronized void writePersistence(final @NotNull Collection<TopicFilterPojo> topicFilters) {
         if (persistenceFile.exists() && !persistenceFile.canWrite()) {
             log.error("Unable to write to persistence file {}, because it is not writable.", persistenceFile);
             throw new UnrecoverableException(false);
@@ -108,14 +108,14 @@ public class TopicFilterPersistenceReaderWriter {
         }
     }
 
-    private static @NotNull TopicFilterPersistenceEntity convertToEntity(final @NotNull Collection<TopicFilter> tags) {
+    private static @NotNull TopicFilterPersistenceEntity convertToEntity(final @NotNull Collection<TopicFilterPojo> tags) {
         final List<TopicFilterXmlEntity> tagsAsEntities =
                 tags.stream().map(TopicFilterMapper::topicFilterEntityFromDomainTag).collect(Collectors.toList());
         return new TopicFilterPersistenceEntity(tagsAsEntities);
 
     }
 
-    private @NotNull List<TopicFilter> convertToTopicFilters(final @NotNull TopicFilterPersistenceEntity persistenceEntity) {
+    private @NotNull List<TopicFilterPojo> convertToTopicFilters(final @NotNull TopicFilterPersistenceEntity persistenceEntity) {
         return persistenceEntity.getTopicFilters()
                 .stream()
                 .map(TopicFilterMapper::topicFilterFromDomainTagEntity)

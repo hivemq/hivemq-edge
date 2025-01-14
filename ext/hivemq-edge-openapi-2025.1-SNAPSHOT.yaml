@@ -2601,6 +2601,8 @@ paths:
                 $ref: '#/components/schemas/HealthStatus'
           description: Success
       summary: Endpoint to determine whether the gateway is considered UP
+      tags:
+        - Health Check Endpoint
   /api/v1/health/readiness:
     get:
       description: Endpoint to determine whether the gateway is considered ready.
@@ -2618,6 +2620,8 @@ paths:
                 $ref: '#/components/schemas/HealthStatus'
           description: Success
       summary: Endpoint to determine whether the gateway is considered ready
+      tags:
+        - Health Check Endpoint
   /api/v1/management/bridges:
     get:
       description: Get all bridges configured in the system.
