@@ -91,6 +91,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           id={OperationData.Handle.SCHEMA}
           style={{
             top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
+            background: 'var(--chakra-colors-white)',
+            borderColor: 'var(--chakra-colors-black)',
+            borderWidth: 2,
           }}
         />
       )}
@@ -103,6 +106,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             style={{
               top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
               // background: 'green',
+              background: 'var(--chakra-colors-white)',
+              borderColor: 'var(--chakra-colors-black)',
+              borderWidth: 2,
             }}
           />
           <CustomHandle
@@ -111,6 +117,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             id={OperationData.Handle.FUNCTION}
             style={{
               top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 1.5rem)`,
+              background: 'var(--chakra-colors-white)',
+              borderColor: 'var(--chakra-colors-black)',
+              borderWidth: 2,
             }}
           />
           <CustomHandle
@@ -119,6 +128,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             id={OperationData.Handle.SERIALISER}
             style={{
               top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 3rem)`,
+              background: 'var(--chakra-colors-white)',
+              borderColor: 'var(--chakra-colors-black)',
+              borderWidth: 2,
             }}
           />
         </>
