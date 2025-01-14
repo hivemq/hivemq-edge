@@ -20,12 +20,17 @@ import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
-import com.hivemq.configuration.entity.api.*;
+import com.hivemq.configuration.entity.api.AdminApiEntity;
+import com.hivemq.configuration.entity.api.ApiJwsEntity;
+import com.hivemq.configuration.entity.api.ApiListenerEntity;
+import com.hivemq.configuration.entity.api.ApiTlsEntity;
+import com.hivemq.configuration.entity.api.HttpListenerEntity;
+import com.hivemq.configuration.entity.api.HttpsListenerEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +39,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ApiConfigurator {
+public class ApiConfigurator implements Configurator<AdminApiEntity>{
 
     private static final Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
 
     private final @NotNull ApiConfigurationService apiConfigurationService;
+
+    private volatile AdminApiEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public ApiConfigurator(
@@ -48,11 +56,13 @@ public class ApiConfigurator {
 
     //-- Converts XML entity types to bean types
 
-    public void setApiConfig(final @NotNull AdminApiEntity configEntity) {
-
-        if (configEntity == null) {
-            return;
+    @Override
+    public ConfigResult setConfig(final @NotNull AdminApiEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
         }
+        this.configEntity = configEntity;
+        this.initialized = true;
 
         apiConfigurationService.setEnabled(configEntity.isEnabled());
 
@@ -114,5 +124,6 @@ public class ApiConfigurator {
             apiConfigurationService.setListeners(builder.build());
         }
 
+        return ConfigResult.SUCCESS;
     }
 }

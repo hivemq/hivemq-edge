@@ -23,19 +23,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ModuleConfigurator {
+public class ModuleConfigurator implements Configurator<Map<String, Object>>{
 
     private final @NotNull ModuleConfigurationService configurationService;
+
+    private volatile Map<String, Object> configEntity;
+    private volatile boolean initialized = false;
 
     public ModuleConfigurator(final @NotNull ModuleConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull Map<String, Object> config) {
+    @Override
+    public ConfigResult setConfig(final @NotNull Map<String, Object> configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.configEntity = configEntity;
+        this.initialized = true;
         //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
-        Map<String, Object> configMap = new HashMap<>();
-        for (final String key : config.keySet()) {
-            Object value = config.get(key);
+        final Map<String, Object> configMap = new HashMap<>();
+        for (final String key : configEntity.keySet()) {
+            Object value = configEntity.get(key);
             if (value instanceof List) {
                 //if its a <structural element> ie. a list, create a shallow copy to additions and removals are distinct
                 value = new ArrayList((List) value);
@@ -45,13 +54,7 @@ public class ModuleConfigurator {
             configMap.put(key, value);
         }
         configurationService.setAllConfigs(configMap);
+        return ConfigResult.SUCCESS;
     }
 
-    public void syncConfigs(final @NotNull Map<String, Object> commercialProtocolConfig) {
-        if (commercialProtocolConfig == null) {
-            return;
-        }
-        commercialProtocolConfig.clear();
-        commercialProtocolConfig.putAll(configurationService.getAllConfigs());
-    }
 }

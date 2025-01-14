@@ -19,20 +19,31 @@ import com.hivemq.configuration.entity.SecurityConfigEntity;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-public class SecurityConfigurator {
-
+public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
 
     protected final @NotNull SecurityConfigurationService securityConfigurationService;
+
+    private volatile SecurityConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     public SecurityConfigurator(final @NotNull SecurityConfigurationService securityConfigurationService) {
         this.securityConfigurationService = securityConfigurationService;
     }
 
-    void setSecurityConfig(final @NotNull SecurityConfigEntity securityConfigEntity) {
-        securityConfigurationService.setAllowServerAssignedClientId(securityConfigEntity.getAllowEmptyClientIdEntity().isEnabled());
-        securityConfigurationService.setValidateUTF8(securityConfigEntity.getUtf8ValidationEntity().isEnabled());
-        securityConfigurationService.setPayloadFormatValidation(securityConfigEntity.getPayloadFormatValidationEntity().isEnabled());
-        securityConfigurationService.setAllowRequestProblemInformation(securityConfigEntity.getAllowRequestProblemInformationEntity().isEnabled());
+    @Override
+    public ConfigResult setConfig(final @NotNull SecurityConfigEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.configEntity = configEntity;
+        this.initialized = true;
+
+        securityConfigurationService.setAllowServerAssignedClientId(configEntity.getAllowEmptyClientIdEntity().isEnabled());
+        securityConfigurationService.setValidateUTF8(configEntity.getUtf8ValidationEntity().isEnabled());
+        securityConfigurationService.setPayloadFormatValidation(configEntity.getPayloadFormatValidationEntity().isEnabled());
+        securityConfigurationService.setAllowRequestProblemInformation(configEntity.getAllowRequestProblemInformationEntity().isEnabled());
+
+        return ConfigResult.SUCCESS;
     }
 
 

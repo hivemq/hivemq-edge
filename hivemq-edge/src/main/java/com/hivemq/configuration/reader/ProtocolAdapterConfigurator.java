@@ -22,16 +22,28 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProtocolAdapterConfigurator {
+public class ProtocolAdapterConfigurator implements Configurator<List<ProtocolAdapterEntity>> {
 
     private final @NotNull ProtocolAdapterConfigurationService configurationService;
+
+    private volatile List<ProtocolAdapterEntity> configEntity;
+    private volatile boolean initialized = false;
 
     public ProtocolAdapterConfigurator(final @NotNull ProtocolAdapterConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull List<ProtocolAdapterEntity> protocolAdapterConfigs) {
-        configurationService.setAllConfigs(new ArrayList<>(protocolAdapterConfigs));
+    @Override
+    public ConfigResult setConfig(final @NotNull List<ProtocolAdapterEntity> configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.configEntity = configEntity;
+        this.initialized = true;
+
+        configurationService.setAllConfigs(new ArrayList<>(configEntity));
+
+        return ConfigResult.SUCCESS;
     }
 
     public void syncConfigs(final @NotNull List<ProtocolAdapterEntity> config) {

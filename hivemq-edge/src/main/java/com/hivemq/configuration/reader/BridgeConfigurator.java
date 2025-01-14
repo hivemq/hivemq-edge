@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class BridgeConfigurator {
+public class BridgeConfigurator implements Configurator<List<MqttBridgeEntity>>{
 
     private static final Logger log = LoggerFactory.getLogger(BridgeConfigurator.class);
     public static final String KEYSTORE_TYPE_PKCS12 = "PKCS12";
@@ -58,19 +58,24 @@ public class BridgeConfigurator {
 
     private final @NotNull BridgeConfigurationService bridgeConfigurationService;
 
+    private volatile List<MqttBridgeEntity> bridgeConfigs;
+    private volatile boolean initialized = false;
+
     @Inject
     public BridgeConfigurator(
             final @NotNull BridgeConfigurationService bridgeConfigurationService) {
         this.bridgeConfigurationService = bridgeConfigurationService;
     }
 
-    public void setBridgeConfig(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
-
-        if (bridgeConfigs.isEmpty()) {
-            return;
+    @Override
+    public ConfigResult setConfig(@NotNull final List<MqttBridgeEntity> bridgeConfigs) {
+        if(initialized && hasChanged(this.bridgeConfigs, bridgeConfigs)) {
+            return ConfigResult.NEEDS_RESTART;
         }
+        this.bridgeConfigs = bridgeConfigs;
+        initialized = true;
 
-        for (MqttBridgeEntity bridgeConfig : bridgeConfigs) {
+        for (final MqttBridgeEntity bridgeConfig : bridgeConfigs) {
             final RemoteBrokerEntity remoteBroker = bridgeConfig.getRemoteBroker();
             final MqttBridge.Builder builder = new MqttBridge.Builder();
 
@@ -139,6 +144,7 @@ public class BridgeConfigurator {
 
             bridgeConfigurationService.addBridge(builder.build());
         }
+        return ConfigResult.SUCCESS;
     }
 
     private @NotNull List<LocalSubscription> convertLocalSubscriptions(

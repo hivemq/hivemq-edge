@@ -21,22 +21,29 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 
-public class UsageTrackingConfigurator {
+public class UsageTrackingConfigurator implements Configurator<UsageTrackingConfigEntity> {
 
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
+
+    private volatile UsageTrackingConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public UsageTrackingConfigurator(final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService) {
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
     }
 
-    public void setConfig(final @NotNull UsageTrackingConfigEntity usageTrackingConfig) {
-
-        if (usageTrackingConfig == null) {
-            return;
+    @Override
+    public ConfigResult setConfig(final @NotNull UsageTrackingConfigEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
         }
+        this.configEntity = configEntity;
+        this.initialized = true;
 
         usageTrackingConfigurationService.setTrackingEnabled(
-                usageTrackingConfig.isEnabled());
+                configEntity.isEnabled());
+
+        return ConfigResult.SUCCESS;
     }
 }

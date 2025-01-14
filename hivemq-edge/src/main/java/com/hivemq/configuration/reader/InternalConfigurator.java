@@ -20,17 +20,29 @@ import com.hivemq.configuration.entity.OptionEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-public class InternalConfigurator {
+public class InternalConfigurator implements Configurator<InternalConfigEntity> {
 
     private final @NotNull InternalConfigurationService internalConfigurationService;
+
+    private volatile InternalConfigEntity internalConfigEntity;
+    private volatile boolean initialized = false;
 
     public InternalConfigurator(final @NotNull InternalConfigurationService internalConfigurationService) {
         this.internalConfigurationService = internalConfigurationService;
     }
 
-    public void setConfig(final @NotNull InternalConfigEntity internalConfigEntity) {
+    @Override
+    public ConfigResult setConfig(final @NotNull InternalConfigEntity internalConfigEntity) {
+        if(initialized && hasChanged(this.internalConfigEntity, internalConfigEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.internalConfigEntity = internalConfigEntity;
+        this.initialized = true;
+
         for (final OptionEntity optionEntity : internalConfigEntity.getOptions()) {
             internalConfigurationService.set(optionEntity.getKey(), optionEntity.getValue());
         }
+
+        return ConfigResult.SUCCESS;
     }
 }

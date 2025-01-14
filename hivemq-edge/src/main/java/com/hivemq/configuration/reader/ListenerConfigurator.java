@@ -42,12 +42,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ListenerConfigurator {
+public class ListenerConfigurator implements Configurator<ListenerConfigurator.Listeners> {
 
     private static final Logger log = LoggerFactory.getLogger(ListenerConfigurator.class);
     public static final String KEYSTORE_TYPE_PKCS12 = "PKCS12";
@@ -55,6 +56,8 @@ public class ListenerConfigurator {
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull SystemInformation systemInformation;
+    private volatile Listeners listeners;
+    private volatile boolean initialized = false;
 
     private final @NotNull List<String> chosenNames;
 
@@ -66,16 +69,23 @@ public class ListenerConfigurator {
         this.chosenNames = new ArrayList<>();
     }
 
-    void setListenerConfig(
-            final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
-        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(mqttListeners);
+    @Override
+    public ConfigResult setConfig(final @NotNull Listeners listeners) {
+        if(initialized && hasChanged(this.listeners, listeners)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.listeners = listeners;
+        this.initialized = true;
+
+        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(listeners.mqttListeners);
         for (final Listener listener : convertedMqttListeners) {
             listenerConfigurationService.addListener(listener);
         }
-        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(mqttsnListeners);
+        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(listeners.mqttsnListeners);
         for (final Listener listener : convertedMqttsnListeners) {
             listenerConfigurationService.addListener(listener);
         }
+        return ConfigResult.SUCCESS;
     }
 
     private @NotNull ImmutableList<Listener> convertListenerEntities(final @NotNull List<ListenerEntity> entities) {
@@ -259,4 +269,12 @@ public class ListenerConfigurator {
         }
     }
 
+    public static class Listeners {
+        public final @NotNull List<ListenerEntity> mqttListeners;
+        public final @NotNull List<ListenerEntity> mqttsnListeners;
+        public Listeners(final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
+            this.mqttListeners = mqttListeners;
+            this.mqttsnListeners = mqttsnListeners;
+        }
+    }
 }

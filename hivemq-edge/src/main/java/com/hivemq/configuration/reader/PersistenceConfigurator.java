@@ -23,18 +23,29 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author Lukas Brandl
  */
-public class PersistenceConfigurator {
+public class PersistenceConfigurator implements Configurator<PersistenceEntity>{
 
     @NotNull
     private final PersistenceConfigurationService persistenceConfigurationService;
+
+    private volatile PersistenceEntity configEntity;
+    private volatile boolean initialized = false;
 
     public PersistenceConfigurator(final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
         this.persistenceConfigurationService = persistenceConfigurationService;
     }
 
-    public void setPersistenceConfig(final @NotNull PersistenceEntity persistenceConfig) {
-        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
-                persistenceConfig.getMode().name()));
+    @Override
+    public ConfigResult setConfig(final @NotNull PersistenceEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.configEntity = configEntity;
+        this.initialized = true;
 
+        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
+                configEntity.getMode().name()));
+
+        return ConfigResult.SUCCESS;
     }
 }

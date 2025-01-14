@@ -21,25 +21,32 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 
-public class DynamicConfigConfigurator {
+public class DynamicConfigConfigurator implements Configurator<DynamicConfigEntity> {
 
     private final @NotNull DynamicConfigurationService dynamicConfigService;
+
+    private volatile DynamicConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public DynamicConfigConfigurator(final @NotNull DynamicConfigurationService dynamicConfigService) {
         this.dynamicConfigService = dynamicConfigService;
     }
 
-    public void setConfig(final @NotNull DynamicConfigEntity configEntity) {
-
-        if (configEntity == null) {
-            return;
+    @Override
+    public ConfigResult setConfig(final @NotNull DynamicConfigEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
         }
+        this.configEntity = configEntity;
+        this.initialized = true;
 
         dynamicConfigService.setConfigurationExportEnabled(
                 configEntity.isConfigurationExportEnabled());
 
         dynamicConfigService.setMutableConfigurationEnabled(
                 configEntity.isMutableConfigurationEnabled());
+
+        return ConfigResult.SUCCESS;
     }
 }

@@ -330,20 +330,19 @@ public class ConfigFileReaderWriter {
     }
 
     void setConfiguration(final @NotNull HiveMQConfigEntity config) {
-        listenerConfigurator.setListenerConfig(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
-        mqttConfigurator.setMqttConfig(config.getMqttConfig());
-        restrictionConfigurator.setRestrictionsConfig(config.getRestrictionsConfig());
-        securityConfigurator.setSecurityConfig(config.getSecurityConfig());
-        persistenceConfigurator.setPersistenceConfig(config.getPersistenceConfig());
-        mqttsnConfigurator.setMqttsnConfig(config.getMqttsnConfig());
-        bridgeConfigurator.setBridgeConfig(config.getBridgeConfig());
-        apiConfigurator.setApiConfig(config.getApiConfig());
-        protocolAdapterConfigurator.setConfigs(config.getProtocolAdapterConfig());
-        apiConfigurator.setApiConfig(config.getApiConfig());
-        unsConfigurator.setUnsConfig(config.getUns());
+        listenerConfigurator.setConfig(new ListenerConfigurator.Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig()));
+        mqttConfigurator.setConfig(config.getMqttConfig());
+        restrictionConfigurator.setConfig(config.getRestrictionsConfig());
+        securityConfigurator.setConfig(config.getSecurityConfig());
+        persistenceConfigurator.setConfig(config.getPersistenceConfig());
+        mqttsnConfigurator.setConfig(config.getMqttsnConfig());
+        bridgeConfigurator.setConfig(config.getBridgeConfig());
+        apiConfigurator.setConfig(config.getApiConfig());
+        protocolAdapterConfigurator.setConfig(config.getProtocolAdapterConfig());
+        unsConfigurator.setConfig(config.getUns());
         dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
         usageTrackingConfigurator.setConfig(config.getUsageTracking());
-        moduleConfigurator.setConfigs(config.getModuleConfigs());
+        moduleConfigurator.setConfig(config.getModuleConfigs());
         internalConfigurator.setConfig(config.getInternal());
     }
 

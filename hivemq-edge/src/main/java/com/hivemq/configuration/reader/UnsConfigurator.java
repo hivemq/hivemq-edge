@@ -23,19 +23,28 @@ import com.hivemq.uns.config.ISA95;
 
 import javax.inject.Inject;
 
-public class UnsConfigurator {
+public class UnsConfigurator implements Configurator<UnsConfigEntity>{
 
     private final @NotNull UnsConfigurationService unsConfigurationService;
+
+    private volatile UnsConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public UnsConfigurator(final @NotNull UnsConfigurationService unsConfigurationService) {
         this.unsConfigurationService = unsConfigurationService;
     }
 
-    public void setUnsConfig(final @NotNull UnsConfigEntity configEntity) {
+    @Override
+    public ConfigResult setConfig(final @NotNull UnsConfigEntity configEntity) {
+        if(initialized && hasChanged(this.configEntity, configEntity)) {
+            return ConfigResult.NEEDS_RESTART;
+        }
+        this.configEntity = configEntity;
+        this.initialized = true;
 
         if (configEntity == null) {
-            return;
+            return ConfigResult.SUCCESS;
         }
 
         ISA95Entity isa95Entity = configEntity.getIsa95();
@@ -48,14 +57,12 @@ public class UnsConfigurator {
                 withPrefixAllTopics(isa95Entity.isPrefixAllTopics()).
                 withEnabled(isa95Entity.isEnabled());
         unsConfigurationService.setISA95(builderIsa95.build());
+
+        return ConfigResult.SUCCESS;
     }
 
     public void syncUnsConfig(final @NotNull UnsConfigEntity configEntity){
-        if (configEntity == null) {
-            return;
-        }
-
-        ISA95 isa95 = unsConfigurationService.getISA95();
+        final ISA95 isa95 = unsConfigurationService.getISA95();
         configEntity.getIsa95().setEnabled(isa95.isEnabled());
         configEntity.getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
         configEntity.getIsa95().setArea(isa95.getArea());
