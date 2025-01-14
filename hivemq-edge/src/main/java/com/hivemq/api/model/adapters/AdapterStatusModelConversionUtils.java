@@ -41,12 +41,12 @@ public class AdapterStatusModelConversionUtils {
                 OffsetDateTime.ofInstant(Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()),
                         ZoneOffset.UTC);
 
+        System.err.println(offsetDateTime);
         return new Status().runtime(convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()))
                 .connection(convertConnectionStatus(protocolAdapterWrapper.getConnectionStatus()))
                 .id(protocolAdapterWrapper.getId())
                 .type(ApiConstants.ADAPTER_TYPE)
-                //TODO
-               // .startedAt(offsetDateTime)
+                .startedAt(offsetDateTime)
                 .message(protocolAdapterWrapper.getErrorMessage());
     }
 
