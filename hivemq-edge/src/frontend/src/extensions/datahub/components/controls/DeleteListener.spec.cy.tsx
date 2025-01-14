@@ -57,6 +57,16 @@ describe('DeleteListener', () => {
     cy.viewport(800, 400)
   })
 
+  it('should not render a confirmation if nothing selected', () => {
+    cy.mountWithProviders(<DeleteListener />, {
+      wrapper: getWrapperWith([], []),
+    })
+
+    cy.get("[role='alertdialog']").should('not.exist')
+    cy.get('body').type('{backspace}')
+    cy.get("[role='alertdialog']").should('not.exist')
+  })
+
   it('should render a confirmation modal when deleting', () => {
     cy.mountWithProviders(<DeleteListener />, {
       wrapper: getWrapperWith(
