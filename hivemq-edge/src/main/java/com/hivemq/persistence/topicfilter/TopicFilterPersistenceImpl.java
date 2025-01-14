@@ -31,7 +31,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(TopicFilterPersistenceImpl.class);
 
-    private final @NotNull HashMap<String, TopicFilter> filterToTopicFilter = new HashMap<>();
+    private final @NotNull HashMap<String, TopicFilterPojo> filterToTopicFilter = new HashMap<>();
     private final @NotNull TopicFilterPersistenceReaderWriter topicFilterPersistenceReaderWriter;
 
     @Inject
@@ -47,8 +47,8 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     private void loadPersistence() {
-        final List<TopicFilter> topicFilters = topicFilterPersistenceReaderWriter.readPersistence();
-        for (final TopicFilter topicFilter : topicFilters) {
+        final List<TopicFilterPojo> topicFilters = topicFilterPersistenceReaderWriter.readPersistence();
+        for (final TopicFilterPojo topicFilter : topicFilters) {
             if (this.filterToTopicFilter.containsKey(topicFilter.getTopicFilter())) {
                 log.error(
                         "Found duplicate topic filter for filter '{}' during initialization of tag persistence. HiveMQ Edge startup will stopped..",
@@ -62,7 +62,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
 
     @Override
     public synchronized @NotNull TopicFilterAddResult addTopicFilter(
-            final @NotNull TopicFilter topicFilter) {
+            final @NotNull TopicFilterPojo topicFilter) {
         if (filterToTopicFilter.containsKey(topicFilter.getTopicFilter())) {
             return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_FILTER_ALREADY_PRESENT,
                     "An identical TopicFilter exists already for the filter '" + topicFilter.getTopicFilter() + "'");
@@ -74,8 +74,8 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(final @NotNull TopicFilter topicFilter) {
-        final TopicFilter removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
+    public synchronized @NotNull TopicFilterUpdateResult updateTopicFilter(final @NotNull TopicFilterPojo topicFilter) {
+        final TopicFilterPojo removed = filterToTopicFilter.remove(topicFilter.getTopicFilter());
         if (removed != null) {
             this.filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
             topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
@@ -87,9 +87,9 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(final @NotNull List<TopicFilter> topicFilters) {
+    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(final @NotNull List<TopicFilterPojo> topicFilters) {
         filterToTopicFilter.clear();
-        for (final TopicFilter topicFilter : topicFilters) {
+        for (final TopicFilterPojo topicFilter : topicFilters) {
             filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
         }
         topicFilterPersistenceReaderWriter.writePersistence(topicFilters);
@@ -98,7 +98,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
 
     @Override
     public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(final @NotNull String filter) {
-        final TopicFilter topicFilter = filterToTopicFilter.remove(filter);
+        final TopicFilterPojo topicFilter = filterToTopicFilter.remove(filter);
         if (topicFilter == null) {
             return TopicFilterDeleteResult.failed(TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
                     "No topic filter with name '{}' was found.");
@@ -109,12 +109,12 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public synchronized @NotNull List<TopicFilter> getTopicFilters() {
+    public synchronized @NotNull List<TopicFilterPojo> getTopicFilters() {
         return new ArrayList<>(filterToTopicFilter.values());
     }
 
     @Override
-    public @NotNull TopicFilter getTopicFilter(final @NotNull String filter) {
+    public @NotNull TopicFilterPojo getTopicFilter(final @NotNull String filter) {
         return filterToTopicFilter.get(filter);
     }
 }

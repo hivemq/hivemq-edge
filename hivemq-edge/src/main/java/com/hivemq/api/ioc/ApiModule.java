@@ -25,15 +25,6 @@ import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
 import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
 import com.hivemq.api.config.ApiListener;
-import com.hivemq.api.resources.AuthenticationApi;
-import com.hivemq.api.resources.EventApi;
-import com.hivemq.api.resources.FrontendApi;
-import com.hivemq.api.resources.GatewayApi;
-import com.hivemq.api.resources.HealthCheckApi;
-import com.hivemq.api.resources.MetricsApi;
-import com.hivemq.api.resources.SamplingApi;
-import com.hivemq.api.resources.TopicFilterApi;
-import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
 import com.hivemq.api.resources.impl.EventResourceImpl;
@@ -47,8 +38,17 @@ import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
+import com.hivemq.edge.api.EventsApi;
+import com.hivemq.edge.api.FrontendApi;
+import com.hivemq.edge.api.GatewayEndpointApi;
+import com.hivemq.edge.api.HealthCheckEndpointApi;
+import com.hivemq.edge.api.MetricsApi;
+import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
+import com.hivemq.edge.api.TopicFiltersApi;
+import com.hivemq.edge.api.UnsApi;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -76,7 +76,7 @@ public abstract class ApiModule {
     @Binds
     abstract @NotNull MetricsApi metricsApi(@NotNull MetricsResourceImpl metricsResource);
     @Binds
-    abstract @NotNull HealthCheckApi healthCheckApi(@NotNull HealthCheckResourceImpl healthCheckResource);
+    abstract @NotNull HealthCheckEndpointApi healthCheckApi(@NotNull HealthCheckResourceImpl healthCheckResource);
     @Binds
     abstract @NotNull ProtocolAdaptersApi protocolAdaptersApi(@NotNull ProtocolAdaptersResourceImpl protocolAdaptersResource);
     @Binds
@@ -84,17 +84,17 @@ public abstract class ApiModule {
     @Binds
     abstract @NotNull FrontendApi frontendApi(@NotNull FrontendResourceImpl gatewayResource);
     @Binds
-    abstract @NotNull GatewayApi gatewayApi(@NotNull GatewayResourceImpl gatewayResource);
+    abstract @NotNull GatewayEndpointApi gatewayApi(@NotNull GatewayResourceImpl gatewayResource);
     @Binds
-    abstract @NotNull EventApi eventApi(@NotNull EventResourceImpl eventResource);
+    abstract @NotNull EventsApi eventApi(@NotNull EventResourceImpl eventResource);
     @Binds
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
     @Binds
-    abstract @NotNull SamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
+    abstract @NotNull PayloadSamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
     @Binds
-    abstract @NotNull TopicFilterApi topicFilterApi(@NotNull TopicFilterResourceImpl topicFilterResource);
+    abstract @NotNull TopicFiltersApi topicFilterApi(@NotNull TopicFilterResourceImpl topicFilterResource);
 
 
     @Provides

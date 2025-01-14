@@ -26,8 +26,8 @@ import com.hivemq.api.error.ApiException;
 import com.hivemq.api.errors.authentication.AuthenticationValidationError;
 import com.hivemq.api.errors.authentication.UnauthorizedError;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
 import com.hivemq.http.core.UsernamePasswordRoles;
@@ -59,6 +59,8 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
     }
+
+
 
     @Override
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
@@ -94,7 +96,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     }
 
     @Override
-    public @NotNull Response validate(final @Nullable ApiBearerToken token) {
+    public @NotNull Response validateToken(final @Nullable ApiBearerToken token) {
         Preconditions.checkNotNull(token);
         Preconditions.checkState(token.getToken() != null, "Token value cannot be <null>");
         final Optional<ApiPrincipal> principal = tokenVerifier.verify(token.getToken());
@@ -106,7 +108,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     }
 
     @Override
-    public @NotNull Response reissueToken() {
+    public @NotNull Response refreshToken() {
         try {
             final ApiPrincipal principal = getAuthenticatedPrincipalFromContext();
             final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(principal));

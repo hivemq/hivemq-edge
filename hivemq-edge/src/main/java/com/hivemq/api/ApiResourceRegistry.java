@@ -23,19 +23,21 @@ import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.api.error.CustomJsonMappingExceptionMapper;
 import com.hivemq.api.error.CustomJsonParseExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
-import com.hivemq.api.resources.AuthenticationApi;
-import com.hivemq.api.resources.EventApi;
-import com.hivemq.api.resources.FrontendApi;
-import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.GenericAPIHolder;
-import com.hivemq.api.resources.HealthCheckApi;
-import com.hivemq.api.resources.MetricsApi;
-import com.hivemq.api.resources.SamplingApi;
-import com.hivemq.api.resources.TopicFilterApi;
-import com.hivemq.api.resources.UnsApi;
+
 import com.hivemq.api.resources.impl.RootResource;
+import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
+import com.hivemq.edge.api.EventsApi;
+import com.hivemq.edge.api.FrontendApi;
+import com.hivemq.edge.api.GatewayEndpointApi;
+import com.hivemq.edge.api.HealthCheckEndpointApi;
+import com.hivemq.edge.api.MetricsApi;
+import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
+import com.hivemq.edge.api.TopicFiltersApi;
+import com.hivemq.edge.api.UnsApi;
+import io.swagger.annotations.Api;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.error.DefaultExceptionMapper;
 import dagger.Lazy;
@@ -68,43 +70,43 @@ public class ApiResourceRegistry extends ResourceConfig {
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(ApiResourceRegistry.class);
     private final @NotNull Lazy<MetricsApi> metricsApi;
-    private final @NotNull Lazy<HealthCheckApi> healthCheckApi;
+    private final @NotNull Lazy<HealthCheckEndpointApi> healthCheckApi;
     private final @NotNull Lazy<AuthenticationApi> authenticationApi;
     private final @NotNull Lazy<BridgesApi> bridgeApi;
     private final @NotNull Lazy<MetricsApi> dashboardApi;
     private final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi;
     private final @NotNull Lazy<UnsApi> unsApi;
     private final @NotNull Lazy<FrontendApi> frontendApi;
-    private final @NotNull Lazy<GatewayApi> gatewayApi;
-    private final @NotNull Lazy<EventApi> eventApi;
+    private final @NotNull Lazy<GatewayEndpointApi> gatewayApi;
+    private final @NotNull Lazy<EventsApi> eventApi;
     private final @NotNull Lazy<RootResource> rootResource;
     private final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers;
     private final @NotNull Lazy<ITokenGenerator> tokenGenerator;
     private final @NotNull Lazy<ITokenVerifier> tokenVerifier;
     private final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy;
-    private final @NotNull Lazy<SamplingApi> samplingResourceLazy;
-    private final @NotNull Lazy<TopicFilterApi> topicFilterApiLazy;
+    private final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy;
+    private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
 
 
     @Inject
     public ApiResourceRegistry(
             final @NotNull Lazy<MetricsApi> metricsApi,
-            final @NotNull Lazy<HealthCheckApi> healthCheckApi,
+            final @NotNull Lazy<HealthCheckEndpointApi> healthCheckApi,
             final @NotNull Lazy<AuthenticationApi> authenticationApi,
             final @NotNull Lazy<BridgesApi> bridgeApi,
             final @NotNull Lazy<MetricsApi> dashboardApi,
             final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi,
             final @NotNull Lazy<UnsApi> unsApi,
             final @NotNull Lazy<FrontendApi> frontendApi,
-            final @NotNull Lazy<GatewayApi> gatewayApi,
-            final @NotNull Lazy<EventApi> eventApi,
+            final @NotNull Lazy<GatewayEndpointApi> gatewayApi,
+            final @NotNull Lazy<EventsApi> eventApi,
             final @NotNull Lazy<RootResource> rootResource,
             final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers,
             final @NotNull Lazy<ITokenGenerator> tokenGenerator,
             final @NotNull Lazy<ITokenVerifier> tokenVerifier,
             final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy,
-            final @NotNull Lazy<SamplingApi> samplingResourceLazy,
-            final @NotNull Lazy<TopicFilterApi> topicFilterApiLazy) {
+            final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy,
+            final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;

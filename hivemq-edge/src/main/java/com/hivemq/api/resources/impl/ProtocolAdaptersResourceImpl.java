@@ -75,7 +75,7 @@ import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
-import com.hivemq.persistence.topicfilter.TopicFilter;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -870,7 +870,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
 
     private @NotNull SouthboundMapping parseAndEnrichWithSchema(final @NotNull com.hivemq.edge.api.model.SouthboundMapping model) {
-        final TopicFilter topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
+        final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(model.getTopicFilter());
         if (topicFilter == null) {
             throw new IllegalStateException("Southbound mapping contained a topic filter '" +
                     model.getTopicFilter() +

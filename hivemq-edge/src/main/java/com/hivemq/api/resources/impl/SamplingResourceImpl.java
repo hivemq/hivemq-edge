@@ -18,12 +18,10 @@ package com.hivemq.api.resources.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.NotFoundError;
 import com.hivemq.api.errors.samples.NoSamplesFoundError;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
-import com.hivemq.api.resources.SamplingApi;
-import com.hivemq.http.error.ErrorType;
+import com.hivemq.edge.api.PayloadSamplingApi;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.ErrorResponseUtil;
@@ -46,7 +44,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Singleton
-public class SamplingResourceImpl implements SamplingApi {
+public class SamplingResourceImpl implements PayloadSamplingApi {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SamplingResourceImpl.class);
     private static final @NotNull JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
