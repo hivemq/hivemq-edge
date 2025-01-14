@@ -23,7 +23,7 @@ import com.hivemq.uns.config.ISA95;
 
 import javax.inject.Inject;
 
-public class UnsConfigurator implements Configurator<UnsConfigEntity>{
+public class UnsConfigurator implements Syncable<UnsConfigEntity>{
 
     private final @NotNull UnsConfigurationService unsConfigurationService;
 
@@ -61,7 +61,8 @@ public class UnsConfigurator implements Configurator<UnsConfigEntity>{
         return ConfigResult.SUCCESS;
     }
 
-    public void syncUnsConfig(final @NotNull UnsConfigEntity configEntity){
+    @Override
+    public void sync(final @NotNull UnsConfigEntity configEntity){
         final ISA95 isa95 = unsConfigurationService.getISA95();
         configEntity.getIsa95().setEnabled(isa95.isEnabled());
         configEntity.getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());

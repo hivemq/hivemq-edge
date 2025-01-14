@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProtocolAdapterConfigurator implements Configurator<List<ProtocolAdapterEntity>> {
+public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapterEntity>> {
 
     private final @NotNull ProtocolAdapterConfigurationService configurationService;
 
@@ -46,7 +46,8 @@ public class ProtocolAdapterConfigurator implements Configurator<List<ProtocolAd
         return ConfigResult.SUCCESS;
     }
 
-    public void syncConfigs(final @NotNull List<ProtocolAdapterEntity> config) {
+    @Override
+    public void sync(final @NotNull List<ProtocolAdapterEntity> config) {
         config.clear();
         config.addAll(configurationService.getAllConfigs());
     }

@@ -26,9 +26,11 @@ import com.hivemq.configuration.entity.listener.UDPBroadcastListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.EnvVarUtil;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -58,6 +60,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -84,6 +90,7 @@ public class ConfigFileReaderWriter {
     protected @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
+    private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
@@ -119,8 +126,31 @@ public class ConfigFileReaderWriter {
         this.internalConfigurator = internalConfigurator;
     }
 
-    public @NotNull HiveMQConfigEntity applyConfig() {
-        return readConfigFromXML();
+    public void applyConfig() {
+        final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML();
+        this.configEntity = hiveMQConfigEntity;
+        setConfiguration(hiveMQConfigEntity);
+    }
+
+    public void applyConfigAndWatch(final long checkIntervalInMs) {
+        if(scheduledExecutorService != null) {
+            throw new IllegalStateException("Config watch was already started");
+        }
+        final long interval = 0 >= checkIntervalInMs ? checkIntervalInMs : 0;
+        log.info("Rereading config file every {} ms", interval);
+
+        final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
+        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        scheduledExecutorService.schedule(this::readConfigFromXML, interval, TimeUnit.MILLISECONDS);
+        this.scheduledExecutorService = scheduledExecutorService;
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
+    }
+
+    public void stopWatching() {
+        final ScheduledExecutorService scheduledExecutorService = this.scheduledExecutorService;
+        if(scheduledExecutorService != null) {
+            scheduledExecutorService.shutdownNow();
+        }
     }
 
     public void writeConfig() {
@@ -284,7 +314,8 @@ public class ConfigFileReaderWriter {
                     throw new JAXBException("Parsing failed");
                 }
 
-                configEntity = result.getValue();
+                HiveMQConfigEntity configEntity = result.getValue();
+
                 if (configEntity == null) {
                     throw new JAXBException("Result is null");
                 }
@@ -294,8 +325,6 @@ public class ConfigFileReaderWriter {
                 if (!validationErrors.isEmpty()) {
                     throw new JAXBException("Parsing failed");
                 }
-
-                setConfiguration(configEntity);
                 return configEntity;
 
             } catch (final JAXBException | IOException e) {
@@ -330,6 +359,7 @@ public class ConfigFileReaderWriter {
     }
 
     void setConfiguration(final @NotNull HiveMQConfigEntity config) {
+
         listenerConfigurator.setConfig(new ListenerConfigurator.Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig()));
         mqttConfigurator.setConfig(config.getMqttConfig());
         restrictionConfigurator.setConfig(config.getRestrictionsConfig());
@@ -348,9 +378,9 @@ public class ConfigFileReaderWriter {
 
     public void syncConfiguration() {
         Preconditions.checkNotNull(configEntity, "Configuration must be loaded to be synchronized");
-        unsConfigurator.syncUnsConfig(configEntity.getUns());
-        bridgeConfigurator.syncBridgeConfig(configEntity.getBridgeConfig());
-        protocolAdapterConfigurator.syncConfigs(configEntity.getProtocolAdapterConfig());
+        unsConfigurator.sync(configEntity.getUns());
+        bridgeConfigurator.sync(configEntity.getBridgeConfig());
+        protocolAdapterConfigurator.sync(configEntity.getProtocolAdapterConfig());
     }
 
     protected Schema loadSchema() throws IOException, SAXException {

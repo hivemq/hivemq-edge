@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class BridgeConfigurator implements Configurator<List<MqttBridgeEntity>>{
+public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
 
     private static final Logger log = LoggerFactory.getLogger(BridgeConfigurator.class);
     public static final String KEYSTORE_TYPE_PKCS12 = "PKCS12";
@@ -282,7 +282,8 @@ public class BridgeConfigurator implements Configurator<List<MqttBridgeEntity>>{
                 .build();
     }
 
-    public void syncBridgeConfig(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
+    @Override
+    public void sync(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
         if (bridgeConfigs == null) {
             return;
         }
