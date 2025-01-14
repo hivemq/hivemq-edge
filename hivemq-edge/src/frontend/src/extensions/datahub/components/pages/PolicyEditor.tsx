@@ -11,8 +11,6 @@ import ReactFlow, {
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
-import styles from './PolicyEditor.module.scss'
-
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
@@ -182,7 +180,6 @@ const PolicyEditor: FC = () => {
           fitView
           snapToGrid
           snapGrid={[25, 25]}
-          className={styles.dataHubFlow}
           onDragOver={onDragOver}
           onDrop={onDrop}
           isValidConnection={checkValidity}
