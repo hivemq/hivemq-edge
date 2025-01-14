@@ -32,7 +32,7 @@ describe('ValidatorNode', () => {
     cy.get('div[data-handleid]').should('have.length', 2)
     cy.get('div[data-handleid]')
       .eq(0)
-      .should('have.attr', 'data-handlepos', 'top')
+      .should('have.attr', 'data-handlepos', 'left')
       .should('have.attr', 'data-id')
       .then((attr) => {
         expect((attr as unknown as string).endsWith('target')).to.be.true
@@ -40,7 +40,7 @@ describe('ValidatorNode', () => {
 
     cy.get('div[data-handleid]')
       .eq(1)
-      .should('have.attr', 'data-handlepos', 'bottom')
+      .should('have.attr', 'data-handlepos', 'right')
       .should('have.attr', 'data-id')
       .then((attr) => {
         expect((attr as unknown as string).endsWith('source')).to.be.true

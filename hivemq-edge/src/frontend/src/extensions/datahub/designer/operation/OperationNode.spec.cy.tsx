@@ -59,7 +59,7 @@ describe('OperationNode', () => {
     cy.get('@nodeHandles').should('have.length', 5)
     cy.get('@nodeHandles')
       .eq(2)
-      .should('have.attr', 'data-handlepos', 'top')
+      .should('have.attr', 'data-handlepos', 'left')
       .should('have.attr', 'data-handleid', 'deserialiser')
       .should('have.attr', 'data-id')
       .then((attr) => {

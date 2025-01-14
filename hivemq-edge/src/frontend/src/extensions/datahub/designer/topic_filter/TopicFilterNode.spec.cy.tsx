@@ -22,7 +22,7 @@ describe('TopicFilterNode', () => {
 
   it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_TOPIC_FILTER} selected={true} />))
-    cy.getByTestId(`node-topicFilter-topic-filter-id`).should('contain.text', 'Topic Filter')
+    cy.getByTestId(`node-title`).should('contain.text', 'Topic Filter')
     cy.getByTestId('topic-wrapper').should('have.length', 3)
     cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'topic 1')
     cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'topic 2')

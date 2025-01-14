@@ -23,8 +23,10 @@ describe('DataPolicyNode', () => {
   it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<DataPolicyNode {...MOCK_NODE_DATA_POLICY} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Data Policy')
-    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'onSuccess')
-    cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'onError')
+    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'filter')
+    cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'validator')
+    cy.getByTestId(`node-model`).find('p').eq(2).should('contain.text', 'onSuccess')
+    cy.getByTestId(`node-model`).find('p').eq(3).should('contain.text', 'onError')
 
     // TODO[NVL] Create a PageObject and generalise the selectors
     cy.get('div[data-handleid]').should('have.length', 4)
@@ -37,7 +39,7 @@ describe('DataPolicyNode', () => {
       })
     cy.get('div[data-handleid]')
       .eq(1)
-      .should('have.attr', 'data-handlepos', 'top')
+      .should('have.attr', 'data-handlepos', 'left')
       .should('have.attr', 'data-id')
       .then((attr) => {
         expect((attr as unknown as string).endsWith('target')).to.be.true
