@@ -17,13 +17,11 @@ export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
   return (
     <>
       <NodeWrapper route={`node/${DataHubNodeType.FUNCTION}/${id}`} {...props}>
-        <VStack>
-          <HStack>
-            <VStack data-testid="node-model">
-              <NodeParams value={title || t('error.noSet.select')} />
-            </VStack>
-          </HStack>
-        </VStack>
+        <HStack justifyContent="flex-end">
+          <VStack data-testid="node-model" alignItems="flex-end">
+            <NodeParams value={title || t('error.noSet.select')} />
+          </VStack>
+        </HStack>
       </NodeWrapper>
       <CustomHandle
         type="source"

@@ -18,7 +18,7 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
     <>
       <NodeWrapper route={`node/${DataHubNodeType.SCHEMA}/${id}`} {...props}>
         <HStack justifyContent="flex-end">
-          <VStack data-testid="node-model">
+          <VStack data-testid="node-model" alignItems="flex-end">
             <NodeParams value={data?.type || t('error.noSet.select')} />
             <NodeParams value={title} />
           </VStack>
