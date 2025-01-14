@@ -23,25 +23,6 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
     <>
       <NodeWrapper route={`node/${DataHubNodeType.OPERATION}/${id}`} {...props}>
         <VStack alignItems="flex-start">
-          {/*<HStack w="100%" justifyContent="space-around">*/}
-          {/*  {isSerialiser && (*/}
-          {/*    <Text fontSize="xs">{t('workspace.handles.operation', { context: OperationData.Handle.SCHEMA })}</Text>*/}
-          {/*  )}*/}
-          {/*  {isTransform && (*/}
-          {/*    <>*/}
-          {/*      <Text fontSize="xs">*/}
-          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.DESERIALISER })}*/}
-          {/*      </Text>*/}
-          {/*      <Text fontSize="xs">*/}
-          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.FUNCTION })}*/}
-          {/*      </Text>*/}
-          {/*      <Text fontSize="xs">*/}
-          {/*        {t('workspace.handles.operation', { context: OperationData.Handle.SERIALISER })}*/}
-          {/*      </Text>*/}
-          {/*    </>*/}
-          {/*  )}*/}
-          {/*</HStack>*/}
-
           <VStack data-testid="node-model" alignItems="flex-start">
             <NodeParams value={functionId || t('error.noSet.select')} />
             {isSerialiser && (
