@@ -1905,6 +1905,13 @@ paths:
         Creates a schema
 
       operationId: createSchema
+      parameters:
+        - description: The entity tag
+          in: header
+          name: If-Match
+          required: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1913,7 +1920,7 @@ paths:
               type: JSON
               schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
             schema:
-              $ref: '#/components/schemas/Schema'
+              $ref: '#/components/schemas/PolicySchema'
         description: The schema that should be created.
         required: true
       responses:
@@ -1931,7 +1938,7 @@ paths:
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
                     createdAt: 2023-03-01T13:28:35.164Z
               schema:
-                $ref: '#/components/schemas/Schema'
+                $ref: '#/components/schemas/PolicySchema'
           description: Success
         "400":
           content:
@@ -1977,6 +1984,12 @@ paths:
         in: path
         name: schemaId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       responses:
@@ -2050,7 +2063,7 @@ paths:
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
                     createdAt: 2023-03-01T13:28:35.164Z
               schema:
-                $ref: '#/components/schemas/Schema'
+                $ref: '#/components/schemas/PolicySchema'
           description: Success
         "400":
           content:
@@ -5619,7 +5632,7 @@ components:
       - AT_MOST_ONCE
       - AT_LEAST_ONCE
       - EXACTLY_ONCE
-    Schema:
+    PolicySchema:
       type: object
       properties:
         arguments:
@@ -5660,7 +5673,7 @@ components:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/Schema'
+            $ref: '#/components/schemas/PolicySchema'
     SchemaReference:
       type: object
       description: A schema reference is a unique identifier for a schema.
