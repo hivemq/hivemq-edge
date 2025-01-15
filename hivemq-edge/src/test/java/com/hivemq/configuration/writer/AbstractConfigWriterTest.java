@@ -19,6 +19,7 @@ import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.configuration.reader.Configurator;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
 import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
@@ -40,7 +41,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Simon L Johnson
@@ -52,16 +55,38 @@ public abstract class AbstractConfigWriterTest {
     protected ConfigFileReaderWriter createFileReaderWriter(final @NotNull File file){
 
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
+
+        final RestrictionConfigurator restrictionConfigurator = mock(RestrictionConfigurator.class);
+        when(restrictionConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final SecurityConfigurator securityConfigurator = mock(SecurityConfigurator.class);
+        when(securityConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttConfigurator mqttConfigurator = mock(MqttConfigurator.class);
+        when(mqttConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ListenerConfigurator listenerConfigurator = mock(ListenerConfigurator.class);
+        when(listenerConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final PersistenceConfigurator persistenceConfigurator = mock(PersistenceConfigurator.class);
+        when(persistenceConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttsnConfigurator mqttsnConfigurator = mock(MqttsnConfigurator.class);
+        when(mqttsnConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ApiConfigurator apiConfigurator = mock(ApiConfigurator.class);
+        when(apiConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
+                restrictionConfigurator,
+                securityConfigurator,
+                mqttConfigurator,
+                listenerConfigurator,
+                persistenceConfigurator,
+                mqttsnConfigurator,
                 new BridgeConfigurator(configurationService.bridgeConfiguration()),
-                mock(ApiConfigurator.class),
+                apiConfigurator,
                 new UnsConfigurator(configurationService.unsConfiguration()),
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),

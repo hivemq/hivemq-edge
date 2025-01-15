@@ -127,10 +127,11 @@ public class ConfigFileReaderWriter {
         this.internalConfigurator = internalConfigurator;
     }
 
-    public void applyConfig() {
+    public HiveMQConfigEntity applyConfig() {
         final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML();
         this.configEntity = hiveMQConfigEntity;
         setConfiguration(hiveMQConfigEntity);
+        return hiveMQConfigEntity;
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
@@ -362,22 +363,21 @@ public class ConfigFileReaderWriter {
     void setConfiguration(final @NotNull HiveMQConfigEntity config) {
 
         final Map<String, Configurator.ConfigResult> configResults =
-                Map.ofEntries(Map.entry("Listeners",
-                        listenerConfigurator.setConfig(new ListenerConfigurator.Listeners(config.getMqttListenerConfig(),
-                                config.getMqttsnListenerConfig()))),
-                    Map.entry("Mqtt", mqttConfigurator.setConfig(config.getMqttConfig())),
-                    Map.entry("Restriction", restrictionConfigurator.setConfig(config.getRestrictionsConfig())),
-                    Map.entry("Security", securityConfigurator.setConfig(config.getSecurityConfig())),
-                    Map.entry("Persistence", persistenceConfigurator.setConfig(config.getPersistenceConfig())),
-                    Map.entry("MqttSn", mqttsnConfigurator.setConfig(config.getMqttsnConfig())),
-                    Map.entry("Bridge", bridgeConfigurator.setConfig(config.getBridgeConfig())),
-                    Map.entry("Api", apiConfigurator.setConfig(config.getApiConfig())),
-                    Map.entry("ProtocolAdapter", protocolAdapterConfigurator.setConfig(config.getProtocolAdapterConfig())),
-                    Map.entry("Uns", unsConfigurator.setConfig(config.getUns())),
-                    Map.entry("DynamicConfig", dynamicConfigConfigurator.setConfig(config.getGatewayConfig())),
-                    Map.entry("UsageTracking", usageTrackingConfigurator.setConfig(config.getUsageTracking())),
-                    Map.entry("Module", moduleConfigurator.setConfig(config.getModuleConfigs())),
-                    Map.entry("Internal", internalConfigurator.setConfig(config.getInternal())));
+                Map.ofEntries(
+                        Map.entry("Listeners", listenerConfigurator.setConfig(new ListenerConfigurator.Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig()))),
+                        Map.entry("Mqtt", mqttConfigurator.setConfig(config.getMqttConfig())),
+                        Map.entry("Restriction", restrictionConfigurator.setConfig(config.getRestrictionsConfig())),
+                        Map.entry("Security", securityConfigurator.setConfig(config.getSecurityConfig())),
+                        Map.entry("Persistence", persistenceConfigurator.setConfig(config.getPersistenceConfig())),
+                        Map.entry("MqttSn", mqttsnConfigurator.setConfig(config.getMqttsnConfig())),
+                        Map.entry("Bridge", bridgeConfigurator.setConfig(config.getBridgeConfig())),
+                        Map.entry("Api", apiConfigurator.setConfig(config.getApiConfig())),
+                        Map.entry("ProtocolAdapter", protocolAdapterConfigurator.setConfig(config.getProtocolAdapterConfig())),
+                        Map.entry("Uns", unsConfigurator.setConfig(config.getUns())),
+                        Map.entry("DynamicConfig", dynamicConfigConfigurator.setConfig(config.getGatewayConfig())),
+                        Map.entry("UsageTracking", usageTrackingConfigurator.setConfig(config.getUsageTracking())),
+                        Map.entry("Module", moduleConfigurator.setConfig(config.getModuleConfigs())),
+                        Map.entry("Internal", internalConfigurator.setConfig(config.getInternal())));
 
 
         if (configResults.containsValue(Configurator.ConfigResult.NEEDS_RESTART)) {

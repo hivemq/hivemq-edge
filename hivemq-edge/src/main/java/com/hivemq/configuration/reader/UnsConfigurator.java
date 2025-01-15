@@ -51,8 +51,8 @@ public class UnsConfigurator implements Syncable<UnsConfigEntity>{
             return ConfigResult.SUCCESS;
         }
 
-        ISA95Entity isa95Entity = configEntity.getIsa95();
-        ISA95.Builder builderIsa95 = new ISA95.Builder();
+        final ISA95Entity isa95Entity = configEntity.getIsa95();
+        final ISA95.Builder builderIsa95 = new ISA95.Builder();
         builderIsa95.withArea(isa95Entity.getArea()).
                 withEnterprise(isa95Entity.getEnterprise()).
                 withProductionLine(isa95Entity.getProductionLine()).
