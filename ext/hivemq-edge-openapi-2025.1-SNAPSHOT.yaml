@@ -503,7 +503,7 @@ paths:
           type: string
       - description: The entity tag
         in: header
-        name: entityTag
+        name: If-Match
         required: false
         schema:
           type: string
@@ -632,7 +632,7 @@ paths:
           type: string
       - description: The entity tag
         in: header
-        name: entityTag
+        name: If-Match
         required: false
         schema:
           type: string
@@ -1227,7 +1227,7 @@ paths:
           type: string
       - description: The entity tag
         in: header
-        name: entityTag
+        name: If-Match
         required: false
         schema:
           type: string
@@ -1368,7 +1368,7 @@ paths:
           type: string
       - description: The entity tag
         in: header
-        name: entityTag
+        name: If-Match
         required: false
         schema:
           type: string
