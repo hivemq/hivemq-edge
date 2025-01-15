@@ -6,9 +6,11 @@ import { ClientFilterData, PanelProps } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { MOCK_CLIENT_FILTER_SCHEMA } from '@datahub/designer/client_filter/ClientFilterSchema.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const ClientFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const clients = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<ClientFilterData> | undefined
@@ -17,8 +19,10 @@ export const ClientFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_CLIENT_FILTER_SCHEMA.schema}
           uiSchema={MOCK_CLIENT_FILTER_SCHEMA.uiSchema}
           formData={{ clients: clients }}

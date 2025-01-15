@@ -11,11 +11,13 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data } = useGetAllDataPolicies()
   const { nodes } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const listFilters = useMemo(() => {
     if (isLoading || !data) return undefined
@@ -49,8 +51,10 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_TOPIC_FILTER_SCHEMA.schema}
           uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={formData}

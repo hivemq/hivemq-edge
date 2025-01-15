@@ -19,9 +19,11 @@ import { MOCK_TRANSITION_SCHEMA } from '@datahub/designer/transition/TransitionD
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { FiniteStateMachineFlow } from '@datahub/components/fsm/FiniteStateMachineFlow.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes, edges } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   // TODO[NVL] Error messages?
   const parentPolicy = useMemo(() => {
@@ -113,8 +115,10 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_TRANSITION_SCHEMA.schema}
           uiSchema={{
             ...MOCK_TRANSITION_SCHEMA.uiSchema,

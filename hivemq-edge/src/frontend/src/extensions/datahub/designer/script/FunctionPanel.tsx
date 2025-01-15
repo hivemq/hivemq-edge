@@ -12,10 +12,12 @@ import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaFo
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_FUNCTION_SCHEMA } from '@datahub/designer/script/FunctionData.ts'
 import { getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { data: allScripts } = useGetAllScripts({})
   const { nodes } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const [formData, setFormData] = useState<FunctionData | null>(() => {
     const sourceNode = nodes.find((node) => node.id === selectedNode) as Node<FunctionData> | undefined
@@ -118,8 +120,10 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           widgets={datahubRJSFWidgets}
           schema={MOCK_FUNCTION_SCHEMA.schema}
           uiSchema={getUISchema(formData)}

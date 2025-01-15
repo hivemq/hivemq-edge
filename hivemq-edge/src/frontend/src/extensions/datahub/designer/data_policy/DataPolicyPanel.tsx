@@ -9,11 +9,13 @@ import { MOCK_DATA_POLICY_SCHEMA } from '@datahub/designer/data_policy/DataPolic
 import { CustomValidator } from '@rjsf/utils'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 import { useTranslation } from 'react-i18next'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
   const { data: allPolicies } = useGetAllDataPolicies()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<DataPolicyData> | undefined
@@ -31,8 +33,10 @@ export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_DATA_POLICY_SCHEMA.schema}
           uiSchema={MOCK_DATA_POLICY_SCHEMA.uiSchema}
           formData={data}

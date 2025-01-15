@@ -12,10 +12,12 @@ import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, PanelProps } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes, edges, functions } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
@@ -67,8 +69,10 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
 
   return (
     <Card>
+      {guardAlert && guardAlert}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_OPERATION_SCHEMA.schema}
           uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
           formData={formData}
