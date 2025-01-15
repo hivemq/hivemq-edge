@@ -2224,6 +2224,13 @@ paths:
     post:
       description: Creates a script
       operationId: createScript
+      parameters:
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -2303,6 +2310,12 @@ paths:
         in: path
         name: scriptId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       responses:
