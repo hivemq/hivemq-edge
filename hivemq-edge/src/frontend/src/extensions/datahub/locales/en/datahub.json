@@ -115,6 +115,16 @@
       },
       "edit": {
         "aria-label": "Edit Operations"
+      },
+      "modal": {
+        "clear": {
+          "header": "Do you want to clear the Designer?",
+          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed"
+        },
+        "modify": {
+          "header": "Do you want to modify the policy?",
+          "confirmation": "The current version of your policy will be open for changes. However some elements will not be modifiable. "
+        }
       }
     },
     "controls": {

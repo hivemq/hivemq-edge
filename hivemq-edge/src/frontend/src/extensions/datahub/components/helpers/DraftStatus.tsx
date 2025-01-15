@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text } from '@chakra-ui/react'
+import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text, useDisclosure } from '@chakra-ui/react'
 import { LuTrash2 } from 'react-icons/lu'
 import { PiPencilSimpleLineFill } from 'react-icons/pi'
 
@@ -9,21 +9,31 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import { NodeIcon } from '@datahub/components/helpers/index.ts'
 import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 const DraftStatus: FC = () => {
   const { t } = useTranslation('datahub')
   const { status, name, type, reset, setStatus } = useDataHubDraftStore()
   const navigate = useNavigate()
+  const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
 
   const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   function onHandleClear() {
-    reset()
-    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+    onConfirmDeleteOpen()
   }
 
   function onHandleEdit() {
     setStatus(DesignerStatus.MODIFIED)
+  }
+
+  function handleConfirmOnClose() {
+    onConfirmDeleteClose()
+  }
+
+  function handleConfirmOnSubmit() {
+    reset()
+    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
   }
 
   return (
@@ -59,6 +69,14 @@ const DraftStatus: FC = () => {
           icon={<LuTrash2 />}
         />
       </ButtonGroup>
+      <ConfirmationDialog
+        isOpen={isConfirmDeleteOpen}
+        onClose={handleConfirmOnClose}
+        onSubmit={handleConfirmOnSubmit}
+        message={t('workspace.toolbars.modal.clear.confirmation')}
+        header={t('workspace.toolbars.modal.clear.header')}
+        action={t('workspace.controls.clear')}
+      />
     </HStack>
   )
 }
