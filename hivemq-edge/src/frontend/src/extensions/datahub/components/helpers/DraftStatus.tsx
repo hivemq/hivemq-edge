@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ButtonGroup, HStack, Icon, Text } from '@chakra-ui/react'
+import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text } from '@chakra-ui/react'
 import { LuTrash2 } from 'react-icons/lu'
 import { PiPencilSimpleLineFill } from 'react-icons/pi'
 
@@ -30,7 +30,19 @@ const DraftStatus: FC = () => {
     <HStack alignItems="center" sx={{ textWrap: 'nowrap' }} gap={4}>
       <HStack role="group" aria-label={t('workspace.toolbars.status.aria-label')}>
         <NodeIcon type={DataHubNodeType.DATA_POLICY} />
-        <Text>{t('workspace.toolbox.draft.status', { context: status, name: name, type })}</Text>
+        <Breadcrumb separator="|">
+          <BreadcrumbItem>
+            <Text data-testid="status-type">{t('policy.type', { context: type || PolicyType.CREATE_POLICY })}</Text>
+          </BreadcrumbItem>
+
+          <BreadcrumbItem>
+            <Text>{name || t('policy.unnamed')}</Text>
+          </BreadcrumbItem>
+
+          <BreadcrumbItem isCurrentPage>
+            <Text>{t('workspace.toolbox.draft.status', { context: status })}</Text>
+          </BreadcrumbItem>
+        </Breadcrumb>
       </HStack>
       <ButtonGroup role="group" aria-label={t('workspace.toolbars.edit.aria-label')}>
         <IconButton
