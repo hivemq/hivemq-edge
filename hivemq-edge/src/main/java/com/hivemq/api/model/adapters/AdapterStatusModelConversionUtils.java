@@ -31,17 +31,12 @@ import java.time.ZoneOffset;
  */
 public class AdapterStatusModelConversionUtils {
 
-
     public static @NotNull Status getAdapterStatus(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
-
-
         final OffsetDateTime offsetDateTime = protocolAdapterWrapper.getTimeOfLastStartAttempt() == null ?
                 null :
                 OffsetDateTime.ofInstant(Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()),
                         ZoneOffset.UTC);
-
-        System.err.println(offsetDateTime);
         return new Status().runtime(convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()))
                 .connection(convertConnectionStatus(protocolAdapterWrapper.getConnectionStatus()))
                 .id(protocolAdapterWrapper.getId())
