@@ -501,6 +501,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The entity tag
+        in: header
+        name: entityTag
+        required: false
+        schema:
+          type: string
       responses:
         "204":
           description: "Success, no response body"
@@ -622,6 +628,12 @@ paths:
         in: path
         name: policyId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: entityTag
+        required: false
         schema:
           type: string
       requestBody:
@@ -1352,6 +1364,12 @@ paths:
         in: path
         name: policyId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: entityTag
+        required: false
         schema:
           type: string
       requestBody:
