@@ -299,12 +299,22 @@
         "message_MODE_ONLY_one": "Are you sure you want to delete {{ count }} node? The operation cannot be reversed.",
         "message_MODE_ONLY_other": "Are you sure you want to delete {{ count }} nodes? The operation cannot be reversed.",
         "message_BOTH": "Are you sure you want to delete {{ count }} nodes and connections? The operation cannot be reversed."
-      },
-      "guards": {
+      }
+    },
+    "guards": {
+      "delete": {
         "message_one": "The selected element cannot be deleted because of some constraints",
         "message_other": "The selected elements cannot be deleted because of some constraints",
         "topicFilter": "Topic filter cannot be modified once published",
         "policyNode": "Policy node cannot be deleted once published"
+      },
+      "readonly": {
+        "title": "The policy is in read-only mode",
+        "message": "The element cannot be modified"
+      },
+      "protected": {
+        "title": "The element is protected",
+        "message": "The element cannot be modified"
       }
     }
   },

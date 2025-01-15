@@ -67,7 +67,7 @@ const DeleteListener: FC = () => {
         status: 'error',
         description: (
           <VStack alignItems="flex-start">
-            <Text>{t('workspace.deletion.guards.message', { count: SelectedElementsCount })}</Text>
+            <Text>{t('workspace.guards.delete.message', { count: SelectedElementsCount })}</Text>
             <UnorderedList>
               {allErrors.map((error, index) => (
                 <ListItem key={`toto-${index}`}>{error}</ListItem>

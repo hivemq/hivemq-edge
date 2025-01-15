@@ -309,10 +309,10 @@ export const canDeleteNode = (node: Node, status?: DesignerStatus): { delete: bo
     return { delete: true }
   }
   if (isTopicFilterNodeType(node)) {
-    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+    return { delete: false, error: i18n.t('datahub:workspace.guards.delete.topicFilter') }
   }
   if (isBehaviorPolicyNodeType(node) || isDataPolicyNodeType(node)) {
-    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.policyNode') }
+    return { delete: false, error: i18n.t('datahub:workspace.guards.delete.policyNode') }
   }
   return { delete: true }
 }
@@ -328,7 +328,7 @@ export const canDeleteEdge = (
     const source = nodes.find((node) => node.id === edge.source)
     const target = nodes.find((node) => node.id === edge.target)
     if (source && target && isDataPolicyNodeType(target) && isTopicFilterNodeType(source))
-      return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+      return { delete: false, error: i18n.t('datahub:workspace.guards.delete.topicFilter') }
   }
   return { delete: true }
 }

@@ -1,11 +1,13 @@
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { useTranslation } from 'react-i18next'
 import { useMemo } from 'react'
 import { Node } from 'reactflow'
+import { Alert, AlertDescription, AlertIcon, AlertTitle } from '@chakra-ui/react'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DesignerStatus, TopicFilterData } from '@datahub/types.ts'
 import { canDeleteNode } from '@datahub/utils/node.utils.ts'
-import { Alert, AlertIcon, AlertTitle } from '@chakra-ui/react'
 
 export const usePolicyGuards = (selectedNode: string) => {
+  const { t } = useTranslation('datahub')
   const { status } = useDataHubDraftStore()
   const { nodes } = useDataHubDraftStore()
 
@@ -16,23 +18,22 @@ export const usePolicyGuards = (selectedNode: string) => {
   const isPolicyEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   const protectedNode = adapterNode && canDeleteNode(adapterNode, status)
-  console.log('XXXXXX isPolicyEditable', isPolicyEditable, protectedNode)
 
   let guardAlert = null
   if (!isPolicyEditable) {
     guardAlert = (
       <Alert status="info" mb={5}>
         <AlertIcon />
-        <AlertTitle>The policy is in read-only mode</AlertTitle>
-        The element cannot be modified
+        <AlertTitle>{t('workspace.guards.readonly.title')}</AlertTitle>
+        <AlertDescription>{t('workspace.guards.readonly.message')}</AlertDescription>
       </Alert>
     )
   } else if (protectedNode && !protectedNode.delete) {
     guardAlert = (
       <Alert status="info" mb={5}>
         <AlertIcon />
-        <AlertTitle>The element is protected</AlertTitle>
-        {protectedNode?.error}
+        <AlertTitle>{t('workspace.guards.protected.title')}</AlertTitle>
+        <AlertDescription>{t('workspace.guards.protected.message')}</AlertDescription>
       </Alert>
     )
   }
