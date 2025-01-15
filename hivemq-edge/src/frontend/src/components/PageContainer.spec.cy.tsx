@@ -1,23 +1,37 @@
 /// <reference types="cypress" />
 import PageContainer from './PageContainer.tsx'
+import { Button } from '@chakra-ui/react'
 
-const MOCK_STATUS_TEXT = 'This is a test'
+const MOCK_HEADER = 'This is a test'
+const MOCK_SUBHEADER = 'This is below the test'
 const MOCK_CONTENT = <div data-testid="the-test-id">This is a dummy component</div>
+const MOCK_CTA = <Button>Button</Button>
 
 describe('PageContainer', () => {
   beforeEach(() => {
-    // run these tests as if in a desktop
-    // browser with a 720p monitor
     cy.viewport(800, 250)
   })
-  it('should renders', () => {
-    cy.mountWithProviders(<PageContainer title={MOCK_STATUS_TEXT}>{MOCK_CONTENT}</PageContainer>)
-    // cy.get('.chakra-alert__title').should('contain.text', 'This is a test')
-    // cy.get('.chakra-alert__desc').should('contain.text', 'This is a title')
-    // cy.get("[role='alert']").should('have.attr', 'data-status', 'error')
+
+  it('should render properly', () => {
+    cy.mountWithProviders(
+      <PageContainer title={MOCK_HEADER} subtitle={MOCK_SUBHEADER} cta={MOCK_CTA}>
+        {MOCK_CONTENT}
+      </PageContainer>
+    )
+    cy.get('header h1').should('have.text', 'This is a test')
+    cy.get('header h1 + p').should('have.text', 'This is below the test')
+    cy.getByTestId('page-container-cta').find('button').should('have.text', 'Button')
+    cy.getByTestId('the-test-id').should('have.text', 'This is a dummy component')
   })
 
-  it('should also render', () => {
-    cy.mountWithProviders(<PageContainer>{MOCK_CONTENT}</PageContainer>)
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(
+      <PageContainer title={MOCK_HEADER} subtitle={MOCK_SUBHEADER} cta={<Button>Button</Button>}>
+        {MOCK_CONTENT}
+      </PageContainer>
+    )
+
+    cy.checkAccessibility()
   })
 })

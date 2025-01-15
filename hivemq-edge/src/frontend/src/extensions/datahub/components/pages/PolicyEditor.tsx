@@ -26,7 +26,7 @@ import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 import { CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { DesignerStatus } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -42,7 +42,8 @@ const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
-  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
+  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes, isPolicyInDraft } =
+    useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
@@ -109,6 +110,14 @@ const PolicyEditor: FC = () => {
         const { type, handleId, nodeId } = edgeConnectStart.current
 
         const droppedNode = getConnectedNodeFrom(type, handleId)
+        if (!droppedNode) return
+
+        if (
+          droppedNode.type === DataHubNodeType.DATA_POLICY ||
+          (droppedNode.type === DataHubNodeType.BEHAVIOR_POLICY && isPolicyInDraft())
+        )
+          return
+
         if (droppedNode) {
           const id = getNodeId()
           const newNode: Node = {
@@ -140,7 +149,7 @@ const PolicyEditor: FC = () => {
         }
       }
     },
-    [onAddNodes, onConnect, reactFlowInstance]
+    [isPolicyInDraft, onAddNodes, onConnect, reactFlowInstance]
   )
 
   const onConnectNodes = useCallback(
@@ -156,7 +165,7 @@ const PolicyEditor: FC = () => {
       <ReactFlowProvider>
         <ReactFlow
           ref={reactFlowWrapper}
-          id="edge-workspace-canvas"
+          id="edge-datahub-canvas"
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -179,17 +188,18 @@ const PolicyEditor: FC = () => {
           deleteKeyCode={[]}
           nodesConnectable={isEditable}
           proOptions={proOptions}
-
+          role="region"
+          aria-label={t('workspace.canvas.aria-label')}
           // nodesDraggable={isEditable}
           // elementsSelectable={isEditable}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
-          <Box role="toolbar" aria-label={t('workspace.aria-label')} aria-controls="edge-workspace-canvas">
-            <ToolboxSelectionListener />
+          <Box role="toolbar" aria-label={t('workspace.toolbars.aria-label')} aria-controls="edge-datahub-canvas">
             <DeleteListener />
-            <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
+            <ToolboxSelectionListener />
             <DesignerToolbox />
             <CanvasControls />
+            <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <MiniMap />
           </Box>
         </ReactFlow>
