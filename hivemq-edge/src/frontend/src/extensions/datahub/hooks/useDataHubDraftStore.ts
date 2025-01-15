@@ -34,7 +34,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
         set(initialStore())
       },
       isDirty: () => {
-        return get().nodes.length !== 0 && get().edges.length !== 0
+        return get().nodes.length !== 0 //&& get().edges.length !== 0
       },
       isPolicyInDraft: () => {
         return (
