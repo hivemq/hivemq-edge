@@ -40,6 +40,7 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new EipProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterInformation.class);
     public static final String PROTOCOL_ID = "eip";
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
     private EipProtocolAdapterInformation() {
     }
@@ -136,5 +137,10 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return EipSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }

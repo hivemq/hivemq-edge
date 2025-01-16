@@ -89,7 +89,8 @@ public class ConfigurationMigrator {
 
     @VisibleForTesting
     public ConfigurationMigrator(
-            final @NotNull ConfigurationFile configurationFile, final @NotNull ModuleLoader moduleLoader) {
+            final @NotNull ConfigurationFile configurationFile,
+            final @NotNull ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
         moduleLoader.loadModules();
         this.configurationFile = configurationFile;
@@ -188,6 +189,7 @@ public class ConfigurationMigrator {
 
             return List.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
                     protocolId,
+                    protocolAdapterFactory.getInformation().getCurrentConfigVersion(),
                     objectMapper.convertValue(configTagsTuple.getConfig(), new TypeReference<>() {
                     }),
                     northboundMappingEntities,

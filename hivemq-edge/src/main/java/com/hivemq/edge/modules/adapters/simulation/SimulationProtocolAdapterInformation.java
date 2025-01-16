@@ -36,9 +36,11 @@ import java.util.List;
 
 public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
 
+    public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
+
     private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterInformation.class);
 
-    public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
+    public static final int CURRENT_CONFIG_VERSION = 1;
 
     private SimulationProtocolAdapterInformation() {
     }
@@ -112,6 +114,11 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
             log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 
 

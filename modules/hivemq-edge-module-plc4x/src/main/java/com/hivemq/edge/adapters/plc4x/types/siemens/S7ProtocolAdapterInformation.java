@@ -40,9 +40,10 @@ import java.util.List;
 public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new S7ProtocolAdapterInformation();
-    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterInformation.class);
     public static final String PROTOCOL_ID = "s7";
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterInformation.class);
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
     protected S7ProtocolAdapterInformation() {
     }
@@ -134,5 +135,10 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return S7SpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }

@@ -338,6 +338,11 @@ class ProtocolAdapterManagerTest {
         public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
             return null;
         }
+
+        @Override
+        public int getCurrentConfigVersion() {
+            return 1;
+        }
     }
 
     static class TestWritingAdapter implements WritingProtocolAdapter {

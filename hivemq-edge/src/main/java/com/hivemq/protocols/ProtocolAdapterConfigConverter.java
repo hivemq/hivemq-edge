@@ -77,7 +77,9 @@ public class ProtocolAdapterConfigConverter {
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig, southboundMappingList,
+                protocolAdapterEntity.getConfigVersion(),
+                protocolSpecificAdapterConfig,
+                southboundMappingList,
                 northboundMappingList,
                 tags);
     }

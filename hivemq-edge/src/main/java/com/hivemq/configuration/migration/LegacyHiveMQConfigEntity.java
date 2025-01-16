@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hivemq.configuration.entity.HiveMQConfigEntity.CURRENT_CONFIG_VERSION;
+
 /**
  * @author Dominik Obermaier
  * @author Lukas brandl
@@ -165,7 +167,8 @@ public class LegacyHiveMQConfigEntity {
 
     final @NotNull HiveMQConfigEntity to(
             final @NotNull List<ProtocolAdapterEntity> adapterEntities) {
-        return new HiveMQConfigEntity(this.getApiConfig(),
+        return new HiveMQConfigEntity(CURRENT_CONFIG_VERSION,
+                this.getApiConfig(),
                 this.getGatewayConfig(),
                 this.getModuleConfigs(),
                 this.getMqttConfig(),

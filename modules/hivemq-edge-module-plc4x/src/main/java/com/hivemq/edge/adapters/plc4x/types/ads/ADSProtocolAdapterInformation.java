@@ -37,11 +37,13 @@ import java.util.List;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapterInformation
-    implements ProtocolAdapterInformation {
+public class ADSProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ADSProtocolAdapterInformation();
+
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterInformation.class);
+    private static final int CURRENT_CONFIG_VERSION = 1;
+
 
     protected ADSProtocolAdapterInformation() {
     }
@@ -133,5 +135,10 @@ public class ADSProtocolAdapterInformation
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return ADSSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }

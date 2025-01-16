@@ -39,10 +39,11 @@ import java.util.List;
  */
 public class HttpProtocolAdapterInformation implements ProtocolAdapterInformation {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapterInformation.class);
     public static final ProtocolAdapterInformation INSTANCE = new HttpProtocolAdapterInformation();
     public static final String PROTOCOL_ID = "http";
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapterInformation.class);
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
     protected HttpProtocolAdapterInformation() {
     }
@@ -131,5 +132,10 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return HttpSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }
