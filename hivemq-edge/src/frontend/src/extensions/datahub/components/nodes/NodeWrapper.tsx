@@ -31,7 +31,16 @@ interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
   toolbar?: React.ReactNode
 }
 
-export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar, route, wrapperProps, data, type }) => {
+export const NodeWrapper: FC<NodeWrapperProps> = ({
+  selected,
+  children,
+  toolbar,
+  route,
+  wrapperProps,
+  data,
+  type,
+  ...props
+}) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
   const [internalSelection, setInternalSelection] = useState(false)
@@ -93,7 +102,12 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar,
   return (
     <>
       <NodeToolbar isVisible={selected && isSingleSelect} offset={16}>
-        <NodeDatahubToolbar onCopy={onHandleCopy} onDelete={onHandleDelete} onEdit={onHandleEdit}>
+        <NodeDatahubToolbar
+          selectedNode={props.id}
+          onCopy={onHandleCopy}
+          onDelete={onHandleDelete}
+          onEdit={onHandleEdit}
+        >
           {toolbar}
         </NodeDatahubToolbar>
       </NodeToolbar>

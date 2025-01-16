@@ -12,7 +12,9 @@ describe('NodeDatahubToolbar', () => {
     const mockOnCopy = cy.stub().as('copyNode')
 
     cy.mountWithProviders(
-      mockReactFlow(<NodeDatahubToolbar onEdit={mockOnEdit} onCopy={mockOnCopy} onDelete={mockOnDelete} />)
+      mockReactFlow(
+        <NodeDatahubToolbar selectedNode="my-node" onEdit={mockOnEdit} onCopy={mockOnCopy} onDelete={mockOnDelete} />
+      )
     )
     cy.get('@editNode').should('not.have.been.called')
     cy.get('@deleteNode').should('not.have.been.called')
@@ -33,7 +35,7 @@ describe('NodeDatahubToolbar', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(mockReactFlow(<NodeDatahubToolbar />))
+    cy.mountWithProviders(mockReactFlow(<NodeDatahubToolbar selectedNode="my-node" />))
     cy.checkAccessibility()
     cy.percySnapshot('Component: DataHub - NodeDatahubToolbar')
   })
