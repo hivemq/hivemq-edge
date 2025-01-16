@@ -33,7 +33,6 @@ export enum DesignerStatus {
   DRAFT = 'DRAFT',
   LOADED = 'LOADED',
   MODIFIED = 'MODIFIED',
-  READ_ONLY = 'READ_ONLY',
 }
 
 export interface WorkspaceState {
