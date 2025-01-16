@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { CombinedPolicy, PolicyType } from '@datahub/types.ts'
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
@@ -106,5 +104,24 @@ describe('DataHubListAction', () => {
     cy.get('@onDelete').should('not.have.been.called')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
+  })
+
+  it('should be accessible', () => {
+    const policy: CombinedPolicy = {
+      type: PolicyType.BEHAVIOR_POLICY,
+      ...mockBehaviorPolicy,
+    }
+
+    cy.injectAxe()
+    cy.mountWithProviders(
+      <DataHubListAction
+        policy={policy}
+        onEdit={cy.stub().as('onEdit')}
+        onDownload={cy.stub().as('onDownload')}
+        onDelete={cy.stub().as('onDelete')}
+      />
+    )
+    cy.checkAccessibility()
+    cy.percySnapshot('Component: DataHub - NodeDatahubToolbar')
   })
 })
