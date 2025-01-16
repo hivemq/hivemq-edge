@@ -34,6 +34,7 @@
     "action": {
       "edit": "Edit",
       "view": "View",
+      "config": "Configure",
       "download": "Download",
       "delete": "Delete",
       "copy": "Copy"

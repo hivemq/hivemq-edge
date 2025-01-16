@@ -20,8 +20,8 @@ describe('NodeDatahubToolbar', () => {
     cy.get('@deleteNode').should('not.have.been.called')
     cy.get('@copyNode').should('not.have.been.called')
 
-    cy.getByTestId('node-toolbar-edit').should('have.attr', 'aria-label', 'Edit')
-    cy.getByTestId('node-toolbar-edit').click()
+    cy.getByTestId('node-toolbar-config').should('have.attr', 'aria-label', 'Configure')
+    cy.getByTestId('node-toolbar-config').click()
     cy.get('@editNode').should('have.been.called')
 
     cy.getByTestId('node-toolbar-copy').should('have.attr', 'aria-label', 'Copy')

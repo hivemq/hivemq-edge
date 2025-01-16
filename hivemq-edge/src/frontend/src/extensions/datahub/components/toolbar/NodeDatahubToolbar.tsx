@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ButtonGroupProps, Divider } from '@chakra-ui/react'
-import { LuCopy, LuDelete, LuFileEdit } from 'react-icons/lu'
+import { ButtonGroupProps, Divider, Icon } from '@chakra-ui/react'
+import { LuCopy, LuDelete, LuFileCog } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -29,13 +29,13 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ch
       )}
       <ToolbarButtonGroup orientation="horizontal" isAttached {...props}>
         <IconButton
-          icon={<LuFileEdit />}
+          icon={<Icon as={LuFileCog} boxSize="20px" />}
           data-testid="node-toolbar-edit"
-          aria-label={t('Listings.action.edit')}
+          aria-label={t('Listings.action.config')}
           onClick={onEdit}
         />
         <IconButton
-          icon={<LuCopy />}
+          icon={<Icon as={LuCopy} boxSize="20px" />}
           data-testid="node-toolbar-copy"
           aria-label={t('Listings.action.copy')}
           onClick={onCopy}
@@ -44,7 +44,7 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ch
       </ToolbarButtonGroup>
       <ToolbarButtonGroup orientation="horizontal" isAttached variant="outline" {...props}>
         <IconButton
-          icon={<LuDelete />}
+          icon={<Icon as={LuDelete} boxSize="20px" />}
           data-testid="node-toolbar-delete"
           aria-label={t('Listings.action.delete')}
           colorScheme="red"
