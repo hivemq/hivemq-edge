@@ -33,7 +33,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const navigate = useNavigate()
   const deleteDataPolicy = useDeleteDataPolicy()
   const deleteBehaviourPolicy = useDeleteBehaviorPolicy()
-  const { isDirty } = useDataHubDraftStore()
+  const { isDirty, reset } = useDataHubDraftStore()
 
   const isError = useMemo(() => {
     return isDataError || isBehaviorError
@@ -42,6 +42,8 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const isLoading = useMemo(() => {
     return isDataLoading || isBehaviorLoading
   }, [isDataLoading, isBehaviorLoading])
+
+  const isDraftDirty = isDirty()
 
   const safeData = useMemo<CombinedPolicy[]>(() => {
     if (isLoading)
@@ -69,19 +71,22 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       ...insertItems<DataPolicy>(dataPolicies?.items, PolicyType.DATA_POLICY),
       ...insertItems<BehaviorPolicy>(behaviorPolicies?.items, PolicyType.BEHAVIOR_POLICY),
     ]
-    if (isDirty()) ss.unshift(generateDraftPolicyItem())
+    if (isDraftDirty) ss.unshift(generateDraftPolicyItem())
 
     return ss
-  }, [isLoading, isDirty, dataPolicies?.items, behaviorPolicies?.items])
+  }, [isLoading, isDraftDirty, dataPolicies?.items, behaviorPolicies?.items])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
     const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {
-      return () => {
-        const deleteMutation: UseMutationResult<void, unknown, string> =
-          info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
-
-        onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
+      if (info.row.original.type === PolicyType.CREATE_POLICY) {
+        reset()
+        return
       }
+
+      const deleteMutation: UseMutationResult<void, unknown, string> =
+        info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
+
+      onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
     }
 
     const onHandleEdit = (info: CellContext<CombinedPolicy, unknown>) => () => {
@@ -147,7 +152,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
                 policy={info.row.original}
-                onDelete={onHandleDelete(info)}
+                onDelete={() => onHandleDelete(info)}
                 onEdit={onHandleEdit(info)}
                 onDownload={onHandleDownload(info)}
               />
@@ -156,7 +161,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         },
       },
     ]
-  }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
+  }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, reset, t])
 
   return (
     <PaginatedTable<CombinedPolicy>

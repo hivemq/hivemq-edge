@@ -65,7 +65,6 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
   )
 
   if (!policy) return renderResourceToolbar()
-
   if (policy?.type === PolicyType.CREATE_POLICY) return renderDraftToolbar()
   return (
     <HStack>
