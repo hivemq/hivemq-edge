@@ -16,8 +16,12 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.DATA_POLICY}/${id}`} {...props} toolbar={<PolicyToolbar />}>
         <HStack justifyContent="space-between">
           <VStack alignItems="flex-start" data-testid="node-model">
-            <Text fontSize="xs">{t('filter')}</Text>
-            <Text fontSize="xs">{t('validator')}</Text>
+            <Text fontSize="xs">
+              {t('workspace.handles.validation', { context: DataPolicyData.Handle.TOPIC_FILTER })}
+            </Text>
+            <Text fontSize="xs">
+              {t('workspace.handles.validation', { context: DataPolicyData.Handle.VALIDATION })}
+            </Text>
           </VStack>
           <VStack alignItems="flex-end" data-testid="node-model">
             <Text fontSize="xs">
