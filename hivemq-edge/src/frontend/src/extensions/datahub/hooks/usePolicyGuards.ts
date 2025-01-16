@@ -12,8 +12,7 @@ export interface GuardAlertProps {
 
 export const usePolicyGuards = (selectedNode?: string) => {
   const { t } = useTranslation('datahub')
-  const { status } = useDataHubDraftStore()
-  const { nodes } = useDataHubDraftStore()
+  const { status, nodes } = useDataHubDraftStore()
 
   const adapterNode = useMemo(() => {
     return nodes.find((e) => e.id === selectedNode) as Node<TopicFilterData> | undefined
