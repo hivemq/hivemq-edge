@@ -23,8 +23,11 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.hivemq.edge.api.model.DataPolicyValidator;
+import com.hivemq.http.custom.CustomaPolicyValidatorTypeEnumSerializer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.Produces;
@@ -54,6 +57,11 @@ public class JaxrsObjectMapperProvider extends JacksonJaxbJsonProvider {
                 .configure(MapperFeature.AUTO_DETECT_GETTERS, false)
                 .build();
         mapper.registerModule(new JavaTimeModule());
+
+        final SimpleModule module = new SimpleModule();
+        module.addDeserializer(DataPolicyValidator.TypeEnum.class, new CustomaPolicyValidatorTypeEnumSerializer());
+        mapper.registerModule(module);
+
         setMapper(mapper);
     }
 
