@@ -135,7 +135,8 @@
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
       "clear": "Clear the Designer",
-      "edit": "Edit the policy",
+      "modify": "Modify the policy",
+      "clone": "Clone as a new draft",
       "shortcuts": "Help using the Designer"
     },
 

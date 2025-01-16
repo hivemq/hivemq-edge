@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text, useDisclosure } from '@chakra-ui/react'
-import { LuTrash2 } from 'react-icons/lu'
+import { LuBookCopy, LuTrash2 } from 'react-icons/lu'
 import { PiPencilSimpleLineFill } from 'react-icons/pi'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -25,6 +25,12 @@ const DraftStatus: FC = () => {
 
   function onHandleEdit() {
     setStatus(DesignerStatus.MODIFIED)
+  }
+
+  function onHandleClone() {
+    setStatus(DesignerStatus.DRAFT, { name: '' })
+    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+    // TODO[NVL] This is not enough, we should "clean" the id of protected elements
   }
 
   function handleConfirmOnClose() {
@@ -57,11 +63,20 @@ const DraftStatus: FC = () => {
       <ButtonGroup role="group" aria-label={t('workspace.toolbars.edit.aria-label')}>
         <IconButton
           isDisabled={isPolicyEditable}
-          data-testid="designer-edit-"
+          data-testid="designer-edit-modify"
           onClick={onHandleEdit}
-          aria-label={t('workspace.controls.edit')}
+          aria-label={t('workspace.controls.modify')}
           icon={<Icon as={PiPencilSimpleLineFill} boxSize="18px" />}
         />
+
+        <IconButton
+          isDisabled={isPolicyEditable}
+          data-testid="designer-edit-duplicate"
+          onClick={onHandleClone}
+          aria-label={t('workspace.controls.clone')}
+          icon={<Icon as={LuBookCopy} boxSize="18px" />}
+        />
+
         <IconButton
           data-testid="designer-clear-draft"
           onClick={onHandleClear}
