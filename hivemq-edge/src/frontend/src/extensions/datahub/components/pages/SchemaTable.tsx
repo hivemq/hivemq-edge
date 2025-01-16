@@ -84,7 +84,6 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                isAccessDisabled
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
                 onDownload={onHandleDownload(info)}
               />

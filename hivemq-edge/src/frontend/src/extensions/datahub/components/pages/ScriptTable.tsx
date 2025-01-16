@@ -94,7 +94,6 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                isAccessDisabled
                 onDelete={() =>
                   onDeleteItem?.(deleteScript.mutateAsync, DataHubNodeType.FUNCTION, info.row.original.id)
                 }

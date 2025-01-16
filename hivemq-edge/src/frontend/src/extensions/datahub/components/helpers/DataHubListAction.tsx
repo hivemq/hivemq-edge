@@ -13,16 +13,9 @@ interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
   onDelete?: MouseEventHandler<HTMLButtonElement>
   onDownload?: MouseEventHandler<HTMLButtonElement>
-  isAccessDisabled?: boolean
 }
 
-const DataHubListAction: FC<DataHubListActionProps> = ({
-  policy,
-  onEdit,
-  onDelete,
-  onDownload,
-  isAccessDisabled = false,
-}) => {
+const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelete, onDownload }) => {
   const { t } = useTranslation('datahub')
   const navigate = useNavigate()
   const { setStatus } = useDataHubDraftStore()
@@ -77,16 +70,12 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
         />
       </ButtonGroup>
       <ButtonGroup size="sm" isAttached>
-        {!isAccessDisabled && (
-          <>
-            <IconButton
-              data-testid="list-action-view"
-              onClick={onEdit}
-              aria-label={t('Listings.action.view')}
-              icon={<LuFileSearch />}
-            />
-          </>
-        )}
+        <IconButton
+          data-testid="list-action-view"
+          onClick={onEdit}
+          aria-label={t('Listings.action.view')}
+          icon={<LuFileSearch />}
+        />
         <IconButton
           data-testid="list-action-download"
           onClick={onDownload}
