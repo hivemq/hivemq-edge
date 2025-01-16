@@ -63,9 +63,7 @@ public class WritingServiceProvider {
         }
         return writingServiceFactory.build(objectMapper,
                 localTopicTree,
-                singleWriterService,
-                topicFilterPersistence
-                );
+                singleWriterService);
     }
 
 

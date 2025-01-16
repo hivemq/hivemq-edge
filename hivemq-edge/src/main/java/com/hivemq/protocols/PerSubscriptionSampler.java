@@ -17,6 +17,7 @@ package com.hivemq.protocols;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
@@ -39,18 +40,17 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
-            final @NotNull PollingProtocolAdapter pollingProtocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull PollingContext pollingContext,
             final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull JsonPayloadCreator jsonPayloadCreator) {
         super(protocolAdapterWrapper,
                 objectMapper,
                 adapterPublishService,
                 eventService,
-                jsonPayloadDefaultCreator);
-        this.perSubscriptionProtocolAdapter = pollingProtocolAdapter;
+                jsonPayloadCreator);
+        this.perSubscriptionProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
         this.pollingContext = pollingContext;
     }
 

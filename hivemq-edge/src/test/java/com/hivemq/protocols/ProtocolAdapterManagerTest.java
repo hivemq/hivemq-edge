@@ -124,7 +124,10 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -148,7 +151,10 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -176,7 +182,10 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
@@ -203,7 +212,10 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(),
                 anyString())).thenThrow(new RuntimeException("we failed start"));
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
@@ -229,7 +241,10 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.stopWriting(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
@@ -252,10 +267,13 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.stopWriting(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(protocolAdapterWritingService.stopWriting(any(), any())).thenReturn(CompletableFuture.failedFuture(new IllegalArgumentException()));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
+                protocolAdapterWritingService,
+                protocolAdapterPollingService,
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),

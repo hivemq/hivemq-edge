@@ -28,6 +28,5 @@ public interface WritingServiceFactory {
     @NotNull InternalProtocolAdapterWritingService build(
             @NotNull ObjectMapper objectMapper,
             @NotNull LocalTopicTree localTopicTree,
-            @NotNull SingleWriterService singleWriterService,
-            @NotNull TopicFilterPersistence topicFilterPersistence);
+            @NotNull SingleWriterService singleWriterService);
 }

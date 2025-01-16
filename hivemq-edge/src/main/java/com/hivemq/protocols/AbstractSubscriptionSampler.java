@@ -70,21 +70,21 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
 
-    private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
+    private final @NotNull JsonPayloadCreator jsonPayloadCreator;
 
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull JsonPayloadCreator jsonPayloadCreator) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
         final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapter.getAdapter();
         this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
         this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
         this.objectMapper = objectMapper;
-        this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
+        this.jsonPayloadCreator = jsonPayloadCreator;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
@@ -110,7 +110,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
-            protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), new ProtocolAdapterStopOutputImpl());
+            protocolAdapter.stop();
         }
     }
 
@@ -131,7 +131,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             if (jsonPayloadCreatorOverride != null) {
                 jsonPayloadsAsBytes = jsonPayloadCreatorOverride.convertToJson(sample, objectMapper);
             } else {
-                jsonPayloadsAsBytes = jsonPayloadDefaultCreator.convertToJson(sample, objectMapper);
+                jsonPayloadsAsBytes = jsonPayloadCreator.convertToJson(sample, objectMapper);
             }
 
             for (final byte[] json : jsonPayloadsAsBytes) {
