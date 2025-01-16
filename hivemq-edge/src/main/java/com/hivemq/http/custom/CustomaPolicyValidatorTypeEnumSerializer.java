@@ -23,7 +23,6 @@ public class CustomaPolicyValidatorTypeEnumSerializer extends StdDeserializer<Da
     public DataPolicyValidator.@NotNull TypeEnum deserialize(
             final @NotNull JsonParser jp, final @NotNull DeserializationContext ctxt)
             throws IOException {
-        System.err.println("Custom serializer called.");
         final JsonNode node = jp.getCodec().readTree(jp);
         return DataPolicyValidator.TypeEnum.fromString(node.asText().toUpperCase());
     }
