@@ -12,7 +12,8 @@ import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, PanelProps } from '@datahub/types.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
@@ -69,7 +70,7 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
 
   return (
     <Card>
-      {guardAlert && guardAlert}
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}

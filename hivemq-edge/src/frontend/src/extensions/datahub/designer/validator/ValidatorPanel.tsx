@@ -9,7 +9,7 @@ import { DataHubNodeType, PanelProps, ValidatorData } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_VALIDATOR_SCHEMA } from '@datahub/designer/validator/DataPolicyValidator.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
@@ -31,7 +31,7 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
 
   return (
     <Card>
-      {guardAlert && guardAlert}
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}

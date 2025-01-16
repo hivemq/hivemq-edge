@@ -26,7 +26,7 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null

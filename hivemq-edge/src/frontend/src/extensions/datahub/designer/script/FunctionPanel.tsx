@@ -12,7 +12,8 @@ import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaFo
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_FUNCTION_SCHEMA } from '@datahub/designer/script/FunctionData.ts'
 import { getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { data: allScripts } = useGetAllScripts({})
@@ -120,7 +121,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
 
   return (
     <Card>
-      {guardAlert && guardAlert}
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}

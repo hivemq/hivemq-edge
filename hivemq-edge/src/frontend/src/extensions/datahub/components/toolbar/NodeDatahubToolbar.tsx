@@ -5,7 +5,7 @@ import { LuCopy, LuDelete, LuFileCog } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 interface NodeToolbarProps extends ButtonGroupProps {
   onCopy?: (event: React.BaseSyntheticEvent) => void

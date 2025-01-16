@@ -10,7 +10,7 @@ import { DesignerStatus } from '@datahub/types.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
 import { canDeleteEdge, canDeleteNode } from '@datahub/utils/node.utils.ts'
 import { DATAHUB_TOAST_ID, dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const DeleteListener: FC = () => {
   const { t } = useTranslation('datahub')

@@ -10,7 +10,7 @@ import { NodeIcon } from '@datahub/components/helpers/index.ts'
 import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const DraftStatus: FC = () => {
   const { t } = useTranslation('datahub')

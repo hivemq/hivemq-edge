@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
+import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 
 import { DataPolicyData, PanelProps } from '@datahub/types.ts'
@@ -8,8 +9,8 @@ import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaFo
 import { MOCK_DATA_POLICY_SCHEMA } from '@datahub/designer/data_policy/DataPolicySchema.ts'
 import { CustomValidator } from '@rjsf/utils'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
-import { useTranslation } from 'react-i18next'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
@@ -33,7 +34,7 @@ export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
 
   return (
     <Card>
-      {guardAlert && guardAlert}
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}

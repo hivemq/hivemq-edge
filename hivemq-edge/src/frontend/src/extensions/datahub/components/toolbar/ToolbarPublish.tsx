@@ -14,7 +14,7 @@ import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCre
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
 import { DataHubNodeType, DryRunResults, ResourceState, ResourceWorkingVersion } from '@datahub/types.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 interface Mutate<T> {
   type: DataHubNodeType

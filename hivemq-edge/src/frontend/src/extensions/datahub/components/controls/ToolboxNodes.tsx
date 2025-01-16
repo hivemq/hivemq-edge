@@ -6,7 +6,7 @@ import { DataHubNodeType } from '@datahub/types.ts'
 import ToolItem from '@datahub/components/controls/ToolItem.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import ToolGroup from '@datahub/components/controls/ToolGroup.tsx'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 interface ToolboxNodesProps {
   direction?: 'horizontal' | 'vertical'

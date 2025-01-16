@@ -6,7 +6,7 @@ import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 export const ToolbarDryRun: FC = () => {
   const { t } = useTranslation('datahub')

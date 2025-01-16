@@ -25,7 +25,7 @@ import { LuConstruction } from 'react-icons/lu'
 import { DefaultEditor } from '@datahub/config/editors.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { NodeIcon } from '@datahub/components/helpers'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')

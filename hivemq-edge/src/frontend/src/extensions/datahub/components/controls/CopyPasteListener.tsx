@@ -5,7 +5,7 @@ import { useHotkeys } from 'react-hotkeys-hook'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const DEFAULT_POSITION_DELTA: XYPosition = { x: 100, y: 75 }
 
