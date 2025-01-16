@@ -30,7 +30,7 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ch
       <ToolbarButtonGroup orientation="horizontal" isAttached {...props}>
         <IconButton
           icon={<Icon as={LuFileCog} boxSize="20px" />}
-          data-testid="node-toolbar-edit"
+          data-testid="node-toolbar-config"
           aria-label={t('Listings.action.config')}
           onClick={onEdit}
         />

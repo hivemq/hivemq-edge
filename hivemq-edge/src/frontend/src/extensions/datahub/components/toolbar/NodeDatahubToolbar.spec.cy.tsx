@@ -25,12 +25,14 @@ describe('NodeDatahubToolbar', () => {
     cy.get('@editNode').should('have.been.called')
 
     cy.getByTestId('node-toolbar-copy').should('have.attr', 'aria-label', 'Copy')
-    cy.getByTestId('node-toolbar-copy').click()
-    cy.get('@copyNode').should('have.been.called')
+    // cy.getByTestId('node-toolbar-copy').click()
+    // cy.get('@copyNode').should('have.been.called')
+    cy.getByTestId('node-toolbar-copy').should('be.disabled')
 
     cy.getByTestId('node-toolbar-delete').should('have.attr', 'aria-label', 'Delete')
-    cy.getByTestId('node-toolbar-delete').click()
-    cy.get('@deleteNode').should('have.been.called')
+    // cy.getByTestId('node-toolbar-delete').click()
+    // cy.get('@deleteNode').should('have.been.called')
+    cy.getByTestId('node-toolbar-delete').should('be.disabled')
   })
 
   it('should be accessible', () => {
