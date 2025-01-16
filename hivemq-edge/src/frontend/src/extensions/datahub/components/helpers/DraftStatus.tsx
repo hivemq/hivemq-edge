@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text, useDisclosure } from '@chakra-ui/react'
@@ -10,14 +10,14 @@ import { NodeIcon } from '@datahub/components/helpers/index.ts'
 import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 const DraftStatus: FC = () => {
   const { t } = useTranslation('datahub')
   const { status, name, type, reset, setStatus } = useDataHubDraftStore()
+  const { isPolicyEditable } = usePolicyGuards()
   const navigate = useNavigate()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
-
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   function onHandleClear() {
     onConfirmDeleteOpen()
@@ -56,7 +56,7 @@ const DraftStatus: FC = () => {
       </HStack>
       <ButtonGroup role="group" aria-label={t('workspace.toolbars.edit.aria-label')}>
         <IconButton
-          isDisabled={isEditable}
+          isDisabled={isPolicyEditable}
           data-testid="designer-edit-"
           onClick={onHandleEdit}
           aria-label={t('workspace.controls.edit')}

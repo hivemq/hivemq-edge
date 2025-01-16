@@ -24,8 +24,9 @@ import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 import { CustomEdgeTypes, CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -45,8 +46,8 @@ const PolicyEditor: FC = () => {
     useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
-  const edgeTypes = useMemo(() => CustomEdgeTypes, [])
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+const edgeTypes = useMemo(() => CustomEdgeTypes, [])
+  const { isPolicyEditable } = usePolicyGuards()
 
   const checkValidity = useCallback(
     (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),
@@ -92,14 +93,14 @@ const PolicyEditor: FC = () => {
 
   const onConnectStart = useCallback(
     (_: unknown, params: OnConnectStartParams) => {
-      if (!isEditable) return
+      if (!isPolicyEditable) return
       const nodeFound = nodes.find((e) => e.id === params.nodeId)
       edgeConnectStart.current = undefined
       if (nodeFound) {
         edgeConnectStart.current = { ...params, type: nodeFound.type }
       }
     },
-    [isEditable, nodes]
+    [isPolicyEditable, nodes]
   )
 
   const onConnectEnd = useCallback(
@@ -178,7 +179,7 @@ const PolicyEditor: FC = () => {
           onConnectEnd={onConnectEnd}
           onConnect={onConnectNodes}
           connectionRadius={35}
-          connectionLineComponent={isEditable ? ConnectionLine : undefined}
+          connectionLineComponent={isPolicyEditable ? ConnectionLine : undefined}
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
@@ -187,7 +188,7 @@ const PolicyEditor: FC = () => {
           onDrop={onDrop}
           isValidConnection={checkValidity}
           deleteKeyCode={[]}
-          nodesConnectable={isEditable}
+          nodesConnectable={isPolicyEditable}
           proOptions={proOptions}
           role="region"
           aria-label={t('workspace.canvas.aria-label')}

@@ -1,10 +1,9 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
-
-import config from '@/config'
 
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
@@ -13,16 +12,9 @@ import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPolic
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import {
-  DataHubNodeType,
-  DesignerStatus,
-  DryRunResults,
-  ResourceState,
-  ResourceWorkingVersion,
-} from '@datahub/types.ts'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { DataHubNodeType, DryRunResults, ResourceState, ResourceWorkingVersion } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.tsx'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -52,7 +44,6 @@ const resourceReducer =
 export const ToolbarPublish: FC = () => {
   const { t } = useTranslation('datahub')
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
-  const { status: statusDraft } = useDataHubDraftStore()
   const createSchema = useCreateSchema()
   const createScript = useCreateScript()
   const createDataPolicy = useCreateDataPolicy()
@@ -60,8 +51,8 @@ export const ToolbarPublish: FC = () => {
   const toast = useToast()
   const { state, pathname } = useLocation()
   const navigate = useNavigate()
+  const { isPolicyEditable } = usePolicyGuards()
 
-  const isEditEnabled = config.features.DATAHUB_EDIT_POLICY_ENABLED || statusDraft === DesignerStatus.DRAFT
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
   const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {
@@ -163,7 +154,7 @@ export const ToolbarPublish: FC = () => {
       variant="primary"
       leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
       onClick={handlePublish}
-      isDisabled={!isValid || !isEditEnabled}
+      isDisabled={!isValid || !isPolicyEditable}
       isLoading={createSchema.isPending}
     >
       {t('workspace.toolbar.policy.publish')}

@@ -6,7 +6,7 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DesignerStatus, TopicFilterData } from '@datahub/types.ts'
 import { canDeleteNode } from '@datahub/utils/node.utils.ts'
 
-export const usePolicyGuards = (selectedNode: string) => {
+export const usePolicyGuards = (selectedNode?: string) => {
   const { t } = useTranslation('datahub')
   const { status } = useDataHubDraftStore()
   const { nodes } = useDataHubDraftStore()
@@ -38,5 +38,10 @@ export const usePolicyGuards = (selectedNode: string) => {
     )
   }
 
-  return { status, isNodeEditable: isPolicyEditable && protectedNode && protectedNode?.delete, guardAlert: guardAlert }
+  return {
+    status,
+    isPolicyEditable,
+    isNodeEditable: isPolicyEditable && protectedNode && protectedNode?.delete,
+    guardAlert: guardAlert,
+  }
 }
