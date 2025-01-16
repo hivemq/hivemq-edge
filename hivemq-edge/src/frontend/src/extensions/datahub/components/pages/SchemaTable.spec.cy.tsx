@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
-import SchemaTable from '@datahub/components/pages/SchemaTable.tsx'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import SchemaTable from '@datahub/components/pages/SchemaTable.tsx'
 
 describe('SchemaTable', () => {
   beforeEach(() => {
