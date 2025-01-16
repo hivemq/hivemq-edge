@@ -24,7 +24,7 @@ describe('DataPolicyNode', () => {
     cy.mountWithProviders(mockReactFlow(<DataPolicyNode {...MOCK_NODE_DATA_POLICY} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Data Policy')
     cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'filter')
-    cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'validator')
+    cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'validation')
     cy.getByTestId(`node-model`).find('p').eq(2).should('contain.text', 'onSuccess')
     cy.getByTestId(`node-model`).find('p').eq(3).should('contain.text', 'onError')
 
