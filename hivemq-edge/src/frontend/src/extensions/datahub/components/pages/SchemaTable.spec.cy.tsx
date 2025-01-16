@@ -38,4 +38,10 @@ describe('SchemaTable', () => {
     cy.get('@firstItemContent').eq(2).should('have.text', '1')
     cy.get('@firstItemContent').eq(3).should('have.text', '2 days ago')
   })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<SchemaTable />)
+    cy.checkAccessibility()
+  })
 })

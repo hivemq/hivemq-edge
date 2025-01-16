@@ -48,15 +48,19 @@ const DraftStatus: FC = () => {
         <NodeIcon type={DataHubNodeType.DATA_POLICY} />
         <Breadcrumb separator="|">
           <BreadcrumbItem>
-            <Text data-testid="status-type">{t('policy.type', { context: type || PolicyType.CREATE_POLICY })}</Text>
+            <Text data-testid="status-container-type">
+              {t('policy.type', { context: type || PolicyType.CREATE_POLICY })}
+            </Text>
           </BreadcrumbItem>
 
           <BreadcrumbItem>
-            <Text>{name || t('policy.unnamed')}</Text>
+            <Text data-testid="status-container-name">{name || t('policy.unnamed')}</Text>
           </BreadcrumbItem>
 
-          <BreadcrumbItem isCurrentPage>
-            <Text>{t('workspace.toolbox.draft.status', { context: status })}</Text>
+          <BreadcrumbItem>
+            <Text data-testid="status-container-status">
+              {t('workspace.toolbox.draft.status', { context: status })}
+            </Text>
           </BreadcrumbItem>
         </Breadcrumb>
       </HStack>
@@ -71,14 +75,14 @@ const DraftStatus: FC = () => {
 
         <IconButton
           isDisabled={isPolicyEditable}
-          data-testid="designer-edit-duplicate"
+          data-testid="designer-edit-clone"
           onClick={onHandleClone}
           aria-label={t('workspace.controls.clone')}
           icon={<Icon as={LuBookCopy} boxSize="18px" />}
         />
 
         <IconButton
-          data-testid="designer-clear-draft"
+          data-testid="designer-edit-clear"
           onClick={onHandleClear}
           aria-label={t('workspace.controls.clear')}
           icon={<LuTrash2 />}
