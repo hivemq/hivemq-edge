@@ -16,17 +16,19 @@
 package com.hivemq.bootstrap.factories;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
+import org.jetbrains.annotations.NotNull;
 
 public interface HandlerFactory {
 
-    @NotNull HandlerPackage build( final @NotNull MqttConnacker mqttConnacker,
-                                   final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                                   final @NotNull IncomingPublishDropper incomingPublishDropper,
-                                   final @NotNull ConfigurationService configurationService);
+    @NotNull
+    HandlerPackage build(
+            final @NotNull MqttConnacker mqttConnacker,
+            final @NotNull MqttServerDisconnector mqttServerDisconnector,
+            final @NotNull IncomingPublishDropper incomingPublishDropper,
+            final @NotNull ConfigurationService configurationService);
 
 
 }
