@@ -2,12 +2,8 @@ import { renderHook } from '@testing-library/react'
 import { describe, expect } from 'vitest'
 
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
-import { EdgeFlowProvider } from './FlowContext.tsx'
+import { getWrapperEdgeProvider } from '@/__test-utils__/hooks/WrapperEdgeProvider.tsx'
 import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <EdgeFlowProvider>{children}</EdgeFlowProvider>
-)
 
 describe('useEdgeFlowContext', () => {
   beforeEach(() => {
@@ -21,7 +17,7 @@ describe('useEdgeFlowContext', () => {
   })
 
   it('should return the canvas options', () => {
-    const { result } = renderHook(() => useEdgeFlowContext(), { wrapper })
+    const { result } = renderHook(() => useEdgeFlowContext(), { wrapper: getWrapperEdgeProvider() })
     expect(result.current.options).toEqual<EdgeFlowOptions>({
       showGateway: false,
       showTopics: true,

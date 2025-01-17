@@ -1,24 +1,5 @@
-import { FC, PropsWithChildren } from 'react'
-import { Card, CardBody, CardHeader, Code } from '@chakra-ui/react'
-import { useLocation } from 'react-router-dom'
-
+import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import ProtocolAdapterPage from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
-
-const Wrapper: FC<PropsWithChildren> = ({ children }) => {
-  const { pathname } = useLocation()
-
-  return (
-    <>
-      {children}
-      <Card mt={50} variant="filled">
-        <CardHeader>Testing Dashboard</CardHeader>
-        <CardBody data-testid="test-pathname" as={Code}>
-          {pathname}
-        </CardBody>
-      </Card>
-    </>
-  )
-}
 
 describe('ProtocolAdapterPage', () => {
   beforeEach(() => {
@@ -27,7 +8,7 @@ describe('ProtocolAdapterPage', () => {
 
   it('should render the page header', () => {
     cy.mountWithProviders(<ProtocolAdapterPage />, {
-      wrapper: Wrapper,
+      wrapper: WrapperTestRoute,
       routerProps: { initialEntries: [`/protocol-adapters`] },
     })
 
@@ -55,7 +36,7 @@ describe('ProtocolAdapterPage', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ProtocolAdapterPage />, {
-      wrapper: Wrapper,
+      wrapper: WrapperTestRoute,
       routerProps: { initialEntries: [`/protocol-adapters`] },
     })
     cy.checkAccessibility()
