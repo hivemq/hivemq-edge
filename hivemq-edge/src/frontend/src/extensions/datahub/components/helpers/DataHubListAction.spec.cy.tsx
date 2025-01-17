@@ -18,9 +18,11 @@ describe('DataHubListAction', () => {
     )
 
     cy.get('button').should('have.length', 2)
+    cy.getByTestId('list-action-view').should('have.attr', 'aria-label', 'Continue on draft')
     cy.getByTestId('list-action-view').should('not.be.disabled')
 
     cy.get('@onDelete').should('not.have.been.called')
+    cy.getByTestId('list-action-delete').should('have.attr', 'aria-label', 'Delete')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
   })
@@ -38,10 +40,12 @@ describe('DataHubListAction', () => {
     cy.getByTestId('list-action-download').should('not.be.disabled')
 
     cy.get('@onDownload').should('not.have.been.called')
+    cy.getByTestId('list-action-download').should('have.attr', 'aria-label', 'Download')
     cy.getByTestId('list-action-download').click()
     cy.get('@onDownload').should('have.been.called')
 
     cy.get('@onDelete').should('not.have.been.called')
+    cy.getByTestId('list-action-delete').should('have.attr', 'aria-label', 'Delete')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
   })
@@ -64,14 +68,17 @@ describe('DataHubListAction', () => {
     cy.getByTestId('list-action-view').should('not.be.disabled')
 
     cy.get('@onEdit').should('not.have.been.called')
+    cy.getByTestId('list-action-view').should('have.attr', 'aria-label', 'View / Edit')
     cy.getByTestId('list-action-view').click()
     cy.get('@onEdit').should('have.been.called')
 
     cy.get('@onDownload').should('not.have.been.called')
+    cy.getByTestId('list-action-download').should('have.attr', 'aria-label', 'Download')
     cy.getByTestId('list-action-download').click()
     cy.get('@onDownload').should('have.been.called')
 
     cy.get('@onDelete').should('not.have.been.called')
+    cy.getByTestId('list-action-delete').should('have.attr', 'aria-label', 'Delete')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
   })
@@ -94,14 +101,17 @@ describe('DataHubListAction', () => {
     cy.getByTestId('list-action-view').should('not.be.disabled')
 
     cy.get('@onEdit').should('not.have.been.called')
+    cy.getByTestId('list-action-view').should('have.attr', 'aria-label', 'View / Edit')
     cy.getByTestId('list-action-view').click()
     cy.get('@onEdit').should('have.been.called')
 
     cy.get('@onDownload').should('not.have.been.called')
+    cy.getByTestId('list-action-download').should('have.attr', 'aria-label', 'Download')
     cy.getByTestId('list-action-download').click()
     cy.get('@onDownload').should('have.been.called')
 
     cy.get('@onDelete').should('not.have.been.called')
+    cy.getByTestId('list-action-delete').should('have.attr', 'aria-label', 'Delete')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
   })

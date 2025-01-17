@@ -65,7 +65,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
         <IconButton
           data-testid="list-action-view"
           onClick={onEdit}
-          aria-label={t('Listings.action.view')}
+          aria-label={t('Listings.action.view-edit')}
           icon={<LuFileSearch />}
         />
         <IconButton
