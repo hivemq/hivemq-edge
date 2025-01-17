@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
@@ -49,7 +49,6 @@ export const ToolbarPublish: FC = () => {
   const createDataPolicy = useCreateDataPolicy()
   const createBehaviorPolicy = useCreateBehaviorPolicy()
   const toast = useToast()
-  const { state, pathname } = useLocation()
   const navigate = useNavigate()
   const { isPolicyEditable } = usePolicyGuards()
 
@@ -141,10 +140,10 @@ export const ToolbarPublish: FC = () => {
           status: 'error',
         })
       })
-      .finally(() => {
+      .then(() => {
         reset()
         setNode(selectedNode)
-        navigate(state?.origin || pathname, { replace: true })
+        navigate(`/datahub/${selectedNode?.type}/${selectedNode?.data.id}`, { replace: true })
       })
   }
 
