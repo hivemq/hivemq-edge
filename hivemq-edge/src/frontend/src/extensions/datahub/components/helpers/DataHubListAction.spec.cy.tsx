@@ -60,7 +60,7 @@ describe('DataHubListAction', () => {
       />
     )
 
-    cy.get('button').should('have.length', 4)
+    cy.get('button').should('have.length', 3)
     cy.getByTestId('list-action-view').should('not.be.disabled')
 
     cy.get('@onEdit').should('not.have.been.called')
@@ -90,7 +90,7 @@ describe('DataHubListAction', () => {
       />
     )
 
-    cy.get('button').should('have.length', 4)
+    cy.get('button').should('have.length', 3)
     cy.getByTestId('list-action-view').should('not.be.disabled')
 
     cy.get('@onEdit').should('not.have.been.called')

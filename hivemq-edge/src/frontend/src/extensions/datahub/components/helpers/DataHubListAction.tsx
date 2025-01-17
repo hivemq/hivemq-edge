@@ -63,14 +63,6 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
     <HStack>
       <ButtonGroup size="sm" isAttached>
         <IconButton
-          data-testid="list-action-edit"
-          onClick={onEdit}
-          aria-label={t('Listings.action.edit')}
-          icon={<LuFileEdit />}
-        />
-      </ButtonGroup>
-      <ButtonGroup size="sm" isAttached>
-        <IconButton
           data-testid="list-action-view"
           onClick={onEdit}
           aria-label={t('Listings.action.view')}
