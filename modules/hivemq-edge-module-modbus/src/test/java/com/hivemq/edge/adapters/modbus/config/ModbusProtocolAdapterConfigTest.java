@@ -63,7 +63,7 @@ public class ModbusProtocolAdapterConfigTest {
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeoutMillis()).isEqualTo(1337);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(modbusToMqttMapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
             assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
@@ -116,7 +116,7 @@ public class ModbusProtocolAdapterConfigTest {
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeoutMillis()).isEqualTo(5000);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(modbusToMqttMapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
             assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);

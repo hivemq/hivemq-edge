@@ -159,7 +159,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
-        final NorthboundMapping httpToMqttMapping = protocolAdapterConfig.getFromEdgeMappings().get(0);
+        final NorthboundMapping httpToMqttMapping = protocolAdapterConfig.getNorthboundMappings().get(0);
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
 
@@ -187,7 +187,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
         assertThat(config.isAllowUntrustedCertificates()).isTrue();
 
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("tag1");
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
@@ -211,7 +211,7 @@ public class HttpProtocolAdapterConfigTest {
             });
         });
 
-        assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("tag3");
             assertThat(mapping.getTopicFilter()).isEqualTo("my/#");
         }, mapping -> {

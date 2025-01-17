@@ -30,12 +30,10 @@ import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -61,6 +59,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.sql.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
@@ -142,6 +143,9 @@ public class ProtocolAdapterManager {
         if(protocolAdapters.get(config.getAdapterId()) != null) {
             throw new IllegalArgumentException("adapter already exists by id '" + config.getAdapterId() + "'");
         }
+
+        protocolAdapterMetrics.increaseProtocolAdapterMetric(config.getProtocolId());
+
         final String adapterType = getKey(config.getProtocolId());
         final Optional<ProtocolAdapterFactory<?>> protocolAdapterFactoryOptional =
                 protocolAdapterFactoryManager.get(adapterType);
@@ -170,7 +174,6 @@ public class ProtocolAdapterManager {
                     config.getAdapterId(),
                     metricRegistry);
 
-
             final ProtocolAdapterStateImpl protocolAdapterState =
                     new ProtocolAdapterStateImpl(moduleServices.eventService(),
                             config.getAdapterId(),
@@ -186,7 +189,7 @@ public class ProtocolAdapterManager {
                                     config.getAdapterId(),
                                     config.getAdapterConfig(),
                                     config.getTags(),
-                                    config.getFromEdgeMappings(),
+                                    config.getNorthboundMappings(),
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,
@@ -198,14 +201,11 @@ public class ProtocolAdapterManager {
                     protocolAdapterMetricsService,
                     protocolAdapterWritingService,
                     protocolAdapterPollingService,
+                    config,
                     protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
-                    protocolAdapterState,
-                    config.getAdapterConfig(),
-                    config.getTags(),
-                    config.getToEdgeMappings(),
-                    config.getFromEdgeMappings());
+                    protocolAdapterState);
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
@@ -214,7 +214,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    private boolean deleteAdapterInternal(final @NotNull String id) {
+    private synchronized boolean deleteAdapterInternal(final @NotNull String id) {
         Preconditions.checkNotNull(id);
         final ProtocolAdapterWrapper adapterWrapper = protocolAdapters.remove(id);
         if (adapterWrapper != null) {
@@ -248,7 +248,7 @@ public class ProtocolAdapterManager {
         return false;
     }
 
-    public void start() {
+    public synchronized void start() {
         log.info("Starting adapters");
         for (final ProtocolAdapterConfig adapterConfig : configPersistence.allAdapters()) {
             try {
@@ -257,6 +257,80 @@ public class ProtocolAdapterManager {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public synchronized void refresh() {
+        log.info("Refreshing adapters");
+
+        final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configPersistence.allAdapters().stream().collect(
+                Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+
+        final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
+
+        final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
+        adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
+
+        final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
+        adaptersToBeCreated.removeAll(protocolAdapters.keySet());
+
+        final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
+        adaptersToBeCreated.removeAll(adaptersToBeUpdated);
+        adaptersToBeCreated.removeAll(adaptersToBeDeleted);
+
+        List<String> failedAdapters = new ArrayList<>();
+
+        adaptersToBeDeleted
+                .forEach(name -> {
+                    try {
+                        stop(name)
+                            .thenApply(r -> deleteAdapterInternal(name))
+                            .get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed deleting adapter {}", name, e);
+                    }
+                });
+
+        adaptersToBeCreated
+                .forEach(name -> {
+                    try {
+                        start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed adding adapter {}", name, e);
+                    }
+                });
+
+        adaptersToBeUpdated
+                .forEach(name -> {
+                    try {
+                        stop(name)
+                            .thenApply(r -> deleteAdapterInternal(name))
+                            .thenCompose(r ->
+                                    start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())))
+                            .get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed updating adapter {}", name, e);
+                    }
+
+                });
+
+        if(failedAdapters.isEmpty()) {
+            eventService.configurationEvent()
+                    .withSeverity(Event.SEVERITY.WARN)
+                    .withMessage("Configuration has been succesfully reloaded")
+                    .fire();
+        } else {
+            eventService.configurationEvent()
+                    .withSeverity(Event.SEVERITY.CRITICAL)
+                    .withMessage("Reloading of configuration failed")
+                    .fire();
+
+            //TODO TERMINATE!!!
+        }
+
+
     }
 
     //legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
@@ -384,7 +458,6 @@ public class ProtocolAdapterManager {
         if (getAdapterById(protocolAdapterConfig.getAdapterId()).isPresent()) {
             throw new IllegalArgumentException("adapter already exists by id '" + protocolAdapterConfig.getProtocolId() + "'");
         }
-        protocolAdapterMetrics.increaseProtocolAdapterMetric(protocolAdapterConfig.getProtocolId());
         final CompletableFuture<Void> ret = start(createAdapterInternal(protocolAdapterConfig, versionProvider.getVersion()));
 
         configPersistence.addAdapter(protocolAdapterConfig);

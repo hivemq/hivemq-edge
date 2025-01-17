@@ -86,11 +86,11 @@ public class ProtocolAdapterConfig {
         return tags;
     }
 
-    public @NotNull List<NorthboundMapping> getFromEdgeMappings() {
+    public @NotNull List<NorthboundMapping> getNorthboundMappings() {
         return northboundMappings;
     }
 
-    public @NotNull List<SouthboundMapping> getToEdgeMappings() {
+    public @NotNull List<SouthboundMapping> getSouthboundMappings() {
         return southboundMappings;
     }
 

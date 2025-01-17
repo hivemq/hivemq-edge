@@ -51,26 +51,20 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull ProtocolSpecificAdapterConfig configObject;
-    private final @NotNull List<? extends Tag> tags;
-    private final @NotNull List<SouthboundMapping> southboundMappings;
-    private final @NotNull List<NorthboundMapping> northboundMappings;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
+    private volatile @NotNull ProtocolAdapterConfig config;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
+            final @NotNull ProtocolAdapterConfig config,
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterState protocolAdapterState,
-            final @NotNull ProtocolSpecificAdapterConfig configObject,
-            final @NotNull List<? extends Tag> tags,
-            final @NotNull List<SouthboundMapping> southboundMappings,
-            final @NotNull List<NorthboundMapping> northboundMappings) {
+            final @NotNull ProtocolAdapterState protocolAdapterState) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -78,10 +72,7 @@ public class ProtocolAdapterWrapper {
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = protocolAdapterState;
-        this.configObject = configObject;
-        this.tags = tags;
-        this.southboundMappings = southboundMappings;
-        this.northboundMappings = northboundMappings;
+        this.config = config;
     }
 
     public @NotNull CompletableFuture<Void> start(
@@ -157,11 +148,11 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull ProtocolSpecificAdapterConfig getConfigObject() {
-        return configObject;
+        return config.getAdapterConfig();
     }
 
     public @NotNull List<? extends Tag> getTags() {
-        return tags;
+        return config.getTags();
     }
 
     public @Nullable Long getTimeOfLastStartAttempt() {
@@ -177,11 +168,11 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull List<NorthboundMapping> getNorthboundMappings() {
-        return northboundMappings;
+        return config.getNorthboundMappings();
     }
 
     public @NotNull List<SouthboundMapping> getSouthboundMappings() {
-        return southboundMappings;
+        return config.getSouthboundMappings();
     }
 
     public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {
