@@ -186,6 +186,8 @@
     "handles": {
       "validation_onSuccess": "onSuccess",
       "validation_onError": "onError",
+      "validation_topicFilter": "filter",
+      "validation_validation": "validation",
       "behavior_serial.will": "onWill",
       "behavior_serial.publish": "onPublish",
       "operation_deserialiser": "deserializer",

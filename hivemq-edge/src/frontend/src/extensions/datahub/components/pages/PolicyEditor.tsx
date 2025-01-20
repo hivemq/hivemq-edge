@@ -11,22 +11,21 @@ import ReactFlow, {
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
-import styles from './PolicyEditor.module.scss'
-
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
-import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
+import DesignerMiniMap from '@datahub/components/controls/DesignerMiniMap.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
 import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
 import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
-import { CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
+import { CustomEdgeTypes, CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
+import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -46,7 +45,7 @@ const PolicyEditor: FC = () => {
     useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
-
+  const edgeTypes = useMemo(() => CustomEdgeTypes, [])
   const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   const checkValidity = useCallback(
@@ -169,6 +168,7 @@ const PolicyEditor: FC = () => {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           // onEdgeUpdate={onEdgeUpdate}
@@ -180,8 +180,7 @@ const PolicyEditor: FC = () => {
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
-          snapGrid={[25, 25]}
-          className={styles.dataHubFlow}
+          snapGrid={[CANVAS_GRID, CANVAS_GRID]}
           onDragOver={onDragOver}
           onDrop={onDrop}
           isValidConnection={checkValidity}
@@ -200,7 +199,7 @@ const PolicyEditor: FC = () => {
             <DesignerToolbox />
             <CanvasControls />
             <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
-            <MiniMap />
+            <DesignerMiniMap />
           </Box>
         </ReactFlow>
         <SuspenseOutlet />

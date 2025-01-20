@@ -1,4 +1,6 @@
-const treeView = {
+import { SystemStyleObject } from '@chakra-ui/react'
+
+export const treeView: SystemStyleObject = {
   "[role='tree']": {
     '--spacing': '1.5rem',
     '--radius': '10px',
@@ -29,5 +31,3 @@ const treeView = {
   //   borderWidth: '0 0 2px 2px',
   // },
 }
-
-export default treeView

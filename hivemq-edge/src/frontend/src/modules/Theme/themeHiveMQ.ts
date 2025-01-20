@@ -4,7 +4,8 @@ import { extendTheme } from '@chakra-ui/react'
 
 import components from './components'
 import colors from './foundations/colors.ts'
-import treeView from '@/modules/Theme/globals/treeview.ts'
+import { treeView } from '@/modules/Theme/globals/treeview.ts'
+import { reactFlow } from '@/modules/Theme/globals/react-flow.ts'
 
 const themeHiveMQ = extendTheme({
   fonts: {
@@ -14,14 +15,9 @@ const themeHiveMQ = extendTheme({
   styles: {
     global: {
       ...treeView,
+      ...reactFlow,
     },
   },
-
-  // fontSizes: {
-  //   lg: '16px',
-  //   md: '14px',
-  //   sm: '12px',
-  // },
 
   colors: colors,
   components: components,

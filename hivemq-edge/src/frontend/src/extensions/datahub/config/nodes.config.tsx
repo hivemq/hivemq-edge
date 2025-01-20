@@ -1,6 +1,6 @@
 import { FC } from 'react'
-import { NodeProps } from 'reactflow'
-import { DataHubNodeType } from '@datahub/types.ts'
+import { EdgeProps, NodeProps } from 'reactflow'
+import { DataHubNodeType, EdgeTypes } from '@datahub/types.ts'
 import { TopicFilterNode } from '@datahub/designer/topic_filter/TopicFilterNode.tsx'
 import { ClientFilterNode } from '@datahub/designer/client_filter/ClientFilterNode.tsx'
 import { DataPolicyNode } from '@datahub/designer/data_policy/DataPolicyNode.tsx'
@@ -10,6 +10,7 @@ import { OperationNode } from '@datahub/designer/operation/OperationNode.tsx'
 import { FunctionNode } from '@datahub/designer/script/FunctionNode.tsx'
 import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.tsx'
 import { TransitionNode } from '@datahub/designer/transition/TransitionNode.tsx'
+import DataHubPolicyEdge from '@datahub/components/edges/DataHubPolicyEdge.tsx'
 
 /**
  * Used in the ReactFlow component to create custom nodes
@@ -24,4 +25,11 @@ export const CustomNodeTypes: Record<string, FC<NodeProps>> = {
   [DataHubNodeType.FUNCTION]: FunctionNode,
   [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyNode,
   [DataHubNodeType.TRANSITION]: TransitionNode,
+}
+
+/**
+ * Used in the ReactFlow component to create custom edges
+ */
+export const CustomEdgeTypes: Record<string, FC<EdgeProps>> = {
+  [EdgeTypes.DATAHUB_EDGE]: DataHubPolicyEdge,
 }

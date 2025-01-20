@@ -29,7 +29,7 @@ describe('OperationNode', () => {
     cy.get('div[data-handleid]').should('have.length', 1)
     cy.get('div[data-handleid]')
       .eq(0)
-      .should('have.attr', 'data-handlepos', 'bottom')
+      .should('have.attr', 'data-handlepos', 'right')
       .should('have.attr', 'data-id')
       .then((attr) => {
         expect((attr as unknown as string).endsWith('source')).to.be.true

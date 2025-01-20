@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { ConnectionLineComponentProps, getSimpleBezierPath } from 'reactflow'
+import { ConnectionLineComponentProps, getSmoothStepPath } from 'reactflow'
 import { Tag } from '@chakra-ui/react'
 
 import { getConnectedNodeFrom } from '@datahub/utils/node.utils.ts'
@@ -39,7 +39,7 @@ const ConnectionLine: FC<ConnectionLineComponentProps> = ({
     targetPosition: props.toPosition,
   }
 
-  const [d] = getSimpleBezierPath(pathParams)
+  const [d] = getSmoothStepPath(pathParams)
 
   return (
     <g>

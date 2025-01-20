@@ -1,16 +1,28 @@
 import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NodeProps } from 'reactflow'
-import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
+import {
+  Avatar,
+  BoxProps,
+  Card,
+  CardBody,
+  CardBodyProps,
+  CardHeader,
+  HStack,
+  Text,
+  useColorModeValue,
+} from '@chakra-ui/react'
 
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 
 import NodeDatahubToolbar from '@datahub/components/toolbar/NodeDatahubToolbar.tsx'
-import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
+import { DataHubNodeData, DataHubNodeType, PolicyDryRunStatus } from '@datahub/types.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { parseHotkey } from '@datahub/utils/hotkeys.utils.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { NodeIcon } from '@datahub/components/helpers'
+import { useTranslation } from 'react-i18next'
 
 interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
   children: ReactNode
@@ -19,11 +31,15 @@ interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
   toolbar?: React.ReactNode
 }
 
-export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar, route, wrapperProps, data }) => {
+export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar, route, wrapperProps, data, type }) => {
+  const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
   const [internalSelection, setInternalSelection] = useState(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const headerBackgroundColor = useColorModeValue('blue.200', 'blue.700')
+  const headerPolicyBackgroundColor = useColorModeValue('orange.200', 'orange.700')
+  const headerResourceBackgroundColor = useColorModeValue('pink.200', 'pink.700')
 
   const CheckIcon = useMemo(() => getDryRunStatusIcon(data.dryRunStatus), [data])
 
@@ -52,6 +68,13 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar,
     }
     setInternalSelection(true)
   }
+
+  const backgroundColor =
+    type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY
+      ? headerPolicyBackgroundColor
+      : type === DataHubNodeType.SCHEMA || type === DataHubNodeType.FUNCTION
+      ? headerResourceBackgroundColor
+      : headerBackgroundColor
 
   const selectedStyle: Partial<BoxProps> = {
     boxShadow: 'var(--chakra-shadows-outline)',
@@ -82,6 +105,7 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar,
         {...(selected ? { ...selectedStyle } : {})}
         size="sm"
         onClick={onHandleEdit}
+        w="250px"
       >
         {isDryRun && (
           <Avatar
@@ -94,9 +118,11 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, toolbar,
             {...(data.dryRunStatus === PolicyDryRunStatus.SUCCESS ? { ...successStyle, background: 'green.500' } : {})}
           />
         )}
-        <CardBody as={HStack} {...wrapperProps}>
-          {children}
-        </CardBody>
+        <CardHeader backgroundColor={backgroundColor} as={HStack} height={12}>
+          <NodeIcon type={type} />
+          <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
+        </CardHeader>
+        <CardBody {...wrapperProps}>{children}</CardBody>
       </Card>
     </>
   )

@@ -82,6 +82,10 @@ export interface PolicyCheckAction {
   getErrors: () => ProblemDetailsExtended[] | undefined
 }
 
+export enum EdgeTypes {
+  DATAHUB_EDGE = 'DATAHUB_EDGE',
+}
+
 export enum DataHubNodeType {
   INTERNAL = 'INTERNAL',
   ADAPTOR = 'ADAPTOR',
