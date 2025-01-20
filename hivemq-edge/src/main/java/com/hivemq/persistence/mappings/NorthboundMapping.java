@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.api.model.JavaScriptConstants;
-import com.hivemq.api.utils.MessageHandlingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,9 +97,7 @@ public class NorthboundMapping implements PollingContext {
                 model.getTopic(),
                 model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
                 model.getMessageExpiryInterval() == null ? DEFAULT_MESSAGE_EXPIRY : model.getMessageExpiryInterval(),
-                model.getMessageHandlingOptions() == null ?
-                        DEFAULT_MESSAGE_HANDLING_OPTIONS :
-                        MessageHandlingUtils.convert(model.getMessageHandlingOptions()),
+                MessageHandlingOptions.MQTTMessagePerTag,
                 model.getIncludeTagNames() != null && model.getIncludeTagNames(),
                 model.getIncludeTimestamp() != null && model.getIncludeTimestamp(),
                 model.getUserProperties() == null ?
