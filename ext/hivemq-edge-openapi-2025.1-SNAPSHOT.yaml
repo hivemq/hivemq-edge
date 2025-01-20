@@ -5386,7 +5386,6 @@ components:
       - includeTimestamp
       - maxQoS
       - messageExpiryInterval
-      - messageHandlingOptions
       - tagName
       - topic
     NorthboundMappingList:
