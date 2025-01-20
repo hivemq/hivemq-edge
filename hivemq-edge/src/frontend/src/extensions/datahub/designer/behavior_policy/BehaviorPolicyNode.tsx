@@ -7,6 +7,7 @@ import { BehaviorPolicyData, DataHubNodeType } from '@datahub/types.ts'
 import { NodeParams } from '@datahub/components/helpers'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import PolicyToolbar from '@datahub/components/toolbar/PolicyToolbar.tsx'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -24,7 +25,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         position={Position.Left}
         id={BehaviorPolicyData.Handle.CLIENT_FILTER}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 48px `,
+          top: getHandlePosition(0),
         }}
       />
       <CustomHandle
@@ -32,7 +33,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         position={Position.Right}
         id={BehaviorPolicyData.Handle.TRANSITIONS}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 48px `,
+          top: getHandlePosition(0),
         }}
       />
     </>

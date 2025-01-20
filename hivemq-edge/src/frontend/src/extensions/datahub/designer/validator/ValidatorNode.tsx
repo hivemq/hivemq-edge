@@ -5,6 +5,7 @@ import { NodeProps, Position } from 'reactflow'
 import { DataHubNodeType, ValidatorData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
   const { id, data } = props
@@ -23,7 +24,7 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
         position={Position.Left}
         id="target"
         style={{
-          top: `calc(100% - 44px)`,
+          top: getHandlePosition(0),
         }}
       />
       <CustomHandle
@@ -31,7 +32,7 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
         position={Position.Right}
         id="source"
         style={{
-          top: `calc(100% - 44px)`,
+          top: getHandlePosition(0),
         }}
       />
     </>

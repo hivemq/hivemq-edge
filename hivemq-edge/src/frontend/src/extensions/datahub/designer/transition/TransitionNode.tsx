@@ -6,6 +6,7 @@ import { NodeProps, Position } from 'reactflow'
 import { DataHubNodeType, FsmState, TransitionData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -29,7 +30,7 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
         position={Position.Left}
         id={TransitionData.Handle.BEHAVIOR_POLICY}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 48px `,
+          top: getHandlePosition(0),
         }}
       />
       <CustomHandle
@@ -39,7 +40,7 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
         isConnectable={1}
         className={className}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 48px `,
+          top: getHandlePosition(0),
         }}
       />
     </>

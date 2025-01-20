@@ -7,6 +7,7 @@ import { DataHubNodeType, FunctionData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
 import { renderResourceName } from '@datahub/utils/node.utils.ts'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -28,7 +29,7 @@ export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
         position={Position.Right}
         id="source"
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 48px `,
+          top: getHandlePosition(0),
         }}
       />
     </>

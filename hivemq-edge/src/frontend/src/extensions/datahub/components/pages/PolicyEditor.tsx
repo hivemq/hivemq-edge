@@ -25,6 +25,7 @@ import { CustomEdgeTypes, CustomNodeTypes } from '@datahub/config/nodes.config.t
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
+import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -179,7 +180,7 @@ const PolicyEditor: FC = () => {
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
-          snapGrid={[25, 25]}
+          snapGrid={[CANVAS_GRID, CANVAS_GRID]}
           onDragOver={onDragOver}
           onDrop={onDrop}
           isValidConnection={checkValidity}

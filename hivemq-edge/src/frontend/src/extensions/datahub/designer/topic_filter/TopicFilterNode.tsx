@@ -6,6 +6,7 @@ import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
 import { TopicFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
   const { id, data, type } = props
@@ -27,7 +28,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
           id={`${t}-${index}`}
           key={`${id}-${t}-${index}`}
           style={{
-            top: `calc(var(--chakra-space-3) + 12px + 48px + ${index * 24}px + ${0.5 * index}rem)`,
+            top: getHandlePosition(index),
           }}
         />
       ))}

@@ -7,6 +7,7 @@ import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { NodeWrapper } from '@datahub/components/nodes/NodeWrapper.tsx'
 import NodeParams from '@datahub/components/helpers/NodeParams.tsx'
 import { CustomHandle } from '@datahub/components/nodes/CustomHandle.tsx'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -26,17 +27,19 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           <VStack data-testid="node-model" alignItems="flex-start">
             <NodeParams value={functionId || t('error.noSet.select')} />
             {isSerialiser && (
-              <Text fontSize="xs">{t('workspace.handles.operation', { context: OperationData.Handle.SCHEMA })}</Text>
+              <Text fontSize="xs" h={6} alignContent="center">
+                {t('workspace.handles.operation', { context: OperationData.Handle.SCHEMA })}
+              </Text>
             )}
             {isTransform && (
               <>
-                <Text fontSize="xs">
+                <Text fontSize="xs" h={6} alignContent="center">
                   {t('workspace.handles.operation', { context: OperationData.Handle.DESERIALISER })}
                 </Text>
-                <Text fontSize="xs">
+                <Text fontSize="xs" h={6} alignContent="center">
                   {t('workspace.handles.operation', { context: OperationData.Handle.FUNCTION })}
                 </Text>
-                <Text fontSize="xs">
+                <Text fontSize="xs" h={6} alignContent="center">
                   {t('workspace.handles.operation', { context: OperationData.Handle.SERIALISER })}
                 </Text>
               </>
@@ -49,8 +52,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
         position={Position.Left}
         id={OperationData.Handle.INPUT}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 44px)`,
-          // background: 'green',
+          top: getHandlePosition(0),
         }}
       />
       {!metadata?.isTerminal && (
@@ -60,8 +62,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           id={OperationData.Handle.OUTPUT}
           isConnectable={1}
           style={{
-            top: `calc(var(--chakra-space-3) + 12px + 44px)`,
-            // background: 'green',
+            top: getHandlePosition(0),
           }}
         />
       )}
@@ -71,7 +72,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           position={Position.Left}
           id={OperationData.Handle.SCHEMA}
           style={{
-            top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
+            top: getHandlePosition(1),
             background: 'var(--chakra-colors-white)',
             borderColor: 'var(--chakra-colors-black)',
             borderWidth: 2,
@@ -85,8 +86,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             position={Position.Left}
             id={OperationData.Handle.DESERIALISER}
             style={{
-              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px)`,
-              // background: 'green',
+              top: getHandlePosition(1),
               background: 'var(--chakra-colors-white)',
               borderColor: 'var(--chakra-colors-black)',
               borderWidth: 2,
@@ -97,7 +97,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             position={Position.Left}
             id={OperationData.Handle.FUNCTION}
             style={{
-              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 1.5rem)`,
+              top: getHandlePosition(2),
               background: 'var(--chakra-colors-white)',
               borderColor: 'var(--chakra-colors-black)',
               borderWidth: 2,
@@ -108,7 +108,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
             position={Position.Left}
             id={OperationData.Handle.SERIALISER}
             style={{
-              top: `calc(var(--chakra-space-3) + 12px + 16px + 1rem + 44px + 3rem)`,
+              top: getHandlePosition(3),
               background: 'var(--chakra-colors-white)',
               borderColor: 'var(--chakra-colors-black)',
               borderWidth: 2,

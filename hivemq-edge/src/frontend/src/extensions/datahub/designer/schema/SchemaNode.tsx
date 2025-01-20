@@ -7,6 +7,7 @@ import { DataHubNodeType, SchemaData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
 import { renderResourceName } from '@datahub/utils/node.utils.ts'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -29,7 +30,7 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
         position={Position.Right}
         id="source"
         style={{
-          top: `calc(100% - 44px)`,
+          top: getHandlePosition(0),
         }}
       />
     </>

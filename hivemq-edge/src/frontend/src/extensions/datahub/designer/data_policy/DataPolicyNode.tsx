@@ -6,6 +6,7 @@ import { HStack, Text, VStack } from '@chakra-ui/react'
 import { DataHubNodeType, DataPolicyData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import PolicyToolbar from '@datahub/components/toolbar/PolicyToolbar.tsx'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -16,18 +17,20 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.DATA_POLICY}/${id}`} {...props} toolbar={<PolicyToolbar />}>
         <HStack justifyContent="space-between">
           <VStack alignItems="flex-start" data-testid="node-model">
-            <Text fontSize="xs">
+            <Text fontSize="xs" h={6} alignContent="center">
               {t('workspace.handles.validation', { context: DataPolicyData.Handle.TOPIC_FILTER })}
             </Text>
-            <Text fontSize="xs">
+            <Text fontSize="xs" h={6} alignContent="center">
               {t('workspace.handles.validation', { context: DataPolicyData.Handle.VALIDATION })}
             </Text>
           </VStack>
           <VStack alignItems="flex-end" data-testid="node-model">
-            <Text fontSize="xs">
+            <Text fontSize="xs" h={6} alignContent="center">
               {t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}
             </Text>
-            <Text fontSize="xs">{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}</Text>
+            <Text fontSize="xs" h={6} alignContent="center">
+              {t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}
+            </Text>
           </VStack>
         </HStack>
       </NodeWrapper>
@@ -36,7 +39,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         position={Position.Left}
         id={DataPolicyData.Handle.TOPIC_FILTER}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 44px)`,
+          top: getHandlePosition(),
           borderColor: 'var(--chakra-colors-black)',
         }}
       />
@@ -46,7 +49,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         id={DataPolicyData.Handle.VALIDATION}
         className={DataPolicyData.Handle.VALIDATION}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 16px + 0.5rem + 44px)`,
+          top: getHandlePosition(1),
           background: 'var(--chakra-colors-white)',
           borderColor: 'var(--chakra-colors-black)',
           borderWidth: 2,
@@ -58,8 +61,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         id={DataPolicyData.Handle.ON_SUCCESS}
         className={DataPolicyData.Handle.ON_SUCCESS}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 44px)`,
-          // background: 'green',
+          top: getHandlePosition(),
         }}
         isConnectable={1}
       />
@@ -69,7 +71,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         id={DataPolicyData.Handle.ON_ERROR}
         className={DataPolicyData.Handle.ON_ERROR}
         style={{
-          top: `calc(var(--chakra-space-3) + 12px + 16px + 0.5rem + 44px)`,
+          top: getHandlePosition(1),
         }}
         isConnectable={1}
       />

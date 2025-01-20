@@ -6,6 +6,7 @@ import { ClientTag } from '@/components/MQTT/EntityTag.tsx'
 
 import { ClientFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
+import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
 export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
   const { id, data, type } = props
@@ -26,7 +27,7 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
           id={`${id}-${index}`}
           key={`${id}-${client}-${index}`}
           style={{
-            top: `calc(var(--chakra-space-3) + 12px + 48px + ${index * 24}px + ${0.5 * index}rem)`,
+            top: getHandlePosition(index),
           }}
         />
       ))}
