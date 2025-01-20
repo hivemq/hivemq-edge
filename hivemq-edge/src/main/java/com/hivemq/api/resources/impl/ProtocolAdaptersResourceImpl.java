@@ -747,7 +747,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getAdapterNorthboundMappings(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
-                .map(adapter -> adapter.getFromEdgeMappings()
+                .map(adapter -> adapter.getNorthboundMappings()
                         .stream()
                         .map(NorthboundMappingModel::from)
                         .collect(Collectors.toList()))
@@ -763,7 +763,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<NorthboundMappingModel> northboundMappingListModels = protocolAdapterManager.getProtocolAdapters()
                 .values()
                 .stream()
-                .flatMap(adapter -> adapter.getFromEdgeMappings().stream().map(NorthboundMappingModel::from))
+                .flatMap(adapter -> adapter.getNorthboundMappings().stream().map(NorthboundMappingModel::from))
                 .collect(Collectors.toList());
         return Response.status(200).entity(new NorthboundMappingListModel(northboundMappingListModels)).build();
     }
@@ -775,7 +775,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getProtocolAdapters()
                         .values()
                         .stream()
-                        .flatMap(adapter -> adapter.getToEdgeMappings().stream().map(SouthboundMapping::toModel))
+                        .flatMap(adapter -> adapter.getSouthboundMappings().stream().map(SouthboundMapping::toModel))
                         .collect(Collectors.toList());
         return Response.status(200).entity(new SouthboundMappingList().items(southboundMappingModels)).build();
     }
@@ -823,7 +823,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getAdapterSouthboundMappings(final @NotNull String adapterId) {
         return protocolAdapterManager.getAdapterById(adapterId)
-                .map(adapter -> adapter.getToEdgeMappings()
+                .map(adapter -> adapter.getSouthboundMappings()
                         .stream()
                         .map(SouthboundMapping::toModel)
                         .collect(Collectors.toList()))

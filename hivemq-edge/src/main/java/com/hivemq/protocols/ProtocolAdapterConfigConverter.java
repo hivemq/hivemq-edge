@@ -84,7 +84,7 @@ public class ProtocolAdapterConfigConverter {
                 tags);
     }
 
-    private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
+    public @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
             final @NotNull String protocolId) {
         final @NotNull Optional<ProtocolAdapterFactory<?>> factoryOptional =
                 protocolAdapterFactoryManager.get(protocolId);

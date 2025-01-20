@@ -34,11 +34,9 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
-import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
@@ -59,7 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -102,11 +99,9 @@ public class ProtocolAdapterManager {
 
     @Inject
     public ProtocolAdapterManager(
-            final @NotNull ConfigurationService configurationService,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ModuleServicesImpl moduleServices,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull ModuleLoader moduleLoader,
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull EventService eventService,
             final @NotNull ConfigPersistence configPersistence,
@@ -495,7 +490,7 @@ public class ProtocolAdapterManager {
         final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(
                 adapterId,
                 adapterType,
-                adapterInformationOptional.get().getCurrentConfigVersion(),
+                configConverter.getProtocolAdapterFactory(adapterType).getInformation().getCurrentConfigVersion(),
                 protocolSpecificAdapterConfig,
                 List.of(),
                 List.of(),
