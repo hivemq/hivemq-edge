@@ -4627,7 +4627,7 @@ components:
           format: int64
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
-          maximum: 4294967295
+#          maximum: 4294967295 too big for Java long
           minimum: 0
         status:
           $ref: '#/components/schemas/Status'
