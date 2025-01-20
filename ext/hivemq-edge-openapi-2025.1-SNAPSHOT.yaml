@@ -501,6 +501,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
+        schema:
+          type: string
       responses:
         "204":
           description: "Success, no response body"
@@ -622,6 +628,12 @@ paths:
         in: path
         name: policyId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       requestBody:
@@ -1213,6 +1225,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
+        schema:
+          type: string
       responses:
         "204":
           description: "Success, no response body"
@@ -1346,6 +1364,12 @@ paths:
         in: path
         name: policyId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       requestBody:
@@ -1881,6 +1905,13 @@ paths:
         Creates a schema
 
       operationId: createSchema
+      parameters:
+        - description: The entity tag
+          in: header
+          name: If-Match
+          required: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1889,7 +1920,7 @@ paths:
               type: JSON
               schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
             schema:
-              $ref: '#/components/schemas/Schema'
+              $ref: '#/components/schemas/PolicySchema'
         description: The schema that should be created.
         required: true
       responses:
@@ -1907,7 +1938,7 @@ paths:
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
                     createdAt: 2023-03-01T13:28:35.164Z
               schema:
-                $ref: '#/components/schemas/Schema'
+                $ref: '#/components/schemas/PolicySchema'
           description: Success
         "400":
           content:
@@ -1953,6 +1984,12 @@ paths:
         in: path
         name: schemaId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       responses:
@@ -2026,7 +2063,7 @@ paths:
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
                     createdAt: 2023-03-01T13:28:35.164Z
               schema:
-                $ref: '#/components/schemas/Schema'
+                $ref: '#/components/schemas/PolicySchema'
           description: Success
         "400":
           content:
@@ -2187,6 +2224,13 @@ paths:
     post:
       description: Creates a script
       operationId: createScript
+      parameters:
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -2266,6 +2310,12 @@ paths:
         in: path
         name: scriptId
         required: true
+        schema:
+          type: string
+      - description: The entity tag
+        in: header
+        name: If-Match
+        required: false
         schema:
           type: string
       responses:
@@ -2601,6 +2651,8 @@ paths:
                 $ref: '#/components/schemas/HealthStatus'
           description: Success
       summary: Endpoint to determine whether the gateway is considered UP
+      tags:
+        - Health Check Endpoint
   /api/v1/health/readiness:
     get:
       description: Endpoint to determine whether the gateway is considered ready.
@@ -2618,6 +2670,8 @@ paths:
                 $ref: '#/components/schemas/HealthStatus'
           description: Success
       summary: Endpoint to determine whether the gateway is considered ready
+      tags:
+        - Health Check Endpoint
   /api/v1/management/bridges:
     get:
       description: Get all bridges configured in the system.
@@ -4308,6 +4362,11 @@ paths:
       - Metrics
       - Metrics Endpoint
 components:
+  headers:
+    ETag:
+      description: 'Identifier for a specific version of a resource'
+      schema:
+        type: string
   schemas:
     Adapter:
       type: object
@@ -4565,10 +4624,10 @@ components:
             $ref: '#/components/schemas/BridgeSubscription'
         sessionExpiry:
           type: integer
-          format: int32
+          format: int64
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
-          maximum: 4294967295
+#          maximum: 4294967295 too big for Java long
           minimum: 0
         status:
           $ref: '#/components/schemas/Status'
@@ -5586,7 +5645,7 @@ components:
       - AT_MOST_ONCE
       - AT_LEAST_ONCE
       - EXACTLY_ONCE
-    Schema:
+    PolicySchema:
       type: object
       properties:
         arguments:
@@ -5627,7 +5686,7 @@ components:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/Schema'
+            $ref: '#/components/schemas/PolicySchema'
     SchemaReference:
       type: object
       description: A schema reference is a unique identifier for a schema.

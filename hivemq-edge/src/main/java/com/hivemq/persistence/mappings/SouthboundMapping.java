@@ -15,11 +15,9 @@
  */
 package com.hivemq.persistence.mappings;
 
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class SouthboundMapping implements InternalWritingContext {
 
@@ -50,6 +48,24 @@ public class SouthboundMapping implements InternalWritingContext {
     public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }
+
+    public static @NotNull SouthboundMapping fromModel(
+            final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping,
+            final @NotNull String schema) {
+        return new SouthboundMapping(southboundMapping.getTagName(),
+                southboundMapping.getTopicFilter(),
+                southboundMapping.getFieldMapping() != null ?
+                        FieldMapping.fromModel(southboundMapping.getFieldMapping()) :
+                        FieldMapping.DEFAULT_FIELD_MAPPING,
+                schema);
+    }
+
+    public @NotNull com.hivemq.edge.api.model.SouthboundMapping toModel() {
+        return new com.hivemq.edge.api.model.SouthboundMapping().topicFilter(this.getTopicFilter())
+                .tagName(this.getTagName())
+                .fieldMapping(this.fieldMapping.toModel());
+    }
+
 
     @Override
     public @NotNull String getSchema() {

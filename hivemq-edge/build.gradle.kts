@@ -1,12 +1,22 @@
 import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins.withId("com.hivemq.edge-version-updater") {
     project.ext.set(
         "versionUpdaterFiles",
         arrayOf("src/main/resources/hivemq-edge-configuration.json", "gradle.properties")
     )
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.openapitools:openapi-generator-gradle-plugin")
+    }
 }
 
 plugins {
@@ -26,10 +36,10 @@ plugins {
     alias(libs.plugins.spotbugs)
     alias(libs.plugins.forbiddenApis)
 
+    alias(libs.plugins.openapi.generator)
 
     id("jacoco")
     id("pmd")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.27"
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
 
@@ -184,10 +194,12 @@ dependencies {
     implementation(libs.jackson.jaxrs.json.provider)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.databind.nullable)
     implementation(libs.jackson.dataformat.xml)
 
     //Open API
     implementation(libs.swagger.annotations)
+    implementation(libs.swagger.jaxrs)
 
     //JWT
     implementation(libs.jose4j)
@@ -260,40 +272,35 @@ tasks.test {
 }
 
 /* ******************** OpenAPI ******************** */
+val buildDirectory = layout.buildDirectory.get()
+tasks.register<GenerateTask>("genJaxRs") {
+    inputSpec.set("${projectDir}/../ext/hivemq-edge-openapi-2025.1-SNAPSHOT.yaml")
+    outputDir.set("${buildDirectory}/generated/openapi")
+    generatorName.set("jaxrs-spec")
+    apiPackage.set("com.hivemq.edge.api")
+    modelPackage.set("com.hivemq.edge.api.model")
+    invokerPackage.set("com.hivemq.edge.api")
+    generateApiTests.set(false)
+    configOptions.set(
+        hashMapOf(
+            "dateLibrary" to "java8",
+            "generateBuilders" to "true",
+            "generatePom" to "false",
+            "interfaceOnly" to "true",
+            "useTags" to "true",
+            "returnResponse" to "true",
+            "openApiNullable" to  "false"
+        )
+    )
+}
 
-tasks.resolve {
-    outputDir = temporaryDir
-    outputFileName = "hivemq-edge-openapi"
-    outputFormat = io.swagger.v3.plugins.gradle.tasks.ResolveTask.Format.YAML
-    classpath = sourceSets.main.get().runtimeClasspath
-    resourcePackages = setOf("com.hivemq.api.resources")
-    openApiFile = file("src/openapi/openapi-base.yaml")
-    sortOutput = true
-
-    doFirst {
-        delete(outputDir)
-        mkdir(outputDir)
+sourceSets {
+    main {
+        java {
+            srcDirs("${buildDirectory}/generated/openapi/src/gen/java")
+            srcDirs("${buildDirectory}/generated/openapi/src/main/java")
+        }
     }
-}
-
-val openApiSpec by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI yaml specification"
-
-    from(tasks.resolve)
-    into(layout.buildDirectory.dir("openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
-}
-
-
-val openApiDoc by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI html documentation"
-
-    from(openApiSpec)
-    from("src/openapi/index.html")
-    into(layout.buildDirectory.dir("docs/openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
 }
 
 /* ******************** distribution ******************** */
@@ -307,6 +314,10 @@ tasks.jar {
         "HiveMQ-Edge-Version" to project.version,
         "Main-Class" to "com.hivemq.HiveMQEdgeMain"
     )
+}
+
+tasks.compileJava {
+    dependsOn(tasks.named("genJaxRs"))
 }
 
 tasks.shadowJar {
@@ -400,6 +411,7 @@ license {
     exclude("*.json")
     exclude("**/*.xml")
     exclude("**/RollingList.java")
+    exclude("**/api/**/*.java")
 }
 
 downloadLicenses {

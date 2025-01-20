@@ -26,19 +26,19 @@ public interface TopicFilterPersistence {
     void sync();
 
     @NotNull
-    TopicFilterAddResult addTopicFilter(@NotNull TopicFilter domainTag);
+    TopicFilterAddResult addTopicFilter(@NotNull TopicFilterPojo domainTag);
 
-    @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilter topicFilter);
+    @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilterPojo topicFilter);
 
-    @NotNull TopicFilterUpdateResult updateAllTopicFilters(@NotNull List<TopicFilter> topicFilter);
+    @NotNull TopicFilterUpdateResult updateAllTopicFilters(@NotNull List<TopicFilterPojo> topicFilter);
 
 
     @NotNull
     TopicFilterDeleteResult deleteTopicFilter(@NotNull String filter);
 
     @NotNull
-    List<TopicFilter> getTopicFilters();
+    List<TopicFilterPojo> getTopicFilters();
 
     @Nullable
-    TopicFilter getTopicFilter(@NotNull String filter);
+    TopicFilterPojo getTopicFilter(@NotNull String filter);
 }

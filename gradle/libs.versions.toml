@@ -43,9 +43,12 @@ slf4j = "2.0.16"
 spotBugs = "4.8.5"
 stefanBirkner-systemRules = "1.19.0"
 swagger-annotations = "2.2.27"
+swagger-jaxrs = "1.6.14"
 victools-jsonschema = "4.37.0"
 wiremock = "3.0.1"
 zeroAllocationHashing = "0.16"
+openApiGeneratorVersion="7.10.0"
+jacksonDatabindNullable="0.2.6"
 
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
@@ -77,6 +80,7 @@ hivemq-extensionSdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref 
 hivemq-mqttClient = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqttClient" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref = "jackson" }
@@ -115,6 +119,7 @@ shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", versio
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 stefanBirkner-systemRules = { module = "com.github.stefanbirkner:system-rules", version.ref = "stefanBirkner-systemRules" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
+swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools-jsonschema" }
 victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools-jsonschema" }
 wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }
@@ -133,6 +138,7 @@ license = { id = "com.github.hierynomus.license", version = "0.16.1" }
 shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
 forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.8" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openApiGeneratorVersion" }
 
 
 
