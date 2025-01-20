@@ -20,17 +20,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -40,7 +34,6 @@ import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
@@ -50,7 +43,6 @@ import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -655,168 +647,6 @@ public class ProtocolAdapterManager {
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .collect(Collectors.toList()));
     }
-
-
-    public static class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig>
-            implements ProtocolAdapterInput<T> {
-        public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
-        private final String adapterId;
-        private final @NotNull T configObject;
-        private final @NotNull String version;
-        private final @NotNull ProtocolAdapterState protocolAdapterState;
-        private final @NotNull ModuleServices moduleServices;
-        private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-        private final @NotNull List<Tag> tags;
-        private final @NotNull List<PollingContext> pollingContexts;
-
-        public ProtocolAdapterInputImpl(
-                final @NotNull String adapterId,
-                final @NotNull T configObject,
-                final @NotNull List<Tag> tags,
-                final @NotNull List<NorthboundMapping> northboundMappings,
-                final @NotNull String version,
-                final @NotNull ProtocolAdapterState protocolAdapterState,
-                final @NotNull ModuleServices moduleServices,
-                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
-            this.adapterId = adapterId;
-            this.configObject = configObject;
-            this.version = version;
-            this.protocolAdapterState = protocolAdapterState;
-            this.moduleServices = moduleServices;
-            this.protocolAdapterMetricsService = protocolAdapterMetricsService;
-            this.tags = tags;
-            this.pollingContexts = northboundMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
-        }
-
-        @Override
-        public @NotNull String getAdapterId() {
-            return adapterId;
-        }
-
-        @Override
-        public @NotNull T getConfig() {
-            return configObject;
-        }
-
-        @Override
-        public @NotNull String getVersion() {
-            return version;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterState getProtocolAdapterState() {
-            return protocolAdapterState;
-        }
-
-        @Override
-        public @NotNull ModuleServices moduleServices() {
-            return moduleServices;
-        }
-
-        @Override
-        public @NotNull AdapterFactories adapterFactories() {
-            return ADAPTER_FACTORIES;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsHelper() {
-            return protocolAdapterMetricsService;
-        }
-
-        @Override
-        public @NotNull List<Tag> getTags() {
-            return tags;
-        }
-
-        @Override
-        public @NotNull List<PollingContext> getPollingContexts() {
-            return pollingContexts;
-        }
-    }
-
-    private static class PollingContextWrapper implements PollingContext {
-        private final @NotNull String topic;
-        private final @NotNull String tagName;
-        private final @NotNull MessageHandlingOptions messageHandlingOptions;
-        private final boolean includeTagNames;
-        private final boolean includeTimestamp;
-        private final @NotNull List<MqttUserProperty> userProperties;
-        private final int maxQoS;
-        private final long messageExpiryInterval;
-
-        public PollingContextWrapper(
-                final String topic,
-                final String tagName,
-                final MessageHandlingOptions messageHandlingOptions,
-                final boolean includeTagNames,
-                final boolean includeTimestamp,
-                final List<MqttUserProperty> userProperties,
-                final int maxQoS,
-                final long messageExpiryInterval) {
-            this.topic = topic;
-            this.tagName = tagName;
-            this.messageHandlingOptions = messageHandlingOptions;
-            this.includeTagNames = includeTagNames;
-            this.includeTimestamp = includeTimestamp;
-            this.userProperties = userProperties;
-            this.maxQoS = maxQoS;
-            this.messageExpiryInterval = messageExpiryInterval;
-        }
-
-        @Override
-        public @NotNull String getMqttTopic() {
-            return topic;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
-        }
-
-        @Override
-        public int getMqttQos() {
-            return maxQoS;
-        }
-
-        @Override
-        public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-            return messageHandlingOptions;
-        }
-
-        @Override
-        public @NotNull Boolean getIncludeTimestamp() {
-            return includeTimestamp;
-        }
-
-        @Override
-        public @NotNull Boolean getIncludeTagNames() {
-            return includeTagNames;
-        }
-
-        @Override
-        public @NotNull List<MqttUserProperty> getUserProperties() {
-            return userProperties;
-        }
-
-        @Override
-        public @Nullable Long getMessageExpiryInterval() {
-            return messageExpiryInterval;
-        }
-
-        public static @NotNull PollingContextWrapper from(final NorthboundMapping northboundMapping) {
-            return new PollingContextWrapper(
-                    northboundMapping.getMqttTopic(),
-                    northboundMapping.getTagName(),
-                    northboundMapping.getMessageHandlingOptions(),
-                    northboundMapping.getIncludeTagNames(),
-                    northboundMapping.getIncludeTimestamp(),
-                    List.copyOf(northboundMapping.getUserProperties()),
-                    northboundMapping.getMqttQos(),
-                    northboundMapping.getMessageExpiryInterval()
-            );
-        }
-    }
-
 
     private static void syncFuture(final @NotNull Future future){
         try {
