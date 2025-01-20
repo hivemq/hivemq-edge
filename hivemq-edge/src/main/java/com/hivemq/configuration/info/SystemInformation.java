@@ -98,4 +98,9 @@ public interface SystemInformation {
      */
     boolean isEmbedded();
 
+    /**
+     * @return the interval between refreshing config files, 0 means no refreshing
+     */
+    long configRefreshIntervalInMs();
+
 }

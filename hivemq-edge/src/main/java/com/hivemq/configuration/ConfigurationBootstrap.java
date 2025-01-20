@@ -92,7 +92,11 @@ public class ConfigurationBootstrap {
                 new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                 new InternalConfigurator(configurationService.internalConfigurationService()));
 
-        configFileReader.applyConfig();
+        if (systemInformation.configRefreshIntervalInMs() <= 0) {
+            configFileReader.applyConfig();
+        } else {
+            configFileReader.applyConfigAndWatch(systemInformation.configRefreshIntervalInMs());
+        }
         configurationService.setConfigFileReaderWriter(configFileReader);
         return configurationService;
     }

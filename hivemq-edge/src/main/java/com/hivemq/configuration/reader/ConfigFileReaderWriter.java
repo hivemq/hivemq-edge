@@ -88,7 +88,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
     private final @NotNull ModuleConfigurator moduleConfigurator;
     private final @NotNull InternalConfigurator internalConfigurator;
-    protected @NotNull HiveMQConfigEntity configEntity;
+    protected volatile @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
@@ -138,12 +138,18 @@ public class ConfigFileReaderWriter {
         if(scheduledExecutorService != null) {
             throw new IllegalStateException("Config watch was already started");
         }
-        final long interval = 0 >= checkIntervalInMs ? checkIntervalInMs : 0;
+        final long interval = (checkIntervalInMs > 0) ? checkIntervalInMs : 0;
         log.info("Rereading config file every {} ms", interval);
+
+        applyConfig();
 
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutorService.schedule(this::readConfigFromXML, interval, TimeUnit.MILLISECONDS);
+        scheduledExecutorService.schedule(() -> {
+            final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML();
+            this.configEntity = hiveMQConfigEntity;
+            setConfiguration(hiveMQConfigEntity);
+        }, interval, TimeUnit.MILLISECONDS);
         this.scheduledExecutorService = scheduledExecutorService;
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
     }
@@ -277,13 +283,14 @@ public class ConfigFileReaderWriter {
     }
 
     private @NotNull HiveMQConfigEntity readConfigFromXML() {
+
         if (configurationFile.file().isEmpty()) {
             log.error("No configuration file present. Shutting down HiveMQ Edge.");
             throw new UnrecoverableException(false);
         }
 
         final File configFile = configurationFile.file().get();
-        log.debug("Reading configuration file {}", configFile);
+        log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = new ArrayList<>();
 
         synchronized (lock) {
@@ -381,9 +388,10 @@ public class ConfigFileReaderWriter {
 
 
         if (configResults.containsValue(Configurator.ConfigResult.NEEDS_RESTART)) {
+            System.out.println(config);
             log.error("RESTART!!!!!");
         } else {
-            log.info("Config reloaded");
+            log.error("Config reloaded");
         }
 
     }
