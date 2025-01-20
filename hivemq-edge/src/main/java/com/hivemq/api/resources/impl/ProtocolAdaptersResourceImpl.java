@@ -302,9 +302,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
         try {
-            protocolAdapterManager.addAdapterWithoutTags(adapterType,
+            protocolAdapterManager.addAdapter(new ProtocolAdapterConfig(
                     adapter.getId(),
-                    (LinkedHashMap) adapter.getConfig());
+                    adapterType,
+                    protocolAdapterType.get().getCurrentConfigVersion(),
+                    configConverter.convertAdapterConfig(adapterType, (LinkedHashMap) adapter.getConfig(), protocolAdapterManager.writingEnabled()),
+                    List.of(),
+                    List.of(),
+                    List.of()));
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -336,7 +341,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final Map<String, Object> config = (LinkedHashMap) adapter.getConfig();
         try {
-            protocolAdapterManager.updateAdapterConfig(adapter.getType(), adapterId, config);
+            protocolAdapterManager.updateAdapterConfig(
+                    adapter.getType(),
+                    adapterId,
+                    configConverter.convertAdapterConfig(
+                            adapter.getType(),
+                            config,
+                            protocolAdapterManager.writingEnabled()));
         } catch (final Exception e) {
             log.error("Exception during update of adapter '{}'.", adapterId);
             log.debug("Original Exception:", e);

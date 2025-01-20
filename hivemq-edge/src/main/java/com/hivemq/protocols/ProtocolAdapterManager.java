@@ -473,41 +473,12 @@ public class ProtocolAdapterManager {
         configPersistence.updateAdapter(protocolAdapterConfig);
     }
 
-    //TODO: move into resource
-    public synchronized @NotNull CompletableFuture<Void> addAdapterWithoutTags(
-            final @NotNull String adapterType,
-            final @NotNull String adapterId,
-            final @NotNull Map<String, Object> config) {
-        Preconditions.checkNotNull(adapterType);
-        Preconditions.checkNotNull(adapterId);
-        Preconditions.checkNotNull(config);
-
-        final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
-
-        // we can not add toMappings as we do not have field mappings here yet.
-        // actually this is correct from the user workflow
-        final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(
-                adapterId,
-                adapterType,
-                configConverter.getProtocolAdapterFactory(adapterType).getInformation().getCurrentConfigVersion(),
-                protocolSpecificAdapterConfig,
-                List.of(),
-                List.of(),
-                List.of());
-
-        return addAdapter(protocolAdapterConfig);
-    }
-
-
     public boolean updateAdapterConfig(
             final @NotNull String adapterType,
             final @NotNull String adapterId,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
-            final ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig =
-                    configConverter.convertAdapterConfig(adapterType, config, writingEnabled());
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
                     adapterType,
                     oldInstance.getAdapterInformation().getCurrentConfigVersion(),
@@ -520,7 +491,7 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<Map<String, Object>> tags) {
+    public boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<? extends Tag> tags) {
         Preconditions.checkNotNull(adapterId);
         return getAdapterById(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
@@ -530,7 +501,7 @@ public class ProtocolAdapterManager {
                     oldInstance.getConfigObject(),
                     oldInstance.getSouthboundMappings(),
                     oldInstance.getNorthboundMappings(),
-                    configConverter.mapsToTags(protocolId, tags));
+                    tags);
             updateAdapter(protocolAdapterConfig);
             return true;
         }).orElse(false);
@@ -597,13 +568,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<? extends Tag> tags = adapter.getTags();
+            final List<? extends Tag> tags = new ArrayList<>(adapter.getTags());
             final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
             if (!alreadyExists) {
-                final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
-                tagMaps.add(domainTag.toTagMap());
-                updateAdapterTags(adapterId, tagMaps);
+                tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(), domainTag));
+                updateAdapterTags(adapterId, tags);
                 return DomainTagAddResult.success();
             } else {
                 return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
@@ -617,10 +586,8 @@ public class ProtocolAdapterManager {
             final List<? extends Tag> tags = adapter.getTags();
             final boolean alreadyExists = tags.removeIf(t -> t.getName().equals(domainTag.getTagName()));
             if (alreadyExists) {
-                final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
-                tagMaps.add(domainTag.toTagMap());
-                updateAdapterTags(adapterId, tagMaps);
+                tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(), domainTag));
+                updateAdapterTags(adapterId, tags);
                 return DomainTagUpdateResult.success();
             } else {
                 return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
@@ -631,9 +598,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagUpdateResult updateDomainTags(
             final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
         return getAdapterById(adapterId).map(adapter -> {
-            final List<Map<String, Object>> tagMaps =
-                    domainTags.stream().map(DomainTag::toTagMap).collect(Collectors.toList());
-            updateAdapterTags(adapterId, tagMaps);
+            List<Tag> protocolTags = new ArrayList<>();
+            domainTags.forEach(domainTag ->
+                    protocolTags.add(configConverter
+                            .domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(), domainTag)));
+            updateAdapterTags(adapterId, protocolTags);
             return DomainTagUpdateResult.success();
         }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
     }
@@ -644,9 +613,7 @@ public class ProtocolAdapterManager {
             final List<? extends Tag> tags = adapter.getTags();
             final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
             if (exists) {
-                final List<Map<String, Object>> tagMaps =
-                        tags.stream().map(configConverter::convertagTagsToMaps).collect(Collectors.toList());
-                updateAdapterTags(adapterId, tagMaps);
+                updateAdapterTags(adapterId, tags);
                 return DomainTagDeleteResult.success();
             } else {
                 return DomainTagDeleteResult.failed(NOT_FOUND, adapterId);

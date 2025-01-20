@@ -88,11 +88,10 @@ class ProtocolAdapterManagerTest {
 
     @BeforeEach
     void setUp() {
-        protocolAdapterManager = new ProtocolAdapterManager(configurationService,
+        protocolAdapterManager = new ProtocolAdapterManager(
                 metricRegistry,
                 moduleServices,
                 objectMapper,
-                moduleLoader,
                 remoteService,
                 eventService,
                 configPersistence,
