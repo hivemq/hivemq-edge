@@ -5369,12 +5369,6 @@ components:
           type: integer
           format: int64
           description: The message expiry interval.
-        messageHandlingOptions:
-          type: string
-          description: How collected tags should or shouldn't be aggregated.
-          enum:
-          - MQTTMessagePerTag
-          - MQTTMessagePerSubscription
         tagName:
           type: string
           format: mqtt-tag
@@ -5392,7 +5386,6 @@ components:
       - includeTimestamp
       - maxQoS
       - messageExpiryInterval
-      - messageHandlingOptions
       - tagName
       - topic
     NorthboundMappingList:
