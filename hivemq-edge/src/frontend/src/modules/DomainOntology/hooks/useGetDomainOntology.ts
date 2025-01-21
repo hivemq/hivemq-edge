@@ -16,6 +16,9 @@ export const useGetDomainOntology = () => {
   const isLoading =
     northMappings.isLoading || southMappings.isLoading || tags.isLoading || bridges.isLoading || topicFilters.isLoading
 
+  const isError =
+    northMappings.isError || southMappings.isError || tags.isError || bridges.isError || topicFilters.isError
+
   const bridgeSubscriptions = useMemo(() => {
     const topics = [] as string[]
     const topicFilters = [] as string[]
@@ -45,6 +48,7 @@ export const useGetDomainOntology = () => {
     northMappings,
     southMappings,
     bridgeSubscriptions,
-    isLoading: isLoading,
+    isLoading,
+    isError,
   }
 }

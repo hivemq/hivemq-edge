@@ -5,7 +5,8 @@ import type { Tree, TreeLeaf } from '@/modules/DomainOntology/types.ts'
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 
 export const useGetTreeData = () => {
-  const { topicFilters, tags, northMappings, southMappings, bridgeSubscriptions, isLoading } = useGetDomainOntology()
+  const { topicFilters, tags, northMappings, southMappings, bridgeSubscriptions, isLoading, isError } =
+    useGetDomainOntology()
 
   const treeData = useMemo<Tree>(() => {
     const treeBridgeFilters =
@@ -100,7 +101,8 @@ export const useGetTreeData = () => {
   ])
 
   return {
-    treeData: treeData,
-    isLoading: isLoading,
+    treeData,
+    isLoading,
+    isError,
   }
 }

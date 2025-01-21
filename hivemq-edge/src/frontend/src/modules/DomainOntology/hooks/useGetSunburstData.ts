@@ -4,7 +4,7 @@ import { stratifyTopicTree, toTreeMetadata } from '@/modules/Workspace/utils/top
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 
 export const useGetSunburstData = () => {
-  const { topicFilters, tags, northMappings, bridgeSubscriptions, isLoading } = useGetDomainOntology()
+  const { topicFilters, tags, northMappings, bridgeSubscriptions, isLoading, isError } = useGetDomainOntology()
 
   const sunburstData = useMemo(() => {
     if (isLoading) return stratifyTopicTree([{ label: 'root', count: 1 }])
@@ -31,7 +31,8 @@ export const useGetSunburstData = () => {
   ])
 
   return {
-    sunburstData: sunburstData,
-    isLoading: isLoading,
+    sunburstData,
+    isLoading,
+    isError,
   }
 }

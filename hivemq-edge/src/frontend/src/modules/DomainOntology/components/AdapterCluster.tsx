@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { HierarchyNode } from 'd3-hierarchy'
 import { Text } from '@chakra-ui/react'
 
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import TreeChart from '@/modules/DomainOntology/components/charts/TreeChart.tsx'
 import ConfigurationPanel from '@/modules/DomainOntology/components/cluster/ConfigurationPanel.tsx'
 import { useGetClusterData } from '@/modules/DomainOntology/hooks/useGetClusterData.ts'
@@ -11,9 +12,11 @@ import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper
 
 const AdapterCluster: FC = () => {
   const { t } = useTranslation()
-  const { data, clusterKeys, setClusterKeys } = useGetClusterData()
+  const { data, clusterKeys, setClusterKeys, isError } = useGetClusterData()
 
   const arrayHelpStrings = t('ontology.charts.cluster.help', { returnObjects: true }) as unknown as string[]
+
+  if (isError) return <ErrorMessage type={t('ontology.error.loading')} />
 
   return (
     <ChartWrapper

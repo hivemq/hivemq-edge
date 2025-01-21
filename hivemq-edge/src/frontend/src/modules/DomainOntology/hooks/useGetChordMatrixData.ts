@@ -5,7 +5,8 @@ import type { DomainTag, NorthboundMapping, TopicFilter } from '@/api/__generate
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 
 export const useGetChordMatrixData = () => {
-  const { topicFilters, tags, northMappings, bridgeSubscriptions, southMappings, isLoading } = useGetDomainOntology()
+  const { topicFilters, tags, northMappings, bridgeSubscriptions, southMappings, isLoading, isError } =
+    useGetDomainOntology()
 
   const matrixData = useMemo(() => {
     // const allTopicFilters = topicFilters.data?.items?.map<string>((filter) => filter.topicFilter) || []
@@ -95,7 +96,8 @@ export const useGetChordMatrixData = () => {
   ])
 
   return {
-    matrixData: matrixData,
-    isLoading: isLoading,
+    matrixData,
+    isLoading,
+    isError,
   }
 }

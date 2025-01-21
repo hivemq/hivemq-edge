@@ -12,23 +12,27 @@ import {
 } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 
 export const useGetClusterData = () => {
-  const { data: listBridges, refetch: refetch1 } = useListBridges()
-  const { data: listAdapter, refetch: refetch2 } = useListProtocolAdapters()
+  const listBridges = useListBridges()
+  const listAdapters = useListProtocolAdapters()
   const [clusterKeys, setClusterKeys] = useState<string[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch1().finally()
-      refetch2().finally()
+      listBridges.refetch().finally()
+      listAdapters.refetch().finally()
     }, 2000)
     return () => clearInterval(interval)
-  }, [refetch1, refetch2])
+  }, [listAdapters, listBridges])
 
   const data = useMemo(() => {
     const dataSource: ClusterDataWrapper[] = [
-      ...(listAdapter?.map<ClusterDataWrapper>((e) => ({ category: TreeEntity.ADAPTER, payload: e, name: e.id })) ||
+      ...(listAdapters.data?.map<ClusterDataWrapper>((e) => ({
+        category: TreeEntity.ADAPTER,
+        payload: e,
+        name: e.id,
+      })) || []),
+      ...(listBridges.data?.map<ClusterDataWrapper>((e) => ({ category: TreeEntity.BRIDGE, payload: e, name: e.id })) ||
         []),
-      ...(listBridges?.map<ClusterDataWrapper>((e) => ({ category: TreeEntity.BRIDGE, payload: e, name: e.id })) || []),
     ]
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +51,13 @@ export const useGetClusterData = () => {
     }
 
     return clusterHierarchy
-  }, [clusterKeys, listAdapter, listBridges])
+  }, [clusterKeys, listAdapters.data, listBridges.data])
 
-  return { isLoading: true, data: data, clusterKeys, setClusterKeys }
+  return {
+    isLoading: listAdapters.isLoading || listBridges.isLoading,
+    isError: listAdapters.isError || listBridges.isError,
+    data: data,
+    clusterKeys,
+    setClusterKeys,
+  }
 }
