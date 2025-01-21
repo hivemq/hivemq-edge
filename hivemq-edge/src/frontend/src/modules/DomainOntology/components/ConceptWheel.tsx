@@ -14,6 +14,8 @@ const ConceptWheel: FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | undefined>()
   const isWildcard = Boolean(selectedTopic && selectedTopic.includes('#'))
 
+  const arrayHelpStrings = t('ontology.charts.conceptWheel.help', { returnObjects: true }) as unknown as string[]
+
   const onHandleSelect = (topic: string, event: MouseEvent) => {
     setSelectedTopic(topic)
     event.stopPropagation()
@@ -23,7 +25,10 @@ const ConceptWheel: FC = () => {
 
   return (
     <ChartWrapper
-      help={<Text>ddf</Text>}
+      helpTitle={t('ontology.charts.conceptWheel.title')}
+      help={arrayHelpStrings.map((line, index) => (
+        <Text key={`test-${index}`}>{line}</Text>
+      ))}
       footer={selectedTopic && !isWildcard && <MetadataExplorer topic={selectedTopic} />}
     >
       <SunburstChart data={sunburstData} onSelect={onHandleSelect} />

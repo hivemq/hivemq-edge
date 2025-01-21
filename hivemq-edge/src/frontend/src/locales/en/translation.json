@@ -1138,7 +1138,19 @@
           "This interactive graph simulates how the workspace can be automatically organised according to a list of dynamic properties",
           "Use the configuration to define partition keys"
         ]
+      },
+      "conceptWheel": {
+        "title": "About the Concept Wheel",
+        "help": [
+          "This interactive graph shows all the concepts being manipulated by this Edge instance.",
+          "Topics (and topic filters) and tags are distributed on a expanding circular tree, showing co-location and namespacing.",
+          "Note that visualisation is only effective if you are using segments for your naming convention.",
+          "Select segment from the wheel to access meta-information about the concept, especially their schema."
+        ]
       }
+    },
+    "error": {
+      "loading": "Error while loading the data"
     }
   }
 }
