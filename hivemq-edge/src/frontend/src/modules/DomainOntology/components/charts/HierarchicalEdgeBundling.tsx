@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
-import * as d3 from 'd3'
-import { Tree } from '@/modules/Ontology/ff.ts'
+import { hierarchy, cluster } from 'd3-hierarchy'
+import { lineRadial, curveBundle } from 'd3-shape'
+// import { interpolateRdBu } from 'd3-scale-chromatic'
+import { Tree, TreeLeaf } from '@/modules/DomainOntology/types.ts'
 
 type HierarchicalEdgeBundlingProps = {
   width: number
@@ -12,21 +14,20 @@ const BUNDLE_COEFF = 0.95
 const MARGIN = 200
 
 export const HierarchicalEdgeBundling = ({ width, height, data }: HierarchicalEdgeBundlingProps) => {
-  const hierarchy = useMemo(() => {
-    return d3.hierarchy(data).sum((d) => d.value)
+  const hierarchyxxx = useMemo(() => {
+    return hierarchy(data).sum((d) => d.value)
   }, [data])
 
   const radius = Math.min(width, height) / 2 - MARGIN
 
   const dendrogram = useMemo(() => {
-    const dendrogramGenerator = d3
-      .cluster<Tree>()
+    const dendrogramGenerator = cluster<Tree>()
       .size([360, radius])
       .separation((a, b) => {
         return a.parent == b.parent ? 1 : 6
       })
-    return dendrogramGenerator(hierarchy)
-  }, [radius, hierarchy])
+    return dendrogramGenerator(hierarchyxxx)
+  }, [radius, hierarchyxxx])
 
   const allNodes = dendrogram
     .descendants()
@@ -53,38 +54,43 @@ export const HierarchicalEdgeBundling = ({ width, height, data }: HierarchicalEd
       )
     })
 
-  const linksGenerator = d3
-    .lineRadial()
-    .radius((d) => d.y)
+  const linksGenerator = lineRadial<{ x: number; y: number }>()
+    .radius((d) => {
+      return d.y
+    })
     .angle((d) => (d.x / 180) * Math.PI)
-    .curve(d3.curveBundle.beta(BUNDLE_COEFF))
+    .curve(curveBundle.beta(BUNDLE_COEFF))
 
   // Compute a map from name to node.
   const nameToNodeMap = {}
   dendrogram.descendants().map((node) => {
+    // @ts-ignore
     nameToNodeMap[node.data.name] = node
   })
 
-  const gradColor = (t) => d3.interpolateRdBu(1 - t)
+  // const gradColor = (t: number) => interpolateRdBu(1 - t)
 
   const allEdges = dendrogram
     .descendants()
     .filter((node) => node.data.type === 'leaf' && node.data.links.length > 0)
-    .map((sourceNode, i) => {
-      return sourceNode.data.links.map((targetNodeName: string) => {
+    .map((sourceNode) => {
+      const leaf = sourceNode.data as TreeLeaf
+      return leaf.links.map((targetNodeName: string) => {
+        // @ts-ignore
         const traversedNodes = sourceNode.path(nameToNodeMap[targetNodeName])
 
         const traversedCoords = traversedNodes.map((node) => {
           return { x: node.x, y: node.y }
         })
 
-        console.log('XXXXXXX re', targetNodeName, i, sourceNode.data.name)
+        // console.log('XXXXXXX re', targetNodeName, i, sourceNode.data.name)
 
         return (
           <path
             key={`${sourceNode.data.name}-s-${targetNodeName}`}
             fill="none"
             stroke="red"
+            // @ts-ignore
             d={linksGenerator(traversedCoords)}
           />
         )
