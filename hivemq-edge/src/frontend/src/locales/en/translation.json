@@ -1121,5 +1121,24 @@
         "description_error": "The list of Topic Filters could not be updated on the Edge"
       }
     }
+  },
+  "ontology": {
+    "panel": {
+      "about": "About",
+      "cluster": "Workspace Cluster",
+      "wheel": "Concept Wheel",
+      "chord": "Relationship Chords",
+      "sankey": "Concept Flow",
+      "edge-blunting": "Topology Diagram (*)"
+    },
+    "charts": {
+      "cluster": {
+        "title": "About Workspace Clustering",
+        "help": [
+          "This interactive graph simulates how the workspace can be automatically organised according to a list of dynamic properties",
+          "Use the configuration to define partition keys"
+        ]
+      }
+    }
   }
 }
