@@ -83,13 +83,14 @@ public class ConfigFileReaderWriter {
     private boolean defaultBackupConfig = true;
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
     private final @NotNull List<Configurator<?>> configurators;
+    private final boolean testMode;
 
     private AtomicLong fileModified = new AtomicLong();
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
-
+        testMode = System.getProperty("hivemq.config.testing") != null
         this.configurationFile = configurationFile;
         this.configurators = configurators;
     }
@@ -117,7 +118,7 @@ public class ConfigFileReaderWriter {
                     .ifPresent(hiveMQConfigEntity -> {
                         this.configEntity = hiveMQConfigEntity;
                         if(!setConfiguration(hiveMQConfigEntity)) {
-                            if(System.getProperty("hivemq.config.testing") == null) {
+                            if(testMode) {
                                 log.error("Restarting because new cong can't be hot-reloaded");
                                 System.exit(0);
                             } else {
