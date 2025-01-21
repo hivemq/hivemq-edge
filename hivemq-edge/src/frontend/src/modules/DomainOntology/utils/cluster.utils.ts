@@ -25,6 +25,7 @@ export interface ClusterFunctionCatalog<T> {
 // const ggg = dataSource.map((e) => DateTime.fromISO(e.payload.status?.startedAt).toRelative())
 // const scale = scaleCluster().domain(ggg).range(['1', '2', '3', '4', '5'])
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const groupCatalog: ClusterFunctionCatalog<any>[] = [
   { key: 'runtime', name: 'Runtime Status', keyFunction: (e) => e.payload.status?.runtime },
   { key: 'type', name: 'Started at', keyFunction: (e) => DateTime.fromISO(e.payload.status?.startedAt).toRelative() },

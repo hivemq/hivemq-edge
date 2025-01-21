@@ -1,9 +1,8 @@
 import { ComponentType, FC, useCallback, useMemo } from 'react'
 import { labelValue, WidgetProps } from '@rjsf/utils'
-import { FormControl, FormLabel, HStack, Text } from '@chakra-ui/react'
-import { chakraComponents, GroupBase, OnChangeValue, OptionProps, Select } from 'chakra-react-select'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { ClusterFunctionCatalog } from '@/modules/DomainOntology/utils/cluster.utils.ts'
+import { chakraComponents, OnChangeValue, OptionProps, Select } from 'chakra-react-select'
+import { FormControl, FormLabel, HStack, Text } from '@chakra-ui/react'
 
 const Option: ComponentType<OptionProps> = ({ children, ...props }) => {
   return (
@@ -23,10 +22,9 @@ export const CompactSelectWidget: FC<WidgetProps> = (props) => {
     else return []
   }, [props.options.enumOptions])
 
-  const onChange = useCallback<(newValue: OnChangeValue) => void>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onChange = useCallback<(newValue: OnChangeValue<any, false>) => void>(
     (newValue) => {
-      console.log('XXXXXXXX props newValue', newValue)
-
       if (newValue) props.onChange(newValue.value)
     },
     [props]

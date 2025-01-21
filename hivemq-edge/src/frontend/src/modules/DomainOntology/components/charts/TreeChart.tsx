@@ -5,11 +5,13 @@ import { Box, chakra as Chakra } from '@chakra-ui/react'
 
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface TreeChartProps<T = any> {
   data: TreeDataProps<T>
   identity?: PropertyAccessor<TreeDataProps<T>, string> | undefined
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const NodeTooltip: FC<NodeTooltipProps<any>> = ({ node }) => {
   const theme = useTheme()
 
@@ -43,6 +45,7 @@ const NodeTooltip: FC<NodeTooltipProps<any>> = ({ node }) => {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const LinkTooltip: FC<LinkTooltipProps<any>> = ({ link }) => {
   const theme = useTheme()
 
