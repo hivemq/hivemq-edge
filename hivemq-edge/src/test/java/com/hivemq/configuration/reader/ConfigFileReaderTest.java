@@ -187,20 +187,7 @@ public class ConfigFileReaderTest {
 
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
                 configurationFile,
-                restrictionConfigurator,
-                securityConfigurator,
-                mqttConfigurator,
-                listenerConfigurator,
-                persistenceConfigurator,
-                mqttsnConfigurator,
-                bridgeConfigurator,
-                apiConfigurator,
-                unsConfigurator,
-                dynamicConfigConfigurator,
-                usageTrackingConfigurator,
-                protocolAdapterConfigurator,
-                moduleConfigurator,
-                internalConfigurator);
+                List.of());
         return configFileReader;
     }
 }

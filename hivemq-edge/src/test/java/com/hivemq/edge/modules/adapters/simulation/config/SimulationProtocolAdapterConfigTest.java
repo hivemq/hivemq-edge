@@ -272,20 +272,20 @@ class SimulationProtocolAdapterConfigTest {
 
         final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(
                 new ConfigurationFile(configFile),
-                restrictionConfigurator,
-                securityConfigurator,
-                mqttConfigurator,
-                listenerConfigurator,
-                persistenceConfigurator,
-                mqttsnConfigurator,
-                bridgeConfigurator,
-                apiConfigurator,
-                unsConfigurator,
-                dynamicConfigConfigurator,
-                usageTrackingConfigurator,
-                protocolAdapterConfigurator,
-                moduleConfigurator,
-                internalConfigurator);
+                List.of(restrictionConfigurator,
+                    securityConfigurator,
+                    mqttConfigurator,
+                    listenerConfigurator,
+                    persistenceConfigurator,
+                    mqttsnConfigurator,
+                    bridgeConfigurator,
+                    apiConfigurator,
+                    unsConfigurator,
+                    dynamicConfigConfigurator,
+                    usageTrackingConfigurator,
+                    protocolAdapterConfigurator,
+                    moduleConfigurator,
+                    internalConfigurator));
         return readerWriter.applyConfig();
     }
 }

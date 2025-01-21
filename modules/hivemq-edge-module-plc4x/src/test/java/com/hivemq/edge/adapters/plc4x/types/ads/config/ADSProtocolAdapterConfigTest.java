@@ -207,21 +207,7 @@ class ADSProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 
