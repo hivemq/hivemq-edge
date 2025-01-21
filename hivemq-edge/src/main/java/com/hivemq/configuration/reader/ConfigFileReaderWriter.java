@@ -92,9 +92,6 @@ public class ConfigFileReaderWriter {
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
     private final @NotNull List<Configurator<?>> configurators;
 
-    private final @NotNull AtomicLong fileModified = new AtomicLong();
-    private volatile @NotNull Map<Path, Long> fileModificationTimestamps;
-
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
@@ -103,7 +100,13 @@ public class ConfigFileReaderWriter {
     }
 
     public HiveMQConfigEntity applyConfig() {
-        final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(0).get();
+        if (configurationFile.file().isEmpty()) {
+            log.error("No configuration file present. Shutting down HiveMQ Edge.");
+            throw new UnrecoverableException(false);
+        }
+
+        final File configFile = configurationFile.file().get();
+        final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
         this.configEntity = hiveMQConfigEntity;
         setConfiguration(hiveMQConfigEntity);
         return hiveMQConfigEntity;
@@ -113,40 +116,62 @@ public class ConfigFileReaderWriter {
         if(scheduledExecutorService != null) {
             throw new IllegalStateException("Config watch was already started");
         }
+        if (configurationFile.file().isEmpty()) {
+            log.error("No configuration file present. Shutting down HiveMQ Edge.");
+            throw new UnrecoverableException(false);
+        }
+
+        final File configFile = configurationFile.file().get();
         final long interval = (checkIntervalInMs > 0) ? checkIntervalInMs : 0;
         log.info("Rereading config file every {} ms", interval);
+
+        final @NotNull AtomicLong fileModified = new AtomicLong();
+        final @NotNull Map<Path, Long> fileModificationTimestamps;
 
         HiveMQConfigEntity entity = applyConfig();
         fileModificationTimestamps = findFilesToWatch(entity);
 
+        AtomicLong fileModifiedTimestamp = new AtomicLong();
+        try {
+            fileModifiedTimestamp.set(Files.getLastModifiedTime(configFile.toPath()).toMillis());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read last modified time from " + configFile.getAbsolutePath(), e);
+        }
+
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutorService.scheduleAtFixedRate(() -> {
-            readConfigFromXML(fileModified.get())
-                    .ifPresent(hiveMQConfigEntity -> {
-                        boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
-                        this.configEntity = hiveMQConfigEntity;
-                        if(!devmode) {
-                            fileModificationTimestamps.entrySet().forEach(pathToTs -> {
-                                try {
-                                    if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
-                                        log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
-                                        System.exit(0);
-                                    }
-                                } catch (IOException e) {
-                                    throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
+            try {
+                final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+                if (modified > fileModified.get()) {
+                    fileModified.set(modified);
+                    final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
+                    final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
+                    this.configEntity = hiveMQConfigEntity;
+                    if(!devmode) {
+                        fileModificationTimestamps.entrySet().forEach(pathToTs -> {
+                            try {
+                                if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
+                                    log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                                    System.exit(0);
                                 }
-                            });
-                        }
-                        if(!setConfiguration(hiveMQConfigEntity)) {
-                            if(!devmode) {
-                                log.error("Restarting because new config can't be hot-reloaded");
-                                System.exit(0);
-                            } else {
-                                log.error("TESTMODE, NOT RESTARTING");
+                            } catch (IOException e) {
+                                throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
                             }
+                        });
+                    }
+                    if(!setConfiguration(hiveMQConfigEntity)) {
+                        if(!devmode) {
+                            log.error("Restarting because new config can't be hot-reloaded");
+                            System.exit(0);
+                        } else {
+                            log.error("TESTMODE, NOT RESTARTING");
                         }
-                    });
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }, 0, interval, TimeUnit.MILLISECONDS);
         this.scheduledExecutorService = scheduledExecutorService;
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
@@ -319,24 +344,7 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    private @NotNull Optional<HiveMQConfigEntity> readConfigFromXML(final long lastModifiedAfter) {
-
-        if (configurationFile.file().isEmpty()) {
-            log.error("No configuration file present. Shutting down HiveMQ Edge.");
-            throw new UnrecoverableException(false);
-        }
-
-        final File configFile = configurationFile.file().get();
-
-        try {
-            final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
-            if(modified <= lastModifiedAfter){
-                return Optional.empty();
-            }
-            fileModified.set(modified);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read last modified time from " + configFile.getAbsolutePath(), e);
-        }
+    private @NotNull HiveMQConfigEntity readConfigFromXML(final @NotNull File configFile) {
 
         log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = new ArrayList<>();
@@ -382,7 +390,7 @@ public class ConfigFileReaderWriter {
                 if (!validationErrors.isEmpty()) {
                     throw new JAXBException("Parsing failed");
                 }
-                return Optional.of(configEntity);
+                return configEntity;
 
             } catch (final JAXBException | IOException e) {
                 final StringBuilder messageBuilder = new StringBuilder();
