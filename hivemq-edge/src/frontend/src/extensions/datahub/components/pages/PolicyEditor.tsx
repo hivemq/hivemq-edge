@@ -46,7 +46,7 @@ const PolicyEditor: FC = () => {
     useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
-const edgeTypes = useMemo(() => CustomEdgeTypes, [])
+  const edgeTypes = useMemo(() => CustomEdgeTypes, [])
   const { isPolicyEditable } = usePolicyGuards()
 
   const checkValidity = useCallback(
