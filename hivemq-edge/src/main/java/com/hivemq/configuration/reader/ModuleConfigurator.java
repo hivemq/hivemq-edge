@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,15 +37,16 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull Map<String, Object> configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getModuleConfigs())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getModuleConfigs();
         this.initialized = true;
         //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
         final Map<String, Object> configMap = new HashMap<>();

@@ -22,6 +22,8 @@ import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.BridgeAuthenticationEntity;
 import com.hivemq.configuration.entity.bridge.BridgeMqttEntity;
 import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
@@ -68,15 +70,16 @@ public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
     }
 
     @Override
-    public ConfigResult setConfig(@NotNull final List<MqttBridgeEntity> configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getBridgeConfig())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(@NotNull final HiveMQConfigEntity config) {
+        this.configEntity = config.getBridgeConfig();
         initialized = true;
 
         for (final MqttBridgeEntity bridgeConfig : configEntity) {

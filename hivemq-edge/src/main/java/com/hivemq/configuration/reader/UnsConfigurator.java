@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.service.UnsConfigurationService;
@@ -36,15 +38,16 @@ public class UnsConfigurator implements Syncable<UnsConfigEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull UnsConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getUns())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getUns();
         this.initialized = true;
 
         if (configEntity == null) {

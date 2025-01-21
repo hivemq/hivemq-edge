@@ -15,10 +15,14 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.OptionEntity;
+import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class InternalConfigurator implements Configurator<InternalConfigEntity> {
 
@@ -32,15 +36,16 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull InternalConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getInternal())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getInternal();
         this.initialized = true;
 
         for (final OptionEntity optionEntity : configEntity.getOptions()) {

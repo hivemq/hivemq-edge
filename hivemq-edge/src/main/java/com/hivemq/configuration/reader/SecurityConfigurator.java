@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.SecurityConfigEntity;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -31,15 +33,16 @@ public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull SecurityConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getSecurityConfig())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getSecurityConfig();
         this.initialized = true;
 
         securityConfigurationService.setAllowServerAssignedClientId(configEntity.getAllowEmptyClientIdEntity().isEnabled());

@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -48,17 +50,17 @@ public class MqttConfigurator implements Configurator<MqttConfigEntity>{
         this.mqttConfigurationService = mqttConfigurationService;
     }
 
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getMqttConfig())) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
-    public ConfigResult setConfig(final @NotNull MqttConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
-        }
-        this.configEntity = configEntity;
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getMqttConfig();
         this.initialized = true;
 
         mqttConfigurationService.setRetainedMessagesEnabled(configEntity.getRetainedMessagesConfigEntity().isEnabled());

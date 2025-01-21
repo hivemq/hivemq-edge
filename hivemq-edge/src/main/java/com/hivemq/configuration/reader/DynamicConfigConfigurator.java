@@ -16,10 +16,13 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.DynamicConfigEntity;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.util.List;
 
 public class DynamicConfigConfigurator implements Configurator<DynamicConfigEntity> {
 
@@ -34,15 +37,16 @@ public class DynamicConfigConfigurator implements Configurator<DynamicConfigEnti
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull DynamicConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getGatewayConfig())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getGatewayConfig();
         this.initialized = true;
 
         dynamicConfigService.setConfigurationExportEnabled(

@@ -40,6 +40,7 @@ import util.TestConfigurationBootstrap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -78,21 +79,23 @@ public abstract class AbstractConfigWriterTest {
         when(apiConfigurator.setConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                restrictionConfigurator,
-                securityConfigurator,
-                mqttConfigurator,
-                listenerConfigurator,
-                persistenceConfigurator,
-                mqttsnConfigurator,
-                new BridgeConfigurator(configurationService.bridgeConfiguration()),
-                apiConfigurator,
-                new UnsConfigurator(configurationService.unsConfiguration()),
-                new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
-                new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
-                new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
-                new InternalConfigurator(configurationService.internalConfigurationService()));
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+                configurationFile,
+                List.of(
+                    restrictionConfigurator,
+                    securityConfigurator,
+                    mqttConfigurator,
+                    listenerConfigurator,
+                    persistenceConfigurator,
+                    mqttsnConfigurator,
+                    new BridgeConfigurator(configurationService.bridgeConfiguration()),
+                    apiConfigurator,
+                    new UnsConfigurator(configurationService.unsConfiguration()),
+                    new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
+                    new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
+                    new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
+                    new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
+                    new InternalConfigurator(configurationService.internalConfigurationService())));
         configFileReader.setDefaultBackupConfig(false);
         return configFileReader;
     }

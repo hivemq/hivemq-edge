@@ -20,6 +20,7 @@ import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.api.ApiJwsEntity;
 import com.hivemq.configuration.entity.api.ApiListenerEntity;
@@ -54,18 +55,19 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
         this.apiConfigurationService = apiConfigurationService;
     }
 
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getApiConfig())) {
+            return true;
+        }
+        return false;
+    }
+
     //-- Converts XML entity types to bean types
 
     @Override
-    public ConfigResult setConfig(final @NotNull AdminApiEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
-        }
-        this.configEntity = configEntity;
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getApiConfig();
         this.initialized = true;
 
         apiConfigurationService.setEnabled(configEntity.isEnabled());

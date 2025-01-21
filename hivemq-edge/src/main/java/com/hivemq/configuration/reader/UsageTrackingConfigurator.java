@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.UsageTrackingConfigEntity;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -34,15 +36,16 @@ public class UsageTrackingConfigurator implements Configurator<UsageTrackingConf
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull UsageTrackingConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getUsageTracking())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getUsageTracking();
         this.initialized = true;
 
         usageTrackingConfigurationService.setTrackingEnabled(

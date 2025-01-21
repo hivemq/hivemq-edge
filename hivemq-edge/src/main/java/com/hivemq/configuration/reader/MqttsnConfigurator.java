@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.MqttSnConfigEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
@@ -41,16 +43,18 @@ public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
         }
     }
 
+
     @Override
-    public ConfigResult setConfig(final @NotNull MqttSnConfigEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getMqttsnConfig())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getMqttsnConfig();
         this.initialized = true;
 
         mqttsnConfigurationService.setGatewayId(configEntity.getGatewayId());

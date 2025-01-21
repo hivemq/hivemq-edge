@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -34,15 +36,16 @@ public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapte
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull List<ProtocolAdapterEntity> configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getProtocolAdapterConfig())) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getProtocolAdapterConfig();
         this.initialized = true;
 
         configurationService.setAllConfigs(new ArrayList<>(configEntity));

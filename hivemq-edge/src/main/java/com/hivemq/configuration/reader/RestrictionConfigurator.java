@@ -15,11 +15,15 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.RestrictionsEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
 
@@ -36,17 +40,17 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getRestrictionsConfig())) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
-    public ConfigResult setConfig(final @NotNull RestrictionsEntity configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
-        }
-        this.configEntity = configEntity;
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getRestrictionsConfig();
         this.initialized = true;
 
         restrictionsConfigurationService.setMaxConnections(validateMaxConnections(configEntity.getMaxConnections()));

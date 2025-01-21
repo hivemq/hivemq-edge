@@ -18,6 +18,8 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TLSEntity;
@@ -69,15 +71,18 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull Listeners configEntity) {
-        if(initialized) {
-            if (hasChanged(this.configEntity, configEntity)) {
-                return ConfigResult.NEEDS_RESTART;
-            } else {
-                return ConfigResult.NO_OP;
-            }
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
+        if(initialized && hasChanged(this.configEntity, listeners)) {
+            return true;
         }
-        this.configEntity = configEntity;
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
+        this.configEntity = listeners;
         this.initialized = true;
 
         final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(configEntity.mqttListeners);
