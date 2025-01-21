@@ -90,7 +90,7 @@ public class ConfigFileReaderWriter {
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
-        testMode = System.getProperty("hivemq.config.testing") != null
+        testMode = System.getProperty("hivemq.config.testing") != null;
         this.configurationFile = configurationFile;
         this.configurators = configurators;
     }
