@@ -11,7 +11,7 @@ import {
   TreeEntity,
 } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 
-export const useGetCluster = () => {
+export const useGetClusterData = () => {
   const { data: listBridges, refetch: refetch1 } = useListBridges()
   const { data: listAdapter, refetch: refetch2 } = useListProtocolAdapters()
   const [clusterKeys, setClusterKeys] = useState<string[]>([])
