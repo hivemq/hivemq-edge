@@ -12,6 +12,8 @@ import {
   PopoverCloseButton,
   HStack,
   Button,
+  Box,
+  CardFooter,
 } from '@chakra-ui/react'
 
 interface ChartWrapperProps {
@@ -20,13 +22,14 @@ interface ChartWrapperProps {
   help?: React.ReactNode
   helpTitle?: string
   cta?: React.ReactNode
+  footer?: React.ReactNode
 }
 
-const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle }) => {
+const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle, footer }) => {
   return (
     <Card size="sm">
       {(cta || help) && (
-        <CardHeader as={HStack} justifyContent="space-between">
+        <CardHeader as={HStack} justifyContent={cta && help ? 'space-between' : cta ? 'flex-start' : 'flex-end'}>
           {cta && cta}
           {help && (
             <Popover placement="bottom-end">
@@ -43,7 +46,12 @@ const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle })
           )}
         </CardHeader>
       )}
-      <CardBody>{children}</CardBody>
+      <CardBody>
+        <Box w="100%" h="60vh">
+          {children}
+        </Box>
+      </CardBody>
+      {footer && <CardFooter>{footer}</CardFooter>}
     </Card>
   )
 }

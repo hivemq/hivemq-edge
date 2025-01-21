@@ -81,9 +81,9 @@ const TreeChart: FC<TreeChartProps> = ({ data, identity }) => {
       inactiveNodeSize={12}
       nodeColor={{ scheme: 'category10' }}
       fixNodeColorAtDepth={1}
-      // linkThickness={2}
-      // activeLinkThickness={8}
-      // inactiveLinkThickness={2}
+      linkThickness={2}
+      activeLinkThickness={8}
+      inactiveLinkThickness={2}
       orientLabel={false}
       linkColor={{
         from: 'target.color',
@@ -91,7 +91,7 @@ const TreeChart: FC<TreeChartProps> = ({ data, identity }) => {
       }}
       margin={{ top: 90, right: 90, bottom: 90, left: 90 }}
       motionConfig="stiff"
-      // meshDetectionRadius={80}
+      meshDetectionRadius={80}
       layout="bottom-to-top"
       onLinkMouseEnter={() => undefined}
       onLinkMouseMove={() => undefined}

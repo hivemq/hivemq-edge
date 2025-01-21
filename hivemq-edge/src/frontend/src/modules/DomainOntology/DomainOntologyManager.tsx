@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Box, Tab, TabList, TabPanel, TabPanels, Tabs, VStack } from '@chakra-ui/react'
+import { Tab, TabList, TabPanel, TabPanels, type TabPanelProps, Tabs, VStack } from '@chakra-ui/react'
 
 import TopicWheel from '@/modules/DomainOntology/components/TopicWheel.tsx'
 import { HierarchicalEdgeBundling } from '@/modules/DomainOntology/components/charts/HierarchicalEdgeBundling.tsx'
@@ -14,8 +14,10 @@ const DomainOntologyManager: FC = () => {
   const { t } = useTranslation()
   const { treeData, sunburstData, matrixData, sankeyData } = useGetDomainOntology()
 
+  const panelProps: TabPanelProps = { px: 0, as: VStack, alignItems: 'stretch' }
+
   return (
-    <Tabs variant="enclosed" isLazy>
+    <Tabs variant="soft-rounded" isLazy>
       <TabList>
         <Tab>{t('ontology.panel.cluster')}</Tab>
         <Tab>{t('ontology.panel.wheel')}</Tab>
@@ -24,31 +26,25 @@ const DomainOntologyManager: FC = () => {
         <Tab>{t('ontology.panel.edge-blunting')}</Tab>
       </TabList>
       <TabPanels>
-        <TabPanel px={0} as={VStack} alignItems="stretch">
+        <TabPanel {...panelProps}>
           <AdapterCluster />
         </TabPanel>
-        <TabPanel px={0} as={VStack} alignItems="stretch">
+        <TabPanel {...panelProps}>
           <TopicWheel data={sunburstData} />
         </TabPanel>
-        <TabPanel px={0} as={VStack} alignItems="stretch">
+        <TabPanel {...panelProps}>
           <ChartWrapper>
-            <Box w="100%" h="69vh">
-              <ChordChart matrix={matrixData.matrix} keys={matrixData.keys}></ChordChart>
-            </Box>
+            <ChordChart matrix={matrixData.matrix} keys={matrixData.keys}></ChordChart>
           </ChartWrapper>
         </TabPanel>
-        <TabPanel px={0} as={VStack} alignItems="stretch">
+        <TabPanel {...panelProps}>
           <ChartWrapper>
-            <Box w="100%" h="69vh">
-              <SankeyChart data={sankeyData}></SankeyChart>
-            </Box>
+            <SankeyChart data={sankeyData}></SankeyChart>
           </ChartWrapper>
         </TabPanel>
-        <TabPanel px={0} as={VStack} alignItems="stretch">
+        <TabPanel {...panelProps}>
           <ChartWrapper>
-            <Box w="100%" h="100%">
-              <HierarchicalEdgeBundling data={treeData} width={800} height={800} />
-            </Box>
+            <HierarchicalEdgeBundling data={treeData} width={800} height={800} />
           </ChartWrapper>
         </TabPanel>
       </TabPanels>

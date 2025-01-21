@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HierarchyNode } from 'd3-hierarchy'
-import { Box, Text } from '@chakra-ui/react'
+import { Text } from '@chakra-ui/react'
 
 import TreeChart from '@/modules/DomainOntology/components/charts/TreeChart.tsx'
 import ConfigurationPanel from '@/modules/DomainOntology/components/cluster/ConfigurationPanel.tsx'
@@ -23,22 +23,20 @@ const AdapterCluster: FC = () => {
         <Text key={`test-${index}`}>{line}</Text>
       ))}
     >
-      <Box w="100%" h="69vh">
-        <TreeChart
-          data={data}
-          identity={(e) => {
-            const node = e as HierarchyNode<ClusterDataWrapper>
-            if (node.depth === 0) return 'Hive MQ'
-            if (Array.isArray(node.data)) {
-              const [key] = node.data
-              return key || 'No data'
-            }
-            if (node.data) return node.data.name
+      <TreeChart
+        data={data}
+        identity={(e) => {
+          const node = e as HierarchyNode<ClusterDataWrapper>
+          if (node.depth === 0) return 'Hive MQ'
+          if (Array.isArray(node.data)) {
+            const [key] = node.data
+            return key || 'No data'
+          }
+          if (node.data) return node.data.name
 
-            return node.name
-          }}
-        />
-      </Box>
+          return node.name
+        }}
+      />
     </ChartWrapper>
   )
 }
