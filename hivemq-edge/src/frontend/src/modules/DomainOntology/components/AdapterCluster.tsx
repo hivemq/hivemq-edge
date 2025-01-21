@@ -5,13 +5,13 @@ import { Text } from '@chakra-ui/react'
 
 import TreeChart from '@/modules/DomainOntology/components/charts/TreeChart.tsx'
 import ConfigurationPanel from '@/modules/DomainOntology/components/cluster/ConfigurationPanel.tsx'
-import { useGetCluster } from '@/modules/DomainOntology/hooks/useGetCluster.ts'
+import { useGetClusterData } from '@/modules/DomainOntology/hooks/useGetClusterData.ts'
 import { ClusterDataWrapper } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper.tsx'
 
 const AdapterCluster: FC = () => {
   const { t } = useTranslation()
-  const { data, clusterKeys, setClusterKeys } = useGetCluster()
+  const { data, clusterKeys, setClusterKeys } = useGetClusterData()
 
   const arrayHelpStrings = t('ontology.charts.cluster.help', { returnObjects: true }) as unknown as string[]
 

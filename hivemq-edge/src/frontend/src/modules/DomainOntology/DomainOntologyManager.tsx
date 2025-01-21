@@ -4,15 +4,21 @@ import { Tab, TabList, TabPanel, TabPanels, type TabPanelProps, Tabs, VStack } f
 
 import TopicWheel from '@/modules/DomainOntology/components/TopicWheel.tsx'
 import { HierarchicalEdgeBundling } from '@/modules/DomainOntology/components/charts/HierarchicalEdgeBundling.tsx'
-import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 import ChordChart from '@/modules/DomainOntology/components/charts/ChordChart.tsx'
 import SankeyChart from '@/modules/DomainOntology/components/charts/SankeyChart.tsx'
 import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper.tsx'
 import AdapterCluster from '@/modules/DomainOntology/components/AdapterCluster.tsx'
+import { useGetTreeData } from '@/modules/DomainOntology/hooks/useGetTreeData.ts'
+import { useGetSunburstData } from '@/modules/DomainOntology/hooks/useGetSunburstData.ts'
+import { useGetChordMatrixData } from '@/modules/DomainOntology/hooks/useGetChordMatrixData.ts'
+import { useGetSankeyData } from '@/modules/DomainOntology/hooks/useGetSankeyData.ts'
 
 const DomainOntologyManager: FC = () => {
   const { t } = useTranslation()
-  const { treeData, sunburstData, matrixData, sankeyData } = useGetDomainOntology()
+  const { treeData } = useGetTreeData()
+  const { sunburstData } = useGetSunburstData()
+  const { matrixData } = useGetChordMatrixData()
+  const { sankeyData } = useGetSankeyData()
 
   const panelProps: TabPanelProps = { px: 0, as: VStack, alignItems: 'stretch' }
 
