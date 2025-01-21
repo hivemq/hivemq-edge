@@ -134,7 +134,7 @@ public class ConfigFileReaderWriter {
                                         System.exit(0);
                                     }
                                 } catch (IOException e) {
-                                    throw new RuntimeException(e);
+                                    throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
                                 }
                             });
                         }
