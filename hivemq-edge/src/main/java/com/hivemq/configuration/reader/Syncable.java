@@ -1,5 +1,7 @@
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+
 public interface Syncable<T> extends Configurator<T> {
 
     /**
@@ -7,5 +9,5 @@ public interface Syncable<T> extends Configurator<T> {
      *
      * @param entity the entity to witch the internal state of the configurator is applied to
      */
-    void sync(T entity);
+    void sync(HiveMQConfigEntity entity);
 }

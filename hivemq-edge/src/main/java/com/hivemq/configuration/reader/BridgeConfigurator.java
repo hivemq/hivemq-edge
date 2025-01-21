@@ -290,14 +290,11 @@ public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
     }
 
     @Override
-    public void sync(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
-        if (bridgeConfigs == null) {
-            return;
-        }
+    public void sync(final @NotNull HiveMQConfigEntity entity) {
         List<MqttBridge> liveBridges = bridgeConfigurationService.getBridges();
         List<MqttBridgeEntity> newList = liveBridges.stream().map(this::uncovert).collect(Collectors.toList());
-        bridgeConfigs.clear();
-        bridgeConfigs.addAll(newList);
+        entity.getBridgeConfig().clear();
+        entity.getBridgeConfig().addAll(newList);
     }
 
     protected MqttBridgeEntity uncovert(MqttBridge from) {

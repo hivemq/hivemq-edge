@@ -54,8 +54,8 @@ public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapte
     }
 
     @Override
-    public void sync(final @NotNull List<ProtocolAdapterEntity> config) {
-        config.clear();
-        config.addAll(configurationService.getAllConfigs());
+    public void sync(final @NotNull HiveMQConfigEntity config) {
+        config.getProtocolAdapterConfig().clear();
+        config.getProtocolAdapterConfig().addAll(configurationService.getAllConfigs());
     }
 }

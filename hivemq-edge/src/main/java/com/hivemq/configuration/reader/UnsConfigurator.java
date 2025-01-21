@@ -69,14 +69,14 @@ public class UnsConfigurator implements Syncable<UnsConfigEntity>{
     }
 
     @Override
-    public void sync(final @NotNull UnsConfigEntity configEntity){
+    public void sync(final @NotNull HiveMQConfigEntity entity){
         final ISA95 isa95 = unsConfigurationService.getISA95();
-        configEntity.getIsa95().setEnabled(isa95.isEnabled());
-        configEntity.getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
-        configEntity.getIsa95().setArea(isa95.getArea());
-        configEntity.getIsa95().setEnterprise(isa95.getEnterprise());
-        configEntity.getIsa95().setSite(isa95.getSite());
-        configEntity.getIsa95().setWorkCell(isa95.getWorkCell());
-        configEntity.getIsa95().setProductionLine(isa95.getProductionLine());
+        entity.getUns().getIsa95().setEnabled(isa95.isEnabled());
+        entity.getUns().getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
+        entity.getUns().getIsa95().setArea(isa95.getArea());
+        entity.getUns().getIsa95().setEnterprise(isa95.getEnterprise());
+        entity.getUns().getIsa95().setSite(isa95.getSite());
+        entity.getUns().getIsa95().setWorkCell(isa95.getWorkCell());
+        entity.getUns().getIsa95().setProductionLine(isa95.getProductionLine());
     }
 }

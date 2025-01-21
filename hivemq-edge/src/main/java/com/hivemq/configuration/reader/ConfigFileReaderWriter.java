@@ -19,12 +19,17 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.configuration.entity.api.ApiTlsEntity;
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPBroadcastListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
+import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
+import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.util.EnvVarUtil;
 import com.hivemq.util.ThreadFactoryUtil;
@@ -57,12 +62,15 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -83,14 +91,13 @@ public class ConfigFileReaderWriter {
     private boolean defaultBackupConfig = true;
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
     private final @NotNull List<Configurator<?>> configurators;
-    private final boolean testMode;
 
-    private AtomicLong fileModified = new AtomicLong();
+    private final @NotNull AtomicLong fileModified = new AtomicLong();
+    private volatile @NotNull Map<Path, Long> fileModificationTimestamps;
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
-        testMode = System.getProperty("hivemq.config.testing") != null;
         this.configurationFile = configurationFile;
         this.configurators = configurators;
     }
@@ -109,17 +116,31 @@ public class ConfigFileReaderWriter {
         final long interval = (checkIntervalInMs > 0) ? checkIntervalInMs : 0;
         log.info("Rereading config file every {} ms", interval);
 
-        applyConfig();
+        HiveMQConfigEntity entity = applyConfig();
+        fileModificationTimestamps = findFilesToWatch(entity);
 
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             readConfigFromXML(fileModified.get())
                     .ifPresent(hiveMQConfigEntity -> {
+                        boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
                         this.configEntity = hiveMQConfigEntity;
+                        if(!devmode) {
+                            fileModificationTimestamps.entrySet().forEach(pathToTs -> {
+                                try {
+                                    if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
+                                        log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                                        System.exit(0);
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                        }
                         if(!setConfiguration(hiveMQConfigEntity)) {
-                            if(testMode) {
-                                log.error("Restarting because new cong can't be hot-reloaded");
+                            if(!devmode) {
+                                log.error("Restarting because new config can't be hot-reloaded");
                                 System.exit(0);
                             } else {
                                 log.error("TESTMODE, NOT RESTARTING");
@@ -129,6 +150,45 @@ public class ConfigFileReaderWriter {
         }, 0, interval, TimeUnit.MILLISECONDS);
         this.scheduledExecutorService = scheduledExecutorService;
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
+    }
+
+    public static Map<Path, Long> findFilesToWatch(HiveMQConfigEntity entity) {
+        final Map<Path, Long> paths = new ConcurrentHashMap<>();
+
+        entity.getBridgeConfig().forEach(cfg -> {
+            final BridgeTlsEntity tls = cfg.getRemoteBroker().getTls();
+            if(tls != null) {
+                final KeystoreEntity keyStore = cfg.getRemoteBroker().getTls().getKeyStore();
+                if(keyStore != null) {
+                    final Path path = Paths.get(keyStore.getPath());
+                    try {
+                        paths.put(path, Files.getLastModifiedTime(path).toMillis());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                final TruststoreEntity trustStore = cfg.getRemoteBroker().getTls().getTrustStore();
+                if(trustStore != null) {
+                    final Path path = Paths.get(trustStore.getPath());
+                    try {
+                        paths.put(path, Files.getLastModifiedTime(path).toMillis());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+        final ApiTlsEntity tls = entity.getApiConfig().getTls();
+        if (tls != null && tls.getKeystoreEntity() != null) {
+            final Path path = Paths.get(tls.getKeystoreEntity().getPath());
+            try {
+                paths.put(path, Files.getLastModifiedTime(path).toMillis());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return paths;
     }
 
     public void stopWatching() {
