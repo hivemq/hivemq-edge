@@ -30,10 +30,11 @@ const AdapterCluster: FC = () => {
         data={data}
         identity={(e) => {
           const node = e as HierarchyNode<ClusterDataWrapper>
-          if (node.depth === 0) return 'Hive MQ'
+          if (node.depth === 0) return t('branding.appName')
+
           if (Array.isArray(node.data)) {
             const [key] = node.data
-            return key || 'No data'
+            return key || t('branding.appName')
           }
           if (node.data) return node.data.name
 

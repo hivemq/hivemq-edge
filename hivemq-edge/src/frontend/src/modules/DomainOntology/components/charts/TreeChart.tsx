@@ -101,7 +101,6 @@ const TreeChart: FC<TreeChartProps> = ({ data, identity }) => {
       nodeTooltip={NodeTooltip}
       linkTooltipAnchor="center"
       nodeComponent={(element) => {
-        // console.log(element)
         if (element.node.depth === 0)
           return (
             <g>

@@ -1150,7 +1150,13 @@
       }
     },
     "error": {
-      "loading": "Error while loading the data"
+      "loading": "Error while loading the data",
+      "noDataLoaded": "No data created in your Edge",
+      "noTopicLoaded": "No topic created in your Edge",
+      "noTagLoaded": "No tag created in your Edge",
+      "cluster": {
+        "noGrouping": "No data"
+      }
     }
   }
 }
