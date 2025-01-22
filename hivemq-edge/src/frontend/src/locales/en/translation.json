@@ -1157,6 +1157,12 @@
           "Note that visualisation is only effective if you are using segments for your naming convention.",
           "Select segment from the wheel to access meta-information about the concept, especially their schema."
         ]
+      },
+      "relationChord": {
+        "title": "About the Relation Chords diagram"
+      },
+      "relationSankey": {
+        "title": "About the Concept Flow diagram"
       }
     },
     "error": {

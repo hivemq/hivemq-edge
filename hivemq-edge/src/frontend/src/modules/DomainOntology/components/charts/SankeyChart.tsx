@@ -1,13 +1,16 @@
 import { FC } from 'react'
 import { ResponsiveSankey, SankeyDataProps, DefaultNode, DefaultLink } from '@nivo/sankey'
+import { useTranslation } from 'react-i18next'
 
 interface SankeyChartProps {
   data: SankeyDataProps<DefaultNode, DefaultLink>
 }
 
 const SankeyChart: FC<SankeyChartProps> = ({ data }) => {
+  const { t } = useTranslation()
   return (
     <ResponsiveSankey
+      ariaLabel={t('ontology.charts.relationSankey.title')}
       data={data.data}
       margin={{ top: 0, right: 200, bottom: 0, left: 0 }}
       align="justify"

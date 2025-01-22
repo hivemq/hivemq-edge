@@ -4,6 +4,7 @@ import { type PropertyAccessor, useTheme } from '@nivo/core'
 import { Box, chakra as Chakra } from '@chakra-ui/react'
 
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
+import { useTranslation } from 'react-i18next'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface TreeChartProps<T = any> {
@@ -72,8 +73,10 @@ const LinkTooltip: FC<LinkTooltipProps<any>> = ({ link }) => {
 }
 
 const TreeChart: FC<TreeChartProps> = ({ data, identity }) => {
+  const { t } = useTranslation()
   return (
     <ResponsiveTree
+      ariaLabel={t('ontology.charts.cluster.title')}
       data={data}
       identity={identity}
       mode="dendogram"

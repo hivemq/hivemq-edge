@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { ResponsiveChord } from '@nivo/chord'
 import { Card, CardBody } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 interface ChordChartProps {
   id?: string
@@ -9,8 +10,10 @@ interface ChordChartProps {
 }
 
 const ChordChart: FC<ChordChartProps> = ({ matrix, keys }) => {
+  const { t } = useTranslation()
   return (
     <ResponsiveChord
+      ariaLabel={t('ontology.charts.relationChord.title')}
       data={matrix}
       keys={keys}
       margin={{ top: 0, right: 200, bottom: 0, left: 0 }}

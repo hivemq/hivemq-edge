@@ -15,7 +15,7 @@ const DomainOntologyManager: FC = () => {
   const panelProps: TabPanelProps = { px: 0, as: VStack, alignItems: 'stretch' }
 
   return (
-    <Tabs variant="soft-rounded" isLazy>
+    <Tabs variant="solid-rounded" isLazy>
       <TabList>
         <Tab>{t('ontology.panel.cluster')}</Tab>
         <Tab>{t('ontology.panel.wheel')}</Tab>
