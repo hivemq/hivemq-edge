@@ -1,3 +1,14 @@
+export type BridgeSubscription = {
+  topics: string[]
+  topicFilters: string[]
+  mappings: string[][]
+}
+
+export interface ChordMatrixData {
+  matrix: number[][]
+  keys: string[]
+}
+
 export type TreeNode = {
   type: 'node'
   value: number
