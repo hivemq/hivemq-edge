@@ -5,9 +5,9 @@ import { Tab, TabList, TabPanel, TabPanels, type TabPanelProps, Tabs, VStack } f
 import ConceptWheel from '@/modules/DomainOntology/components/ConceptWheel.tsx'
 
 import AdapterCluster from '@/modules/DomainOntology/components/AdapterCluster.tsx'
-import RelationshipMatrix from '@/modules/DomainOntology/components/RelationshipMatrix.tsx'
+import RelationMatrix from '@/modules/DomainOntology/components/RelationMatrix.tsx'
 import ConceptFlow from '@/modules/DomainOntology/components/ConceptFlow.tsx'
-import RelationshipEdgeBundling from '@/modules/DomainOntology/components/RelationshipEdgeBundling.tsx'
+import RelationEdgeBundling from '@/modules/DomainOntology/components/RelationEdgeBundling.tsx'
 
 const DomainOntologyManager: FC = () => {
   const { t } = useTranslation()
@@ -31,13 +31,13 @@ const DomainOntologyManager: FC = () => {
           <ConceptWheel />
         </TabPanel>
         <TabPanel {...panelProps}>
-          <RelationshipMatrix />
+          <RelationMatrix />
         </TabPanel>
         <TabPanel {...panelProps}>
           <ConceptFlow />
         </TabPanel>
         <TabPanel {...panelProps}>
-          <RelationshipEdgeBundling />
+          <RelationEdgeBundling />
         </TabPanel>
       </TabPanels>
     </Tabs>
