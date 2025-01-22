@@ -313,8 +313,6 @@ public class ProtocolAdapterManager {
                     .withSeverity(Event.SEVERITY.CRITICAL)
                     .withMessage("Reloading of configuration failed")
                     .fire();
-
-            //TODO TERMINATE!!!
         }
 
 
@@ -377,9 +375,7 @@ public class ProtocolAdapterManager {
                     return null;
                 }, executorService)
                 .exceptionally(throwable -> {
-                    //TODO move to separate method after refactoring
                     try {
-                        //TODO needs better failure information
                         if (log.isWarnEnabled()) {
                             log.warn("Protocol-adapter '{}' could not be started, reason: {}",
                                     protocolAdapterWrapper.getId(),
