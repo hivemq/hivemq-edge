@@ -2,8 +2,10 @@ import { useMemo } from 'react'
 import type { DefaultLink, DefaultNode, SankeyDataProps } from '@nivo/sankey'
 
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
+import { useTranslation } from 'react-i18next'
 
 export const useGetSankeyData = () => {
+  const { t } = useTranslation()
   const { topicFilters, tags, northMappings, bridgeSubscriptions, southMappings, isLoading, isError } =
     useGetDomainOntology()
 
@@ -56,15 +58,34 @@ export const useGetSankeyData = () => {
     //   setAdjacencyMatrix(x, y)
     // }
 
+    const allNodes = [
+      ...allTopics,
+      ...allTags,
+      ...allTopicFilters,
+      ...bridgeSubscriptions.topics,
+      ...bridgeSubscriptions.topicFilters,
+    ]
+
+    if (!allNodes.length || !links.length) {
+      // TODO[NVL] It looks weird but there is no easy way to get it scaled down
+      const emptyStateData: SankeyDataProps<DefaultNode, DefaultLink> = {
+        data: {
+          nodes: [{ id: t('branding.appName') }, { id: t('ontology.error.noDataLoaded') }],
+          links: [
+            {
+              source: t('branding.appName'),
+              target: t('ontology.error.noDataLoaded'),
+              value: 1,
+            },
+          ],
+        },
+      }
+      return emptyStateData
+    }
+
     const data: SankeyDataProps<DefaultNode, DefaultLink> = {
       data: {
-        nodes: [
-          ...allTopics,
-          ...allTags,
-          ...allTopicFilters,
-          ...bridgeSubscriptions.topics,
-          ...bridgeSubscriptions.topicFilters,
-        ].map((e) => ({ id: e })),
+        nodes: allNodes.map((e) => ({ id: e })),
         links: links,
       },
     }
