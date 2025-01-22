@@ -1137,7 +1137,17 @@
         "help": [
           "This interactive graph simulates how the workspace can be automatically organised according to a list of dynamic properties",
           "Use the configuration to define partition keys"
-        ]
+        ],
+        "configuration": {
+          "header": "Configuration",
+          "title": "Grouping rules",
+          "description": "Group adapters, bridges and devices using a combination of the following rules",
+          "cta": {
+            "add": "Add a group",
+            "config": "Configuration",
+            "submit": "Submit"
+          }
+        }
       },
       "conceptWheel": {
         "title": "About the Concept Wheel",

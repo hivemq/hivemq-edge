@@ -32,6 +32,7 @@ export const CompactSelectWidget: FC<WidgetProps> = (props) => {
 
   return (
     <FormControl
+      data-testid="rjsf-compact-selector"
       {...chakraProps}
       isDisabled={props.disabled || props.readonly}
       isRequired={props.required}

@@ -25,8 +25,7 @@ interface ConfigurationPanelProps {
 const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }) => {
   const { t } = useTranslation()
   const data = useMemo(() => {
-    const data = { groups: [...groupKeys] }
-    return data
+    return { groups: [...groupKeys] }
   }, [groupKeys])
 
   return (
@@ -35,12 +34,14 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }
         return (
           <>
             <PopoverTrigger>
-              <Button>Configuration</Button>
+              <Button data-testid="cluster-form-trigger">
+                {t('ontology.charts.cluster.configuration.cta.config')}
+              </Button>
             </PopoverTrigger>
             <PopoverContent minWidth="sm">
               <PopoverArrow />
               <PopoverCloseButton />
-              <PopoverHeader>Configuration</PopoverHeader>
+              <PopoverHeader>{t('ontology.charts.cluster.configuration.header')}</PopoverHeader>
               <PopoverBody>
                 <Form
                   id="cluster-form"

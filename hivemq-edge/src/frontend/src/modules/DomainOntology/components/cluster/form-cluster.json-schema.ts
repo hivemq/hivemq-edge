@@ -3,12 +3,14 @@ import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { groupCatalog } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 import { CompactSelectWidget } from '@/modules/DomainOntology/components/cluster/CompactSelectWidget.tsx'
 
+import i18n from '@/config/i18n.config.ts'
+
 export const schema: RJSFSchema = {
   properties: {
     groups: {
       type: 'array',
-      title: 'Grouping rules',
-      description: 'Group adapters, bridges and devices using the following rules:',
+      title: i18n.t('ontology.charts.cluster.configuration.title'),
+      description: i18n.t('ontology.charts.cluster.configuration.description'),
       items: {
         type: 'string',
         enum: groupCatalog.map((e) => e.name),
@@ -22,10 +24,9 @@ export const uiSchema: UiSchema = {
     norender: true,
   },
   groups: {
-    'ui:title': null,
     items: {
       'ui:widget': CompactSelectWidget,
-      'ui:addButton': 'Add a mapping',
+      'ui:addButton': i18n.t('ontology.charts.cluster.configuration.cta.add'),
     },
   },
 }
