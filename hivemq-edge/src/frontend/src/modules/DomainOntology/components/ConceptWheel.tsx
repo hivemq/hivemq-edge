@@ -25,6 +25,7 @@ const ConceptWheel: FC = () => {
 
   return (
     <ChartWrapper
+      data-testid="edge-panel-concept-wheel"
       helpTitle={t('ontology.charts.conceptWheel.title')}
       help={arrayHelpStrings.map((line, index) => (
         <Text key={`test-${index}`}>{line}</Text>

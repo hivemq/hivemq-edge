@@ -20,6 +20,7 @@ const AdapterCluster: FC = () => {
 
   return (
     <ChartWrapper
+      data-testid="edge-panel-adapter-clusters"
       cta={<ConfigurationPanel groupKeys={clusterKeys} onSubmit={(a) => setClusterKeys(a)} />}
       helpTitle={t('ontology.charts.cluster.title')}
       help={arrayHelpStrings.map((line, index) => (

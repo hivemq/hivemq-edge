@@ -13,7 +13,7 @@ const ConceptFlow: FC = () => {
   if (isError) return <ErrorMessage type={t('ontology.error.loading')} />
 
   return (
-    <ChartWrapper>
+    <ChartWrapper data-testid="edge-panel-concept-flow">
       <SankeyChart data={sankeyData}></SankeyChart>
     </ChartWrapper>
   )

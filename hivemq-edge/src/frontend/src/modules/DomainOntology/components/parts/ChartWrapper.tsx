@@ -17,7 +17,6 @@ import {
 } from '@chakra-ui/react'
 
 interface ChartWrapperProps {
-  id?: string
   children: React.ReactNode
   help?: React.ReactNode
   helpTitle?: string
@@ -25,9 +24,9 @@ interface ChartWrapperProps {
   footer?: React.ReactNode
 }
 
-const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle, footer }) => {
+const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle, footer, ...props }) => {
   return (
-    <Card size="sm">
+    <Card size="sm" {...props}>
       {(cta || help) && (
         <CardHeader as={HStack} justifyContent={cta && help ? 'space-between' : cta ? 'flex-start' : 'flex-end'}>
           {cta && cta}
