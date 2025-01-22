@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react'
 import Form from '@rjsf/chakra-ui'
 import validator from '@rjsf/validator-ajv8'
-import { schema, uiSchema } from '@/modules/DomainOntology/components/cluster/form-cluster.utils.ts'
+import { schema, uiSchema } from '@/modules/DomainOntology/components/cluster/form-cluster.json-schema.ts'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 
 interface ConfigurationPanelProps {
