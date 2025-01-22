@@ -261,8 +261,8 @@ public class ProtocolAdapterManager {
         adaptersToBeCreated.removeAll(protocolAdapters.keySet());
 
         final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
-        adaptersToBeCreated.removeAll(adaptersToBeUpdated);
-        adaptersToBeCreated.removeAll(adaptersToBeDeleted);
+        adaptersToBeUpdated.removeAll(adaptersToBeCreated);
+        adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
 
         List<String> failedAdapters = new ArrayList<>();
 
