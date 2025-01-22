@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Text } from '@chakra-ui/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MetadataExplorer from '@/modules/DomainOntology/components/MetadataExplorer.tsx'
 import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper.tsx'
 import SunburstChart from '@/modules/DomainOntology/components/charts/SunburstChart.tsx'
@@ -10,7 +11,7 @@ import { useGetSunburstData } from '@/modules/DomainOntology/hooks/useGetSunburs
 
 const ConceptWheel: FC = () => {
   const { t } = useTranslation()
-  const { sunburstData, isError } = useGetSunburstData()
+  const { sunburstData, isError, isLoading } = useGetSunburstData()
   const [selectedTopic, setSelectedTopic] = useState<string | undefined>()
   const isWildcard = Boolean(selectedTopic && selectedTopic.includes('#'))
 
@@ -21,6 +22,7 @@ const ConceptWheel: FC = () => {
     event.stopPropagation()
   }
 
+  if (isLoading) return <LoaderSpinner />
   if (isError) return <ErrorMessage type={t('ontology.error.loading')} />
 
   return (

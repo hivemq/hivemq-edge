@@ -2,14 +2,16 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper.tsx'
 import SankeyChart from '@/modules/DomainOntology/components/charts/SankeyChart.tsx'
 import { useGetSankeyData } from '@/modules/DomainOntology/hooks/useGetSankeyData.ts'
 
 const ConceptFlow: FC = () => {
   const { t } = useTranslation()
-  const { sankeyData, isError } = useGetSankeyData()
+  const { sankeyData, isError, isLoading } = useGetSankeyData()
 
+  if (isLoading) return <LoaderSpinner />
   if (isError) return <ErrorMessage type={t('ontology.error.loading')} />
 
   return (
