@@ -6,7 +6,7 @@ import type {
   BehaviorPolicyOnEvent,
   BehaviorPolicyOnTransition,
   PolicyOperation,
-  Schema,
+  PolicySchema,
   Script,
 } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
@@ -107,7 +107,7 @@ export const extractEventStates = (
 
 export const loadTransitions = (
   behaviorPolicy: BehaviorPolicy,
-  schemas: Schema[],
+  schemas: PolicySchema[],
   scripts: Script[],
   behaviorPolicyNode: Node<BehaviorPolicyData>
 ) => {

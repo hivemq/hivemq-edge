@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type Schema = {
+export type PolicySchema = {
     /**
      * The schema type dependent arguments.
      */

@@ -4,7 +4,7 @@ import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
 
-import type { Schema, SchemaReference, Script } from '@/api/__generated__'
+import type { PolicySchema, SchemaReference, Script } from '@/api/__generated__'
 import type { DataHubNodeData, DryRunResults, ResourceFamily, SchemaData } from '@datahub/types.ts'
 import { DataHubNodeType, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
@@ -23,7 +23,7 @@ export const getScriptFamilies = (items: Script[]) => {
   }, {})
 }
 
-export const getSchemaFamilies = (items: Schema[]) => {
+export const getSchemaFamilies = (items: PolicySchema[]) => {
   return items.reduce<Record<string, ResourceFamily>>((acc, schema) => {
     if (acc[schema.id]) {
       if (schema.version) acc[schema.id].versions.push(schema.version)
@@ -42,7 +42,7 @@ export const getSchemaFamilies = (items: Schema[]) => {
   }, {})
 }
 
-export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
+export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<PolicySchema> {
   if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
     return {
       node: schemaNode,
@@ -51,7 +51,7 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
   }
 
   if (schemaNode.data.type === SchemaType.JSON) {
-    const jsonSchema: Schema = {
+    const jsonSchema: PolicySchema = {
       id: schemaNode.data.name,
       type: schemaNode.data.type,
       schemaDefinition: btoa(schemaNode.data.schemaSource),
@@ -88,7 +88,7 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
           ),
         }
 
-      const schema: Schema = {
+      const schema: PolicySchema = {
         id: schemaNode.data.name,
         type: schemaNode.data.type,
         schemaDefinition: encoded,
@@ -116,7 +116,7 @@ export function loadSchema(
   targetHandle: string | null,
   positionDeltaX: number,
   schemaRef: SchemaReference,
-  schemas: Schema[]
+  schemas: PolicySchema[]
 ): (NodeAddChange | Connection)[] {
   const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
   if (!schema)
@@ -128,7 +128,7 @@ export function loadSchema(
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + positionDeltaX,
-        y: parentNode.position.y + CANVAS_POSITION.Schema.y,
+        y: parentNode.position.y + CANVAS_POSITION.PolicySchema.y,
       },
       data: {
         name: schema.id,
@@ -163,7 +163,7 @@ export function loadSchema(
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + positionDeltaX,
-        y: parentNode.position.y + CANVAS_POSITION.Schema.y,
+        y: parentNode.position.y + CANVAS_POSITION.PolicySchema.y,
       },
       data: {
         // @ts-ignore force undefined

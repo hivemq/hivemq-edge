@@ -11,7 +11,7 @@ export const $SchemaList = {
         items: {
             type: 'array',
             contains: {
-                type: 'Schema',
+                type: 'PolicySchema',
             },
         },
     },

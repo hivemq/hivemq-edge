@@ -2,10 +2,11 @@ import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import type { DataPolicy, Schema } from '@/api/__generated__'
+import type { DataPolicy, PolicySchema } from '@/api/__generated__'
 import { DataPolicyValidator } from '@/api/__generated__'
-import type { DataPolicyData, SchemaData, ValidatorData, WorkspaceState } from '@datahub/types.ts'
 import { DataHubNodeType, SchemaType, StrategyType } from '@datahub/types.ts'
+import type { DataPolicyData, SchemaData, ValidatorData, WorkspaceState } from '@datahub/types.ts'
+
 import {
   checkValidityPolicyValidator,
   checkValidityPolicyValidators,
@@ -146,7 +147,7 @@ describe('loadValidators', () => {
     position: { x: 0, y: 0 },
   }
 
-  const schemas: Schema[] = [
+  const schemas: PolicySchema[] = [
     {
       id: 'test',
       version: 1,

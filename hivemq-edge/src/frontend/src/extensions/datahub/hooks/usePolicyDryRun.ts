@@ -1,7 +1,7 @@
 import type { Node } from 'reactflow'
 import { getIncomers } from 'reactflow'
 
-import type { Schema, Script } from '@/api/__generated__'
+import type { PolicySchema, Script } from '@/api/__generated__'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { BehaviorPolicyData, DataHubNodeData, DryRunResults } from '@datahub/types.ts'
@@ -95,7 +95,7 @@ export const usePolicyDryRun = () => {
 
     const successResources = onSuccessPipeline.reduce(onlyNonNullResources, [] as DryRunResults<Script>[])
     const errorResources = onErrorPipeline.reduce(onlyNonNullResources, [] as DryRunResults<Script>[])
-    const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
+    const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
     const allConfigurations = checkValidityConfigurations(allNodes)
@@ -139,7 +139,7 @@ export const usePolicyDryRun = () => {
     const model = checkValidityModel(behaviourPolicyNode)
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(behaviourPolicyNode, reducedStore)
 
-    const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
+    const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
 
     const allConfigurations = checkValidityConfigurations(allNodes)
 

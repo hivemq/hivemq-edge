@@ -20,6 +20,7 @@ import { DefaultService } from './services/DefaultService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
 import { GatewayEndpointService } from './services/GatewayEndpointService';
+import { HealthCheckEndpointService } from './services/HealthCheckEndpointService';
 import { MetricsService } from './services/MetricsService';
 import { MetricsEndpointService } from './services/MetricsEndpointService';
 import { PayloadSamplingService } from './services/PayloadSamplingService';
@@ -45,6 +46,7 @@ export class HiveMqClient {
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
     public readonly gatewayEndpoint: GatewayEndpointService;
+    public readonly healthCheckEndpoint: HealthCheckEndpointService;
     public readonly metrics: MetricsService;
     public readonly metricsEndpoint: MetricsEndpointService;
     public readonly payloadSampling: PayloadSamplingService;
@@ -57,7 +59,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2024.8-SNAPSHOT',
+            VERSION: config?.VERSION ?? '2025.1-SNAPSHOT',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -81,6 +83,7 @@ export class HiveMqClient {
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
         this.gatewayEndpoint = new GatewayEndpointService(this.request);
+        this.healthCheckEndpoint = new HealthCheckEndpointService(this.request);
         this.metrics = new MetricsService(this.request);
         this.metricsEndpoint = new MetricsEndpointService(this.request);
         this.payloadSampling = new PayloadSamplingService(this.request);

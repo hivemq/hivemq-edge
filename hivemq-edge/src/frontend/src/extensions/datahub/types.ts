@@ -5,7 +5,7 @@ import type {
   DataPolicy,
   DataPolicyValidator,
   PolicyOperation,
-  Schema,
+  PolicySchema,
   SchemaReference,
   Script,
 } from '@/api/__generated__'
@@ -205,7 +205,7 @@ export interface SchemaData extends ResourceState {
   type: SchemaType
   schemaSource?: string
   messageType?: string
-  core?: Schema
+  core?: PolicySchema
 }
 
 export interface FunctionData extends ResourceState {

@@ -4,7 +4,7 @@
 /* eslint-disable */
 
 import type { PaginationCursor } from './PaginationCursor';
-import type { Schema } from './Schema';
+import type { PolicySchema } from './PolicySchema';
 
 /**
  * A listing of schemas.
@@ -14,6 +14,6 @@ export type SchemaList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<Schema>;
+    items?: Array<PolicySchema>;
 };
 

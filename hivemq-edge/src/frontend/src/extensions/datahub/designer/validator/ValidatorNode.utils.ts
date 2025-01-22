@@ -1,7 +1,7 @@
 import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
 import { getIncomers } from 'reactflow'
 
-import type { DataPolicy, Schema, SchemaReference } from '@/api/__generated__'
+import type { DataPolicy, PolicySchema, SchemaReference } from '@/api/__generated__'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
@@ -17,7 +17,7 @@ import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
   store: WorkspaceState
-): DryRunResults<DataPolicyValidator, Schema> {
+): DryRunResults<DataPolicyValidator, PolicySchema> {
   const { nodes, edges } = store
 
   const schemas = getIncomers(validator, nodes, edges).filter(isSchemaNodeType)
@@ -59,7 +59,7 @@ export function checkValidityPolicyValidators(
   return incomers.map((validator) => checkValidityPolicyValidator(validator, store))
 }
 
-export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicyNode: Node<DataPolicyData>) => {
+export const loadValidators = (policy: DataPolicy, schemas: PolicySchema[], dataPolicyNode: Node<DataPolicyData>) => {
   const position: XYPosition = {
     x: dataPolicyNode.position.x + CANVAS_POSITION.Validator.x,
     y: dataPolicyNode.position.y + CANVAS_POSITION.Validator.y,

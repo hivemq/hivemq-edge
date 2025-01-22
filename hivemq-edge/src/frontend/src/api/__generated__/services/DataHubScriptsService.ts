@@ -50,15 +50,20 @@ export class DataHubScriptsService {
      * Create a new script
      * Creates a script
      * @param requestBody The script that should be created.
+     * @param ifMatch The entity tag
      * @returns Script Success
      * @throws ApiError
      */
     public createScript(
         requestBody: Script,
+        ifMatch?: string,
     ): CancelablePromise<Script> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/v1/data-hub/scripts',
+            headers: {
+                'If-Match': ifMatch,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -76,17 +81,22 @@ export class DataHubScriptsService {
      * Delete a script
      * Deletes the selected script.
      * @param scriptId The script identifier of the script to delete.
+     * @param ifMatch The entity tag
      * @returns void
      * @throws ApiError
      */
     public deleteScript(
         scriptId: string,
+        ifMatch?: string,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/api/v1/data-hub/scripts/{scriptId}',
             path: {
                 'scriptId': scriptId,
+            },
+            headers: {
+                'If-Match': ifMatch,
             },
             errors: {
                 400: `Script is referenced`,
