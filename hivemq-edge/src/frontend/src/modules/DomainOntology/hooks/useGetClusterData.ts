@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { group } from 'd3-array'
 import { hierarchy } from 'd3-hierarchy'
+import { useTranslation } from 'react-i18next'
 
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
@@ -12,11 +13,14 @@ import {
 } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 
 export const useGetClusterData = () => {
+  const { t } = useTranslation()
   const listBridges = useListBridges()
   const listAdapters = useListProtocolAdapters()
   const [clusterKeys, setClusterKeys] = useState<string[]>([])
 
   useEffect(() => {
+    if (listBridges.isError || listAdapters.isError) return
+
     const interval = setInterval(() => {
       listBridges.refetch().finally()
       listAdapters.refetch().finally()
@@ -25,6 +29,8 @@ export const useGetClusterData = () => {
   }, [listAdapters, listBridges])
 
   const data = useMemo(() => {
+    const emptyStateData = [{ id: t('ontology.error.noDataLoaded') }]
+
     const dataSource: ClusterDataWrapper[] = [
       ...(listAdapters.data?.map<ClusterDataWrapper>((e) => ({
         category: TreeEntity.ADAPTER,
@@ -44,14 +50,14 @@ export const useGetClusterData = () => {
 
     const clusterGrouped = group(dataSource, ...keyFunctions)
 
-    const clusterHierarchy = hierarchy(clusterGrouped)
+    const clusterHierarchy = hierarchy(clusterGrouped.length ? clusterGrouped : emptyStateData)
 
     if (clusterHierarchy.children === undefined) {
       return { ...clusterHierarchy, children: [...clusterHierarchy.data], data: ['Root', clusterHierarchy.data] }
     }
 
     return clusterHierarchy
-  }, [clusterKeys, listAdapters.data, listBridges.data])
+  }, [clusterKeys, listAdapters.data, listBridges.data, t])
 
   return {
     isLoading: listAdapters.isLoading || listBridges.isLoading,
