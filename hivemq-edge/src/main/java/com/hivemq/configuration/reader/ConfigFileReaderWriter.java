@@ -140,41 +140,48 @@ public class ConfigFileReaderWriter {
 
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
-                if (modified > fileModified.get()) {
-                    fileModified.set(modified);
-                    final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
-                    final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
-                    this.configEntity = hiveMQConfigEntity;
-                    if(!devmode) {
-                        fileModificationTimestamps.entrySet().forEach(pathToTs -> {
-                            try {
-                                if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
-                                    log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
-                                    System.exit(0);
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
-                            }
-                        });
-                    }
-                    if(!setConfiguration(hiveMQConfigEntity)) {
-                        if(!devmode) {
-                            log.error("Restarting because new config can't be hot-reloaded");
-                            System.exit(0);
-                        } else {
-                            log.error("TESTMODE, NOT RESTARTING");
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, 0, interval, TimeUnit.MILLISECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(
+                () -> checkMonitoredFilesForChanges(configFile, fileModified, fileModificationTimestamps)
+                , 0, interval, TimeUnit.MILLISECONDS);
         this.scheduledExecutorService = scheduledExecutorService;
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
+    }
+
+    private void checkMonitoredFilesForChanges(
+            File configFile,
+            @NotNull AtomicLong fileModified,
+            @NotNull Map<Path, Long> fileModificationTimestamps) {
+        try {
+            final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+            if (modified > fileModified.get()) {
+                fileModified.set(modified);
+                final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
+                final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
+                this.configEntity = hiveMQConfigEntity;
+                if(!devmode) {
+                    fileModificationTimestamps.entrySet().forEach(pathToTs -> {
+                        try {
+                            if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
+                                log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                                System.exit(0);
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
+                        }
+                    });
+                }
+                if(!setConfiguration(hiveMQConfigEntity)) {
+                    if(!devmode) {
+                        log.error("Restarting because new config can't be hot-reloaded");
+                        System.exit(0);
+                    } else {
+                        log.error("TESTMODE, NOT RESTARTING");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Map<Path, Long> findFilesToWatch(HiveMQConfigEntity entity) {
