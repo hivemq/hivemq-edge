@@ -28,10 +28,14 @@ const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle, f
   return (
     <Card size="sm" {...props}>
       {(cta || help) && (
-        <CardHeader as={HStack} justifyContent={cta && help ? 'space-between' : cta ? 'flex-start' : 'flex-end'}>
+        <CardHeader
+          data-testid="chart-wrapper-header"
+          as={HStack}
+          justifyContent={cta && help ? 'space-between' : cta ? 'flex-start' : 'flex-end'}
+        >
           {cta && cta}
           {help && (
-            <Popover placement="bottom-end">
+            <Popover placement="bottom-end" isLazy>
               <PopoverTrigger>
                 <Button>Help</Button>
               </PopoverTrigger>

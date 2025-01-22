@@ -26,7 +26,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }
   }, [groupKeys])
 
   return (
-    <Popover placement="bottom-start" closeOnBlur={false}>
+    <Popover placement="bottom-start" closeOnBlur={false} isLazy>
       {({ onClose }) => {
         return (
           <>
