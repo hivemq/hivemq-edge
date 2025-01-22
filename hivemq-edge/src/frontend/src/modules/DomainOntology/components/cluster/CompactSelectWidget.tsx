@@ -52,7 +52,7 @@ export const CompactSelectWidget: FC<WidgetProps> = (props) => {
         instanceId="dataPoint"
         isRequired={props.required}
         options={options}
-        // value={options.find((e) => e.name === props.value)}
+        value={options.find((option) => option.value === props.value)}
         onChange={onChange}
         components={{ Option }}
       />
