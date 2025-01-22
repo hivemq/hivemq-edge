@@ -18,6 +18,9 @@ export const schema: RJSFSchema = {
 }
 
 export const uiSchema: UiSchema = {
+  'ui:submitButtonOptions': {
+    norender: true,
+  },
   groups: {
     'ui:title': null,
     items: {

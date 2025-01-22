@@ -1,6 +1,8 @@
 import { FC, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Button,
+  HStack,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -11,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import Form from '@rjsf/chakra-ui'
 import validator from '@rjsf/validator-ajv8'
+
 import { schema, uiSchema } from '@/modules/DomainOntology/components/cluster/form-cluster.json-schema.ts'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 
@@ -20,6 +23,7 @@ interface ConfigurationPanelProps {
 }
 
 const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }) => {
+  const { t } = useTranslation()
   const data = useMemo(() => {
     const data = { groups: [...groupKeys] }
     return data
@@ -39,6 +43,7 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }
               <PopoverHeader>Configuration</PopoverHeader>
               <PopoverBody>
                 <Form
+                  id="cluster-form"
                   schema={schema}
                   uiSchema={uiSchema}
                   formData={data}
@@ -53,6 +58,11 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }
                     ArrayFieldTemplate,
                   }}
                 />
+                <HStack justifyContent="flex-end">
+                  <Button type="submit" form="cluster-form" variant="primary">
+                    {t('ontology.charts.cluster.configuration.cta.submit')}
+                  </Button>
+                </HStack>
               </PopoverBody>
             </PopoverContent>
           </>
