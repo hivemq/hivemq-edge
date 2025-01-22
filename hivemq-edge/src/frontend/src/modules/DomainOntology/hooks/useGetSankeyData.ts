@@ -70,11 +70,26 @@ export const useGetSankeyData = () => {
       // TODO[NVL] It looks weird but there is no easy way to get it scaled down
       const emptyStateData: SankeyDataProps<DefaultNode, DefaultLink> = {
         data: {
-          nodes: [{ id: t('branding.appName') }, { id: t('ontology.error.noDataLoaded') }],
+          nodes: [
+            { id: t('branding.appName') },
+            { id: t('ontology.error.noDataLoaded') },
+            { id: t('ontology.error.noTopicLoaded') },
+            { id: t('ontology.error.noTagLoaded') },
+          ],
           links: [
             {
               source: t('branding.appName'),
               target: t('ontology.error.noDataLoaded'),
+              value: 3,
+            },
+            {
+              source: t('ontology.error.noDataLoaded'),
+              target: t('ontology.error.noTopicLoaded'),
+              value: 1,
+            },
+            {
+              source: t('ontology.error.noDataLoaded'),
+              target: t('ontology.error.noTagLoaded'),
               value: 1,
             },
           ],

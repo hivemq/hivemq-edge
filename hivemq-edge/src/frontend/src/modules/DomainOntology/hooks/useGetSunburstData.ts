@@ -12,8 +12,8 @@ export const useGetSunburstData = () => {
     // TODO[NVL] id and label needs to be added to datum when stratifying
     // The Sunburst chart doesn't allow a single sector
     const emptyStateData = stratifyTopicTree([
-      { label: t('ontology.error.noDataLoaded'), count: 1 },
-      { label: t('ontology.error.noDataLoaded'), count: 1 },
+      { label: t('ontology.error.noTopicLoaded'), count: 1 },
+      { label: t('ontology.error.noTagLoaded'), count: 1 },
     ])
 
     if (isLoading) return emptyStateData
