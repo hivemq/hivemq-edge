@@ -21,7 +21,7 @@ const DomainOntologyManager: FC = () => {
         <Tab>{t('ontology.panel.wheel')}</Tab>
         <Tab>{t('ontology.panel.chord')}</Tab>
         <Tab>{t('ontology.panel.sankey')}</Tab>
-        <Tab>{t('ontology.panel.edge-blunting')}</Tab>
+        {/*<Tab>{t('ontology.panel.edge-blunting')}</Tab>*/}
       </TabList>
       <TabPanels>
         <TabPanel {...panelProps}>

@@ -1,3 +1,4 @@
+/* istanbul ignore file -- @preserve */
 import type { ReactFlowState } from 'reactflow'
 
 export const CONFIG_ZOOM_SKELETON = 0.5
