@@ -22,7 +22,6 @@ interface ConfigurationPanelProps {
 const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }) => {
   const data = useMemo(() => {
     const data = { groups: [...groupKeys] }
-    console.log('groupKeys', data)
     return data
   }, [groupKeys])
 
