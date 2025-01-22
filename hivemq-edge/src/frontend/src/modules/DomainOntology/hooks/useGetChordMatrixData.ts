@@ -3,8 +3,14 @@ import mqttTopicMatch from 'mqtt-match'
 
 import type { DomainTag, NorthboundMapping, TopicFilter } from '@/api/__generated__'
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
+import { useTranslation } from 'react-i18next'
+
+// TODO[NVL] Cannot draw arrows so different size in/out to show direction
+const SOURCE_VALUE = 1
+const TARGET_VALUE = 3
 
 export const useGetChordMatrixData = () => {
+  const { t } = useTranslation()
   const { topicFilters, tags, northMappings, bridgeSubscriptions, southMappings, isLoading, isError } =
     useGetDomainOntology()
 
@@ -35,14 +41,25 @@ export const useGetChordMatrixData = () => {
 
     const keys = Array.from(
       new Set([...Object.keys(datum), ...bridgeSubscriptions.topics, ...bridgeSubscriptions.topicFilters])
-    ) //Array.from(new Set([...allTags, ...allTopics, ...allTopicFilters]))
+    )
     const matrix = Array.from(Array(keys.length), () => Array.from(Array(keys.length), () => 0))
+
+    if (!keys.length) {
+      return {
+        matrix: [
+          [0, SOURCE_VALUE, SOURCE_VALUE],
+          [TARGET_VALUE, 0, 0],
+          [TARGET_VALUE, 0, 0],
+        ],
+        keys: [t('branding.appName'), t('ontology.error.noTopicLoaded'), t('ontology.error.noTagLoaded')],
+      }
+    }
 
     const setAdjacencyMatrix = (x: number, y: number) => {
       if (x !== -1 && y !== -1) {
         matrix[x][x] += 0
         matrix[y][y] += 0
-        matrix[x][y] += 1
+        matrix[x][y] += SOURCE_VALUE
         matrix[y][x] += 3
       }
     }
@@ -85,6 +102,7 @@ export const useGetChordMatrixData = () => {
     bridgeSubscriptions.topics,
     northMappings.data?.items,
     southMappings.data?.items,
+    t,
     tags.data?.items,
     topicFilters.data?.items,
   ])
