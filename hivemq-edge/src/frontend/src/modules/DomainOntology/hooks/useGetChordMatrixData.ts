@@ -38,12 +38,6 @@ export const useGetChordMatrixData = () => {
     ) //Array.from(new Set([...allTags, ...allTopics, ...allTopicFilters]))
     const matrix = Array.from(Array(keys.length), () => Array.from(Array(keys.length), () => 0))
 
-    console.log(
-      'XXXXXXX ke',
-      keys,
-      datum,
-      Object.values(datum).map((e) => typeof e)
-    )
     const setAdjacencyMatrix = (x: number, y: number) => {
       if (x !== -1 && y !== -1) {
         matrix[x][x] += 0
