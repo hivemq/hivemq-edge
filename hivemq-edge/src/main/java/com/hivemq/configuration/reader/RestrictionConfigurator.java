@@ -15,31 +15,50 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.RestrictionsEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
 
-public class RestrictionConfigurator {
+public class RestrictionConfigurator implements Configurator<RestrictionsEntity>{
 
     private static final Logger log = LoggerFactory.getLogger(RestrictionConfigurator.class);
 
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
 
+    private volatile RestrictionsEntity configEntity;
+    private volatile boolean initialized = false;
+
     public RestrictionConfigurator(final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getRestrictionsConfig())) {
+            return true;
+        }
+        return false;
+    }
 
-    void setRestrictionsConfig(final @NotNull RestrictionsEntity restrictionsEntity) {
-        restrictionsConfigurationService.setMaxConnections(validateMaxConnections(restrictionsEntity.getMaxConnections()));
-        restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(restrictionsEntity.getMaxClientIdLength()));
-        restrictionsConfigurationService.setNoConnectIdleTimeout(validateNoConnectIdleTimeout(restrictionsEntity.getNoConnectIdleTimeout()));
-        restrictionsConfigurationService.setIncomingLimit(validateIncomingLimit(restrictionsEntity.getIncomingBandwidthThrottling()));
-        restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(restrictionsEntity.getMaxTopicLength()));
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getRestrictionsConfig();
+        this.initialized = true;
+
+        restrictionsConfigurationService.setMaxConnections(validateMaxConnections(configEntity.getMaxConnections()));
+        restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(configEntity.getMaxClientIdLength()));
+        restrictionsConfigurationService.setNoConnectIdleTimeout(validateNoConnectIdleTimeout(configEntity.getNoConnectIdleTimeout()));
+        restrictionsConfigurationService.setIncomingLimit(validateIncomingLimit(configEntity.getIncomingBandwidthThrottling()));
+        restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(configEntity.getMaxTopicLength()));
+        return ConfigResult.SUCCESS;
     }
 
     private long validateMaxConnections(final long maxConnections) {

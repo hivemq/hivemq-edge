@@ -44,6 +44,11 @@ public class EnvironmentVariables {
     public static final String CONFIG_FOLDER = "HIVEMQ_CONFIG_FOLDER";
 
     /**
+     * Name of the environment variable for activating container mode
+     */
+    public static final String CONFIG_REFRESH_INTERVAL = "HIVEMQ_CONFIG_REFRESHINTERVAL";
+
+    /**
      * Name of the environment variable for configuring the data folder.
      */
     public static final String DATA_FOLDER = "HIVEMQ_DATA_FOLDER";

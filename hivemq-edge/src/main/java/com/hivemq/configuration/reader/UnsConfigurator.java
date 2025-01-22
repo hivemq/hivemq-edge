@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.service.UnsConfigurationService;
@@ -23,23 +25,37 @@ import com.hivemq.uns.config.ISA95;
 
 import javax.inject.Inject;
 
-public class UnsConfigurator {
+public class UnsConfigurator implements Syncable<UnsConfigEntity>{
 
     private final @NotNull UnsConfigurationService unsConfigurationService;
+
+    private volatile UnsConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public UnsConfigurator(final @NotNull UnsConfigurationService unsConfigurationService) {
         this.unsConfigurationService = unsConfigurationService;
     }
 
-    public void setUnsConfig(final @NotNull UnsConfigEntity configEntity) {
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getUns())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getUns();
+        this.initialized = true;
 
         if (configEntity == null) {
-            return;
+            return ConfigResult.SUCCESS;
         }
 
-        ISA95Entity isa95Entity = configEntity.getIsa95();
-        ISA95.Builder builderIsa95 = new ISA95.Builder();
+        final ISA95Entity isa95Entity = configEntity.getIsa95();
+        final ISA95.Builder builderIsa95 = new ISA95.Builder();
         builderIsa95.withArea(isa95Entity.getArea()).
                 withEnterprise(isa95Entity.getEnterprise()).
                 withProductionLine(isa95Entity.getProductionLine()).
@@ -48,20 +64,19 @@ public class UnsConfigurator {
                 withPrefixAllTopics(isa95Entity.isPrefixAllTopics()).
                 withEnabled(isa95Entity.isEnabled());
         unsConfigurationService.setISA95(builderIsa95.build());
+
+        return ConfigResult.SUCCESS;
     }
 
-    public void syncUnsConfig(final @NotNull UnsConfigEntity configEntity){
-        if (configEntity == null) {
-            return;
-        }
-
-        ISA95 isa95 = unsConfigurationService.getISA95();
-        configEntity.getIsa95().setEnabled(isa95.isEnabled());
-        configEntity.getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
-        configEntity.getIsa95().setArea(isa95.getArea());
-        configEntity.getIsa95().setEnterprise(isa95.getEnterprise());
-        configEntity.getIsa95().setSite(isa95.getSite());
-        configEntity.getIsa95().setWorkCell(isa95.getWorkCell());
-        configEntity.getIsa95().setProductionLine(isa95.getProductionLine());
+    @Override
+    public void sync(final @NotNull HiveMQConfigEntity entity){
+        final ISA95 isa95 = unsConfigurationService.getISA95();
+        entity.getUns().getIsa95().setEnabled(isa95.isEnabled());
+        entity.getUns().getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
+        entity.getUns().getIsa95().setArea(isa95.getArea());
+        entity.getUns().getIsa95().setEnterprise(isa95.getEnterprise());
+        entity.getUns().getIsa95().setSite(isa95.getSite());
+        entity.getUns().getIsa95().setWorkCell(isa95.getWorkCell());
+        entity.getUns().getIsa95().setProductionLine(isa95.getProductionLine());
     }
 }

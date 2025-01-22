@@ -22,6 +22,8 @@ import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.BridgeAuthenticationEntity;
 import com.hivemq.configuration.entity.bridge.BridgeMqttEntity;
 import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
@@ -50,7 +52,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class BridgeConfigurator {
+public class BridgeConfigurator implements Syncable<List<MqttBridgeEntity>>{
 
     private static final Logger log = LoggerFactory.getLogger(BridgeConfigurator.class);
     public static final String KEYSTORE_TYPE_PKCS12 = "PKCS12";
@@ -58,19 +60,29 @@ public class BridgeConfigurator {
 
     private final @NotNull BridgeConfigurationService bridgeConfigurationService;
 
+    private volatile List<MqttBridgeEntity> configEntity;
+    private volatile boolean initialized = false;
+
     @Inject
     public BridgeConfigurator(
             final @NotNull BridgeConfigurationService bridgeConfigurationService) {
         this.bridgeConfigurationService = bridgeConfigurationService;
     }
 
-    public void setBridgeConfig(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
-
-        if (bridgeConfigs.isEmpty()) {
-            return;
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getBridgeConfig())) {
+            return true;
         }
+        return false;
+    }
 
-        for (MqttBridgeEntity bridgeConfig : bridgeConfigs) {
+    @Override
+    public ConfigResult setConfig(@NotNull final HiveMQConfigEntity config) {
+        this.configEntity = config.getBridgeConfig();
+        initialized = true;
+
+        for (final MqttBridgeEntity bridgeConfig : configEntity) {
             final RemoteBrokerEntity remoteBroker = bridgeConfig.getRemoteBroker();
             final MqttBridge.Builder builder = new MqttBridge.Builder();
 
@@ -139,6 +151,7 @@ public class BridgeConfigurator {
 
             bridgeConfigurationService.addBridge(builder.build());
         }
+        return ConfigResult.SUCCESS;
     }
 
     private @NotNull List<LocalSubscription> convertLocalSubscriptions(
@@ -276,14 +289,12 @@ public class BridgeConfigurator {
                 .build();
     }
 
-    public void syncBridgeConfig(final @NotNull List<MqttBridgeEntity> bridgeConfigs) {
-        if (bridgeConfigs == null) {
-            return;
-        }
+    @Override
+    public void sync(final @NotNull HiveMQConfigEntity entity) {
         List<MqttBridge> liveBridges = bridgeConfigurationService.getBridges();
         List<MqttBridgeEntity> newList = liveBridges.stream().map(this::uncovert).collect(Collectors.toList());
-        bridgeConfigs.clear();
-        bridgeConfigs.addAll(newList);
+        entity.getBridgeConfig().clear();
+        entity.getBridgeConfig().addAll(newList);
     }
 
     protected MqttBridgeEntity uncovert(MqttBridge from) {

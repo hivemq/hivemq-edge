@@ -73,7 +73,7 @@ class S7ProtocolAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
@@ -112,7 +112,7 @@ class S7ProtocolAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
@@ -198,21 +198,7 @@ class S7ProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

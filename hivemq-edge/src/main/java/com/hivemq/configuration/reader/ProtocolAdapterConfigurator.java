@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -22,20 +24,38 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProtocolAdapterConfigurator {
+public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapterEntity>> {
 
     private final @NotNull ProtocolAdapterConfigurationService configurationService;
+
+    private volatile List<ProtocolAdapterEntity> configEntity;
+    private volatile boolean initialized = false;
 
     public ProtocolAdapterConfigurator(final @NotNull ProtocolAdapterConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull List<ProtocolAdapterEntity> protocolAdapterConfigs) {
-        configurationService.setAllConfigs(new ArrayList<>(protocolAdapterConfigs));
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getProtocolAdapterConfig())) {
+            return true;
+        }
+        return false;
     }
 
-    public void syncConfigs(final @NotNull List<ProtocolAdapterEntity> config) {
-        config.clear();
-        config.addAll(configurationService.getAllConfigs());
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getProtocolAdapterConfig();
+        this.initialized = true;
+
+        configurationService.setAllConfigs(new ArrayList<>(configEntity));
+
+        return ConfigResult.SUCCESS;
+    }
+
+    @Override
+    public void sync(final @NotNull HiveMQConfigEntity config) {
+        config.getProtocolAdapterConfig().clear();
+        config.getProtocolAdapterConfig().addAll(configurationService.getAllConfigs());
     }
 }

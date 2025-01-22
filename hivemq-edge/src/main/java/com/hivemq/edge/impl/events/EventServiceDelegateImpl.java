@@ -64,6 +64,11 @@ public class EventServiceDelegateImpl implements EventService {
     }
 
     @Override
+    public @NotNull EventBuilder configurationEvent() {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
+    }
+
+    @Override
     public List<Event> readEvents(final @Nullable Long sinceTimestamp, final @Nullable Integer limit) {
         return eventStore.readEvents(sinceTimestamp, limit);
     }

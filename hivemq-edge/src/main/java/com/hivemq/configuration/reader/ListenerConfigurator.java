@@ -18,6 +18,8 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TLSEntity;
@@ -47,7 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ListenerConfigurator {
+public class ListenerConfigurator implements Configurator<ListenerConfigurator.Listeners> {
 
     private static final Logger log = LoggerFactory.getLogger(ListenerConfigurator.class);
     public static final String KEYSTORE_TYPE_PKCS12 = "PKCS12";
@@ -55,6 +57,8 @@ public class ListenerConfigurator {
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull SystemInformation systemInformation;
+    private volatile Listeners configEntity;
+    private volatile boolean initialized = false;
 
     private final @NotNull List<String> chosenNames;
 
@@ -66,16 +70,30 @@ public class ListenerConfigurator {
         this.chosenNames = new ArrayList<>();
     }
 
-    void setListenerConfig(
-            final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
-        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(mqttListeners);
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
+        if(initialized && hasChanged(this.configEntity, listeners)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
+        this.configEntity = listeners;
+        this.initialized = true;
+
+        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(configEntity.mqttListeners);
         for (final Listener listener : convertedMqttListeners) {
             listenerConfigurationService.addListener(listener);
         }
-        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(mqttsnListeners);
+        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(configEntity.mqttsnListeners);
         for (final Listener listener : convertedMqttsnListeners) {
             listenerConfigurationService.addListener(listener);
         }
+        return ConfigResult.SUCCESS;
     }
 
     private @NotNull ImmutableList<Listener> convertListenerEntities(final @NotNull List<ListenerEntity> entities) {
@@ -259,4 +277,12 @@ public class ListenerConfigurator {
         }
     }
 
+    public static class Listeners {
+        public final @NotNull List<ListenerEntity> mqttListeners;
+        public final @NotNull List<ListenerEntity> mqttsnListeners;
+        public Listeners(final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
+            this.mqttListeners = mqttListeners;
+            this.mqttsnListeners = mqttsnListeners;
+        }
+    }
 }

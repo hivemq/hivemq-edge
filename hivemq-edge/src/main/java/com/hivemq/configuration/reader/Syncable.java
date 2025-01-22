@@ -13,23 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols;
+package com.hivemq.configuration.reader;
 
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 
-class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {
+public interface Syncable<T> extends Configurator<T> {
 
-    private final @NotNull ModuleServices moduleServices;
-
-    ProtocolAdapterStartInputImpl(
-            final @NotNull ModuleServices moduleServices) {
-        this.moduleServices = moduleServices;
-    }
-
-    @Override
-    public @NotNull ModuleServices moduleServices() {
-        return moduleServices;
-    }
+    /**
+     * Sync the provided entity with the current state in the configurator.
+     *
+     * @param entity the entity to witch the internal state of the configurator is applied to
+     */
+    void sync(HiveMQConfigEntity entity);
 }

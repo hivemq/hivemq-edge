@@ -131,12 +131,12 @@ public class ProtocolAdapterEntity {
     public static @NotNull ProtocolAdapterEntity from(
             final @NotNull ProtocolAdapterConfig protocolAdapterConfig, final @NotNull ObjectMapper objectMapper) {
 
-        final List<NorthboundMappingEntity> northboundMappings = protocolAdapterConfig.getFromEdgeMappings()
+        final List<NorthboundMappingEntity> northboundMappings = protocolAdapterConfig.getNorthboundMappings()
                 .stream()
                 .map(NorthboundMappingEntity::from)
                 .collect(Collectors.toList());
 
-        final List<SouthboundMappingEntity> southboundMappings = protocolAdapterConfig.getToEdgeMappings()
+        final List<SouthboundMappingEntity> southboundMappings = protocolAdapterConfig.getSouthboundMappings()
                 .stream()
                 .map(SouthboundMappingEntity::from)
                 .collect(Collectors.toList());

@@ -51,6 +51,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockitoAnnotations;
 
 import java.io.File;
+import java.util.List;
 
 public class AbstractConfigurationTest {
 
@@ -98,20 +99,21 @@ public class AbstractConfigurationTest {
         final ConfigurationFile configurationFile = new ConfigurationFile(xmlFile);
         reader = new ConfigFileReaderWriter(
                 configurationFile,
-                new RestrictionConfigurator(restrictionsConfigurationService),
-                new SecurityConfigurator(securityConfigurationService),
-                new MqttConfigurator(mqttConfigurationService),
-                new ListenerConfigurator(listenerConfigurationService, systemInformation),
-                new PersistenceConfigurator(persistenceConfigurationService),
-                new MqttsnConfigurator(mqttsnConfigurationService),
-                new BridgeConfigurator(bridgeConfigurationService),
-                new ApiConfigurator(apiConfigurationService),
-                new UnsConfigurator(unsConfigurationService),
-                new DynamicConfigConfigurator(dynamicConfigurationService),
-                new UsageTrackingConfigurator(usageTrackingConfigurationService),
-                new ProtocolAdapterConfigurator(protocolAdapterConfigurationService),
-                new ModuleConfigurator(moduleConfigurationService),
-                new InternalConfigurator(internalConfigurationService));
+                List.of(
+                        new RestrictionConfigurator(restrictionsConfigurationService),
+                        new SecurityConfigurator(securityConfigurationService),
+                        new MqttConfigurator(mqttConfigurationService),
+                        new ListenerConfigurator(listenerConfigurationService, systemInformation),
+                        new PersistenceConfigurator(persistenceConfigurationService),
+                        new MqttsnConfigurator(mqttsnConfigurationService),
+                        new BridgeConfigurator(bridgeConfigurationService),
+                        new ApiConfigurator(apiConfigurationService),
+                        new UnsConfigurator(unsConfigurationService),
+                        new DynamicConfigConfigurator(dynamicConfigurationService),
+                        new UsageTrackingConfigurator(usageTrackingConfigurationService),
+                        new ProtocolAdapterConfigurator(protocolAdapterConfigurationService),
+                        new ModuleConfigurator(moduleConfigurationService),
+                        new InternalConfigurator(internalConfigurationService)));
     }
 
 }

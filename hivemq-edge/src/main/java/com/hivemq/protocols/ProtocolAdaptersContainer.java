@@ -15,21 +15,19 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import org.jetbrains.annotations.NotNull;
 
-class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-    private final @NotNull ModuleServices moduleServices;
+public class ProtocolAdaptersContainer {
+    private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
 
-    ProtocolAdapterStartInputImpl(
-            final @NotNull ModuleServices moduleServices) {
-        this.moduleServices = moduleServices;
+    public ProtocolAdapterWrapper getAdapterById(@NotNull final String id) {
+        return protocolAdapters.get(id);
     }
 
-    @Override
-    public @NotNull ModuleServices moduleServices() {
-        return moduleServices;
+    public ProtocolAdapterWrapper removeAdapterById(@NotNull final String id) {
+        return protocolAdapters.remove(id);
     }
 }

@@ -51,6 +51,8 @@ import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceIm
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * @author Christoph Schäbel
  */
@@ -77,22 +79,27 @@ public class ConfigurationBootstrap {
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
 
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                new RestrictionConfigurator(configurationService.restrictionsConfiguration()),
-                new SecurityConfigurator(configurationService.securityConfiguration()),
-                new MqttConfigurator(configurationService.mqttConfiguration()),
-                new ListenerConfigurator(configurationService.listenerConfiguration(), systemInformation),
-                new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
-                new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
-                new BridgeConfigurator(configurationService.bridgeConfiguration()),
-                new ApiConfigurator(configurationService.apiConfiguration()),
-                new UnsConfigurator(configurationService.unsConfiguration()),
-                new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
-                new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
-                new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
-                new InternalConfigurator(configurationService.internalConfigurationService()));
+                List.of(
+                        new RestrictionConfigurator(configurationService.restrictionsConfiguration()),
+                        new SecurityConfigurator(configurationService.securityConfiguration()),
+                        new MqttConfigurator(configurationService.mqttConfiguration()),
+                        new ListenerConfigurator(configurationService.listenerConfiguration(), systemInformation),
+                        new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
+                        new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
+                        new BridgeConfigurator(configurationService.bridgeConfiguration()),
+                        new ApiConfigurator(configurationService.apiConfiguration()),
+                        new UnsConfigurator(configurationService.unsConfiguration()),
+                        new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
+                        new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
+                        new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
+                        new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
+                        new InternalConfigurator(configurationService.internalConfigurationService())));
 
-        configFileReader.applyConfig();
+        if (systemInformation.configRefreshIntervalInMs() <= 0) {
+            configFileReader.applyConfig();
+        } else {
+            configFileReader.applyConfigAndWatch(systemInformation.configRefreshIntervalInMs());
+        }
         configurationService.setConfigFileReaderWriter(configFileReader);
         return configurationService;
     }

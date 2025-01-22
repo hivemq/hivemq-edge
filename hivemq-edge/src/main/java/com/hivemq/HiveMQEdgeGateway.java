@@ -66,7 +66,7 @@ public class HiveMQEdgeGateway {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             bridgeService.updateBridges();
-            protocolAdapterManager.start().get();
+            protocolAdapterManager.start();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");

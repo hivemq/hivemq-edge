@@ -16,30 +16,45 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.DynamicConfigEntity;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.util.List;
 
-public class DynamicConfigConfigurator {
+public class DynamicConfigConfigurator implements Configurator<DynamicConfigEntity> {
 
     private final @NotNull DynamicConfigurationService dynamicConfigService;
+
+    private volatile DynamicConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     @Inject
     public DynamicConfigConfigurator(final @NotNull DynamicConfigurationService dynamicConfigService) {
         this.dynamicConfigService = dynamicConfigService;
     }
 
-    public void setConfig(final @NotNull DynamicConfigEntity configEntity) {
-
-        if (configEntity == null) {
-            return;
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getGatewayConfig())) {
+            return true;
         }
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getGatewayConfig();
+        this.initialized = true;
 
         dynamicConfigService.setConfigurationExportEnabled(
                 configEntity.isConfigurationExportEnabled());
 
         dynamicConfigService.setMutableConfigurationEnabled(
                 configEntity.isMutableConfigurationEnabled());
+
+        return ConfigResult.SUCCESS;
     }
 }

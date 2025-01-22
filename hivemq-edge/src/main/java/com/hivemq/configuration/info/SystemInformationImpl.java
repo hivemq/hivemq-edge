@@ -52,6 +52,8 @@ public class SystemInformationImpl implements SystemInformation {
     private final boolean embedded;
     private final int processorCount;
 
+    private final long configRefreshIntervalInMs;
+
     private final boolean usePathOfRunningJar;
 
     public SystemInformationImpl() {
@@ -70,6 +72,7 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File pluginFolder,
             final @Nullable File modulesFolder,
             final @Nullable File licenseFolder) {
+        final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
@@ -78,6 +81,7 @@ public class SystemInformationImpl implements SystemInformation {
         this.modulesFolder = modulesFolder;
         this.licenseFolder = licenseFolder;
         this.runningSince = System.currentTimeMillis();
+        this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
         processorCount = getPhysicalProcessorCount();
     }
 
@@ -207,6 +211,11 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public long getRunningSince() {
         return runningSince;
+    }
+
+    @Override
+    public long configRefreshIntervalInMs() {
+        return configRefreshIntervalInMs;
     }
 
     /**

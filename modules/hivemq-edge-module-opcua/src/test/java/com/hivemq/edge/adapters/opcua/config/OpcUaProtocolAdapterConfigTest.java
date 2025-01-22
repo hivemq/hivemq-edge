@@ -90,7 +90,7 @@ class OpcUaProtocolAdapterConfigTest {
 
 
 
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
@@ -107,7 +107,7 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
         });
 
-        assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
         }, mapping -> {
@@ -137,7 +137,7 @@ class OpcUaProtocolAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
@@ -150,7 +150,7 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
         });
 
-        assertThat(protocolAdapterConfig.getToEdgeMappings()).satisfiesExactly(mapping -> {
+        assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
         });
@@ -270,21 +270,7 @@ class OpcUaProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

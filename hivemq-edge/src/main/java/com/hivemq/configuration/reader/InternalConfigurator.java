@@ -15,22 +15,43 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.OptionEntity;
+import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-public class InternalConfigurator {
+import java.util.List;
+
+public class InternalConfigurator implements Configurator<InternalConfigEntity> {
 
     private final @NotNull InternalConfigurationService internalConfigurationService;
+
+    private volatile InternalConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     public InternalConfigurator(final @NotNull InternalConfigurationService internalConfigurationService) {
         this.internalConfigurationService = internalConfigurationService;
     }
 
-    public void setConfig(final @NotNull InternalConfigEntity internalConfigEntity) {
-        for (final OptionEntity optionEntity : internalConfigEntity.getOptions()) {
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getInternal())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getInternal();
+        this.initialized = true;
+
+        for (final OptionEntity optionEntity : configEntity.getOptions()) {
             internalConfigurationService.set(optionEntity.getKey(), optionEntity.getValue());
         }
+
+        return ConfigResult.SUCCESS;
     }
 }
