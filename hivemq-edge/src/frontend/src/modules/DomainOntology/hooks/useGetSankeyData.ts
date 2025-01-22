@@ -111,6 +111,7 @@ export const useGetSankeyData = () => {
     bridgeSubscriptions.topics,
     northMappings.data?.items,
     southMappings.data?.items,
+    t,
     tags.data?.items,
     topicFilters.data?.items,
   ])
