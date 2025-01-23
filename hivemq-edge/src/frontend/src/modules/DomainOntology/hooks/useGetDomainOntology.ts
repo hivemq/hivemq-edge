@@ -21,23 +21,23 @@ export const useGetDomainOntology = () => {
     northMappings.isError || southMappings.isError || tags.isError || bridges.isError || topicFilters.isError
 
   const bridgeSubscriptions = useMemo<BridgeSubscription>(() => {
-    const topics = [] as string[]
-    const topicFilters = [] as string[]
-    const mappings = [] as string[][]
+    const topics: string[] = []
+    const topicFilters: string[] = []
+    const mappings: string[][] = []
 
     for (const bridge of bridges.data || []) {
       for (const local of bridge.localSubscriptions || []) {
         const { destination, filters } = local
         topics.push(destination)
         topicFilters.push(...filters)
-        mappings.push(...filters.map((e) => [e, destination]))
+        mappings.push(...filters.map((filter) => [filter, destination]))
       }
 
       for (const remote of bridge.remoteSubscriptions || []) {
         const { destination, filters } = remote
         topics.push(destination)
         topicFilters.push(...filters)
-        mappings.push(...filters.map((e) => [e, destination]))
+        mappings.push(...filters.map((filter) => [filter, destination]))
       }
     }
     return { topics: Array.from(new Set(topics)), topicFilters: Array.from(new Set(topicFilters)), mappings }

@@ -32,13 +32,16 @@ export const useGetClusterData = () => {
     const emptyStateData = [{ id: t('ontology.error.noDataLoaded') }]
 
     const dataSource: ClusterDataWrapper[] = [
-      ...(listAdapters.data?.map<ClusterDataWrapper>((e) => ({
+      ...(listAdapters.data?.map<ClusterDataWrapper>((adapter) => ({
         category: TreeEntity.ADAPTER,
-        payload: e,
-        name: e.id,
+        payload: adapter,
+        name: adapter.id,
       })) || []),
-      ...(listBridges.data?.map<ClusterDataWrapper>((e) => ({ category: TreeEntity.BRIDGE, payload: e, name: e.id })) ||
-        []),
+      ...(listBridges.data?.map<ClusterDataWrapper>((bridge) => ({
+        category: TreeEntity.BRIDGE,
+        payload: bridge,
+        name: bridge.id,
+      })) || []),
     ]
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

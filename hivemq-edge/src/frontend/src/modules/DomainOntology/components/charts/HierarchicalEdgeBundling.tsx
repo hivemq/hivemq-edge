@@ -14,7 +14,7 @@ const BUNDLE_COEFF = 0.95
 const MARGIN = 200
 
 export const HierarchicalEdgeBundling = ({ width, height, data }: HierarchicalEdgeBundlingProps) => {
-  const hierarchyxxx = useMemo(() => {
+  const hierarchyNode = useMemo(() => {
     return hierarchy(data).sum((d) => d.value)
   }, [data])
 
@@ -26,14 +26,13 @@ export const HierarchicalEdgeBundling = ({ width, height, data }: HierarchicalEd
       .separation((a, b) => {
         return a.parent == b.parent ? 1 : 6
       })
-    return dendrogramGenerator(hierarchyxxx)
-  }, [radius, hierarchyxxx])
+    return dendrogramGenerator(hierarchyNode)
+  }, [radius, hierarchyNode])
 
   const allNodes = dendrogram
     .descendants()
     .filter((node) => node.data.type === 'leaf')
     .map((node) => {
-      console.log('XXXXXX', node)
       const turnLabelUpsideDown = node.x > 180
       return (
         <g key={`${node.data.name}-source`} transform={'rotate(' + (node.x - 90) + ')translate(' + node.y + ')'}>
@@ -82,8 +81,6 @@ export const HierarchicalEdgeBundling = ({ width, height, data }: HierarchicalEd
         const traversedCoords = traversedNodes.map((node) => {
           return { x: node.x, y: node.y }
         })
-
-        // console.log('XXXXXXX re', targetNodeName, i, sourceNode.data.name)
 
         return (
           <path
