@@ -1,4 +1,4 @@
-import { RangeOption } from '@/components/DateTime/types.ts'
+import type { RangeOption } from '@/components/DateTime/types.ts'
 import { DateTime, Duration } from 'luxon'
 
 export const MOCK_RANGE_OPTION: RangeOption = {

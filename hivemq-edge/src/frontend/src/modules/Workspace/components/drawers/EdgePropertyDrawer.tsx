@@ -1,6 +1,7 @@
-import { FC, useState } from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import {
   Drawer,
   DrawerBody,

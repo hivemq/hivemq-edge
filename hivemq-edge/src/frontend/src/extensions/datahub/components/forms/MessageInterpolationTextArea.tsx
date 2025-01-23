@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 

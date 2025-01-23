@@ -1,7 +1,7 @@
-import { FC } from 'react'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
-import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
-import { IdSchema } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
+import type { IdSchema } from '@rjsf/utils'
 
 export enum BatchModeStepType {
   UPLOAD,

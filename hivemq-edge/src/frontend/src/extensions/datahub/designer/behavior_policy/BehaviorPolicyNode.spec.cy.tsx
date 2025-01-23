@@ -1,11 +1,12 @@
 /// <reference types="cypress" />
 
-import { NodeProps } from 'reactflow'
+import type { NodeProps } from 'reactflow'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
+import type { BehaviorPolicyData } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.tsx'
 
 const MOCK_NODE_BEHAVIOR_POLICY: NodeProps<BehaviorPolicyData> = {

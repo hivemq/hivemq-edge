@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
 import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
 

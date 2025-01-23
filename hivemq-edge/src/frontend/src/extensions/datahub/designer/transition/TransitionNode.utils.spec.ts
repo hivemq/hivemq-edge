@@ -1,24 +1,17 @@
 import { expect } from 'vitest'
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import {
-  BehaviorPolicyData,
-  BehaviorPolicyType,
-  DataHubNodeType,
-  OperationData,
-  StateType,
-  TransitionData,
-  TransitionType,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { BehaviorPolicyData, OperationData, TransitionData, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType, StateType, TransitionType } from '@datahub/types.ts'
 import {
   checkValidityTransitions,
   extractEventStates,
   getActiveTransition,
   loadTransitions,
 } from '@datahub/designer/transition/TransitionNode.utils.ts'
-import { type BehaviorPolicy, BehaviorPolicyOnTransition, Schema, Script } from '@/api/__generated__'
+import type { BehaviorPolicyOnTransition, Schema, Script } from '@/api/__generated__'
+import { type BehaviorPolicy } from '@/api/__generated__'
 
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
   id: 'node-id',

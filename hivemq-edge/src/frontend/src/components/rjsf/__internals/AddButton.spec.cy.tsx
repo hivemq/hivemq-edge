@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { IconButtonProps } from '@rjsf/utils'
+import type { IconButtonProps } from '@rjsf/utils'
 import AddButton from '@/components/rjsf/__internals/AddButton.tsx'
 
 const mockIconButtonProps: IconButtonProps = {

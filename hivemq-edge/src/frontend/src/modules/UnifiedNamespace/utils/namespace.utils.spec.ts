@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { ISA95Namespace } from '../types.ts'
+import type { ISA95Namespace } from '../types.ts'
 import { namespaceToStrings } from '@/modules/UnifiedNamespace/utils/namespace.utils.ts'
 
 type MatchSuite = [ISA95Namespace, string[]]

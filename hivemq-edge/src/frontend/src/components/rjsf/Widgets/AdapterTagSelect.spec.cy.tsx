@@ -1,8 +1,8 @@
-import { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
 
 import { mockDataPointOPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import AdapterTagSelect from '@/components/rjsf/Widgets/AdapterTagSelect.tsx'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 const MOCK_ADAPTER_PROPS: WidgetProps = {
   id: 'adapter-widget',

@@ -1,4 +1,5 @@
-import { FC, Fragment } from 'react'
+import type { FC } from 'react'
+import { Fragment } from 'react'
 import { chakra, Kbd, Text } from '@chakra-ui/react'
 
 import i18n from '@/config/i18n.config.ts'

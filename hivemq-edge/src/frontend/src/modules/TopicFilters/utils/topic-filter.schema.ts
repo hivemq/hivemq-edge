@@ -1,6 +1,6 @@
 // data:content/type;base64,
-import { RJSFSchema } from '@rjsf/utils'
-import { Accept } from 'react-dropzone'
+import type { RJSFSchema } from '@rjsf/utils'
+import type { Accept } from 'react-dropzone'
 import validator from '@rjsf/validator-ajv8'
 
 import i18n from '@/config/i18n.config.ts'

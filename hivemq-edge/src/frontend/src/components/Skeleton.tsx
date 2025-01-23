@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box, SkeletonCircle, SkeletonText } from '@chakra-ui/react'
 
 const Skeleton: FC = () => {

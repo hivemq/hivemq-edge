@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'

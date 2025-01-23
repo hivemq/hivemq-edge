@@ -1,8 +1,9 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
-import { IChangeEvent } from '@rjsf/core'
-import { RJSFSchema } from '@rjsf/utils'
+import type { IChangeEvent } from '@rjsf/core'
+import type { RJSFSchema } from '@rjsf/utils'
 
 import {
   Button,
@@ -17,14 +18,14 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { customUniqueAdapterValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'

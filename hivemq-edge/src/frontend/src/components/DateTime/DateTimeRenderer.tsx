@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Text, Tooltip, type TextProps } from '@chakra-ui/react'
-import { DateTime } from 'luxon'
+import type { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 
 import { toHuman } from './utils/duration.utils.ts'

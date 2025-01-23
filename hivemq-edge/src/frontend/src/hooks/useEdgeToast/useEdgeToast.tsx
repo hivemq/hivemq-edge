@@ -1,7 +1,8 @@
-import { Text, useToast, UseToastOptions } from '@chakra-ui/react'
+import type { UseToastOptions } from '@chakra-ui/react'
+import { Text, useToast } from '@chakra-ui/react'
 
-import { ApiError } from '@/api/__generated__'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import type { ApiError } from '@/api/__generated__'
+import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useEdgeToast = () => {

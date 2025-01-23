@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { IoLinkOutline } from 'react-icons/io5'
 import { GoLinkExternal } from 'react-icons/go'
 
-import { OnboardingTask } from '@/modules/Welcome/types.ts'
+import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
-import { ApiError } from '@/api/__generated__'
+import type { ApiError } from '@/api/__generated__'
 
 export interface OnboardingFetchType {
   data?: OnboardingTask[]

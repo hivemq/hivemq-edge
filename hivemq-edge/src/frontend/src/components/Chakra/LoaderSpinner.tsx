@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Spinner, type SpinnerProps } from '@chakra-ui/react'
 
 const LoaderSpinner: FC<SpinnerProps> = (props) => {

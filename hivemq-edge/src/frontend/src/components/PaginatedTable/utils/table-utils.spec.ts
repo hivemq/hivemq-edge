@@ -1,7 +1,7 @@
 import { expect } from 'vitest'
-import { AriaAttributes } from 'react'
+import type { AriaAttributes } from 'react'
 import { getAriaSort } from '@/components/PaginatedTable/utils/table-utils.ts'
-import { SortDirection } from '@tanstack/react-table'
+import type { SortDirection } from '@tanstack/react-table'
 
 interface TestEachSuite {
   canSort: boolean

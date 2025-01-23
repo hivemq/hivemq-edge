@@ -1,7 +1,9 @@
-import { getIncomers, getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Node, NodeAddChange, XYPosition } from 'reactflow'
+import { getIncomers, getOutgoers } from 'reactflow'
 
-import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
-import { DataHubNodeType, DataPolicyData, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import type { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
+import type { DataPolicyData, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 

@@ -1,4 +1,4 @@
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 
 /* istanbul ignore next -- @preserve */
 export const MqttUserProperty: RJSFSchema = {

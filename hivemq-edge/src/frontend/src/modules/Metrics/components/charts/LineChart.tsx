@@ -1,10 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Box, useTheme } from '@chakra-ui/react'
 
-import { ChartProps } from '../../types.ts'
+import type { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import ChartTooltip from '../parts/ChartTooltip.tsx'
 

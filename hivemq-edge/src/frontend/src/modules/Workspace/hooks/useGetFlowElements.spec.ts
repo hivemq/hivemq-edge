@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, beforeEach, afterEach, vi } from 'vitest'
-import { WithCSSVar } from '@chakra-ui/react'
-import { Dict } from '@chakra-ui/utils'
+import type { WithCSSVar } from '@chakra-ui/react'
+import type { Dict } from '@chakra-ui/utils'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
@@ -11,7 +11,7 @@ import queryClient from '@/api/queryClient.ts'
 import '@/config/i18n.config.ts'
 
 import useGetFlowElements from './useGetFlowElements.ts'
-import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
+import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {

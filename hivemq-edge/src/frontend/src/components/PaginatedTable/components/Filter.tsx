@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Column } from '@tanstack/react-table'
+import type { Column } from '@tanstack/react-table'
 import { CreatableSelect } from 'chakra-react-select'
 import { Box } from '@chakra-ui/react'
 import { DateTime } from 'luxon'

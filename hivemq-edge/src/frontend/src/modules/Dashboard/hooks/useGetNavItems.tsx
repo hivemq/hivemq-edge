@@ -10,7 +10,7 @@ import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 
-import { NavLinksBlockType } from '../types.ts'
+import type { NavLinksBlockType } from '../types.ts'
 
 const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => {
   const { t } = useTranslation()

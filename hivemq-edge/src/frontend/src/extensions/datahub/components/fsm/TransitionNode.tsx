@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position } from 'reactflow'
 import { Checkbox, HStack, Tag } from '@chakra-ui/react'
 
 export const TransitionNode: FC<NodeProps> = (props) => {

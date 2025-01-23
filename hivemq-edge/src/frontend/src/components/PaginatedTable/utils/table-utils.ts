@@ -1,5 +1,5 @@
-import { AriaAttributes } from 'react'
-import { SortDirection } from '@tanstack/react-table'
+import type { AriaAttributes } from 'react'
+import type { SortDirection } from '@tanstack/react-table'
 
 export const getAriaSort = (canSort: boolean, isSorted: false | SortDirection): AriaAttributes['aria-sort'] => {
   if (!canSort) return undefined

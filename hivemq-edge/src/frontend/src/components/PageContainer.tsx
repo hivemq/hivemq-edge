@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 import { Box, Text, Flex, Heading, chakra as Chakra } from '@chakra-ui/react'
 
 interface PageContainerProps {

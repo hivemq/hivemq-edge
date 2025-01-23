@@ -1,5 +1,5 @@
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
-import { ArrayFieldTemplateProps } from '@rjsf/utils'
+import type { ArrayFieldTemplateProps } from '@rjsf/utils'
 import { Heading, Text } from '@chakra-ui/react'
 
 const mockTemplateProps: ArrayFieldTemplateProps = {

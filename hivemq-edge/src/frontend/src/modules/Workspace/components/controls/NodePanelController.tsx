@@ -1,12 +1,16 @@
-import { FC, lazy, Suspense, useEffect } from 'react'
+import type { FC } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Node, useEdges, useNodes } from 'reactflow'
+import type { Node } from 'reactflow'
+import { useEdges, useNodes } from 'reactflow'
 import { useDisclosure } from '@chakra-ui/react'
 
-import { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import { DeviceMetadata, EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import type { DeviceMetadata, Group } from '@/modules/Workspace/types.ts'
+import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 
 const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))

@@ -1,9 +1,10 @@
-import { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { DataPolicy } from '@/api/__generated__'
+import type { DataPolicy } from '@/api/__generated__'
 
 import { getNodeId } from '@datahub/utils/node.utils.ts'
-import { DataHubNodeType, DataPolicyData, TopicFilterData } from '@datahub/types.ts'
+import type { DataPolicyData, TopicFilterData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export const loadTopicFilter = (

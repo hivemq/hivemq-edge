@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { FormControl, FormHelperText, FormLabel, Input, HStack, Switch } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,7 @@ import { useValidationRules } from '@/api/hooks/useValidationRules/useValidation
 import { $TlsConfiguration } from '@/api/__generated__'
 
 import { CYPHER_SUITES, TLS_PROTOCOLS } from '../../utils/tlsConfiguration.ts'
-import { BridgePanelType } from '../../types.ts'
+import type { BridgePanelType } from '../../types.ts'
 
 const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()

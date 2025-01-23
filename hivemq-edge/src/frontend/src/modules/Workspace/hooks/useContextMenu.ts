@@ -1,4 +1,5 @@
-import { MouseEvent, useEffect } from 'react'
+import type { MouseEvent } from 'react'
+import { useEffect } from 'react'
 import { useKeyPress } from 'reactflow'
 import { useNavigate } from 'react-router-dom'
 

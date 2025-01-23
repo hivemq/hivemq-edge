@@ -1,4 +1,4 @@
-import { HotKeyItem } from '@datahub/types.ts'
+import type { HotKeyItem } from '@datahub/types.ts'
 
 export const SCRIPT_FUNCTION_SEPARATOR = ':'
 export const SCRIPT_FUNCTION_PREFIX = 'fn'

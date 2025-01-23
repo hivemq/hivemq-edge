@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { ApiError, NotificationList } from '@/api/__generated__'
+import type { ApiError, NotificationList } from '@/api/__generated__'
 
 export const useGetNotifications = () => {
   const appClient = useHttpClient()

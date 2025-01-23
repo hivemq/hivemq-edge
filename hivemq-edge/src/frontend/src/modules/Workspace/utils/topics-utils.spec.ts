@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
-import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
+import type { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 
-import { Adapter, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { TopicFilter } from '@/modules/Workspace/types.ts'
+import type { TopicFilter } from '@/modules/Workspace/types.ts'
 
 import { MOCK_PROTOCOL_MODBUS, MOCK_ADAPTER_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
 import { MOCK_PROTOCOL_SIMULATION, MOCK_ADAPTER_SIMULATION } from '@/__test-utils__/adapters/simulation.ts'

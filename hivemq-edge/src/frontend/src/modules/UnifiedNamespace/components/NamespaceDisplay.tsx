@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Breadcrumb, BreadcrumbItem, type BreadcrumbProps, Text } from '@chakra-ui/react'
-import { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
+import type { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
 
 import { NAMESPACE_SEPARATOR, namespaceToStrings } from '../utils/namespace.utils.ts'
 

@@ -1,17 +1,10 @@
 import { create } from 'zustand'
-import {
-  EdgeChange,
-  NodeChange,
-  NodeAddChange,
-  EdgeAddChange,
-  Node,
-  addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
-} from 'reactflow'
-import { Group, NodeTypes, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
+import type { EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from 'reactflow'
+import { addEdge, applyNodeChanges, applyEdgeChanges } from 'reactflow'
+import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { Adapter } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
 
 // define the initial state
 const initialState: WorkspaceState = {

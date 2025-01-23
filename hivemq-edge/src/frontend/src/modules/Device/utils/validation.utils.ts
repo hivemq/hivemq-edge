@@ -1,4 +1,4 @@
-import { FormValidation } from '@rjsf/utils'
+import type { FormValidation } from '@rjsf/utils'
 import type { DomainTagList } from '@/api/__generated__'
 
 import i18n from '@/config/i18n.config.ts'

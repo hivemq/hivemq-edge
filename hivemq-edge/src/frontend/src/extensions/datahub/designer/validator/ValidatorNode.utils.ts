@@ -1,19 +1,14 @@
-import { Connection, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { getIncomers } from 'reactflow'
 
-import { DataPolicy, DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
+import type { DataPolicy, Schema, SchemaReference } from '@/api/__generated__'
+import { DataPolicyValidator } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 import i18n from '@/config/i18n.config.ts'
 
-import {
-  DataHubNodeType,
-  DataPolicyData,
-  DryRunResults,
-  ResourceWorkingVersion,
-  SchemaArguments,
-  ValidatorData,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { DryRunResults, SchemaArguments, ValidatorData, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, ResourceWorkingVersion } from '@datahub/types.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'

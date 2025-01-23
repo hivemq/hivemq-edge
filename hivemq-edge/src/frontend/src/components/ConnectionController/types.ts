@@ -1,4 +1,4 @@
-import { StatusTransitionCommand } from '@/api/__generated__'
+import type { StatusTransitionCommand } from '@/api/__generated__'
 
 export interface ConnectionElementProps {
   id: string

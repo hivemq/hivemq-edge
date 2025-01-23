@@ -1,6 +1,7 @@
-import { createContext, FunctionComponent, PropsWithChildren, useEffect, useState } from 'react'
+import type { FunctionComponent, PropsWithChildren } from 'react'
+import { createContext, useEffect, useState } from 'react'
 
-import { ApiBearerToken } from '@/api/__generated__'
+import type { ApiBearerToken } from '@/api/__generated__'
 import { useLocalStorage } from '@/hooks/useLocalStorage/useLocalStorage.ts'
 import { authUtilities, processToken } from '@/modules/Auth/auth-utilities.ts'
 

@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { useMemo } from 'react'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { DesignerStatus, TopicFilterData } from '@datahub/types.ts'
+import type { TopicFilterData } from '@datahub/types.ts'
+import { DesignerStatus } from '@datahub/types.ts'
 import { canDeleteNode } from '@datahub/utils/node.utils.ts'
 
 export interface GuardAlertProps {

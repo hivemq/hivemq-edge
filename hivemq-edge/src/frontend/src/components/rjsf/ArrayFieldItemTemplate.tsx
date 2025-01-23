@@ -1,6 +1,8 @@
-import { FC, useEffect, useMemo } from 'react'
+import type { FC } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrayFieldTemplateItemType, getTemplate, getUiOptions } from '@rjsf/utils'
+import type { ArrayFieldTemplateItemType } from '@rjsf/utils'
+import { getTemplate, getUiOptions } from '@rjsf/utils'
 import {
   Box,
   ButtonGroup,

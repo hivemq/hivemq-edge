@@ -1,8 +1,9 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
+import type { EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
 
-import { DataHubNodeType, DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
+import type { DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
+import { DataHubNodeType } from '../types.ts'
 import useDataHubDraftStore from '@/extensions/datahub/hooks/useDataHubDraftStore.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 

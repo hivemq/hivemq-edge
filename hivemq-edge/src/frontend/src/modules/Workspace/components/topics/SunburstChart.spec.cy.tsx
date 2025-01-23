@@ -1,8 +1,8 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { stratify } from 'd3-hierarchy'
 import { Box } from '@chakra-ui/react'
 import SunburstChart from '@/modules/Workspace/components/topics/SunburstChart.tsx'
-import { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
+import type { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 
 const MOCK_TOPICS = ['test/r1', 'test/r2', 'test/r3', 'test/r4']
 const MOCK_STRATIFY_TOPICS = stratify<TopicTreeMetadata>().path((d) => d.label)(

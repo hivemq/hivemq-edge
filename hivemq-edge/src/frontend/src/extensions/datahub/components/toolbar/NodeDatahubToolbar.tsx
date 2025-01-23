@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ButtonGroupProps, Divider, Icon } from '@chakra-ui/react'
+import type { ButtonGroupProps } from '@chakra-ui/react'
+import { Divider, Icon } from '@chakra-ui/react'
 import { LuCopy, LuDelete, LuFileCog } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApiError, StatusTransitionCommand, StatusTransitionResult } from '../../__generated__'
+import type { ApiError, StatusTransitionCommand, StatusTransitionResult } from '../../__generated__'
 
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'

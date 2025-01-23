@@ -1,18 +1,17 @@
-import { FC, useCallback, useMemo } from 'react'
-import {
-  chakraComponents,
-  CreatableSelect,
-  createFilter,
+import type { FC } from 'react'
+import { useCallback, useMemo } from 'react'
+import type {
   GroupBase,
   OptionBase,
-  Select,
   SelectComponentsConfig,
   OnChangeValue,
   PropsValue,
   MultiValue,
   SingleValue,
 } from 'chakra-react-select'
-import { HStack, IconProps, Text, VStack } from '@chakra-ui/react'
+import { chakraComponents, CreatableSelect, createFilter, Select } from 'chakra-react-select'
+import type { IconProps } from '@chakra-ui/react'
+import { HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'

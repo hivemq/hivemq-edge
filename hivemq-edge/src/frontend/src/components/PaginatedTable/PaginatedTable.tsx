@@ -1,8 +1,8 @@
-import { useState, CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ColumnDef, ColumnFiltersState, Row } from '@tanstack/react-table'
 import {
-  ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -11,7 +11,6 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  Row,
   useReactTable,
 } from '@tanstack/react-table'
 import {

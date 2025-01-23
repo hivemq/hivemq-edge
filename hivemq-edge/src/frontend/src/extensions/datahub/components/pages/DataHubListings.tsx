@@ -1,7 +1,8 @@
-import { FC, useState } from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tab, TabList, TabPanel, TabPanels, Tabs, Text, useDisclosure, useToast } from '@chakra-ui/react'
-import { UseMutateAsyncFunction } from '@tanstack/react-query'
+import type { UseMutateAsyncFunction } from '@tanstack/react-query'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 

@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ReactFlowState, useStore, Node, useReactFlow } from 'reactflow'
+import type { ReactFlowState, Node } from 'reactflow'
+import { useStore, useReactFlow } from 'reactflow'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { DeviceMetadata, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { WorkspaceAdapterCommand } from '@/modules/ProtocolAdapters/types.ts'
 
 const addSelectedNodesState = (state: ReactFlowState) => (nodeIds: string[]) => state.addSelectedNodes(nodeIds)

@@ -1,11 +1,12 @@
 import { type FC, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps, DatumId } from '@nivo/sunburst'
+import type { DatumId } from '@nivo/sunburst'
+import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps } from '@nivo/sunburst'
 import { type HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
 
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
-import { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
+import type { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 
 interface SunburstNivoProps {
   data: HierarchyNode<TopicTreeMetadata>

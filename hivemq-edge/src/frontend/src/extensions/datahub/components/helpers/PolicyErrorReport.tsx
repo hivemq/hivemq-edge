@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -11,7 +11,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 import { useTranslation } from 'react-i18next'
 
 interface PolicyErrorReportProps {

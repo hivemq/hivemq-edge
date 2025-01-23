@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { ApiError } from '@/api/__generated__'
+import type { ApiError } from '@/api/__generated__'
 
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 

@@ -1,4 +1,4 @@
-import { ChangeEvent, FC } from 'react'
+import type { ChangeEvent, FC } from 'react'
 import { Checkbox, HStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'

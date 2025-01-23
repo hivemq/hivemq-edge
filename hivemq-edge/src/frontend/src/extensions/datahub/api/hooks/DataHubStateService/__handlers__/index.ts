@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { FsmStateInformationItem, FsmStatesInformationListItem } from '@/api/__generated__'
+import type { FsmStateInformationItem, FsmStatesInformationListItem } from '@/api/__generated__'
 
 export const mockFSMStateInfo: FsmStateInformationItem = {}
 

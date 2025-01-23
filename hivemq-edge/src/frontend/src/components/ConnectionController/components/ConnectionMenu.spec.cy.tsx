@@ -3,7 +3,7 @@
 import { StatusTransitionCommand } from '@/api/__generated__'
 import ConnectionMenu from '@/components/ConnectionController/components/ConnectionMenu.tsx'
 import { Menu, MenuButton, MenuList } from '@chakra-ui/react'
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 
 const MOCK_ID = 'my-id'
 

@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { NodeProps, Position } from 'reactflow'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Position } from 'reactflow'
 import { Text } from '@chakra-ui/react'
 
 import { NodeWrapper } from './NodeWrapper.tsx'

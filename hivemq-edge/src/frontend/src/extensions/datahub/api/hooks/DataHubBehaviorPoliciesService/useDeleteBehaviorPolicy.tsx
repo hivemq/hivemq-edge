@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import queryClient from '@/api/queryClient.ts'
-import { ApiError } from '@/api/__generated__'
+import type { ApiError } from '@/api/__generated__'
 import { DATAHUB_QUERY_KEYS } from '@datahub/api/utils.ts'
 
 export const useDeleteBehaviorPolicy = () => {

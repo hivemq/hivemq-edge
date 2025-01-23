@@ -1,4 +1,5 @@
-import { FC, RefObject, useRef, LegacyRef } from 'react'
+import type { FC, RefObject, LegacyRef } from 'react'
+import { useRef } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -9,7 +10,7 @@ import {
   Button,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { FocusableElement } from '@chakra-ui/utils'
+import type { FocusableElement } from '@chakra-ui/utils'
 
 interface ConfirmationDialogProps {
   isOpen: boolean

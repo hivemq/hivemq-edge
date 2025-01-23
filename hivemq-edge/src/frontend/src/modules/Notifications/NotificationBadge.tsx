@@ -1,7 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoNotifications } from 'react-icons/io5'
-import { Icon, useColorModeValue, useToast, UseToastOptions } from '@chakra-ui/react'
+import type { UseToastOptions } from '@chakra-ui/react'
+import { Icon, useColorModeValue, useToast } from '@chakra-ui/react'
 
 import ButtonBadge from '@/components/Chakra/ButtonBadge.tsx'
 

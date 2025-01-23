@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { MetricList } from '@/api/__generated__'
+import type { MetricList } from '@/api/__generated__'
 import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'

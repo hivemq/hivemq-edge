@@ -1,4 +1,4 @@
-import { FormContextType, IdSchema, RJSFValidationError } from '@rjsf/utils'
+import type { FormContextType, IdSchema, RJSFValidationError } from '@rjsf/utils'
 
 export type FormControlState = {
   tabIndex: number

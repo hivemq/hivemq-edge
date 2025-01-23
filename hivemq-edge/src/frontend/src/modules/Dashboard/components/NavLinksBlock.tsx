@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box, Flex, List, ListItem, Text } from '@chakra-ui/react'
 
 import { NavLink } from './NavLink.tsx'
-import { NavLinksBlockType } from '../types.ts'
+import type { NavLinksBlockType } from '../types.ts'
 
 const NavLinksBlock: FC<NavLinksBlockType> = ({ title, items }) => {
   return (

@@ -1,4 +1,4 @@
-import { MappingValidation } from '@/modules/Mappings/types.ts'
+import type { MappingValidation } from '@/modules/Mappings/types.ts'
 import ValidationStatus from './ValidationStatus.tsx'
 
 const MOCK_SUBS: MappingValidation = {

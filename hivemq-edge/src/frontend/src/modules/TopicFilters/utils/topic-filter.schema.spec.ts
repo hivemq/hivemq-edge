@@ -1,8 +1,8 @@
 import { describe, expect } from 'vitest'
+import type { SchemaHandler } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 import {
   decodeDataUriJsonSchema,
   encodeDataUriJsonSchema,
-  SchemaHandler,
   validateSchemaFromDataURI,
 } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 import { MOCK_TOPIC_FILTER_SCHEMA_VALID } from '@/api/hooks/useTopicFilters/__handlers__'

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
 
-import { DomainTag, DomainTagList } from '@/api/__generated__'
+import type { DomainTag, DomainTagList } from '@/api/__generated__'
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
 import { useDeleteDomainTags } from '@/api/hooks/useProtocolAdapters/useDeleteDomainTags.ts'
@@ -11,7 +11,7 @@ import { useUpdateAllDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdat
 import { useUpdateDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateDomainTags.ts'
 import { useGetDomainTagSchema } from '@/api/hooks/useDomainModel/useGetDomainTagSchema.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
-import { ManagerContextType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 
 export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()

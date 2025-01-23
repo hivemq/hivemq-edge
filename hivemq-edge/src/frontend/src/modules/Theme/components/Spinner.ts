@@ -1,4 +1,5 @@
-import { defineStyle, defineStyleConfig, SystemProps } from '@chakra-ui/react'
+import type { SystemProps } from '@chakra-ui/react'
+import { defineStyle, defineStyleConfig } from '@chakra-ui/react'
 
 const spinner = defineStyle<SystemProps>({
   color: 'brand.500',

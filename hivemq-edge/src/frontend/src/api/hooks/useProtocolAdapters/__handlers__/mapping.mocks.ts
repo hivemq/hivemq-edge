@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { SouthboundMappingList, SouthboundMapping, NorthboundMappingList, JsonNode } from '@/api/__generated__'
-import { NorthboundMapping } from '@/api/__generated__'
+import type { NorthboundMapping } from '@/api/__generated__'
 
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'

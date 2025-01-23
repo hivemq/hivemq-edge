@@ -1,9 +1,10 @@
-import { FC } from 'react'
-import { Handle, NodeProps, Position, useStore } from 'reactflow'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position, useStore } from 'reactflow'
 import { Box, HStack, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
 
@@ -19,7 +19,8 @@ import {
   Badge,
 } from '@chakra-ui/react'
 
-import { Event, Payload } from '@/api/__generated__'
+import type { Event } from '@/api/__generated__'
+import { Payload } from '@/api/__generated__'
 import SeverityBadge from '@/modules/EventLog/components/SeverityBadge.tsx'
 import { prettifyXml, prettyJSON } from '@/modules/EventLog/utils/payload-utils.ts'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'

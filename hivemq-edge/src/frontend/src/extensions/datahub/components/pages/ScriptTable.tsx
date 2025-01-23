@@ -1,5 +1,6 @@
-import { FC, useMemo } from 'react'
-import { CellContext, ColumnDef } from '@tanstack/react-table'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Skeleton, Text } from '@chakra-ui/react'
@@ -12,7 +13,7 @@ import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGe
 import { useDeleteScript } from '@datahub/api/hooks/DataHubScriptsService/useDeleteScript.tsx'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
-import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { downloadJSON } from '@datahub/utils/download.utils.ts'
 

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { type CardProps, Card } from '@chakra-ui/react'
 
 interface NodeWrapperProps extends CardProps {

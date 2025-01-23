@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { IChangeEvent } from '@rjsf/core'
+import type { IChangeEvent } from '@rjsf/core'
 
 import {
   AbsoluteCenter,

@@ -1,8 +1,10 @@
-import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
-import { Card, CardBody, CardBodyProps, Text } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position } from 'reactflow'
+import type { CardBodyProps } from '@chakra-ui/react'
+import { Card, CardBody, Text } from '@chakra-ui/react'
 
-import { FsmState } from '@datahub/types.ts'
+import type { FsmState } from '@datahub/types.ts'
 
 const stateStyle: Record<string, CardBodyProps> = {
   INITIAL: { borderStyle: 'dashed', borderWidth: 2 },

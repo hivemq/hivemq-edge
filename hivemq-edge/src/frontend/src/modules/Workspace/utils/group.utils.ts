@@ -1,4 +1,5 @@
-import { getRectOfNodes, Node, Rect } from 'reactflow'
+import type { Node, Rect } from 'reactflow'
+import { getRectOfNodes } from 'reactflow'
 
 const GROUP_MARGIN = 20
 const GROUP_TITLE_MARGIN = 24

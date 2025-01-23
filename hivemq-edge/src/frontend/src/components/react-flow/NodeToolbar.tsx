@@ -1,6 +1,8 @@
-import { FC } from 'react'
-import { NodeToolbar as ReactFlowNodeToolbar, NodeToolbarProps } from 'reactflow'
-import { As, chakra, Icon } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { NodeToolbarProps } from 'reactflow'
+import { NodeToolbar as ReactFlowNodeToolbar } from 'reactflow'
+import type { As } from '@chakra-ui/react'
+import { chakra, Icon } from '@chakra-ui/react'
 import { BsGripVertical } from 'react-icons/bs'
 
 const NodeToolbarChakra = chakra<As, NodeToolbarProps>(ReactFlowNodeToolbar)

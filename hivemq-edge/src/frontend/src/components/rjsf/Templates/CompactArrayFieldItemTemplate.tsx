@@ -1,5 +1,6 @@
-import { FC, useMemo } from 'react'
-import { ArrayFieldTemplateItemType } from '@rjsf/utils'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { ArrayFieldTemplateItemType } from '@rjsf/utils'
 import { ButtonGroup, Td, Tr } from '@chakra-ui/react'
 import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
 

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { DurationUnits } from 'luxon/src/duration'
+import type { DurationUnits } from 'luxon/src/duration'
 
 export const toHuman = (timestamp: DateTime, alternativeNow?: DateTime) => {
   const units: DurationUnits = ['weeks', 'days', 'hours', 'minutes', 'seconds']

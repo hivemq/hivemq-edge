@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Center, Flex, Image, useColorMode } from '@chakra-ui/react'
 

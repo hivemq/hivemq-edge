@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Tag, TagLabel, TagProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { TagProps } from '@chakra-ui/react'
+import { Tag, TagLabel } from '@chakra-ui/react'
 
 interface NodeParamsProps extends TagProps {
   value: string

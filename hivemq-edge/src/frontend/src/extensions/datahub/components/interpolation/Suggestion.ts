@@ -1,9 +1,10 @@
 /* istanbul ignore file -- @preserve */
 import { ReactRenderer } from '@tiptap/react'
-import { MentionOptions } from '@tiptap/extension-mention'
+import type { MentionOptions } from '@tiptap/extension-mention'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
 
-import SuggestionList, { SuggestionListRef } from './SuggestionList.jsx'
+import type { SuggestionListRef } from './SuggestionList.jsx'
+import SuggestionList from './SuggestionList.jsx'
 import { getItems } from '@datahub/components/interpolation/interpolation.utils.ts'
 
 /**

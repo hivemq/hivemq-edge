@@ -1,4 +1,5 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import {
   Drawer,
   DrawerBody,
@@ -19,7 +20,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
-import { ApiError, Bridge } from '@/api/__generated__'
+import type { ApiError, Bridge } from '@/api/__generated__'
 import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'

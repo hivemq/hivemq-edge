@@ -1,12 +1,13 @@
-import { FC, useEffect, useMemo } from 'react'
+import type { FC } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { JSONSchema7 } from 'json-schema'
+import type { JSONSchema7 } from 'json-schema'
 import { Select } from 'chakra-react-select'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Box, HStack, Input, chakra, FormControl, FormErrorMessage } from '@chakra-ui/react'
 import { LuChevronsRight } from 'react-icons/lu'
 
-import { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchModeMappings/types.ts'
 import { findMatch } from '@/components/rjsf/BatchModeMappings/utils/levenshtein.utils.ts'
 
 const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {

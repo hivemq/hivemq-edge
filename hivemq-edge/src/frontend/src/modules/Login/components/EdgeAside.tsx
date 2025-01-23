@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box, Heading, Image, Stack, Text } from '@chakra-ui/react'
 import logo from '@/assets/edge/04-hivemq-industrial-edge-vert-neg.svg'
 import { useTranslation } from 'react-i18next'

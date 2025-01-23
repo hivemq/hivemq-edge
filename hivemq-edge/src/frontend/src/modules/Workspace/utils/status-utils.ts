@@ -1,10 +1,13 @@
-import { Edge, Instance, MarkerType, Node } from 'reactflow'
-import { WithCSSVar } from '@chakra-ui/react'
-import { Dict } from '@chakra-ui/utils'
+import type { Edge, Instance, Node } from 'reactflow'
+import { MarkerType } from 'reactflow'
+import type { WithCSSVar } from '@chakra-ui/react'
+import type { Dict } from '@chakra-ui/utils'
 
-import { Adapter, Bridge, ProtocolAdapter, Status } from '@/api/__generated__'
+import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 
-import { Group, NodeTypes } from '../types.ts'
+import type { Group } from '../types.ts'
+import { NodeTypes } from '../types.ts'
 import { getBridgeTopics } from './topics-utils.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 

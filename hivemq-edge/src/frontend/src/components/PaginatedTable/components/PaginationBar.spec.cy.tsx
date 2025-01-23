@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import { Table, TableState } from '@tanstack/react-table'
-import { Adapter } from '@/api/__generated__'
+import type { Table, TableState } from '@tanstack/react-table'
+import type { Adapter } from '@/api/__generated__'
 
 import PaginationBar from './PaginationBar.tsx'
 

@@ -1,5 +1,5 @@
-import { FC } from 'react'
-import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
+import type { FC } from 'react'
+import type { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 import { MenuItem } from '@chakra-ui/react'
 import { StatusTransitionCommand } from '@/api/__generated__'
 import { useTranslation } from 'react-i18next'

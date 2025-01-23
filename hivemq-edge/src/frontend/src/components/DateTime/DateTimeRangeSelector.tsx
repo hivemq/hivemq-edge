@@ -1,9 +1,11 @@
-import { FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
-import { ActionMeta, CreatableSelect, SingleValue } from 'chakra-react-select'
+import type { ActionMeta, SingleValue } from 'chakra-react-select'
+import { CreatableSelect } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
-import { RangeOption } from './types.ts'
+import type { RangeOption } from './types.ts'
 import Option from './components/Option.tsx'
 import { makeDefaultRangeOption } from './utils/range-option.utils.ts'
 

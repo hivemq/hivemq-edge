@@ -1,5 +1,6 @@
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
-import { CombinedPolicy, PolicyType } from '@datahub/types.ts'
+import type { CombinedPolicy } from '@datahub/types.ts'
+import { PolicyType } from '@datahub/types.ts'
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 

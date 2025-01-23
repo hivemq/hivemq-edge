@@ -1,13 +1,13 @@
 import { describe, expect } from 'vitest'
-import { Edge, Node } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
 
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
+import type { ConnectableHandleProps } from '@datahub/utils/node.utils.ts'
 import {
   canDeleteEdge,
   canDeleteNode,
-  ConnectableHandleProps,
   getAllParents,
   getConnectedNodeFrom,
   getNodeId,
@@ -17,6 +17,7 @@ import {
   reduceIdsFrom,
   renderResourceName,
 } from '@datahub/utils/node.utils.ts'
+import type { ValidDropConnection } from '@datahub/types.ts'
 import {
   BehaviorPolicyData,
   DataHubNodeType,
@@ -28,7 +29,6 @@ import {
   SchemaType,
   StrategyType,
   TransitionData,
-  ValidDropConnection,
 } from '@datahub/types.ts'
 import i18n from '@/config/i18n.config.ts'
 

@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Alert, AlertIcon, AlertStatus, type AlertProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { AlertStatus } from '@chakra-ui/react'
+import { Alert, AlertIcon, type AlertProps } from '@chakra-ui/react'
 import { Event } from '@/api/__generated__'
 
 interface SeverityBadgeProps extends AlertProps {

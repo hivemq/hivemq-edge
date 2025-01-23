@@ -1,24 +1,21 @@
 import { http, HttpResponse } from 'msw'
-import { GenericObjectType, UiSchema } from '@rjsf/utils'
-import { JSONSchema7 } from 'json-schema'
+import type { GenericObjectType, UiSchema } from '@rjsf/utils'
+import type { JSONSchema7 } from 'json-schema'
 
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import type { Adapter, AdaptersList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import {
-  Adapter,
-  AdaptersList,
   type DomainTag,
   type DomainTagList,
   ObjectNode,
-  ProtocolAdapter,
-  ProtocolAdaptersList,
   Status,
   type TagSchema,
   type ValuesTree,
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
-import { DeviceMetadata } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [

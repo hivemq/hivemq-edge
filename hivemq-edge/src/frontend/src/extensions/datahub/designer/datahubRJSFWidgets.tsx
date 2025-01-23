@@ -1,4 +1,4 @@
-import { RegistryWidgetsType } from '@rjsf/utils'
+import type { RegistryWidgetsType } from '@rjsf/utils'
 
 import { AdapterSelect, JavascriptEditor, JSONSchemaEditor, ProtoSchemaEditor } from '@datahub/components/forms'
 import FunctionCreatableSelect from '@datahub/components/forms/FunctionCreatableSelect.tsx'

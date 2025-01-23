@@ -1,14 +1,9 @@
 import { expect } from 'vitest'
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import {
-  BehaviorPolicyData,
-  BehaviorPolicyType,
-  ClientFilterData,
-  DataHubNodeType,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { BehaviorPolicyData, ClientFilterData, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityClients, loadClientFilter } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
 import type { BehaviorPolicy } from '@/api/__generated__'
 

@@ -1,16 +1,10 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 
-import {
-  DataHubNodeType,
-  DataPolicyData,
-  DryRunResults,
-  PolicyCheckAction,
-  PolicyCheckState,
-  PolicyDryRunStatus,
-} from '../types.ts'
+import type { DataPolicyData, DryRunResults, PolicyCheckAction, PolicyCheckState } from '../types.ts'
+import { DataHubNodeType, PolicyDryRunStatus } from '../types.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {

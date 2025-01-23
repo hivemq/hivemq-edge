@@ -1,5 +1,5 @@
-import { UseFormReturn } from 'react-hook-form'
-import { Bridge } from '@/api/__generated__'
+import type { UseFormReturn } from 'react-hook-form'
+import type { Bridge } from '@/api/__generated__'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 

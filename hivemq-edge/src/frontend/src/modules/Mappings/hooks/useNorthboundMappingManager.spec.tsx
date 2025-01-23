@@ -5,7 +5,7 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import { useNorthboundMappingManager } from '@/modules/Mappings/hooks/useNorthboundMappingManager.ts'
 import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
-import { NorthboundMappingList } from '@/api/__generated__'
+import type { NorthboundMappingList } from '@/api/__generated__'
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 
 describe('useNorthboundMappingManager', () => {

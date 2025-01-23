@@ -1,4 +1,4 @@
-import { ISA95ApiBean } from '@/api/__generated__'
+import type { ISA95ApiBean } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 
 export const mockISA95ApiBean: ISA95ApiBean = {

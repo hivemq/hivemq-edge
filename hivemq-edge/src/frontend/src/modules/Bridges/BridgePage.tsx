@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'

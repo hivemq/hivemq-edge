@@ -1,4 +1,5 @@
-import { Edge, MarkerType } from 'reactflow'
+import type { Edge } from 'reactflow'
+import { MarkerType } from 'reactflow'
 
 // TODO[NVL] Too restrictive for theming; use custom edge
 export const styleDefaultEdge: Pick<Edge, 'markerEnd' | 'markerStart' | 'style'> = {

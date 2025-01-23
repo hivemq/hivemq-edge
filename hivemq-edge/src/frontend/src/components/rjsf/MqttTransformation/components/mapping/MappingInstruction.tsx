@@ -1,4 +1,5 @@
-import { FC, useEffect, useRef, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {
@@ -18,11 +19,11 @@ import {
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
-import { Instruction } from '@/api/__generated__'
+import type { Instruction } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {

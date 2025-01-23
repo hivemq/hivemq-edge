@@ -1,8 +1,9 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Spinner, useToast } from '@chakra-ui/react'
-import { Connection, NodeAddChange } from 'reactflow'
+import type { Connection, NodeAddChange } from 'reactflow'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 

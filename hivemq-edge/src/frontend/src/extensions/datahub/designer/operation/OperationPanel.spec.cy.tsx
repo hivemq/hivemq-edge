@@ -1,11 +1,12 @@
 /// <reference types="cypress" />
 
-import { Edge, Node } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
-import { DataHubNodeType, FunctionData, OperationData } from '@datahub/types.ts'
+import type { FunctionData } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { OperationPanel } from './OperationPanel.tsx'
 
 const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {

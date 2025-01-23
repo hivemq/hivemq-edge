@@ -1,13 +1,8 @@
-import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, {
-  Connection,
-  HandleType,
-  Node,
-  NodeAddChange,
-  ReactFlowInstance,
-  ReactFlowProvider,
-  XYPosition,
-} from 'reactflow'
+import type { FC } from 'react'
+import type React from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { Connection, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from 'reactflow'
+import ReactFlow, { ReactFlowProvider } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 

@@ -1,13 +1,14 @@
 import { type FC, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CustomValidator, FormContextType, RJSFSchema } from '@rjsf/utils'
-import { IChangeEvent } from '@rjsf/core'
+import type { CustomValidator, FormContextType, RJSFSchema } from '@rjsf/utils'
+import type { IChangeEvent } from '@rjsf/core'
 
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
-import { MappingManagerType, MappingType } from '@/modules/Mappings/types.ts'
-import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { MappingManagerType } from '@/modules/Mappings/types.ts'
+import { MappingType } from '@/modules/Mappings/types.ts'
+import type { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
 import { customMappingValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 
 interface MappingFormProps {

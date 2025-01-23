@@ -1,4 +1,4 @@
-import { UiSchema } from '@rjsf/utils'
+import type { UiSchema } from '@rjsf/utils'
 
 /* istanbul ignore next -- @preserve */
 const metadataWidget: UiSchema = {

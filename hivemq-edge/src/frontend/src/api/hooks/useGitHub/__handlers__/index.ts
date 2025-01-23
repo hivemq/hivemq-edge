@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { GitHubReleases } from '../types.ts'
+import type { GitHubReleases } from '../types.ts'
 
 export const MOCK_GITHUB_RELEASE: GitHubReleases = {
   name: '2023.XXX',

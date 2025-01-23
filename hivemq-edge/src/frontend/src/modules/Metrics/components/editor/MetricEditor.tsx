@@ -1,6 +1,9 @@
-import { FC, useEffect, useMemo } from 'react'
-import { Select, OptionsOrGroups, GroupBase } from 'chakra-react-select'
-import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import type { FC } from 'react'
+import { useEffect, useMemo } from 'react'
+import type { OptionsOrGroups, GroupBase } from 'chakra-react-select'
+import { Select } from 'chakra-react-select'
+import type { SubmitHandler } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
@@ -8,7 +11,8 @@ import { BiAddToQueue } from 'react-icons/bi'
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.ts'
 
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
-import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption, MetricsFilter } from '../../types.ts'
+import type { ChartTypeOption, MetricDefinition, MetricNameOption, MetricsFilter } from '../../types.ts'
+import { ChartType } from '../../types.ts'
 
 interface MetricEditorProps {
   onSubmit: SubmitHandler<MetricDefinition>

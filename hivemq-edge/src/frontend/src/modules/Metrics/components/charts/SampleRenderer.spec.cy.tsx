@@ -2,8 +2,9 @@
 
 import { DateTime } from 'luxon'
 import { MOCK_METRIC_SAMPLE, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
-import { extractMetricInfo, MetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
-import { DataPoint } from '@/api/__generated__'
+import type { MetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import type { DataPoint } from '@/api/__generated__'
 
 import SampleRenderer from './SampleRenderer.tsx'
 

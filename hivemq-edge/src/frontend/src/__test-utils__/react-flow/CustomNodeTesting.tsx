@@ -1,6 +1,8 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import ReactFlow, { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
+import type { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
+import ReactFlow from 'reactflow'
 import { Code, VStack } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'

@@ -1,11 +1,12 @@
-import { FC, useCallback, useMemo } from 'react'
-import { getIncomers, Node } from 'reactflow'
+import type { FC } from 'react'
+import { useCallback, useMemo } from 'react'
+import type { Node } from 'reactflow'
+import { getIncomers } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
-import { IChangeEvent } from '@rjsf/core'
+import type { IChangeEvent } from '@rjsf/core'
 
-import {
+import type {
   BehaviorPolicyData,
-  DataHubNodeType,
   FiniteStateMachineSchema,
   FsmState,
   PanelProps,
@@ -13,6 +14,7 @@ import {
   TransitionData,
   TransitionType,
 } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_TRANSITION_SCHEMA } from '@datahub/designer/transition/TransitionData.ts'

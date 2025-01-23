@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Alert, AlertDescription, AlertIcon, AlertStatus, AlertTitle, Box, Text } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { AlertStatus } from '@chakra-ui/react'
+import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 

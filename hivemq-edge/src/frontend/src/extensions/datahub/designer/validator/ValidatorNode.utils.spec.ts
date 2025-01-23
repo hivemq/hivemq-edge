@@ -1,17 +1,11 @@
 import { expect } from 'vitest'
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataPolicy, DataPolicyValidator, Schema } from '@/api/__generated__'
-import {
-  DataHubNodeType,
-  DataPolicyData,
-  SchemaData,
-  SchemaType,
-  StrategyType,
-  ValidatorData,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { DataPolicy, Schema } from '@/api/__generated__'
+import { DataPolicyValidator } from '@/api/__generated__'
+import type { DataPolicyData, SchemaData, ValidatorData, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType, SchemaType, StrategyType } from '@datahub/types.ts'
 import {
   checkValidityPolicyValidator,
   checkValidityPolicyValidators,

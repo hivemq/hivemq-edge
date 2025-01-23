@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
 import {
   MOCK_JAVASCRIPT_SCHEMA,
   MOCK_JSONSCHEMA_SCHEMA,

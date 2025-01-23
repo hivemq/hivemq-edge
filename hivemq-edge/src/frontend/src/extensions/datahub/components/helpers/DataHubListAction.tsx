@@ -1,11 +1,12 @@
-import { FC, MouseEventHandler } from 'react'
+import type { FC, MouseEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ButtonGroup, HStack } from '@chakra-ui/react'
 import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import { CombinedPolicy, DesignerStatus, PolicyType } from '@datahub/types.ts'
+import type { CombinedPolicy } from '@datahub/types.ts'
+import { DesignerStatus, PolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 interface DataHubListActionProps {

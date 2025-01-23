@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { useReactFlow, Node } from 'reactflow'
+import type { Node } from 'reactflow'
+import { useReactFlow } from 'reactflow'
 import {
   Button,
   Card,

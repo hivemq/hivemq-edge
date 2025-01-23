@@ -1,19 +1,17 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import Form from '@rjsf/chakra-ui'
-import { FormProps } from '@rjsf/core'
-import {
+import type { FormProps } from '@rjsf/core'
+import type {
   DescriptionFieldProps,
   FieldTemplateProps,
   FormContextType,
   RJSFSchema,
   StrictRJSFSchema,
-  getTemplate,
-  getUiOptions,
   ErrorListProps,
-  TranslatableString,
   TitleFieldProps,
 } from '@rjsf/utils'
-import { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import { getTemplate, getUiOptions, TranslatableString } from '@rjsf/utils'
+import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'

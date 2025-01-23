@@ -1,4 +1,4 @@
-import { RegisterOptions } from 'react-hook-form'
+import type { RegisterOptions } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
 // See https://swagger.io/docs/specification/data-models/data-types/

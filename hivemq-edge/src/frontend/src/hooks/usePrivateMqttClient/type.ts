@@ -1,5 +1,6 @@
-import { JsonNode } from '@/api/__generated__'
-import mqtt, { MqttClient } from 'mqtt'
+import type { JsonNode } from '@/api/__generated__'
+import type { MqttClient } from 'mqtt'
+import type mqtt from 'mqtt'
 
 /* istanbul ignore next -- @preserve */
 export enum MqttClientStatus {

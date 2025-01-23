@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
-import { IdSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { IdSchema } from '@rjsf/utils'
 import {
   Button,
   ButtonGroup,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 

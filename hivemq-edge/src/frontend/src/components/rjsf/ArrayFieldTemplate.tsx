@@ -1,11 +1,12 @@
-import { FC } from 'react'
-import { ArrayFieldTemplateProps, getTemplate, getUiOptions, ArrayFieldTemplateItemType } from '@rjsf/utils'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { FC } from 'react'
+import type { ArrayFieldTemplateProps, ArrayFieldTemplateItemType } from '@rjsf/utils'
+import { getTemplate, getUiOptions } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { Box, Grid, GridItem, HStack } from '@chakra-ui/react'
 
 import AddButton from '@/components/rjsf/__internals/AddButton.tsx'
 import BatchUploadButton from '@/components/rjsf/BatchModeMappings/BatchUploadButton.tsx'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
   const {

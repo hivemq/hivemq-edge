@@ -1,6 +1,7 @@
-import { ChangeEvent, FC, FocusEvent } from 'react'
+import type { ChangeEvent, FC, FocusEvent } from 'react'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { ariaDescribedByIds, BaseInputTemplateProps, examplesId, getInputProps, labelValue } from '@rjsf/utils'
+import type { BaseInputTemplateProps } from '@rjsf/utils'
+import { ariaDescribedByIds, examplesId, getInputProps, labelValue } from '@rjsf/utils'
 import { FormControl, FormLabel, Input } from '@chakra-ui/react'
 
 // TODO[RJSF] Bug with file accept; see https://github.com/rjsf-team/react-jsonschema-form/issues/4404

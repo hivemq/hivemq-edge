@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import Mention from '@tiptap/extension-mention'
 import Text from '@tiptap/extension-text'

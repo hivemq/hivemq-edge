@@ -1,9 +1,10 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
-import { DataHubNodeType, SchemaData, SchemaType } from '@datahub/types.ts'
+import type { SchemaData } from '@datahub/types.ts'
+import { DataHubNodeType, SchemaType } from '@datahub/types.ts'
 import { checkValiditySchema, getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 

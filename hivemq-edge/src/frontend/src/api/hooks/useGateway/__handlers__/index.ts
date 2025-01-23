@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import { Listener, ListenerList } from '@/api/__generated__'
+import type { ListenerList } from '@/api/__generated__'
+import { Listener } from '@/api/__generated__'
 
 export const mockMqttListener: Listener = {
   name: 'tcp-listener-1883',

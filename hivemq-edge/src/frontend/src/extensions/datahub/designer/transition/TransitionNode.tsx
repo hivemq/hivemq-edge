@@ -1,7 +1,9 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { NodeProps, Position } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import { Position } from 'reactflow'
 
 import { DataHubNodeType, FsmState, TransitionData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'

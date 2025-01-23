@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Box, Tooltip, chakra as Chakra, VisuallyHidden, Badge } from '@chakra-ui/react'
 
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { formatHost } from '../../utils/formatters.tsx'
 
 type BridgeConnection = Pick<

@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { DataHubNodeType, PanelProps } from '@datahub/types.ts'
+import type { FC } from 'react'
+import type { PanelProps } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { TopicFilterPanel } from '@datahub/designer/topic_filter/TopicFilterPanel.tsx'

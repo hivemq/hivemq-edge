@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import { UiSchema } from '@rjsf/utils'
+import type { UiSchema } from '@rjsf/utils'
 
 describe('getRequiredUiSchema', () => {
   it('should return the mandatory properties ', () => {

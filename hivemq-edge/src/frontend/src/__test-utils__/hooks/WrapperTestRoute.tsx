@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader, Code } from '@chakra-ui/react'
 

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Checkbox,
@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react'
 import { $Bridge } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
-import { BridgePanelType } from '@/modules/Bridges/types.ts'
+import type { BridgePanelType } from '@/modules/Bridges/types.ts'
 
 const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()

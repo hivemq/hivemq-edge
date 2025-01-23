@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 
-import { ApiBearerToken } from '@/api/__generated__'
+import type { ApiBearerToken } from '@/api/__generated__'
 import { parseJWT, verifyJWT } from '@/api/utils.ts'
 
 export const processToken = (

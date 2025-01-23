@@ -2,7 +2,7 @@ import { describe, expect } from 'vitest'
 
 import { ObjectNode } from '@/api/__generated__'
 import { convertEdgeNode, getAdapterTreeView } from '@/components/rjsf/Widgets/utils/treeview.utils.ts'
-import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
+import type { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 
 interface TestEachSuite {
   parent: INode<FlatObjectNode>

@@ -4,7 +4,7 @@ import { MdDataObject, MdNumbers, MdOutlineDataArray, MdOutlineTextFields, MdQue
 import { RxComponentBoolean } from 'react-icons/rx'
 import { TbDecimal } from 'react-icons/tb'
 
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 export const DataTypeIcon: Record<JSONSchema7TypeName, IconType> = {
   ['object']: MdDataObject,

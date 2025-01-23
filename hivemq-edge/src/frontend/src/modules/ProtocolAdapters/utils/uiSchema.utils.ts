@@ -1,4 +1,4 @@
-import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
+import type { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
 
 import { CompactArrayField, MqttTransformationField } from '@/components/rjsf/Fields'
 

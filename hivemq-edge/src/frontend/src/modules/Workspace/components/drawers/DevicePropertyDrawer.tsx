@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getIncomers, Node } from 'reactflow'
+import type { Node } from 'reactflow'
+import { getIncomers } from 'reactflow'
 import {
   Drawer,
   DrawerBody,
@@ -11,13 +12,13 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import { Adapter } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import DeviceTagList from '@/modules/Device/components/DeviceTagList.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { DeviceMetadata, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata, NodeTypes } from '@/modules/Workspace/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 interface DevicePropertyDrawerProps {

@@ -1,7 +1,9 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHotkeys } from 'react-hotkeys-hook'
-import { NodeRemoveChange, EdgeRemoveChange, getConnectedEdges } from 'reactflow'
+import type { NodeRemoveChange, EdgeRemoveChange } from 'reactflow'
+import { getConnectedEdges } from 'reactflow'
 import { ListItem, Text, UnorderedList, useDisclosure, useToast, VStack } from '@chakra-ui/react'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'

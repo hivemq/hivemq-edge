@@ -1,4 +1,4 @@
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 import { QoS as QoSEnum } from '@/api/__generated__'
 

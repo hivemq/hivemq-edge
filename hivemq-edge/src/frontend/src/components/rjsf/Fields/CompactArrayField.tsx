@@ -1,8 +1,8 @@
-import { FC } from 'react'
-import { FieldProps } from '@rjsf/utils'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { FC } from 'react'
+import type { FieldProps } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { CompactArrayFieldTemplate } from '@/components/rjsf/Templates/CompactArrayFieldTemplate.tsx'
 import { CompactFieldTemplate } from '@/components/rjsf/Templates/CompactFieldTemplate.tsx'
 import { CompactBaseInputTemplate } from '@/components/rjsf/Templates/CompactBaseInputTemplate.tsx'

@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react'
 
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import '@/config/i18n.config.ts'
-import { RegisterOptions } from 'react-hook-form'
+import type { RegisterOptions } from 'react-hook-form'
 
 interface Suite {
   schema: Record<string, unknown>

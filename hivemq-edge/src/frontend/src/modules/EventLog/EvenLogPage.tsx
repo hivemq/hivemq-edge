@@ -1,8 +1,9 @@
-import { FC, useState } from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDisclosure } from '@chakra-ui/react'
 
-import { Event } from '@/api/__generated__'
+import type { Event } from '@/api/__generated__'
 import PageContainer from '@/components/PageContainer.tsx'
 
 import EventDrawer from './components/panel/EventDrawer.tsx'

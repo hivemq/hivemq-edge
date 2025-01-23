@@ -1,9 +1,10 @@
-import { FC } from 'react'
-import { Image, Badge, Box, Flex, Highlight, Link, Text, HighlightProps, Skeleton } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { HighlightProps } from '@chakra-ui/react'
+import { Image, Badge, Box, Flex, Highlight, Link, Text, Skeleton } from '@chakra-ui/react'
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 
 interface AdapterTypeSummaryProps {
   adapter: ProtocolAdapter

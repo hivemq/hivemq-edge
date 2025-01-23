@@ -1,6 +1,8 @@
-import { FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon, IconButton, IconButtonProps, Tooltip, PlacementWithLogical } from '@chakra-ui/react'
+import type { IconButtonProps, PlacementWithLogical } from '@chakra-ui/react'
+import { Icon, IconButton, Tooltip } from '@chakra-ui/react'
 import { LuClipboardCopy } from 'react-icons/lu'
 import { VscCheck, VscError } from 'react-icons/vsc'
 

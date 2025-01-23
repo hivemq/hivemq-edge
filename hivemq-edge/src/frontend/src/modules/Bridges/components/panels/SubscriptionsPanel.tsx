@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { CreatableSelect } from 'chakra-react-select'
@@ -38,7 +38,7 @@ import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/us
 import { SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
 
 import CustomUserProperties from './CustomUserProperties.tsx'
-import { BridgeSubscriptionsProps } from '../../types.ts'
+import type { BridgeSubscriptionsProps } from '../../types.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {

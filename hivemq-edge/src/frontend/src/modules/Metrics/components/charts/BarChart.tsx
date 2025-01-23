@@ -1,11 +1,12 @@
-import { FC } from 'react'
-import { Theme } from '@nivo/core'
-import { BarDatum, ResponsiveBar } from '@nivo/bar'
+import type { FC } from 'react'
+import type { Theme } from '@nivo/core'
+import type { BarDatum } from '@nivo/bar'
+import { ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Box, useTheme } from '@chakra-ui/react'
 
-import { ChartProps } from '../../types.ts'
+import type { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import ChartTooltip from '../parts/ChartTooltip.tsx'
 

@@ -3,7 +3,8 @@ import { act, renderHook } from '@testing-library/react'
 
 import '@/config/i18n.config.ts'
 
-import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import { BatchModeStepType } from '@/components/rjsf/BatchModeMappings/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchModeMappings/hooks/useBatchModeSteps.ts'
 import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 

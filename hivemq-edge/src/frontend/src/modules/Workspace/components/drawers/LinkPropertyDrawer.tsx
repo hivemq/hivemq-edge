@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
-import { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'

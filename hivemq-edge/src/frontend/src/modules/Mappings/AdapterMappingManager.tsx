@@ -1,5 +1,5 @@
 import { type FC, useEffect, useMemo } from 'react'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {

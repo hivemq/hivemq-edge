@@ -1,8 +1,10 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Alert, AlertIcon } from '@chakra-ui/react'
 
-import { TopicFilter } from '@/api/__generated__'
-import { SchemaHandler, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
+import type { TopicFilter } from '@/api/__generated__'
+import type { SchemaHandler } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
+import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 
 interface SchemaValidationMarkProps {
   topicFilter: TopicFilter

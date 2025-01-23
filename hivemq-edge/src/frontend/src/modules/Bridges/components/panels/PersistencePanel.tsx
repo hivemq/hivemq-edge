@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Checkbox, FormControl, FormErrorMessage, FormHelperText } from '@chakra-ui/react'
 
-import { BridgePanelType } from '../../types.ts'
+import type { BridgePanelType } from '../../types.ts'
 
 const PersistencePanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()

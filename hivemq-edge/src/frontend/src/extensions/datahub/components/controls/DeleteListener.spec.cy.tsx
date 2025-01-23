@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { Edge, Node } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
 import { Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'

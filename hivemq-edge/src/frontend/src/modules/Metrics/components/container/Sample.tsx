@@ -1,14 +1,16 @@
-import { FC, useEffect, useState } from 'react'
-import { Box, CloseButton, VStack, StackProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
+import type { StackProps } from '@chakra-ui/react'
+import { Box, CloseButton, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.ts'
-import { DataPoint } from '@/api/__generated__'
+import type { DataPoint } from '@/api/__generated__'
 
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import SampleRenderer from '../charts/SampleRenderer.tsx'
-import { ChartTheme } from '@/modules/Metrics/types.ts'
+import type { ChartTheme } from '@/modules/Metrics/types.ts'
 
 interface SampleProps extends StackProps {
   metricName?: string

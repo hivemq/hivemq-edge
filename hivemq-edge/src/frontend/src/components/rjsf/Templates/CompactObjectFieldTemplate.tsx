@@ -1,8 +1,8 @@
-import { FC } from 'react'
-import { ObjectFieldTemplateProps, RJSFSchema } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { ObjectFieldTemplateProps, RJSFSchema } from '@rjsf/utils'
 import { Td } from '@chakra-ui/react'
 
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const CompactObjectFieldTemplate: FC<ObjectFieldTemplateProps<unknown, RJSFSchema, AdapterContext>> = (
   props

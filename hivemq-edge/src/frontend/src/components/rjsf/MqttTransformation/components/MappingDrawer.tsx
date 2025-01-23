@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import {
   Drawer,
   DrawerBody,
@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { SouthboundMapping, JsonNode } from '@/api/__generated__'
+import type { SouthboundMapping, JsonNode } from '@/api/__generated__'
 import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
 
 interface MappingDrawerProps {

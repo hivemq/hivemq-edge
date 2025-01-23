@@ -1,13 +1,15 @@
-import { FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Box, Card, CardBody, CloseButton, HStack, Icon, type StackProps, VStack } from '@chakra-ui/react'
 import { BiCollapseHorizontal, BiExpandHorizontal } from 'react-icons/bi'
 
-import { DataPoint } from '@/api/__generated__'
+import type { DataPoint } from '@/api/__generated__'
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.ts'
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 
-import { ChartTheme, ChartType } from '../../types.ts'
+import type { ChartTheme } from '../../types.ts'
+import { ChartType } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import LineChart from '../charts/LineChart.tsx'
 import BarChart from '../charts/BarChart.tsx'

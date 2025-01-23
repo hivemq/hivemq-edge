@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import { Event, EventList, Payload, TypeIdentifier } from '@/api/__generated__'
+import type { EventList } from '@/api/__generated__'
+import { Event, Payload, TypeIdentifier } from '@/api/__generated__'
 
 import { DateTime } from 'luxon'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'

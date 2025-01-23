@@ -1,5 +1,7 @@
-import { FC, ReactElement, useState } from 'react'
-import { Edge, EdgeAddChange, getConnectedEdges, Node, NodeAddChange, NodeSelectionChange, XYPosition } from 'reactflow'
+import type { FC, ReactElement } from 'react'
+import { useState } from 'react'
+import type { Edge, EdgeAddChange, Node, NodeAddChange, NodeSelectionChange, XYPosition } from 'reactflow'
+import { getConnectedEdges } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import { useHotkeys } from 'react-hotkeys-hook'
 

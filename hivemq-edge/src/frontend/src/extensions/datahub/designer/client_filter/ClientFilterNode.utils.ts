@@ -1,9 +1,11 @@
-import { Connection, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { getIncomers } from 'reactflow'
 
 import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
-import { BehaviorPolicy } from '@/api/__generated__'
+import type { BehaviorPolicy } from '@/api/__generated__'
 
-import { BehaviorPolicyData, ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import type { BehaviorPolicyData, ClientFilterData, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 

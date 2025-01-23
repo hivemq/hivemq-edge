@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Icon, IconButton, Menu, MenuButton, MenuDivider, MenuGroup, MenuItem, MenuList, Text } from '@chakra-ui/react'
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { Adapter, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'

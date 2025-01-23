@@ -1,7 +1,8 @@
-import { FC, useEffect, useMemo, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import validator from '@rjsf/validator-ajv8'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import {
   Button,
   Checkbox,
@@ -16,7 +17,8 @@ import {
 } from '@chakra-ui/react'
 import { LuCheckSquare } from 'react-icons/lu'
 
-import { ErrorObject, StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchModeMappings/types.ts'
+import { ErrorObject } from '@/components/rjsf/BatchModeMappings/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 const MappingsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {

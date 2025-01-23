@@ -1,5 +1,5 @@
-import { JSONSchema7 } from 'json-schema'
-import { Dispatch, SetStateAction } from 'react'
+import type { JSONSchema7 } from 'json-schema'
+import type { Dispatch, SetStateAction } from 'react'
 
 export type CustomPropertyValue = string
 export type FormDataItem = Record<string, CustomPropertyValue>

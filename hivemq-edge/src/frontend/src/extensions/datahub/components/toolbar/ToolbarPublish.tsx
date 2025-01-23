@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { UseMutateAsyncFunction } from '@tanstack/react-query'
+import type { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
-import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
+import type { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
@@ -13,7 +13,8 @@ import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import { DataHubNodeType, DryRunResults, ResourceState, ResourceWorkingVersion } from '@datahub/types.ts'
+import type { DryRunResults, ResourceState } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceWorkingVersion } from '@datahub/types.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 interface Mutate<T> {

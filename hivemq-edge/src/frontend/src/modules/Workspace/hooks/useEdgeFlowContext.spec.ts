@@ -3,7 +3,7 @@ import { describe, expect } from 'vitest'
 
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 import { getWrapperEdgeProvider } from '@/__test-utils__/hooks/WrapperEdgeProvider.tsx'
-import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
+import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
 describe('useEdgeFlowContext', () => {
   beforeEach(() => {

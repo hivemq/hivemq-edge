@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Card, HStack, Square, Text } from '@chakra-ui/react'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
-import { DateTime } from 'luxon'
+import type { DateTime } from 'luxon'
 
 interface TooltipProps {
   color: string

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { ApiError, FsmStatesInformationListItem } from '@/api/__generated__'
+import type { ApiError, FsmStatesInformationListItem } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { DATAHUB_QUERY_KEYS } from '@datahub/api/utils.ts'
 

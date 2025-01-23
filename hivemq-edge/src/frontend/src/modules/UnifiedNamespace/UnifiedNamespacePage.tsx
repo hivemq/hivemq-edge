@@ -1,10 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Box, Button, Flex, SimpleGrid } from '@chakra-ui/react'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.ts'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import InfoPanel from '@/modules/UnifiedNamespace/components/panels/InfoPanel.tsx'

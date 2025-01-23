@@ -1,4 +1,5 @@
-import { FC, useEffect, useRef } from 'react'
+import type { FC } from 'react'
+import { useEffect, useRef } from 'react'
 import type { IconType } from 'react-icons'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7TypeName } from 'json-schema'
@@ -6,7 +7,7 @@ import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 interface PropertyItemProps {
   property: FlatJSONSchema7

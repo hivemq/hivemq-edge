@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react'
-import mermaid, { MermaidConfig } from 'mermaid'
+import type React from 'react'
+import { useEffect } from 'react'
+import type { MermaidConfig } from 'mermaid'
+import mermaid from 'mermaid'
 import { Card, CardBody } from '@chakra-ui/react'
 
 export interface MermaidProps {

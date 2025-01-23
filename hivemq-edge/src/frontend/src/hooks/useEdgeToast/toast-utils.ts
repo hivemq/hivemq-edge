@@ -1,4 +1,4 @@
-import { UseToastOptions } from '@chakra-ui/react'
+import type { UseToastOptions } from '@chakra-ui/react'
 
 export const DEFAULT_TOAST_OPTION: UseToastOptions = {
   status: 'success',

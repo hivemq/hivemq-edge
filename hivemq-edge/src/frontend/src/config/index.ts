@@ -1,4 +1,4 @@
-import { NetworkMode } from '@tanstack/react-query'
+import type { NetworkMode } from '@tanstack/react-query'
 
 interface configType {
   environment: string

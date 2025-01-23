@@ -1,14 +1,16 @@
-import { FC, useEffect, useState } from 'react'
-import { FieldProps, getTemplate, getUiOptions } from '@rjsf/utils'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
+import type { FieldProps } from '@rjsf/utils'
+import { getTemplate, getUiOptions } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
-import { SouthboundMapping } from '@/api/__generated__'
+import type { SouthboundMapping } from '@/api/__generated__'
 import ListMappings from '@/components/rjsf/MqttTransformation/components/ListMappings.tsx'
 import MappingDrawer from '@/components/rjsf/MqttTransformation/components/MappingDrawer.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')

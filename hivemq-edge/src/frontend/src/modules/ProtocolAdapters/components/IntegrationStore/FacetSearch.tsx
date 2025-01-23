@@ -1,4 +1,5 @@
-import { ChangeEvent, FC, useMemo } from 'react'
+import type { ChangeEvent, FC } from 'react'
+import { useMemo } from 'react'
 import {
   Flex,
   FormControl,
@@ -17,9 +18,9 @@ import {
 import { SearchIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { ProtocolAdapter, ProtocolAdapterCategory } from '@/api/__generated__'
+import type { ProtocolAdapter, ProtocolAdapterCategory } from '@/api/__generated__'
 
-import { ProtocolFacetType } from '../../types.ts'
+import type { ProtocolFacetType } from '../../types.ts'
 
 interface SearchFilterAdaptersProps {
   items: ProtocolAdapter[]

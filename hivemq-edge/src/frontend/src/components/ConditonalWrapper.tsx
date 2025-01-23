@@ -1,4 +1,5 @@
-import React, { FC } from 'react'
+import type { FC } from 'react'
+import type React from 'react'
 
 interface ConditionalWrapperProps {
   children: React.ReactElement

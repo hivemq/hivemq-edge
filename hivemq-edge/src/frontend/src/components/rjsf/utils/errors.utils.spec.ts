@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest'
 import { hasNestedError } from '@/components/rjsf/utils/errors.utils.ts'
-import { ErrorSchema } from '@rjsf/utils'
+import type { ErrorSchema } from '@rjsf/utils'
 
 interface TestProperty {
   test?: object

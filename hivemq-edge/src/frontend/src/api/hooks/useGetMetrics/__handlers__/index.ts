@@ -1,4 +1,4 @@
-import { DataPoint, Metric, MetricList } from '@/api/__generated__'
+import type { DataPoint, Metric, MetricList } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2 } from '@/__test-utils__/mocks.ts'
 import { DateTime } from 'luxon'

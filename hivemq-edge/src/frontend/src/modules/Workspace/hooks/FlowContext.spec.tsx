@@ -2,7 +2,7 @@ import { useContext } from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { EdgeFlowContext, EdgeFlowProvider } from './FlowContext.tsx'
-import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
+import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
 const optionKeys = ['showTopics', 'showStatus', 'showMetrics', 'showGateway']
 

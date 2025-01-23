@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
+import type { FC } from 'react'
+import type { SubmitHandler } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import {
   Checkbox,
   Flex,
@@ -13,7 +14,8 @@ import {
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { $ISA95ApiBean, ISA95ApiBean } from '@/api/__generated__'
+import type { ISA95ApiBean } from '@/api/__generated__'
+import { $ISA95ApiBean } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 
 import NamespaceDisplay from './NamespaceDisplay.tsx'

@@ -1,25 +1,27 @@
-import { FC, PropsWithChildren } from 'react'
-import { Edge, Node } from 'reactflow'
+import type { FC, PropsWithChildren } from 'react'
+import type { Edge, Node } from 'reactflow'
 import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import { DataPolicyValidator } from '@/api/__generated__'
+import type {
+  ClientFilterData,
+  DesignerStatus,
+  DryRunResults,
+  SchemaData,
+  TopicFilterData,
+  TransitionData,
+  ValidatorData,
+} from '@/extensions/datahub/types.ts'
 import {
   BehaviorPolicyData,
   BehaviorPolicyType,
-  ClientFilterData,
   DataHubNodeType,
   DataPolicyData,
-  DesignerStatus,
-  DryRunResults,
   OperationData,
-  SchemaData,
   SchemaType,
   StrategyType,
-  TopicFilterData,
-  TransitionData,
   TransitionType,
-  ValidatorData,
 } from '@/extensions/datahub/types.ts'
 import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'

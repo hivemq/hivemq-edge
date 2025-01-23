@@ -1,4 +1,5 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Box,
@@ -17,7 +18,7 @@ import { EditIcon } from '@chakra-ui/icons'
 
 import BridgeLogo from '@/assets/app/bridges.svg'
 
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.ts'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 

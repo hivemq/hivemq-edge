@@ -1,4 +1,5 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Card, CardBody, HStack, Icon, Image, StackDivider, Text, VStack } from '@chakra-ui/react'
 import { PiBridgeThin } from 'react-icons/pi'
 import { GrStatusUnknown } from 'react-icons/gr'

@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import type { BoxProps } from '@chakra-ui/react'
 import {
   Box,
-  BoxProps,
   Button,
   Heading,
   SimpleGrid,
@@ -18,7 +18,7 @@ import {
 import { BsClipboardCheck } from 'react-icons/bs'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
+import type { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 
 interface OnboardingProps extends BoxProps {
   tasks: OnboardingFetchType

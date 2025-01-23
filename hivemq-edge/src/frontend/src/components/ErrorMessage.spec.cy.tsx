@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 import ErrorMessage from './ErrorMessage.tsx'
-import { ProblemDetails } from '@/api/types/http-problem-details'
+import type { ProblemDetails } from '@/api/types/http-problem-details'
 
 const MOCK_STATUS_TEXT = 'This is a test'
 const MOCK_ERROR: ProblemDetails = { title: 'This is a title', status: 401 }

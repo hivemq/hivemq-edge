@@ -1,10 +1,13 @@
-import { FocusEvent, useCallback, useMemo } from 'react'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { FocusEvent } from 'react'
+import { useCallback, useMemo } from 'react'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
-import { Select, OnChangeValue, SingleValueProps, chakraComponents, OptionProps } from 'chakra-react-select'
+import type { OnChangeValue, SingleValueProps, OptionProps } from 'chakra-react-select'
+import { Select, chakraComponents } from 'chakra-react-select'
 
-import { Adapter } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 const SingleValue = (props: SingleValueProps<Adapter>) => {

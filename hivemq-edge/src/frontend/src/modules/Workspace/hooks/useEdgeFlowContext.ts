@@ -1,5 +1,6 @@
 import { useContext } from 'react'
-import { EdgeFlowContext, EdgeFlowContextType } from './FlowContext.tsx'
+import type { EdgeFlowContextType } from './FlowContext.tsx'
+import { EdgeFlowContext } from './FlowContext.tsx'
 
 export const useEdgeFlowContext = () => {
   const context = useContext<EdgeFlowContextType | null>(EdgeFlowContext)

@@ -4,7 +4,7 @@ import { Duration } from 'luxon'
 
 import '@/config/i18n.config.ts'
 
-import { RangeOption } from '../types.ts'
+import type { RangeOption } from '../types.ts'
 import { MOCK_RANGE_OPTION } from '../utils/range-option.mocks.ts'
 import { useRangeTranslation } from './useRangeTranslation.ts'
 

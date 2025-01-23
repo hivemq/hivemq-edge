@@ -1,5 +1,5 @@
-import { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from 'reactflow'
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from 'reactflow'
+import type { ProtocolAdapter } from '@/api/__generated__'
 
 export interface EdgeFlowOptions {
   showTopics: boolean

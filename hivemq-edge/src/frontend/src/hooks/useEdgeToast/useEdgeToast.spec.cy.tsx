@@ -3,7 +3,7 @@
 import { useEdgeToast } from './useEdgeToast.tsx'
 import { Button } from '@chakra-ui/react'
 import { ApiError } from '@/api/__generated__'
-import { ApiResult } from '@/api/__generated__/core/ApiResult.ts'
+import type { ApiResult } from '@/api/__generated__/core/ApiResult.ts'
 
 const result: ApiResult = {
   url: 'http://fake.url.com',

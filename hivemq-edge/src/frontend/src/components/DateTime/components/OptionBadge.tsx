@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Badge, type BadgeProps } from '@chakra-ui/react'
 
-import { RangeOption } from '../types.ts'
+import type { RangeOption } from '../types.ts'
 import { useRangeTranslation } from '../hooks/useRangeTranslation.ts'
 
 interface OptionBadgeProps extends BadgeProps {

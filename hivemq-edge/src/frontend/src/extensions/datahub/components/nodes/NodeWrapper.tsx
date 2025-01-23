@@ -1,22 +1,15 @@
-import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
+import type { FC, ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NodeProps } from 'reactflow'
-import {
-  Avatar,
-  BoxProps,
-  Card,
-  CardBody,
-  CardBodyProps,
-  CardHeader,
-  HStack,
-  Text,
-  useColorModeValue,
-} from '@chakra-ui/react'
+import type { NodeProps } from 'reactflow'
+import type { BoxProps, CardBodyProps } from '@chakra-ui/react'
+import { Avatar, Card, CardBody, CardHeader, HStack, Text, useColorModeValue } from '@chakra-ui/react'
 
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 
 import NodeDatahubToolbar from '@datahub/components/toolbar/NodeDatahubToolbar.tsx'
-import { DataHubNodeData, DataHubNodeType, PolicyDryRunStatus } from '@datahub/types.ts'
+import type { DataHubNodeData } from '@datahub/types.ts'
+import { DataHubNodeType, PolicyDryRunStatus } from '@datahub/types.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { parseHotkey } from '@datahub/utils/hotkeys.utils.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'

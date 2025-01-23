@@ -1,7 +1,8 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 
 import useDataHubDraftStore from '../hooks/useDataHubDraftStore.ts'
-import { PolicyCheckState, WorkspaceState, WorkspaceStatus } from '../types.ts'
+import type { PolicyCheckState, WorkspaceState, WorkspaceStatus } from '../types.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { ReactFlowProvider } from 'reactflow'
 

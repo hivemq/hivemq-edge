@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useOnSelectionChange } from 'reactflow'
 
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'

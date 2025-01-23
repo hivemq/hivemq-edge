@@ -1,8 +1,9 @@
-import { FC, useMemo } from 'react'
-import { Node } from 'reactflow'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 
-import { ClientFilterData, PanelProps } from '@datahub/types.ts'
+import type { ClientFilterData, PanelProps } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { MOCK_CLIENT_FILTER_SCHEMA } from '@datahub/designer/client_filter/ClientFilterSchema.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'

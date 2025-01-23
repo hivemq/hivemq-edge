@@ -1,11 +1,14 @@
-import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
-import { WithCSSVar } from '@chakra-ui/react'
-import { Dict } from '@chakra-ui/utils'
-import { GenericObjectType } from '@rjsf/utils'
+import type { Edge, Node, XYPosition } from 'reactflow'
+import { MarkerType, Position } from 'reactflow'
+import type { WithCSSVar } from '@chakra-ui/react'
+import type { Dict } from '@chakra-ui/utils'
+import type { GenericObjectType } from '@rjsf/utils'
 
-import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, Bridge, Listener, ProtocolAdapter } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 
-import { DeviceMetadata, EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
+import type { DeviceMetadata } from '../types.ts'
+import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 

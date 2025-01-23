@@ -1,4 +1,4 @@
-import { JSONSchema7 } from 'json-schema'
+import type { JSONSchema7 } from 'json-schema'
 import { MqttUserProperty } from '@/api/schemas/definitions/MqttUserProperty.json-schema.ts'
 import { QoS } from '@/api/schemas/definitions/QoS.json-schema.ts'
 

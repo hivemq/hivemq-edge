@@ -1,13 +1,6 @@
-import { Bridge } from '@/api/__generated__'
-import {
-  createContext,
-  Dispatch,
-  FunctionComponent,
-  PropsWithChildren,
-  SetStateAction,
-  useContext,
-  useState,
-} from 'react'
+import type { Bridge } from '@/api/__generated__'
+import type { Dispatch, FunctionComponent, PropsWithChildren, SetStateAction } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 interface BridgeContextProps {
   bridge: Bridge

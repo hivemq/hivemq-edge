@@ -1,13 +1,13 @@
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Button } from '@chakra-ui/react'
 
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import SubscriptionsPanel from './SubscriptionsPanel.tsx'
-import { SubscriptionType } from '@/modules/Bridges/types.ts'
+import type { SubscriptionType } from '@/modules/Bridges/types.ts'
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 

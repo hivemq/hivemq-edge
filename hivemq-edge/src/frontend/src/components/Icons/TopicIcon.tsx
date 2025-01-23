@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Icon, type IconProps } from '@chakra-ui/react'
 import { SiMqtt } from 'react-icons/si'
 import { useTranslation } from 'react-i18next'

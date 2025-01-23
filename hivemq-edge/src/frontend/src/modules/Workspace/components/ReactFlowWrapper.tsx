@@ -1,6 +1,7 @@
 import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import ReactFlow, { Background, getIncomers, getOutgoers, Node, NodePositionChange } from 'reactflow'
+import type { Node, NodePositionChange } from 'reactflow'
+import ReactFlow, { Background, getIncomers, getOutgoers } from 'reactflow'
 import { Box } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'

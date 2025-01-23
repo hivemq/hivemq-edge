@@ -1,16 +1,18 @@
-import { FC, ReactNode, useEffect, useState } from 'react'
+import type { FC, ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { SubmitHandler } from 'react-hook-form'
+import type { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
-import { Adapter, ApiError } from '@/api/__generated__'
+import type { Adapter, ApiError } from '@/api/__generated__'
 import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.ts'
 import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
