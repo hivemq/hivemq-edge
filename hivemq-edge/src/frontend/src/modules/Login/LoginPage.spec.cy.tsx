@@ -64,9 +64,9 @@ describe('LoginPage', () => {
 
     cy.mountWithProviders(<LoginPage />)
     cy.wait('@getConfig').then((e) => console.log('ddd', e))
+    cy.get("[role='alert'").eq(0).should('be.visible')
     cy.get("[role='alert'")
       .eq(0)
-      .should('be.visible')
       .find("div[data-status='info']")
       .should('contain.text', 'Welcome To HiveMQ Edge')
       .should('contain.text', mockGatewayConfiguration.firstUseInformation?.firstUseDescription)

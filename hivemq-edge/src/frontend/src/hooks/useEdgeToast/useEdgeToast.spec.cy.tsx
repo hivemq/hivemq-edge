@@ -58,11 +58,8 @@ describe('NamespaceForm', () => {
 
     cy.getByTestId('trigger-success').click()
     cy.get('[role="status"]').should('have.length', 1)
-    cy.get('[role="status"]')
-      .eq(0)
-      .should('be.visible')
-      .find("div[data-status='success']")
-      .should('contain.text', 'This is a success')
+    cy.get('[role="status"]').eq(0).should('be.visible')
+    cy.get('[role="status"]').eq(0).find("div[data-status='success']").should('contain.text', 'This is a success')
   })
 
   it('should render error toast properly', () => {
@@ -70,11 +67,8 @@ describe('NamespaceForm', () => {
 
     cy.getByTestId('trigger-error').click()
     cy.get('[role="status"]').should('have.length', 1)
-    cy.get('[role="status"]')
-      .eq(0)
-      .should('be.visible')
-      .find("div[data-status='error']")
-      .should('contain.text', 'This is an error')
+    cy.get('[role="status"]').eq(0).should('be.visible')
+    cy.get('[role="status"]').eq(0).find("div[data-status='error']").should('contain.text', 'This is an error')
 
     // cy.getByTestId('trigger-error').click()
     // cy.get('[role="status"]').should('have.length', 2)
