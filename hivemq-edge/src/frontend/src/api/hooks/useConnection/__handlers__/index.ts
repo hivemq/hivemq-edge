@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import { Status, StatusList } from '@/api/__generated__'
+import type { StatusList } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import { MOCK_ADAPTER_ID, MOCK_BRIDGE_ID } from '@/__test-utils__/mocks.ts'
 
 export const mockBridgeConnectionStatus: Status = {

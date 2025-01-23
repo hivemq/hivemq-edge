@@ -1,7 +1,9 @@
-import { FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiError, Status, StatusTransitionCommand } from '@/api/__generated__'
+import type { ApiError, StatusTransitionCommand } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx'
 import { useSetConnectionStatus as useSetBridgeConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
@@ -10,7 +12,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import ConnectionButton from './components/ConnectionButton.tsx'
 import ConnectionMenu from './components/ConnectionMenu.tsx'
-import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
+import type { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 
 interface ConnectionControllerProps {
   type: DeviceTypes

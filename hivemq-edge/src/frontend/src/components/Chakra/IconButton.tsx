@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { IconButtonProps, TooltipProps, Tooltip, IconButton as CuiIconButton } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { IconButtonProps, TooltipProps } from '@chakra-ui/react'
+import { Tooltip, IconButton as CuiIconButton } from '@chakra-ui/react'
 
 interface IconTooltipButtonProps extends Omit<IconButtonProps, 'icon'> {
   icon: React.ReactElement

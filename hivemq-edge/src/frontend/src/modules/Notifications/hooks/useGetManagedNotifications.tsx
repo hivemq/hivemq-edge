@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
-import { Badge, Link, Text, UseToastOptions } from '@chakra-ui/react'
+import type { UseToastOptions } from '@chakra-ui/react'
+import { Badge, Link, Text } from '@chakra-ui/react'
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 
 import { useGetReleases } from '@/api/hooks/useGitHub/useGetReleases.ts'

@@ -15,8 +15,10 @@
     "description": "The Data Hub on Edge provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
   },
   "policy": {
+    "type_CREATE_POLICY": "No type selected",
     "type_DATA_POLICY": "Data Policy",
-    "type_BEHAVIOR_POLICY": "Behavior Policy"
+    "type_BEHAVIOR_POLICY": "Behavior Policy",
+    "unnamed": "Unnamed policy"
   },
 
   "resource": {
@@ -32,6 +34,8 @@
     "action": {
       "edit": "Edit",
       "view": "View",
+      "view-edit": "View / Edit",
+      "config": "Configure",
       "download": "Download",
       "delete": "Delete",
       "copy": "Copy"
@@ -113,6 +117,16 @@
       },
       "edit": {
         "aria-label": "Edit Operations"
+      },
+      "modal": {
+        "clear": {
+          "header": "Do you want to clear the Designer?",
+          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed"
+        },
+        "modify": {
+          "header": "Do you want to modify the policy?",
+          "confirmation": "The current version of your policy will be open for changes. However some elements will not be modifiable. "
+        }
       }
     },
     "controls": {
@@ -122,7 +136,8 @@
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
       "clear": "Clear the Designer",
-      "edit": "Edit the policy",
+      "modify": "Modify the policy",
+      "clone": "Clone as a new draft",
       "shortcuts": "Help using the Designer"
     },
 
@@ -160,10 +175,10 @@
         "operation": "Operation"
       },
       "draft": {
-        "status_DRAFT": "Draft Policy",
-        "status_LOADED": "{{ type }} {{ name }} - Loaded",
-        "status_MODIFIED": "{{ type }} {{ name }} - Modified",
-        "status_READ_ONLY": "{{ type }} {{ name }} - Read-only"
+        "status_DRAFT": "Draft",
+        "status_LOADED": "Loaded",
+        "status_MODIFIED": "Modified",
+        "status_READ_ONLY": "Read-only"
       }
     },
     "nodes": {
@@ -287,12 +302,22 @@
         "message_MODE_ONLY_one": "Are you sure you want to delete {{ count }} node? The operation cannot be reversed.",
         "message_MODE_ONLY_other": "Are you sure you want to delete {{ count }} nodes? The operation cannot be reversed.",
         "message_BOTH": "Are you sure you want to delete {{ count }} nodes and connections? The operation cannot be reversed."
-      },
-      "guards": {
+      }
+    },
+    "guards": {
+      "delete": {
         "message_one": "The selected element cannot be deleted because of some constraints",
         "message_other": "The selected elements cannot be deleted because of some constraints",
         "topicFilter": "Topic filter cannot be modified once published",
         "policyNode": "Policy node cannot be deleted once published"
+      },
+      "readonly": {
+        "title": "The policy is in read-only mode",
+        "message": "The element cannot be modified"
+      },
+      "protected": {
+        "title": "The element is protected",
+        "message": "The element cannot be modified"
       }
     }
   },

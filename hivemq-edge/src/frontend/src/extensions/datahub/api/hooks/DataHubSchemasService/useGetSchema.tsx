@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { DATAHUB_QUERY_KEYS } from '../../utils.ts'
-import { ApiError, Schema } from '@/api/__generated__'
+import type { ApiError, Schema } from '@/api/__generated__'
 
 export const useGetSchema = (schemaId: string, fields?: string) => {
   const appClient = useHttpClient()

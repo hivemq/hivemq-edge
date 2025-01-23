@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import {
   Button,
   Card,
@@ -21,7 +21,7 @@ import {
 import { EditIcon } from '@chakra-ui/icons'
 import { MdOutlineEventNote } from 'react-icons/md'
 
-import { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'

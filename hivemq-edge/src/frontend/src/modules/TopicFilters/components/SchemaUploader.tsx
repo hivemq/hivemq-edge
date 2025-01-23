@@ -1,7 +1,9 @@
-import { FC, useState } from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDropzone } from 'react-dropzone'
-import { AlertStatus, Button, Card, CardBody, Text, useToast } from '@chakra-ui/react'
+import type { AlertStatus } from '@chakra-ui/react'
+import { Button, Card, CardBody, Text, useToast } from '@chakra-ui/react'
 
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'

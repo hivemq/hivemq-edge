@@ -1,16 +1,11 @@
-import { getIncomers, Node } from 'reactflow'
+import type { Node } from 'reactflow'
+import { getIncomers } from 'reactflow'
 
-import { Schema, Script } from '@/api/__generated__'
+import type { Schema, Script } from '@/api/__generated__'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import {
-  BehaviorPolicyData,
-  DataHubNodeData,
-  DataHubNodeType,
-  DataPolicyData,
-  DryRunResults,
-  PolicyDryRunStatus,
-} from '@datahub/types.ts'
+import type { BehaviorPolicyData, DataHubNodeData, DryRunResults } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, PolicyDryRunStatus } from '@datahub/types.ts'
 import {
   checkValidityConfigurations,
   isClientFilterNodeType,

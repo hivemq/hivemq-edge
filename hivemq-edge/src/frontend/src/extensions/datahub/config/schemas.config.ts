@@ -1,4 +1,4 @@
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { MOCK_TOPIC_FILTER_SCHEMA } from '@datahub/designer/topic_filter/TopicFilterData.ts'
 import { MOCK_CLIENT_FILTER_SCHEMA } from '@datahub/designer/client_filter/ClientFilterSchema.ts'

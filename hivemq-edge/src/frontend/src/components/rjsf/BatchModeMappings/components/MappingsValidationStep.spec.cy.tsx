@@ -1,4 +1,4 @@
-import { BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
 import MappingsValidationStep from '@/components/rjsf/BatchModeMappings/components/MappingsValidationStep.tsx'
 import {
   MOCK_ID_SCHEMA,

@@ -1,12 +1,11 @@
+import type { ButtonProps, PlacementWithLogical } from '@chakra-ui/react'
 import {
   Button,
-  ButtonProps,
   Popover,
   PopoverArrow,
   PopoverContent,
   PopoverTrigger,
   SimpleGrid,
-  PlacementWithLogical,
   Box,
   Flex,
   Portal,

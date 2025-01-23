@@ -1,4 +1,5 @@
-import { FormContextType, IconButtonProps, RJSFSchema, StrictRJSFSchema, TranslatableString } from '@rjsf/utils'
+import type { FormContextType, IconButtonProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
+import { TranslatableString } from '@rjsf/utils'
 import { ArrowUpIcon, ArrowDownIcon, CopyIcon, DeleteIcon } from '@chakra-ui/icons'
 
 import ChakraIconButton from '@/components/rjsf/__internals/ChakraIconButton.tsx'

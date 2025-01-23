@@ -1,21 +1,26 @@
-import { FC, useCallback, useState } from 'react'
-import { Node } from 'reactflow'
+import type { FC } from 'react'
+import { useCallback, useState } from 'react'
+import type { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
-import { UiSchema } from '@rjsf/utils'
-import { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
+import type { UiSchema } from '@rjsf/utils'
+import type { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
 
 import { MOCK_JAVASCRIPT_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
-import { FunctionData, PanelProps, ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
+import type { FunctionData, PanelProps } from '@datahub/types.ts'
+import { ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_FUNCTION_SCHEMA } from '@datahub/designer/script/FunctionData.ts'
 import { getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { data: allScripts } = useGetAllScripts({})
   const { nodes } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const [formData, setFormData] = useState<FunctionData | null>(() => {
     const sourceNode = nodes.find((node) => node.id === selectedNode) as Node<FunctionData> | undefined
@@ -118,8 +123,10 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
 
   return (
     <Card>
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           widgets={datahubRJSFWidgets}
           schema={MOCK_FUNCTION_SCHEMA.schema}
           uiSchema={getUISchema(formData)}

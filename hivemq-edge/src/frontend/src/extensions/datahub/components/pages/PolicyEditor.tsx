@@ -1,13 +1,8 @@
-import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, {
-  Connection,
-  HandleType,
-  Node,
-  NodeAddChange,
-  ReactFlowInstance,
-  ReactFlowProvider,
-  XYPosition,
-} from 'reactflow'
+import type { FC } from 'react'
+import type React from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { Connection, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from 'reactflow'
+import ReactFlow, { ReactFlowProvider } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
@@ -24,8 +19,9 @@ import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 import { CustomEdgeTypes, CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -41,12 +37,12 @@ const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
-  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes, isPolicyInDraft } =
+  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes, isPolicyInDraft, setStatus } =
     useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
   const edgeTypes = useMemo(() => CustomEdgeTypes, [])
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+  const { isPolicyEditable } = usePolicyGuards()
 
   const checkValidity = useCallback(
     (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),
@@ -83,21 +79,23 @@ const PolicyEditor: FC = () => {
           data: getNodePayload(type),
         }
         onAddNodes([{ item: newNode, type: 'add' }])
+        if (type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY)
+          setStatus(status, { type })
       }
     },
-    [onAddNodes, reactFlowInstance]
+    [onAddNodes, reactFlowInstance, setStatus, status]
   )
 
   const onConnectStart = useCallback(
     (_: unknown, params: OnConnectStartParams) => {
-      if (!isEditable) return
+      if (!isPolicyEditable) return
       const nodeFound = nodes.find((e) => e.id === params.nodeId)
       edgeConnectStart.current = undefined
       if (nodeFound) {
         edgeConnectStart.current = { ...params, type: nodeFound.type }
       }
     },
-    [isEditable, nodes]
+    [isPolicyEditable, nodes]
   )
 
   const onConnectEnd = useCallback(
@@ -176,7 +174,7 @@ const PolicyEditor: FC = () => {
           onConnectEnd={onConnectEnd}
           onConnect={onConnectNodes}
           connectionRadius={35}
-          connectionLineComponent={isEditable ? ConnectionLine : undefined}
+          connectionLineComponent={isPolicyEditable ? ConnectionLine : undefined}
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
@@ -185,7 +183,7 @@ const PolicyEditor: FC = () => {
           onDrop={onDrop}
           isValidConnection={checkValidity}
           deleteKeyCode={[]}
-          nodesConnectable={isEditable}
+          nodesConnectable={isPolicyEditable}
           proOptions={proOptions}
           role="region"
           aria-label={t('workspace.canvas.aria-label')}

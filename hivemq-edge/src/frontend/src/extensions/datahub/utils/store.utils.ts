@@ -1,7 +1,8 @@
-import { Edge, Node } from 'reactflow'
-import { RJSFSchema } from '@rjsf/utils'
+import type { Edge, Node } from 'reactflow'
+import type { RJSFSchema } from '@rjsf/utils'
 
-import { DesignerStatus, FunctionSpecs, WorkspaceState, WorkspaceStatus } from '@datahub/types.ts'
+import type { FunctionSpecs, WorkspaceState, WorkspaceStatus } from '@datahub/types.ts'
+import { DesignerStatus } from '@datahub/types.ts'
 import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 
 export const getFunctions = (schema: RJSFSchema) => {

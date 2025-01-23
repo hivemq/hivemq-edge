@@ -1,4 +1,4 @@
-import { JSONSchema7 } from 'json-schema'
+import type { JSONSchema7 } from 'json-schema'
 import { QoS } from '@/api/schemas/definitions/QoS.json-schema.ts'
 
 import i18n from '@/config/i18n.config.ts'

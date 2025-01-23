@@ -1,27 +1,23 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
 import Form from '@rjsf/chakra-ui'
-import { FormProps } from '@rjsf/core'
-import {
+import type { FormProps } from '@rjsf/core'
+import type {
   DescriptionFieldProps,
   FieldTemplateProps,
   FormContextType,
   RJSFSchema,
   StrictRJSFSchema,
-  getTemplate,
-  getUiOptions,
   ErrorListProps,
-  TranslatableString,
   TitleFieldProps,
 } from '@rjsf/utils'
-import { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import { getTemplate, getUiOptions, TranslatableString } from '@rjsf/utils'
+import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
 
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { DesignerStatus } from '@datahub/types.ts'
 
 // overriding the heading definition
 function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
@@ -154,16 +150,17 @@ function FieldTemplate<
   )
 }
 
-export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' | 'liveValidate' | 'omitExtraData'>> = (
-  props
-) => {
-  const { uiSchema, ...rest } = props
-  const { status } = useDataHubDraftStore()
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+interface ReactFlowSchemaFormProps
+  extends Omit<FormProps, 'validator' | 'templates' | 'liveValidate' | 'omitExtraData'> {
+  isNodeEditable?: boolean
+}
+
+export const ReactFlowSchemaForm: FC<ReactFlowSchemaFormProps> = (props) => {
+  const { uiSchema, isNodeEditable = true, ...rest } = props
 
   return (
     <Form
-      readonly={status === DesignerStatus.LOADED}
+      readonly={!isNodeEditable}
       id="datahub-node-form"
       showErrorList="bottom"
       templates={{
@@ -176,7 +173,7 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
       }}
       validator={validator}
       // TODO[NVL] Not sure we want to hide the validation when readonly
-      noValidate={!isEditable}
+      noValidate={!isNodeEditable}
       uiSchema={{
         ...uiSchema,
         'ui:submitButtonOptions': {

@@ -1,7 +1,9 @@
-import { FC, useCallback, useMemo } from 'react'
-import { getIncomers, Node } from 'reactflow'
-import { IChangeEvent } from '@rjsf/core'
-import { CustomValidator } from '@rjsf/utils'
+import type { FC } from 'react'
+import { useCallback, useMemo } from 'react'
+import type { Node } from 'reactflow'
+import { getIncomers } from 'reactflow'
+import type { IChangeEvent } from '@rjsf/core'
+import type { CustomValidator } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 
 import { Card, CardBody } from '@chakra-ui/react'
@@ -11,11 +13,15 @@ import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
-import { DataHubNodeType, DataPolicyData, OperationData, PanelProps } from '@datahub/types.ts'
+import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes, edges, functions } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
@@ -67,8 +73,10 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
 
   return (
     <Card>
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_OPERATION_SCHEMA.schema}
           uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
           formData={formData}

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Alert, Icon, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { LuConstruction } from 'react-icons/lu'

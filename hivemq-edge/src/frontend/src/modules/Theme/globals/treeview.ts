@@ -1,4 +1,4 @@
-import { SystemStyleObject } from '@chakra-ui/react'
+import type { SystemStyleObject } from '@chakra-ui/react'
 
 export const treeView: SystemStyleObject = {
   "[role='tree']": {

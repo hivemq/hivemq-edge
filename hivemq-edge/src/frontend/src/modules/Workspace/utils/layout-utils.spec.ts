@@ -1,7 +1,8 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 
-import { EdgeFlowGrouping, EdgeFlowLayout } from '../types.ts'
+import type { EdgeFlowGrouping } from '../types.ts'
+import { EdgeFlowLayout } from '../types.ts'
 
 import { MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
 import { applyLayout } from '@/modules/Workspace/utils/layout-utils.ts'

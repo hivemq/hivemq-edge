@@ -1,13 +1,15 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Handle, Position, NodeProps, useStore } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position, useStore } from 'reactflow'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { PLCTagIcon } from '@/components/Icons/TopicIcon.tsx'
-import { DeviceMetadata } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import {
   deviceCapabilityIcon,

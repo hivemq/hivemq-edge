@@ -1,5 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { UseDisclosureProps } from '@chakra-ui/react'
 import {
   Button,
   Drawer,
@@ -11,12 +12,11 @@ import {
   DrawerOverlay,
   Text,
   useDisclosure,
-  UseDisclosureProps,
 } from '@chakra-ui/react'
 
-import { DomainTagList } from '@/api/__generated__'
+import type { DomainTagList } from '@/api/__generated__'
 import DeviceTagForm from '@/modules/Device/components/DeviceTagForm.tsx'
-import { ManagerContextType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 
 interface DeviceTagDrawerProps<T> {
   context: ManagerContextType<T>

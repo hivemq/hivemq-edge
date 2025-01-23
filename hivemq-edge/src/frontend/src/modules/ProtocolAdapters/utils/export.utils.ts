@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
-import { RJSFSchema } from '@rjsf/utils'
-import { Adapter, JsonNode, ProtocolAdapter } from '@/api/__generated__'
+import type { RJSFSchema } from '@rjsf/utils'
+import type { Adapter, JsonNode, ProtocolAdapter } from '@/api/__generated__'
 import {
   getPropertiesFromPath,
   getTopicPaths,

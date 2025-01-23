@@ -2,7 +2,7 @@
 import { IoLinkOutline } from 'react-icons/io5'
 
 import Onboarding from './Onboarding.tsx'
-import { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
+import type { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 
 const MOCK_ONBOARDING: OnboardingFetchType = {
   data: [

@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
-import SchemaTable from '@datahub/components/pages/SchemaTable.tsx'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import SchemaTable from '@datahub/components/pages/SchemaTable.tsx'
 
 describe('SchemaTable', () => {
   beforeEach(() => {
@@ -37,5 +37,11 @@ describe('SchemaTable', () => {
     cy.get('@firstItemContent').eq(1).should('have.text', 'JSON')
     cy.get('@firstItemContent').eq(2).should('have.text', '1')
     cy.get('@firstItemContent').eq(3).should('have.text', '2 days ago')
+  })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<SchemaTable />)
+    cy.checkAccessibility()
   })
 })

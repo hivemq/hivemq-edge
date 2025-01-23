@@ -1,5 +1,5 @@
 import type { HTMLContent } from '@tiptap/react'
-import { MentionNodeAttrs } from '@datahub/components/interpolation/SuggestionList.tsx'
+import type { MentionNodeAttrs } from '@datahub/components/interpolation/SuggestionList.tsx'
 
 export const parseInterpolations = (value: string | undefined): HTMLContent => {
   const replacer = (_: string, ...args: (string | number)[]) => `<span data-type="mention" data-id="${args[0]}"></span>`

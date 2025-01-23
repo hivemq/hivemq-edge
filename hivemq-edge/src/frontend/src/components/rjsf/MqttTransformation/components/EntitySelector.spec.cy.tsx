@@ -4,7 +4,7 @@ import {
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-import { DomainTagList } from '@/api/__generated__'
+import type { DomainTagList } from '@/api/__generated__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 

@@ -1,6 +1,7 @@
-import { Connection, getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { getOutgoers } from 'reactflow'
 
-import {
+import type {
   BehaviorPolicy,
   BehaviorPolicyOnEvent,
   BehaviorPolicyOnTransition,
@@ -11,17 +12,8 @@ import {
 import i18n from '@/config/i18n.config.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
-import {
-  BehaviorPolicyData,
-  BehaviorPolicyType,
-  DataHubNodeType,
-  DryRunResults,
-  FiniteStateMachineSchema,
-  StateType,
-  TransitionData,
-  TransitionType,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { BehaviorPolicyData, DryRunResults, FiniteStateMachineSchema, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType, StateType, TransitionData, TransitionType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { checkValidityPipeline, loadBehaviorPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'

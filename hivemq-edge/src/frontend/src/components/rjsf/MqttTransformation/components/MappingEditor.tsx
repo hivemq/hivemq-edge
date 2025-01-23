@@ -1,15 +1,18 @@
-import { FC, useEffect, useMemo } from 'react'
+import type { FC } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, List, ListItem } from '@chakra-ui/react'
+import type { CardProps } from '@chakra-ui/react'
+import { Button, Card, CardBody, CardHeader, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
-import { Instruction } from '@/api/__generated__'
+import type { Instruction } from '@/api/__generated__'
 import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
-import { FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string

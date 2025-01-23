@@ -1,7 +1,8 @@
 import { create } from 'zustand'
-import { Node } from 'reactflow'
-import { DryRunResults, PolicyCheckAction, PolicyCheckState, PolicyDryRunStatus } from '@datahub/types.ts'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import type { Node } from 'reactflow'
+import type { DryRunResults, PolicyCheckAction, PolicyCheckState } from '@datahub/types.ts'
+import { PolicyDryRunStatus } from '@datahub/types.ts'
+import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
 const initialStore = (): PolicyCheckState => {
   return {

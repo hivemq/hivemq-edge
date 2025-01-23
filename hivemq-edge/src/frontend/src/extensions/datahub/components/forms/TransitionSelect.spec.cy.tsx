@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
-import { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
 import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
-import { FiniteStateMachineSchema } from '@datahub/types.ts'
+import type { FiniteStateMachineSchema } from '@datahub/types.ts'
 
 // @ts-ignore
 const MOCK_OPTIONS: FiniteStateMachineSchema = MOCK_BEHAVIOR_POLICY_SCHEMA.schema.definitions?.['Publish.quota']

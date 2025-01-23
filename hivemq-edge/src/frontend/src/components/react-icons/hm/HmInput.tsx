@@ -1,4 +1,5 @@
-import { GenIcon, IconBaseProps } from 'react-icons'
+import type { IconBaseProps } from 'react-icons'
+import { GenIcon } from 'react-icons'
 
 export const HmInput = (props: IconBaseProps) =>
   GenIcon({

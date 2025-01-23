@@ -1,4 +1,5 @@
-import { Bridge, BridgeList, Status, StatusList } from '@/api/__generated__'
+import type { Bridge, BridgeList, StatusList } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 import { MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION, MOCK_TOPIC_REF1 } from '@/__test-utils__/react-flow/topics.ts'
 import { mockBridgeConnectionStatus } from '@/api/hooks/useConnection/__handlers__'

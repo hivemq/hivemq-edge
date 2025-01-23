@@ -1,11 +1,11 @@
 import { describe, expect, vi } from 'vitest'
-import { FormValidation, RJSFSchema, UiSchema } from '@rjsf/utils'
+import type { FormValidation, RJSFSchema, UiSchema } from '@rjsf/utils'
 
 import { customUniqueAdapterValidate } from './validation-utils.ts'
-import { Adapter } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
 
 describe('customValidate()', () => {
   it('should detect duplication of id', () => {

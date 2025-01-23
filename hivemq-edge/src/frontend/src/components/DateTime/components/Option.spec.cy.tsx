@@ -1,6 +1,6 @@
-import { GroupBase, OptionProps } from 'chakra-react-select'
+import type { GroupBase, OptionProps } from 'chakra-react-select'
 
-import { RangeOption } from '../types.ts'
+import type { RangeOption } from '../types.ts'
 import Option from '../components/Option.tsx'
 import { MOCK_RANGE_OPTION } from '@/components/DateTime/utils/range-option.mocks.ts'
 

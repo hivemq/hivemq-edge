@@ -1,9 +1,10 @@
 import { expect } from 'vitest'
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { type DataPolicy } from '@/api/__generated__'
-import { DataHubNodeType, DataPolicyData } from '@datahub/types.ts'
+import type { DataPolicyData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { loadTopicFilter } from '@datahub/designer/topic_filter/TopicFilterNode.utils.ts'
 
 describe('loadTopicFilter', () => {

@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import { Route, Routes } from 'react-router-dom'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'

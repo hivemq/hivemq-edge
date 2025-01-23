@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Alert, AlertDescription, AlertIcon, AlertTitle, Button, VStack } from '@chakra-ui/react'
-import { StepRendererProps } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { StepRendererProps } from '@/components/rjsf/BatchModeMappings/types.ts'
 import { useTranslation } from 'react-i18next'
 
 const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, onContinue, store }) => {

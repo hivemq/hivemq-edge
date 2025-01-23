@@ -1,18 +1,20 @@
-import { FC, useState } from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from '../../types.ts'
+import type { AdapterNavigateState, ProtocolFacetType } from '../../types.ts'
+import { ProtocolAdapterTabIndex } from '../../types.ts'
 import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
 import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'

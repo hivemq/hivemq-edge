@@ -1,13 +1,14 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Box, Button, Card, CardBody, CardFooter, Link, SimpleGrid, Skeleton } from '@chakra-ui/react'
 import { ArrowForwardIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 import WarningMessage from '@/components/WarningMessage.tsx'
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
-import { ProtocolFacetType } from '../../types.ts'
+import type { ProtocolFacetType } from '../../types.ts'
 import { applyFacets } from '../../utils/facets-utils.ts'
 import AdapterTypeSummary from '../adapters/AdapterTypeSummary.tsx'
 

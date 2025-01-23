@@ -1,9 +1,12 @@
-import { FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import type { SubmitHandler } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Select } from 'chakra-react-select'
 
+import type { AlertStatus } from '@chakra-ui/react'
 import {
   chakra as Chakra,
   Button,
@@ -25,15 +28,10 @@ import {
   Text,
   useDisclosure,
   VStack,
-  AlertStatus,
   useToast,
 } from '@chakra-ui/react'
-import {
-  AdapterExportError,
-  ExportFormat,
-  ExportFormatDisplay,
-  ProtocolAdapterTabIndex,
-} from '@/modules/ProtocolAdapters/types.ts'
+import type { ExportFormatDisplay } from '@/modules/ProtocolAdapters/types.ts'
+import { AdapterExportError, ExportFormat, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import { adapterExportFormats } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'

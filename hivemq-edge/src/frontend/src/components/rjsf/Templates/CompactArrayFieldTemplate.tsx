@@ -1,10 +1,11 @@
-import { FC } from 'react'
-import { JSONSchema7 } from 'json-schema'
-import { RJSFSchema, ArrayFieldTemplateProps, getTemplate, getUiOptions, ArrayFieldTemplateItemType } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { JSONSchema7 } from 'json-schema'
+import type { RJSFSchema, ArrayFieldTemplateProps, ArrayFieldTemplateItemType } from '@rjsf/utils'
+import { getTemplate, getUiOptions } from '@rjsf/utils'
 import { Box, HStack, Table, Tbody, Th, Thead, Tr } from '@chakra-ui/react'
 
 import AddButton from '@/components/rjsf/__internals/AddButton.tsx'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const CompactArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
   const { canAdd, disabled, idSchema, uiSchema, items, onAddClick, readonly, registry, required, schema, title } = props

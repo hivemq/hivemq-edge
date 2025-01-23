@@ -2,7 +2,7 @@
 
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import ProtocolsBrowser from '@/modules/ProtocolAdapters/components/IntegrationStore/ProtocolsBrowser.tsx'
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 
 const MOCK_ADAPTERS: ProtocolAdapter[] = [
   {

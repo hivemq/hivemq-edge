@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { ControlProps, ReactFlowState, useReactFlow, useStore, useStoreApi } from 'reactflow'
+import type { FC } from 'react'
+import type { ControlProps, ReactFlowState } from 'reactflow'
+import { useReactFlow, useStore, useStoreApi } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { ButtonGroup } from '@chakra-ui/react'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'

@@ -1,9 +1,11 @@
-import { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { PolicyOperation, Script } from '@/api/__generated__'
+import type { PolicyOperation } from '@/api/__generated__'
+import { Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 
-import { DataHubNodeData, DataHubNodeType, DryRunResults, FunctionData, OperationData } from '@datahub/types.ts'
+import type { DataHubNodeData, DryRunResults, FunctionData } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 import {

@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { ButtonGroup, ButtonGroupProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { ButtonGroupProps } from '@chakra-ui/react'
+import { ButtonGroup } from '@chakra-ui/react'
 
 // TODO[NVL] ChakraUI Theme doesn't support ButtonGroup
 const ToolbarButtonGroup: FC<ButtonGroupProps> = ({ children, ...rest }) => {

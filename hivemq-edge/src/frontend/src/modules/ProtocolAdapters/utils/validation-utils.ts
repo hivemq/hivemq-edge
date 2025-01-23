@@ -1,9 +1,9 @@
-import { FormValidation, RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils'
-import { Adapter, SouthboundMapping } from '@/api/__generated__'
+import type { FormValidation, RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils'
+import type { Adapter, SouthboundMapping } from '@/api/__generated__'
 
 import i18n from '@/config/i18n.config.ts'
 
-import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
 //
 // import {
 //   getOutwardMappingRootProperty,

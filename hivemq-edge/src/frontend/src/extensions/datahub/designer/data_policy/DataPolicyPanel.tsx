@@ -1,19 +1,23 @@
-import { FC, useMemo } from 'react'
-import { Node } from 'reactflow'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { Node } from 'reactflow'
+import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 
-import { DataPolicyData, PanelProps } from '@datahub/types.ts'
+import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_DATA_POLICY_SCHEMA } from '@datahub/designer/data_policy/DataPolicySchema.ts'
-import { CustomValidator } from '@rjsf/utils'
+import type { CustomValidator } from '@rjsf/utils'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
-import { useTranslation } from 'react-i18next'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
   const { data: allPolicies } = useGetAllDataPolicies()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<DataPolicyData> | undefined
@@ -31,8 +35,10 @@ export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
 
   return (
     <Card>
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_DATA_POLICY_SCHEMA.schema}
           uiSchema={MOCK_DATA_POLICY_SCHEMA.uiSchema}
           formData={data}

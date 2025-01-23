@@ -1,5 +1,5 @@
 import MiniMap from '@/components/react-flow/MiniMap.tsx'
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useColorModeValue, useTheme } from '@chakra-ui/react'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { getColor } from '@chakra-ui/theme-tools'

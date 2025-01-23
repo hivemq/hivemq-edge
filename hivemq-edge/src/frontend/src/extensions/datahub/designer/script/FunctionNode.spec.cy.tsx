@@ -1,11 +1,12 @@
 /// <reference types="cypress" />
 
-import { NodeProps } from 'reactflow'
+import type { NodeProps } from 'reactflow'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataHubNodeType, FunctionData } from '../../types.ts'
+import type { FunctionData } from '../../types.ts'
+import { DataHubNodeType } from '../../types.ts'
 import { FunctionNode } from './FunctionNode.tsx'
 
 const MOCK_NODE_FUNCTION: NodeProps<FunctionData> = {

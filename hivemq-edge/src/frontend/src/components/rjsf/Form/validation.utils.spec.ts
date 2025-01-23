@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { ErrorObject } from '@/components/rjsf/Form/validation.utils.ts'
 import {
   customFormatsValidator,
   customLocalizer,
-  ErrorObject,
   validationTag,
   validationTopic,
   validationTopicFilter,

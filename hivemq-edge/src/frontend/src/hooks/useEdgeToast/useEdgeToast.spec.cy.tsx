@@ -3,7 +3,7 @@
 import { useEdgeToast } from './useEdgeToast.tsx'
 import { Button } from '@chakra-ui/react'
 import { ApiError } from '@/api/__generated__'
-import { ApiResult } from '@/api/__generated__/core/ApiResult.ts'
+import type { ApiResult } from '@/api/__generated__/core/ApiResult.ts'
 
 const result: ApiResult = {
   url: 'http://fake.url.com',
@@ -58,11 +58,8 @@ describe('NamespaceForm', () => {
 
     cy.getByTestId('trigger-success').click()
     cy.get('[role="status"]').should('have.length', 1)
-    cy.get('[role="status"]')
-      .eq(0)
-      .should('be.visible')
-      .find("div[data-status='success']")
-      .should('contain.text', 'This is a success')
+    cy.get('[role="status"]').eq(0).should('be.visible')
+    cy.get('[role="status"]').eq(0).find("div[data-status='success']").should('contain.text', 'This is a success')
   })
 
   it('should render error toast properly', () => {
@@ -70,11 +67,8 @@ describe('NamespaceForm', () => {
 
     cy.getByTestId('trigger-error').click()
     cy.get('[role="status"]').should('have.length', 1)
-    cy.get('[role="status"]')
-      .eq(0)
-      .should('be.visible')
-      .find("div[data-status='error']")
-      .should('contain.text', 'This is an error')
+    cy.get('[role="status"]').eq(0).should('be.visible')
+    cy.get('[role="status"]').eq(0).find("div[data-status='error']").should('contain.text', 'This is an error')
 
     // cy.getByTestId('trigger-error').click()
     // cy.get('[role="status"]').should('have.length', 2)

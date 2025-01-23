@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { ApiError, DataPoint } from '@/api/__generated__'
+import type { ApiError, DataPoint } from '@/api/__generated__'
 import config from '@/config'
 
 export const useGetSample = (metricName: string | undefined) => {

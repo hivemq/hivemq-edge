@@ -5,7 +5,8 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import { useSouthboundMappingManager } from '@/modules/Mappings/hooks/useSouthboundMappingManager.ts'
 import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks.ts'
-import { type FieldMapping, SouthboundMappingList } from '@/api/__generated__'
+import type { SouthboundMappingList } from '@/api/__generated__'
+import { type FieldMapping } from '@/api/__generated__'
 
 describe('useSouthboundMappingManager', () => {
   beforeEach(() => {

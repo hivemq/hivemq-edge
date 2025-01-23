@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { ReactFlowProvider } from 'reactflow'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 

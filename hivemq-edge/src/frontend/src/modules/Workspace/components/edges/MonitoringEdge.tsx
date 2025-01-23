@@ -1,5 +1,7 @@
-import { FC, useMemo } from 'react'
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { EdgeProps } from 'reactflow'
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow'
 
 import DataPolicyEdgeCTA from '@/modules/Workspace/components/edges/DataPolicyEdgeCTA.tsx'
 import ObservabilityEdgeCTA from '@/modules/Workspace/components/edges/ObservabilityEdgeCTA.tsx'

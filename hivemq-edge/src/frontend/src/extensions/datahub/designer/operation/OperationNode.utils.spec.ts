@@ -1,16 +1,9 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import {
-  DataHubNodeType,
-  DataPolicyData,
-  FunctionData,
-  OperationData,
-  SchemaData,
-  SchemaType,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import type { FunctionData, SchemaData, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, OperationData, SchemaType } from '@datahub/types.ts'
 import {
   checkValidityPipeline,
   checkValidityTransformFunction,

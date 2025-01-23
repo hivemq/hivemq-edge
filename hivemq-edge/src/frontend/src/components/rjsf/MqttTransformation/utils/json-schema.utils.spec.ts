@@ -5,7 +5,7 @@ import {
   payloadToSchema,
   reducerSchemaExamples,
 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks.ts'
 
 describe('getPropertyListFrom', () => {

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { SelectEntityType, SelectTag, SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
 import { FormControl, FormLabel } from '@chakra-ui/react'

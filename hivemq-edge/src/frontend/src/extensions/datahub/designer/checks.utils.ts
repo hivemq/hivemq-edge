@@ -1,4 +1,4 @@
-import { XYPosition } from 'reactflow'
+import type { XYPosition } from 'reactflow'
 
 // The delta positions used to locate nodes on the canvas at loading time, as position is not serialised
 export const CANVAS_POSITION = {

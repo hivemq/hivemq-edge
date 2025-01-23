@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Circle, Flex, Heading, Image, Text, type HTMLChakraProps } from '@chakra-ui/react'
 import DefaultLogo from '@/assets/app/bridge-empty.svg'
 

@@ -1,6 +1,6 @@
 // see https://github.com/gustf/js-levenshtein
 
-import { ColumnOption } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { ColumnOption } from '@/components/rjsf/BatchModeMappings/types.ts'
 import { AUTO_MATCH_DISTANCE } from '@/components/rjsf/BatchModeMappings/utils/config.utils.ts'
 
 const _min = (d0: number, d1: number, d2: number, bx: number, ay: number): number => {

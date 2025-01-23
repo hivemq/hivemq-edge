@@ -1,5 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { UseDisclosureProps } from '@chakra-ui/react'
 import {
   Button,
   Card,
@@ -14,10 +15,9 @@ import {
   DrawerOverlay,
   Text,
   useDisclosure,
-  UseDisclosureProps,
 } from '@chakra-ui/react'
 
-import { TopicFilter } from '@/api/__generated__'
+import type { TopicFilter } from '@/api/__generated__'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import TopicSchemaManager from '@/modules/TopicFilters/components/TopicSchemaManager.tsx'
 

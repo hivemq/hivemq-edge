@@ -1,6 +1,6 @@
-import { ApiBearerToken, UsernamePasswordCredentials } from '@/api/__generated__'
+import type { ApiBearerToken, UsernamePasswordCredentials } from '@/api/__generated__'
 // @ts-ignore an import is not working
-import { CyHttpMessages } from 'cypress/types/net-stubbing'
+import type { CyHttpMessages } from 'cypress/types/net-stubbing'
 import { http, HttpResponse } from 'msw'
 
 const TOKEN =

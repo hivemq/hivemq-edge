@@ -1,8 +1,8 @@
-import { FC, FormEvent } from 'react'
+import type { FC, FormEvent } from 'react'
 import validator from '@rjsf/validator-ajv8'
-import { RJSFSchema, UiSchema, RJSFValidationError, RegistryFieldsType } from '@rjsf/utils'
+import type { RJSFSchema, UiSchema, RJSFValidationError, RegistryFieldsType } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
-import { IChangeEvent } from '@rjsf/core'
+import type { IChangeEvent } from '@rjsf/core'
 
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'

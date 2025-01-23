@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Avatar, Box, Card, CardHeader, Flex, Heading, Text } from '@chakra-ui/react'
-import { DeviceMetadata } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
 
 interface DeviceMetadataProps {
   device: DeviceMetadata

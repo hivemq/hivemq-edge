@@ -1,5 +1,6 @@
-import { DateTime, Duration } from 'luxon'
-import { RangeOption } from '@/components/DateTime/types.ts'
+import type { DateTime } from 'luxon'
+import { Duration } from 'luxon'
+import type { RangeOption } from '@/components/DateTime/types.ts'
 
 const defaultRangeOption: readonly RangeOption[] = [
   { value: 'more', label: 'More...', colorScheme: 'yellow', isCommand: true, isDisabled: true },

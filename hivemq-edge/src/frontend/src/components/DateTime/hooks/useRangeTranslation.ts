@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import { RangeOption } from '../types.ts'
+import type { RangeOption } from '../types.ts'
 
 export const useRangeTranslation = () => {
   const i18next = useTranslation('components')

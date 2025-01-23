@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 
 import RjsfMocks from '@/__test-utils__/rjsf/rjsf.mocks.tsx'
 import { adapterJSFFields } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'

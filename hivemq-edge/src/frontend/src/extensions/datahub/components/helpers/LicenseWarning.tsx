@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Circle, Flex, Heading, Image, Link } from '@chakra-ui/react'
 import { Trans, useTranslation } from 'react-i18next'
 

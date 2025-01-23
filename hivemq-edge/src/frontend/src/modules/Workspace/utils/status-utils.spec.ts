@@ -1,16 +1,19 @@
 import { expect } from 'vitest'
-import { Edge, MarkerType, Node, NodeProps } from 'reactflow'
-import * as CSS from 'csstype'
-import { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
+import type { Edge, Node, NodeProps } from 'reactflow'
+import { MarkerType } from 'reactflow'
+import type * as CSS from 'csstype'
+import type { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
 
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 
-import { Adapter, Bridge, Status } from '@/api/__generated__'
+import type { Adapter, Bridge } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
-import { EdgeStyle, getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
+import type { EdgeStyle } from './status-utils.ts'
+import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
 import { NodeTypes } from '../types.ts'
 
 const disconnectedBridge: NodeProps<Bridge> = {

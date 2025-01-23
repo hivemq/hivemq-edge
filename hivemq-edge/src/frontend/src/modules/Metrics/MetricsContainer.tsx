@@ -1,4 +1,5 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -13,9 +14,10 @@ import {
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { NodeTypes } from '@/modules/Workspace/types.ts'
+import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
-import { ChartType, MetricDefinition, MetricsFilter } from './types.ts'
+import type { MetricDefinition, MetricsFilter } from './types.ts'
+import { ChartType } from './types.ts'
 import useMetricsStore from './hooks/useMetricsStore.ts'
 import { extractMetricInfo } from './utils/metrics-name.utils.ts'
 import MetricEditor from './components/editor/MetricEditor.tsx'

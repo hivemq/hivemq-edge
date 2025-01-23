@@ -1,4 +1,4 @@
-import { CSSProperties, FC } from 'react'
+import type { CSSProperties, FC } from 'react'
 import { LuBarChartBig } from 'react-icons/lu'
 import { useTranslation } from 'react-i18next'
 import { ButtonGroup, Icon, useColorMode } from '@chakra-ui/react'

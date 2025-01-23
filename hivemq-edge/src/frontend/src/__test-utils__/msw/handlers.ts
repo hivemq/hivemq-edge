@@ -11,7 +11,7 @@ import { handlers as DataHubSchemasService } from '@/extensions/datahub/api/hook
 import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hooks/DataHubScriptsService/__handlers__'
 
 import { safeTopicSchemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
-import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
+import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 export const handlers = [
   ...useFrontendServices,

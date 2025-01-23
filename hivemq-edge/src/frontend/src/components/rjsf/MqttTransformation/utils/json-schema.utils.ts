@@ -1,9 +1,9 @@
-import { RJSFSchema } from '@rjsf/utils'
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema'
-import { JsonNode } from '@/api/__generated__'
+import type { RJSFSchema } from '@rjsf/utils'
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema'
+import type { JsonNode } from '@/api/__generated__'
 import { match, P } from 'ts-pattern'
 import { inferSchema } from '@jsonhero/schema-infer'
-import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
+import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 export const ARRAY_ITEM_INDEX = '___index'
 

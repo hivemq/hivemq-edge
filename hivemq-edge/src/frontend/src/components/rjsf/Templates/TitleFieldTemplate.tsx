@@ -1,5 +1,5 @@
 // overriding the heading definition
-import { RJSFSchema, StrictRJSFSchema, TitleFieldProps } from '@rjsf/utils'
+import type { RJSFSchema, StrictRJSFSchema, TitleFieldProps } from '@rjsf/utils'
 import { Box, Divider, Heading } from '@chakra-ui/react'
 
 export const TitleFieldTemplate = <T = unknown, S extends StrictRJSFSchema = RJSFSchema>({

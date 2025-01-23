@@ -1,4 +1,4 @@
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_DEVICE, MOCK_NODE_GROUP } from '@/__test-utils__/react-flow/nodes.ts'
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import GroupContentEditor from '@/modules/Workspace/components/parts/GroupContentEditor.tsx'

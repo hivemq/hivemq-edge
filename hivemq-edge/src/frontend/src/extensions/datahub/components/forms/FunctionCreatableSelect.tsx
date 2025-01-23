@@ -1,11 +1,14 @@
-import { FC, useCallback } from 'react'
-import { OptionProps, SingleValueProps, chakraComponents, ActionMeta, OnChangeValue, Select } from 'chakra-react-select'
+import type { FC } from 'react'
+import { useCallback } from 'react'
+import type { OptionProps, SingleValueProps, ActionMeta, OnChangeValue } from 'chakra-react-select'
+import { chakraComponents, Select } from 'chakra-react-select'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { HStack, VStack, Text, FormLabel, FormControl } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { FunctionSpecs } from '../../types.ts'
+import type { FunctionSpecs } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {

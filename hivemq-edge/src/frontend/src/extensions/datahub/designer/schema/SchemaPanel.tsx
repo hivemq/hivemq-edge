@@ -1,13 +1,15 @@
-import { FC, useCallback, useState } from 'react'
-import { Node } from 'reactflow'
+import type { FC } from 'react'
+import { useCallback, useState } from 'react'
+import type { Node } from 'reactflow'
 import { parse } from 'protobufjs'
-import { CustomValidator, UiSchema } from '@rjsf/utils'
-import { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
+import type { CustomValidator, UiSchema } from '@rjsf/utils'
+import type { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
 import { Card, CardBody } from '@chakra-ui/react'
 
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
-import { PanelProps, ResourceStatus, ResourceWorkingVersion, SchemaData, SchemaType } from '@datahub/types.ts'
+import type { PanelProps, SchemaData } from '@datahub/types.ts'
+import { ResourceStatus, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import { MOCK_JSONSCHEMA_SCHEMA, MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -15,10 +17,13 @@ import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_SCHEMA_SCHEMA } from '@datahub/designer/schema/SchemaData.ts'
 import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { data: allSchemas } = useGetAllSchemas()
   const { nodes } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
   const [formData, setFormData] = useState<SchemaData | null>(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
 
@@ -156,8 +161,10 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
 
   return (
     <Card>
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_SCHEMA_SCHEMA.schema}
           uiSchema={getUISchema(formData)}
           formData={formData}

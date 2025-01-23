@@ -1,7 +1,9 @@
-import { FC, useEffect, useMemo } from 'react'
+import type { FC } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { JSONSchema7 } from 'json-schema'
-import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
+import type { JSONSchema7 } from 'json-schema'
+import type { CardProps } from '@chakra-ui/react'
+import { Card, CardBody, CardHeader, Heading, HStack } from '@chakra-ui/react'
 import { RxReload } from 'react-icons/rx'
 
 import { useSamplingForTopic } from '@/api/hooks/useDomainModel/useSamplingForTopic.ts'
@@ -9,7 +11,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { JsonNode } from '@/api/__generated__'
+import type { JsonNode } from '@/api/__generated__'
 
 interface DataModelSourcesProps extends Omit<CardProps, 'onChange'> {
   topic: string

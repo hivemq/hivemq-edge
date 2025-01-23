@@ -1,11 +1,12 @@
-import { Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { BehaviorPolicy, BehaviorPolicyBehavior, BehaviorPolicyOnTransition } from '@/api/__generated__'
+import type { BehaviorPolicy, BehaviorPolicyBehavior, BehaviorPolicyOnTransition } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import i18n from '@/config/i18n.config.ts'
 
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType, DryRunResults } from '@datahub/types.ts'
+import type { BehaviorPolicyData, DryRunResults } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { getNodeId } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): DryRunResults<BehaviorPolicyBehavior> {

@@ -1,4 +1,4 @@
-import { MappingValidation } from '@/modules/Mappings/types.ts'
+import type { MappingValidation } from '@/modules/Mappings/types.ts'
 import DataModelDestination from './DataModelDestination.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 

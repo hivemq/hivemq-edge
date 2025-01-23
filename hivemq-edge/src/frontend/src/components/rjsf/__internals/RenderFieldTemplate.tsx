@@ -1,5 +1,5 @@
-import { FC } from 'react'
-import { FieldTemplateProps } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { FieldTemplateProps } from '@rjsf/utils'
 import { Box, FormControl, FormHelperText } from '@chakra-ui/react'
 
 export const RenderFieldTemplate: FC<FieldTemplateProps> = ({

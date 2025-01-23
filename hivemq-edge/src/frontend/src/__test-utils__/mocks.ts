@@ -1,4 +1,4 @@
-import { ISA95ApiBean } from '@/api/__generated__'
+import type { ISA95ApiBean } from '@/api/__generated__'
 
 export const MOCK_CREATED_AT = '2023-10-13T11:51:24.234Z'
 

@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { type ObjectNode, ValuesTree } from '@/api/__generated__'
-import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
+import type { ValuesTree } from '@/api/__generated__'
+import { type ObjectNode } from '@/api/__generated__'
+import type { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 
 export const convertEdgeNode = (parent: INode<FlatObjectNode>, node: ObjectNode): INode<FlatObjectNode>[] => {
   const { children, ...flatNode } = node

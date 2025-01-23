@@ -1,11 +1,12 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import BridgeEmptyLogo from '@/assets/app/bridge-empty.svg'
 
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 

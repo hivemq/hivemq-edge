@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { MiniMap as ReactFlowMinimap, MiniMapProps } from 'reactflow'
+import type { FC } from 'react'
+import type { MiniMapProps } from 'reactflow'
+import { MiniMap as ReactFlowMinimap } from 'reactflow'
 import { useTheme, useColorMode } from '@chakra-ui/react'
 
 const Minimap: FC<MiniMapProps> = (props) => {

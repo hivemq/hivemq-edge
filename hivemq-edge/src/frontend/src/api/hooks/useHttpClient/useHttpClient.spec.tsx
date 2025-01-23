@@ -7,8 +7,9 @@ import config from '@/config'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
-import { AxiosHttpRequestWithInterceptors, useHttpClient } from './useHttpClient.ts'
-import { ApiBearerToken, ApiError } from '@/api/__generated__'
+import type { AxiosHttpRequestWithInterceptors } from './useHttpClient.ts'
+import { useHttpClient } from './useHttpClient.ts'
+import type { ApiBearerToken, ApiError } from '@/api/__generated__'
 
 enum auth {
   HEADER_ATTACHED = 'HEADER_ATTACHED',

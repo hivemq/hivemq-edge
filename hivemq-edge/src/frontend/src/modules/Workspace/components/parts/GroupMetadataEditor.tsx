@@ -1,10 +1,10 @@
-import { FC } from 'react'
-import { Node } from 'reactflow'
+import type { FC } from 'react'
+import type { Node } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Controller, useForm } from 'react-hook-form'
 import { Button, Card, CardBody, CardFooter, CardHeader, FormControl, FormLabel, Input } from '@chakra-ui/react'
 
-import { Group } from '@/modules/Workspace/types.ts'
+import type { Group } from '@/modules/Workspace/types.ts'
 import { ColorPicker } from '@/components/Chakra/ColorPicker.tsx'
 
 interface GroupMetadataEditorProps {

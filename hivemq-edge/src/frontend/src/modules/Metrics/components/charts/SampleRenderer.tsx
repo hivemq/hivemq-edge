@@ -1,4 +1,6 @@
-import { FC, ReactNode, useMemo } from 'react'
+import type { FC, ReactNode } from 'react'
+import { useMemo } from 'react'
+import type { StatProps } from '@chakra-ui/react'
 import {
   HStack,
   Spinner,
@@ -7,7 +9,6 @@ import {
   StatHelpText,
   StatLabel,
   StatNumber,
-  StatProps,
   Text,
   Tooltip,
   useTheme,
@@ -15,9 +16,9 @@ import {
 import { NotAllowedIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { ApiError, DataPoint } from '@/api/__generated__'
-import { MetricInfo } from '../../utils/metrics-name.utils.ts'
-import { ChartTheme } from '@/modules/Metrics/types.ts'
+import type { ApiError, DataPoint } from '@/api/__generated__'
+import type { MetricInfo } from '../../utils/metrics-name.utils.ts'
+import type { ChartTheme } from '@/modules/Metrics/types.ts'
 
 interface SampleRendererProps extends StatProps {
   metricInfo: MetricInfo

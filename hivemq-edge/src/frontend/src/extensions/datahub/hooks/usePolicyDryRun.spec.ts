@@ -1,14 +1,9 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { onlyNonNullResources, usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
-import {
-  BehaviorPolicyData,
-  BehaviorPolicyType,
-  DataHubNodeType,
-  DataPolicyData,
-  DryRunResults,
-} from '@datahub/types.ts'
-import { Node } from 'reactflow'
+import type { BehaviorPolicyData, DataPolicyData, DryRunResults } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
+import type { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('onlyNonNullResources', () => {

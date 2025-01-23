@@ -5,7 +5,7 @@ import { type SouthboundMappingList } from '@/api/__generated__'
 import { useListSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useListSouthboundMappings.ts'
 import { useUpdateSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useUpdateSouthboundMappings.ts'
 
-import { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 import { southboundMappingListSchema } from '@/api/schemas/southbound.json-schema.ts'
 import { southboundMappingListUISchema } from '@/api/schemas/southbound.ui-schema.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'

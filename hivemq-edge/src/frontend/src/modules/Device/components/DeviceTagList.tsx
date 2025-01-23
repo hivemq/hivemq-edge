@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody, CardHeader, Code, Flex, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 import { LuFileCog } from 'react-icons/lu'
 
-import { Adapter, DomainTagList } from '@/api/__generated__'
+import type { Adapter, DomainTagList } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'

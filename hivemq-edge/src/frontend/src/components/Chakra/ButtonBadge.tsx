@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Avatar, AvatarBadge, AvatarProps, IconButton, Text } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { AvatarProps } from '@chakra-ui/react'
+import { Avatar, AvatarBadge, IconButton, Text } from '@chakra-ui/react'
 
 interface ButtonBadgeProps extends Omit<AvatarProps, 'aria-label'> {
   badgeCount?: number

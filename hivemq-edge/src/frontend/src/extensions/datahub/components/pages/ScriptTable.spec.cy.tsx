@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import ScriptTable from '@datahub/components/pages/ScriptTable.tsx'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import { DateTime } from 'luxon'
@@ -44,5 +42,13 @@ describe('ScriptTable', () => {
     cy.get('@firstItemContent').eq(2).should('have.text', '1')
     cy.get('@firstItemContent').eq(3).should('have.text', 'this is a description')
     cy.get('@firstItemContent').eq(4).should('have.text', '2 days ago')
+  })
+
+  it('should be accessible', () => {
+    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] })
+
+    cy.injectAxe()
+    cy.mountWithProviders(<ScriptTable />)
+    cy.checkAccessibility()
   })
 })

@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, expect, vi } from 'vitest'
-import { MouseEvent, ReactElement } from 'react'
+import type { MouseEvent, ReactElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { useContextMenu } from './useContextMenu.ts'

@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import DeviceTagForm from '@/modules/Device/components/DeviceTagForm.tsx'
-import { ManagerContextType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
 import type { DomainTagList } from '@/api/__generated__'
 

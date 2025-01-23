@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-import { ChartType } from '../types.ts'
+import type { ChartType } from '../types.ts'
 
 export interface MetricDefinitionSpec {
   source: string

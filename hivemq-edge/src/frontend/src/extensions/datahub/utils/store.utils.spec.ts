@@ -1,8 +1,9 @@
 import { describe, expect } from 'vitest'
 import { getFunctions, initialStore } from './store.utils.ts'
-import { DesignerStatus, WorkspaceState, WorkspaceStatus } from '@/extensions/datahub/types.ts'
-import { RJSFSchema } from '@rjsf/utils'
-import { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import type { WorkspaceState, WorkspaceStatus } from '@/extensions/datahub/types.ts'
+import { DesignerStatus } from '@/extensions/datahub/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
+import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
 
 describe('initialStore', () => {
   it('should return the initial state of the store', async () => {

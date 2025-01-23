@@ -1,4 +1,5 @@
-import { FC } from 'react'
+import type { FC } from 'react'
+import type { DrawerProps } from '@chakra-ui/react'
 import {
   Drawer,
   DrawerBody,
@@ -7,7 +8,6 @@ import {
   DrawerHeader,
   DrawerOverlay,
   Text,
-  DrawerProps,
   useBoolean,
 } from '@chakra-ui/react'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'

@@ -20,9 +20,11 @@ import { FaTools } from 'react-icons/fa'
 import Panel from '@/components/react-flow/Panel.tsx'
 import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
+  const { isPolicyEditable } = usePolicyGuards()
 
   return (
     <Panel position="top-left">
@@ -32,6 +34,7 @@ const DesignerToolbox: FC = () => {
             <>
               <PopoverTrigger>
                 <IconButton
+                  isDisabled={!isPolicyEditable}
                   data-testid="toolbox-trigger"
                   aria-label={t('workspace.toolbox.trigger', { context: !isOpen ? 'open' : 'close' })}
                   aria-controls="toolbox-content"

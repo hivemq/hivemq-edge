@@ -1,15 +1,17 @@
-import { FC, useMemo } from 'react'
-import { CellContext, ColumnDef } from '@tanstack/react-table'
-import { UseMutationResult } from '@tanstack/react-query'
+import type { FC } from 'react'
+import { useMemo } from 'react'
+import type { CellContext, ColumnDef } from '@tanstack/react-table'
+import type { UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Skeleton, Text } from '@chakra-ui/react'
 
-import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
+import type { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
+import type { CombinedPolicy } from '@datahub/types.ts'
 import { PolicyType } from '@datahub/types.ts'
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
 import { useDeleteDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useDeleteDataPolicy.tsx'
@@ -18,10 +20,9 @@ import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesSe
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
-import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { downloadJSON } from '@datahub/utils/download.utils.ts'
-
-type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
@@ -34,6 +35,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const navigate = useNavigate()
   const deleteDataPolicy = useDeleteDataPolicy()
   const deleteBehaviourPolicy = useDeleteBehaviorPolicy()
+  const { isDirty, reset } = useDataHubDraftStore()
 
   const isError = useMemo(() => {
     return isDataError || isBehaviorError
@@ -43,6 +45,8 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
     return isDataLoading || isBehaviorLoading
   }, [isDataLoading, isBehaviorLoading])
 
+  const isDraftDirty = isDirty()
+
   const safeData = useMemo<CombinedPolicy[]>(() => {
     if (isLoading)
       return [
@@ -50,24 +54,41 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR_POLICY },
       ]
 
-    return [
-      ...(dataPolicies?.items
-        ? dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA_POLICY } as CombinedPolicy))
-        : []),
-      ...(behaviorPolicies?.items
-        ? behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR_POLICY } as CombinedPolicy))
-        : []),
+    const generateDraftPolicyItem = (): CombinedPolicy => ({
+      type: PolicyType.CREATE_POLICY,
+      id: '',
+      createdAt: DateTime.now().toISO() as string,
+      matching: { topicFilter: '' },
+    })
+
+    function insertItems<Item extends DataPolicy | BehaviorPolicy>(
+      items: Item[] | undefined,
+      type: PolicyType
+    ): CombinedPolicy[] {
+      if (!items) return []
+      return items.map((item) => ({ ...item, type } as CombinedPolicy))
+    }
+
+    const draftPolicyItems = [
+      ...insertItems<DataPolicy>(dataPolicies?.items, PolicyType.DATA_POLICY),
+      ...insertItems<BehaviorPolicy>(behaviorPolicies?.items, PolicyType.BEHAVIOR_POLICY),
     ]
-  }, [isLoading, dataPolicies?.items, behaviorPolicies?.items])
+    if (isDraftDirty) draftPolicyItems.unshift(generateDraftPolicyItem())
+
+    return draftPolicyItems
+  }, [isLoading, isDraftDirty, dataPolicies?.items, behaviorPolicies?.items])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
     const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {
-      return () => {
-        const deleteMutation: UseMutationResult<void, unknown, string> =
-          info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
-
-        onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
+      if (info.row.original.type === PolicyType.CREATE_POLICY) {
+        reset()
+        return
       }
+
+      const deleteMutation: UseMutationResult<void, unknown, string> =
+        info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
+
+      onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
     }
 
     const onHandleEdit = (info: CellContext<CombinedPolicy, unknown>) => () => {
@@ -132,7 +153,8 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                onDelete={onHandleDelete(info)}
+                policy={info.row.original}
+                onDelete={() => onHandleDelete(info)}
                 onEdit={onHandleEdit(info)}
                 onDownload={onHandleDownload(info)}
               />
@@ -141,7 +163,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         },
       },
     ]
-  }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
+  }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, reset, t])
 
   return (
     <PaginatedTable<CombinedPolicy>

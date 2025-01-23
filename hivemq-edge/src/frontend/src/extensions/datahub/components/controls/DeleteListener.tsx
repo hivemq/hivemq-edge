@@ -1,7 +1,9 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHotkeys } from 'react-hotkeys-hook'
-import { NodeRemoveChange, EdgeRemoveChange, getConnectedEdges } from 'reactflow'
+import type { NodeRemoveChange, EdgeRemoveChange } from 'reactflow'
+import { getConnectedEdges } from 'reactflow'
 import { ListItem, Text, UnorderedList, useDisclosure, useToast, VStack } from '@chakra-ui/react'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
@@ -10,12 +12,14 @@ import { DesignerStatus } from '@datahub/types.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
 import { canDeleteEdge, canDeleteNode } from '@datahub/utils/node.utils.ts'
 import { DATAHUB_TOAST_ID, dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const DeleteListener: FC = () => {
   const { t } = useTranslation('datahub')
   const { nodes, edges, status, onNodesChange, onEdgesChange, setStatus } = useDataHubDraftStore()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const toast = useToast()
+  const { isPolicyEditable } = usePolicyGuards()
 
   const selectedElements = useMemo(() => {
     const selectedNodes = nodes.filter((node) => node.selected)
@@ -35,10 +39,8 @@ const DeleteListener: FC = () => {
     return 'BOTH'
   }, [selectedElements])
 
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
-
   useHotkeys([DATAHUB_HOTKEY.BACKSPACE, DATAHUB_HOTKEY.DELETE], () => {
-    if (!isEditable) return
+    if (!isPolicyEditable) return
 
     const { selectedNodes, selectedEdges } = selectedElements
     const canDeleteNodes = selectedNodes.map((node) => canDeleteNode(node, status))
@@ -67,7 +69,7 @@ const DeleteListener: FC = () => {
         status: 'error',
         description: (
           <VStack alignItems="flex-start">
-            <Text>{t('workspace.deletion.guards.message', { count: SelectedElementsCount })}</Text>
+            <Text>{t('workspace.guards.delete.message', { count: SelectedElementsCount })}</Text>
             <UnorderedList>
               {allErrors.map((error, index) => (
                 <ListItem key={`toto-${index}`}>{error}</ListItem>

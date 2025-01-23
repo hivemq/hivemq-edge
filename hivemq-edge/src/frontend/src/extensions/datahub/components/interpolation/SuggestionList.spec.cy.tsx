@@ -1,9 +1,7 @@
 /// <reference types="cypress" />
 
-import SuggestionList, {
-  MentionNodeAttrs,
-  SuggestionListProps,
-} from '@datahub/components/interpolation/SuggestionList.tsx'
+import type { MentionNodeAttrs, SuggestionListProps } from '@datahub/components/interpolation/SuggestionList.tsx'
+import SuggestionList from '@datahub/components/interpolation/SuggestionList.tsx'
 
 const mockItems: MentionNodeAttrs[] = [
   {

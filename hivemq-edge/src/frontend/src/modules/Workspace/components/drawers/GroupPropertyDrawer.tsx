@@ -1,6 +1,7 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 import { Link as RouterLink } from 'react-router-dom'
 import {
   Button,
@@ -26,11 +27,13 @@ import { MdOutlineEventNote } from 'react-icons/md'
 
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 
-import { Group, NodeTypes } from '../../types.ts'
+import type { Group } from '../../types.ts'
+import { NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import GroupMetadataEditor from '../parts/GroupMetadataEditor.tsx'
-import { ChartType, MetricsFilter } from '@/modules/Metrics/types.ts'
+import type { MetricsFilter } from '@/modules/Metrics/types.ts'
+import { ChartType } from '@/modules/Metrics/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import GroupContentEditor from '@/modules/Workspace/components/parts/GroupContentEditor.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'

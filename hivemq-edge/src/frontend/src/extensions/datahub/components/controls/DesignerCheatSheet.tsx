@@ -1,4 +1,5 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Card,
@@ -22,7 +23,7 @@ import { LuBadgeHelp } from 'react-icons/lu'
 import ShortcutRenderer from '@/components/Chakra/ShortcutRenderer.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { DATAHUB_HOTKEY_CONTEXT } from '@datahub/utils/datahub.utils.ts'
-import { HotKeyItem } from '@datahub/types.ts'
+import type { HotKeyItem } from '@datahub/types.ts'
 
 const DesignerCheatSheet: FC = () => {
   const { t } = useTranslation('datahub')

@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
 import { Editor } from '@datahub/components/interpolation/Editor.tsx'

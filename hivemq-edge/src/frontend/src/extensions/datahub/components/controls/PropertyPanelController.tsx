@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { IChangeEvent } from '@rjsf/core'
+import type { IChangeEvent } from '@rjsf/core'
 
 import {
   AbsoluteCenter,
@@ -25,7 +25,7 @@ import { LuConstruction } from 'react-icons/lu'
 import { DefaultEditor } from '@datahub/config/editors.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { NodeIcon } from '@datahub/components/helpers'
-import { DesignerStatus } from '@datahub/types.ts'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')
@@ -33,8 +33,8 @@ const PropertyPanelController = () => {
   const { state } = useLocation()
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const { status, onUpdateNodes } = useDataHubDraftStore()
-  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+  const { onUpdateNodes } = useDataHubDraftStore()
+  const { isNodeEditable } = usePolicyGuards(nodeId)
 
   useEffect(() => {
     if (type && nodeId) {
@@ -96,7 +96,7 @@ const PropertyPanelController = () => {
         <DrawerFooter borderTopWidth="1px">
           {isEditorValid && (
             <Flex flexGrow={1} justifyContent="flex-end">
-              <Button variant="primary" type="submit" form="datahub-node-form" isDisabled={!isEditable}>
+              <Button variant="primary" type="submit" form="datahub-node-form" isDisabled={!isNodeEditable}>
                 {t('workspace.panel.submit')}
               </Button>
             </Flex>

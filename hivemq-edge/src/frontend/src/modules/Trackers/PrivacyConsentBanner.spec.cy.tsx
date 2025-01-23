@@ -1,7 +1,8 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { useLocalStorage } from '@uidotdev/usehooks'
 import { Text } from '@chakra-ui/react'
-import PrivacyConsentBanner, { PrivacySourceGranted } from '@/modules/Trackers/PrivacyConsentBanner.tsx'
+import type { PrivacySourceGranted } from '@/modules/Trackers/PrivacyConsentBanner.tsx'
+import PrivacyConsentBanner from '@/modules/Trackers/PrivacyConsentBanner.tsx'
 import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 
 const Wrapper: FC<PropsWithChildren> = ({ children }) => {

@@ -1,8 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { HStack, VStack } from '@chakra-ui/react'
-import { NodeProps, Position } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import { Position } from 'reactflow'
 
-import { DataHubNodeType, ValidatorData } from '@datahub/types.ts'
+import type { ValidatorData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'

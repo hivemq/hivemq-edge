@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import { FormControl, FormLabel, Text, VStack } from '@chakra-ui/react'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'

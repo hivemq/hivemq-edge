@@ -1,8 +1,8 @@
-import { UseFormReturn, FieldValues } from 'react-hook-form'
-import { IdSchema } from '@rjsf/utils'
-import { Adapter, ProtocolAdapter } from '@/api/__generated__'
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { Dispatch, SetStateAction } from 'react'
+import type { UseFormReturn, FieldValues } from 'react-hook-form'
+import type { IdSchema } from '@rjsf/utils'
+import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { Dispatch, SetStateAction } from 'react'
 
 export enum WorkspaceAdapterCommand {
   VIEW = 'VIEW',

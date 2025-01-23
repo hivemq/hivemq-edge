@@ -1,11 +1,12 @@
-import { FC, useCallback, useMemo } from 'react'
-import { getIncomers, Node } from 'reactflow'
+import type { FC } from 'react'
+import { useCallback, useMemo } from 'react'
+import type { Node } from 'reactflow'
+import { getIncomers } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
-import { IChangeEvent } from '@rjsf/core'
+import type { IChangeEvent } from '@rjsf/core'
 
-import {
+import type {
   BehaviorPolicyData,
-  DataHubNodeType,
   FiniteStateMachineSchema,
   FsmState,
   PanelProps,
@@ -13,15 +14,19 @@ import {
   TransitionData,
   TransitionType,
 } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_TRANSITION_SCHEMA } from '@datahub/designer/transition/TransitionData.ts'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { FiniteStateMachineFlow } from '@datahub/components/fsm/FiniteStateMachineFlow.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes, edges } = useDataHubDraftStore()
+  const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   // TODO[NVL] Error messages?
   const parentPolicy = useMemo(() => {
@@ -113,8 +118,10 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
 
   return (
     <Card>
+      {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
       <CardBody>
         <ReactFlowSchemaForm
+          isNodeEditable={isNodeEditable}
           schema={MOCK_TRANSITION_SCHEMA.schema}
           uiSchema={{
             ...MOCK_TRANSITION_SCHEMA.uiSchema,

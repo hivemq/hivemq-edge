@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { DataPolicy, DataPolicyList } from '@/api/__generated__'
+import type { DataPolicy, DataPolicyList } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_DATA_POLICY_ID = 'my-policy-id'

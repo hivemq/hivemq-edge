@@ -1,5 +1,7 @@
-import { FC, useEffect } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
+import type { FC } from 'react'
+import { useEffect } from 'react'
+import type { SubmitHandler } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Alert,
@@ -19,7 +21,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { usePostAuthentication } from '@/api/hooks/usePostAuthentication'
-import { ApiBearerToken, ApiError, FirstUseInformation, UsernamePasswordCredentials } from '@/api/__generated__'
+import type { ApiBearerToken, ApiError, FirstUseInformation, UsernamePasswordCredentials } from '@/api/__generated__'
 import { parseJWT } from '@/api/utils.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'

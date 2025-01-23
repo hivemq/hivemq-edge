@@ -1,8 +1,9 @@
 import { expect } from 'vitest'
-import { Node, NodeAddChange } from 'reactflow'
+import type { Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
+import type { BehaviorPolicyData } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityModel, loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import type { BehaviorPolicy, BehaviorPolicyOnTransition } from '@/api/__generated__'
 

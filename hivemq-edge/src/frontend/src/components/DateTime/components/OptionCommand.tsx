@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box, Button } from '@chakra-ui/react'
-import { RangeOption } from '@/components/DateTime/types.ts'
+import type { RangeOption } from '@/components/DateTime/types.ts'
 
 interface OptionCommandProps {
   data: RangeOption

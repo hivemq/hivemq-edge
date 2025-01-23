@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { MetricList } from '@/api/__generated__'
+import type { MetricList } from '@/api/__generated__'
 import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 

@@ -1,4 +1,5 @@
-import { defineStyle, defineStyleConfig, theme as baseTheme, SystemStyleObject } from '@chakra-ui/react'
+import type { SystemStyleObject } from '@chakra-ui/react'
+import { defineStyle, defineStyleConfig, theme as baseTheme } from '@chakra-ui/react'
 
 const primary = defineStyle(
   (props): SystemStyleObject => ({

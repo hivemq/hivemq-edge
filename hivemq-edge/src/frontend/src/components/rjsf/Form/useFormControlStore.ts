@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { FormControlState, FormControlStore } from '@/components/rjsf/Form/types.ts'
+import type { FormControlState, FormControlStore } from '@/components/rjsf/Form/types.ts'
 
 const initialState: FormControlState = {
   tabIndex: 0,

@@ -1,28 +1,31 @@
-import { FC, PropsWithChildren } from 'react'
-import { Edge, Node } from 'reactflow'
+import type { FC, PropsWithChildren } from 'react'
+import type { Edge, Node } from 'reactflow'
 import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import { DataPolicyValidator } from '@/api/__generated__'
+import type {
+  ClientFilterData,
+  DesignerStatus,
+  DryRunResults,
+  SchemaData,
+  TopicFilterData,
+  TransitionData,
+  ValidatorData,
+} from '@/extensions/datahub/types.ts'
 import {
   BehaviorPolicyData,
   BehaviorPolicyType,
-  ClientFilterData,
   DataHubNodeType,
   DataPolicyData,
-  DryRunResults,
   OperationData,
-  SchemaData,
   SchemaType,
   StrategyType,
-  TopicFilterData,
-  TransitionData,
   TransitionType,
-  ValidatorData,
 } from '@/extensions/datahub/types.ts'
 import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
-import { MockChecksStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+import { MockChecksStoreWrapper, MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 
 export const MOCK_INITIAL_POLICY = () => {
   const baseNode: Node<{ label: string }> = {
@@ -195,6 +198,21 @@ export const getPolicyPublishWrapper = (report?: DryRunResults<unknown, never>[]
           <CardBody data-testid="test-dashboard">{pathname}</CardBody>
         </Card>
       </MockChecksStoreWrapper>
+    )
+  }
+  return Wrapper
+}
+
+export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
+  const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    return (
+      <MockStoreWrapper
+        config={{
+          initialState: { status: status, nodes: nodes || [] },
+        }}
+      >
+        {children}
+      </MockStoreWrapper>
     )
   }
   return Wrapper

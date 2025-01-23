@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { FieldTemplateProps } from '@rjsf/utils'
+import type { FieldTemplateProps } from '@rjsf/utils'
 import { RenderFieldTemplate } from './RenderFieldTemplate.tsx'
 import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 

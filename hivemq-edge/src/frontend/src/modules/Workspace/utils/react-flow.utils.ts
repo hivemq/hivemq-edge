@@ -1,4 +1,4 @@
-import { ReactFlowState } from 'reactflow'
+import type { ReactFlowState } from 'reactflow'
 
 export const CONFIG_ZOOM_SKELETON = 0.5
 export const CONFIG_ZOOM_MIN = 0.2

@@ -1,11 +1,12 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Link as ReactRouterLink } from 'react-router-dom'
 import { Box, Icon, Link as ChakraLink } from '@chakra-ui/react'
 import { PiBridgeThin, PiPlugsConnectedFill, PiUserFill } from 'react-icons/pi'
 import { MdOutlineEventNote } from 'react-icons/md'
 
 import { TypeIdentifier } from '@/api/__generated__'
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 interface SourceLinkProps {
   source: TypeIdentifier | undefined

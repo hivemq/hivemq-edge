@@ -20,6 +20,7 @@ module.exports = {
     '@typescript-eslint/ban-ts-comment': 0,
     '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
     'deprecation/deprecation': 0,
+    '@typescript-eslint/consistent-type-imports': 'error',
   },
   ignorePatterns: ['**/__generated__/*'],
 }

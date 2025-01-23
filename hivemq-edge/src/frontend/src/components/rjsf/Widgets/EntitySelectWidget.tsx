@@ -1,11 +1,12 @@
 import { Fragment, useMemo } from 'react'
-import { getUiOptions, WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
+import { getUiOptions } from '@rjsf/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
 import { CustomFormat } from '@/api/types/json-schema.ts'
 import { SelectTag, SelectTopic, SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
-import { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { MappingContext } from '@/modules/ProtocolAdapters/types.ts'
 
 export const registerEntitySelectWidget =
   // eslint-disable-next-line react/display-name

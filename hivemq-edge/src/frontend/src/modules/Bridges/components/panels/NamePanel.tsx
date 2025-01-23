@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FormControl, FormErrorMessage, FormHelperText, FormLabel, Input } from '@chakra-ui/react'
 
 import { $Bridge } from '@/api/__generated__'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
-import { BridgePanelType } from '@/modules/Bridges/types.ts'
+import type { BridgePanelType } from '@/modules/Bridges/types.ts'
 
 const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
   const { t } = useTranslation()

@@ -1,28 +1,18 @@
-import {
-  Connection,
-  EdgeAddChange,
-  EdgeChange,
-  NodeAddChange,
-  NodeChange,
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
-  Node,
-} from 'reactflow'
+import type { Connection, EdgeAddChange, EdgeChange, NodeAddChange, NodeChange, Node } from 'reactflow'
+import { addEdge, applyEdgeChanges, applyNodeChanges } from 'reactflow'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import {
+import type {
   BehaviorPolicyData,
-  DataHubNodeType,
   DataPolicyData,
   DesignerStatus,
-  EdgeTypes,
   FunctionSpecs,
   WorkspaceAction,
   WorkspaceState,
   WorkspaceStatus,
 } from '../types.ts'
+import { DataHubNodeType, EdgeTypes } from '../types.ts'
 import { initialStore } from '../utils/store.utils.ts'
 import { styleDefaultEdge } from '../utils/edge.utils.ts'
 
@@ -34,7 +24,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
         set(initialStore())
       },
       isDirty: () => {
-        return get().nodes.length !== 0 && get().edges.length !== 0
+        return get().nodes.length !== 0
       },
       isPolicyInDraft: () => {
         return (
@@ -107,7 +97,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
         option?: { name?: string; type?: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY }
       ) => {
         set({ status: status })
-        if (option?.name) set({ name: option.name })
+        if (option && option.name != undefined) set({ name: option.name })
         if (option?.type) set({ type: option.type })
       },
     }),

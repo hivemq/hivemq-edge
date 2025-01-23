@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
 import { AdapterSelect } from '@datahub/components/forms/AdapterSelect.tsx'
 
 // @ts-ignore No need for the whole props for testing

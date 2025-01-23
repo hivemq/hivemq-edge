@@ -1,5 +1,5 @@
 import { MermaidRenderer } from '@datahub/components/fsm/MermaidRenderer.tsx'
-import { FiniteStateMachineSchema } from '@datahub/types.ts'
+import type { FiniteStateMachineSchema } from '@datahub/types.ts'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 
 // @ts-ignore

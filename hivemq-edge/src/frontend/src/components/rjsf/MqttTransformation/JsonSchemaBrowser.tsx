@@ -1,6 +1,7 @@
 import { type FC, useMemo } from 'react'
 import type { JSONSchema7 } from 'json-schema'
-import { Heading, List, ListItem, ListProps } from '@chakra-ui/react'
+import type { ListProps } from '@chakra-ui/react'
+import { Heading, List, ListItem } from '@chakra-ui/react'
 
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'

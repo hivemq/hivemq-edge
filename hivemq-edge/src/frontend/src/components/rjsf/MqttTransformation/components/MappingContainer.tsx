@@ -1,15 +1,16 @@
-import { FC, useCallback, useState } from 'react'
+import type { FC } from 'react'
+import { useCallback, useState } from 'react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { Card, CardBody, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
-import { SouthboundMapping, JsonNode } from '@/api/__generated__'
+import type { SouthboundMapping, JsonNode } from '@/api/__generated__'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import {
   SelectDestinationTag,
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
-import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { useTranslation } from 'react-i18next'
 

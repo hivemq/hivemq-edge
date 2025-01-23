@@ -1,5 +1,5 @@
-import { JsonNode } from '@/api/__generated__'
-import { RJSFSchema } from '@rjsf/utils'
+import type { JsonNode } from '@/api/__generated__'
+import type { RJSFSchema } from '@rjsf/utils'
 
 import i18n from '@/config/i18n.config.ts'
 

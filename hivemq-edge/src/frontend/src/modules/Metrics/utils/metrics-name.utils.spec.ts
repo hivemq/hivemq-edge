@@ -1,6 +1,7 @@
 import { describe, expect } from 'vitest'
 
-import { extractMetricInfo, MetricInfo } from './metrics-name.utils.ts'
+import type { MetricInfo } from './metrics-name.utils.ts'
+import { extractMetricInfo } from './metrics-name.utils.ts'
 import {
   MOCK_METRIC_ADAPTER,
   MOCK_METRIC_BRIDGE,

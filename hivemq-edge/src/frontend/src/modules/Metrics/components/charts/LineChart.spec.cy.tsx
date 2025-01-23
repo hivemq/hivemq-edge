@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { Box } from '@chakra-ui/react'
 
 import { MOCK_METRIC_SAMPLE_ARRAY, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'

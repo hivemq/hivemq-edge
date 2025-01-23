@@ -1,4 +1,4 @@
-import { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
+import type { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
 
 export const namespaceToStrings = (namespace: ISA95Namespace): string[] => {
   const { enterprise, site, area, workCell, productionLine } = namespace

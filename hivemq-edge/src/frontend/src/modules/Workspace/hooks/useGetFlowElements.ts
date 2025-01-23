@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Edge, Node, useEdgesState, useNodesState } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
+import { useEdgesState, useNodesState } from 'reactflow'
 import { useTheme } from '@chakra-ui/react'
 
-import { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'

@@ -1,8 +1,9 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { EdgeAddChange, Node, Edge, Rect } from 'reactflow'
+import type { EdgeAddChange, Node, Edge, Rect } from 'reactflow'
 
-import { Group, IdStubs, NodeTypes, WorkspaceAction, WorkspaceState } from '../types.ts'
+import type { Group, WorkspaceAction, WorkspaceState } from '../types.ts'
+import { IdStubs, NodeTypes } from '../types.ts'
 import useWorkspaceStore from './useWorkspaceStore.ts'
 import {
   MOCK_NODE_ADAPTER,

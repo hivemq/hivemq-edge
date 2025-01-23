@@ -1,5 +1,7 @@
-import { FC, type HTMLAttributes, type ReactNode } from 'react'
-import { Panel as ReactFlowPanel, PanelPosition } from 'reactflow'
+import type { FC } from 'react'
+import { type HTMLAttributes, type ReactNode } from 'react'
+import type { PanelPosition } from 'reactflow'
+import { Panel as ReactFlowPanel } from 'reactflow'
 import { Box } from '@chakra-ui/react'
 
 // ReactFlow PanelProps is not exported

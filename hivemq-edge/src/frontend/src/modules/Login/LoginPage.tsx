@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box, Flex, Image, Stack, useColorMode, useColorModeValue } from '@chakra-ui/react'
 
 import logoLight from '@/assets/edge/01-hivemq-industrial-edge.svg'

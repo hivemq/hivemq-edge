@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position } from 'reactflow'
 import { Image } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 

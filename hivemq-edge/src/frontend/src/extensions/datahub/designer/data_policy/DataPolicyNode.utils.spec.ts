@@ -1,10 +1,11 @@
 import { expect } from 'vitest'
-import { Node, NodeAddChange } from 'reactflow'
+import type { Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataHubNodeType, DataPolicyData, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
+import type { DataPolicyData, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityFilter, loadDataPolicy } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
-import { DataPolicy } from '@/api/__generated__'
+import type { DataPolicy } from '@/api/__generated__'
 
 describe('checkValidityFilter', () => {
   it('should return error if no topic filter connected', async () => {

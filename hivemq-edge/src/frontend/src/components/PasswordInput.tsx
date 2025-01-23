@@ -1,7 +1,9 @@
-import { FC, useState } from 'react'
-import { Button, Input, InputGroup, InputRightElement, InputProps as CUIInputProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import { useState } from 'react'
+import type { InputProps as CUIInputProps } from '@chakra-ui/react'
+import { Button, Input, InputGroup, InputRightElement } from '@chakra-ui/react'
 
-import {
+import type {
   FieldValues,
   UseFormRegister,
   RegisterOptions,

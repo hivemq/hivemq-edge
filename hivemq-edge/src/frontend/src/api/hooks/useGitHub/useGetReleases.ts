@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { useQuery } from '@tanstack/react-query'
 
-import { ApiError } from '@/api/__generated__'
-import { GitHubReleases } from '@/api/hooks/useGitHub/types.ts'
+import type { ApiError } from '@/api/__generated__'
+import type { GitHubReleases } from '@/api/hooks/useGitHub/types.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useGetReleases = () => {

@@ -1,6 +1,6 @@
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
-import { Node } from 'reactflow'
-import { DataHubNodeType } from '@datahub/types.ts'
+import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import type { Node } from 'reactflow'
+import type { DataHubNodeType } from '@datahub/types.ts'
 import i18n from '@/config/i18n.config.ts'
 
 const commonProperties: Pick<ProblemDetailsExtended, 'status'> = { status: 404 }

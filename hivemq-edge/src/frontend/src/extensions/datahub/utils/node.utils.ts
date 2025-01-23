@@ -1,4 +1,5 @@
-import { Connection, Edge, getConnectedEdges, getIncomers, getOutgoers, HandleProps, Node } from 'reactflow'
+import type { Connection, Edge, HandleProps, Node } from 'reactflow'
+import { getConnectedEdges, getIncomers, getOutgoers } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import type { TFunction } from 'i18next'
 import validator from '@rjsf/validator-ajv8'
@@ -7,26 +8,28 @@ import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-ico
 import i18n from '@/config/i18n.config.ts'
 
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
-import {
-  BehaviorPolicyData,
+import type {
   ClientFilterData,
   DataHubNodeData,
+  DryRunResults,
+  FunctionData,
+  SchemaData,
+  TopicFilterData,
+  ValidatorData,
+  ValidDropConnection,
+} from '../types.ts'
+import {
+  BehaviorPolicyData,
   DataHubNodeType,
   DataPolicyData,
   DesignerStatus,
-  DryRunResults,
-  FunctionData,
   OperationData,
   PolicyDryRunStatus,
   ResourceStatus,
   ResourceWorkingVersion,
-  SchemaData,
   SchemaType,
   StrategyType,
-  TopicFilterData,
   TransitionData,
-  ValidatorData,
-  ValidDropConnection,
 } from '../types.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
@@ -309,10 +312,10 @@ export const canDeleteNode = (node: Node, status?: DesignerStatus): { delete: bo
     return { delete: true }
   }
   if (isTopicFilterNodeType(node)) {
-    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+    return { delete: false, error: i18n.t('datahub:workspace.guards.delete.topicFilter') }
   }
   if (isBehaviorPolicyNodeType(node) || isDataPolicyNodeType(node)) {
-    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.policyNode') }
+    return { delete: false, error: i18n.t('datahub:workspace.guards.delete.policyNode') }
   }
   return { delete: true }
 }
@@ -328,7 +331,7 @@ export const canDeleteEdge = (
     const source = nodes.find((node) => node.id === edge.source)
     const target = nodes.find((node) => node.id === edge.target)
     if (source && target && isDataPolicyNodeType(target) && isTopicFilterNodeType(source))
-      return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+      return { delete: false, error: i18n.t('datahub:workspace.guards.delete.topicFilter') }
   }
   return { delete: true }
 }

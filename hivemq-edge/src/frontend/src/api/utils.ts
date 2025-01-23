@@ -1,4 +1,4 @@
-import { JWTPayload } from './types/jwt-payload.ts'
+import type { JWTPayload } from './types/jwt-payload.ts'
 
 export const QUERY_KEYS = {
   BRIDGES: 'bridges',

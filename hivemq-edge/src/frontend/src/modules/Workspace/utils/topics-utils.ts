@@ -1,10 +1,11 @@
-import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
-import { JSONSchema7 } from 'json-schema'
+import type { GenericObjectType, RJSFSchema } from '@rjsf/utils'
+import type { JSONSchema7 } from 'json-schema'
 import { stratify } from 'd3-hierarchy'
 
-import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
+import type { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { CustomFormat } from '@/api/types/json-schema.ts'
-import { TopicFilter, type TopicTreeMetadata } from '../types.ts'
+import type { TopicFilter } from '../types.ts'
+import { type TopicTreeMetadata } from '../types.ts'
 
 export const MQTT_WILDCARD_MULTI = '#'
 export const MQTT_WILDCARD_SINGLE = '+'

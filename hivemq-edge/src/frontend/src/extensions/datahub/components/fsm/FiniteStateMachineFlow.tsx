@@ -1,10 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Box } from '@chakra-ui/react'
 import { ReactFlowProvider } from 'reactflow'
 
 import config from '@/config'
 
-import { FiniteStateMachine } from '@datahub/types.ts'
+import type { FiniteStateMachine } from '@datahub/types.ts'
 
 import { MermaidRenderer } from '@datahub/components/fsm/MermaidRenderer.tsx'
 import { ReactFlowRenderer } from '@datahub/components/fsm/ReactFlowRenderer.tsx'

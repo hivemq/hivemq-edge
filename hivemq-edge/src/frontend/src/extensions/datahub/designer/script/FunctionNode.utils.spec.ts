@@ -1,9 +1,11 @@
 import { expect } from 'vitest'
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
-import { PolicyOperation, Script } from '@/api/__generated__'
-import { DataHubNodeType, FunctionData } from '@datahub/types.ts'
+import type { PolicyOperation } from '@/api/__generated__'
+import { Script } from '@/api/__generated__'
+import type { FunctionData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import {
   checkValidityJSScript,
   formatScriptName,

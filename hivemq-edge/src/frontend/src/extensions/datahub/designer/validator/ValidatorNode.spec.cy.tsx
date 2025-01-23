@@ -1,12 +1,13 @@
 /// <reference types="cypress" />
 
-import { NodeProps } from 'reactflow'
+import type { NodeProps } from 'reactflow'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { DataPolicyValidator } from '@/api/__generated__'
-import { DataHubNodeType, StrategyType, ValidatorData } from '@datahub/types.ts'
+import type { ValidatorData } from '@datahub/types.ts'
+import { DataHubNodeType, StrategyType } from '@datahub/types.ts'
 import { ValidatorNode } from './ValidatorNode.tsx'
 
 const MOCK_NODE_VALIDATOR: NodeProps<ValidatorData> = {

@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Handle, Position, NodeProps } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import { Handle, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image } from '@chakra-ui/react'
 

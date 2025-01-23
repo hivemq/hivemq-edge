@@ -1,4 +1,4 @@
-import { UiSchema } from '@rjsf/utils'
+import type { UiSchema } from '@rjsf/utils'
 import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
 import { CustomFormat } from '@/api/types/json-schema.ts'
 

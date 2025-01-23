@@ -1,4 +1,4 @@
-import { Edge, Node } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'

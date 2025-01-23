@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { Alert, AlertDescription, AlertIcon, type AlertStatus, AlertTitle } from '@chakra-ui/react'
 
 interface ErrorMessageProps {

@@ -1,19 +1,12 @@
-import { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from 'reactflow'
 import { parse, util as protobufUtils } from 'protobufjs'
 import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
 
-import { Schema, SchemaReference, Script } from '@/api/__generated__'
-import {
-  DataHubNodeData,
-  DataHubNodeType,
-  DryRunResults,
-  ResourceFamily,
-  ResourceWorkingVersion,
-  SchemaData,
-  SchemaType,
-} from '@datahub/types.ts'
+import type { Schema, SchemaReference, Script } from '@/api/__generated__'
+import type { DataHubNodeData, DryRunResults, ResourceFamily, SchemaData } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'

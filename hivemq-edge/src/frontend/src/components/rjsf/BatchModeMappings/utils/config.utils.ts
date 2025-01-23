@@ -1,4 +1,4 @@
-import { Accept } from 'react-dropzone'
+import type { Accept } from 'react-dropzone'
 
 // TODO[NVl] This should be configurable in the uiSchema of each adapter, customising the supported formats
 export const acceptMimeTypes: Accept = {

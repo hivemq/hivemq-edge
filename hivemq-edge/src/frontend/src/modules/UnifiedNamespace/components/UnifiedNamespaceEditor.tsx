@@ -1,4 +1,5 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import {
   Button,
   Drawer,
@@ -10,11 +11,11 @@ import {
   DrawerOverlay,
   useDisclosure,
 } from '@chakra-ui/react'
-import { SubmitHandler } from 'react-hook-form'
+import type { SubmitHandler } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-import { ApiError, ISA95ApiBean } from '@/api/__generated__'
+import type { ApiError, ISA95ApiBean } from '@/api/__generated__'
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.ts'
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.ts'
 

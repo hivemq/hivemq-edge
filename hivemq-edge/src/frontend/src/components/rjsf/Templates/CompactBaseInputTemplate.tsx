@@ -1,5 +1,6 @@
-import { ChangeEvent, FC } from 'react'
-import { BaseInputTemplateProps, getInputProps } from '@rjsf/utils'
+import type { ChangeEvent, FC } from 'react'
+import type { BaseInputTemplateProps } from '@rjsf/utils'
+import { getInputProps } from '@rjsf/utils'
 import { FormControl, Input } from '@chakra-ui/react'
 
 export const CompactBaseInputTemplate: FC<BaseInputTemplateProps> = (props) => {

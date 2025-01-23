@@ -1,4 +1,5 @@
-import { ColumnDef, type SortDirection } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
+import { type SortDirection } from '@tanstack/react-table'
 import PaginatedTable from './PaginatedTable.tsx'
 
 interface MOCK_TYPE {

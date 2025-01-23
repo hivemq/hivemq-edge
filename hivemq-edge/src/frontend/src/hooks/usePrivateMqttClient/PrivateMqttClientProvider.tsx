@@ -1,11 +1,14 @@
-import { FC, PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react'
+import type { FC, PropsWithChildren } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { setupWorker } from 'msw/browser'
-import mqtt, { ErrorWithReasonCode, MqttClient } from 'mqtt'
+import type { ErrorWithReasonCode, MqttClient } from 'mqtt'
+import mqtt from 'mqtt'
 import debug from 'debug'
 import config from '@/config'
 
 import { createHandlersWithMQTTClient } from '@/__test-utils__/msw/handlers.ts'
-import { MqttClientStatus, MQTTSample, PrivateMqttClientType } from '@/hooks/usePrivateMqttClient/type.ts'
+import type { MQTTSample, PrivateMqttClientType } from '@/hooks/usePrivateMqttClient/type.ts'
+import { MqttClientStatus } from '@/hooks/usePrivateMqttClient/type.ts'
 import { PRIVATE_MQTT_CLIENT, SAMPLING_DURATION } from '@/hooks/usePrivateMqttClient/mqtt-client.utils.ts'
 import { PrivateMqttClientContext } from '@/hooks/usePrivateMqttClient/PrivateMqttClientContext'
 

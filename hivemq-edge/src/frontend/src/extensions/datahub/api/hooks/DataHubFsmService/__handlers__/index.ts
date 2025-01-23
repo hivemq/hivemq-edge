@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { JsonNode } from '@/api/__generated__'
+import type { JsonNode } from '@/api/__generated__'
 
 import model from '@datahub/api/__generated__/schemas/BehaviorPolicyData.json'
 

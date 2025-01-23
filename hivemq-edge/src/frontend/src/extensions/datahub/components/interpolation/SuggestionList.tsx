@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { Alert, AlertTitle, Button, VStack } from '@chakra-ui/react'
-import { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion'
+import type { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion'
 import { useTranslation } from 'react-i18next'
 
 // This type is based on

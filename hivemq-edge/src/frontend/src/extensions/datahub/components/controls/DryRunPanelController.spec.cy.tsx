@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { ReactFlowProvider } from 'reactflow'
 import { Route, Routes } from 'react-router-dom'
 import DryRunPanelController from '@datahub/components/controls/DryRunPanelController.tsx'

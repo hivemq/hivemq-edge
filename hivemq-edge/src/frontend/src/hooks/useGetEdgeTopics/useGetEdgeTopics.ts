@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { ApiError } from '@/api/__generated__'
+import type { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'

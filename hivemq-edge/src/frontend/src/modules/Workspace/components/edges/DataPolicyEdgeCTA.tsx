@@ -1,4 +1,4 @@
-import { CSSProperties, FC } from 'react'
+import type { CSSProperties, FC } from 'react'
 import { MdPolicy } from 'react-icons/md'
 import { ButtonGroup, Icon, Text, useColorMode } from '@chakra-ui/react'
 

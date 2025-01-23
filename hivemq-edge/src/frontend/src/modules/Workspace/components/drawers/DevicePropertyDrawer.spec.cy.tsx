@@ -1,4 +1,4 @@
-import { Edge, Node } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_DEVICE } from '@/__test-utils__/react-flow/nodes.ts'
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'

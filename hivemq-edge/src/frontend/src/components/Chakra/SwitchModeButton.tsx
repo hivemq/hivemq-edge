@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Icon, useColorMode, IconButtonProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { IconButtonProps } from '@chakra-ui/react'
+import { Icon, useColorMode } from '@chakra-ui/react'
 import { MdDarkMode, MdLightMode } from 'react-icons/md'
 import { useTranslation } from 'react-i18next'
 import IconButton from '@/components/Chakra/IconButton.tsx'

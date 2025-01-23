@@ -1,14 +1,16 @@
 import { expect } from 'vitest'
-import { Edge, Node, Position } from 'reactflow'
+import type { Edge, Node } from 'reactflow'
+import { Position } from 'reactflow'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-import { DeviceMetadata, IdStubs, NodeTypes } from '../types.ts'
+import type { DeviceMetadata } from '../types.ts'
+import { IdStubs, NodeTypes } from '../types.ts'
 import {
   createAdapterNode,
   createBridgeNode,

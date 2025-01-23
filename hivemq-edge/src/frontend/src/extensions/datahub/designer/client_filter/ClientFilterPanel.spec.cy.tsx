@@ -1,10 +1,11 @@
 /// <reference types="cypress" />
 
 import { Button } from '@chakra-ui/react'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
-import { ClientFilterData, DataHubNodeType } from '@datahub/types.ts'
+import type { ClientFilterData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 
 import { ClientFilterPanel } from './ClientFilterPanel.tsx'
 

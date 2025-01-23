@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { Route, Routes } from 'react-router-dom'
-import { Node } from 'reactflow'
+import type { Node } from 'reactflow'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'

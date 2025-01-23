@@ -1,4 +1,4 @@
-import { ErrorSchema, FieldErrors } from '@rjsf/utils'
+import type { ErrorSchema, FieldErrors } from '@rjsf/utils'
 
 export const hasNestedError = <T>(props: ErrorSchema<T> | undefined) => {
   if (!props) return false

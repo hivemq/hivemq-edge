@@ -1,7 +1,8 @@
 /// <reference types="cypress" />
 
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { Adapter, Status } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import AdapterActionMenu from '@/modules/ProtocolAdapters/components/adapters/AdapterActionMenu.tsx'
 import { WorkspaceAdapterCommand } from '@/modules/ProtocolAdapters/types.ts'
 

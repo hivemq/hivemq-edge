@@ -1,4 +1,5 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import {
   Button,
   Card,
@@ -14,14 +15,15 @@ import {
   VStack,
 } from '@chakra-ui/react'
 
-import { TopicFilter } from '@/api/__generated__'
+import type { TopicFilter } from '@/api/__generated__'
 
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader.tsx'
 import SchemaSampler from '@/modules/TopicFilters/components/SchemaSampler.tsx'
 import { useTopicFilterManager } from '@/modules/TopicFilters/hooks/useTopicFilterManager.ts'
-import { SchemaHandler, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
+import type { SchemaHandler } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
+import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 import { useTranslation } from 'react-i18next'
 
 interface CurrentSchemaProps {

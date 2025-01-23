@@ -1,7 +1,7 @@
-import { MutableRefObject } from 'react'
-import Form from '@rjsf/core'
-import { RJSFSchema, RJSFValidationError, UiSchema } from '@rjsf/utils'
-import { ChakraRJSFormContext, UITab, UITabIndexed } from '@/components/rjsf/Form/types.ts'
+import type { MutableRefObject } from 'react'
+import type Form from '@rjsf/core'
+import type { RJSFSchema, RJSFValidationError, UiSchema } from '@rjsf/utils'
+import type { ChakraRJSFormContext, UITab, UITabIndexed } from '@/components/rjsf/Form/types.ts'
 
 export const _toPath = (path: string) => path?.match(/([^[.\]])+/g)
 

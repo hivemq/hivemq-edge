@@ -1,8 +1,9 @@
-import { Connection, getConnectedEdges, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { getConnectedEdges, getIncomers } from 'reactflow'
 
 import i18n from '@/config/i18n.config.ts'
 
-import {
+import type {
   BehaviorPolicyOnTransition,
   DataPolicy,
   PolicyOperation,
@@ -10,17 +11,14 @@ import {
   SchemaReference,
   Script,
 } from '@/api/__generated__'
-import {
-  DataHubNodeType,
-  DataPolicyData,
+import type {
   DryRunResults,
   FunctionData,
-  OperationData,
   PolicyOperationArguments,
-  ResourceWorkingVersion,
   TransitionData,
   WorkspaceState,
 } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, OperationData, ResourceWorkingVersion } from '@datahub/types.ts'
 import {
   checkValidityJSScript,
   formatScriptName,

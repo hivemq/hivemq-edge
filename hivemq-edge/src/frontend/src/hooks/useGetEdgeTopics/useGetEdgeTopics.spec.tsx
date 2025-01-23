@@ -10,12 +10,20 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
 
-import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
+import type {
+  Adapter,
+  AdaptersList,
+  Bridge,
+  BridgeList,
+  ProtocolAdapter,
+  ProtocolAdaptersList,
+} from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
-import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.ts'
+import type { EdgeTopicsOptions } from './useGetEdgeTopics.ts'
+import { useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.ts'
 
 interface Suite {
   topic: string

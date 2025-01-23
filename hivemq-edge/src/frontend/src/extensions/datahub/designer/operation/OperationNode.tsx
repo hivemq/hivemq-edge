@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NodeProps, Position } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import { Position } from 'reactflow'
 import { Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'

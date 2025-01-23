@@ -1,4 +1,4 @@
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 
 export const MOCK_MQTT_SCHEMA_REFS: RJSFSchema = {
   definitions: {

@@ -1,9 +1,10 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7 } from 'json-schema'
 import { Button, Card, CardBody, CardFooter } from '@chakra-ui/react'
 
-import { TopicFilter } from '@/api/__generated__'
+import type { TopicFilter } from '@/api/__generated__'
 import { useSamplingForTopic } from '@/api/hooks/useDomainModel/useSamplingForTopic.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'

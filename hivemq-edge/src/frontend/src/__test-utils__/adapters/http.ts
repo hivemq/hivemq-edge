@@ -1,4 +1,4 @@
-import { ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 
 export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
   id: 'http',

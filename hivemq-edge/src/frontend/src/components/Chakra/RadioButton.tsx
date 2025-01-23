@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { UseRadioProps, Box, useRadio, Text } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { UseRadioProps } from '@chakra-ui/react'
+import { Box, useRadio, Text } from '@chakra-ui/react'
 
 interface RadioButtonProps extends UseRadioProps {
   children: React.ReactNode

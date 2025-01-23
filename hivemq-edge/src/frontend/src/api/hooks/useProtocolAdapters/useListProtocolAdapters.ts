@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import { Adapter, ApiError } from '@/api/__generated__'
+import type { Adapter, ApiError } from '@/api/__generated__'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useListProtocolAdapters = () => {

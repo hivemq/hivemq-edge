@@ -10,7 +10,7 @@ import { useCreateTopicFilter } from '@/api/hooks/useTopicFilters/useCreateTopic
 import { useDeleteTopicFilter } from '@/api/hooks/useTopicFilters/useDeleteTopicFilter.ts'
 import { useUpdateTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateTopicFilter.ts'
 import { useUpdateAllTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateAllTopicFilters.ts'
-import { ManagerContextType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 
 interface TopicFilterSchemas {
   schema: RJSFSchema

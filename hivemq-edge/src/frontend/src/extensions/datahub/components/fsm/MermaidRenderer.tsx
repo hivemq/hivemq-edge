@@ -1,8 +1,9 @@
-import { FC, useMemo } from 'react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 
 import { Mermaid } from '@/components/Mermaid.tsx'
 
-import { FiniteStateMachine, FsmState } from '@datahub/types.ts'
+import type { FiniteStateMachine, FsmState } from '@datahub/types.ts'
 
 export const MermaidRenderer: FC<FiniteStateMachine> = (props) => {
   const script = useMemo(() => {

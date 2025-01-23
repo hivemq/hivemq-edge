@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { BaseInputTemplateProps, getUiOptions } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { BaseInputTemplateProps } from '@rjsf/utils'
+import { getUiOptions } from '@rjsf/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect.tsx'

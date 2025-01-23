@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import { ApiError, ScriptList } from '@/api/__generated__'
+import type { ApiError, ScriptList } from '@/api/__generated__'
 import { DATAHUB_QUERY_KEYS } from '@datahub/api/utils.ts'
 
 interface GetAllScriptsProps {

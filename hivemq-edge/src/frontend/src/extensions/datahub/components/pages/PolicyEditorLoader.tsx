@@ -1,12 +1,13 @@
-import { FC, useEffect } from 'react'
+import type { FC } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Spinner, useToast } from '@chakra-ui/react'
-import { Connection, NodeAddChange } from 'reactflow'
+import type { Connection, NodeAddChange } from 'reactflow'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-import { DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
 import PolicyEditor from '@datahub/components/pages/PolicyEditor.tsx'
 import { useGetDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetDataPolicy.tsx'
 import { useGetBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetBehaviorPolicy.tsx'
@@ -67,7 +68,7 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       for (const connection of edgeConnects) {
         store.onConnect(connection)
       }
-      store.setStatus(DesignerStatus.LOADED, { name: dataPolicy.id })
+      store.setStatus(DesignerStatus.LOADED, { name: dataPolicy.id, type: DataHubNodeType.DATA_POLICY })
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message
@@ -136,7 +137,7 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       for (const connection of edgeConnects) {
         store.onConnect(connection)
       }
-      store.setStatus(DesignerStatus.LOADED, { name: behaviorPolicy.id })
+      store.setStatus(DesignerStatus.LOADED, { name: behaviorPolicy.id, type: DataHubNodeType.BEHAVIOR_POLICY })
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message

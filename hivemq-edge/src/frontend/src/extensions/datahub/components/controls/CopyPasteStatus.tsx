@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { ButtonGroup, Tag, TagLabel, TagLeftIcon } from '@chakra-ui/react'
 import { LuCopy, LuCopyCheck } from 'react-icons/lu'
 

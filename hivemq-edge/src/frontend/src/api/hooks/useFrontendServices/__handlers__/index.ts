@@ -1,4 +1,5 @@
-import { Capability, CapabilityList, GatewayConfiguration, Notification, NotificationList } from '@/api/__generated__'
+import type { Capability, CapabilityList, GatewayConfiguration, NotificationList } from '@/api/__generated__'
+import { Notification } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 
 const lorem =

@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import axios, { AxiosError } from 'axios'
+import type { AxiosError } from 'axios'
+import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
 import config from '@/config'
 
-import { BaseHttpRequest, CancelablePromise, HiveMqClient, OpenAPIConfig } from '@/api/__generated__'
-import { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptions.ts'
+import type { CancelablePromise, OpenAPIConfig } from '@/api/__generated__'
+import { BaseHttpRequest, HiveMqClient } from '@/api/__generated__'
+import type { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptions.ts'
 import { request as __request } from '@/api/__generated__/core/request.ts'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 

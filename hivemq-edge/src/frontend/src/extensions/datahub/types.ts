@@ -1,5 +1,5 @@
-import { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChange, OnNodesChange } from 'reactflow'
-import {
+import type { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChange, OnNodesChange } from 'reactflow'
+import type {
   BehaviorPolicy,
   BehaviorPolicyOnTransition,
   DataPolicy,
@@ -9,9 +9,10 @@ import {
   SchemaReference,
   Script,
 } from '@/api/__generated__'
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
-import { IChangeEvent } from '@rjsf/core'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import { type DataPolicyMatching } from '@/api/__generated__'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
+import type { IChangeEvent } from '@rjsf/core'
+import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
 export interface HotKeyItem {
   key: string
@@ -32,7 +33,6 @@ export enum DesignerStatus {
   DRAFT = 'DRAFT',
   LOADED = 'LOADED',
   MODIFIED = 'MODIFIED',
-  READ_ONLY = 'READ_ONLY',
 }
 
 export interface WorkspaceState {
@@ -391,3 +391,14 @@ export interface ValidDropConnection {
   handle: string | null
   isSource: boolean
 }
+
+export interface DraftPolicy {
+  readonly createdAt?: string
+  id: string
+  matching: DataPolicyMatching
+}
+
+export type CombinedPolicy =
+  | (DataPolicy & { type: PolicyType.DATA_POLICY })
+  | (BehaviorPolicy & { type: PolicyType.BEHAVIOR_POLICY })
+  | (DraftPolicy & { type: PolicyType.CREATE_POLICY })

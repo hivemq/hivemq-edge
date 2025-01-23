@@ -1,11 +1,12 @@
 /// <reference types="cypress" />
 
-import { NodeProps } from 'reactflow'
+import type { NodeProps } from 'reactflow'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { ClientFilterData, DataHubNodeType } from '@datahub/types.ts'
+import type { ClientFilterData } from '@datahub/types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import { ClientFilterNode } from './ClientFilterNode.tsx'
 
 const MOCK_NODE_CLIENT_FILTER: NodeProps<ClientFilterData> = {

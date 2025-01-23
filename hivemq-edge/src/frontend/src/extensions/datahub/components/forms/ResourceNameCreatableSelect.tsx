@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  ActionMeta,
-  chakraComponents,
-  CreatableSelect,
-  createFilter,
-  OnChangeValue,
-  OptionProps,
-  Options,
-  SingleValueProps,
-} from 'chakra-react-select'
+import type { ActionMeta, OnChangeValue, OptionProps, Options, SingleValueProps } from 'chakra-react-select'
+import { chakraComponents, CreatableSelect, createFilter } from 'chakra-react-select'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { DataHubNodeType, FunctionData, ResourceFamily, ResourceStatus, SchemaData } from '@datahub/types.ts'
+import type { FunctionData, ResourceFamily, SchemaData } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceStatus } from '@datahub/types.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
 import { getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import { ApiError, ValuesTree } from '@/api/__generated__'
+import type { ApiError, ValuesTree } from '@/api/__generated__'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useGetDataPoints = (

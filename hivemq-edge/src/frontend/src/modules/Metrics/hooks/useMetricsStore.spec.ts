@@ -1,10 +1,8 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 
-import useMetricsStore, {
-  MetricDefinitionSpec,
-  MetricDefinitionStore,
-} from '@/modules/Metrics/hooks/useMetricsStore.ts'
+import type { MetricDefinitionSpec, MetricDefinitionStore } from '@/modules/Metrics/hooks/useMetricsStore.ts'
+import useMetricsStore from '@/modules/Metrics/hooks/useMetricsStore.ts'
 import { ChartType } from '@/modules/Metrics/types.ts'
 
 describe('useMetricsStore', () => {

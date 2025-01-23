@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy } from 'react'
-import { RouteObject } from 'react-router-dom'
+import type { RouteObject } from 'react-router-dom'
 
 const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPage.tsx'))
 const PolicyEditorLoader = lazy(() => import('@datahub/components/pages/PolicyEditorLoader.tsx'))

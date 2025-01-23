@@ -8,7 +8,7 @@ import { useUpdateNorthboundMappings } from '@/api/hooks/useProtocolAdapters/use
 import { northboundMappingListSchema } from '@/api/schemas/northbound.json-schema.ts'
 import { northboundMappingListUISchema } from '@/api/schemas/northbound.ui-schema.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
-import { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
+import type { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 
 export const useNorthboundMappingManager = (adapterId: string): MappingManagerType<NorthboundMappingList> => {
   const { t } = useTranslation()

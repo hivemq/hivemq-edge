@@ -1,4 +1,4 @@
-import { Instruction } from '@/api/__generated__'
+import type { Instruction } from '@/api/__generated__'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import MappingInstruction from './MappingInstruction.tsx'
 

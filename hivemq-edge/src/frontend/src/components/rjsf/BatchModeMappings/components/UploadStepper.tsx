@@ -1,5 +1,5 @@
-import { FC } from 'react'
-import { IdSchema } from '@rjsf/utils'
+import type { FC } from 'react'
+import type { IdSchema } from '@rjsf/utils'
 import {
   Box,
   Stepper,
@@ -13,7 +13,7 @@ import {
   StepTitle,
   VStack,
 } from '@chakra-ui/react'
-import { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import type { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
 
 interface UploadStepperProps {
   activeStep: number

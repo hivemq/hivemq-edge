@@ -1,7 +1,8 @@
 import { http, HttpResponse } from 'msw'
-import { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema } from '@rjsf/utils'
 
-import { type Schema, SchemaList } from '@/api/__generated__'
+import type { SchemaList } from '@/api/__generated__'
+import { type Schema } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_SCHEMA_ID = 'my-schema-id'

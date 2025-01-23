@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { Bridge } from '@/api/__generated__'
+import type { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import OptionsPanel from '@/modules/Bridges/components/panels/OptionsPanel.tsx'
 import { Button } from '@chakra-ui/react'

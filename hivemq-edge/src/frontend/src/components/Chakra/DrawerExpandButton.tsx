@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { IconButton, IconButtonProps } from '@chakra-ui/react'
+import type { FC } from 'react'
+import type { IconButtonProps } from '@chakra-ui/react'
+import { IconButton } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { useTranslation } from 'react-i18next'
 

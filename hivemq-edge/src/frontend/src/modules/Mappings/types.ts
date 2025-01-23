@@ -1,6 +1,7 @@
-import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
-import { AlertProps } from '@chakra-ui/react'
-import { ApiError } from '@/api/__generated__'
+import type { GenericObjectType } from '@rjsf/utils'
+import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
+import type { AlertProps } from '@chakra-ui/react'
+import type { ApiError } from '@/api/__generated__'
 
 export interface ManagerContextType<T> {
   schema?: RJSFSchema

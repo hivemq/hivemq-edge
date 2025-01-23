@@ -2,7 +2,7 @@ import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
-import { FormControlStore } from '@/components/rjsf/Form/types.ts'
+import type { FormControlStore } from '@/components/rjsf/Form/types.ts'
 
 describe('useWorkspaceStore', () => {
   beforeEach(() => {

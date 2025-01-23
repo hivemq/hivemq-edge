@@ -1,4 +1,5 @@
-import { FC, useMemo, useState } from 'react'
+import type { FC } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Box,
   Flex,
@@ -11,15 +12,15 @@ import {
   useDisclosure,
   useToken,
 } from '@chakra-ui/react'
-import { ColumnDef, Row } from '@tanstack/react-table'
+import type { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.ts'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
@@ -32,11 +33,8 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
-import {
-  AdapterNavigateState,
-  ProtocolAdapterTabIndex,
-  WorkspaceAdapterCommand,
-} from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
+import { ProtocolAdapterTabIndex, WorkspaceAdapterCommand } from '@/modules/ProtocolAdapters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 

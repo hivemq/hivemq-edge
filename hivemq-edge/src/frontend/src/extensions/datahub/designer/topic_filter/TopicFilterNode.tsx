@@ -1,10 +1,11 @@
-import { FC } from 'react'
-import { NodeProps, Position } from 'reactflow'
+import type { FC } from 'react'
+import type { NodeProps } from 'reactflow'
+import { Position } from 'reactflow'
 import { VStack } from '@chakra-ui/react'
 
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
-import { TopicFilterData } from '@datahub/types.ts'
+import type { TopicFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
