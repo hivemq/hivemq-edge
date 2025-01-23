@@ -94,8 +94,9 @@ export const loadValidators = (policy: DataPolicy, schemas: PolicySchema[], data
       targetHandle: DataPolicyData.Handle.VALIDATION,
     })
 
+    let nb = 0
     for (const schemaRef of validatorArguments.schemas) {
-      const schemaNodes = loadSchema(validatorNode, null, 0, schemaRef, schemas)
+      const schemaNodes = loadSchema(validatorNode, null, nb++, schemaRef, schemas)
       newNodes.push(...schemaNodes)
     }
   }

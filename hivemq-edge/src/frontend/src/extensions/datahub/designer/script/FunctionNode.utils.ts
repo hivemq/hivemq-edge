@@ -42,15 +42,19 @@ export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunRes
   return { data: script, node: scriptNode }
 }
 
-export const loadScripts = (parentNode: Node<DataHubNodeData>, functions: PolicyOperation[], scripts: Script[]) => {
-  const delta = ((Math.max(functions.length || 0, 1) - 1) * CANVAS_POSITION.Function.x) / 2
+export const loadScripts = (
+  parentNode: Node<DataHubNodeData>,
+  positionInGroup: number,
+  functions: PolicyOperation[],
+  scripts: Script[]
+) => {
   const position: XYPosition = {
-    x: parentNode.position.x - CANVAS_POSITION.Function.x - delta,
-    y: parentNode.position.y + CANVAS_POSITION.Function.y,
+    x: parentNode.position.x + CANVAS_POSITION.Function.x,
+    y: parentNode.position.y,
   }
 
   const shiftLeft = () => {
-    position.x += CANVAS_POSITION.Function.x
+    position.y += positionInGroup * CANVAS_POSITION.Function.y
     return position
   }
 

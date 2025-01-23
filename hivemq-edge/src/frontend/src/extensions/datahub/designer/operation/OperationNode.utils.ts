@@ -289,7 +289,7 @@ export const loadPipeline = (
   const delta =
     handle === DataPolicyData.Handle.ON_ERROR ? CANVAS_POSITION.OperationError : CANVAS_POSITION.OperationSuccess
   const position: XYPosition = {
-    x: parentNode.position.x + delta.x,
+    x: parentNode.position.x,
     y: parentNode.position.y + delta.y,
   }
 
@@ -338,22 +338,24 @@ export const loadPipeline = (
             },
           }
 
+          const nbItems = functions.length + 2
+
           const deserialisers = loadSchema(
             operationNode,
             OperationData.Handle.DESERIALISER,
-            -200,
+            1,
             deserializer.arguments as SchemaReference,
             schemas
           )
           const serialisers = loadSchema(
             operationNode,
             OperationData.Handle.SERIALISER,
-            200,
+            nbItems,
             policyOperation.arguments as SchemaReference,
             schemas
           )
 
-          const allScripts = loadScripts(operationNode, functions, scripts)
+          const allScripts = loadScripts(operationNode, 2, functions, scripts)
           newNodes.push(...deserialisers)
           newNodes.push(...serialisers)
           newNodes.push(...allScripts)

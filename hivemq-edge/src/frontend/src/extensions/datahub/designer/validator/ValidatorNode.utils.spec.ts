@@ -204,8 +204,8 @@ describe('loadValidators', () => {
           },
           id: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
           position: {
-            x: 0,
-            y: -150,
+            x: -320,
+            y: 160,
           },
           type: 'VALIDATOR',
         },
@@ -227,8 +227,8 @@ describe('loadValidators', () => {
           },
           id: 'test',
           position: {
-            x: 0,
-            y: -300,
+            x: -640,
+            y: 160,
           },
           type: 'SCHEMA',
         },
@@ -249,8 +249,8 @@ describe('loadValidators', () => {
           },
           id: 'test',
           position: {
-            x: 0,
-            y: -300,
+            x: -640,
+            y: 320,
           },
           type: 'SCHEMA',
         },

@@ -22,6 +22,7 @@ import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnectio
 import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
+import { CANVAS_DROP_DELTA } from '@datahub/designer/checks.utils.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -104,7 +105,7 @@ const PolicyEditor: FC = () => {
       const isTargetCanvas = targetElement.classList.contains('react-flow__pane')
 
       if (isTargetCanvas && edgeConnectStart.current && reactFlowInstance) {
-        const { type, handleId, nodeId } = edgeConnectStart.current
+        const { type, handleId, handleType, nodeId } = edgeConnectStart.current
 
         const droppedNode = getConnectedNodeFrom(type, handleId)
         if (!droppedNode) return
@@ -126,6 +127,9 @@ const PolicyEditor: FC = () => {
             type: droppedNode.type,
             data: getNodePayload(droppedNode.type),
           }
+
+          newNode.position.y += CANVAS_DROP_DELTA.y
+          if (handleType === 'target') newNode.position.x += CANVAS_DROP_DELTA.x
 
           const edgeConnection: Connection = droppedNode.isSource
             ? {

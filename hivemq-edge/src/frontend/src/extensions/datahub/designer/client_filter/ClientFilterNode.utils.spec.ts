@@ -150,7 +150,7 @@ describe('loadClientFilter', () => {
           },
           id: expect.stringContaining('node_'),
           position: {
-            x: -300,
+            x: -320,
             y: 0,
           },
           type: DataHubNodeType.CLIENT_FILTER,
