@@ -127,8 +127,8 @@ export function loadSchema(
       id: schemaRef.schemaId,
       type: DataHubNodeType.SCHEMA,
       position: {
-        x: parentNode.position.x + positionDeltaX,
-        y: parentNode.position.y + CANVAS_POSITION.PolicySchema.y,
+        x: parentNode.position.x + CANVAS_POSITION.PolicySchema.x,
+        y: parentNode.position.y + positionDeltaX,
       },
       data: {
         name: schema.id,
