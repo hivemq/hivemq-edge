@@ -8,6 +8,7 @@ import AdapterCluster from '@/modules/DomainOntology/components/AdapterCluster.t
 import RelationMatrix from '@/modules/DomainOntology/components/RelationMatrix.tsx'
 import ConceptFlow from '@/modules/DomainOntology/components/ConceptFlow.tsx'
 import RelationEdgeBundling from '@/modules/DomainOntology/components/RelationEdgeBundling.tsx'
+import config from '@/config'
 
 const DomainOntologyManager: FC = () => {
   const { t } = useTranslation()
@@ -21,7 +22,7 @@ const DomainOntologyManager: FC = () => {
         <Tab>{t('ontology.panel.wheel')}</Tab>
         <Tab>{t('ontology.panel.chord')}</Tab>
         <Tab>{t('ontology.panel.sankey')}</Tab>
-        {/*<Tab>{t('ontology.panel.edge-blunting')}</Tab>*/}
+        {config.features.WORKSPACE_EXPERIMENTAL && <Tab>{t('ontology.panel.edge-blunting')}</Tab>}
       </TabList>
       <TabPanels>
         <TabPanel {...panelProps}>
@@ -36,9 +37,11 @@ const DomainOntologyManager: FC = () => {
         <TabPanel {...panelProps}>
           <ConceptFlow />
         </TabPanel>
-        <TabPanel {...panelProps}>
-          <RelationEdgeBundling />
-        </TabPanel>
+        {config.features.WORKSPACE_EXPERIMENTAL && (
+          <TabPanel {...panelProps}>
+            <RelationEdgeBundling />
+          </TabPanel>
+        )}
       </TabPanels>
     </Tabs>
   )
