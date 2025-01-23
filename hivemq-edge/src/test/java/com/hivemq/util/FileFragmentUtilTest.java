@@ -15,8 +15,9 @@ public class FileFragmentUtilTest {
 
         Files.writeString(fragment, "THE FRAGMENT");
         final String fragmented = "<hallo>${FRAGMENT:" + fragment.toFile() + "}</hallo>";
-        final String resolved = FileFragmentUtil.replaceFragmentPlaceHolders(fragmented);
+        final FileFragmentUtil.FragmentResult resolved = FileFragmentUtil.replaceFragmentPlaceHolders(fragmented);
 
-        assertThat(resolved).isEqualTo("<hallo>THE FRAGMENT</hallo>");
+        assertThat(resolved.getRenderResult()).isEqualTo("<hallo>THE FRAGMENT</hallo>");
+        assertThat(resolved.getFragmentToModificationTime()).containsKey(fragment);
     }
 }
