@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge } from '@/api/__generated__'
 
 export enum TreeEntity {
   BRIDGE = 'BRIDGE',

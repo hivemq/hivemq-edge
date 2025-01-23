@@ -1,5 +1,5 @@
 /* istanbul ignore file -- @preserve */
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { groupCatalog } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 import { CompactSelectWidget } from '@/modules/DomainOntology/components/cluster/CompactSelectWidget.tsx'
 

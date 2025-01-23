@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { hierarchy, cluster } from 'd3-hierarchy'
 import { lineRadial, curveBundle } from 'd3-shape'
 // import { interpolateRdBu } from 'd3-scale-chromatic'
-import { Tree, TreeLeaf } from '@/modules/DomainOntology/types.ts'
+import type { Tree, TreeLeaf } from '@/modules/DomainOntology/types.ts'
 
 type HierarchicalEdgeBundlingProps = {
   width: number

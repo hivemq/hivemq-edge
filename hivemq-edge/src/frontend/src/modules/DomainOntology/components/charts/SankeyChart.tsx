@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { ResponsiveSankey, SankeyDataProps, DefaultNode, DefaultLink } from '@nivo/sankey'
+import type { FC } from 'react'
+import type { SankeyDataProps, DefaultNode, DefaultLink } from '@nivo/sankey'
+import { ResponsiveSankey } from '@nivo/sankey'
 import { useTranslation } from 'react-i18next'
 
 interface SankeyChartProps {

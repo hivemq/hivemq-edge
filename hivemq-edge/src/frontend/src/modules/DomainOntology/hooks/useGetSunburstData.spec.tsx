@@ -1,5 +1,5 @@
 import { beforeEach, expect, vi } from 'vitest'
-import { HierarchyNode } from 'd3-hierarchy'
+import type { HierarchyNode } from 'd3-hierarchy'
 
 import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'

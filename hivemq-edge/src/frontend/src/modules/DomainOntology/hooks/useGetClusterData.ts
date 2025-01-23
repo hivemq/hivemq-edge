@@ -5,12 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
-import {
-  ClusterDataWrapper,
-  ClusterFunction,
-  groupCatalog,
-  TreeEntity,
-} from '@/modules/DomainOntology/utils/cluster.utils.ts'
+import type { ClusterDataWrapper, ClusterFunction } from '@/modules/DomainOntology/utils/cluster.utils.ts'
+import { groupCatalog, TreeEntity } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 
 export const useGetClusterData = () => {
   const { t } = useTranslation()

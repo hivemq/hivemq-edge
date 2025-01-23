@@ -1,4 +1,5 @@
-import { FC, type MouseEvent, useState } from 'react'
+import type { FC } from 'react'
+import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@chakra-ui/react'
 

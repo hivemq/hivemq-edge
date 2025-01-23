@@ -5,7 +5,7 @@ import { useListDomainSouthboundMappings } from '@/api/hooks/useDomainModel/useL
 import { useListDomainTags } from '@/api/hooks/useDomainModel/useListDomainTags.ts'
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
-import { BridgeSubscription } from '@/modules/DomainOntology/types.ts'
+import type { BridgeSubscription } from '@/modules/DomainOntology/types.ts'
 
 export const useGetDomainOntology = () => {
   const northMappings = useListDomainNorthboundMappings()

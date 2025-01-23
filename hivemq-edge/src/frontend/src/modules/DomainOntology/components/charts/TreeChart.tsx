@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { type LinkTooltipProps, type NodeTooltipProps, ResponsiveTree, type TreeDataProps } from '@nivo/tree'
 import { type PropertyAccessor, useTheme } from '@nivo/core'
 import { Box, chakra as Chakra } from '@chakra-ui/react'

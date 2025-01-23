@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { ResponsiveChord } from '@nivo/chord'
 import { Card, CardBody } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'

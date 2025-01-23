@@ -1,7 +1,10 @@
-import { ComponentType, FC, useCallback, useMemo } from 'react'
-import { labelValue, WidgetProps } from '@rjsf/utils'
+import type { ComponentType, FC } from 'react'
+import { useCallback, useMemo } from 'react'
+import type { WidgetProps } from '@rjsf/utils'
+import { labelValue } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { chakraComponents, OnChangeValue, OptionProps, Select } from 'chakra-react-select'
+import type { OnChangeValue, OptionProps } from 'chakra-react-select'
+import { chakraComponents, Select } from 'chakra-react-select'
 import { FormControl, FormLabel, HStack, Text } from '@chakra-ui/react'
 
 const Option: ComponentType<OptionProps> = ({ children, ...props }) => {

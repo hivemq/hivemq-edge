@@ -9,7 +9,7 @@ import { handlers as protocolHandler } from '@/api/hooks/useProtocolAdapters/__h
 import { handlers as tahHandlers } from '@/api/hooks/useDomainModel/__handlers__'
 import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__handlers__'
 import { handlers as bridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
-import { ChordMatrixData } from '@/modules/DomainOntology/types.ts'
+import type { ChordMatrixData } from '@/modules/DomainOntology/types.ts'
 import { useGetChordMatrixData } from '@/modules/DomainOntology/hooks/useGetChordMatrixData.ts'
 
 describe('useGetChordMatrixData', () => {

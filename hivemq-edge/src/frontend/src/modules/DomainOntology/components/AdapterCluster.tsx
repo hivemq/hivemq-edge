@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HierarchyNode } from 'd3-hierarchy'
+import type { HierarchyNode } from 'd3-hierarchy'
 import { Text } from '@chakra-ui/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -8,7 +8,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import TreeChart from '@/modules/DomainOntology/components/charts/TreeChart.tsx'
 import ConfigurationPanel from '@/modules/DomainOntology/components/cluster/ConfigurationPanel.tsx'
 import { useGetClusterData } from '@/modules/DomainOntology/hooks/useGetClusterData.ts'
-import { ClusterDataWrapper } from '@/modules/DomainOntology/utils/cluster.utils.ts'
+import type { ClusterDataWrapper } from '@/modules/DomainOntology/utils/cluster.utils.ts'
 import ChartWrapper from '@/modules/DomainOntology/components/parts/ChartWrapper.tsx'
 
 const AdapterCluster: FC = () => {
