@@ -9,20 +9,26 @@ import type { BehaviorPolicy, DataPolicy, PolicySchema, Script } from '@/api/__g
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
-import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
-import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import type { DryRunResults, ResourceState } from '@datahub/types.ts'
-import { DataHubNodeType, ResourceWorkingVersion } from '@datahub/types.ts'
+import { useUpdateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useUpdateDataPolicy.tsx'
+import { useUpdateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useUpdateBehaviorPolicy.tsx'
+
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
-interface Mutate<T> {
+import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import type { DryRunResults, ResourceState } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceWorkingVersion, DesignerStatus } from '@datahub/types.ts'
+
+// Should be PolicySchema | Script | DataPolicy | BehaviorPolicy
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface Mutate<T, U = any> {
   type: DataHubNodeType
-  payload: T
-  mutation: UseMutateAsyncFunction<T, unknown, T>
+  payload: U
+  mutation: UseMutateAsyncFunction<T, unknown, U>
 }
-type ValidMutate = Mutate<PolicySchema> | Mutate<Script> | Mutate<DataPolicy> | Mutate<BehaviorPolicy>
 
 const resourceReducer =
   <T extends PolicySchema | Script>(type: DataHubNodeType) =>
@@ -44,107 +50,153 @@ const resourceReducer =
 
 export const ToolbarPublish: FC = () => {
   const { t } = useTranslation('datahub')
+  const { status } = useDataHubDraftStore()
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const createSchema = useCreateSchema()
   const createScript = useCreateScript()
   const createDataPolicy = useCreateDataPolicy()
+  const modifyDataPolicy = useUpdateDataPolicy()
   const createBehaviorPolicy = useCreateBehaviorPolicy()
+  const modifyBehaviorPolicy = useUpdateBehaviorPolicy()
   const toast = useToast()
   const navigate = useNavigate()
   const { isPolicyEditable } = usePolicyGuards()
 
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
-  const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {
-    try {
-      await promise
-      toast({
-        ...dataHubToastOption,
-        title: t('error.publish.title', { source: type }),
-        description: t('error.publish.description', { source: type }),
-        status: 'success',
-      })
-    } catch (error) {
-      let message
-      if (error instanceof Error) message = error.message
-      else message = String(error)
-      toast({
-        ...dataHubToastOption,
-        title: t('error.publish.error', { source: type }),
-        description: message,
-        status: 'error',
-      })
-    }
+  const toastInternalError = (message: string) => {
+    toast({
+      ...dataHubToastOption,
+      title: t('publish.internal.title', { source: selectedNode?.type }),
+      description: message,
+      status: 'error',
+    })
   }
 
-  const handlePublish = () => {
-    if (!report) return
-
-    const payload = [...report].pop()
-    if (!payload) return
-
-    const { data, resources } = payload
-
-    const allSchemas =
-      resources?.reduce(resourceReducer<PolicySchema>(DataHubNodeType.SCHEMA), []).map<Mutate<PolicySchema>>((e) => ({
-        type: DataHubNodeType.SCHEMA,
-        payload: e,
-        mutation: createSchema.mutateAsync,
-      })) || []
-
-    const allScripts =
-      resources?.reduce(resourceReducer<Script>(DataHubNodeType.FUNCTION), []).map<Mutate<Script>>((e) => ({
-        type: DataHubNodeType.FUNCTION,
-        payload: e,
-        mutation: createScript.mutateAsync,
-      })) || []
-
-    const promises = [...allSchemas, ...allScripts].map((request) => {
-      return handleMutation(
-        // @ts-ignore TODO[NVL] Weird! Check the type mismatch
-        request.mutation(request.payload),
-        request.type
-      )
-    })
-
-    Promise.all(promises)
+  const reportMutation = (promise: Promise<unknown>, type?: string) => {
+    promise
       .then(() => {
-        if (payload.node.type === DataHubNodeType.DATA_POLICY) {
-          const policy: Mutate<DataPolicy> = {
-            type: DataHubNodeType.DATA_POLICY,
-            payload: data as DataPolicy,
-            mutation: createDataPolicy.mutateAsync,
-          }
-          handleMutation(
-            // @ts-ignore TODO[NVL] Weird! Check the type mismatch
-            policy.mutation(policy.payload),
-            DataHubNodeType.DATA_POLICY
-          )
-        } else if (payload.node.type === DataHubNodeType.BEHAVIOR_POLICY) {
-          const policy: Mutate<BehaviorPolicy> = {
-            type: DataHubNodeType.BEHAVIOR_POLICY,
-            payload: data as BehaviorPolicy,
-            mutation: createBehaviorPolicy.mutateAsync,
-          }
-          handleMutation(
-            // @ts-ignore TODO[NVL] Weird! Check the type mismatch
-            policy.mutation(policy.payload),
-            DataHubNodeType.BEHAVIOR_POLICY
-          )
-        }
-      })
-      .catch((e) => {
-        return toast({
+        toast({
           ...dataHubToastOption,
-          title: t('error.publish.error', { source: DataHubNodeType.DATA_POLICY }),
-          description: e.toString(),
+          title: t('publish.success.title', { source: type || selectedNode?.type }),
+          description: t('publish.success.description', { source: type || selectedNode?.type, context: status }),
+          status: 'success',
+        })
+      })
+      .catch((error) => {
+        let message
+        if (error instanceof Error) message = error.message
+        else message = String(error)
+        toast({
+          ...dataHubToastOption,
+          title: t('publish.error.title', { source: type || selectedNode?.type }),
+          description: message,
           status: 'error',
         })
       })
+    return promise
+  }
+
+  const publishResources = (resources?: DryRunResults<never>[]) => {
+    const allSchemas =
+      resources
+        ?.reduce(resourceReducer<PolicySchema>(DataHubNodeType.SCHEMA), [])
+        .map<Mutate<PolicySchema>>((policySchema) => ({
+          type: DataHubNodeType.SCHEMA,
+          payload: policySchema,
+          mutation: createSchema.mutateAsync,
+        })) || []
+
+    const allScripts =
+      resources?.reduce(resourceReducer<Script>(DataHubNodeType.FUNCTION), []).map<Mutate<Script>>((script) => ({
+        type: DataHubNodeType.FUNCTION,
+        payload: script,
+        mutation: createScript.mutateAsync,
+      })) || []
+
+    return [...allSchemas, ...allScripts].map((request) =>
+      reportMutation(request.mutation(request.payload), request.type)
+    )
+  }
+
+  const publishMainPolicy = (payload: DryRunResults<unknown, never>) => () => {
+    const { data } = payload
+
+    let policy: Mutate<DataPolicy | BehaviorPolicy>
+    switch (true) {
+      case payload.node.type === DataHubNodeType.DATA_POLICY && status === DesignerStatus.DRAFT:
+        policy = {
+          type: DataHubNodeType.DATA_POLICY,
+          payload: data as DataPolicy,
+          mutation: createDataPolicy.mutateAsync,
+        }
+        break
+      case payload.node.type === DataHubNodeType.DATA_POLICY && status === DesignerStatus.MODIFIED: {
+        const dataPolicy = data as DataPolicy
+        policy = {
+          type: DataHubNodeType.DATA_POLICY,
+          payload: {
+            policyId: dataPolicy.id,
+            requestBody: dataPolicy,
+          },
+          mutation: modifyDataPolicy.mutateAsync,
+        }
+        break
+      }
+      case payload.node.type === DataHubNodeType.BEHAVIOR_POLICY && status === DesignerStatus.DRAFT:
+        policy = {
+          type: DataHubNodeType.BEHAVIOR_POLICY,
+          payload: data as BehaviorPolicy,
+          mutation: createBehaviorPolicy.mutateAsync,
+        }
+        break
+      case payload.node.type === DataHubNodeType.BEHAVIOR_POLICY && status === DesignerStatus.MODIFIED: {
+        const behaviourPolicy = data as BehaviorPolicy
+        policy = {
+          type: DataHubNodeType.BEHAVIOR_POLICY,
+          payload: {
+            policyId: behaviourPolicy.id,
+            requestBody: behaviourPolicy,
+          },
+          mutation: modifyBehaviorPolicy.mutateAsync,
+        }
+        break
+      }
+      default:
+        toastInternalError(t('error.validityReport.noContext'))
+        return
+    }
+
+    return reportMutation(policy.mutation(policy.payload), payload.node.type)
+  }
+
+  const handlePublish = () => {
+    if (!report) return toastInternalError(t('error.validityReport.motFound'))
+
+    const payload = [...report].pop()
+    if (!payload) return toastInternalError(t('error.validityReport.notValid'))
+
+    const { resources } = payload
+
+    const promises = publishResources(resources)
+
+    Promise.all(promises)
+      .then(publishMainPolicy(payload))
       .then(() => {
         reset()
         setNode(selectedNode)
         navigate(`/datahub/${selectedNode?.type}/${selectedNode?.data.id}`, { replace: true })
+      })
+      .catch((error) => {
+        let message
+        if (error instanceof Error) message = error.message
+        else message = String(error)
+        return toast({
+          ...dataHubToastOption,
+          title: t('publish.error.title', { source: DataHubNodeType.DATA_POLICY }),
+          description: message.toString(),
+          status: 'error',
+        })
       })
   }
 
