@@ -21,45 +21,49 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
   const navigate = useNavigate()
   const { setStatus } = useDataHubDraftStore()
 
-  const renderResourceToolbar = () => (
-    <ButtonGroup size="sm" isAttached>
-      <IconButton
-        data-testid="list-action-download"
-        onClick={onDownload}
-        aria-label={t('Listings.action.download')}
-        icon={<LuDownload />}
-      />
-      <IconButton
-        data-testid="list-action-delete"
-        onClick={onDelete}
-        aria-label={t('Listings.action.delete')}
-        icon={<LuTrash2 />}
-      />
-    </ButtonGroup>
-  )
+  if (!policy) {
+    // If not policy, it's a resource toolbar
+    return (
+      <ButtonGroup size="sm" isAttached>
+        <IconButton
+          data-testid="list-action-download"
+          onClick={onDownload}
+          aria-label={t('Listings.action.download')}
+          icon={<LuDownload />}
+        />
+        <IconButton
+          data-testid="list-action-delete"
+          onClick={onDelete}
+          aria-label={t('Listings.action.delete')}
+          icon={<LuTrash2 />}
+        />
+      </ButtonGroup>
+    )
+  }
 
-  const renderDraftToolbar = () => (
-    <ButtonGroup size="sm" isAttached>
-      <IconButton
-        data-testid="list-action-view"
-        onClick={() => {
-          setStatus(DesignerStatus.DRAFT)
-          navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
-        }}
-        aria-label={t('Listings.policy.action.draft')}
-        icon={<LuFileEdit />}
-      />
-      <IconButton
-        data-testid="list-action-delete"
-        onClick={onDelete}
-        aria-label={t('Listings.action.delete')}
-        icon={<LuTrash2 />}
-      />
-    </ButtonGroup>
-  )
+  if (policy?.type === PolicyType.CREATE_POLICY) {
+    // If a draft
+    return (
+      <ButtonGroup size="sm" isAttached>
+        <IconButton
+          data-testid="list-action-view"
+          onClick={() => {
+            setStatus(DesignerStatus.DRAFT)
+            navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+          }}
+          aria-label={t('Listings.policy.action.draft')}
+          icon={<LuFileEdit />}
+        />
+        <IconButton
+          data-testid="list-action-delete"
+          onClick={onDelete}
+          aria-label={t('Listings.action.delete')}
+          icon={<LuTrash2 />}
+        />
+      </ButtonGroup>
+    )
+  }
 
-  if (!policy) return renderResourceToolbar()
-  if (policy?.type === PolicyType.CREATE_POLICY) return renderDraftToolbar()
   return (
     <HStack>
       <ButtonGroup size="sm" isAttached>
