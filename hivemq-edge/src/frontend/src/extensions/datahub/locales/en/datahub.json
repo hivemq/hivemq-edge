@@ -321,6 +321,22 @@
       }
     }
   },
+  "publish": {
+    "internal": {
+      "title": "Internal error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+    },
+    "success": {
+      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
+      "description_DRAFT": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
+      "description_MODIFIED": "We've updated the $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you."
+    },
+    "error": {
+      "title": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+    },
+    "title111": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
+    "description1111": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
+    "error1111": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+  },
   "error": {
     "validation": {
       "noNode": "Node is unknown",
@@ -368,11 +384,6 @@
       "notValidated": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly configured: {{ error }}",
       "internal": "Encountered an error while processing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }): {{ error }}"
     },
-    "publish": {
-      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
-      "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
-      "error": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
-    },
     "load": {
       "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
       "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
@@ -395,6 +406,11 @@
     "elementNotDefined": {
       "title": "Error loading the node",
       "description": "The $t(datahub:workspace.nodes.type, { 'context': '{{nodeType}}' }) is not a valid element"
+    },
+    "validityReport": {
+      "motFound": "Cannot access the validity report",
+      "notValid": "The validity report cannot be parsed successfully",
+      "noContext": "The nature of the modifications cannot be safely determined"
     }
   },
   "shortcuts": {
