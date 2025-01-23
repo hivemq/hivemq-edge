@@ -1,8 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import type { RJSFSchema } from '@rjsf/utils'
 
-import type { SchemaList } from '@/api/__generated__'
-import { type Schema } from '@/api/__generated__'
+import type { SchemaList, PolicySchema } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_SCHEMA_ID = 'my-schema-id'
@@ -25,7 +24,7 @@ export const MOCK_SCHEMA_SOURCE: RJSFSchema = {
   },
 }
 
-export const mockSchemaTempHumidity: Schema = {
+export const mockSchemaTempHumidity: PolicySchema = {
   id: MOCK_SCHEMA_ID,
   createdAt: MOCK_CREATED_AT,
   schemaDefinition: btoa(JSON.stringify(MOCK_SCHEMA_SOURCE)),

@@ -5,7 +5,7 @@ import type { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
-import type { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
+import type { BehaviorPolicy, DataPolicy, PolicySchema, Script } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
@@ -22,10 +22,10 @@ interface Mutate<T> {
   payload: T
   mutation: UseMutateAsyncFunction<T, unknown, T>
 }
-type ValidMutate = Mutate<Schema> | Mutate<Script> | Mutate<DataPolicy> | Mutate<BehaviorPolicy>
+type ValidMutate = Mutate<PolicySchema> | Mutate<Script> | Mutate<DataPolicy> | Mutate<BehaviorPolicy>
 
 const resourceReducer =
-  <T extends Schema | Script>(type: DataHubNodeType) =>
+  <T extends PolicySchema | Script>(type: DataHubNodeType) =>
   (accumulator: T[], result: DryRunResults<T, never>) => {
     if (result.node.type !== type) return accumulator
     if (!result.data) return accumulator
@@ -86,7 +86,7 @@ export const ToolbarPublish: FC = () => {
     const { data, resources } = payload
 
     const allSchemas =
-      resources?.reduce(resourceReducer<Schema>(DataHubNodeType.SCHEMA), []).map<Mutate<Schema>>((e) => ({
+      resources?.reduce(resourceReducer<PolicySchema>(DataHubNodeType.SCHEMA), []).map<Mutate<PolicySchema>>((e) => ({
         type: DataHubNodeType.SCHEMA,
         payload: e,
         mutation: createSchema.mutateAsync,

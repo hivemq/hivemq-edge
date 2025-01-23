@@ -7,7 +7,7 @@ import type {
   BehaviorPolicyOnTransition,
   DataPolicy,
   PolicyOperation,
-  Schema,
+  PolicySchema,
   SchemaReference,
   Script,
 } from '@/api/__generated__'
@@ -34,7 +34,7 @@ import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
   store: WorkspaceState
-): DryRunResults<PolicyOperation, Script | Schema>[] {
+): DryRunResults<PolicyOperation, Script | PolicySchema>[] {
   const { nodes, edges } = store
 
   if (!operationNode.data.functionId || !operationNode.data.formData) {
@@ -230,7 +230,7 @@ export function checkValidityPipeline(
 export const loadBehaviorPolicyPipelines = (
   behaviorPolicyTransition: BehaviorPolicyOnTransition,
   transitionNode: Node<TransitionData>,
-  schemas: Schema[],
+  schemas: PolicySchema[],
   scripts: Script[]
 ) => {
   const activeTransition = getActiveTransition(behaviorPolicyTransition)
@@ -246,7 +246,7 @@ export const loadBehaviorPolicyPipelines = (
 
 export const loadDataPolicyPipelines = (
   policy: DataPolicy,
-  schemas: Schema[],
+  schemas: PolicySchema[],
   scripts: Script[],
   dataPolicyNode: Node<DataPolicyData>
 ) => {
@@ -280,7 +280,7 @@ export const loadPipeline = (
   parentNode: Node,
   pipeline: Array<PolicyOperation>,
   handle: DataPolicyData.Handle | null,
-  schemas: Schema[],
+  schemas: PolicySchema[],
   scripts: Script[]
 ) => {
   if (!parentNode)

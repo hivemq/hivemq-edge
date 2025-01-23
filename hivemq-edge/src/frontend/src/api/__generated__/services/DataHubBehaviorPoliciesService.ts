@@ -83,17 +83,22 @@ export class DataHubBehaviorPoliciesService {
      *
      *
      * @param policyId The identifier of the policy to delete.
+     * @param ifMatch The entity tag
      * @returns void
      * @throws ApiError
      */
     public deleteBehaviorPolicy(
         policyId: string,
+        ifMatch?: string,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/api/v1/data-hub/behavior-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
+            },
+            headers: {
+                'If-Match': ifMatch,
             },
             errors: {
                 400: `URL parameter missing`,
@@ -145,18 +150,23 @@ export class DataHubBehaviorPoliciesService {
      *
      * @param policyId The identifier of the policy.
      * @param requestBody The policy that should be updated.
+     * @param ifMatch The entity tag
      * @returns BehaviorPolicy Success
      * @throws ApiError
      */
     public updateBehaviorPolicy(
         policyId: string,
         requestBody: BehaviorPolicy,
+        ifMatch?: string,
     ): CancelablePromise<BehaviorPolicy> {
         return this.httpRequest.request({
             method: 'PUT',
             url: '/api/v1/data-hub/behavior-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
+            },
+            headers: {
+                'If-Match': ifMatch,
             },
             body: requestBody,
             mediaType: 'application/json',

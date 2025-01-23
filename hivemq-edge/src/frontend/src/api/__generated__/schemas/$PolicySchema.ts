@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $Schema = {
+export const $PolicySchema = {
     properties: {
         arguments: {
             type: 'dictionary',

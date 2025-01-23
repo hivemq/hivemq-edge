@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Skeleton, Text } from '@chakra-ui/react'
 
-import type { Schema } from '@/api/__generated__'
+import type { PolicySchema } from '@/api/__generated__'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
@@ -23,15 +23,15 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { isLoading, data, isError } = useGetAllSchemas()
   const deleteSchema = useDeleteSchema()
 
-  const safeData = useMemo<Schema[]>(() => {
+  const safeData = useMemo<PolicySchema[]>(() => {
     if (isLoading) return [mockSchemaTempHumidity]
 
     return [...(data?.items || [])]
   }, [isLoading, data?.items])
 
-  const columns = useMemo<ColumnDef<Schema>[]>(() => {
-    const onHandleDownload = (info: CellContext<Schema, unknown>) => () => {
-      downloadJSON<Schema>(info.row.original.id, info.row.original)
+  const columns = useMemo<ColumnDef<PolicySchema>[]>(() => {
+    const onHandleDownload = (info: CellContext<PolicySchema, unknown>) => () => {
+      downloadJSON<PolicySchema>(info.row.original.id, info.row.original)
     }
 
     return [
@@ -96,7 +96,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
-    <PaginatedTable<Schema>
+    <PaginatedTable<PolicySchema>
       aria-label={t('Listings.schema.label')}
       data={safeData}
       columns={columns}

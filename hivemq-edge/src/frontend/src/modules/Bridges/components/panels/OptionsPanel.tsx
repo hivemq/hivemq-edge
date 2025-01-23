@@ -54,7 +54,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
 
       <FormControl>
         <FormLabel htmlFor="sessionExpiry">{t('bridge.options.sessionExpiry.label')}</FormLabel>
-        <NumberInput id="sessionExpiry" step={1} max={$Bridge.properties.sessionExpiry.maximum}>
+        <NumberInput id="sessionExpiry" step={1}>
           <NumberInputField
             {...register('sessionExpiry', {
               ...getRulesForProperty($Bridge.properties.sessionExpiry),

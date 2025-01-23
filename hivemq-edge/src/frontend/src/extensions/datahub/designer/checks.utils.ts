@@ -6,7 +6,7 @@ export const CANVAS_POSITION = {
   Topic: { x: -300, y: 0 } as XYPosition,
   Function: { x: 350, y: -400 } as XYPosition,
   Transition: { x: 400, y: 100 } as XYPosition,
-  Schema: { x: 0, y: -150 } as XYPosition,
+  PolicySchema: { x: 0, y: -150 } as XYPosition,
   Validator: { x: 0, y: -150 } as XYPosition,
   OperationSuccess: { x: 200, y: 0 } as XYPosition,
   OperationError: { x: 200, y: 100 } as XYPosition,

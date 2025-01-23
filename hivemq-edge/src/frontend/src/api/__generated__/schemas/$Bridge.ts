@@ -86,8 +86,7 @@ export const $Bridge = {
             type: 'number',
             description: `The sessionExpiry associated the the MQTT connection.`,
             isRequired: true,
-            format: 'int32',
-            maximum: 4294967295,
+            format: 'int64',
         },
         status: {
             type: 'Status',

@@ -10,7 +10,7 @@ import {
   getActiveTransition,
   loadTransitions,
 } from '@datahub/designer/transition/TransitionNode.utils.ts'
-import type { BehaviorPolicyOnTransition, Schema, Script } from '@/api/__generated__'
+import type { BehaviorPolicyOnTransition, PolicySchema, Script } from '@/api/__generated__'
 import { type BehaviorPolicy } from '@/api/__generated__'
 
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
@@ -290,7 +290,7 @@ describe('loadTransitions', () => {
       id: 'string',
       matching: { clientIdRegex: '*.*' },
     }
-    const schemas: Schema[] = []
+    const schemas: PolicySchema[] = []
     const scripts: Script[] = []
 
     expect(loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)).toStrictEqual<
@@ -304,7 +304,7 @@ describe('loadTransitions', () => {
       id: 'string',
       matching: { clientIdRegex: '*.*' },
     }
-    const schemas: Schema[] = []
+    const schemas: PolicySchema[] = []
     const scripts: Script[] = []
     expect(() => loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)).toThrow(
       'Something is wrong with the transition model'

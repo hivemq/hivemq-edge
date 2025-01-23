@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Schema } from '../models/Schema';
+import type { PolicySchema } from '../models/PolicySchema';
 import type { SchemaList } from '../models/SchemaList';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -56,15 +56,20 @@ export class DataHubSchemasService {
      *
      *
      * @param requestBody The schema that should be created.
-     * @returns Schema Success
+     * @param ifMatch The entity tag
+     * @returns PolicySchema Success
      * @throws ApiError
      */
     public createSchema(
-        requestBody: Schema,
-    ): CancelablePromise<Schema> {
+        requestBody: PolicySchema,
+        ifMatch?: string,
+    ): CancelablePromise<PolicySchema> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/v1/data-hub/schemas',
+            headers: {
+                'If-Match': ifMatch,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -83,17 +88,22 @@ export class DataHubSchemasService {
      *
      *
      * @param schemaId The schema identifier of the schema versions to delete.
+     * @param ifMatch The entity tag
      * @returns void
      * @throws ApiError
      */
     public deleteSchema(
         schemaId: string,
+        ifMatch?: string,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/api/v1/data-hub/schemas/{schemaId}',
             path: {
                 'schemaId': schemaId,
+            },
+            headers: {
+                'If-Match': ifMatch,
             },
             errors: {
                 400: `Schema referenced`,
@@ -114,13 +124,13 @@ export class DataHubSchemasService {
      *
      * @param schemaId The identifier of the schema.
      * @param fields Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt
-     * @returns Schema Success
+     * @returns PolicySchema Success
      * @throws ApiError
      */
     public getSchema(
         schemaId: string,
         fields?: string,
-    ): CancelablePromise<Schema> {
+    ): CancelablePromise<PolicySchema> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/data-hub/schemas/{schemaId}',
