@@ -66,16 +66,16 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       type: PolicyType
     ): CombinedPolicy[] {
       if (!items) return []
-      return items.map((e) => ({ ...e, type } as CombinedPolicy))
+      return items.map((item) => ({ ...item, type } as CombinedPolicy))
     }
 
-    const ss = [
+    const draftPolicyItems = [
       ...insertItems<DataPolicy>(dataPolicies?.items, PolicyType.DATA_POLICY),
       ...insertItems<BehaviorPolicy>(behaviorPolicies?.items, PolicyType.BEHAVIOR_POLICY),
     ]
-    if (isDraftDirty) ss.unshift(generateDraftPolicyItem())
+    if (isDraftDirty) draftPolicyItems.unshift(generateDraftPolicyItem())
 
-    return ss
+    return draftPolicyItems
   }, [isLoading, isDraftDirty, dataPolicies?.items, behaviorPolicies?.items])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
