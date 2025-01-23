@@ -1,6 +1,6 @@
 import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
 
-describe('DataHubListAction', () => {
+describe('DraftStatus', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
   })
