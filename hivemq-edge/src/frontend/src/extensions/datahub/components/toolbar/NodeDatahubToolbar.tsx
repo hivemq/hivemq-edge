@@ -16,9 +16,9 @@ interface NodeToolbarProps extends ButtonGroupProps {
   selectedNode: string
 }
 
-const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, children, ...props }) => {
+const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, children, selectedNode, ...props }) => {
   const { t } = useTranslation('datahub')
-  const { isNodeEditable } = usePolicyGuards(props.selectedNode)
+  const { isNodeEditable } = usePolicyGuards(selectedNode)
 
   return (
     <>
