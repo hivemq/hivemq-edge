@@ -19,6 +19,7 @@ interface configType {
   features: {
     DEV_MOCK_SERVER: boolean
     DATAHUB_FSM_REACT_FLOW: boolean
+    WORKSPACE_EXPERIMENTAL: boolean
   }
 
   documentation: {
@@ -67,6 +68,8 @@ const config: configType = {
      * Visualise FSM using React Flow. If false, use Mermaid
      */
     DATAHUB_FSM_REACT_FLOW: import.meta.env.VITE_FLAG_DATAHUB_FSM_REACTFLOW === 'true',
+
+    WORKSPACE_EXPERIMENTAL: import.meta.env.VITE_FLAG_WORKSPACE_SHOW_EXPERIMENTAL === 'true',
   },
 
   documentation: {

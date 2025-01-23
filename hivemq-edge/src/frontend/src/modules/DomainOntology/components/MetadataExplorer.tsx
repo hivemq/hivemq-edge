@@ -18,7 +18,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   const { schema, isLoading, isError, error, refetch } = useSamplingForTopic(topic)
 
   return (
-    <Card size="sm">
+    <Card size="sm" w="100%">
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading size="md">{topic}</Heading>
         <IconButton

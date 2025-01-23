@@ -1121,5 +1121,58 @@
         "description_error": "The list of Topic Filters could not be updated on the Edge"
       }
     }
+  },
+  "ontology": {
+    "panel": {
+      "about": "About",
+      "cluster": "Workspace Cluster",
+      "wheel": "Concept Wheel",
+      "chord": "Relation Chords",
+      "sankey": "Concept Flow",
+      "edge-blunting": "Topology Diagram (*)"
+    },
+    "charts": {
+      "cluster": {
+        "title": "About Workspace Clustering",
+        "help": [
+          "This interactive graph simulates how the workspace can be automatically organised according to a list of dynamic properties",
+          "Use the configuration to define partition keys"
+        ],
+        "configuration": {
+          "header": "Configuration",
+          "title": "Grouping rules",
+          "description": "Group adapters, bridges and devices using a combination of the following rules",
+          "cta": {
+            "add": "Add a group",
+            "config": "Configuration",
+            "submit": "Submit"
+          }
+        }
+      },
+      "conceptWheel": {
+        "title": "About the Concept Wheel",
+        "help": [
+          "This interactive graph shows all the concepts being manipulated by this Edge instance.",
+          "Topics (and topic filters) and tags are distributed on a expanding circular tree, showing co-location and namespacing.",
+          "Note that visualisation is only effective if you are using segments for your naming convention.",
+          "Select segment from the wheel to access meta-information about the concept, especially their schema."
+        ]
+      },
+      "relationChord": {
+        "title": "About the Relation Chords diagram"
+      },
+      "relationSankey": {
+        "title": "About the Concept Flow diagram"
+      }
+    },
+    "error": {
+      "loading": "Error while loading the data",
+      "noDataLoaded": "No data created in your Edge",
+      "noTopicLoaded": "No topic created in your Edge",
+      "noTagLoaded": "No tag created in your Edge",
+      "cluster": {
+        "noGrouping": "No data"
+      }
+    }
   }
 }

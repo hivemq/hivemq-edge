@@ -35,7 +35,7 @@ const CenteredMetric: FC<SunburstCustomLayerProps<unknown>> = ({ centerX, center
   return (
     <>
       <text x={centerX} y={centerY} textAnchor="middle" dominantBaseline="central">
-        {t('branding.appName')}
+        {t('ontology.error.cluster.noGrouping')}
       </text>
     </>
   )

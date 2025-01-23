@@ -1,4 +1,4 @@
-import MetadataExplorer from '@/modules/Workspace/components/topics/MetadataExplorer.tsx'
+import MetadataExplorer from '@/modules/DomainOntology/components/MetadataExplorer.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 describe('MetadataExplorer', () => {
