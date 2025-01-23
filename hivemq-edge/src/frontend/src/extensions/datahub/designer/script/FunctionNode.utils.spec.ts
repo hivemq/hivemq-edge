@@ -123,7 +123,7 @@ describe('loadScripts', () => {
       },
     ]
 
-    expect(loadScripts(node, policyOperations, scripts)).toStrictEqual<(NodeAddChange | Connection)[]>([
+    expect(loadScripts(node, 0, policyOperations, scripts)).toStrictEqual<(NodeAddChange | Connection)[]>([
       expect.objectContaining<NodeAddChange>({
         item: {
           data: {
@@ -134,8 +134,8 @@ describe('loadScripts', () => {
           },
           id: 'script1',
           position: {
-            x: 0,
-            y: -400,
+            x: -320,
+            y: 0,
           },
           type: DataHubNodeType.FUNCTION,
         },
@@ -156,6 +156,6 @@ describe('loadScripts', () => {
         arguments: {},
       },
     ]
-    expect(() => loadScripts(node, policyOperations, scripts)).toThrow('Cannot find the JS Function node')
+    expect(() => loadScripts(node, 0, policyOperations, scripts)).toThrow('Cannot find the JS Function node')
   })
 })
