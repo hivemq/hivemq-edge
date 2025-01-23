@@ -176,7 +176,7 @@
       },
       "draft": {
         "status_DRAFT": "Draft",
-        "status_LOADED": "Locked",
+        "status_LOADED": "Loaded",
         "status_MODIFIED": "Modified",
         "status_READ_ONLY": "Read-only"
       }
