@@ -32,6 +32,7 @@ import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.util.EnvVarUtil;
+import com.hivemq.util.FileFragmentUtil;
 import com.hivemq.util.ThreadFactoryUtil;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -63,13 +64,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -91,6 +91,7 @@ public class ConfigFileReaderWriter {
     private boolean defaultBackupConfig = true;
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
     private final @NotNull List<Configurator<?>> configurators;
+    private final @NotNull Map<Path, Long> fragmentToModificationTime = new ConcurrentHashMap<>();
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
@@ -125,13 +126,13 @@ public class ConfigFileReaderWriter {
         final long interval = (checkIntervalInMs > 0) ? checkIntervalInMs : 0;
         log.info("Rereading config file every {} ms", interval);
 
-        final @NotNull AtomicLong fileModified = new AtomicLong();
-        final @NotNull Map<Path, Long> fileModificationTimestamps;
+        final AtomicLong fileModified = new AtomicLong();
+        final Map<Path, Long> fileModificationTimestamps;
 
-        HiveMQConfigEntity entity = applyConfig();
+        final HiveMQConfigEntity entity = applyConfig();
         fileModificationTimestamps = findFilesToWatch(entity);
 
-        AtomicLong fileModifiedTimestamp = new AtomicLong();
+        final AtomicLong fileModifiedTimestamp = new AtomicLong();
         try {
             fileModifiedTimestamp.set(Files.getLastModifiedTime(configFile.toPath()).toMillis());
         } catch (IOException e) {
@@ -148,9 +149,9 @@ public class ConfigFileReaderWriter {
     }
 
     private void checkMonitoredFilesForChanges(
-            File configFile,
-            @NotNull AtomicLong fileModified,
-            @NotNull Map<Path, Long> fileModificationTimestamps) {
+            final File configFile,
+            final @NotNull AtomicLong fileModified,
+            final @NotNull Map<Path, Long> fileModificationTimestamps) {
         try {
             final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
             if (modified > fileModified.get()) {
@@ -159,7 +160,10 @@ public class ConfigFileReaderWriter {
                 final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
                 this.configEntity = hiveMQConfigEntity;
                 if(!devmode) {
-                    fileModificationTimestamps.entrySet().forEach(pathToTs -> {
+                    final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
+
+                    pathsToCheck.putAll(fileModificationTimestamps);
+                    pathsToCheck.entrySet().forEach(pathToTs -> {
                         try {
                             if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
                                 log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
@@ -367,6 +371,10 @@ public class ConfigFileReaderWriter {
 
                 //replace environment variable placeholders
                 String configFileContent = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
+                final FileFragmentUtil.FragmentResult fragmentResult = FileFragmentUtil.replaceFragmentPlaceHolders(configFileContent);
+                fragmentToModificationTime.putAll(fragmentResult.getFragmentToModificationTime());
+
+                configFileContent = fragmentResult.getRenderResult(); //must happen before env rendering so templates can be used with envs
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
@@ -377,6 +385,7 @@ public class ConfigFileReaderWriter {
                         validationErrors.add(e);
                     }
                     return true;
+
                 });
 
                 final JAXBElement<? extends HiveMQConfigEntity> result =

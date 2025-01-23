@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Singleton;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +29,6 @@ import java.util.regex.Pattern;
  *
  * @author Christoph Schäbel
  */
-@Singleton
 public class EnvVarUtil {
 
     private static final Logger log = LoggerFactory.getLogger(EnvVarUtil.class);
@@ -55,7 +53,7 @@ public class EnvVarUtil {
     }
 
     /**
-     * Replaces placeholders like '${VAR_NAME}' and '${ENV:VAR_NAME}' with the according environment variables.
+     * Replaces placeholders like '${ENV:VAR_NAME}' with the according environment variables.
      *
      * @param text the text which contains placeholders (or not)
      * @return the text with all the placeholders replaced
