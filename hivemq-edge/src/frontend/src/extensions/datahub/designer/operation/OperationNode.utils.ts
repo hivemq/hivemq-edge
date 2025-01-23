@@ -338,24 +338,24 @@ export const loadPipeline = (
             },
           }
 
-          const items = functions.length + 2
+          const nbItems = functions.length + 2
 
           const deserialisers = loadSchema(
             operationNode,
             OperationData.Handle.DESERIALISER,
-            CANVAS_POSITION.SchemaOperation.y,
+            1,
             deserializer.arguments as SchemaReference,
             schemas
           )
           const serialisers = loadSchema(
             operationNode,
             OperationData.Handle.SERIALISER,
-            CANVAS_POSITION.SchemaOperation.y * items,
+            nbItems,
             policyOperation.arguments as SchemaReference,
             schemas
           )
 
-          const allScripts = loadScripts(operationNode, CANVAS_POSITION.SchemaOperation.y, functions, scripts)
+          const allScripts = loadScripts(operationNode, 2, functions, scripts)
           newNodes.push(...deserialisers)
           newNodes.push(...serialisers)
           newNodes.push(...allScripts)

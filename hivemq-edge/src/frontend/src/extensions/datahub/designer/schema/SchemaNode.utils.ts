@@ -114,7 +114,7 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
 export function loadSchema(
   parentNode: Node<DataHubNodeData>,
   targetHandle: string | null,
-  positionDeltaX: number,
+  positionInGroup: number,
   schemaRef: SchemaReference,
   schemas: PolicySchema[]
 ): (NodeAddChange | Connection)[] {
@@ -128,7 +128,7 @@ export function loadSchema(
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + CANVAS_POSITION.PolicySchema.x,
-        y: parentNode.position.y + positionDeltaX,
+        y: parentNode.position.y + positionInGroup * CANVAS_POSITION.SchemaOperation.y,
       },
       data: {
         name: schema.id,
@@ -162,7 +162,7 @@ export function loadSchema(
       id: schemaRef.schemaId,
       type: DataHubNodeType.SCHEMA,
       position: {
-        x: parentNode.position.x + positionDeltaX,
+        x: parentNode.position.x + positionInGroup,
         y: parentNode.position.y + CANVAS_POSITION.PolicySchema.y,
       },
       data: {
