@@ -80,12 +80,12 @@ public class EnvVarUtilTest {
         setTempEnvVars(Map.of("VALUE1", "value$1", "VALUE2", "2", "VALUE3", "value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}"));
 
         final String testString =
-                "<test1><test2 id=\"VALUE1\"><test3>${ENV:VALUE1}</test3><test4>${ENV:VALUE2}</test4><test5>${ENV:VALUE3}</test5></test2></test1>";
+                "<test1><test2 id=\"VALUE1\"><test3>${ENV:VALUE1}${FRAGMENT:FRAGGY}</test3><test4>${ENV:VALUE2}</test4><test5>${ENV:VALUE3}</test5></test2></test1>";
 
         final String result = EnvVarUtil.replaceEnvironmentVariablePlaceholders(testString);
 
         final String expected =
-                "<test1><test2 id=\"VALUE1\"><test3>value$1</test3><test4>2</test4><test5>value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}</test5></test2></test1>";
+                "<test1><test2 id=\"VALUE1\"><test3>value$1${FRAGMENT:FRAGGY}</test3><test4>2</test4><test5>value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}</test5></test2></test1>";
 
         assertEquals(expected, result);
     }
