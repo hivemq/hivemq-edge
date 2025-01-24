@@ -22,6 +22,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import java.util.Objects;
+
 import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
 
 /**
@@ -66,5 +68,26 @@ public class RestrictionsEntity {
 
     public long getNoConnectIdleTimeout() {
         return noConnectIdleTimeout;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final RestrictionsEntity that = (RestrictionsEntity) o;
+        return Objects.equals(getMaxConnections(), that.getMaxConnections()) &&
+                Objects.equals(getMaxClientIdLength(), that.getMaxClientIdLength()) &&
+                Objects.equals(getMaxTopicLength(), that.getMaxTopicLength()) &&
+                Objects.equals(getNoConnectIdleTimeout(), that.getNoConnectIdleTimeout()) &&
+                Objects.equals(getIncomingBandwidthThrottling(), that.getIncomingBandwidthThrottling());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMaxConnections(),
+                getMaxClientIdLength(),
+                getMaxTopicLength(),
+                getNoConnectIdleTimeout(),
+                getIncomingBandwidthThrottling());
     }
 }

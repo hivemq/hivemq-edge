@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -52,5 +53,21 @@ public abstract class ListenerEntity {
 
     public @Nullable String getExternalHostname() {
         return externalHostname;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ListenerEntity that = (ListenerEntity) o;
+        return getPort() == that.getPort() &&
+                Objects.equals(getBindAddress(), that.getBindAddress()) &&
+                Objects.equals(getName(), that.getName()) &&
+                Objects.equals(getExternalHostname(), that.getExternalHostname());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPort(), getBindAddress(), getName(), getExternalHostname());
     }
 }

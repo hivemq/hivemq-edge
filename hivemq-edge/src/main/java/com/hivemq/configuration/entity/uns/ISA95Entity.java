@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -90,5 +91,28 @@ public class ISA95Entity extends DisabledEntity {
 
     public void setWorkCell(final String workCell) {
         this.workCell = workCell;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ISA95Entity that = (ISA95Entity) o;
+        return isPrefixAllTopics() == that.isPrefixAllTopics() &&
+                Objects.equals(getEnterprise(), that.getEnterprise()) &&
+                Objects.equals(getSite(), that.getSite()) &&
+                Objects.equals(getArea(), that.getArea()) &&
+                Objects.equals(getProductionLine(), that.getProductionLine()) &&
+                Objects.equals(getWorkCell(), that.getWorkCell());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isPrefixAllTopics(),
+                getEnterprise(),
+                getSite(),
+                getArea(),
+                getProductionLine(),
+                getWorkCell());
     }
 }

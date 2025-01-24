@@ -16,10 +16,14 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import org.apache.commons.lang3.builder.ReflectionDiffBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 public interface Configurator <T>{
+    Logger log = LoggerFactory.getLogger(Configurator.class);
+
     enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART}
 
     ConfigResult setConfig(HiveMQConfigEntity config);
@@ -28,9 +32,10 @@ public interface Configurator <T>{
 
     default boolean hasChanged(final T originalConfig, final T newConfig) {
         if ((originalConfig != null && newConfig == null) || (originalConfig == null && newConfig != null)) {
+            log.error( "{} has changed {} {}", originalConfig.getClass().getSimpleName(), originalConfig == null, newConfig == null);
             return true;
         }
-        return new ReflectionDiffBuilder<>(originalConfig, newConfig, ToStringStyle.SHORT_PREFIX_STYLE)
-                .build().getDiffs().isEmpty();
+
+        return !Objects.equals(originalConfig, newConfig);
     }
 }

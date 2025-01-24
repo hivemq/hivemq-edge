@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -43,5 +44,18 @@ public class MqttsnPredefinedTopicAliasEntity {
 
     public String getTopicName() {
         return topicName;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MqttsnPredefinedTopicAliasEntity that = (MqttsnPredefinedTopicAliasEntity) o;
+        return getAlias() == that.getAlias() && Objects.equals(getTopicName(), that.getTopicName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopicName(), getAlias());
     }
 }

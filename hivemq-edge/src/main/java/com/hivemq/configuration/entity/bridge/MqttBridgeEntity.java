@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -99,5 +100,28 @@ public class MqttBridgeEntity {
 
     public void setPersist(final boolean persist) {
         this.persist = persist;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MqttBridgeEntity that = (MqttBridgeEntity) o;
+        return getPersist() == that.getPersist() &&
+                Objects.equals(getId(), that.getId()) &&
+                Objects.equals(getRemoteBroker(), that.getRemoteBroker()) &&
+                Objects.equals(getRemoteSubscriptions(), that.getRemoteSubscriptions()) &&
+                Objects.equals(getForwardedTopics(), that.getForwardedTopics()) &&
+                Objects.equals(getLoopPrevention(), that.getLoopPrevention());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(),
+                getRemoteBroker(),
+                getRemoteSubscriptions(),
+                getForwardedTopics(),
+                getLoopPrevention(),
+                getPersist());
     }
 }

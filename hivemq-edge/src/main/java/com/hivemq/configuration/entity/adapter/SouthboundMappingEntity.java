@@ -24,6 +24,7 @@ import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class SouthboundMappingEntity {
@@ -94,4 +95,19 @@ public class SouthboundMappingEntity {
                 southboundMapping.getSchema());
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SouthboundMappingEntity that = (SouthboundMappingEntity) o;
+        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                Objects.equals(fieldMapping, that.fieldMapping) &&
+                Objects.equals(fromNorthSchema, that.fromNorthSchema);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopicFilter(), getTagName(), fieldMapping, fromNorthSchema);
+    }
 }

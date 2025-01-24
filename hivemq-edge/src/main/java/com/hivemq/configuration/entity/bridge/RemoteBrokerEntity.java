@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.*;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "remote-broker")
@@ -89,5 +90,23 @@ public class RemoteBrokerEntity {
 
     public void setTls(final BridgeTlsEntity tls) {
         this.tls = tls;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final RemoteBrokerEntity that = (RemoteBrokerEntity) o;
+        return getPort() == that.getPort() &&
+                Objects.equals(getHost(), that.getHost()) &&
+                Objects.equals(getMqtt(), that.getMqtt()) &&
+                Objects.equals(getAuthentication(), that.getAuthentication()) &&
+                Objects.equals(getBridgeWebsocketConfig(), that.getBridgeWebsocketConfig()) &&
+                Objects.equals(getTls(), that.getTls());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPort(), getHost(), getMqtt(), getAuthentication(), getBridgeWebsocketConfig(), getTls());
     }
 }

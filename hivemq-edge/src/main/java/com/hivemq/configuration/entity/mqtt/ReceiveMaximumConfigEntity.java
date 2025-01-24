@@ -19,6 +19,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -34,5 +35,18 @@ public class ReceiveMaximumConfigEntity {
 
     public int getServerReceiveMaximum() {
         return serverReceiveMaximum;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ReceiveMaximumConfigEntity that = (ReceiveMaximumConfigEntity) o;
+        return getServerReceiveMaximum() == that.getServerReceiveMaximum();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getServerReceiveMaximum());
     }
 }

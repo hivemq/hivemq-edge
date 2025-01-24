@@ -201,4 +201,47 @@ public class HiveMQConfigEntity {
     public int getVersion() {
         return version;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final HiveMQConfigEntity that = (HiveMQConfigEntity) o;
+        return getVersion() == that.getVersion() &&
+                Objects.equals(mqttListeners, that.mqttListeners) &&
+                Objects.equals(mqttsnListeners, that.mqttsnListeners) &&
+                Objects.equals(mqtt, that.mqtt) &&
+                Objects.equals(mqttsn, that.mqttsn) &&
+                Objects.equals(restrictions, that.restrictions) &&
+                Objects.equals(security, that.security) &&
+                Objects.equals(persistence, that.persistence) &&
+                Objects.equals(mqttBridges, that.mqttBridges) &&
+                Objects.equals(api, that.api) &&
+                Objects.equals(getUns(), that.getUns()) &&
+                Objects.equals(gateway, that.gateway) &&
+                Objects.equals(getUsageTracking(), that.getUsageTracking()) &&
+                Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig()) &&
+                Objects.equals(getModuleConfigs(), that.getModuleConfigs()) &&
+                Objects.equals(getInternal(), that.getInternal());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getVersion(),
+                mqttListeners,
+                mqttsnListeners,
+                mqtt,
+                mqttsn,
+                restrictions,
+                security,
+                persistence,
+                mqttBridges,
+                api,
+                getUns(),
+                gateway,
+                getUsageTracking(),
+                getProtocolAdapterConfig(),
+                getModuleConfigs(),
+                getInternal());
+    }
 }
