@@ -28,13 +28,13 @@ public class DomainTag {
 
     private final @NotNull String tagName;
     private final @NotNull String adapterId;
-    private final @NotNull String description;
+    private final @Nullable String description;
     private final @NotNull JsonNode definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
-            final @NotNull String description,
+            final @Nullable String description,
             final @NotNull JsonNode definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
@@ -46,7 +46,8 @@ public class DomainTag {
             final @NotNull com.hivemq.edge.api.model.DomainTag domainTag,
             final @NotNull String adapterId,
             final @NotNull ObjectMapper objectMapper) {
-        return new DomainTag(domainTag.getName(),
+        return new DomainTag(
+                domainTag.getName(),
                 adapterId,
                 domainTag.getDescription(),
                 objectMapper.valueToTree(domainTag.getDefinition()));
@@ -75,7 +76,7 @@ public class DomainTag {
     }
 
     public @NotNull Map<String, Object> toTagMap() {
-        return Map.of("name", tagName, "description", description, "definition", definition);
+        return Map.of("name", tagName, "description", description != null ? description : "", "definition", definition);
     }
 
     // only tag is used as duplicates based on this field are not allowed.
