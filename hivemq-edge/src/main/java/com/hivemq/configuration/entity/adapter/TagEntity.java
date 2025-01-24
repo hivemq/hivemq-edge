@@ -25,6 +25,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class TagEntity {
 
@@ -82,5 +83,20 @@ public class TagEntity {
         map.put("description", description);
         map.put("definition", definition);
         return map;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final TagEntity tagEntity = (TagEntity) o;
+        return Objects.equals(getName(), tagEntity.getName()) &&
+                Objects.equals(getDescription(), tagEntity.getDescription()) &&
+                Objects.equals(getDefinition(), tagEntity.getDefinition());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getDescription(), getDefinition());
     }
 }

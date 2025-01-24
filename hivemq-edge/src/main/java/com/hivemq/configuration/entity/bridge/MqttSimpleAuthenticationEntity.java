@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlRootElement(name = "mqtt-simple-authentication")
@@ -46,5 +47,18 @@ public class MqttSimpleAuthenticationEntity {
 
     public void setPassword(final String password) {
         this.password = password;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MqttSimpleAuthenticationEntity that = (MqttSimpleAuthenticationEntity) o;
+        return Objects.equals(getUser(), that.getUser()) && Objects.equals(getPassword(), that.getPassword());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getUser(), getPassword());
     }
 }

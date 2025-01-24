@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -65,5 +66,22 @@ public class AdminApiEntity extends EnabledEntity {
 
     public ApiTlsEntity getTls() {
         return tls;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final AdminApiEntity that = (AdminApiEntity) o;
+        return Objects.equals(getListeners(), that.getListeners()) &&
+                Objects.equals(getTls(), that.getTls()) &&
+                Objects.equals(getJws(), that.getJws()) &&
+                Objects.equals(getUsers(), that.getUsers());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getListeners(), getTls(), getJws(), getUsers());
     }
 }

@@ -28,6 +28,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "websocket")
@@ -65,5 +66,20 @@ public class BridgeWebsocketConfigurationEntity {
 
     public void setSubProtocol(final @NotNull String subProtocol) {
         this.subProtocol = subProtocol;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BridgeWebsocketConfigurationEntity that = (BridgeWebsocketConfigurationEntity) o;
+        return isEnabled() == that.isEnabled() &&
+                Objects.equals(getServerPath(), that.getServerPath()) &&
+                Objects.equals(getSubProtocol(), that.getSubProtocol());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isEnabled(), getServerPath(), getSubProtocol());
     }
 }

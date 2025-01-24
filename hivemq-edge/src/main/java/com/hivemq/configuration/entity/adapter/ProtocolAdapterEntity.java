@@ -159,5 +159,28 @@ public class ProtocolAdapterEntity {
                 tagEntities);
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ProtocolAdapterEntity that = (ProtocolAdapterEntity) o;
+        return Objects.equals(getAdapterId(), that.getAdapterId()) &&
+                Objects.equals(getProtocolId(), that.getProtocolId()) &&
+                Objects.equals(getConfigVersion(), that.getConfigVersion()) &&
+                Objects.equals(getConfig(), that.getConfig()) &&
+                Objects.equals(getTags(), that.getTags()) &&
+                Objects.equals(getSouthboundMappingEntities(), that.getSouthboundMappingEntities()) &&
+                Objects.equals(getNorthboundMappingEntities(), that.getNorthboundMappingEntities());
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getAdapterId(),
+                getProtocolId(),
+                getConfigVersion(),
+                getConfig(),
+                getTags(),
+                getSouthboundMappingEntities(),
+                getNorthboundMappingEntities());
+    }
 }

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 public class MqttUserPropertyEntity {
 
@@ -56,28 +57,20 @@ public class MqttUserPropertyEntity {
     }
 
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final MqttUserPropertyEntity that = (MqttUserPropertyEntity) o;
-        return name.equals(that.name) && value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + value.hashCode();
-        return result;
-    }
-
-    @Override
     public @NotNull String toString() {
         return "MqttUserProperty{" + "name='" + name + '\'' + ", value='" + value + '\'' + '}';
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MqttUserPropertyEntity that = (MqttUserPropertyEntity) o;
+        return Objects.equals(getName(), that.getName()) && Objects.equals(getValue(), that.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getValue());
+    }
 }

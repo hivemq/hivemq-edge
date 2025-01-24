@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Georg Held
@@ -61,5 +62,20 @@ public class KeystoreEntity {
 
     public void setPrivateKeyPassword(final String privateKeyPassword) {
         this.privateKeyPassword = privateKeyPassword;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final KeystoreEntity that = (KeystoreEntity) o;
+        return Objects.equals(getPath(), that.getPath()) &&
+                Objects.equals(getPassword(), that.getPassword()) &&
+                Objects.equals(getPrivateKeyPassword(), that.getPrivateKeyPassword());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPath(), getPassword(), getPrivateKeyPassword());
     }
 }

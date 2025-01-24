@@ -82,6 +82,9 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     @Override
     public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
         final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
+        if(listeners.equals(configEntity)) {
+            return ConfigResult.NO_OP;
+        }
         this.configEntity = listeners;
         this.initialized = true;
 
@@ -283,6 +286,20 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         public Listeners(final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
             this.mqttListeners = mqttListeners;
             this.mqttsnListeners = mqttsnListeners;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final Listeners listeners = (Listeners) o;
+            return Objects.equals(mqttListeners, listeners.mqttListeners) &&
+                    Objects.equals(mqttsnListeners, listeners.mqttsnListeners);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mqttListeners, mqttsnListeners);
         }
     }
 }

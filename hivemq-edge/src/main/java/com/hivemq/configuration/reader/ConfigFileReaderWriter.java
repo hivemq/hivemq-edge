@@ -131,7 +131,6 @@ public class ConfigFileReaderWriter {
 
         final HiveMQConfigEntity entity = applyConfig();
         fileModificationTimestamps = findFilesToWatch(entity);
-
         final AtomicLong fileModifiedTimestamp = new AtomicLong();
         try {
             fileModifiedTimestamp.set(Files.getLastModifiedTime(configFile.toPath()).toMillis());
@@ -153,27 +152,28 @@ public class ConfigFileReaderWriter {
             final @NotNull AtomicLong fileModified,
             final @NotNull Map<Path, Long> fileModificationTimestamps) {
         try {
+            final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
+
+            if(!devmode) {
+                final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
+
+                pathsToCheck.putAll(fileModificationTimestamps);
+                pathsToCheck.entrySet().forEach(pathToTs -> {
+                    try {
+                        if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
+                            log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                            System.exit(0);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
+                    }
+                });
+            }
             final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
             if (modified > fileModified.get()) {
                 fileModified.set(modified);
                 final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
-                final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
                 this.configEntity = hiveMQConfigEntity;
-                if(!devmode) {
-                    final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
-
-                    pathsToCheck.putAll(fileModificationTimestamps);
-                    pathsToCheck.entrySet().forEach(pathToTs -> {
-                        try {
-                            if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
-                                log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
-                                System.exit(0);
-                            }
-                        } catch (IOException e) {
-                            throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
-                        }
-                    });
-                }
                 if(!setConfiguration(hiveMQConfigEntity)) {
                     if(!devmode) {
                         log.error("Restarting because new config can't be hot-reloaded");
@@ -395,7 +395,7 @@ public class ConfigFileReaderWriter {
                     throw new JAXBException("Parsing failed");
                 }
 
-                HiveMQConfigEntity configEntity = result.getValue();
+                final HiveMQConfigEntity configEntity = result.getValue();
 
                 if (configEntity == null) {
                     throw new JAXBException("Result is null");
@@ -441,8 +441,11 @@ public class ConfigFileReaderWriter {
 
     boolean setConfiguration(final @NotNull HiveMQConfigEntity config) {
 
-        List<String> requiresRestart =
-                configurators.stream().filter(c -> c.needsRestartWithConfig(config)).map(c -> c.getClass().getSimpleName()).collect(Collectors.toList());
+        final List<String> requiresRestart =
+                configurators.stream()
+                        .filter(c -> c.needsRestartWithConfig(config))
+                        .map(c -> c.getClass().getSimpleName())
+                        .collect(Collectors.toList());
 
         if (requiresRestart.isEmpty()) {
             log.debug("Config can be applied");

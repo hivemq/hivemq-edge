@@ -28,6 +28,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class NorthboundMappingEntity {
@@ -204,5 +205,32 @@ public class NorthboundMappingEntity {
                 ctx.getIncludeTimestamp(),
                 mqttUserProperties,
                 ctx.getMessageExpiryInterval());
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final NorthboundMappingEntity that = (NorthboundMappingEntity) o;
+        return getMaxQoS() == that.getMaxQoS() &&
+                isIncludeTagNames() == that.isIncludeTagNames() &&
+                isIncludeTimestamp() == that.isIncludeTimestamp() &&
+                getMessageExpiryInterval() == that.getMessageExpiryInterval() &&
+                Objects.equals(getTopic(), that.getTopic()) &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                getMessageHandlingOptions() == that.getMessageHandlingOptions() &&
+                Objects.equals(getUserProperties(), that.getUserProperties());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopic(),
+                getTagName(),
+                getMaxQoS(),
+                getMessageHandlingOptions(),
+                isIncludeTagNames(),
+                isIncludeTimestamp(),
+                getUserProperties(),
+                getMessageExpiryInterval());
     }
 }

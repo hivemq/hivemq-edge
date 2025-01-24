@@ -18,6 +18,7 @@ package com.hivemq.configuration.entity;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.*;
+import java.util.Objects;
 
 /**
  * @author Lukas Brandl
@@ -53,5 +54,16 @@ public class PersistenceEntity {
         return mode;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final PersistenceEntity that = (PersistenceEntity) o;
+        return getMode() == that.getMode();
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getMode());
+    }
 }

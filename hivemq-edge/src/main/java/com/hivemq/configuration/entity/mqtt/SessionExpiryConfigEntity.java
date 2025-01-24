@@ -20,6 +20,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import java.util.Objects;
+
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 
 /**
@@ -37,5 +39,18 @@ public class SessionExpiryConfigEntity {
 
     public long getMaxInterval() {
         return maxInterval;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SessionExpiryConfigEntity that = (SessionExpiryConfigEntity) o;
+        return getMaxInterval() == that.getMaxInterval();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getMaxInterval());
     }
 }

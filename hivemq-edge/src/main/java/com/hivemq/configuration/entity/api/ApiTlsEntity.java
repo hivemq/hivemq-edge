@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -59,4 +60,18 @@ public class ApiTlsEntity {
         return cipherSuites;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ApiTlsEntity that = (ApiTlsEntity) o;
+        return Objects.equals(getKeystoreEntity(), that.getKeystoreEntity()) &&
+                Objects.equals(getProtocols(), that.getProtocols()) &&
+                Objects.equals(getCipherSuites(), that.getCipherSuites());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getKeystoreEntity(), getProtocols(), getCipherSuites());
+    }
 }

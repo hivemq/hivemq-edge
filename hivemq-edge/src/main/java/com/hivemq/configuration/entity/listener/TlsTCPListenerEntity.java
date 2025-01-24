@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Dominik Obermaier
@@ -36,5 +37,19 @@ public class TlsTCPListenerEntity extends ListenerEntity {
 
     public @Nullable TLSEntity getTls() {
         return tls;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final TlsTCPListenerEntity that = (TlsTCPListenerEntity) o;
+        return Objects.equals(getTls(), that.getTls());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getTls());
     }
 }

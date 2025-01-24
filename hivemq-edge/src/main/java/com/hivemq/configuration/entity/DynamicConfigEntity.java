@@ -19,6 +19,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -40,5 +41,19 @@ public class DynamicConfigEntity {
 
     public boolean isMutableConfigurationEnabled() {
         return mutableConfigurationEnabled;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final DynamicConfigEntity that = (DynamicConfigEntity) o;
+        return isConfigurationExportEnabled() == that.isConfigurationExportEnabled() &&
+                isMutableConfigurationEnabled() == that.isMutableConfigurationEnabled();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isConfigurationExportEnabled(), isMutableConfigurationEnabled());
     }
 }

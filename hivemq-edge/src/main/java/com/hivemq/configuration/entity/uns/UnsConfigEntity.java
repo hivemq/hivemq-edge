@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -35,4 +36,16 @@ public class UnsConfigEntity {
 
     public @NotNull ISA95Entity getIsa95() { return isa95; }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final UnsConfigEntity that = (UnsConfigEntity) o;
+        return Objects.equals(getIsa95(), that.getIsa95());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getIsa95());
+    }
 }

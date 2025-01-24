@@ -19,6 +19,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "resource-path")
@@ -37,5 +38,18 @@ public class ResourcePath {
 
     public String getUri() {
         return uri;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ResourcePath that = (ResourcePath) o;
+        return Objects.equals(getPath(), that.getPath()) && Objects.equals(getUri(), that.getUri());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPath(), getUri());
     }
 }

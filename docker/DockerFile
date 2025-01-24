@@ -43,6 +43,7 @@ RUN set -x \
 
 COPY --from=unpack /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION} /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}
 COPY config.xml /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf/config.xml
+COPY config-k8s.xml /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf-k8s/config.xml
 COPY docker-entrypoint.sh /opt/docker-entrypoint.sh
 
 RUN ln -s /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION} /opt/hivemq \
@@ -50,6 +51,8 @@ RUN ln -s /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION} /opt/hivemq \
     && useradd -g hivemq -d /opt/hivemq -s /bin/bash --uid ${HIVEMQ_UID} hivemq \
     && chgrp 0 /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf/config.xml \
     && chmod 770 /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf/config.xml \
+    && chgrp 0 /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf-k8s/config.xml \
+    && chmod 770 /opt/hivemq-edge-${HIVEMQ_EDGE_VERSION}/conf-k8s/config.xml \
     && chgrp 0 /opt/hivemq \
     && chmod 770 /opt/hivemq \
     && chmod +x /opt/hivemq/bin/run.sh /opt/docker-entrypoint.sh

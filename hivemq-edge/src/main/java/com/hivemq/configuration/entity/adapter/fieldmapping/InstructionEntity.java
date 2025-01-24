@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 
 import javax.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 public class InstructionEntity {
 
@@ -53,5 +54,19 @@ public class InstructionEntity {
 
     public @NotNull Instruction to() {
         return new Instruction(getSourceFieldName(), getDestinationFieldName());
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final InstructionEntity that = (InstructionEntity) o;
+        return Objects.equals(getSourceFieldName(), that.getSourceFieldName()) &&
+                Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getSourceFieldName(), getDestinationFieldName());
     }
 }

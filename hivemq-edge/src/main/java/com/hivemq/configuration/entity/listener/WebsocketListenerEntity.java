@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Dominik Obermaier
@@ -57,5 +58,21 @@ public class WebsocketListenerEntity extends ListenerEntity {
         protocols.add("mqttv3.1");
         protocols.add("mqtt");
         return protocols;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final WebsocketListenerEntity that = (WebsocketListenerEntity) o;
+        return Objects.equals(getPath(), that.getPath()) &&
+                Objects.equals(getSubprotocols(), that.getSubprotocols()) &&
+                Objects.equals(isAllowExtensions(), that.isAllowExtensions());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getPath(), getSubprotocols(), isAllowExtensions());
     }
 }

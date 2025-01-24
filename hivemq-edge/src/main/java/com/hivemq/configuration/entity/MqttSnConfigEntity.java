@@ -27,6 +27,7 @@ import org.slj.mqtt.sn.MqttsnConstants;
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -95,5 +96,34 @@ public class MqttSnConfigEntity {
 
     public int getGatewayId() {
         return gatewayId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MqttSnConfigEntity that = (MqttSnConfigEntity) o;
+        return getMaxClientIdentifierLength() == that.getMaxClientIdentifierLength() &&
+                getGatewayId() == that.getGatewayId() &&
+                Objects.equals(getPredefinedTopicAliases(), that.getPredefinedTopicAliases()) &&
+                Objects.equals(getAllowEmptyClientIdentifierEntity(), that.getAllowEmptyClientIdentifierEntity()) &&
+                Objects.equals(getDiscoveryEntity(), that.getDiscoveryEntity()) &&
+                Objects.equals(getAllowAnonymousPublishMinus1Entity(), that.getAllowAnonymousPublishMinus1Entity()) &&
+                Objects.equals(getAllowWakingPingToHijackSessionEntity(),
+                        that.getAllowWakingPingToHijackSessionEntity()) &&
+                Objects.equals(getTopicRegistrationsHeldDuringSleepEntity(),
+                        that.getTopicRegistrationsHeldDuringSleepEntity());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPredefinedTopicAliases(),
+                getAllowEmptyClientIdentifierEntity(),
+                getDiscoveryEntity(),
+                getAllowAnonymousPublishMinus1Entity(),
+                getAllowWakingPingToHijackSessionEntity(),
+                getTopicRegistrationsHeldDuringSleepEntity(),
+                getMaxClientIdentifierLength(),
+                getGatewayId());
     }
 }
