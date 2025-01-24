@@ -31,11 +31,6 @@ public interface Configurator <T>{
     boolean needsRestartWithConfig(HiveMQConfigEntity config);
 
     default boolean hasChanged(final T originalConfig, final T newConfig) {
-        if ((originalConfig != null && newConfig == null) || (originalConfig == null && newConfig != null)) {
-            log.error( "{} has changed {} {}", originalConfig.getClass().getSimpleName(), originalConfig == null, newConfig == null);
-            return true;
-        }
-
         return !Objects.equals(originalConfig, newConfig);
     }
 }
