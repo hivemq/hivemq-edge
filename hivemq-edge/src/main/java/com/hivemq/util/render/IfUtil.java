@@ -6,9 +6,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -19,8 +21,10 @@ public class IfUtil {
 
     private static final @NotNull String FRAGMENT_VAR_PATTERN = "\\$\\{IF:(.*?)}";
 
-    public static final @NotNull String HIVEMQ_HTTPS_ENABLED = "HIVEMQ_HTTPS_ENABLED";
-    public static final @NotNull String HIVEMQ_MQTTS_ENABLED = "HIVEMQ_MQTTS_ENABLED";
+    public static final @NotNull List<String> SUPPORTED_ENVS = List.of(
+            "HIVEMQ_HTTPS_ENABLED",
+            "HIVEMQ_MQTTS_ENABLED",
+            "HIVEMQ_MQTTS_CLIENTAUTH_ENABLED");
 
     /**
      * Get a Java system property or system environment variable with the specified name.
@@ -48,8 +52,9 @@ public class IfUtil {
      */
     public static @NotNull String replaceIfPlaceHolders(final @NotNull String text) {
 
-        final String mqttsBlockToActivate = Boolean.parseBoolean(getValue(HIVEMQ_MQTTS_ENABLED)) ? "HIVEMQ_MQTTS_ENABLED" : "!HIVEMQ_MQTTS_ENABLED";
-        final String httpsBlockToActivate = Boolean.parseBoolean(getValue(HIVEMQ_HTTPS_ENABLED)) ? "HIVEMQ_HTTPS_ENABLED" : "!HIVEMQ_HTTPS_ENABLED";
+        final List<String> activations = SUPPORTED_ENVS.stream()
+                .map(envName -> Boolean.parseBoolean(getValue(envName)) ? envName : "!" + envName)
+                .collect(Collectors.toList());
 
         final Matcher matcher = Pattern.compile(FRAGMENT_VAR_PATTERN)
                 .matcher(text);
@@ -70,8 +75,7 @@ public class IfUtil {
         String result = text;
         while(!matchers.empty()) {
             final IfToken closingMatch = matchers.pop();
-            final String value = closingMatch.content;
-            if (value.equals(mqttsBlockToActivate) || value.equals(httpsBlockToActivate)) {
+            if (activations.contains(closingMatch.content)) {
                 //this is an active block, just remove the placeholders
                 result = result.substring(0, closingMatch.getStart()) + result.substring(closingMatch.getStop());
                 final IfToken openingMatch = matchers.pop();

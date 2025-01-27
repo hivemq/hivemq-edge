@@ -12,20 +12,35 @@
             <port>8883</port>
             <bind-address>0.0.0.0</bind-address>
             <tls>
-                <client-authentication-mode></client-authentication-mode>
-                <prefer-server-cipher-suites></prefer-server-cipher-suites>
+                <client-authentication-mode>${ENV:HIVEMQ_MQTTS_CLIENT_AUTH_MODE}</client-authentication-mode>
+                <prefer-server-cipher-suites>${ENV:HIVEMQ_MQTTS_PREFER_SERVER_CIPHER_SUITE}</prefer-server-cipher-suites>
                 <keystore>
-                    <path></path>
-                    <password></password>
-                    <private-key-password></private-key-password>
+                    <path>${ENV:HIVEMQ_MQTTS_KEYSTORE_PATH}</path>
+                    <password>${ENV:HIVEMQ_MQTTS_KEYSTORE_PASSWORD}</password>
+                    <private-key-password>${ENV:HIVEMQ_MQTTS_PRIVATE_KEY_PASSWORD}</private-key-password>
+                </keystore>
+            </tls>
+        </tls-tcp-listener>
+        ${IF:HIVEMQ_MQTTS_ENABLED}
+        ${IF:HIVEMQ_MQTTS_CLIENTAUTH_ENABLED}
+        <tls-tcp-listener>
+            <port>8883</port>
+            <bind-address>0.0.0.0</bind-address>
+            <tls>
+                <client-authentication-mode>${ENV:HIVEMQ_MQTTS_CLIENT_AUTH_MODE}</client-authentication-mode>
+                <prefer-server-cipher-suites>${ENV:HIVEMQ_MQTTS_PREFER_SERVER_CIPHER_SUITE}</prefer-server-cipher-suites>
+                <keystore>
+                    <path>${ENV:HIVEMQ_MQTTS_KEYSTORE_PATH}</path>
+                    <password>${ENV:HIVEMQ_MQTTS_KEYSTORE_PASSWORD}</password>
+                    <private-key-password>${ENV:HIVEMQ_MQTTS_PRIVATE_KEY_PASSWORD}</private-key-password>
                 </keystore>
                 <truststore>
-                    <path></path>
-                    <password></password>
+                    <path>${ENV:HIVEMQ_MQTTS_TRUSTSTORE_PATH}</path>
+                    <password>${ENV:HIVEMQ_MQTTS_TRUSTSTORE_PASSWORD}</password>
                 </truststore>
             </tls>
         </tls-tcp-listener>
-        ${IF: HIVEMQ_MQTTS_ENABLED}
+        ${IF:HIVEMQ_MQTTS_CLIENTAUTH_ENABLED}
     </mqtt-listeners>
     <mqtt-sn-listeners>
         <udp-listener>
@@ -47,9 +62,9 @@
                 <bind-address>0.0.0.0</bind-address>
                 <port>8443</port>
                 <keystore>
-                    <path></path>
-                    <password></password>
-                    <private-key-password></private-key-password>
+                    <path>${ENV:HIVEMQ_HTTPS_KEYSTORE_PATH}</path>
+                    <password>${ENV:HIVEMQ_HTTPS_KEYSTORE_PASSWORD}</password>
+                    <private-key-password>${ENV:HIVEMQ_HTTPS_PRIVATE_KEY_PASSWORD}</private-key-password>
                 </keystore>
             </https-listener>
             ${IF:HIVEMQ_HTTPS_ENABLED}
