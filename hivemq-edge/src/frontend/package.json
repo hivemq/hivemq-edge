@@ -91,6 +91,7 @@
     "monaco-editor": "^0.47.0",
     "mqtt": "^5.10.1",
     "mqtt-match": "^3.0.0",
+    "nyc": "^17.1.0",
     "protobufjs": "^7.2.6",
     "react": "^18.2.0",
     "react-accessible-treeview": "^2.9.1",
@@ -111,6 +112,7 @@
   },
   "devDependencies": {
     "@chakra-ui/cli": "^2.4.1",
+    "@cypress/code-coverage": "^3.13.10",
     "@percy/cli": "^1.28.5",
     "@percy/cypress": "^3.1.2",
     "@tanstack/eslint-plugin-query": "^5.32.1",
@@ -150,10 +152,14 @@
     "stylelint-config-standard-scss": "^9.0.0",
     "typescript": "^5.0.4",
     "vite": "^5.2.13",
+    "vite-plugin-istanbul": "^6.0.2",
     "vitest": "^1.5.3"
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "nyc": {
+    "report-dir": "./coverage-cypress"
   },
   "engines": {
     "node": "18",
