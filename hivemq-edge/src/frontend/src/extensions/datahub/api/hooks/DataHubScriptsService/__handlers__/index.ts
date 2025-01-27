@@ -36,4 +36,20 @@ export const handlers = [
       { status: 200 }
     )
   }),
+
+  http.get('*/data-hub/scripts/:scriptid', () => {
+    return HttpResponse.json<Script>(mockScript, { status: 200 })
+  }),
+
+  http.post('*/data-hub/scripts', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.delete('*/data-hub/scripts/:scriptid', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/data-hub/scripts/:scriptid', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
 ]
