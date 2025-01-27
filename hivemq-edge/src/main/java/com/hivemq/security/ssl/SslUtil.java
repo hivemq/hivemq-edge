@@ -54,7 +54,7 @@ public final class SslUtil {
             final @NotNull String keyStorePassword,
             final @NotNull String privateKeyPassword) {
 
-        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(keyStoreType, keyStorePath).getBytes(StandardCharsets.UTF_8))) {
+        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(keyStoreType, keyStorePath))) {
             //load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
@@ -79,13 +79,13 @@ public final class SslUtil {
         }
     }
 
-    private static String loadFileContentAndConvertIfBase64Encoded(@NotNull String keyStoreType, @NotNull String keyStorePath) {
-        final String keystoreContent;
+    private static byte[] loadFileContentAndConvertIfBase64Encoded(@NotNull String keyStoreType, @NotNull String keyStorePath) {
+        final byte[] keystoreContent;
         try {
-            String loaded = Files.readString(Path.of(keyStorePath), StandardCharsets.UTF_8);
+            byte[] loaded = Files.readAllBytes(Path.of(keyStorePath));
             //in containers the keystore might arrive base64 encoded
             try {
-                loaded = new String(Base64.getDecoder().decode(loaded), StandardCharsets.UTF_8);
+                loaded = Base64.getDecoder().decode(loaded);
             } catch (IllegalArgumentException e) {
                 //ignored, just means the content isn't base64 encoded
             }
@@ -112,7 +112,7 @@ public final class SslUtil {
             final @NotNull String trustStoreType,
             final @NotNull String trustStorePath,
             final @NotNull String trustStorePassword) {
-        try (final FileInputStream fileInputStream = new FileInputStream(loadFileContentAndConvertIfBase64Encoded(trustStoreType, trustStorePath))) {
+        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(trustStoreType, trustStorePath))) {
             //load keystore from TLS config
             final KeyStore keyStoreTrust = KeyStore.getInstance(trustStoreType);
             keyStoreTrust.load(fileInputStream, trustStorePassword.toCharArray());
