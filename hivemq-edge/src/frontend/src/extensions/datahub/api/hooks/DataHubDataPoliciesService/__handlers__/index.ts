@@ -19,7 +19,20 @@ export const handlers = [
       { status: 200 }
     )
   }),
+
   http.get('*/data-hub/data-validation/policies/:policy', () => {
     return HttpResponse.json<DataPolicy>(mockDataPolicy, { status: 200 })
+  }),
+
+  http.post('*/data-hub/data-validation/policies', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.delete('*/data-hub/data-validation/policies/:policyId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/data-hub/data-validation/policies/:policyId', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]
