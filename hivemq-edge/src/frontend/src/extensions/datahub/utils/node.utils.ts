@@ -32,7 +32,6 @@ import {
   TransitionData,
 } from '../types.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
-import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CustomNodeJSONSchema } from '@datahub/config/schemas.config.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
@@ -374,15 +373,18 @@ export const isNodeHandleConnectable = (handle: ConnectableHandleProps, node: No
   return handle.isConnectable
 }
 
-export const renderResourceName = (
-  name: string | undefined,
-  version: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED | undefined,
-  t: TFunction
-) => {
+export const renderResourceName = (name: string | undefined, version: number | undefined, t: TFunction) => {
   if (!name || !version) return t('error.noSet.select', { ns: 'datahub' })
 
-  const isDraft = enumFromStringValue(ResourceStatus, version.toString())
-  const formatedVersion = !isDraft ? version : t('workspace.nodes.status', { context: version, ns: 'datahub' })
+  const getResourceNormalisedVersion = (version: number, t: TFunction) => {
+    if (version === ResourceWorkingVersion.DRAFT)
+      return t('workspace.nodes.status', { context: ResourceStatus.DRAFT, ns: 'datahub' })
+    if (version === ResourceWorkingVersion.MODIFIED)
+      return t('workspace.nodes.status', { context: ResourceStatus.MODIFIED, ns: 'datahub' })
+    return version
+  }
+
+  const formatedVersion = getResourceNormalisedVersion(version, t)
 
   return `${name}:${formatedVersion}`
 }
