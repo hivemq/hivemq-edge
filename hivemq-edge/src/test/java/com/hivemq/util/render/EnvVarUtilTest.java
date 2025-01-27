@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.util;
+package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.util.render.EnvVarUtil;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 

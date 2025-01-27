@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.util;
+package com.hivemq.util.render;
 
-import com.hivemq.util.render.FileFragmentUtil;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;

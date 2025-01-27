@@ -28,110 +28,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
-public class EnvVarUtilTest {
+public class IfUtilTest {
 
     @Test
     public void test_getValue_existing() throws Exception {
 
         final HashMap<String, String> map = new HashMap<>();
-        map.put("TEST_EXISTING_ENVVAR", "iamset");
+        map.put("HIVEMQ_MQTTS_ENABLED", "false");
         setTempEnvVars(map);
 
-        final String result = EnvVarUtil.getValue("TEST_EXISTING_ENVVAR");
+        final String testString = "${IF:HIVEMQ_MQTTS_ENABLED}hallo${IF:HIVEMQ_MQTTS_ENABLED}welt${IF:!HIVEMQ_HTTPS_ENABLED}!!!${IF:!HIVEMQ_HTTPS_ENABLED}9876543210";
 
-        assertEquals("iamset", result);
-    }
+        final String result = IfUtil.replaceIfPlaceHolders(testString);
 
-    @Test
-    public void test_getValue_existing_java_prop() throws Exception {
-
-        System.setProperty("test.existing.envvar", "iamset2");
-
-        final String result = EnvVarUtil.getValue("test.existing.envvar");
-
-        assertEquals("iamset2", result);
-    }
-
-    @Test
-    public void test_getValue_existing_both() throws Exception {
-
-        final HashMap<String, String> map = new HashMap<>();
-        map.put("test.existing.both", "iamset");
-        setTempEnvVars(map);
-
-        System.setProperty("test.existing.both", "iamset2");
-
-        final String result = EnvVarUtil.getValue("test.existing.both");
-
-        //expect System.property to win
-        assertEquals("iamset2", result);
-    }
-
-    @Test
-    public void test_getValue_non_existing() throws Exception {
-
-        final String result = EnvVarUtil.getValue("TEST_NON_EXISTING_ENVVAR");
-
-        assertNull(result);
-    }
-
-    @Test
-    public void test_replaceEnvironmentVariablePlaceholders() throws Exception {
-        setTempEnvVars(Map.of("VALUE1", "value$1", "VALUE2", "2", "VALUE3", "value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}"));
-
-        final String testString =
-                "<test1><test2 id=\"VALUE1\"><test3>${ENV:VALUE1}${FRAGMENT:FRAGGY}</test3><test4>${ENV:VALUE2}</test4><test5>${ENV:VALUE3}</test5></test2></test1>";
-
-        final String result = EnvVarUtil.replaceEnvironmentVariablePlaceholders(testString);
-
-        final String expected =
-                "<test1><test2 id=\"VALUE1\"><test3>value$1${FRAGMENT:FRAGGY}</test3><test4>2</test4><test5>value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}</test5></test2></test1>";
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    public void test_replaceEnvironmentVariablePlaceholders_withLegacyAtTheEnd_variablesReplacedCorrectly()
-            throws Exception {
-        setTempEnvVars(Map.of("VALUE1", "value$1", "VALUE2", "2", "VALUE3", "value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}"));
-
-        final String testString =
-                "<test1><test2 id=\"VALUE1\"><test3>${ENV:VALUE1}</test3><test4>${ENV:VALUE2}</test4><test5>${ENV:VALUE3}</test5></test2></test1>";
-
-        final String result = EnvVarUtil.replaceEnvironmentVariablePlaceholders(testString);
-
-        final String expected =
-                "<test1><test2 id=\"VALUE1\"><test3>value$1</test3><test4>2</test4><test5>value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}</test5></test2></test1>";
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    public void test_replaceEnvironmentVariablePlaceholders_withLegacyAtTheBeginning_variablesReplacedCorrectly()
-            throws Exception {
-        setTempEnvVars(Map.of("VALUE1", "value$1", "VALUE2", "2", "VALUE3", "value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}"));
-
-        final String testString =
-                "<test1><test2 id=\"VALUE1\"><test3>${ENV:VALUE1}</test3><test4>${ENV:VALUE2}</test4><test5>${ENV:VALUE3}</test5></test2></test1>";
-
-        final String result = EnvVarUtil.replaceEnvironmentVariablePlaceholders(testString);
-
-        final String expected =
-                "<test1><test2 id=\"VALUE1\"><test3>value$1</test3><test4>2</test4><test5>value-_/!\"\\'3!§%&/()=?`*,;.:[]|{}</test5></test2></test1>";
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    public void test_replaceEnvironmentVariablePlaceholders_unknown_varname() throws Exception {
-
-        setTempEnvVars(Map.of("VALUE1", "value"));
-
-        final String testString = "<test1>${ENV:VALUE1}</test1><test2>${ENV:VALUE2}</test2>";
-
-        assertThrows(UnrecoverableException.class, () -> {
-            EnvVarUtil.replaceEnvironmentVariablePlaceholders(testString);
-        });
+        assertEquals("welt!!!9876543210", result);
     }
 
     /**

@@ -1,10 +1,31 @@
 <?xml version="1.0"?>
 <hivemq>
     <mqtt-listeners>
+        ${IF:!HIVEMQ_MQTTS_ENABLED}
         <tcp-listener>
             <port>1883</port>
             <bind-address>0.0.0.0</bind-address>
         </tcp-listener>
+        ${IF:!HIVEMQ_MQTTS_ENABLED}
+        ${IF:HIVEMQ_MQTTS_ENABLED}
+        <tls-tcp-listener>
+            <port>8883</port>
+            <bind-address>0.0.0.0</bind-address>
+            <tls>
+                <client-authentication-mode></client-authentication-mode>
+                <prefer-server-cipher-suites></prefer-server-cipher-suites>
+                <keystore>
+                    <path></path>
+                    <password></password>
+                    <private-key-password></private-key-password>
+                </keystore>
+                <truststore>
+                    <path></path>
+                    <password></password>
+                </truststore>
+            </tls>
+        </tls-tcp-listener>
+        ${IF: HIVEMQ_MQTTS_ENABLED}
     </mqtt-listeners>
     <mqtt-sn-listeners>
         <udp-listener>
@@ -15,10 +36,23 @@
     <admin-api>
         <enabled>true</enabled>
         <listeners>
+            ${IF:!HIVEMQ_HTTPS_ENABLED}
             <http-listener>
                 <bind-address>0.0.0.0</bind-address>
                 <port>8080</port>
             </http-listener>
+            ${IF:!HIVEMQ_HTTPS_ENABLED}
+            ${IF:HIVEMQ_HTTPS_ENABLED}
+            <https-listener>
+                <bind-address>0.0.0.0</bind-address>
+                <port>8443</port>
+                <keystore>
+                    <path></path>
+                    <password></password>
+                    <private-key-password></private-key-password>
+                </keystore>
+            </https-listener>
+            ${IF:HIVEMQ_HTTPS_ENABLED}
         </listeners>
     </admin-api>
     ${FRAGMENT:/fragment/config}
