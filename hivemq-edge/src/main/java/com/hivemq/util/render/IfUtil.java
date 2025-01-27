@@ -23,6 +23,7 @@ public class IfUtil {
 
     public static final @NotNull List<String> SUPPORTED_ENVS = List.of(
             "HIVEMQ_HTTPS_ENABLED",
+            "HIVEMQ_MQTT_ENABLED",
             "HIVEMQ_MQTTS_ENABLED",
             "HIVEMQ_MQTTS_CLIENTAUTH_ENABLED");
 

@@ -22,14 +22,20 @@ import com.hivemq.security.exception.SslException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Base64;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -47,7 +53,8 @@ public final class SslUtil {
             final @NotNull String keyStorePath,
             final @NotNull String keyStorePassword,
             final @NotNull String privateKeyPassword) {
-        try (final FileInputStream fileInputStream = new FileInputStream(keyStorePath)) {
+
+        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(keyStoreType, keyStorePath).getBytes(StandardCharsets.UTF_8))) {
             //load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
@@ -72,6 +79,25 @@ public final class SslUtil {
         }
     }
 
+    private static String loadFileContentAndConvertIfBase64Encoded(@NotNull String keyStoreType, @NotNull String keyStorePath) {
+        final String keystoreContent;
+        try {
+            String loaded = Files.readString(Path.of(keyStorePath), StandardCharsets.UTF_8);
+            //in containers the keystore might arrive base64 encoded
+            try {
+                loaded = new String(Base64.getDecoder().decode(loaded), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                //ignored, just means the content isn't base64 encoded
+            }
+            keystoreContent = loaded;
+        } catch (final IOException e) {
+            throw new SslException(String.format("Not able to open or read KeyStore '%s' with type '%s'",
+                    keyStorePath,
+                    keyStoreType), e);
+        }
+        return keystoreContent;
+    }
+
     public static @Nullable TrustManagerFactory getTrustManagerFactory(final @NotNull Tls tls) throws SslException {
         return isNotBlank(tls.getTruststorePath()) &&
                 tls.getTruststoreType() != null &&
@@ -86,7 +112,7 @@ public final class SslUtil {
             final @NotNull String trustStoreType,
             final @NotNull String trustStorePath,
             final @NotNull String trustStorePassword) {
-        try (final FileInputStream fileInputStream = new FileInputStream(trustStorePath)) {
+        try (final FileInputStream fileInputStream = new FileInputStream(loadFileContentAndConvertIfBase64Encoded(trustStoreType, trustStorePath))) {
             //load keystore from TLS config
             final KeyStore keyStoreTrust = KeyStore.getInstance(trustStoreType);
             keyStoreTrust.load(fileInputStream, trustStorePassword.toCharArray());
