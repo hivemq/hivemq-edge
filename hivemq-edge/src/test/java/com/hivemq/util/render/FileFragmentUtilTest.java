@@ -15,6 +15,7 @@
  */
 package com.hivemq.util;
 
+import com.hivemq.util.render.FileFragmentUtil;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
