@@ -19,8 +19,8 @@ describe('ToolbarPublish', () => {
     cy.get('button').click()
     cy.wait('@getPolicies')
     cy.get('[role="status"] div').should('have.attr', 'data-status', 'error')
-    cy.get('[role="status"] div#toast-1-title').should('have.text', 'Error publishing Data Policy')
-    cy.get('[role="status"] div#toast-1-description').should('have.text', 'Not Found')
+    cy.get('[role="status"] div#toast-publish-error-title').should('have.text', 'Error publishing Data Policy')
+    cy.get('[role="status"] div#toast-publish-error-description').should('have.text', 'Not Found')
   })
 
   it('should handle success', () => {
@@ -31,8 +31,11 @@ describe('ToolbarPublish', () => {
     cy.get('button').click()
     cy.wait('@getPolicies')
     cy.get('[role="status"] div').should('have.attr', 'data-status', 'success')
-    cy.get('[role="status"] div#toast-2-title').should('have.text', 'Data Policy published')
-    cy.get('[role="status"] div#toast-2-description').should('have.text', "We've created a new Data Policy for you.")
+    cy.get('[role="status"] div#toast-publish-success-title').should('have.text', 'Data Policy published')
+    cy.get('[role="status"] div#toast-publish-success-description').should(
+      'have.text',
+      "We've created a new Data Policy for you."
+    )
   })
 
   it('should be accessible', () => {

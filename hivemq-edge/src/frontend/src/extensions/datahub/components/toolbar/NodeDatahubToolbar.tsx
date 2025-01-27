@@ -16,9 +16,9 @@ interface NodeToolbarProps extends ButtonGroupProps {
   selectedNode: string
 }
 
-const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, children, ...props }) => {
+const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, children, selectedNode, ...props }) => {
   const { t } = useTranslation('datahub')
-  const { isNodeEditable } = usePolicyGuards(props.selectedNode)
+  const { isNodeEditable } = usePolicyGuards(selectedNode)
 
   return (
     <>
@@ -28,7 +28,7 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ch
           <Divider orientation="vertical" />
         </>
       )}
-      <ToolbarButtonGroup orientation="horizontal" isAttached {...props}>
+      <ToolbarButtonGroup orientation="horizontal" isAttached variant="outline" {...props}>
         <IconButton
           icon={<Icon as={LuFileCog} boxSize="20px" />}
           data-testid="node-toolbar-config"
@@ -48,7 +48,6 @@ const NodeDatahubToolbar: FC<NodeToolbarProps> = ({ onCopy, onEdit, onDelete, ch
           icon={<Icon as={LuDelete} boxSize="20px" />}
           data-testid="node-toolbar-delete"
           aria-label={t('Listings.action.delete')}
-          colorScheme="red"
           onClick={onDelete}
           isDisabled={!isNodeEditable}
         />
