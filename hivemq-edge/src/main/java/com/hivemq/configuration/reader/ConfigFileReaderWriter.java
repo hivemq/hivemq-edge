@@ -377,8 +377,8 @@ public class ConfigFileReaderWriter {
                 fragmentToModificationTime.putAll(fragmentResult.getFragmentToModificationTime());
 
                 configFileContent = fragmentResult.getRenderResult(); //must happen before env rendering so templates can be used with envs
-                configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
                 configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
+                configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
                 final StreamSource streamSource = new StreamSource(is);
