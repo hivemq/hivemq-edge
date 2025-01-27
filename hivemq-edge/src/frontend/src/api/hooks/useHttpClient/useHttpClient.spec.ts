@@ -1,11 +1,10 @@
-import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { vi, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 
 import config from '@/config'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import type { AxiosHttpRequestWithInterceptors } from './useHttpClient.ts'
 import { useHttpClient } from './useHttpClient.ts'
@@ -77,12 +76,6 @@ const handlers = [
     )
   }),
 ]
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <AuthProvider>
-    <MemoryRouter>{children}</MemoryRouter>
-  </AuthProvider>
-)
 
 describe('useSpringClient', () => {
   beforeEach(() => {
