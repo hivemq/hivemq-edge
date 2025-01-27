@@ -70,6 +70,7 @@ export const ToolbarPublish: FC = () => {
       title: t('publish.internal.title', { source: selectedNode?.type }),
       description: message,
       status: 'error',
+      id: 'publish-internal',
     })
   }
 
@@ -81,6 +82,7 @@ export const ToolbarPublish: FC = () => {
           title: t('publish.success.title', { source: type || selectedNode?.type }),
           description: t('publish.success.description', { source: type || selectedNode?.type, context: status }),
           status: 'success',
+          id: 'publish-success',
         })
       })
       .catch((error) => {
@@ -92,6 +94,7 @@ export const ToolbarPublish: FC = () => {
           title: t('publish.error.title', { source: type || selectedNode?.type }),
           description: message,
           status: 'error',
+          id: 'publish-error',
         })
       })
     return promise
@@ -196,6 +199,7 @@ export const ToolbarPublish: FC = () => {
           title: t('publish.error.title', { source: DataHubNodeType.DATA_POLICY }),
           description: message.toString(),
           status: 'error',
+          id: 'publish-runtime-error',
         })
       })
   }
