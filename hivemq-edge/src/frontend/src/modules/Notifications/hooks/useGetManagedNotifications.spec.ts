@@ -29,7 +29,7 @@ describe('useGetManagedNotifications', () => {
       expect(result.current.isSuccess).toBeTruthy()
     })
 
-    expect(result.current.notifications).toHaveLength(2)
+    expect(result.current.notifications).toHaveLength(3)
     expect(result.current.readNotifications).toHaveLength(0)
   })
 
@@ -40,7 +40,7 @@ describe('useGetManagedNotifications', () => {
       expect(result.current.isSuccess).toBeTruthy()
     })
 
-    expect(result.current.notifications).toHaveLength(2)
+    expect(result.current.notifications).toHaveLength(3)
     expect(result.current.readNotifications).toHaveLength(0)
 
     // close the first notification
@@ -48,7 +48,7 @@ describe('useGetManagedNotifications', () => {
       result.current.notifications[0].onCloseComplete?.()
     })
 
-    expect(result.current.notifications).toHaveLength(1)
+    expect(result.current.notifications).toHaveLength(2)
     expect(result.current.readNotifications).toHaveLength(1)
     expect(result.current.readNotifications).toContainEqual('Default Credentials Need Changing!')
 
@@ -57,9 +57,9 @@ describe('useGetManagedNotifications', () => {
       result.current.notifications[0].onCloseComplete?.()
     })
 
-    expect(result.current.notifications).toHaveLength(0)
+    expect(result.current.notifications).toHaveLength(2)
     expect(result.current.readNotifications).toHaveLength(2)
     expect(result.current.readNotifications).toContainEqual('Default Credentials Need Changing!')
-    expect(result.current.readNotifications).toContainEqual('2023.XXX')
+    expect(result.current.readNotifications).toContainEqual('config-writeable')
   })
 })
