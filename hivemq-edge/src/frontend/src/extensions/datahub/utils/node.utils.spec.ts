@@ -25,7 +25,6 @@ import {
   DesignerStatus,
   OperationData,
   ResourceWorkingVersion,
-  ResourceStatus,
   SchemaType,
   StrategyType,
   TransitionData,
@@ -666,7 +665,7 @@ describe('getConnectedNodeFrom', () => {
 
 interface ResourceNameTest {
   name?: string
-  version?: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED
+  version?: number
   result: string
 }
 
@@ -686,8 +685,13 @@ const resourceNameTestSuite: ResourceNameTest[] = [
   },
   {
     name: 'test',
-    version: ResourceStatus.DRAFT,
+    version: ResourceWorkingVersion.DRAFT,
     result: 'test:DRAFT',
+  },
+  {
+    name: 'test',
+    version: ResourceWorkingVersion.MODIFIED,
+    result: 'test:MODIFIED',
   },
 ]
 
