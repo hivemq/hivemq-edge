@@ -31,9 +31,10 @@ import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
-import com.hivemq.util.EnvVarUtil;
-import com.hivemq.util.FileFragmentUtil;
+import com.hivemq.util.render.EnvVarUtil;
+import com.hivemq.util.render.FileFragmentUtil;
 import com.hivemq.util.ThreadFactoryUtil;
+import com.hivemq.util.render.IfUtil;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -370,12 +371,15 @@ public class ConfigFileReaderWriter {
                 }
 
                 //replace environment variable placeholders
-                String configFileContent = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
+                String configFileContent = Files.readString(configFile.toPath());
                 final FileFragmentUtil.FragmentResult fragmentResult = FileFragmentUtil.replaceFragmentPlaceHolders(configFileContent);
+
                 fragmentToModificationTime.putAll(fragmentResult.getFragmentToModificationTime());
 
                 configFileContent = fragmentResult.getRenderResult(); //must happen before env rendering so templates can be used with envs
+                configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
+
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
                 final StreamSource streamSource = new StreamSource(is);
