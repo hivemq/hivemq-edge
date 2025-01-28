@@ -8,7 +8,7 @@ describe('DraftStatus', () => {
   it('should render', () => {
     cy.mountWithProviders(<DraftStatus />)
 
-    cy.getByTestId('status-container-type').should('contain.text', 'No type')
+    cy.getByTestId('status-container-type').should('contain.text', 'Active draft')
     cy.getByTestId('status-container-name').should('contain.text', 'Unnamed policy')
     cy.getByTestId('status-container-status').should('contain.text', 'Draft')
 
