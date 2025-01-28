@@ -18,6 +18,7 @@ package com.hivemq.api.resources.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InvalidQueryParameterErrors;
 import com.hivemq.api.errors.bridge.BridgeFailedSchemaValidationError;
 import com.hivemq.api.errors.bridge.BridgeNotFoundError;
@@ -32,6 +33,7 @@ import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
@@ -68,15 +70,18 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public BridgeResourceImpl(
             final @NotNull ConfigurationService configurationService,
             final @NotNull BridgeService bridgeService,
-            final @NotNull ExecutorService executorService) {
+            final @NotNull ExecutorService executorService,
+            final @NotNull SystemInformation systemInformation) {
         this.configurationService = configurationService;
         this.bridgeService = bridgeService;
         this.executorService = executorService;
+        this.systemInformation = systemInformation;
     }
 
     @Override
@@ -93,7 +98,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
     @Override
     public @NotNull Response addBridge(final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
-
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         if (checkBridgeExists(bridge.getId())) {
             return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(List.of(new Error(
@@ -145,6 +152,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
     @Override
     public @NotNull Response removeBridge(final @NotNull String bridgeId) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
@@ -203,6 +213,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     public @NotNull Response updateBridge(
             final @NotNull String bridgeId,
             final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         validateBridge(errorMessages, bridge);

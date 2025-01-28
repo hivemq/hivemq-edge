@@ -17,6 +17,7 @@ package com.hivemq;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
+import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.HiveMQExceptionHandlerBootstrap;
 import com.hivemq.bootstrap.LoggingBootstrap;
@@ -95,6 +96,11 @@ public class HiveMQEdgeBootstrap {
     public @NotNull Injector bootstrap() throws HiveMQEdgeStartupException {
         metricRegistry.addListener(new MetricRegistryLogger());
 
+        if(systemInformation.isConfigWriteable()) {
+            capabilityService.addCapability(new Capability("config-writeable",
+                    "Config can be manipulated via the REST API",
+                    "Changes to the configuration made via the REST API are persisted back into the config.xml."));
+        }
         LoggingBootstrap.prepareLogging();
 
         // Embedded has already called init as it is required to read the config file.

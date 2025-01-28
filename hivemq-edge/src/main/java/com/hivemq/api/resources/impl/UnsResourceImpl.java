@@ -16,10 +16,12 @@
 package com.hivemq.api.resources.impl;
 
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.ValidationError;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.UnsApi;
 import com.hivemq.edge.api.model.ISA95ApiBean;
 import com.hivemq.uns.UnifiedNamespaceService;
@@ -36,11 +38,14 @@ import javax.ws.rs.core.Response;
 public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     private final @NotNull UnifiedNamespaceService unifiedNamespaceService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public UnsResourceImpl(
-            final @NotNull UnifiedNamespaceService unifiedNamespaceService) {
+            final @NotNull UnifiedNamespaceService unifiedNamespaceService,
+            final @NotNull SystemInformation systemInformation) {
         this.unifiedNamespaceService = unifiedNamespaceService;
+        this.systemInformation = systemInformation;
     }
 
     @Override
@@ -52,6 +57,9 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     @Override
     public @NotNull Response setIsa95(final @NotNull ISA95ApiBean isa95) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
 

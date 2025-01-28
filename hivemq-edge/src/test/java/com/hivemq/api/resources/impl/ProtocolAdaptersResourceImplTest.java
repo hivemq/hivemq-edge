@@ -16,6 +16,7 @@
 package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -29,6 +30,7 @@ import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Response;
@@ -56,6 +58,7 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull VersionProvider versionProvider = mock();
     private final @NotNull ProtocolAdapterConfigConverter configConverter = mock();
     private final @NotNull TopicFilterPersistence topicFilterPersistence = mock();
+    private final @NotNull SystemInformation systemInformation = mock();
 
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource =
@@ -66,7 +69,13 @@ class ProtocolAdaptersResourceImplTest {
                     objectMapper,
                     versionProvider,
                     configConverter,
-                    topicFilterPersistence);
+                    topicFilterPersistence,
+                    systemInformation);
+
+    @BeforeEach
+    public void setUp() {
+        when(systemInformation.isConfigWriteable()).thenReturn(true);
+    }
 
     @Test
     void getDomainTagsForAdapter() {

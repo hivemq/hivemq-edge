@@ -49,6 +49,11 @@ public class EnvironmentVariables {
     public static final String CONFIG_REFRESH_INTERVAL = "HIVEMQ_CONFIG_REFRESHINTERVAL";
 
     /**
+     * Name of the environment variable for indicating a writeable config
+     */
+    public static final String CONFIG_WRITEABLE = "HIVEMQ_CONFIG_WRITEABLE";
+
+    /**
      * Name of the environment variable for configuring the data folder.
      */
     public static final String DATA_FOLDER = "HIVEMQ_DATA_FOLDER";
