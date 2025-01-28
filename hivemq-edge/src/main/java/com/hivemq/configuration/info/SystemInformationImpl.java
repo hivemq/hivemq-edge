@@ -56,6 +56,8 @@ public class SystemInformationImpl implements SystemInformation {
 
     private final boolean usePathOfRunningJar;
 
+    private final boolean configWriteable;
+
     public SystemInformationImpl() {
         this(false);
     }
@@ -73,6 +75,7 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File modulesFolder,
             final @Nullable File licenseFolder) {
         final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
+        final String configWriteable = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
@@ -82,6 +85,7 @@ public class SystemInformationImpl implements SystemInformation {
         this.licenseFolder = licenseFolder;
         this.runningSince = System.currentTimeMillis();
         this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
+        this.configWriteable = Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable );
         processorCount = getPhysicalProcessorCount();
     }
 
@@ -331,5 +335,8 @@ public class SystemInformationImpl implements SystemInformation {
         return embedded;
     }
 
-
+    @Override
+    public boolean isConfigWriteable() {
+        return configWriteable;
+    }
 }

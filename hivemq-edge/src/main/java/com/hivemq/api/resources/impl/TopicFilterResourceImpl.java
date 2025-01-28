@@ -18,8 +18,10 @@ package com.hivemq.api.resources.impl;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.topicfilters.TopicFilterNotFoundError;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.model.TopicFilterList;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
@@ -42,16 +44,21 @@ import java.util.stream.Collectors;
 public class TopicFilterResourceImpl extends AbstractApi implements TopicFiltersApi {
 
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
-    public TopicFilterResourceImpl(final @NotNull TopicFilterPersistence topicFilterPersistence) {
+    public TopicFilterResourceImpl(
+            final @NotNull TopicFilterPersistence topicFilterPersistence,
+            final @NotNull SystemInformation systemInformation) {
         this.topicFilterPersistence = topicFilterPersistence;
+        this.systemInformation = systemInformation;
     }
-
-
 
     @Override
     public @NotNull Response addTopicFilters(final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final @NotNull TopicFilterAddResult addResult =
                 topicFilterPersistence.addTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
         final @NotNull String name = topicFilterModel.getDescription();
@@ -82,6 +89,9 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
 
     @Override
     public @NotNull Response deleteTopicFilter(final @NotNull String filterUriEncoded) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
 
         final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(filter);
@@ -97,7 +107,12 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
 
     @Override
     public @NotNull Response updateTopicFilter(
-            final @NotNull String filterUriEncoded, final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
+            final @NotNull String filterUriEncoded,
+            final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
+
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
             return ErrorResponseUtil.errorResponse(new BadRequestError(
@@ -123,6 +138,9 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
 
     @Override
     public @NotNull Response updateTopicFilters(final @NotNull TopicFilterList topicFilterModelList) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final List<TopicFilterPojo> topicFilters = topicFilterModelList.getItems()
                 .stream()
                 .map(TopicFilterPojo::fromModel)

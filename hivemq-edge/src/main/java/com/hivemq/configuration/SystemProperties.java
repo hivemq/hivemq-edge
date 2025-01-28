@@ -26,6 +26,7 @@ public class SystemProperties {
 
     public static final String CONFIG_FOLDER = "hivemq.config.folder";
     public static final String CONFIG_REFRESH_INTERVAL = "hivemq.config.refreshinterval";
+    public static final String CONFIG_WRITEABLE = "hivemq.config.writeable";
     public static final String LICENSE_FOLDER = "hivemq.license.folder";
 
     public static final String DATA_FOLDER = "hivemq.data.folder";

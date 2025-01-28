@@ -103,4 +103,10 @@ public interface SystemInformation {
      */
     long configRefreshIntervalInMs();
 
+    /**
+     * Indicates whether the config can be written
+     *
+     * @return false if the config can't be written.
+     */
+    boolean isConfigWriteable();
 }

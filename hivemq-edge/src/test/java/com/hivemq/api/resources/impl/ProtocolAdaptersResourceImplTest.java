@@ -16,6 +16,7 @@
 package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -56,6 +57,7 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull VersionProvider versionProvider = mock();
     private final @NotNull ProtocolAdapterConfigConverter configConverter = mock();
     private final @NotNull TopicFilterPersistence topicFilterPersistence = mock();
+    private final @NotNull SystemInformation systemInformation = mock();
 
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource =
@@ -66,7 +68,8 @@ class ProtocolAdaptersResourceImplTest {
                     objectMapper,
                     versionProvider,
                     configConverter,
-                    topicFilterPersistence);
+                    topicFilterPersistence,
+                    systemInformation);
 
     @Test
     void getDomainTagsForAdapter() {

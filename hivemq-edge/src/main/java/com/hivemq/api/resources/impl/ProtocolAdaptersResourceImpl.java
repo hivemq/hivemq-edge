@@ -29,6 +29,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.InvalidInputError;
 import com.hivemq.api.errors.adapters.AdapterFailedSchemaValidationError;
@@ -50,6 +51,7 @@ import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -125,6 +127,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -135,7 +138,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull ObjectMapper objectMapper,
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterConfigConverter configConverter,
-            final @NotNull TopicFilterPersistence topicFilterPersistence) {
+            final @NotNull TopicFilterPersistence topicFilterPersistence,
+            final @NotNull SystemInformation systemInformation) {
+        this.systemInformation = systemInformation;
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
@@ -285,6 +290,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response addAdapter(final @NotNull String adapterType, final @NotNull Adapter adapter) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
@@ -326,6 +334,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
@@ -358,6 +369,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteAdapter(final @NotNull String adapterId) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
@@ -499,6 +513,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response addAdapterDomainTags(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addDomainTag(adapterId,
                 com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(domainTag, adapterId, objectMapper));
         switch (domainTagAddResult.getDomainTagPutStatus()) {
@@ -522,6 +539,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response deleteAdapterDomainTags(
             final @NotNull String adapterId, final @NotNull String tagName) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final DomainTagDeleteResult domainTagDeleteResult =
@@ -540,6 +560,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterDomainTag(
             final @NotNull String adapterId, final @NotNull String tagName, final @NotNull DomainTag domainTag) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         log.info("Updating tag with name {}", decodedTagName);
         final DomainTagUpdateResult domainTagUpdateResult =
@@ -562,6 +585,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterDomainTags(
             final @NotNull String adapterId, final @NotNull DomainTagList domainTagList) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final Set<com.hivemq.persistence.domain.DomainTag> domainTags = domainTagList.getItems()
                 .stream()
                 .map(e -> com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(e, adapterId, objectMapper))
@@ -679,6 +705,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull String adapterType,
             final @NotNull String adapterName,
             final @NotNull AdapterConfig adapterConfig) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final Optional<ProtocolAdapterInformation> protocolAdapterInformation =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterInformation.isEmpty()) {
@@ -795,6 +824,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterNorthboundMappings(
             final @NotNull String adapterId, final @NotNull NorthboundMappingList northboundMappingList) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
@@ -848,6 +880,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterSouthboundMappings(
             final @NotNull String adapterId, final @NotNull SouthboundMappingList southboundMappingListModel) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         return protocolAdapterManager.getAdapterById(adapterId)
                 .map(adapter -> {
                     final Set<String> requiredTags = new HashSet<>();
