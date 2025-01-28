@@ -61,11 +61,13 @@
             <https-listener>
                 <bind-address>0.0.0.0</bind-address>
                 <port>8443</port>
-                <keystore>
-                    <path>${ENV:HIVEMQ_HTTPS_KEYSTORE_PATH}</path>
-                    <password>${ENV:HIVEMQ_HTTPS_KEYSTORE_PASSWORD}</password>
-                    <private-key-password>${ENV:HIVEMQ_HTTPS_PRIVATE_KEY_PASSWORD}</private-key-password>
-                </keystore>
+                <tls>
+                    <keystore>
+                        <path>${ENV:HIVEMQ_HTTPS_KEYSTORE_PATH}</path>
+                        <password>${ENV:HIVEMQ_HTTPS_KEYSTORE_PASSWORD}</password>
+                        <private-key-password>${ENV:HIVEMQ_HTTPS_PRIVATE_KEY_PASSWORD}</private-key-password>
+                    </keystore>
+                </tls>
             </https-listener>
             ${IF:HIVEMQ_HTTPS_ENABLED}
         </listeners>
