@@ -30,6 +30,7 @@ import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Response;
@@ -70,6 +71,11 @@ class ProtocolAdaptersResourceImplTest {
                     configConverter,
                     topicFilterPersistence,
                     systemInformation);
+
+    @BeforeEach
+    public void setUp() {
+        when(systemInformation.isConfigWriteable()).thenReturn(true);
+    }
 
     @Test
     void getDomainTagsForAdapter() {
