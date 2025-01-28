@@ -75,6 +75,7 @@ public class JaxrsBootstrapFactory {
                         .ciphers(httpsListener.getCipherSuites(), SupportedCipherSuiteFilter.INSTANCE)
                         .build()).context();
 
+                jaxrsConfig.setSslContext(context);
                 jaxrsConfig.setHttpsConfigurator(new HttpsConfigurator(context) {
                     @Override
                     public void configure(final @NotNull HttpsParameters params) {
