@@ -16,9 +16,11 @@
 package com.hivemq.security.ssl;
 
 import com.hivemq.configuration.service.entity.Tls;
+import com.hivemq.security.exception.SslException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.security.exception.SslException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -27,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -40,6 +41,8 @@ import java.util.Base64;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public final class SslUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(SslUtil.class);
 
     public static @NotNull KeyManagerFactory getKeyManagerFactory(final @NotNull Tls tls) throws SslException {
         return createKeyManagerFactory(tls.getKeystoreType(),
@@ -54,10 +57,9 @@ public final class SslUtil {
             final @NotNull String keyStorePassword,
             final @NotNull String privateKeyPassword) {
 
-        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(keyStoreType, keyStorePath))) {
+        try  {
             //load keystore from TLS config
-            final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            keyStore.load(fileInputStream, keyStorePassword.toCharArray());
+            final KeyStore keyStore = getKeyStore(keyStoreType, keyStorePassword, keyStorePath);
 
             //set up KeyManagerFactory with private-key-password from TLS config
             final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -77,6 +79,34 @@ public final class SslUtil {
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
         }
+    }
+
+    private static @NotNull KeyStore getKeyStore(
+            @NotNull String keyStoreType, @NotNull String keyStorePassword, String keyStorePath)
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        //First try to load keystore as is
+        try (final InputStream fileInputStream = new FileInputStream(keyStorePath)) {
+            final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(fileInputStream, keyStorePassword.toCharArray());
+            return keyStore;
+        } catch (final IOException ioe) {
+            //IOException generally means the keystore can't be read in the given format
+            log.debug("Keystore can't be loaded, probably encoded as base64", ioe);
+        }
+
+        //We might run in k8s, so let's try if the file is base64 encoded
+        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(keyStoreType, keyStorePath))) {
+            final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(fileInputStream, keyStorePassword.toCharArray());
+            return keyStore;
+        } catch (final IOException ioe) {
+            log.debug("Keystore can't be loaded, probably encoded as base64", ioe);
+            //If we fail now the file is broken
+            throw new SslException(String.format("Not able to open or read KeyStore '%s' with type '%s'",
+                    keyStorePath,
+                    keyStoreType), ioe);
+        }
+
     }
 
     private static byte[] loadFileContentAndConvertIfBase64Encoded(@NotNull String keyStoreType, @NotNull String keyStorePath) {
@@ -112,10 +142,9 @@ public final class SslUtil {
             final @NotNull String trustStoreType,
             final @NotNull String trustStorePath,
             final @NotNull String trustStorePassword) {
-        try (final InputStream fileInputStream = new ByteArrayInputStream(loadFileContentAndConvertIfBase64Encoded(trustStoreType, trustStorePath))) {
+        try  {
             //load keystore from TLS config
-            final KeyStore keyStoreTrust = KeyStore.getInstance(trustStoreType);
-            keyStoreTrust.load(fileInputStream, trustStorePassword.toCharArray());
+            final KeyStore keyStoreTrust = getKeyStore(trustStoreType, trustStorePassword, trustStorePath);
 
             //set up TrustManagerFactory
             final TrustManagerFactory tmFactory =

@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,18 +77,11 @@ public class EnvVarUtil {
 
             final String varName = matcher.group(1);
 
-            String replacement = getValue(varName);
+            final String replacement = getValue(varName);
 
             if (replacement == null) {
                 log.error("Environment Variable {} for HiveMQ config.xml is not set.", varName);
                 throw new UnrecoverableException(false);
-            }
-
-            //in containers the environment variables might arrive base64 encoded
-            try {
-                replacement = new String(Base64.getDecoder().decode(replacement), StandardCharsets.UTF_8);
-            } catch (IllegalArgumentException e) {
-                log.debug("Provided string is not base64 encoded", e);
             }
 
             //sets replacement for this match

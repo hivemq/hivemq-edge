@@ -16,8 +16,8 @@
                 <prefer-server-cipher-suites>${ENV:HIVEMQ_MQTTS_PREFER_SERVER_CIPHER_SUITE}</prefer-server-cipher-suites>
                 <keystore>
                     <path>${ENV:HIVEMQ_MQTTS_KEYSTORE_PATH}</path>
-                    <password>${ENV:HIVEMQ_MQTTS_KEYSTORE_PASSWORD}</password>
-                    <private-key-password>${ENV:HIVEMQ_MQTTS_KEYSTORE_PASSWORD}</private-key-password>
+                    <password>${ENV:HIVEMQ_MQTTS_SECRET_KEYSTORE_PASSWORD}</password>
+                    <private-key-password>${ENV:HIVEMQ_MQTTS_SECRET_KEYSTORE_PASSWORD}</private-key-password>
                 </keystore>
             </tls>
         </tls-tcp-listener>
@@ -32,11 +32,11 @@
                 <keystore>
                     <path>${ENV:HIVEMQ_MQTTS_KEYSTORE_PATH}</path>
                     <password>${ENV:HIVEMQ_MQTTS_KEYSTORE_PASSWORD}</password>
-                    <private-key-password>${ENV:HIVEMQ_MQTTS_PRIVATE_KEY_PASSWORD}</private-key-password>
+                    <private-key-password>${ENV:HIVEMQ_MQTTS_SECRET_PRIVATE_KEY_PASSWORD}</private-key-password>
                 </keystore>
                 <truststore>
                     <path>${ENV:HIVEMQ_MQTTS_TRUSTSTORE_PATH}</path>
-                    <password>${ENV:HIVEMQ_MQTTS_TRUSTSTORE_PASSWORD}</password>
+                    <password>${ENV:HIVEMQ_MQTTS_SECRET_TRUSTSTORE_PASSWORD}</password>
                 </truststore>
             </tls>
         </tls-tcp-listener>
