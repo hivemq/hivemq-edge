@@ -62,7 +62,7 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     @Override
     public @NotNull String getDescription() {
-        return "Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.";
+        return "Simulates device message traffic to enable observation of adapter behavior without the need to configure actual devices.";
     }
 
     @Override

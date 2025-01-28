@@ -78,7 +78,7 @@
       "id" : "http",
       "version" : "2024.9",
       "name" : "HTTP(s) to MQTT Protocol Adapter",
-      "description" : "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.",
+      "description" : "Polls data from one or more web endpoint URLs and converts the consumed structured HTTP bodies (XML, JSON, text, CSV) into an MQTT message.",
       "author" : "HiveMQ",
       "documentationLink" : {
         "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter",
