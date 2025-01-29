@@ -105,7 +105,7 @@
   },
   "welcome": {
     "title": "Welcome to HiveMQ Edge",
-    "description": "Connect from and to any device and send streams of data to your enterprise.",
+    "description": "Connect to and from any device for seamless data streaming to your enterprise infrastructure.",
     "onboarding": {
       "title": "Get data flowing",
       "errorLoading": "We cannot load the onboarding tasks. Please try again later.",
@@ -116,21 +116,21 @@
           "label": "Read more"
         },
         "protocolAdapter": {
-          "title": "Use HiveMQ Edge modular Protocol adapters to connect to local and network based devices.",
+          "title": "Use modular HiveMQ Edge protocol adapters to connect to local devices that use different communication protocols.\n",
           "label": "Use a Protocol Adapter"
         }
       },
       "connectEnterprise": {
         "header": "From HiveMQ Edge to the Enterprise",
         "bridge": {
-          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
+          "title": "Connect your HiveMQ Edge MQTT broker to your enterprise infrastructure with MQTT bridge connections.",
           "label": "Use a Bridge"
         }
       },
       "connectCloud": {
         "header": "Connect To HiveMQ Cloud",
         "section": {
-          "title": "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data",
+          "title": "Create a single source of truth for all your enterprise-wide data by seamlessly connecting your HiveMQ Edge deployment to a HiveMQ Cloud MQTT broker.",
           "label": "Connect To HiveMQ Cloud"
         }
       }
@@ -138,7 +138,7 @@
   },
   "bridge": {
     "title": "MQTT bridges",
-    "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "description": "MQTT bridges let you connect multiple MQTT brokers to enable seamless data sharing between different networks or systems.",
     "list": "List of bridges",
     "action": {
       "add": "Add bridge connection",
@@ -395,7 +395,7 @@
   },
   "protocolAdapter": {
     "title": "Protocol Adapters",
-    "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
+    "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local and remote devices that use communication protocols other than MQTT. Once a connection is established, you can seamlessly consolidate all device data into your HiveMQ Edge MQTT broker.",
     "list": "List of protocol adapters",
     "action": {
       "goCatalog": "Add a new adapter",
@@ -661,25 +661,25 @@
   },
   "unifiedNamespace": {
     "title": "Unified Namespace Prefix",
-    "description": "Set your unified namespace architecture.",
+    "description": "Setting up a Unified Namespace (UNS) for MQTT data helps you create a centralized, standardized framework for organizing and accessing data across your entire organization.",
     "standard": "ISA-95",
     "action": {
-      "define": "Modify the UNS Prefix"
+      "define": "Configure Unified Namespace"
     },
     "error": {
       "loading": "We cannot load your namespace for the time being. Please try again later"
     },
     "container": {
       "prefix": {
-        "title": "My namespace prefix"
+        "title": "Your namespace prefix"
       },
       "info": {
         "title": "ISA-95 Unified Namespace",
         "descriptions": [
-          "A Unified Namespace is a middleware solution that allows you to collect data from various industrial systems, add context to it, and transform it into a format that other systems can understand.",
-          "ISA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. "
+          "A Unified Namespace is a centralized framework that allows you to integrate and harmonize data from diverse industrial systems to achieve seamless real-time data exchange and interoperability.",
+          "ISA-95 is an international standard that defines a structured way to exchange data within a manufacturing enterprise."
         ],
-        "link": "Go to hivemq website to know more"
+        "link": "Learn more about UNS and smart manufacturing on the HiveMQ website"
       },
       "recommend": {
         "title": "Recommended format",
@@ -691,34 +691,34 @@
     },
     "enabled": {
       "label": "Enable Unified Namespace",
-      "helper": "When enabled, unified namespace will provide tokens that can be used in topics to apply UNS convention to your data."
+      "helper": "When enabled, the Unified Namespace  tokens can be used in topics to apply the UNS convention to your data."
     },
     "enterprise": {
       "label": "Enterprise",
-      "helper": "An enterprise is a collection of sites and areas and represents the top level of a role based equipment hierarchy."
+      "helper": "An enterprise is a top-level hierarchical structure that provides a consolidated view and context for all underlying systems, sites, and processes of an organization."
     },
     "site": {
       "label": "Site",
-      "helper": "A site is a physical, geographical, or logical grouping determined by the enterprise."
+      "helper": "Sites are physical, geographical, or logical groups within an enterprise."
     },
     "area": {
       "label": "Area",
-      "helper": "An area is a physical, geographical, or logical grouping determined by the site."
+      "helper": "Areas are physical, geographical, or logical groups within a site"
     },
     "productionLine": {
       "label": "Production Line",
-      "helper": "Production lines are low levels of equipment scheduled for discrete manufacturing processes."
+      "helper": "Production lines group related work cells and operations into a single logical unit within the manufacturing or operational process."
     },
     "workCell": {
       "label": "Work Cell",
-      "helper": "Work Cell are low levels of equipment scheduled for discrete manufacturing processes."
+      "helper": "Work cells are low-level functional units within a manufacturing or operational process that perform a designated task or series of tasks."
     },
     "options": {
       "legend": "Options"
     },
     "prefixAllTopics": {
-      "label": "Add prefix to all topics",
-      "helper": "MQTT topics will use the namespace defined"
+      "label": "Add UNS prefix to all MQTT topics",
+      "helper": "MQTT topics will use the defined namespace"
     },
     "submit": {
       "label": "Submit"
@@ -991,7 +991,7 @@
   },
   "eventLog": {
     "title": "Event Log",
-    "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
+    "description": "HiveMQ Edge components generate many events that are useful for system diagnosis and monitoring. The Event Log allows you to interact with events and gain system insights.",
     "table": {
       "header": {
         "id": "Details",
