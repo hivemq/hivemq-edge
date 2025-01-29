@@ -65,6 +65,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -159,9 +160,13 @@ public class ConfigFileReaderWriter {
                 final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
 
                 pathsToCheck.putAll(fileModificationTimestamps);
+
                 pathsToCheck.entrySet().forEach(pathToTs -> {
                     try {
-                        if (Files.getLastModifiedTime(pathToTs.getKey()).toMillis() > pathToTs.getValue()) {
+
+                        System.out.println("Checking with real " + pathToTs.getKey());
+
+                        if (Files.getFileAttributeView(pathToTs.getKey(), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
                             log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
                             System.exit(0);
                         }

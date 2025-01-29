@@ -59,7 +59,7 @@ public class FileFragmentUtil {
             final String pathString = matcher.group(1);
             try {
                 final Path fragmentPath = Path.of(pathString);
-                final Long modificationTime = fragmentPath.toFile().lastModified();
+                final Long modificationTime = fragmentPath.toRealPath().toFile().lastModified();
                 final String replacement = Files.readString(fragmentPath, StandardCharsets.UTF_8);
                 fragmentToModificationTime.put(fragmentPath, modificationTime);
                 //sets replacement for this match
