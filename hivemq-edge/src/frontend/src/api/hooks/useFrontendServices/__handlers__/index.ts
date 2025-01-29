@@ -127,6 +127,12 @@ export const MOCK_CAPABILITY_DATAHUB: Capability = {
     'This enables HiveMQ Edge to make use of the HiveMQ Data Hub. This includes validation and transformation of data.',
 }
 
+export const MOCK_CAPABILITY_WRITEABLE_CONFIG: Capability = {
+  id: 'config-writeable',
+  displayName: 'Config can be manipulated via the REST API',
+  description: 'Changes to the configuration made via the REST API are persisted back into the config.xml.',
+}
+
 export const MOCK_CAPABILITY_DUMMY: Capability = {
   id: 'edge',
   displayName: 'This is a test capability',
@@ -148,5 +154,11 @@ export const handlers = [
 
   http.get('**/frontend/capabilities', () => {
     return HttpResponse.json<CapabilityList>(MOCK_CAPABILITIES, { status: 200 })
+  }),
+]
+
+export const handlerCapabilities = (source: CapabilityList) => [
+  http.get('**/frontend/capabilities', () => {
+    return HttpResponse.json<CapabilityList>(source, { status: 200 })
   }),
 ]
