@@ -14,8 +14,7 @@ export const $Capability = {
             description: `A human readable name, intended to be used to display at front end.`,
         },
         id: {
-            type: 'string',
-            description: `The identifier of this capability`,
+            type: 'Enum',
         },
     },
 } as const;
