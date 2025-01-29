@@ -5,7 +5,7 @@ describe('ConfigurationPanel', () => {
     cy.viewport(800, 600)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const onSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(<ConfigurationPanel groupKeys={['Runtime Status']} onSubmit={onSubmit} />)
 

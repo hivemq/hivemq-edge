@@ -1,12 +1,9 @@
-/// <reference types="cypress" />
-
 import { expect } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
 
@@ -19,8 +16,6 @@ import type {
   ProtocolAdaptersList,
 } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import type { EdgeTopicsOptions } from './useGetEdgeTopics.ts'
 import { useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.ts'
@@ -52,24 +47,6 @@ describe('reduceTopicsBy', () => {
     expect(reduceTopicsBy(option)([], topic)).toMatchObject(expected)
   })
 })
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider
-    client={
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      })
-    }
-  >
-    <AuthProvider>
-      <MemoryRouter>{children}</MemoryRouter>
-    </AuthProvider>
-  </QueryClientProvider>
-)
 
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,

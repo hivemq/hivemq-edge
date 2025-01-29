@@ -42,4 +42,20 @@ export const handlers = [
       { status: 200 }
     )
   }),
+
+  http.get('*/data-hub/schemas/:schemaId', () => {
+    return HttpResponse.json<PolicySchema>(mockSchemaTempHumidity, { status: 200 })
+  }),
+
+  http.post('*/data-hub/schemas', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.delete('*/data-hub/schemas/:schemaId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/data-hub/schemas/:schemaId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
 ]

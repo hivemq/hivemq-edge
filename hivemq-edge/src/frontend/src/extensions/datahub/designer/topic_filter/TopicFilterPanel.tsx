@@ -11,7 +11,7 @@ import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/'
-import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 

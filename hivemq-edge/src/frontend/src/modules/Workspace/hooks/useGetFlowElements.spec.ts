@@ -12,6 +12,9 @@ import '@/config/i18n.config.ts'
 
 import useGetFlowElements from './useGetFlowElements.ts'
 import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
+import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
+import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -23,7 +26,8 @@ vi.mock('@chakra-ui/react', async () => {
 
 describe('useGetFlowElements', () => {
   beforeEach(() => {
-    window.localStorage.clear()
+    // window.localStorage.clear()
+    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers)
   })
 
   afterEach(() => {
@@ -31,23 +35,15 @@ describe('useGetFlowElements', () => {
     queryClient.clear()
   })
 
-  it('should be used in the right context', async () => {
-    const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider() })
-
-    expect(result.current.nodes).toHaveLength(1)
-    expect(result.current.edges).toHaveLength(0)
-  })
-
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 1, 0],
-    [{ showGateway: true }, 1, 0],
-    [{ showGateway: false }, 1, 0],
+    [{}, 5, 4],
+    [{ showGateway: true }, 6, 5],
+    [{ showGateway: false }, 5, 4],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider(defaults) })
 
     await waitFor(() => {
-      const { nodes } = result.current
-      expect(!!nodes.length).toBeTruthy()
+      expect(result.current.isLoading).toBeFalsy()
     })
 
     expect(result.current.nodes).toHaveLength(countNode)

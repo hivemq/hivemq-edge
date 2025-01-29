@@ -15,7 +15,7 @@ import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__h
 import { handlers as bridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import type { BridgeSubscription } from '@/modules/DomainOntology/types.ts'
 
-const successListOf = <T,>(payload: T) =>
+const successListOf = <T>(payload: T) =>
   expect.objectContaining({
     data: expect.objectContaining({
       items: [

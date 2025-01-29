@@ -200,11 +200,11 @@ export const createAdapterNode = (
     },
   }
 
-  let nodeDevice: Node<DeviceMetadata, NodeTypes.DEVICE_NODE> | undefined = undefined
-  let deviceConnector: Edge | undefined = undefined
+  // let nodeDevice: Node<DeviceMetadata, NodeTypes.DEVICE_NODE> | undefined = undefined
+  // let deviceConnector: Edge | undefined = undefined
 
   const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
-  nodeDevice = {
+  const nodeDevice: Node<DeviceMetadata, NodeTypes.DEVICE_NODE> = {
     id: idBAdapterDevice,
     type: NodeTypes.DEVICE_NODE,
     targetPosition: Position.Top,
@@ -215,7 +215,7 @@ export const createAdapterNode = (
     },
   }
 
-  deviceConnector = {
+  const deviceConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.DEVICE_NODE}@${idAdapter}`,
     target: idBAdapterDevice,
     sourceHandle: 'Top',

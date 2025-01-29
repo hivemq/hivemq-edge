@@ -8,7 +8,7 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { discoverAdapterTopics, getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import mqttTopicMatch from 'mqtt-match'
 
-import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.ts'
 
 //TODO[NVL] return isLoading, isError and maybe error?
 export const useGetPoliciesMatching = (id: string) => {
@@ -64,5 +64,5 @@ export const useGetPoliciesMatching = (id: string) => {
     return Array.from(new Set(policies))
   }
 
-  return undefined
+  return []
 }

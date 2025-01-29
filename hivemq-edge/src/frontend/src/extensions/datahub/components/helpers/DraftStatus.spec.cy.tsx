@@ -5,7 +5,7 @@ describe('DraftStatus', () => {
     cy.viewport(800, 800)
   })
 
-  it.only('should render ', () => {
+  it('should render', () => {
     cy.mountWithProviders(<DraftStatus />)
 
     cy.getByTestId('status-container-type').should('contain.text', 'No type')

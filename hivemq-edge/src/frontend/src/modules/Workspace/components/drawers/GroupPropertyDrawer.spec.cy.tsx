@@ -69,7 +69,7 @@ describe('GroupPropertyDrawer', () => {
     cy.getByTestId('metrics-toggle').should('be.visible')
   })
 
-  it.only('should render the full config tabs properly', () => {
+  it('should render the full config tabs properly', () => {
     cy.intercept('/api/v1/management/events?*', { items: [...mockEdgeEvent(150)] })
     const onClose = cy.stub().as('onClose')
     const onEditEntity = cy.stub()

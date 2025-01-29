@@ -7,12 +7,12 @@ import { MdPublishedWithChanges } from 'react-icons/md'
 
 import type { BehaviorPolicy, DataPolicy, PolicySchema, Script } from '@/api/__generated__'
 
-import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
-import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
-import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
-import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
-import { useUpdateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useUpdateDataPolicy.tsx'
-import { useUpdateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useUpdateBehaviorPolicy.tsx'
+import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.ts'
+import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.ts'
+import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.ts'
+import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.ts'
+import { useUpdateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useUpdateDataPolicy.ts'
+import { useUpdateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useUpdateBehaviorPolicy.ts'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'

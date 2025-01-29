@@ -6,7 +6,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 import type { CustomValidator } from '@rjsf/utils'
 
 import type { BehaviorPolicyData, PanelProps } from '@datahub/types.ts'
-import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
+import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'

@@ -1,13 +1,9 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, expect, vi } from 'vitest'
-import type { MouseEvent, ReactElement } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import type { MouseEvent } from 'react'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { useContextMenu } from './useContextMenu.ts'
-
-const wrapper: React.JSXElementConstructor<{ children: ReactElement }> = ({ children }) => (
-  <MemoryRouter>{children}</MemoryRouter>
-)
 
 const mocks = vi.hoisted(() => {
   return {
