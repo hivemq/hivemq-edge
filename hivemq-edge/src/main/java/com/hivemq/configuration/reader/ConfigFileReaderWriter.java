@@ -63,6 +63,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -163,8 +164,7 @@ public class ConfigFileReaderWriter {
 
                 pathsToCheck.entrySet().forEach(pathToTs -> {
                     try {
-
-                        if (Files.getFileAttributeView(pathToTs.getKey(), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
+                        if (Files.getFileAttributeView(pathToTs.getKey().toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
                             log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
                             System.exit(0);
                         }
