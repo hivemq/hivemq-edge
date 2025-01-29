@@ -12,7 +12,7 @@
   },
   "page": {
     "title": "Data Hub on Edge",
-    "description": "The Data Hub on Edge provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
+    "description": "HiveMQ Data Hub on Edge provides mechanisms to define how the HiveMQ Edge MQTT broker handles MQTT data, MQTT client behavior, and data from the protocol adaptors."
   },
   "policy": {
     "type_CREATE_POLICY": "No type",

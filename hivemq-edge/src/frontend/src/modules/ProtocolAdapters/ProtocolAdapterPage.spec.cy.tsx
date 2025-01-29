@@ -18,7 +18,7 @@ describe('ProtocolAdapterPage', () => {
       .find('h1 + p')
       .should(
         'contain.text',
-        'Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices'
+        'Protocol adapters allow you to connect your HiveMQ Edge installation to local and remote devices that use communication protocols other than MQTT. Once a connection is established, you can seamlessly consolidate all device data into your HiveMQ Edge MQTT broker.'
       )
 
     cy.getByTestId('test-pathname').should('have.text', '/protocol-adapters')
