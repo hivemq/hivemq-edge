@@ -164,8 +164,6 @@ public class ConfigFileReaderWriter {
                 pathsToCheck.entrySet().forEach(pathToTs -> {
                     try {
 
-                        System.out.println("Checking with real " + pathToTs.getKey());
-
                         if (Files.getFileAttributeView(pathToTs.getKey(), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
                             log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
                             System.exit(0);
