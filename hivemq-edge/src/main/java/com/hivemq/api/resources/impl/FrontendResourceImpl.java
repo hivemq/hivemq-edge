@@ -17,7 +17,6 @@ package com.hivemq.api.resources.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.components.EnvironmentProperties;
 import com.hivemq.api.model.components.ExtensionList;
 import com.hivemq.api.model.components.GatewayConfiguration;
@@ -37,15 +36,19 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.edge.api.FrontendApi;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.api.model.Capability;
+import com.hivemq.edge.api.model.CapabilityList;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Simon L Johnson
@@ -163,7 +166,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getNotifications() {
-
         final ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder<>();
         final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
         if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
@@ -188,8 +190,16 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getCapabilities() {
-        final CapabilityList capabilityList = capabilityService.getList();
-        return Response.ok(capabilityList).build();
+        final List<Capability> capabilities = capabilityService.getList()
+                .getItems()
+                .stream()
+                .map(cap -> (Capability) Capability.builder()
+                        .id(Capability.IdEnum.fromString(cap.getId()))
+                        .description(cap.getDescription())
+                        .displayName(cap.getDisplayName())
+                        .build()).collect(Collectors.toList());
+
+        return Response.ok(CapabilityList.builder().items(capabilities).build()).build();
     }
 
 

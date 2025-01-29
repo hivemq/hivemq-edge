@@ -26,7 +26,7 @@ export type { Bridge } from './models/Bridge';
 export type { BridgeCustomUserProperty } from './models/BridgeCustomUserProperty';
 export type { BridgeList } from './models/BridgeList';
 export { BridgeSubscription } from './models/BridgeSubscription';
-export type { Capability } from './models/Capability';
+export { Capability } from './models/Capability';
 export type { CapabilityList } from './models/CapabilityList';
 export type { DataPoint } from './models/DataPoint';
 export type { DataPolicy } from './models/DataPolicy';

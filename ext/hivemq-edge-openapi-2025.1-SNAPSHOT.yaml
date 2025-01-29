@@ -4725,6 +4725,12 @@ components:
             \ end."
         id:
           type: string
+          enum:
+            - config-writeable
+            - bi-directional protocol adapters
+            - control-plane-connectivity
+            - data-hub
+            - mqtt-persistence
           description: The identifier of this capability
     CapabilityList:
       type: object

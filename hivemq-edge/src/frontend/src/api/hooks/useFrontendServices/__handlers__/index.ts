@@ -1,5 +1,5 @@
-import type { Capability, CapabilityList, GatewayConfiguration, NotificationList } from '@/api/__generated__'
-import { Notification } from '@/api/__generated__'
+import type { CapabilityList, GatewayConfiguration, NotificationList } from '@/api/__generated__'
+import { Notification, Capability } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 
 const lorem =
@@ -115,32 +115,26 @@ export const MOCK_NOTIFICATIONS: Array<Notification> = [
 ]
 
 export const MOCK_CAPABILITY_PERSISTENCE: Capability = {
-  id: 'mqtt-persistence',
+  id: Capability.id.MQTT_PERSISTENCE,
   displayName: 'Persistent Data for MQTT traffic',
   description: 'Mqtt Traffic with QoS greater than 0 is stored persistently on disc and loaded on restart of Edge. ',
 }
 
 export const MOCK_CAPABILITY_DATAHUB: Capability = {
-  id: 'data-hub',
+  id: Capability.id.DATA_HUB,
   displayName: 'Data Hub for HiveMQ Edge',
   description:
     'This enables HiveMQ Edge to make use of the HiveMQ Data Hub. This includes validation and transformation of data.',
 }
 
 export const MOCK_CAPABILITY_WRITEABLE_CONFIG: Capability = {
-  id: 'config-writeable',
+  id: Capability.id.CONFIG_WRITEABLE,
   displayName: 'Config can be manipulated via the REST API',
   description: 'Changes to the configuration made via the REST API are persisted back into the config.xml.',
 }
 
-export const MOCK_CAPABILITY_DUMMY: Capability = {
-  id: 'edge',
-  displayName: 'This is a test capability',
-  description: 'Use for testing',
-}
-
 export const MOCK_CAPABILITIES: CapabilityList = {
-  items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_DATAHUB, MOCK_CAPABILITY_DUMMY],
+  items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_DATAHUB],
 }
 
 export const handlers = [

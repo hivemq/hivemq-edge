@@ -1,6 +1,7 @@
 import type { Node } from 'reactflow'
 import type { Bridge, DataPolicy } from '@/api/__generated__'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import type { Group } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
@@ -12,7 +13,7 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 
 //TODO[NVL] return isLoading, isError and maybe error?
 export const useGetPoliciesMatching = (id: string) => {
-  const hasDataHub = useGetCapability(CAPABILITY.DATAHUB)
+  const hasDataHub = useGetCapability(Capability.id.DATA_HUB)
   const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()
   const { nodes: workspaceNodes } = useWorkspaceStore()
   const { data: protocols } = useGetAdapterTypes()

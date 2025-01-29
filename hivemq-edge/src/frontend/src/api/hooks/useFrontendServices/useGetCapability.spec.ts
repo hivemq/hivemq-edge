@@ -6,6 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { handlers } from './__handlers__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
+import { Capability } from '@/api/__generated__'
 
 describe('useGetCapability', () => {
   beforeEach(() => {
@@ -16,16 +17,8 @@ describe('useGetCapability', () => {
     server.resetHandlers()
   })
 
-  it('should not load an non-existent capability', async () => {
-    const { result } = renderHook(() => useGetCapability('wrong-capability'), { wrapper })
-
-    await waitFor(() => {
-      expect(result.current).toBeFalsy()
-    })
-  })
-
   it('should load a capability', async () => {
-    const { result } = renderHook(() => useGetCapability('data-hub'), { wrapper })
+    const { result } = renderHook(() => useGetCapability(Capability.id.DATA_HUB), { wrapper })
 
     await waitFor(() => {
       expect(result.current).toBeTruthy()
