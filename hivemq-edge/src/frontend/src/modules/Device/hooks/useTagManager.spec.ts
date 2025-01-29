@@ -1,12 +1,8 @@
-/// <reference types="cypress" />
-
 import { beforeEach, expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { ReactFlowProvider } from 'reactflow'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import '@/config/i18n.config.ts'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import {
@@ -17,30 +13,9 @@ import {
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import type { Adapter, AdaptersList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { type DomainTagList } from '@/api/__generated__'
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import { useTagManager } from '@/modules/Device/hooks/useTagManager.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { handlers } from '@/api/hooks/useDomainModel/__handlers__'
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider
-    client={
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      })
-    }
-  >
-    <AuthProvider>
-      <ReactFlowProvider>
-        <MemoryRouter>{children}</MemoryRouter>
-      </ReactFlowProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-)
 
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,

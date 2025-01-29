@@ -2,7 +2,7 @@
 node_modules
 /docs
 /dist
-/coverage
+
 # local env files
 .env.local
 .env.*.local
@@ -26,6 +26,15 @@ cypress/screenshots
 
 # Exclude test-results
 test-results
+
+# Exclude code coverage
+/.nyc_output/
+/coverage
+/coverage-components/
+/coverage-e2e/
+/coverage-vitest/
+/coverage-cypress/
+
 
 # Local dev fixes
 /public/app/

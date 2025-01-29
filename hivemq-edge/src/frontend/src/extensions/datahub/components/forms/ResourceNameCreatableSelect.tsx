@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next'
 
 import type { FunctionData, ResourceFamily, SchemaData } from '@datahub/types.ts'
 import { DataHubNodeType, ResourceStatus } from '@datahub/types.ts'
-import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
-import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
+import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.ts'
+import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.ts'
 import { getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
 

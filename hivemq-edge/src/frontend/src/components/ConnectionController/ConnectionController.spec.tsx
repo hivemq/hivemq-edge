@@ -18,11 +18,11 @@ const { mutateAdapterAsync, mutateBridgeAsync, successToast, errorToast } = vi.h
   }
 })
 
-vi.mock('@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx', () => {
+vi.mock('@/api/hooks/useProtocolAdapters/useSetConnectionStatus.ts', () => {
   return { useSetConnectionStatus: () => ({ mutateAsync: mutateAdapterAsync }) }
 })
 
-vi.mock('@/api/hooks/useGetBridges/useSetConnectionStatus.tsx', () => {
+vi.mock('@/api/hooks/useGetBridges/useSetConnectionStatus.ts', () => {
   return { useSetConnectionStatus: () => ({ mutateAsync: mutateBridgeAsync }) }
 })
 

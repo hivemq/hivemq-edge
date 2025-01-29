@@ -101,7 +101,8 @@ describe('useGetPoliciesMatching', () => {
 
     await waitFor(() => {
       const policies = result.current
-      expect(policies).toBeUndefined()
+      expect(policies).not.toBeUndefined()
     })
+    expect(result.current).toEqual([])
   })
 })

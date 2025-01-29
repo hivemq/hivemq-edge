@@ -3,7 +3,12 @@ pnpm-lock.*
 .idea/
 docs/
 dist/
-coverage/
+/.nyc_output/
+/coverage
+/coverage-components/
+/coverage-e2e/
+/coverage-vitest/
+/coverage-cypress/
 public/
 src/api/__generated__
 .gradle/

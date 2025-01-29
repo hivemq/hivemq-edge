@@ -18,14 +18,16 @@ const useGetFlowElements = () => {
   const { t } = useTranslation()
   const theme = useTheme()
   const { options, groups } = useEdgeFlowContext()
-  const { data: adapterTypes } = useGetAdapterTypes()
-  const { data: bridges } = useListBridges()
-  const { data: adapters } = useListProtocolAdapters()
-  const { data: listenerList } = useGetListeners()
+  const { data: adapterTypes, isLoading: isTypeLoding } = useGetAdapterTypes()
+  const { data: bridges, isLoading: isBridgeLoading } = useListBridges()
+  const { data: adapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
+  const { data: listenerList, isLoading: isLisrtenerLoading } = useGetListeners()
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const { items: listeners } = listenerList || {}
+
+  const isLoading = isAdapterLoading || isLisrtenerLoading || isLisrtenerLoading || isBridgeLoading || isTypeLoding
 
   useEffect(() => {
     const nodes: Node[] = []
@@ -69,17 +71,15 @@ const useGetFlowElements = () => {
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
 
-      if (nodeDevice && deviceConnector) {
-        nodes.push(nodeDevice)
-        edges.push(deviceConnector)
-      }
+      nodes.push(nodeDevice)
+      edges.push(deviceConnector)
     })
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
-  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme, adapterTypes?.items])
+  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme, adapterTypes?.items, isLoading])
 
-  return { nodes, edges, onNodesChange, onEdgesChange }
+  return { nodes, edges, onNodesChange, onEdgesChange, isLoading }
 }
 
 export default useGetFlowElements

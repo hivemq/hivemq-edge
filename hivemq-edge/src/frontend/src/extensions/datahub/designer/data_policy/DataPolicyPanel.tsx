@@ -9,7 +9,7 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_DATA_POLICY_SCHEMA } from '@datahub/designer/data_policy/DataPolicySchema.ts'
 import type { CustomValidator } from '@rjsf/utils'
-import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 

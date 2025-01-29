@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 import type { ApiError, StatusTransitionCommand } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
-import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx'
-import { useSetConnectionStatus as useSetBridgeConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
+import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.ts'
+import { useSetConnectionStatus as useSetBridgeConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 

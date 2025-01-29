@@ -12,10 +12,18 @@ import {
   Status,
   type TagSchema,
   type ValuesTree,
+  StatusTransitionResult,
 } from '@/api/__generated__'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
+
+export const mockAdapterStatusTransition: StatusTransitionResult = {
+  callbackTimeoutMillis: 2000,
+  identifier: 'adapterId',
+  status: StatusTransitionResult.status.PENDING,
+  type: 'adapter',
+}
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -767,8 +775,10 @@ export const handlers = [
     return HttpResponse.json({}, { status: 200 })
   }),
 
-  http.put('**/protocol-adapters/adapters/:adapterId/status', () => {
-    return HttpResponse.json({}, { status: 200 })
+  http.put('**/protocol-adapters/adapters/:adapterId/status', ({ params }) => {
+    const { adapterId } = params
+
+    return HttpResponse.json({ ...mockAdapterStatusTransition, identifier: adapterId }, { status: 200 })
   }),
 
   http.put('**/protocol-adapters/adapters/:adapterType', () => {

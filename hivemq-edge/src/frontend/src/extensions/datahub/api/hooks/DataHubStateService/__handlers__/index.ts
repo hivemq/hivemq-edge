@@ -4,7 +4,7 @@ import type { FsmStateInformationItem, FsmStatesInformationListItem } from '@/ap
 export const mockFSMStateInfo: FsmStateInformationItem = {}
 
 export const handlers = [
-  http.get('*/data-hub/fsm', () => {
+  http.get('*/data-hub/behavior-validation/states/:clientId', () => {
     return HttpResponse.json<FsmStatesInformationListItem>({ items: [mockFSMStateInfo] }, { status: 200 })
   }),
 ]

@@ -20,10 +20,14 @@ import 'cypress-axe'
 import 'cypress-each'
 import '@percy/cypress'
 import 'cypress-real-events'
+import '@cypress/code-coverage/support'
+
 import './commands'
 
-import { mount, MountOptions, MountReturn } from 'cypress/react18'
-import { MemoryRouterProps, MemoryRouter } from 'react-router-dom'
+import type { MountOptions, MountReturn } from 'cypress/react18'
+import { mount } from 'cypress/react18'
+import type { MemoryRouterProps } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
