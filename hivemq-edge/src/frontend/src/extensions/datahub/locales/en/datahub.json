@@ -15,7 +15,7 @@
     "description": "HiveMQ Data Hub on Edge provides mechanisms to define how the HiveMQ Edge MQTT broker handles MQTT data, MQTT client behavior, and data from the protocol adaptors."
   },
   "policy": {
-    "type_CREATE_POLICY": "No type",
+    "type_CREATE_POLICY": "Active draft",
     "type_DATA_POLICY": "Data Policy",
     "type_BEHAVIOR_POLICY": "Behavior Policy",
     "unnamed": "Unnamed policy"
@@ -259,7 +259,7 @@
       "policy": {
         "check": "Check",
         "publish": "Publish",
-        "showReport": "Show Validity Report",
+        "showReport": "Show Report",
         "clearReport": "Clear Validity Report",
         "delete": "Delete Policy"
       }

@@ -28,7 +28,7 @@ const DesignerToolbox: FC = () => {
 
   return (
     <Panel position="top-left">
-      <HStack role="group" aria-label={t('workspace.toolbars.draft.aria-label')}>
+      <HStack role="group" aria-label={t('workspace.toolbars.draft.aria-label')} p={1}>
         <Popover>
           {({ isOpen }) => (
             <>
