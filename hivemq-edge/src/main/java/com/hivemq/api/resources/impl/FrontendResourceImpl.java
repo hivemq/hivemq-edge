@@ -38,9 +38,9 @@ import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.model.Capability;
 import com.hivemq.edge.api.model.CapabilityList;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -166,7 +166,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getNotifications() {
-
         final ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder<>();
         final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
         if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
