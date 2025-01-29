@@ -3,15 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { Box, Flex } from '@chakra-ui/react'
 
+import { Capability } from '@/api/__generated__'
 import PageContainer from '@/components/PageContainer.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import LicenseWarning from '@datahub/components/helpers/LicenseWarning.tsx'
 import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
 
 const DataHubPage: FC = () => {
   const { t } = useTranslation('datahub')
-  const hasDataHub = useGetCapability(CAPABILITY.DATAHUB)
+  const hasDataHub = useGetCapability(Capability.id.DATA_HUB)
   const { pathname } = useLocation()
 
   const isMainPage = pathname === '/datahub'
