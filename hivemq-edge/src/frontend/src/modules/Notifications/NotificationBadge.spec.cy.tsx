@@ -17,7 +17,7 @@ describe('NotificationBadge', () => {
     cy.wait('@getReleases')
     cy.wait('@getNotifications')
 
-    cy.getByTestId('buttonBadge-counter').should('contain.text', 1)
+    cy.getByTestId('buttonBadge-counter').should('contain.text', 2)
     cy.getByAriaLabel('Notifications').click()
 
     cy.get("[role='status']").should('be.visible').should('contain.text', 'Default Credentials Need Changing!')
