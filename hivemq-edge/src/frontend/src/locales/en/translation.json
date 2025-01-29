@@ -30,7 +30,7 @@
   },
   "capabilities": {
     "WRITEABLE_CONFIG": {
-      "title": "Config cannot be manipulated via the REST API",
+      "title": "Config cannot be manipulated via the web app",
       "description": "Changes to the configuration made via the web app will NOT be persisted back into the config.xml. The requests will fail with an error message highlighting this situation."
     }
   },
