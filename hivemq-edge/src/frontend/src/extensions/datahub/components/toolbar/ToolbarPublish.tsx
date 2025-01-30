@@ -175,6 +175,7 @@ export const ToolbarPublish: FC = () => {
 
   const handlePublish = () => {
     if (!report) return toastInternalError(t('error.validityReport.motFound'))
+    toast.closeAll()
 
     const payload = [...report].pop()
     if (!payload) return toastInternalError(t('error.validityReport.notValid'))
