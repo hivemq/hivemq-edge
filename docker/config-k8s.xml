@@ -72,5 +72,8 @@
             ${IF:HIVEMQ_HTTPS_ENABLED}
         </listeners>
     </admin-api>
+    <persistence>
+        <mode>${ENV:HIVEMQ_PERSISTENCE_MODE</mode>
+    </persistence>
     ${FRAGMENT:/fragment/config}
 </hivemq>
