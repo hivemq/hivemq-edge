@@ -162,10 +162,7 @@ Check out the git repository and build the Docker image.
 [source,bash]
 ----
 git clone https://github.com/hivemq/hivemq-edge.git
-
-cd hivemq-edge
-
-docker/build.sh
+./gradlew loadOciImage
 ----
 
 The Docker image `hivemq/hivemq-edge:snapshot` is created locally.
