@@ -178,7 +178,7 @@ oci {
                             from("docker/docker-entrypoint.sh")
                             into("hivemq") {
                                 from("./hivemq-edge/src/distribution") { filter { exclude("**/.gitkeep") } }
-                                from(".docker/config-k8s.xml") {
+                                from("docker/config-k8s.xml") {
                                     into("conf-k8s")
                                     rename("config-k8s.xml", "config.xml")
                                 }
