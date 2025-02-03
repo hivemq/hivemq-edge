@@ -148,7 +148,7 @@ val hivemqEdgeJarRelease: Configuration by configurations.creating {
 oci {
     registries {
         dockerHub {
-            credentials()
+            optionalCredentials()
         }
     }
     imageDefinitions.register("main") {
