@@ -1,5 +1,3 @@
-import java.time.Instant
-
 group = "com.hivemq"
 
 plugins {
@@ -172,7 +170,6 @@ oci {
             }
             layers {
                 layer("hivemq") {
-                    metadata { creationTime.set(Instant.EPOCH) }
                     contents {
                         into("opt") {
                             filePermissions = 0b110_110_000
@@ -187,13 +184,19 @@ oci {
                                 }
                                 from("./docker/config.xml") { into("conf") }
                                 from("./hivemq-edge/src/main/resources/config.xsd") { into("conf") }
-
-                                // copy OSS modules
-                                into("modules") {
+                                from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
+                            }
+                        }
+                    }
+                    layer("open-source-modules") {
+                        contents {
+                            into("opt") {
+                                filePermissions = 0b110_110_000
+                                directoryPermissions = 0b111_111_000
+                                into("hivemq/modules") {
+                                    // copy OSS modules
                                     from(openSourceEdgeModuleBinaries.elements)
                                 }
-
-                                from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
                             }
                         }
                     }
