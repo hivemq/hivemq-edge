@@ -188,19 +188,20 @@ oci {
                             }
                         }
                     }
-                    layer("open-source-modules") {
-                        contents {
-                            into("opt") {
-                                filePermissions = 0b110_110_000
-                                directoryPermissions = 0b111_111_000
-                                into("hivemq/modules") {
-                                    // copy OSS modules
-                                    from(openSourceEdgeModuleBinaries.elements)
-                                }
+                }
+                layer("open-source-modules") {
+                    contents {
+                        into("opt") {
+                            filePermissions = 0b110_110_000
+                            directoryPermissions = 0b111_111_000
+                            into("hivemq/modules") {
+                                // copy OSS modules
+                                from(openSourceEdgeModuleBinaries.elements)
                             }
                         }
                     }
                 }
+
             }
         }
         specificPlatform(platform("linux", "amd64"))
