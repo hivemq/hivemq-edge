@@ -47,7 +47,7 @@ swagger-jaxrs = "1.6.14"
 victools-jsonschema = "4.37.0"
 wiremock = "3.0.1"
 zeroAllocationHashing = "0.16"
-openApiGeneratorVersion="7.10.0"
+openApiGeneratorVersion="7.11.0"
 jacksonDatabindNullable="0.2.6"
 
 [libraries]
