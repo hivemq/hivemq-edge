@@ -162,6 +162,7 @@ Check out the git repository and build the Docker image.
 [source,bash]
 ----
 git clone https://github.com/hivemq/hivemq-edge.git
+cd hivemq-edge
 ./gradlew loadOciImage
 ----
 
