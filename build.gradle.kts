@@ -158,7 +158,6 @@ oci {
                 runtime("library:eclipse-temurin:sha256!ec48c245e50016d20c36fd3cdd5b4e881eee68cab535955df74a8a9ec709faaa")
             }
             config {
-                creationTime.set(Instant.EPOCH)
                 user = "10000"
                 ports = setOf("1883", "2442", "8080")
                 environment = mapOf(
