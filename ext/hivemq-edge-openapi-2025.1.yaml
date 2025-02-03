@@ -2725,7 +2725,7 @@ paths:
                           id: cloud
                           type: bridge
               schema:
-                $ref: '#/components/schemas/BridgeList'
+                $ref: './bridge.yaml'
           description: Success
       summary: List all bridges in the system
       tags:
@@ -2737,7 +2737,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Bridge'
+              $ref: './bridge.yaml'
         description: The new bridge.
         required: true
       responses:
@@ -2862,7 +2862,7 @@ paths:
                         id: simons-cloud
                         type: bridge
               schema:
-                $ref: '#/components/schemas/Bridge'
+                $ref: ''./bridge.yaml''
           description: Success
         "400":
           content:
@@ -2893,7 +2893,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Bridge'
+              $ref: './bridge.yaml'
       responses:
         "200":
           description: Success
@@ -4546,172 +4546,6 @@ components:
       required:
       - fromState
       - toState
-    Bridge:
-      type: object
-      properties:
-        cleanStart:
-          type: boolean
-          format: boolean
-          default: true
-          description: The cleanStart value associated the the MQTT connection.
-        clientId:
-          type: string
-          format: string
-          description: The client identifier associated the the MQTT connection.
-          example: my-example-client-id
-          maxLength: 65535
-          nullable: true
-        host:
-          type: string
-          description: "The host the bridge connects to - a well formed hostname,\
-            \ ipv4 or ipv6 value."
-          maxLength: 255
-        id:
-          type: string
-          format: string
-          description: "The bridge id, must be unique and only contain alpha numeric\
-            \ characters with spaces and hyphens."
-          maxLength: 500
-          minLength: 1
-          pattern: "^([a-zA-Z_0-9-_])*$"
-        keepAlive:
-          type: integer
-          format: int32
-          default: 240
-          description: The keepAlive associated the the MQTT connection.
-          maximum: 65535
-          minimum: 0
-        localSubscriptions:
-          type: array
-          description: localSubscriptions associated with the bridge
-          items:
-            $ref: '#/components/schemas/LocalBridgeSubscription'
-        loopPreventionEnabled:
-          type: boolean
-          format: boolean
-          default: true
-          description: Is loop prevention enabled on the connection
-        loopPreventionHopCount:
-          type: integer
-          format: int32
-          default: 1
-          description: Loop prevention hop count
-          maximum: 100
-          minimum: 0
-        password:
-          type: string
-          format: string
-          description: The password value associated the the MQTT connection.
-          maxLength: 65535
-          nullable: true
-        persist:
-          type: boolean
-          description: "If this flag is set to true, any outgoing mqtt messages with\
-            \ QoS-1 or QoS-2 will be persisted on disc in case disc persistence is\
-            \ active.If this flag is set to false, the QoS of any outgoing mqtt messages\
-            \ will be set to QoS-0 and no traffic will be persisted on disc."
-          nullable: true
-        port:
-          type: integer
-          format: int32
-          description: The port number to connect to
-          maximum: 65535
-          minimum: 1
-        remoteSubscriptions:
-          type: array
-          description: remoteSubscriptions associated with the bridge
-          items:
-            $ref: '#/components/schemas/BridgeSubscription'
-        sessionExpiry:
-          type: integer
-          format: int64
-          default: 3600
-          description: The sessionExpiry associated the the MQTT connection.
-#          maximum: 4294967295 too big for Java long
-          minimum: 0
-        status:
-          $ref: '#/components/schemas/Status'
-        tlsConfiguration:
-          $ref: '#/components/schemas/TlsConfiguration'
-        username:
-          type: string
-          format: string
-          description: The username value associated the the MQTT connection.
-          maxLength: 65535
-          nullable: true
-        websocketConfiguration:
-          $ref: '#/components/schemas/WebsocketConfiguration'
-      required:
-      - cleanStart
-      - host
-      - id
-      - keepAlive
-      - port
-      - sessionExpiry
-    BridgeCustomUserProperty:
-      type: object
-      description: The customUserProperties for this subscription
-      properties:
-        key:
-          type: string
-          format: string
-          description: The key the from the property
-        value:
-          type: string
-          format: string
-          description: The value the from the property
-      required:
-      - key
-      - value
-    BridgeList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Bridge'
-      required:
-      - items
-    BridgeSubscription:
-      type: object
-      description: remoteSubscriptions associated with the bridge
-      properties:
-        customUserProperties:
-          type: array
-          description: The customUserProperties for this subscription
-          items:
-            $ref: '#/components/schemas/BridgeCustomUserProperty'
-        destination:
-          type: string
-          description: The destination topic for this filter set.
-          example: some/topic/value
-        filters:
-          type: array
-          description: The filters for this subscription.
-          example: some/topic/value
-          items:
-            type: string
-            description: The filters for this subscription.
-            example: some/topic/value
-        maxQoS:
-          type: integer
-          format: int32
-          default: 0
-          description: The maxQoS for this subscription.
-          enum:
-          - 0
-          - 1
-          - 2
-          maximum: 2
-          minimum: 0
-        preserveRetain:
-          type: boolean
-          description: The preserveRetain for this subscription
-      required:
-      - destination
-      - filters
-      - maxQoS
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5230,58 +5064,7 @@ components:
             $ref: '#/components/schemas/Listener'
       required:
       - items
-    LocalBridgeSubscription:
-      type: object
-      description: localSubscriptions associated with the bridge
-      properties:
-        customUserProperties:
-          type: array
-          description: The customUserProperties for this subscription
-          items:
-            $ref: '#/components/schemas/BridgeCustomUserProperty'
-        destination:
-          type: string
-          description: The destination topic for this filter set.
-          example: some/topic/value
-        excludes:
-          type: array
-          description: The exclusion patterns
-          items:
-            type: string
-            description: The exclusion patterns
-            nullable: true
-          nullable: true
-        filters:
-          type: array
-          description: The filters for this subscription.
-          example: some/topic/value
-          items:
-            type: string
-            description: The filters for this subscription.
-            example: some/topic/value
-        maxQoS:
-          type: integer
-          format: int32
-          default: 0
-          description: The maxQoS for this subscription.
-          enum:
-          - 0
-          - 1
-          - 2
-          maximum: 2
-          minimum: 0
-        preserveRetain:
-          type: boolean
-          description: The preserveRetain for this subscription
-        queueLimit:
-          type: integer
-          format: int64
-          description: The limit of this bridge for QoS-1 and QoS-2 messages.
-          nullable: true
-      required:
-      - destination
-      - filters
-      - maxQoS
+
     Metric:
       type: object
       description: List of result items that are returned by this endpoint
