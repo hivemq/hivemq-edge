@@ -2,6 +2,7 @@ group = "com.hivemq"
 
 plugins {
     id("com.hivemq.edge-version-updater")
+    id("io.github.sgtsilvio.gradle.oci") version "0.20.2"
 }
 
 tasks.register("clean") {
@@ -116,6 +117,96 @@ tasks.register("updateDependantVersions") {
     dependsOn(":updateVersion")
     edgeProjectsToUpdate.forEach {
         dependsOn(gradle.includedBuild(it).task(":updateVersion"))
+    }
+}
+
+
+val openSourceEdgeModuleBinaries: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named("binary"))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named("release"))
+    }
+    extendsFrom(edgeModule)
+}
+
+val hivemqEdgeJarRelease: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named("jar"))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named("release"))
+    }
+    extendsFrom(hivemq)
+}
+
+/* ******************** Docker ******************** */
+
+oci {
+    registries {
+        dockerHub {
+            optionalCredentials()
+        }
+    }
+    imageDefinitions.register("main") {
+        imageName.set("hivemq/hivemq-edge")
+        allPlatforms {
+            dependencies {
+                runtime("library:eclipse-temurin:sha256!ec48c245e50016d20c36fd3cdd5b4e881eee68cab535955df74a8a9ec709faaa")
+            }
+            config {
+                user = "10000"
+                ports = setOf("1883", "2442", "8080")
+                environment = mapOf(
+                    "JAVA_OPTS" to "-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA",
+                    "HIVEMQ_ALLOW_ALL_CLIENTS" to "true",
+                    "LANG" to "en_US.UTF-8",
+                )
+                entryPoint = listOf("/opt/docker-entrypoint.sh")
+                arguments = listOf("/opt/hivemq/bin/run.sh")
+                volumes = setOf("/opt/hivemq/data", "/opt/hivemq/log")
+                workingDirectory = "/opt/hivemq"
+            }
+            layers {
+                layer("hivemq") {
+                    contents {
+                        into("opt") {
+                            filePermissions = 0b110_110_000
+                            directoryPermissions = 0b111_111_000
+                            permissions("**/*.sh", 0b111_111_000)
+                            from("docker/docker-entrypoint.sh")
+                            into("hivemq") {
+                                from("./hivemq-edge/src/distribution") { filter { exclude("**/.gitkeep") } }
+                                from(".docker/config-k8s.xml") {
+                                    into("conf-k8s")
+                                    rename("config-k8s.xml", "config.xml")
+                                }
+                                from("./docker/config.xml") { into("conf") }
+                                from("./hivemq-edge/src/main/resources/config.xsd") { into("conf") }
+                                from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
+                            }
+                        }
+                    }
+                }
+                layer("open-source-modules") {
+                    contents {
+                        into("opt") {
+                            filePermissions = 0b110_110_000
+                            directoryPermissions = 0b111_111_000
+                            into("hivemq/modules") {
+                                // copy OSS modules
+                                from(openSourceEdgeModuleBinaries.elements)
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        specificPlatform(platform("linux", "amd64"))
+        specificPlatform(platform("linux", "arm64", "v8"))
+        specificPlatform(platform("linux", "arm", "v7"))
     }
 }
 

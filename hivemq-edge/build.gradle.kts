@@ -43,6 +43,7 @@ plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
 
+
 }
 
 group = "com.hivemq"
