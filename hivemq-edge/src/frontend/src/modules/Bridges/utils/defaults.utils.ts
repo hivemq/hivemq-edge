@@ -9,4 +9,5 @@ export const bridgeInitialState: Bridge = {
   port: 1883,
   sessionExpiry: 3600,
   persist: true,
+  loopPreventionHopCount: 1,
 }
