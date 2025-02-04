@@ -15,7 +15,8 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import BridgeMainDrawer from '@/modules/Bridges/components/panels/BridgeMainDrawer.tsx'
-import { bridgeInitialState, useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
+import { useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
+import { bridgeInitialState } from '@/modules/Bridges/utils/defaults.utils.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
