@@ -11,8 +11,8 @@ import ConnectionController from './ConnectionController.tsx'
 
 const { mutateAdapterAsync, mutateBridgeAsync, successToast, errorToast } = vi.hoisted(() => {
   return {
-    mutateAdapterAsync: vi.fn<never, StatusTransitionResult>().mockResolvedValue({}),
-    mutateBridgeAsync: vi.fn<never, StatusTransitionResult>().mockResolvedValue({}),
+    mutateAdapterAsync: vi.fn().mockResolvedValue({}),
+    mutateBridgeAsync: vi.fn().mockResolvedValue({}),
     successToast: vi.fn(),
     errorToast: vi.fn(),
   }

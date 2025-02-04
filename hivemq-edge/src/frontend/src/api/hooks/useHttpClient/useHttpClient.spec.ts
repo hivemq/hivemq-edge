@@ -25,7 +25,7 @@ interface MockAuthContextType {
 
 const { mockedMethod } = vi.hoisted(() => {
   return {
-    mockedMethod: vi.fn<[], MockAuthContextType>(() => ({ credentials: { token: 'fake token' } })),
+    mockedMethod: vi.fn(() => ({ credentials: { token: 'fake token' } } as MockAuthContextType)),
   }
 })
 
