@@ -58,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -88,16 +89,15 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     public @NotNull Response getBridges() {
         logger.trace("Bridge API listing events at {}", System.currentTimeMillis());
         final List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
-        final BridgeList list = new BridgeList().items(
-                bridges.stream()
-                        .map(m -> BridgeUtils.convert(m, getStatusInternal(m.getId())))
-                        .collect(Collectors.toList()));
+        final BridgeList list = new BridgeList().items(bridges.stream()
+                .map(m -> BridgeUtils.convert(m, getStatusInternal(m.getId())))
+                .collect(Collectors.toList()));
         return Response.ok(list).build();
     }
 
-
     @Override
     public @NotNull Response addBridge(final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
+        sanitize(bridge);
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
@@ -211,8 +211,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
     @Override
     public @NotNull Response updateBridge(
-            final @NotNull String bridgeId,
-            final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
+            final @NotNull String bridgeId, final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
+        sanitize(bridge);
+
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
@@ -420,7 +421,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                                 .map(BridgeResourceImpl::convertProperty)
                                 .collect(Collectors.toList()) :
                         List.of(),
-                subscription.getPreserveRetain(),
+                Objects.requireNonNullElse(subscription.getPreserveRetain(), false),
                 subscription.getMaxQoS().value(),
                 subscription.getQueueLimit());
     }
@@ -458,7 +459,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.getVerifyHostname(),
-                Math.max(10, tls.getHandshakeTimeout()));
+                Math.max(10, Objects.requireNonNullElse(tls.getHandshakeTimeout(), 10)));
     }
 
     public static @Nullable BridgeWebsocketConfig convertWebsocketConfig(final @Nullable WebsocketConfiguration websocketConfiguration) {
@@ -468,5 +469,89 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
         return new BridgeWebsocketConfig(websocketConfiguration.getServerPath(),
                 websocketConfiguration.getSubProtocol());
+    }
+
+
+    /**
+     * This method re-constructs default values in case invalid values in the request has lead to losing them ( i.e.
+     * they become null)
+     */
+    private static void sanitize(final @NotNull Bridge bridge) {
+
+        if (bridge.getLoopPreventionEnabled() == null) {
+            bridge.setLoopPreventionEnabled(true);
+        }
+
+        if (bridge.getLoopPreventionHopCount() == null) {
+            bridge.setLoopPreventionHopCount(0);
+        }
+
+        if (bridge.getCleanStart() == null) {
+            bridge.setCleanStart(true);
+        }
+
+        if (bridge.getSessionExpiry() == null) {
+            bridge.setSessionExpiry(3600L);
+        }
+
+        if (bridge.getLocalSubscriptions() != null) {
+            bridge.setLocalSubscriptions(List.of());
+        }
+
+        bridge.getLocalSubscriptions().forEach(BridgeResourceImpl::sanitize);
+
+        if (bridge.getRemoteSubscriptions() != null) {
+           bridge.setRemoteSubscriptions(List.of());
+        }
+
+        bridge.getRemoteSubscriptions().forEach(BridgeResourceImpl::sanitize);
+
+        if (bridge.getTlsConfiguration() != null) {
+            sanitize(bridge.getTlsConfiguration());
+        }
+
+    }
+
+    private static void sanitize(final @NotNull TlsConfiguration tlsConfiguration) {
+        if (tlsConfiguration.getCipherSuites() == null) {
+            tlsConfiguration.setCipherSuites(List.of());
+        }
+
+        if (tlsConfiguration.getEnabled() == null) {
+            tlsConfiguration.setEnabled(false);
+        }
+
+        if (tlsConfiguration.getProtocols() == null) {
+            tlsConfiguration.setProtocols(List.of());
+        }
+
+        if (tlsConfiguration.getVerifyHostname() == null) {
+            tlsConfiguration.setVerifyHostname(false);
+        }
+
+        if(tlsConfiguration.getHandshakeTimeout()==null){
+            tlsConfiguration.setHandshakeTimeout(10);
+        }
+    }
+
+    private static void sanitize(final @NotNull LocalBridgeSubscription localBridgeSubscription) {
+        if (localBridgeSubscription.getCustomUserProperties() == null) {
+            localBridgeSubscription.setCustomUserProperties(List.of());
+        }
+
+        if (localBridgeSubscription.getFilters() == null) {
+            localBridgeSubscription.setFilters(List.of());
+        }
+
+    }
+
+    private static void sanitize(final @NotNull BridgeSubscription bridgeSubscription) {
+        if (bridgeSubscription.getCustomUserProperties() == null) {
+            bridgeSubscription.setCustomUserProperties(List.of());
+        }
+
+        if (bridgeSubscription.getFilters() == null) {
+            bridgeSubscription.setFilters(List.of());
+        }
     }
 }
