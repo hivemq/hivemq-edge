@@ -113,10 +113,10 @@ public class ConfigurationMigrator {
     }
 
     @VisibleForTesting
-    public Optional<HiveMQConfigEntity> migrateIfNeeded(final Map<String, ProtocolAdapterFactory<?>> factoryMap) {
+    public @NotNull Optional<HiveMQConfigEntity> migrateIfNeeded(final @NotNull Map<String, ProtocolAdapterFactory<?>> factoryMap) {
         try {
             if (!needsMigration(configurationFile)) {
-                log.info("No configuration migration needed.");
+                log.debug("No configuration migration needed.");
                 return Optional.empty();
             }
 

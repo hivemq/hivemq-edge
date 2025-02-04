@@ -236,11 +236,11 @@ public class ProtocolAdapterManager {
     }
 
     public synchronized void start() {
-        log.info("Starting adapters");
+        log.debug("Starting adapters");
         for (final ProtocolAdapterConfig adapterConfig : configPersistence.allAdapters()) {
             try {
                 start(createAdapterInternal(adapterConfig, versionProvider.getVersion())).get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (final InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -264,7 +264,7 @@ public class ProtocolAdapterManager {
         adaptersToBeUpdated.removeAll(adaptersToBeCreated);
         adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
 
-        List<String> failedAdapters = new ArrayList<>();
+        final List<String> failedAdapters = new ArrayList<>();
 
         adaptersToBeDeleted
                 .forEach(name -> {
@@ -272,7 +272,7 @@ public class ProtocolAdapterManager {
                         stop(name)
                             .thenApply(r -> deleteAdapterInternal(name))
                             .get();
-                    } catch (InterruptedException | ExecutionException e) {
+                    } catch (final InterruptedException | ExecutionException e) {
                         failedAdapters.add(name);
                         log.error("Failed deleting adapter {}", name, e);
                     }
@@ -282,7 +282,7 @@ public class ProtocolAdapterManager {
                 .forEach(name -> {
                     try {
                         start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())).get();
-                    } catch (InterruptedException | ExecutionException e) {
+                    } catch (final InterruptedException | ExecutionException e) {
                         failedAdapters.add(name);
                         log.error("Failed adding adapter {}", name, e);
                     }
@@ -296,7 +296,7 @@ public class ProtocolAdapterManager {
                             .thenCompose(r ->
                                     start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())))
                             .get();
-                    } catch (InterruptedException | ExecutionException e) {
+                    } catch (final InterruptedException | ExecutionException e) {
                         failedAdapters.add(name);
                         log.error("Failed updating adapter {}", name, e);
                     }
@@ -455,7 +455,7 @@ public class ProtocolAdapterManager {
         return result;
     }
 
-    private void updateAdapter(ProtocolAdapterConfig protocolAdapterConfig) {
+    private void updateAdapter(final ProtocolAdapterConfig protocolAdapterConfig) {
         deleteAdapterInternal(protocolAdapterConfig.getAdapterId());
         syncFuture(start(createAdapterInternal(protocolAdapterConfig, versionProvider.getVersion())));
         configPersistence.updateAdapter(protocolAdapterConfig);
@@ -586,7 +586,7 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagUpdateResult updateDomainTags(
             final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
         return getAdapterById(adapterId).map(adapter -> {
-            List<Tag> protocolTags = new ArrayList<>();
+            final List<Tag> protocolTags = new ArrayList<>();
             domainTags.forEach(domainTag ->
                     protocolTags.add(configConverter
                             .domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(), domainTag)));

@@ -109,12 +109,12 @@ public class HiveMQEdgeBootstrap {
             //Create SystemInformation this early because logging depends on it
             systemInformation.init();
         }
-        // load available modules after system information is bootstrapped.
-        moduleLoader.loadModules();
-
 
         log.trace("Initializing Logging");
         LoggingBootstrap.initLogging(systemInformation.getConfigFolder());
+
+        // load available modules after system information is bootstrapped and logging is bootstrapped.
+        moduleLoader.loadModules();
 
         log.trace("Initializing Exception handlers");
         HiveMQExceptionHandlerBootstrap.addUnrecoverableExceptionHandler();
@@ -189,7 +189,7 @@ public class HiveMQEdgeBootstrap {
     }
 
     private void bootstrapCoreComponents() {
-        log.info("Integrating Core Modules");
+        log.debug("Integrating Core Modules");
         // configService is always set in caller
         Preconditions.checkNotNull(configService);
 
