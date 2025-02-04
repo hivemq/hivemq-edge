@@ -4627,8 +4627,8 @@ components:
           format: int64
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
-#          maximum: 4294967295 too big for Java long
           minimum: 0
+          # TODO add maximum for session expiry (4294967295 seems to be too big for Java long)
         status:
           $ref: '#/components/schemas/Status'
         tlsConfiguration:
@@ -5366,15 +5366,19 @@ components:
         includeTagNames:
           type: boolean
           description: Should tag names be included when sent out.
+          default: false
         includeTimestamp:
           type: boolean
           description: Should the timestamp be included when sent out.
+          default: false
         maxQoS:
           $ref: '#/components/schemas/QoS'
+          default: EXACTLY_ONCE
         messageExpiryInterval:
           type: integer
           format: int64
           description: The message expiry interval.
+          default: 9007199254740991L
         tagName:
           type: string
           format: mqtt-tag
@@ -5388,10 +5392,6 @@ components:
           items:
             $ref: '#/components/schemas/MqttUserProperty'
       required:
-      - includeTagNames
-      - includeTimestamp
-      - maxQoS
-      - messageExpiryInterval
       - tagName
       - topic
     NorthboundMappingList:

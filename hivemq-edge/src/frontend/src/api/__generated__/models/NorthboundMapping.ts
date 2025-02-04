@@ -13,16 +13,16 @@ export type NorthboundMapping = {
     /**
      * Should tag names be included when sent out.
      */
-    includeTagNames: boolean;
+    includeTagNames?: boolean;
     /**
      * Should the timestamp be included when sent out.
      */
-    includeTimestamp: boolean;
-    maxQoS: QoS;
+    includeTimestamp?: boolean;
+    maxQoS?: QoS;
     /**
      * The message expiry interval.
      */
-    messageExpiryInterval: number;
+    messageExpiryInterval?: number;
     /**
      * The tag for which values hould be collected and sent out.
      */
