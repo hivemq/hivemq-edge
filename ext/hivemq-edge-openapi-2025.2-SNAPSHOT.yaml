@@ -4627,8 +4627,8 @@ components:
           format: int64
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
-#          maximum: 4294967295 too big for Java long
           minimum: 0
+          # TODO add maximum for session expiry (4294967295 seems to be too big for Java long)
         status:
           $ref: '#/components/schemas/Status'
         tlsConfiguration:
