@@ -8,21 +8,17 @@ export const $NorthboundMapping = {
         includeTagNames: {
             type: 'boolean',
             description: `Should tag names be included when sent out.`,
-            isRequired: true,
         },
         includeTimestamp: {
             type: 'boolean',
             description: `Should the timestamp be included when sent out.`,
-            isRequired: true,
         },
         maxQoS: {
             type: 'QoS',
-            isRequired: true,
         },
         messageExpiryInterval: {
             type: 'number',
             description: `The message expiry interval.`,
-            isRequired: true,
             format: 'int64',
         },
         tagName: {
