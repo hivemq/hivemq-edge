@@ -1,19 +1,10 @@
 import type { FunctionComponent, PropsWithChildren } from 'react'
-import { createContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { ApiBearerToken } from '@/api/__generated__'
 import { useLocalStorage } from '@/hooks/useLocalStorage/useLocalStorage.ts'
 import { authUtilities, processToken } from '@/modules/Auth/auth-utilities.ts'
-
-interface AuthContextType {
-  credentials: ApiBearerToken | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (user: ApiBearerToken, callback: VoidFunction) => void
-  logout: (callback: VoidFunction) => void
-}
-
-export const AuthContext = createContext<AuthContextType | null>(null)
+import { AuthContext } from './AuthContext'
 
 export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
   const [credentials, setCredentials] = useState<ApiBearerToken | null>(null)
