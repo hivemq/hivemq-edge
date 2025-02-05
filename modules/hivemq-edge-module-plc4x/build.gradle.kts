@@ -37,7 +37,7 @@ repositories {
 }
 
 // exclude old transitive dependency versions that are provided by edge
-configurations.runtimeClasspath{
+configurations.runtimeClasspath {
     exclude("io.netty", "netty-buffer")
     exclude("io.netty", "netty-handler")
     exclude("io.netty", "netty-codec")
@@ -53,6 +53,10 @@ dependencies {
     implementation(libs.plc4j.ads)
     implementation(libs.plc4j.api)
     implementation(libs.plc4j.transport.raw.socket)
+
+    constraints {
+        implementation(libs.org.json)
+    }
 }
 
 dependencies {

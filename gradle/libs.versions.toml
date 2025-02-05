@@ -37,6 +37,7 @@ mockito = "5.15.2"
 modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
 netty = "4.1.117.Final"
+org_json = "20250107"
 pmd = "6.55.0"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.16"
@@ -110,6 +111,7 @@ netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty"
 netty-commons = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
+org_json = { module = "org.json:json", version.ref = "org_json" }
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
