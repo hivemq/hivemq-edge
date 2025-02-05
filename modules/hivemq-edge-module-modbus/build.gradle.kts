@@ -39,8 +39,16 @@ dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.jackson.databind)
-    implementation(libs.digitalpetri.modbus.master.tcp)
+    compileOnly(libs.netty.buffer)
+    compileOnly(libs.netty.codec)
+    implementation(libs.digitalpetri.modbus.master.tcp){
+        // exclude old dependency versions that edge provides:
+        exclude("io.netty", "netty-buffer")
+        exclude("io.netty", "netty-codec")
+    }
 
+
+    testImplementation(libs.digitalpetri.modbus.master.tcp)
     testImplementation(libs.jackson.databind)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj)
