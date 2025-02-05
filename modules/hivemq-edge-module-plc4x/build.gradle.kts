@@ -37,6 +37,14 @@ repositories {
 }
 
 dependencies {
+    configurations.all {
+        exclude("io.netty", "netty-buffer")
+        exclude("io.netty", "netty-handler")
+        exclude("io.netty", "netty-codec")
+        exclude("io.netty", "netty-common")
+        exclude("io.netty", "netty-transport")
+    }
+
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
 
@@ -49,6 +57,8 @@ dependencies {
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.plc4j.api)
+
     testImplementation(libs.apache.commonsIO)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.junit.jupiter)

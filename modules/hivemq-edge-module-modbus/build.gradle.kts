@@ -39,7 +39,10 @@ dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.jackson.databind)
-    implementation(libs.digitalpetri.modbus.master.tcp)
+    implementation(libs.digitalpetri.modbus.master.tcp){
+        exclude("io.netty", "netty-buffer")
+        exclude("io.netty", "netty-codec")
+    }
 
     testImplementation(libs.jackson.databind)
     testImplementation(libs.junit.jupiter)
