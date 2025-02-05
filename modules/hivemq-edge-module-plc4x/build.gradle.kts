@@ -36,15 +36,16 @@ repositories {
     }
 }
 
-dependencies {
-    configurations.all {
-        exclude("io.netty", "netty-buffer")
-        exclude("io.netty", "netty-handler")
-        exclude("io.netty", "netty-codec")
-        exclude("io.netty", "netty-common")
-        exclude("io.netty", "netty-transport")
-    }
+// exclude old transitive dependency versions that are provided by edge
+configurations.runtimeClasspath{
+    exclude("io.netty", "netty-buffer")
+    exclude("io.netty", "netty-handler")
+    exclude("io.netty", "netty-codec")
+    exclude("io.netty", "netty-common")
+    exclude("io.netty", "netty-transport")
+}
 
+dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
 
