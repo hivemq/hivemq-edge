@@ -59,7 +59,6 @@ describe('PolicyErrorReport', () => {
     )
 
     cy.get('h2').first().click()
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(800) // Wait for accordion to expand (ugly)
 
     cy.checkAccessibility()
