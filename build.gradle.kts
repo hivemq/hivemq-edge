@@ -182,6 +182,10 @@ oci {
                                     into("conf-k8s")
                                     rename("config-k8s.xml", "config.xml")
                                 }
+                                from("docker/logback-k8s.xml") {
+                                    into("conf-k8s")
+                                    rename("logback-k8s.xml", "logback.xml")
+                                }
                                 from("./docker/config.xml") { into("conf") }
                                 from("./hivemq-edge/src/main/resources/config.xsd") { into("conf") }
                                 from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
