@@ -129,6 +129,11 @@ public class PostgreSQLProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
+    public int getCurrentConfigVersion() {
+        return 1;
+    }
+
+    @Override
     public @NotNull Class<? extends Tag> tagConfigurationClass() {
         return PostgreSQLAdapterTag.class;
     }
