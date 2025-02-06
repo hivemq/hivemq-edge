@@ -5502,6 +5502,23 @@ components:
             $ref: '#/components/schemas/PayloadSample'
       required:
       - items
+    PolicyOnBranch:
+      type: object
+      description: The pipeline to execute when messages are created by a transform
+        script for a particular branch.
+      properties:
+        branchId:
+          type: string
+          description: The name of the branch.
+        pipeline:
+          type: array
+          description: The pipeline to execute for created messages. Currently this
+            may only contain a single Serdes.serialize operation.
+          items:
+            $ref: "#/components/schemas/PolicyOperation"
+      required:
+        - branchId
+        - pipeline
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations
@@ -5517,10 +5534,16 @@ components:
         id:
           type: string
           description: The unique id of the operation in the pipeline.
+        onBranch:
+          type: array
+          description: The branches for new messages created by this operation. For
+            transformation scripts only.
+          items:
+            $ref: "#/components/schemas/PolicyOnBranch"
       required:
-      - arguments
-      - functionId
-      - id
+        - arguments
+        - functionId
+        - id
     ProblemDetails:
       type: object
       properties:

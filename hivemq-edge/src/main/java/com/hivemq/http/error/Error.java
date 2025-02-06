@@ -31,6 +31,7 @@ public class Error {
     public static final @NotNull String REQUIRED_FIELD_MISSING_TITLE = "Required field missing";
     public static final @NotNull String AT_LEAST_ONE_FIELD_MISSING_TITLE = "One of the fields must be present.";
     public static final @NotNull String EMPTY_STRING_TITLE = "String must not be empty";
+    public static final @NotNull String ILLEGAL_COMBINATION_TITLE = "Illegal combination";
 
     @JsonProperty(value = "detail", required = true)
     @Schema(description = "Detailed contextual description of this error")
@@ -158,6 +159,16 @@ public class Error {
                         mustBeforeField),
                 "function");
     }
+
+    public static @NotNull Error exactlyOneFunction(
+            final @NotNull String function, final int functionCount, final @NotNull String path) {
+        return new Error(ILLEGAL_COMBINATION_TITLE,
+                String.format("The branch pipeline must contain exactly one '%s' function, but %d functions were found at '%s'.",
+                        function,
+                        functionCount,
+                        path));
+    }
+
 
     public @Nullable String getParameter() {
         return parameter;
