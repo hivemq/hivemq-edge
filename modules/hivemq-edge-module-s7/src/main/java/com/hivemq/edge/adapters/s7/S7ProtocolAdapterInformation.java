@@ -42,9 +42,15 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     public static final ProtocolAdapterInformation INSTANCE = new S7ProtocolAdapterInformation();
     private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterInformation.class);
     public static final String PROTOCOL_ID = "s7-new";
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
 
     protected S7ProtocolAdapterInformation() {
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 
     @Override
