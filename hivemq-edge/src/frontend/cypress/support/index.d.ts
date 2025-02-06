@@ -1,8 +1,10 @@
 /// <reference types="cypress" />
-import { mount } from 'cypress/react18'
+import type { mount } from 'cypress/react18'
 
 declare namespace Cypress {
-  interface Chainable<Subject> {
+  interface Chainable {
     mount: typeof mount
   }
 }
+
+declare module '@cypress/code-coverage/support'
