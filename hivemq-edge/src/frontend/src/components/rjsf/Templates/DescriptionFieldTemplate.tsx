@@ -5,7 +5,7 @@ import { Text } from '@chakra-ui/react'
 export const DescriptionFieldTemplate = <
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = GenericObjectType
+  F extends FormContextType = GenericObjectType,
 >({
   description,
   id,
