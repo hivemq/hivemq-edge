@@ -7,7 +7,7 @@ import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.
 export const ObjectFieldTemplate = <
   T = never,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = never
+  F extends FormContextType = never,
 >(
   props: ObjectFieldTemplateProps<T, S, F>
 ) => {

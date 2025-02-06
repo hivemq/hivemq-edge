@@ -66,7 +66,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       type: PolicyType
     ): CombinedPolicy[] {
       if (!items) return []
-      return items.map((item) => ({ ...item, type } as CombinedPolicy))
+      return items.map((item) => ({ ...item, type }) as CombinedPolicy)
     }
 
     const draftPolicyItems = [
