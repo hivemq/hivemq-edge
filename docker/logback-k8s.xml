@@ -27,15 +27,11 @@
         <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <root>
+    <root level="${HIVEMQ_LOG_LEVEL:-INFO}">
         <appender-ref ref="CONSOLE"/>
     </root>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
-
-    <logger name="com.hivemq" level="DEBUG"/>
+    <logger name="com.hivemq" level="${HIVEMQ_LOG_LEVEL:-INFO}"/>
     <logger name="jetbrains.exodus" level="WARN"/>
     <logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF"/>
     <logger name="org.apache.plc4x" level="WARN"/>
