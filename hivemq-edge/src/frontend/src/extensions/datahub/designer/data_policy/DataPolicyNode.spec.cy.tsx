@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import type { NodeProps } from 'reactflow'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'

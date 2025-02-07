@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import Bridges from '@/modules/Bridges/Bridges.tsx'
-import { BridgeProvider } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
+import { BridgeProvider } from '@/modules/Bridges/hooks/BridgeProvider.tsx'
 
 const BridgePage: FC = () => {
   const { t } = useTranslation()

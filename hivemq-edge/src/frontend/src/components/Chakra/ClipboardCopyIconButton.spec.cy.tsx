@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import ClipboardCopyIconButton from './ClipboardCopyIconButton.tsx'
 
 const MOCK_CONTENT = 'Text to copy to the clipboard'

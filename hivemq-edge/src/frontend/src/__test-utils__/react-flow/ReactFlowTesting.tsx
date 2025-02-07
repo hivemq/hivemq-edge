@@ -1,10 +1,10 @@
 import { type FC, type ReactNode, useEffect } from 'react'
 import { ReactFlowProvider } from 'reactflow'
+import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { EdgeFlowProvider } from '@/modules/Workspace/hooks/FlowContext.tsx'
 import { type WorkspaceState } from '@/modules/Workspace/types.ts'
-import { Card, CardBody, CardHeader } from '@chakra-ui/react'
+import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface ReactFlowTestingConfig {

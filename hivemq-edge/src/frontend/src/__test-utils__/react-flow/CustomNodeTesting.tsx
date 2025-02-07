@@ -7,7 +7,7 @@ import { Code, VStack } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { EdgeFlowProvider } from '@/modules/Workspace/hooks/FlowContext.tsx'
+import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
 
 interface MockReactFlowProps {
   nodeTypes?: NodeTypes
