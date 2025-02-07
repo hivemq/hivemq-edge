@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { Card, CardBody, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 
@@ -12,13 +13,7 @@ import {
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { useTranslation } from 'react-i18next'
-
-export enum MappingStrategy {
-  EXACT = 'EXACT',
-  TYPED = 'TYPED',
-  TRANSFORMED = 'TRANSFORMED',
-}
+import { MappingStrategy } from '@/components/rjsf/MqttTransformation/types.ts'
 
 interface SubscriptionContainerProps {
   item: SouthboundMapping
