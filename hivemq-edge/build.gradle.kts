@@ -95,7 +95,7 @@ metadata {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
     withJavadocJar()
     withSourcesJar()
@@ -252,6 +252,8 @@ tasks.test {
         "java.base/java.nio=ALL-UNNAMED",
         "--add-opens",
         "java.base/sun.nio.ch=ALL-UNNAMED",
+        "--add-opens",
+        "java.base/java.util=ALL-UNNAMED",
         "--add-opens",
         "jdk.management/com.sun.management.internal=ALL-UNNAMED",
         "--add-exports",
