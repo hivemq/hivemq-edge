@@ -1,9 +1,7 @@
 package com.hivemq.edge.adapters.s7;
 
 import com.github.xingshuangs.iot.protocol.s7.enums.EPlcType;
-import com.github.xingshuangs.iot.protocol.s7.service.MultiAddressRead;
 import com.github.xingshuangs.iot.protocol.s7.service.S7PLC;
-import com.github.xingshuangs.iot.protocol.s7.utils.AddressUtil;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.edge.adapters.s7.config.S7AdapterConfig;
@@ -16,11 +14,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1200;
-import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1500;
-import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_300;
-import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_400;
 
 public class S7Client {
 
@@ -40,29 +33,29 @@ public class S7Client {
             log.trace("Reading data from addresses {} with type {}", addresses, type);
         }
         switch (type) {
-            case BOOL: return combine(dataPointFactory, addresses, s7PLC.readBoolean(addresses));
+            case BOOL: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readBoolean(addresses));
             case BYTE: return addresses.stream().map(address -> dataPointFactory
                             .create(address, s7PLC.readByte(address)))
                             .collect(Collectors.toList());
-            case WORD: return combine(dataPointFactory, addresses, s7PLC.readInt16(addresses));
-            case DWORD: return combine(dataPointFactory, addresses, s7PLC.readInt32(addresses));
-            case LWORD: return combine(dataPointFactory, addresses, s7PLC.readInt64(addresses));
+            case WORD: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, readBytes(addresses, 2));
+            case DWORD: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, readBytes(addresses, 4));
+            case LWORD: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, readBytes(addresses, 8));
             case USINT: return addresses.stream().map(address -> dataPointFactory
                                 .create(address, Byte.toUnsignedInt(s7PLC.readByte(address))))
                                 .collect(Collectors.toList());
-            case UINT: return combine(dataPointFactory, addresses, s7PLC.readUInt16(addresses));
-            case UDINT: return combine(dataPointFactory, addresses, s7PLC.readUInt32(addresses));
+            case UINT: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readUInt16(addresses));
+            case UDINT: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readUInt32(addresses));
             case ULINT: return addresses.stream()
                                 .map(address -> dataPointFactory.create(address, new BigInteger(Long.toUnsignedString(s7PLC.readInt64(address)))))
                                 .collect(Collectors.toList());
             case SINT: return addresses.stream().map(address -> dataPointFactory
                                 .create(address, ((Byte)s7PLC.readByte(address)).shortValue()))
                                 .collect(Collectors.toList());
-            case INT: return combine(dataPointFactory, addresses, s7PLC.readInt16(addresses));
-            case DINT: return combine(dataPointFactory, addresses, s7PLC.readInt32(addresses));
-            case LINT: return combine(dataPointFactory, addresses, s7PLC.readInt64(addresses));
-            case REAL: return combine(dataPointFactory, addresses, s7PLC.readFloat32(addresses));
-            case LREAL: return combine(dataPointFactory, addresses, s7PLC.readFloat64(addresses));
+            case INT: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readInt16(addresses));
+            case DINT: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readInt32(addresses));
+            case LINT: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readInt64(addresses));
+            case REAL: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readFloat32(addresses));
+            case LREAL: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readFloat64(addresses));
             case CHAR: return addresses.stream().map(address -> dataPointFactory
                                 .create(address, s7PLC.readByte(address)))
                                 .collect(Collectors.toList());
@@ -74,11 +67,11 @@ public class S7Client {
                                     })
                                 .collect(Collectors.toList());
             case STRING:
-            case WSTRING: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readString).collect(Collectors.toList()));
-            case TIME: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTime).collect(Collectors.toList()));
-            case LTIME: return combine(dataPointFactory, addresses, s7PLC.readInt64(addresses));
-            case DATE: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDate).collect(Collectors.toList()));
-            case TOD: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTimeOfDay).collect(Collectors.toList()));
+            case WSTRING: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, addresses.stream().map(s7PLC::readString).collect(Collectors.toList()));
+            case TIME: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTime).collect(Collectors.toList()));
+            case LTIME: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, s7PLC.readInt64(addresses));
+            case DATE: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDate).collect(Collectors.toList()));
+            case TOD: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, addresses.stream().map(s7PLC::readTimeOfDay).collect(Collectors.toList()));
             case LTOD: return addresses.stream()
                                 .map(address -> dataPointFactory.create(address, new BigInteger(Long.toUnsignedString(s7PLC.readInt64(address)))))
                                 .collect(Collectors.toList());
@@ -88,16 +81,19 @@ public class S7Client {
             case LDT:return addresses.stream()
                                 .map(address -> dataPointFactory.create(address, new BigInteger(Long.toUnsignedString(s7PLC.readInt64(address)))))
                                 .collect(Collectors.toList());
-            case DTL: return combine(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDTL).collect(Collectors.toList()));
-            case ARRAY: throw new IllegalArgumentException("Arrays not supported");
+            case DTL: return createDatapointsFromAddressesAndValues(dataPointFactory, addresses, addresses.stream().map(s7PLC::readDTL).collect(Collectors.toList()));
             default: {
                 log.error("Unspported tag-type {} at address {}", type, addresses);
                 throw new IllegalArgumentException("Unspported tag-type " + type + " at address " + addresses);
             }
         }
     }
-    
-    public static List<DataPoint> combine(final @NotNull DataPointFactory dataPointFactory, final @NotNull List<String> addresses, final @NotNull  List<?> values) {
+
+    public List<byte[]> readBytes(final List<String> addresses, final int count) {
+        return addresses.stream().map(address -> s7PLC.readByte(address, count)).collect(Collectors.toList());
+    }
+
+    public static List<DataPoint> createDatapointsFromAddressesAndValues(final @NotNull DataPointFactory dataPointFactory, final @NotNull List<String> addresses, final @NotNull  List<?> values) {
         return IntStream
                 .range(0, addresses.size())
                 .mapToObj(i -> dataPointFactory.create(addresses.get(i), values.get(i)))

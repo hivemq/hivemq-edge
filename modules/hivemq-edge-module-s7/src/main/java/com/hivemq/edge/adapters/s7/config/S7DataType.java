@@ -20,12 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1200;
 import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_1500;
-import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_200;
 import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_300;
 import static com.hivemq.edge.adapters.s7.config.S7Versions.S7_400;
 
@@ -66,6 +64,7 @@ public enum S7DataType {
     LDT(LocalDateTime.class, 64, List.of(S7_1500), "Date and time (year-month-day-hour:minute:second:nanoseconds)", "https://support.industry.siemens.com/cs/mdm/109054417?c=71834521483&lc=en-GE"),
     DTL(LocalDateTime.class, 64, List.of(S7_1500), "Date and time (year-month-day-hour:minute:second:nanoseconds)", "https://support.industry.siemens.com/cs/mdm/109054417?c=64682916235&lc=en-GE"),
     ARRAY(Byte[].class, -1, List.of(S7_300, S7_400, S7_1200, S7_1500), "Array of type", "https://support.industry.siemens.com/cs/mdm/109054417?c=52352205963&lc=en-GE");
+
     //RAW_BYTE_ARRAY TODO: it's not an actual type but is there in the old implementation
 
     S7DataType(final @NotNull Class<?> javaType, final @NotNull int lengthInBits, final @NotNull List<S7Versions> availableOn, final @NotNull String description, final @NotNull String docs){
