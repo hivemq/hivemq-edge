@@ -109,7 +109,8 @@ val edgeProjectsToUpdate = setOf(
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-opcua",
-    "hivemq-edge-module-plc4x"
+    "hivemq-edge-module-plc4x",
+    "hivemq-edge-module-postgresql"
 )
 
 tasks.register("updateDependantVersions") {
