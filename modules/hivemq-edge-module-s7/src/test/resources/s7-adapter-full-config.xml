@@ -1,0 +1,85 @@
+<!--
+
+    Copyright 2023-present HiveMQ GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<hivemq>
+    <protocol-adapters>
+        <protocol-adapter>
+            <protocolId>s7-new</protocolId>
+            <adapterId>my-s7-protocol-adapter</adapterId>
+            <config>
+                <host>my.s7-server.com</host>
+                <port>1234</port>
+                <controllerType>S7_400</controllerType>
+                <remoteRack>1</remoteRack>
+                <remoteSlot>3</remoteSlot>
+                <s7ToMqtt>
+                    <pollingIntervalMillis>10</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
+                    <publishChangedDataOnly>false</publishChangedDataOnly>
+                </s7ToMqtt>
+            </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <maxQos>1</maxQos>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <tagName>tag-name</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </northboundMapping>
+                <northboundMapping>
+                    <topic>my/topic/2</topic>
+                    <maxQos>1</maxQos>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <tagName>tag-name</tagName>
+                    <mqttUserProperties>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value1</value>
+                        </mqttUserProperty>
+                        <mqttUserProperty>
+                            <name>name</name>
+                            <value>value2</value>
+                        </mqttUserProperty>
+                    </mqttUserProperties>
+                </northboundMapping>
+            </northboundMappings>
+            <tags>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <address>%IB1</address>
+                        <dataType>INT</dataType>
+                    </definition>
+                </tag>
+            </tags>
+        </protocol-adapter>
+    </protocol-adapters>
+</hivemq>
