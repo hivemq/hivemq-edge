@@ -9,13 +9,12 @@ const MOCK_PAGE_SIZES = [5, 10, 20, 30, 40, 50]
 const MOCK_PAGE_COUNT = 10
 const MOCK_PAGE_INDEX = 2
 
-/* eslint-disable @typescript-eslint/no-empty-function */
 const MOCK_TABLE: Partial<Table<Adapter>> = {
   initialState: undefined,
   setPageIndex: () => {},
   getCanPreviousPage: () => true,
   getCanNextPage: () => true,
-  getState: () => ({ pagination: { pageIndex: MOCK_PAGE_INDEX } } as TableState),
+  getState: () => ({ pagination: { pageIndex: MOCK_PAGE_INDEX } }) as TableState,
   getPageCount: () => MOCK_PAGE_COUNT,
   setPageSize: () => undefined,
   previousPage: () => undefined,

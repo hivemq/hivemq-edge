@@ -46,6 +46,9 @@ export default defineConfig({
         // },
       },
     },
+    watch: {
+      ignored: [path.resolve(__dirname, './coverage*/**')],
+    },
   },
 
   build: {

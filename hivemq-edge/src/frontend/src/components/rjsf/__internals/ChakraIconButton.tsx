@@ -13,7 +13,6 @@ import type { FormContextType, IconButtonProps, RJSFSchema, StrictRJSFSchema } f
  * @see https://github.com/rjsf-team/react-jsonschema-form/blob/main/packages/chakra-ui/src/AddButton/AddButton.tsx
  */
 
-// eslint-disable-next-line react-refresh/only-export-components
 function ChakraIconButton<T = never, S extends StrictRJSFSchema = RJSFSchema, F extends FormContextType = never>(
   props: IconButtonProps<T, S, F>
 ) {

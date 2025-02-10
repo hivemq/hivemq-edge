@@ -4,7 +4,8 @@ import { render, waitFor } from '@testing-library/react'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 
-import { AuthContext, AuthProvider } from './AuthProvider.tsx'
+import { AuthProvider } from './AuthProvider.tsx'
+import { AuthContext } from '@/modules/Auth/AuthContext.ts'
 
 const loginCallback = vi.fn()
 const logoutCallback = vi.fn()
