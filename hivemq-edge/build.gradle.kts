@@ -253,6 +253,8 @@ tasks.test {
         "--add-opens",
         "java.base/sun.nio.ch=ALL-UNNAMED",
         "--add-opens",
+        "java.base/java.util=ALL-UNNAMED",
+        "--add-opens",
         "jdk.management/com.sun.management.internal=ALL-UNNAMED",
         "--add-exports",
         "java.base/jdk.internal.misc=ALL-UNNAMED"
