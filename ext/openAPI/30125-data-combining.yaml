@@ -1,0 +1,148 @@
+openapi: 3.0.1
+info:
+  title: HiveMQ Edge REST API
+  version: "2025.3-SNAPSHOT"
+  description: |
+    Note: This should be restructured and divided in individual files, to match the requirements of the 30019 ticket (splitting openAPI)
+tags:
+  - description: Data combining mappings, using the Orchestrator analogy
+    name: Mappings
+paths:
+  /api/v1/management/mappings/orchestrators:
+    get:
+      tags:
+        - Mappings
+      operationId: getMappingOrchestrators
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestratorList'
+          description: Success
+  /api/v1/management/mappings/orchestrators/{adapterType}:
+    get:
+      tags:
+        - Mappings
+      operationId: getMappingOrchestrator
+      parameters:
+        - description: The adapter type.
+          in: path
+          name: adapterType
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Orchestrator'
+          description: Success
+components:
+  headers:
+    ETag:
+      description: 'Identifier for a specific version of a resource'
+      schema:
+        type: string
+  schemas:
+    OrchestratorList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Orchestrator'
+    Orchestrator:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        primary:
+          description: We are assuming one of the linked entity is the primary source for the orchestration. We don't want to rely on a position in the list, e.g. [0]
+          $ref: '#/components/schemas/EntityReference'
+        sources:
+          description: The rest of the entities connected. Primary is assumed NOT to be in the list
+          $ref: '#/components/schemas/EntityReferenceList'
+        mappings:
+          $ref: '#/components/schemas/DataCombiningList'
+      required:
+        - id
+        - name
+        - primary
+    DataCombiningList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataCombining'
+    DataCombining:
+      type: object
+      description: Define individual rules for data combining, based on the entities selected in the Orchestrator
+      properties:
+        sources:
+          type: object
+          properties:
+            tags:
+              type: array
+              items:
+                type: string
+                format: uuid
+            topicFilters:
+              type: array
+              items:
+                type: string
+                format: uuid
+        destination:
+          type: string
+          format: mqtt-topic
+        instructions:
+          type: array
+          description: List of instructions to be applied to incoming data
+          items:
+            $ref: '#/components/schemas/Instruction'
+      required:
+        - instructions
+    EntityReferenceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+    EntityReference:
+      type: object
+      description: We need this because we don't have a mechanism to identify a prime entity from an id
+      properties:
+        type:
+          type: string
+          description: These are the prime entities owning tags and topic filters
+          enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER, HOST]
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+        - type
+
+
+    Instruction:
+      type: object
+      description: List of instructions to be applied to incoming data
+      properties:
+        destination:
+          type: string
+          description: The field in the output object where the data will be written
+            to
+        source:
+          type: string
+          description: The field in the input object where the data will be read from
+      required:
+        - destination
+        - source
