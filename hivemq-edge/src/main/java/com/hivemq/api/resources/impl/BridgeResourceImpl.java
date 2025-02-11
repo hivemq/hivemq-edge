@@ -543,6 +543,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
             localBridgeSubscription.setFilters(List.of());
         }
 
+        if (localBridgeSubscription.getPreserveRetain() == null) {
+            localBridgeSubscription.setPreserveRetain(false);
+        }
+
     }
 
     private static void sanitize(final @NotNull BridgeSubscription bridgeSubscription) {
@@ -552,6 +556,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
         if (bridgeSubscription.getFilters() == null) {
             bridgeSubscription.setFilters(List.of());
+        }
+
+        if (bridgeSubscription.getPreserveRetain() == null) {
+            bridgeSubscription.setPreserveRetain(false);
         }
     }
 }
