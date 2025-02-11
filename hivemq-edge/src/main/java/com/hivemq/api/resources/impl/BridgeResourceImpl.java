@@ -494,13 +494,13 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
             bridge.setSessionExpiry(3600L);
         }
 
-        if (bridge.getLocalSubscriptions() != null) {
+        if (bridge.getLocalSubscriptions() == null) {
             bridge.setLocalSubscriptions(List.of());
         }
 
         bridge.getLocalSubscriptions().forEach(BridgeResourceImpl::sanitize);
 
-        if (bridge.getRemoteSubscriptions() != null) {
+        if (bridge.getRemoteSubscriptions() == null) {
            bridge.setRemoteSubscriptions(List.of());
         }
 
