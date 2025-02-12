@@ -259,7 +259,7 @@ public class ProtocolAdapterWrapper {
     private void createAndSubscribeTagConsumer() {
         for (final NorthboundMapping northboundMapping : getNorthboundMappings()) {
             final NorthboundTagConsumer northboundTagConsumer =
-                    northboundConsumerFactory.build(this, northboundMapping);
+                    northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService);
             tagManager.addConsumer(northboundMapping.getTagName(), northboundTagConsumer);
             consumers.add(northboundTagConsumer);
         }
