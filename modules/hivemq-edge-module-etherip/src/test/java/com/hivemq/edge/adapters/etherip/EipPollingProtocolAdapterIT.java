@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
@@ -97,7 +98,8 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(tagAddress, tagType))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
+        final List eipToMqttMapping1 = List.of(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn(eipToMqttMapping1);
 
         final PollingOutput output = mock(PollingOutput.class);
 
@@ -145,7 +147,7 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn((List)List.of(eipToMqttMapping));
 
         final PollingOutput output = mock(PollingOutput.class);
 
@@ -186,7 +188,7 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn((List)List.of(eipToMqttMapping));
 
         final PollingOutput output = mock(PollingOutput.class);
 
