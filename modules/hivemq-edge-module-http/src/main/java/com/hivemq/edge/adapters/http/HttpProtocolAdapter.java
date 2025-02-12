@@ -37,8 +37,6 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
-import com.hivemq.adapter.sdk.api.writing.WritingPayload;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
@@ -159,24 +157,25 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             return;
         }
 
-        final PollingContext httpToMqttMapping = pollingInput.getPollingContext();
-
-        // first resolve the tag
-        final String tagName = pollingInput.getPollingContext().getTagName();
-        tags.stream()
-                .filter(tag -> tag.getName().equals(tagName))
-                .findFirst()
-                .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, httpToMqttMapping),
-                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-
+        for (final PollingContext httpToMqttMapping : pollingInput.getPollingContexts()) {
+            // first resolve the tag
+            final String tagName = httpToMqttMapping.getTagName();
+            tags.stream()
+                    .filter(tag -> tag.getName().equals(tagName))
+                    .findFirst()
+                    .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, httpToMqttMapping),
+                            () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                                    httpToMqttMapping.getTagName() +
+                                    "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+        }
+        pollingOutput.finish();
     }
 
     private void pollHttp(
             final @NotNull HttpClient httpClient,
             final @NotNull PollingOutput pollingOutput,
-            final @NotNull HttpTag httpTag, final @NotNull PollingContext httpToMqttMapping) {
+            final @NotNull HttpTag httpTag,
+            final @NotNull PollingContext httpToMqttMapping) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
@@ -209,8 +208,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
-                pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                                tagDef.getHttpRequestMethod()),
+                pollingOutput.fail(new IllegalStateException("Unexpected value: " + tagDef.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
                                 tagDef.getHttpRequestMethod());
                 return;
@@ -289,7 +287,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                     !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
                 data.getDataPoints().forEach(pollingOutput::addDataPoint);
             }
-            pollingOutput.finish();
         });
     }
 
@@ -322,7 +319,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     private void writeHttp(
             final @NotNull WritingInput writingInput,
             final @NotNull WritingOutput writingOutput,
-            final @NotNull HttpTag httpTag, final @NotNull WritingContext writingContext) {
+            final @NotNull HttpTag httpTag,
+            final @NotNull WritingContext writingContext) {
         final HttpTagDefinition tagDef = httpTag.getDefinition();
         final String url = httpTag.getDefinition().getUrl();
 
@@ -368,8 +366,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         output.finish(JsonSchema.createJsonSchema());
     }
 

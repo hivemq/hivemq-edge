@@ -18,13 +18,14 @@ package com.hivemq.edge.modules.adapters.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A protocol adapter sample, is a sampled measurement taken at a point in time. It can encapsulate more than one
@@ -32,23 +33,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSampleImpl<T extends PollingContext> implements ProtocolAdapterDataSample {
+public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample {
 
     private final @NotNull Long timestamp = System.currentTimeMillis();
-    private final @NotNull T pollingContext;
-
-    //-- Handle multiple tags in the same sample
-    private @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    final @NotNull Map<String, List<DataPoint>> tagNameToDataPoints = new ConcurrentHashMap<>();
 
 
-    public ProtocolAdapterDataSampleImpl(final @NotNull T pollingContext) {
-        this.pollingContext = pollingContext;
-    }
-
-    @Override
-    @JsonIgnore
-    public @NotNull T getPollingContext() {
-        return pollingContext;
+    public ProtocolAdapterDataSampleImpl() {
     }
 
     @Override
@@ -61,23 +52,29 @@ public class ProtocolAdapterDataSampleImpl<T extends PollingContext> implements 
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         Preconditions.checkNotNull(tagName);
         Preconditions.checkNotNull(tagValue);
-        dataPoints.add(new DataPointImpl(tagName, tagValue));
+        final DataPointImpl dataPoint = new DataPointImpl(tagName, tagValue);
+        addDataPoint(dataPoint);
     }
 
     @Override
     public void addDataPoint(final @NotNull DataPoint dataPoint) {
-        dataPoints.add(dataPoint);
-    }
+        tagNameToDataPoints.compute(dataPoint.getTagName(), (key, current) -> {
+            if (current != null) {
+                current.add(dataPoint);
+                return current;
+            } else {
+                final List<DataPoint> dataPoints = new ArrayList<>();
+                dataPoints.add(dataPoint);
+                return dataPoints;
+            }
+        });
 
-    @Override
-    public void setDataPoints(final @NotNull List<DataPoint> list) {
-        this.dataPoints = list;
     }
 
     @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public @NotNull List<DataPoint> getDataPoints() {
-        return dataPoints;
+    public @NotNull Map<String, List<DataPoint>> getDataPoints() {
+        return tagNameToDataPoints;
     }
 
 }

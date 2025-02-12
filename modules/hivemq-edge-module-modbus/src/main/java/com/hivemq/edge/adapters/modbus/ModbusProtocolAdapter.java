@@ -105,17 +105,17 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     public void poll(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContexts().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(def -> pollModbus(pollingInput, pollingOutput, (ModbusTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
+                                pollingInput.getPollingContexts().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
     private void pollModbus(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput, final @NotNull ModbusTag modbusTag) {
-        readRegisters(pollingInput.getPollingContext(),
+        readRegisters(pollingInput.getPollingContexts(),
                 modbusClient,
                 modbusTag).whenComplete((modbusdata, throwable) -> {
             if (throwable != null) {

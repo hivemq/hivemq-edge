@@ -110,7 +110,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
                 protocolAdapterStopOutput.stoppedSuccessfully();
                 log.info("Stopped without an open connection");
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             protocolAdapterStopOutput.failStop(e, "Unable to stop Ethernet IP connection");
             log.error("Unable to stop", e);
         }
@@ -131,11 +131,11 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
         }
 
         tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContexts().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(def -> pollWithAddress(pollingOutput, (EipTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
+                                pollingInput.getPollingContexts().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 
@@ -158,7 +158,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
 
 
             pollingOutput.finish();
-        } catch (CipException e) {
+        } catch (final CipException e) {
             if (e.getStatusCode() == 0x04) {
                 log.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
                 pollingOutput.fail(e, "Tag '" + tagAddress + "'  doesn't exist on device");
@@ -166,7 +166,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
                 log.warn("Problem accessing tag '{}' on device.", tagAddress, e);
                 pollingOutput.fail(e, "Problem accessing tag '" + tagAddress + "' on device.");
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
             pollingOutput.fail(e, "An exception occurred while reading tag '" + tagAddress + "'.");
         }
