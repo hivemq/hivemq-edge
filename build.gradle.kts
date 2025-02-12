@@ -2,7 +2,7 @@ group = "com.hivemq"
 
 plugins {
     id("com.hivemq.edge-version-updater")
-    id("io.github.sgtsilvio.gradle.oci") version "0.20.2"
+    id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
 }
 
 tasks.register("clean") {
@@ -168,44 +168,41 @@ oci {
                 volumes = setOf("/opt/hivemq/data", "/opt/hivemq/log")
                 workingDirectory = "/opt/hivemq"
             }
-            layers {
-                layer("hivemq") {
-                    contents {
-                        into("opt") {
-                            filePermissions = 0b110_110_000
-                            directoryPermissions = 0b111_111_000
-                            permissions("**/*.sh", 0b111_111_000)
-                            from("docker/docker-entrypoint.sh")
-                            into("hivemq") {
-                                from("./hivemq-edge/src/distribution") { filter { exclude("**/.gitkeep") } }
-                                from("docker/config-k8s.xml") {
-                                    into("conf-k8s")
-                                    rename("config-k8s.xml", "config.xml")
-                                }
-                                from("docker/logback-k8s.xml") {
-                                    into("conf-k8s")
-                                    rename("logback-k8s.xml", "logback.xml")
-                                }
-                                from("./docker/config.xml") { into("conf") }
-                                from("./hivemq-edge/src/main/resources/config.xsd") { into("conf") }
-                                from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
+            layer("hivemq") {
+                contents {
+                    into("opt") {
+                        filePermissions = 0b110_110_000
+                        directoryPermissions = 0b111_111_000
+                        permissions("**/*.sh", 0b111_111_000)
+                        from("docker/docker-entrypoint.sh")
+                        into("hivemq") {
+                            from("./hivemq-edge/src/distribution") { filter { exclude("**/.gitkeep") } }
+                            from("docker/config-k8s.xml") {
+                                into("conf-k8s")
+                                rename("config-k8s.xml", "config.xml")
                             }
+                            from("docker/logback-k8s.xml") {
+                                into("conf-k8s")
+                                rename("logback-k8s.xml", "logback.xml")
+                            }
+                            from("./docker/config.xml") { into("conf") }
+                            from("./hivemq-edge/src/main/resources/config.xsd") { into("conf") }
+                            from(hivemqEdgeJarRelease) { into("bin").rename(".*", "hivemq.jar") }
                         }
                     }
                 }
-                layer("open-source-modules") {
-                    contents {
-                        into("opt") {
-                            filePermissions = 0b110_110_000
-                            directoryPermissions = 0b111_111_000
-                            into("hivemq/modules") {
-                                // copy OSS modules
-                                from(openSourceEdgeModuleBinaries.elements)
-                            }
+            }
+            layer("open-source-modules") {
+                contents {
+                    into("opt") {
+                        filePermissions = 0b110_110_000
+                        directoryPermissions = 0b111_111_000
+                        into("hivemq/modules") {
+                            // copy OSS modules
+                            from(openSourceEdgeModuleBinaries.elements)
                         }
                     }
                 }
-
             }
         }
         specificPlatform(platform("linux", "amd64"))
