@@ -115,6 +115,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
 
+    // TODO this has to be done in the consumer
     protected @NotNull CompletableFuture<?> captureDataSample(
             final @NotNull ProtocolAdapterDataSample sample, final @NotNull PollingContext pollingContext) {
         Preconditions.checkNotNull(sample);

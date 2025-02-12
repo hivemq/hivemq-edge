@@ -53,7 +53,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
-    private volatile @NotNull ProtocolAdapterConfig config;
+    private final @NotNull ProtocolAdapterConfig config;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -106,12 +106,11 @@ public class ProtocolAdapterWrapper {
         final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
         adapter.stop(input, output);
         stopPolling(protocolAdapterPollingService);
-        return stopWriting(protocolAdapterWritingService)
-                .thenApply(r -> {
-                    //only transition to stopped whne it succeeded
-                    setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                    return null;
-                });
+        return stopWriting(protocolAdapterWritingService).thenApply(r -> {
+            //only transition to stopped whne it succeeded
+            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            return null;
+        });
     }
 
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
@@ -203,17 +202,15 @@ public class ProtocolAdapterWrapper {
             final @NotNull JsonPayloadDefaultCreator jsonPayloadCreator) {
         if (isPolling()) {
             log.debug("Schedule polling for protocol adapter with id '{}'", getId());
-            getNorthboundMappings()
-                    .forEach(adapterSubscription -> {
-                        final PerSubscriptionSampler sampler = new PerSubscriptionSampler(
-                                this,
-                                objectMapper,
-                                adapterPublishService,
-                                adapterSubscription,
-                                eventService,
-                                jsonPayloadCreator);
-                        protocolAdapterPollingService.schedulePolling(sampler);
-                    });
+            final PerAdapterSampler sampler = new PerAdapterSampler(this,
+                    objectMapper,
+                    adapterPublishService,
+                    getNorthboundMappings(),
+                    eventService,
+                    jsonPayloadCreator);
+
+
+            protocolAdapterPollingService.schedulePolling(sampler);
         }
     }
 
@@ -225,18 +222,19 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @NotNull CompletableFuture<Void> startWriting(final boolean writingEnabled, final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
+    private @NotNull CompletableFuture<Void> startWriting(
+            final boolean writingEnabled,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         if (writingEnabled && isWriting()) {
             log.debug("Start writing for protocol adapter with id '{}'", getId());
 
             final List<SouthboundMapping> southboundMappings = getSouthboundMappings();
-            final List<InternalWritingContext> writingContexts = southboundMappings.stream()
-                    .map(InternalWritingContextImpl::new)
-                    .collect(Collectors.toList());
+            final List<InternalWritingContext> writingContexts =
+                    southboundMappings.stream().map(InternalWritingContextImpl::new).collect(Collectors.toList());
 
             return protocolAdapterWritingService.startWriting((WritingProtocolAdapter) getAdapter(),
-                            getProtocolAdapterMetricsService(),
-                            writingContexts);
+                    getProtocolAdapterMetricsService(),
+                    writingContexts);
         } else {
             return CompletableFuture.completedFuture(null);
         }

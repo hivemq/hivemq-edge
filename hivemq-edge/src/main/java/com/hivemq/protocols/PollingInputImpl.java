@@ -19,17 +19,19 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class PollingInputImpl implements PollingInput {
 
-    private final @NotNull PollingContext pollingContext;
+    private final @NotNull List<PollingContext> pollingContext;
 
     public PollingInputImpl(
-            final @NotNull PollingContext pollingContext) {
+            final @NotNull List<PollingContext> pollingContext) {
         this.pollingContext = pollingContext;
     }
 
     @Override
-    public @NotNull PollingContext getPollingContext() {
+    public @NotNull List<PollingContext> getPollingContexts() {
         return pollingContext;
     }
 }
