@@ -5,55 +5,137 @@ info:
   description: |
     Note: This should be restructured and divided in individual files, to match the requirements of the 30019 ticket (splitting openAPI)
 tags:
-  - description: Data combining mappings, using the Orchestrator analogy
-    name: Mappings
+  - description: Data combining mappings, using the Combiner / Orchestrator paradigm
+    name: Combiners
 paths:
-  /api/v1/management/mappings/orchestrators:
+  /api/v1/management/combiners:
     get:
+      description: Get all combiners
+      summary: Get all combiners
+      operationId: get-combiners
       tags:
-        - Mappings
-      operationId: getMappingOrchestrators
+        - Combiners
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrchestratorList'
+                $ref: '#/components/schemas/CombinerList'
           description: Success
-  /api/v1/management/mappings/orchestrators/{adapterType}:
-    get:
+    post:
+      description: Add a new combiner.
+      summary: Add a new combiner
+      operationId: add-combiner
       tags:
-        - Mappings
-      operationId: getMappingOrchestrator
+        - Combiners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The combiner to add
+        required: true
+      responses:
+        "200":
+          description: Success
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/combiners/{combinerId}:
+    get:
+      description: Get a combiner by its unique Id.
+      summary: Get a combiner
+      operationId: getCombinersById
+      tags:
+        - Combiners
       parameters:
-        - description: The adapter type.
+        - name: combinerId
+          description: The unique id of the combiner to retrieve.
           in: path
-          name: adapterType
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Orchestrator'
+                $ref: '#/components/schemas/Combiner'
           description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    delete:
+      description: Delete the specified combiner.
+      summary: Delete a combiner
+      operationId: delete-combiner
+      tags:
+        - Combiners
+      parameters:
+        - name: combinerId
+          description: The unique id of the combiner to delete.
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    put:
+      description: Update a combiner.
+      summary: Update a combiner
+      operationId: update-combiner
+      tags:
+        - Combiners
+      parameters:
+        - name: combinerId
+          description: The unique id of the combiner to update.
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The new content of the combiner
+        required: true
+      responses:
+        "200":
+          description: Success
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+
 components:
-  headers:
-    ETag:
-      description: 'Identifier for a specific version of a resource'
-      schema:
-        type: string
   schemas:
-    OrchestratorList:
+    CombinerList:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Orchestrator'
-    Orchestrator:
+            $ref: '#/components/schemas/Combiner'
+    Combiner:
       type: object
       properties:
         id:
@@ -63,18 +145,13 @@ components:
           type: string
         description:
           type: string
-        primary:
-          description: We are assuming one of the linked entity is the primary source for the orchestration. We don't want to rely on a position in the list, e.g. [0]
-          $ref: '#/components/schemas/EntityReference'
         sources:
-          description: The rest of the entities connected. Primary is assumed NOT to be in the list
           $ref: '#/components/schemas/EntityReferenceList'
         mappings:
           $ref: '#/components/schemas/DataCombiningList'
       required:
         - id
         - name
-        - primary
     DataCombiningList:
       type: object
       properties:
@@ -106,7 +183,7 @@ components:
           type: array
           description: List of instructions to be applied to incoming data
           items:
-            $ref: '#/components/schemas/Instruction'
+            $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/Instruction'
       required:
         - instructions
     EntityReferenceList:
@@ -116,33 +193,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EntityReference'
+    EntityType:
+      type: string
+      description: These are the prime entities owning tags and topic filters
+      enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
     EntityReference:
       type: object
       description: We need this because we don't have a mechanism to identify a prime entity from an id
       properties:
         type:
-          type: string
-          description: These are the prime entities owning tags and topic filters
-          enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER, HOST]
+          $ref: '#/components/schemas/EntityType'
         id:
           type: string
           format: uuid
+        isPrimary:
+          description: The source is the primary orchestrator of the composer
+          type: boolean
+          default: false
       required:
         - id
         - type
 
-
-    Instruction:
-      type: object
-      description: List of instructions to be applied to incoming data
-      properties:
-        destination:
-          type: string
-          description: The field in the output object where the data will be written
-            to
-        source:
-          type: string
-          description: The field in the input object where the data will be read from
-      required:
-        - destination
-        - source
