@@ -25,8 +25,6 @@ import com.digitalpetri.modbus.responses.ReadCoilsResponse;
 import com.digitalpetri.modbus.responses.ReadDiscreteInputsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import io.netty.buffer.ByteBuf;
@@ -46,17 +44,11 @@ public class ModbusClient {
     public static final int DEFAULT_MAX_INPUT_REGISTERS = 125;
     public static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
 
-
-    private final @NotNull String adapterId;
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ModbusTcpMaster modbusClient;
 
     public ModbusClient(
             final @NotNull String adapterId,
-            final @NotNull ModbusSpecificAdapterConfig adapterConfig,
-            final @NotNull DataPointFactory dataPointFactory) {
-        this.dataPointFactory = dataPointFactory;
-        this.adapterId = adapterId;
+            final @NotNull ModbusSpecificAdapterConfig adapterConfig) {
         final ModbusTcpMasterConfig config =
                 new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
                         .setInstanceId(adapterId)
@@ -76,12 +68,12 @@ public class ModbusClient {
     /**
      * Coils are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int unitId) {
+    public @NotNull CompletableFuture<Object> readCoils(final int startIdx, final int unitId) {
         return modbusClient.<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx,
                 Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId).thenApply(response -> {
             try {
                 final ByteBuf buf = response.getCoilStatus();
-                return dataPointFactory.create("registers-" + startIdx, convert(buf, ModbusDataType.BOOL, 1, false));
+                return convert(buf, ModbusDataType.BOOL, 1, false);
             } finally {
                 ReferenceCountUtil.release(response);
             }
@@ -91,12 +83,12 @@ public class ModbusClient {
     /**
      * Discrete registers are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int unitId) {
+    public @NotNull CompletableFuture<Object> readDiscreteInput(final int startIdx, final int unitId) {
         return modbusClient.<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx,
                 Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId).thenApply(response -> {
             try {
                 final ByteBuf buf = response.getInputStatus();
-                return dataPointFactory.create("registers-" + startIdx, convert(buf, ModbusDataType.BOOL, 1, false));
+                return convert(buf, ModbusDataType.BOOL, 1, false);
             } finally {
                 ReferenceCountUtil.release(response);
             }
@@ -106,18 +98,14 @@ public class ModbusClient {
     /**
      * Holding registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(
+    public @NotNull CompletableFuture<Object> readHoldingRegisters(
             final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
 
         return modbusClient.<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx,
                 Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)), unitId).thenApply(response -> {
             try {
                 final ByteBuf buf = response.getRegisters();
-                return dataPointFactory.create("registers-" +
-                                startIdx +
-                                "-" +
-                                (startIdx + dataType.nrOfRegistersToRead - 1),
-                        convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
+                return convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters);
             } finally {
                 ReferenceCountUtil.release(response);
             }
@@ -127,17 +115,13 @@ public class ModbusClient {
     /**
      * Inout registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readInputRegisters(
+    public @NotNull CompletableFuture<Object> readInputRegisters(
             final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
         return modbusClient.<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx,
                 Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)), unitId).thenApply(response -> {
             try {
                 final ByteBuf buf = response.getRegisters();
-                return dataPointFactory.create("registers-" +
-                                startIdx +
-                                "-" +
-                                (startIdx + dataType.nrOfRegistersToRead - 1),
-                        convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters));
+                return convert(buf, dataType, dataType.nrOfRegistersToRead, flipRegisters);
             } finally {
                 ReferenceCountUtil.release(response);
             }
