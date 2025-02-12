@@ -36,19 +36,16 @@ public class HttpData {
     private final @NotNull String contentType;
     private final int httpStatusCode;
     private final @NotNull DataPointFactory dataPointFactory;
-    private final @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
     private final @NotNull Long timestamp = System.currentTimeMillis();
 
     public HttpData(
-            final @NotNull PollingContext pollingContext,
             final @NotNull String requestUrl,
             final int httpStatusCode,
             final @NotNull String contentType,
             final @NotNull DataPointFactory dataPointFactory) {
-        this.pollingContext = pollingContext;
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
@@ -69,25 +66,12 @@ public class HttpData {
     }
 
     @JsonIgnore
-    public @NotNull PollingContext getPollingContext() {
-        return pollingContext;
-    }
-
-    @JsonIgnore
     public @NotNull Long getTimestamp() {
         return timestamp;
     }
 
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         dataPoints.add(dataPointFactory.create(tagName, tagValue));
-    }
-
-    public void addDataPoint(final @NotNull DataPoint dataPoint) {
-        dataPoints.add(dataPoint);
-    }
-
-    public void setDataPoints(final @NotNull List<DataPoint> list) {
-        this.dataPoints = list;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
