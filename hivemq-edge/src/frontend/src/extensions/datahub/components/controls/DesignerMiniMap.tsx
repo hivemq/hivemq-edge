@@ -16,8 +16,8 @@ const DesignerMiniMap: FC = () => {
       type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY
         ? headerPolicyBackgroundColor
         : type === DataHubNodeType.SCHEMA || type === DataHubNodeType.FUNCTION
-        ? headerResourceBackgroundColor
-        : headerBackgroundColor
+          ? headerResourceBackgroundColor
+          : headerBackgroundColor
     )
 
   return (

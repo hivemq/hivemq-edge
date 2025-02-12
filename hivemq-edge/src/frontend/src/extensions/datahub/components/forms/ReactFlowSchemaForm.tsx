@@ -58,7 +58,7 @@ function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>
 function DescriptionFieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = GenericObjectType
+  F extends FormContextType = GenericObjectType,
 >({ description, id }: DescriptionFieldProps<T, S, F>) {
   if (!description) {
     return null
@@ -80,7 +80,7 @@ function DescriptionFieldTemplate<
 function FieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = GenericObjectType
+  F extends FormContextType = GenericObjectType,
 >(props: FieldTemplateProps<T, S, F>) {
   const {
     id,

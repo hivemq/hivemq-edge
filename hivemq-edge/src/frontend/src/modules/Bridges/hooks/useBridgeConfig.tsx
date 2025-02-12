@@ -1,22 +1,19 @@
+import { useContext } from 'react'
 import type { Bridge } from '@/api/__generated__'
-import type { Dispatch, FunctionComponent, PropsWithChildren, SetStateAction } from 'react'
-import { createContext, useContext, useState } from 'react'
-import { bridgeInitialState } from '@/modules/Bridges/utils/defaults.utils.ts'
+import { BridgeContext } from './BridgeContext'
 
-interface BridgeContextProps {
-  bridge: Bridge
-  setBridge: Dispatch<SetStateAction<Bridge>>
+// TODO The number and booleans should all be coming from the openAPI specs since they are all mandatory (see $Bridge.properties.cleanStart.isRequired)
+
+export const bridgeInitialState: Bridge = {
+  cleanStart: true,
+  host: '',
+  keepAlive: 60,
+  id: '',
+  port: 1883,
+  sessionExpiry: 3600,
+  persist: true,
 }
 
-export const BridgeContext = createContext<BridgeContextProps | null>(null)
-
-export const BridgeProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
-  const [bridge, setBridge] = useState<Bridge>(bridgeInitialState)
-
-  return <BridgeContext.Provider value={{ bridge, setBridge }}>{children}</BridgeContext.Provider>
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
 export const useBridgeSetup = () => {
   const context = useContext(BridgeContext)
   if (context === null) {
