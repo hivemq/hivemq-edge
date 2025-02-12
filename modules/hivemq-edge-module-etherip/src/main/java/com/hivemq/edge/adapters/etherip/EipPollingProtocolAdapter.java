@@ -26,7 +26,6 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
@@ -42,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
@@ -58,7 +58,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     private volatile @Nullable EtherNetIP etherNetIP;
 
     private final @NotNull Map<String, EtherIpValue> lastSeenValues;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull Map<String, EipTag> tags;
 
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -66,7 +66,9 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream()
+                .map(tag -> (EipTag)tag)
+                .collect(Collectors.toMap(tag -> createTagAddressForSubscription(tag.getDefinition().getAddress(), tag.getDefinition().getDataType()), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.lastSeenValues = new ConcurrentHashMap<>();
@@ -125,50 +127,43 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public void poll(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        if (etherNetIP == null) {
+
+        final var client = etherNetIP;
+        if (client == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
         }
 
-        tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContexts().getTagName()))
-                .findFirst()
-                .ifPresentOrElse(def -> pollWithAddress(pollingOutput, (EipTag) def),
-                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContexts().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-    }
-
-    private void pollWithAddress(final @NotNull PollingOutput pollingOutput, final EipTag eipAddressTag) {
-        final String tagAddress = createTagAddressForSubscription(eipAddressTag.getDefinition().getAddress(),
-                eipAddressTag.getDefinition().getDataType());
+        final var tagAddresses = tags.keySet().toArray(new String[]{});
         try {
-            final CIPData evt = etherNetIP.readTag(eipAddressTag.getDefinition().getAddress());
+            final var readCipData = client.readTags();
 
-            if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
-                handleResult(evt, tagAddress).forEach(it -> {
-                    if (!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
-                        pollingOutput.addDataPoint(tagAddress, it.getValue());
-                        lastSeenValues.put(tagAddress, it);
-                    }
-                });
-            } else {
-                handleResult(evt, tagAddress).forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+            for (int i = 0; i < readCipData.length; i++) {
+                final var cipData = readCipData[i];
+                final var tagAddress = tagAddresses[i];
+                if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
+                    handleResult(cipData, tagAddress).forEach(it -> {
+                        if (!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
+                            pollingOutput.addDataPoint(tagAddress, it.getValue());
+                            lastSeenValues.put(tagAddress, it);
+                        }
+                    });
+                } else {
+                    handleResult(cipData, tagAddress).forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+                }
             }
-
-
             pollingOutput.finish();
         } catch (final CipException e) {
             if (e.getStatusCode() == 0x04) {
-                log.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
-                pollingOutput.fail(e, "Tag '" + tagAddress + "'  doesn't exist on device");
+                log.warn("A Tag doesn't exist on device.", e);
+                pollingOutput.fail(e, "Tag doesn't exist on device");
             } else {
-                log.warn("Problem accessing tag '{}' on device.", tagAddress, e);
-                pollingOutput.fail(e, "Problem accessing tag '" + tagAddress + "' on device.");
+                log.warn("Problem accessing tag on device.", e);
+                pollingOutput.fail(e, "Problem accessing tag on device.");
             }
         } catch (final Exception e) {
-            log.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
-            pollingOutput.fail(e, "An exception occurred while reading tag '" + tagAddress + "'.");
+            log.warn("An exception occurred while reading tags '{}'.", tagAddresses, e);
+            pollingOutput.fail(e, "An exception occurred while reading tags '" + tagAddresses + "'.");
         }
     }
 
