@@ -356,9 +356,7 @@ public class ProtocolAdapterManager {
         return protocolAdapterWrapper
                 .start(
                     writingEnabled(),
-                    moduleServices,
-                    objectMapper,
-                    jsonPayloadDefaultCreator)
+                    moduleServices)
                 .<Void>thenApplyAsync(unused -> {
                     //TODO move to separate method after refactoring
                     eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
@@ -561,6 +559,7 @@ public class ProtocolAdapterManager {
             final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
             if (!alreadyExists) {
                 tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(), domainTag));
+
                 updateAdapterTags(adapterId, tags);
                 return DomainTagAddResult.success();
             } else {
