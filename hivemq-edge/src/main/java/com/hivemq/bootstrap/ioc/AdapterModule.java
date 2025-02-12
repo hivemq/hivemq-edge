@@ -15,7 +15,10 @@
  */
 package com.hivemq.bootstrap.ioc;
 
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
+import com.hivemq.bootstrap.services.PersistenceBootstrapService;
+import com.hivemq.bootstrap.services.PersistenceBootstrapServiceImpl;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
@@ -33,5 +36,10 @@ public abstract class AdapterModule {
     static @NotNull InternalProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
         return writingServiceProvider.get();
     }
+
+    @Singleton
+    @Binds
+    abstract @NotNull ProtocolAdapterMetricsService  protocolAdapterMetricsService(final @NotNull ProtocolAdapterMetricsService persistenceBootstrapService);
+
 
 }
