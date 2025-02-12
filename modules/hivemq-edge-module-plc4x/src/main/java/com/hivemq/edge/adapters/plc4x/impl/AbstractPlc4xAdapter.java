@@ -292,12 +292,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
         }
-        return new Plc4xDataSample<>(adapterFactories.dataPointFactory());
+        return new Plc4xDataSample(adapterFactories.dataPointFactory());
     }
 
     protected @NotNull Plc4xDataSample processPlcFieldData(
             final @NotNull List<Pair<String, PlcValue>> l) {
-        final Plc4xDataSample data = new Plc4xDataSample<>(adapterFactories.dataPointFactory());
+        final Plc4xDataSample data = new Plc4xDataSample(adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));
