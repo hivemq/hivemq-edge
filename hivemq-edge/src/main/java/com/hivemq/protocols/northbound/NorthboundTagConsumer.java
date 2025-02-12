@@ -22,9 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
-public class NorthboundTagConsumer implements Consumer<List<DataPoint>> {
+public class NorthboundTagConsumer implements TagConsumer{
 
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
 
@@ -105,5 +104,10 @@ public class NorthboundTagConsumer implements Consumer<List<DataPoint>> {
         } catch (final Exception e) {
             log.warn("Exception during polling of data for adapters '{}':", protocolAdapter.getId(), e);
         }
+    }
+
+    @Override
+    public @NotNull String getTagName() {
+        return pollingContext.getTagName();
     }
 }

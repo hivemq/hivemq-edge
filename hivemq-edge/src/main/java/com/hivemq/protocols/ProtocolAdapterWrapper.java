@@ -28,15 +28,19 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.northbound.PerAdapterSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -53,7 +57,10 @@ public class ProtocolAdapterWrapper {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterConfig config;
+    private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
+    private final @NotNull TagManager tagManager;
     protected @Nullable Long lastStartAttemptTime;
+    private final List<NorthboundTagConsumer> consumers = new ArrayList<>();
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -63,7 +70,9 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterState protocolAdapterState) {
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
+            final @NotNull TagManager tagManager) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -72,11 +81,12 @@ public class ProtocolAdapterWrapper {
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = protocolAdapterState;
         this.config = config;
+        this.northboundConsumerFactory = northboundConsumerFactory;
+        this.tagManager = tagManager;
     }
 
     public @NotNull CompletableFuture<Void> start(
-            final boolean writingEnabled,
-            final @NotNull ModuleServices moduleServices) {
+            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
         initStartAttempt();
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
@@ -86,6 +96,7 @@ public class ProtocolAdapterWrapper {
 
         return startFuture.thenCompose(r -> {
             startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
+            createAndSubscribeTagConsumer();
             return startWriting(writingEnabled, protocolAdapterWritingService);
         }).thenApply(r -> {
             setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -95,6 +106,7 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull CompletableFuture<Void> stop() {
+        destroyAndUnsubscribeTagConsumers();
         final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
         final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
         adapter.stop(input, output);
@@ -105,6 +117,7 @@ public class ProtocolAdapterWrapper {
             return null;
         });
     }
+
 
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
@@ -234,5 +247,23 @@ public class ProtocolAdapterWrapper {
             return CompletableFuture.completedFuture(null);
         }
     }
+
+
+    private void destroyAndUnsubscribeTagConsumers() {
+        // TODO check if a destroy makes sense here
+        for (final NorthboundTagConsumer consumer : consumers) {
+            tagManager.removeConsumer(consumer);
+        }
+    }
+
+    private void createAndSubscribeTagConsumer() {
+        for (final NorthboundMapping northboundMapping : getNorthboundMappings()) {
+            final NorthboundTagConsumer northboundTagConsumer =
+                    northboundConsumerFactory.build(this, northboundMapping);
+            tagManager.addConsumer(northboundMapping.getTagName(), northboundTagConsumer);
+            consumers.add(northboundTagConsumer);
+        }
+    }
+
 
 }
