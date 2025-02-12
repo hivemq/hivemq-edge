@@ -15,7 +15,6 @@
  */
 package com.hivemq.protocols;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
@@ -26,13 +25,13 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.northbound.PerAdapterSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -77,9 +76,7 @@ public class ProtocolAdapterWrapper {
 
     public @NotNull CompletableFuture<Void> start(
             final boolean writingEnabled,
-            final @NotNull ModuleServices moduleServices,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadCreator) {
+            final @NotNull ModuleServices moduleServices) {
         initStartAttempt();
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
@@ -88,11 +85,7 @@ public class ProtocolAdapterWrapper {
         final CompletableFuture<Void> startFuture = output.getStartFuture();
 
         return startFuture.thenCompose(r -> {
-            startPolling(protocolAdapterPollingService,
-                    objectMapper,
-                    input.moduleServices().adapterPublishService(),
-                    input.moduleServices().eventService(),
-                    jsonPayloadCreator);
+            startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
             return startWriting(writingEnabled, protocolAdapterWritingService);
         }).thenApply(r -> {
             setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -101,7 +94,7 @@ public class ProtocolAdapterWrapper {
 
     }
 
-    public CompletableFuture<Void> stop() {
+    public @NotNull CompletableFuture<Void> stop() {
         final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
         final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
         adapter.stop(input, output);
@@ -196,20 +189,10 @@ public class ProtocolAdapterWrapper {
 
     private void startPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadCreator) {
+            final @NotNull EventService eventService) {
         if (isPolling()) {
             log.debug("Schedule polling for protocol adapter with id '{}'", getId());
-            final PerAdapterSampler sampler = new PerAdapterSampler(this,
-                    objectMapper,
-                    adapterPublishService,
-                    getNorthboundMappings(),
-                    eventService,
-                    jsonPayloadCreator);
-
-
+            final PerAdapterSampler sampler = new PerAdapterSampler(this, getNorthboundMappings(), eventService);
             protocolAdapterPollingService.schedulePolling(sampler);
         }
     }
