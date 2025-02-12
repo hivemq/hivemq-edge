@@ -21,13 +21,14 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.protocols.PollingInputImpl;
-import com.hivemq.protocols.PollingOutputImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertThrows;
@@ -48,9 +49,9 @@ class SimulationProtocolAdapterTest {
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
     private final @NotNull SimulationToMqttMapping simulationPollingContext =
             new SimulationToMqttMapping("test", 1, null, null, null, null);
-    private final @NotNull PollingInputImpl pollingInput = new PollingInputImpl(simulationPollingContext);
+    private final @NotNull PollingInputImpl pollingInput = new PollingInputImpl(List.of(simulationPollingContext));
     private final @NotNull PollingOutputImpl pollingOutput =
-            new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(simulationPollingContext));
+            new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
     private final @NotNull TimeWaiter timeWaiter = mock();
 
 
@@ -97,7 +98,7 @@ class SimulationProtocolAdapterTest {
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
         pollingOutput.getOutputFuture().get();
 
-        ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.class);
+        final ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(timeWaiter, times(1)).sleep(argumentCaptor.capture());
         final Integer sleepTimeMillis = argumentCaptor.getValue();
         assertTrue(sleepTimeMillis >= 1);

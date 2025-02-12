@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols;
+package com.hivemq.protocols.northbound;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
@@ -45,13 +44,15 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     @Override
     public @NotNull List<byte[]> convertToJson(
-            final @NotNull ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
-        final List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
+            final @NotNull List<DataPoint> dataPoints,
+            final @NotNull PollingContext pollingContext,
+            final @NotNull ObjectMapper objectMapper) {
+        final List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(dataPoints, pollingContext);
         final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
         payloads.forEach(payload -> {
             try {
                 jsonPayloadsAsBytes.add(convertToJson(payload, objectMapper));
-            } catch (ProtocolAdapterException e) {
+            } catch (final ProtocolAdapterException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -64,28 +65,27 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
             throws ProtocolAdapterException {
         try {
             return objectMapper.writeValueAsBytes(data);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
         }
     }
 
     public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(
-            final @NotNull ProtocolAdapterDataSample data) {
-        final PollingContext pollingContext = data.getPollingContext();
+            final @NotNull List<DataPoint> dataPoints, final PollingContext pollingContext) {
         final List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
-        final Long timestamp = pollingContext.getIncludeTimestamp() ? data.getTimestamp() : null;
-        if (data.getDataPoints().size() > 1 &&
+        // TODO perhaps we need to somehow transfer the data point?
+        final Long timestamp = pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null;
+        if (dataPoints.size() > 1 &&
                 pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
             //-- Put all derived samples into a single MQTT message
             final AbstractProtocolAdapterJsonPayload payload =
-                    createMultiPublishPayload(timestamp, data.getDataPoints(), pollingContext.getIncludeTagNames());
+                    createMultiPublishPayload(timestamp, dataPoints, pollingContext.getIncludeTagNames());
             decoratePayloadMessage(payload, pollingContext);
             list.add(payload);
         } else {
             //-- Put all derived samples into individual publish messages
-            data.getDataPoints()
-                    .stream()
+            dataPoints.stream()
                     .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
                     .map(pp -> decoratePayloadMessage(pp, pollingContext))
                     .forEach(list::add);
@@ -94,17 +94,17 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
     }
 
     protected @NotNull ProtocolAdapterPublisherJsonPayload createPublishPayload(
-            final @Nullable Long timestamp, @NotNull DataPoint dataPoint, boolean includeTagName) {
+            final @Nullable Long timestamp, @NotNull final DataPoint dataPoint, final boolean includeTagName) {
         return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
     }
 
     protected @NotNull AbstractProtocolAdapterJsonPayload createMultiPublishPayload(
-            final @Nullable Long timestamp, List<DataPoint> dataPoint, boolean includeTagName) {
+            final @Nullable Long timestamp, final List<DataPoint> dataPoint, final boolean includeTagName) {
         return new ProtocolAdapterMultiPublishJsonPayload(timestamp,
                 dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
     }
 
-    protected static TagSample createTagSample(final @NotNull DataPoint dataPoint, boolean includeTagName) {
+    protected static TagSample createTagSample(final @NotNull DataPoint dataPoint, final boolean includeTagName) {
         return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
     }
 

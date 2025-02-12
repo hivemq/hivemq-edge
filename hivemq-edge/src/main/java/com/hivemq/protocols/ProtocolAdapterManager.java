@@ -42,6 +42,7 @@ import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.northbound.JsonPayloadDefaultCreator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -644,7 +645,7 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toList()));
     }
 
-    private static void syncFuture(final @NotNull Future future){
+    private static void syncFuture(final @NotNull Future<?> future){
         try {
             future.get();
         } catch (final InterruptedException e) {
