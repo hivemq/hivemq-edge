@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols;
+package com.hivemq.protocols.northbound;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
+import com.hivemq.protocols.AbstractSubscriptionSampler;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class PerAdapterSampler extends AbstractSubscriptionSampler {
 
@@ -41,20 +41,13 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
 
 
     private final @NotNull PollingProtocolAdapter pollingProtocolAdapter;
-    private final @NotNull List<PollingContext> pollingContext;
+    private final @NotNull List<? extends PollingContext> pollingContext;
 
     public PerAdapterSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull List<PollingContext> pollingContexts,
-            final @NotNull EventService eventService,
-            final @NotNull JsonPayloadCreator jsonPayloadCreator) {
-        super(protocolAdapterWrapper,
-                objectMapper,
-                adapterPublishService,
-                eventService,
-                jsonPayloadCreator);
+            final @NotNull List<? extends PollingContext> pollingContexts,
+            final @NotNull EventService eventService) {
+        super(protocolAdapterWrapper, eventService);
         this.pollingProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
         this.pollingContext = pollingContexts;
     }
@@ -68,7 +61,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         final PollingOutputImpl pollingOutput =
                 new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            pollingProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
+            pollingProtocolAdapter.poll(new PollingInputImpl((List<PollingContext>) pollingContext), pollingOutput);
         } catch (final Throwable t) {
             pollingOutput.fail(t, null);
             throw t;
@@ -90,7 +83,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                 }
 
                 return CompletableFuture.completedFuture(null);
-                return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
+              //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
             } else {
                 return CompletableFuture.completedFuture(null);
             }
