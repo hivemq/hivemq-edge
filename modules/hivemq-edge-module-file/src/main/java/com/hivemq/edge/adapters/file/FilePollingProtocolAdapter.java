@@ -94,11 +94,11 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
     public void poll(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
+                .filter(tag -> tag.getName().equals(pollingInput.getPollingContexts().getTagName()))
                 .findFirst()
                 .ifPresentOrElse(def -> pollFile(pollingOutput, (FileTag) def),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
+                                pollingInput.getPollingContexts().getTagName() +
                                 "' was not found. For the polling to work the tag must be created via REST API or the UI."));
     }
 

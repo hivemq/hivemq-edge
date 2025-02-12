@@ -97,7 +97,7 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(tagAddress, tagType))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 
@@ -145,7 +145,7 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 
@@ -167,7 +167,7 @@ public class EipPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_True() {
-         EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
+         final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping("topic",
                 1,
                 MessageHandlingOptions.MQTTMessagePerTag,
                 true,
@@ -186,7 +186,7 @@ public class EipPollingProtocolAdapterIT {
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
         final PollingInput input = mock(PollingInput.class);
-        when(input.getPollingContext()).thenReturn(eipToMqttMapping);
+        when(input.getPollingContexts()).thenReturn(eipToMqttMapping);
 
         final PollingOutput output = mock(PollingOutput.class);
 

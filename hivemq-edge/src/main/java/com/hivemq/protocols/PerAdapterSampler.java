@@ -17,7 +17,9 @@ package com.hivemq.protocols;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
@@ -27,22 +29,25 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
+public class PerAdapterSampler extends AbstractSubscriptionSampler {
 
-    private static final Logger log = LoggerFactory.getLogger(PerSubscriptionSampler.class);
+    private static final Logger log = LoggerFactory.getLogger(PerAdapterSampler.class);
 
 
-    private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
-    private final @NotNull PollingContext pollingContext;
+    private final @NotNull PollingProtocolAdapter pollingProtocolAdapter;
+    private final @NotNull List<PollingContext> pollingContext;
 
-    public PerSubscriptionSampler(
+    public PerAdapterSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull PollingContext pollingContext,
+            final @NotNull List<PollingContext> pollingContexts,
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadCreator jsonPayloadCreator) {
         super(protocolAdapterWrapper,
@@ -50,8 +55,8 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
                 adapterPublishService,
                 eventService,
                 jsonPayloadCreator);
-        this.perSubscriptionProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-        this.pollingContext = pollingContext;
+        this.pollingProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
+        this.pollingContext = pollingContexts;
     }
 
 
@@ -61,17 +66,30 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
         final PollingOutputImpl pollingOutput =
-                new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
+                new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            perSubscriptionProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
-        } catch (Throwable t) {
+            pollingProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
+        } catch (final Throwable t) {
             pollingOutput.fail(t, null);
             throw t;
         }
+
+
+        // TODO fixed timeout??
         final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture =
                 pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
         return outputFuture.thenCompose(((pollingResult) -> {
             if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
+
+                final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
+                final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
+
+                for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
+                    // TODO feed to the next layer
+
+                }
+
+                return CompletableFuture.completedFuture(null);
                 return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
             } else {
                 return CompletableFuture.completedFuture(null);
