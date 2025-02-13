@@ -1,5 +1,0 @@
-type: object
-properties:
-  token:
-    type: string
-    description: The token associated a set of authenticated credentials

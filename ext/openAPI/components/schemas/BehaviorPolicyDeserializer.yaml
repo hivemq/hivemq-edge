@@ -1,7 +1,0 @@
-type: object
-description: The deserializer applied to a particular message or payload type.
-properties:
-  schema:
-    $ref: ./SchemaReference.yaml
-required:
-  - schema
