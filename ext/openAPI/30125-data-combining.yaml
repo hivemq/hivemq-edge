@@ -223,10 +223,12 @@ components:
           properties:
             tags:
               type: array
+              description: The list of tags (names) used in the data combining
               items:
                 type: string
             topicFilters:
               type: array
+              description: The list of topic filters (names) used in the data combining
               items:
                 type: string
         destination:
@@ -252,14 +254,19 @@ components:
       enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
     EntityReference:
       type: object
-      description: We need this because we don't have a mechanism to identify a prime entity from an id
+      description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
+      # We need this because we don't have a mechanism to identify a prime entity from an id
+      # Adapter/bridge ids are user-facing not uuid)
+      # id are unique within their types but not across all entities
       properties:
         type:
           $ref: '#/components/schemas/EntityType'
         id:
+          description: The id of the entity being references in the combiner
           type: string
         isPrimary:
-          description: The source is the primary orchestrator of the composer
+          # We are still assuming one of the reference will have a special status
+          description: The source is the primary orchestrator of the combiner
           type: boolean
           default: false
       required:
