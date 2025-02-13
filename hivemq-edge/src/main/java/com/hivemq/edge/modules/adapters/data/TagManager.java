@@ -32,6 +32,8 @@ public class TagManager {
 
 
     private final @NotNull MetricsHolder metricsHolder;
+    // TODO this is basically a memory leak. The problem is when shall we remove the last value?
+    // We would need to add a callback/logic to the lifecycle of tags
     private final Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
 
     @Inject
