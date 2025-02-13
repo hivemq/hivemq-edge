@@ -180,7 +180,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                         }
                     }
                 });
-        pollingOutput.finish();
     }
 
     private CompletableFuture<HttpData> pollHttp(
@@ -225,10 +224,11 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
         return httpClient
                     .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                    .thenApply(httpResponse -> getHttpData(httpResponse, url));
+                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
     }
 
-    private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url) {
+    private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,
+                                          final @NotNull String tagName) {
         Object payloadData = null;
         String responseContentType = null;
 
@@ -274,7 +274,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 adapterFactories.dataPointFactory());
         //When the body is empty, just include the metadata
         if (payloadData != null) {
-            data.addDataPoint(RESPONSE_DATA, payloadData);
+            data.addDataPoint(tagName, payloadData);
         }
         return data;
     }
