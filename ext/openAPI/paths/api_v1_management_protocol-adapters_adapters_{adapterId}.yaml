@@ -1,0 +1,109 @@
+delete:
+  description: Delete adapter configured in the system.
+  operationId: deleteAdapter
+  parameters:
+    - description: The adapter Id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+  summary: Delete an adapter
+  tags:
+    - Protocol Adapters
+get:
+  description: Obtain the details for a configured adapter for the specified type".
+  operationId: getAdapter
+  parameters:
+    - description: The adapter Id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            adapter:
+              description: An example adapter.
+              value:
+                id: test-simulation-server
+                type: simulation
+                config:
+                  id: test-simulation-server
+                  port: 5021
+                  host: 127.0.0.1
+                  pollingIntervalMillis: 1000
+                  subscriptions:
+                    - filter: my-simulation-server/my-simulation-path-100
+                      destination: test
+                      qos: 0
+                adapterRuntimeInformation:
+                  lastStartedAttemptTime: '2023-06-28T10:57:18.707+01'
+                  numberOfDaemonProcesses: 1
+                  connectionStatus:
+                    status: CONNECTED
+                    id: test-simulation-server
+                    type: adapter
+          schema:
+            $ref: ../components/schemas/Adapter.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+  summary: Obtain the details for a configured adapter for the specified type
+  tags:
+    - Protocol Adapters
+put:
+  description: Update adapter configured in the system.
+  operationId: updateAdapter
+  parameters:
+    - description: The adapter Id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/Adapter.yaml
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter is invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update an adapter
+  tags:
+    - Protocol Adapters

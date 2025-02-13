@@ -1,0 +1,38 @@
+type: object
+description: remoteSubscriptions associated with the bridge
+properties:
+  customUserProperties:
+    type: array
+    description: The customUserProperties for this subscription
+    items:
+      $ref: ./BridgeCustomUserProperty.yaml
+  destination:
+    type: string
+    description: The destination topic for this filter set.
+    example: some/topic/value
+  filters:
+    type: array
+    description: The filters for this subscription.
+    example: some/topic/value
+    items:
+      type: string
+      description: The filters for this subscription.
+      example: some/topic/value
+  maxQoS:
+    type: integer
+    format: int32
+    default: 0
+    description: The maxQoS for this subscription.
+    enum:
+      - 0
+      - 1
+      - 2
+    maximum: 2
+    minimum: 0
+  preserveRetain:
+    type: boolean
+    description: The preserveRetain for this subscription
+required:
+  - destination
+  - filters
+  - maxQoS

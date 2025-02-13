@@ -1,0 +1,12 @@
+type: object
+description: List of instructions to be applied to incoming data
+properties:
+  destination:
+    type: string
+    description: The field in the output object where the data will be written to
+  source:
+    type: string
+    description: The field in the input object where the data will be read from
+required:
+  - destination
+  - source
