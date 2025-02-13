@@ -205,7 +205,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull EventService eventService) {
         if (isPolling()) {
             log.debug("Schedule polling for protocol adapter with id '{}'", getId());
-            final PerAdapterSampler sampler = new PerAdapterSampler(this, getNorthboundMappings(), eventService);
+            final PerAdapterSampler sampler = new PerAdapterSampler(this, getNorthboundMappings(), eventService, tagManager);
             protocolAdapterPollingService.schedulePolling(sampler);
         }
     }

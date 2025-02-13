@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
@@ -42,14 +43,17 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
 
     private final @NotNull PollingProtocolAdapter pollingProtocolAdapter;
     private final @NotNull List<? extends PollingContext> pollingContext;
+    private final @NotNull TagManager tagManager;
 
     public PerAdapterSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
             final @NotNull List<? extends PollingContext> pollingContexts,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull TagManager tagManager) {
         super(protocolAdapterWrapper, eventService);
         this.pollingProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
         this.pollingContext = pollingContexts;
+        this.tagManager = tagManager;
     }
 
 
@@ -58,8 +62,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        final PollingOutputImpl pollingOutput =
-                new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
             pollingProtocolAdapter.poll(new PollingInputImpl((List<PollingContext>) pollingContext), pollingOutput);
         } catch (final Throwable t) {
@@ -78,12 +81,11 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                 final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
 
                 for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
-                    // TODO feed to the next layer
-
+                    tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
                 }
 
                 return CompletableFuture.completedFuture(null);
-              //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
+                //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
             } else {
                 return CompletableFuture.completedFuture(null);
             }

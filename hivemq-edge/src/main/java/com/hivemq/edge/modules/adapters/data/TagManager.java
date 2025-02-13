@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,8 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 public class TagManager {
 
+
+
+
     @Inject
-    public TagManager() {
+    public TagManager(final MetricsHolder metricsHolder) {
     }
 
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers =
