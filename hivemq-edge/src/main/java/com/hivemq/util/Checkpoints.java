@@ -51,6 +51,9 @@ public class Checkpoints {
     public static final @NotNull String CONTROL_PLANE_CONNECTION_HANDSHAKE_REISSUED =
             "control-plane-connection-handshake-reissued";
 
+    //a checkpoint for the moment after the extension start method was successfully called
+    public static final @NotNull String EXTENSION_STARTED = "extension-started";
+
 
     public static boolean enabled() {
         return enabled;
