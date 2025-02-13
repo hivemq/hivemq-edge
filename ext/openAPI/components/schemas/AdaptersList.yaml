@@ -1,0 +1,9 @@
+type: object
+properties:
+  items:
+    type: array
+    description: List of result items that are returned by this endpoint
+    items:
+      $ref: ./Adapter.yaml
+required:
+  - items

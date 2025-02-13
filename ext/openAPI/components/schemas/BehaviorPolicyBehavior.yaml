@@ -1,0 +1,11 @@
+type: object
+description: The behavior referenced by the policy, that is validated by the policy.
+properties:
+  arguments:
+    type: object
+    description: The  arguments that the referenced validator type requires.
+  id:
+    type: string
+    description: The unique identifier of a pre-defined behavior.
+required:
+  - id

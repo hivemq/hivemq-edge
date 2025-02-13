@@ -1,0 +1,38 @@
+post:
+  description: Authorize the presented user to obtain a secure token for use on the API.
+  operationId: authenticate
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/UsernamePasswordCredentials.yaml
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            example-authentication:
+              description: Example Authentication configuration.
+              summary: Example authentication
+              value:
+                token: >-
+                  eyJraWQiOiIwMDAwMSIsImFsZyI6IlJTMjU2In0.eyJqdGkiOiJpb09YbmdWQW1ncl9rSGxZMlRPNWx3IiwiaWF0IjoxNjg3OTQ2MzkwLCJhdWQiOiJIaXZlTVEtRWRnZS1BcGkiLCJpc3MiOiJIaXZlTVEtRWRnZSIsImV4cCI6MTY4Nzk0ODE5MCwibmJmIjoxNjg3OTQ2MjcwLCJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl19.F4fCJcLobUJXR8rcER_sXVR2l6LhGc6LrnpDlBfuCmVQI22UjLjh-GBYPJV_VF17at_ChBS0UePN9dF4U0i5SsuLcLbrl6QMyI3kmiDxvZCKPWPJGJfiqljVysbQS5vK2F8eJmVFWr0Bb5rXjTtClLIfDGTLEoETbUOMfmic5EzPdWwLN7i3NbuE3xl9u0RepJwVNf0eZrvwIQjpeLZ8vNx9eIVUeMhXpylrQGlDeikJn_F6K89hc1igl2hzN4aU9oT-WOLeQ82oRq7IhL1Rzi1K9NdKMS_xrpV951basq_419oyGyQ6zcxORyC7vsGLZPGi0sHsSJdQ-j12xhPsMg
+          schema:
+            $ref: ../components/schemas/ApiBearerToken.yaml
+      description: Username & Password Credentials to Authenticate as.
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Error in request.
+    '401':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: The requested credentials could not be authenticated.
+  summary: Authorize the presented user to obtain a secure token for use on the API.
+  tags:
+    - Authentication
+    - Authentication Endpoint

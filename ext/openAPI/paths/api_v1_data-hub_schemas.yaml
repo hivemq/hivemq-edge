@@ -1,0 +1,237 @@
+get:
+  description: |-
+    Get all schemas. 
+
+     This endpoint returns the content of the schemas with the content-type `application/json`. 
+
+     
+  operationId: getAllSchemas
+  parameters:
+    - description: >-
+        Comma-separated list of fields to include in the response. Allowed
+        values are: id, type, schemaDefinition, createdAt
+      example: id,createdAt
+      in: query
+      name: fields
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of schema types used for filtering. Multiple
+        filters can be applied together.
+      example: JSON,PROTOBUF
+      in: query
+      name: types
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of schema ids used for filtering. Multiple filters
+        can be applied together.
+      example: schema1,schema2
+      in: query
+      name: schemaIds
+      schema:
+        type: string
+    - description: >-
+        Specifies the page size for the returned results. Has to be between 10
+        and 500. Default page size is 50.
+      example: 100
+      in: query
+      name: limit
+      schema:
+        type: integer
+        format: int32
+    - description: >-
+        The cursor that has been returned by the previous result page. Do not
+        pass this parameter if you want to fetch the first page.
+      in: query
+      name: cursor
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            list-response-a:
+              description: Example response with multiple schemas. No more pages left
+              summary: Multiple results, last page
+              value:
+                items:
+                  - id: schema1
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:28:35.164Z'
+                  - id: schema2
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:38:35.164Z'
+                  - id: schema3
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:48:35.164Z'
+            list-response-b:
+              description: Example response with multiple schemas. More pages left
+              summary: Multiple results, more pages left
+              value:
+                items:
+                  - id: schema1
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:28:35.164Z'
+                  - id: schema2
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:38:35.164Z'
+                  - id: schema3
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:48:35.164Z'
+                _links:
+                  next: >-
+                    /api/v1/data-hub/schemas?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3
+            list-response-c:
+              description: >-
+                Example response with requested fields and multiple schemas.
+                More pages left
+              summary: Multiple results, requested 'id' field
+              value:
+                items:
+                  - id: schema1
+                  - id: schema2
+                  - id: schema3
+                _links:
+                  next: >-
+                    /api/v1/data-hub/schemas?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3&fields=id
+            list-response-d:
+              description: Example response with a single schema
+              summary: Single Result
+              value:
+                items:
+                  - id: schema1
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:28:35.164Z'
+            list-response-e:
+              description: Example response with all versions of specific schema id.
+              summary: List versions of one schema, last page
+              value:
+                items:
+                  - id: schema1
+                    version: 1
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:28:35.164Z'
+                  - id: schema1
+                    version: 2
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:38:35.164Z'
+                  - id: schema1
+                    version: 3
+                    type: JSON
+                    schemaDefinition: >-
+                      ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                    createdAt: '2023-03-01T13:48:35.164Z'
+          schema:
+            $ref: ../components/schemas/SchemaList.yaml
+      description: Success
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+  summary: Get all schemas
+  tags:
+    - Data Hub - Schemas
+post:
+  description: |+
+    Creates a schema
+
+  operationId: createSchema
+  parameters:
+    - description: The entity tag
+      in: header
+      name: If-Match
+      required: false
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        example:
+          id: schema
+          type: JSON
+          schemaDefinition: >-
+            ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+        schema:
+          $ref: ../components/schemas/PolicySchema.yaml
+    description: The schema that should be created.
+    required: true
+  responses:
+    '201':
+      content:
+        application/json:
+          examples:
+            response-example:
+              description: Example response.
+              summary: Schema was created successfully
+              value:
+                id: schema
+                version: 1
+                type: JSON
+                schemaDefinition: >-
+                  ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                createdAt: '2023-03-01T13:28:35.164Z'
+          schema:
+            $ref: ../components/schemas/PolicySchema.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Schema could not be validatetd
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Schema already exists
+    '412':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Mismatch between schema and etag
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '507':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Insufficient storage
+  summary: Create a new schema
+  tags:
+    - Data Hub - Schemas
