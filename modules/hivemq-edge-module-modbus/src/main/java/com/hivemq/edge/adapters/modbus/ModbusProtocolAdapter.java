@@ -122,12 +122,16 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
                                 if (!dataPoint.equals(entry.value())) {
                                     //value changed, remember and forward
                                     lastSamples.put(tagName, entry.value());
-                                    pollingOutput.addDataPoint(entry.tagName(), entry.value());
+                                    pollingOutput.addDataPoint(tagName, entry.value());
+                                } else {
+                                    //value didn't exist, remember and forward
+                                    lastSamples.put(tagName, entry.value());
+                                    pollingOutput.addDataPoint(tagName, entry.value());
                                 }
                             } else {
                                 //value didn't exist, remember and forward
                                 lastSamples.put(tagName, entry.value());
-                                pollingOutput.addDataPoint(entry.tagName(), entry.value());
+                                pollingOutput.addDataPoint(tagName, entry.value());
                             }
                         } catch (InterruptedException | ExecutionException e) {
                             log.error("Problem while accessing data in a completed future", e);
