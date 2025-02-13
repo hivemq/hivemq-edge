@@ -225,12 +225,10 @@ components:
               type: array
               items:
                 type: string
-                format: uuid
             topicFilters:
               type: array
               items:
                 type: string
-                format: uuid
         destination:
           type: string
           format: mqtt-topic
@@ -260,7 +258,6 @@ components:
           $ref: '#/components/schemas/EntityType'
         id:
           type: string
-          format: uuid
         isPrimary:
           description: The source is the primary orchestrator of the composer
           type: boolean
