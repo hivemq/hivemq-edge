@@ -47,7 +47,7 @@ public class TagManager {
 
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         // TODO handle null
-        lastValueForTag.put(tagName, dataPoints);
+      //  lastValueForTag.put(tagName, dataPoints);
         final List<TagConsumer> tagConsumers = consumers.get(tagName);
         if (tagConsumers != null) {
             consumers.get(tagName).forEach(c -> c.accept(dataPoints));
