@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -81,43 +82,46 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput,
-            final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
 
-        final int minDelay = adapterConfig.getMinDelay();
-        final int maxDelay = adapterConfig.getMaxDelay();
+            // TODO
+            new Thread(() -> {
+                for (final PollingContext pollingContext : pollingInput.getPollingContexts()) {
+                    final int minDelay = adapterConfig.getMinDelay();
+                    final int maxDelay = adapterConfig.getMaxDelay();
 
-        new Thread(() -> {
-            if (minDelay > maxDelay) {
-                pollingOutput.fail(String.format(
-                        "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
-                        minDelay,
-                        maxDelay));
-            } else if (minDelay == maxDelay && maxDelay > 0) {
-                try {
-                    timeWaiter.sleep(minDelay);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    pollingOutput.fail("Thread was interrupted");
-                    return;
+                    if (minDelay > maxDelay) {
+                        pollingOutput.fail(String.format(
+                                "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
+                                minDelay,
+                                maxDelay));
+                    } else if (minDelay == maxDelay && maxDelay > 0) {
+                        try {
+                            timeWaiter.sleep(minDelay);
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            pollingOutput.fail("Thread was interrupted");
+                            return;
+                        }
+                    } else if (maxDelay > 0) {
+                        final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
+                        try {
+                            timeWaiter.sleep(sleepMS);
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            pollingOutput.fail("Thread was interrupted");
+                            return;
+                        }
+                    }
+
+                    pollingOutput.addDataPoint(pollingContext.getTagName(),
+                            ThreadLocalRandom.current()
+                                    .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                                            Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
                 }
-            } else if (maxDelay > 0) {
-                final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
-                try {
-                    timeWaiter.sleep(sleepMS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    pollingOutput.fail("Thread was interrupted");
-                    return;
-                }
-            }
+                pollingOutput.finish();
+            }).start();
 
-            pollingOutput.addDataPoint("sample",
-                    ThreadLocalRandom.current()
-                            .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
-                                    Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
-            pollingOutput.finish();
-        }).start();
     }
 
     @Override
@@ -132,8 +136,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         output.finish(objectMapper.createObjectNode());
     }
 }
