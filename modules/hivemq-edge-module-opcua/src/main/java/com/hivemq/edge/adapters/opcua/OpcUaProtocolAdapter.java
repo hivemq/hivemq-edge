@@ -50,7 +50,7 @@ import java.util.List;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter {
+public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
