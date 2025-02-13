@@ -52,13 +52,7 @@ paths:
       tags:
         - Combiners
       parameters:
-        - name: combinerId
-          description: The unique id of the combiner to retrieve.
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/CombinerId'
       responses:
         "200":
           content:
@@ -79,13 +73,7 @@ paths:
       tags:
         - Combiners
       parameters:
-        - name: combinerId
-          description: The unique id of the combiner to delete.
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/CombinerId'
       responses:
         "200":
           description: Success
@@ -102,13 +90,7 @@ paths:
       tags:
         - Combiners
       parameters:
-        - name: combinerId
-          description: The unique id of the combiner to update.
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/CombinerId'
       requestBody:
         content:
           application/json:
@@ -125,11 +107,76 @@ paths:
               schema:
                 $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner already exists
-
+  /api/v1/management/combiners/{combinerId}/mappings:
+    get:
+      description: Get all data combining mappings for the given combiner
+      summary: Get all mappings
+      operationId: getCombinerMappings
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataCombiningList'
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+  /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
+    get:
+      description: Get all the instructions for a designated mapping
+      summary: Get all instructions
+      operationId: getMappingInstructions
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+        - $ref: '#/components/parameters/MappingId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of instructions to be applied to incoming data
+                items:
+                  $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/Instruction'
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
 components:
+  parameters:
+    CombinerId:
+      name: combinerId
+      description: The unique id of the combiner to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MappingId:
+      name: mappingId
+      description: The unique id of the mapping to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   schemas:
     CombinerList:
       type: object
+      description: The list of Combiner defined in this Edge instance
       properties:
         items:
           type: array
@@ -137,14 +184,18 @@ components:
             $ref: '#/components/schemas/Combiner'
     Combiner:
       type: object
+      description: A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping
       properties:
         id:
           type: string
           format: uuid
+          description: The unique id of the data combiner
         name:
           type: string
+          description: The user-facing name of the combiner
         description:
           type: string
+          description: The user-facing description of the combiner
         sources:
           $ref: '#/components/schemas/EntityReferenceList'
         mappings:
@@ -163,6 +214,10 @@ components:
       type: object
       description: Define individual rules for data combining, based on the entities selected in the Orchestrator
       properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique id of the data combining mapping
         sources:
           type: object
           properties:
