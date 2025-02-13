@@ -30,16 +30,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TagManager {
 
 
-
+    private final MetricsHolder metricsHolder;
 
     @Inject
-    public TagManager(final MetricsHolder metricsHolder) {
+    public TagManager(final @NotNull MetricsHolder metricsHolder) {
+
+
+        this.metricsHolder = metricsHolder;
     }
 
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers =
             new ConcurrentHashMap<>();
 
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
+        // TODO handle null
         consumers.get(tagName).forEach(c -> c.accept(dataPoints));
     }
 

@@ -95,8 +95,8 @@ public class ProtocolAdapterWrapper {
         final CompletableFuture<Void> startFuture = output.getStartFuture();
 
         return startFuture.thenCompose(r -> {
-            startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
             createAndSubscribeTagConsumer();
+            startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
             return startWriting(writingEnabled, protocolAdapterWritingService);
         }).thenApply(r -> {
             setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
