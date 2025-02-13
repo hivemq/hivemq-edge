@@ -24,27 +24,30 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class TagManager {
 
 
-    private final MetricsHolder metricsHolder;
+    private final @NotNull MetricsHolder metricsHolder;
+    private final Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
 
     @Inject
     public TagManager(final @NotNull MetricsHolder metricsHolder) {
-
-
         this.metricsHolder = metricsHolder;
     }
 
-    private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers =
-            new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         // TODO handle null
-        consumers.get(tagName).forEach(c -> c.accept(dataPoints));
+        lastValueForTag.put(tagName, dataPoints);
+        final List<TagConsumer> tagConsumers = consumers.get(tagName);
+        if (tagConsumers != null) {
+            consumers.get(tagName).forEach(c -> c.accept(dataPoints));
+        }
     }
 
 
@@ -59,6 +62,12 @@ public class TagManager {
                 return consumers;
             }
         });
+
+        // if there is a value present in the cache, we sent it to the consumer
+        final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
+        if (dataPoints != null) {
+            consumer.accept(dataPoints);
+        }
     }
 
 
