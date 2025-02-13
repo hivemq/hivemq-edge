@@ -68,7 +68,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags().stream()
                 .map(tag -> (EipTag)tag)
-                .collect(Collectors.toMap(tag -> createTagAddressForSubscription(tag.getDefinition().getAddress(), tag.getDefinition().getDataType()), tag -> tag));
+                .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.lastSeenValues = new ConcurrentHashMap<>();
@@ -127,16 +127,15 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public void poll(
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-
         final var client = etherNetIP;
         if (client == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
         }
 
-        final var tagAddresses = tags.keySet().toArray(new String[]{});
+        final var tagAddresses = tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
         try {
-            final var readCipData = client.readTags();
+            final var readCipData = client.readTags(tagAddresses);
 
             for (int i = 0; i < readCipData.length; i++) {
                 final var cipData = readCipData[i];
@@ -144,12 +143,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
                 if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                     handleResult(cipData, tagAddress).forEach(it -> {
                         if (!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
-                            pollingOutput.addDataPoint(tagAddress, it.getValue());
+                            pollingOutput.addDataPoint(tags.get(tagAddress).getName(), it.getValue());
                             lastSeenValues.put(tagAddress, it);
                         }
                     });
                 } else {
-                    handleResult(cipData, tagAddress).forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+                    handleResult(cipData, tagAddress).forEach(it -> {
+                        pollingOutput.addDataPoint(tags.get(tagAddress).getName(), it.getValue());
+                    });
                 }
             }
             pollingOutput.finish();
@@ -182,17 +183,6 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval();
-    }
-
-    /**
-     * Use this hook method to modify the query generated used to read|subscribe to the devices,
-     * for the most part this is simply the tagAddress field unchanged from the eipToMqttMapping
-     * <p>
-     * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
-     */
-    protected @NotNull String createTagAddressForSubscription(
-            final @NotNull String address, final @NotNull EipDataType dataType) {
-        return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, dataType);
     }
 
 }
