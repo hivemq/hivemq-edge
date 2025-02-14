@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
   DISCOVERY_PAYLOADS: 'discovery.payloads',
   NORTHBOUND_MAPPINGS: 'northbound-mappings',
   SOUTHBOUND_MAPPINGS: 'southbound-mappings',
+  COMBINING_MAPPINGS: 'combining-mappings',
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
   CLIENTS: 'broker-clients',
