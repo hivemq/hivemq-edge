@@ -1,8 +1,12 @@
 import { http, HttpResponse } from 'msw'
-import type { Combiner, CombinerList } from '../../../__generated__'
+import type { Combiner, CombinerList, DataCombining, DataCombiningList, Instruction } from '../../../__generated__'
 
 interface CombinerParams {
   combinerId: string
+}
+
+interface MappingParams extends CombinerParams {
+  mappingId: string
 }
 
 const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
@@ -10,6 +14,16 @@ const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
 export const mockCombiner: Combiner = {
   id: mockCombinerId,
   name: 'my-combiner',
+}
+
+export const mockCombinerMapping: DataCombining = {
+  id: '58677276-fc48-4a9a-880c-41c755f5063b',
+  sources: {
+    tags: [],
+    topicFilters: [],
+  },
+  destination: 'my/topic',
+  instructions: [],
 }
 
 export const handlers = [
@@ -22,9 +36,9 @@ export const handlers = [
     return HttpResponse.json<Combiner>({ ...mockCombiner, id: combinerId }, { status: 200 })
   }),
 
-  http.post<never, Combiner>('*/management/combiners', ({ request }) => {
-    const { body } = request
-    return HttpResponse.json({ created: body }, { status: 200 })
+  http.post<never, Combiner>('*/management/combiners', async ({ request }) => {
+    const data = await request.json()
+    return HttpResponse.json({ created: data }, { status: 200 })
   }),
 
   http.delete<CombinerParams>('*/management/combiners/:combinerId', ({ params }) => {
