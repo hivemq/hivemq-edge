@@ -2,15 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $FieldMapping = {
-    description: `Defines how incoming data should be transformed before being sent out.`,
+export const $EntityReferenceList = {
     properties: {
-        instructions: {
+        items: {
             type: 'array',
             contains: {
-                type: 'Instruction',
+                type: 'EntityReference',
             },
-            isRequired: true,
         },
     },
 } as const;
