@@ -171,9 +171,9 @@ oci {
             layer("hivemq") {
                 contents {
                     into("opt") {
-                        filePermissions = 0b110_110_000
-                        directoryPermissions = 0b111_111_000
-                        permissions("**/*.sh", 0b111_111_000)
+                        filePermissions = 0b110_110_110
+                        directoryPermissions = 0b111_111_111
+                        permissions("**/*.sh", 0b111_111_111)
                         from("docker/docker-entrypoint.sh")
                         into("hivemq") {
                             from("./hivemq-edge/src/distribution") { filter { exclude("**/.gitkeep") } }
@@ -195,8 +195,8 @@ oci {
             layer("open-source-modules") {
                 contents {
                     into("opt") {
-                        filePermissions = 0b110_110_000
-                        directoryPermissions = 0b111_111_000
+                        filePermissions = 0b110_110_110
+                        directoryPermissions = 0b111_111_111
                         into("hivemq/modules") {
                             // copy OSS modules
                             from(openSourceEdgeModuleBinaries.elements)
