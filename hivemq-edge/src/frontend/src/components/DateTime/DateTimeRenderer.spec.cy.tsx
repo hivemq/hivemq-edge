@@ -37,6 +37,6 @@ describe('DateTimeRenderer', () => {
     cy.clock(now)
     cy.mountWithProviders(<DateTimeRenderer date={MOCK_DATE_TIME_NOW} />)
     cy.getByTestId('date-time-approx').should('not.exist')
-    cy.getByTestId('date-time-full').should('contain.text', 'Friday, 10 November 2023 at 00:00:00.000')
+    cy.getByTestId('date-time-full').should('contain.text', 'Friday 10 November 2023 at 00:00:00.000')
   })
 })

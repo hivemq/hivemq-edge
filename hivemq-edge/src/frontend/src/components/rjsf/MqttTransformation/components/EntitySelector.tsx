@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 
-import { SelectEntityType, SelectTag, SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
+import { SelectTag, SelectTopicFilter } from '@/components/MQTT/EntityCreatableSelect.tsx'
+import { SelectEntityType } from '@/components/MQTT/types.ts'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 

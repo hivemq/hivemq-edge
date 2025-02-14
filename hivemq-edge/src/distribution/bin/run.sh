@@ -60,6 +60,9 @@ if hash java 2>/dev/null; then
     # Uncomment for enabling Diagnostic Mode
     #JAVA_OPTS="$JAVA_OPTS -DdiagnosticMode=true"
 
+    # Prevent Javet from crashing on certain systems when using Data Hub scripting
+    export JAVET_DISABLE_PKU=1
+
     if [ -z "$HIVEMQ_HOME" ]; then
         HIVEMQ_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )"
         HOME_OPT="-Dhivemq.home=$HIVEMQ_FOLDER"

@@ -75,8 +75,8 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({
     type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY
       ? headerPolicyBackgroundColor
       : type === DataHubNodeType.SCHEMA || type === DataHubNodeType.FUNCTION
-      ? headerResourceBackgroundColor
-      : headerBackgroundColor
+        ? headerResourceBackgroundColor
+        : headerBackgroundColor
 
   const selectedStyle: Partial<BoxProps> = {
     boxShadow: 'var(--chakra-shadows-outline)',

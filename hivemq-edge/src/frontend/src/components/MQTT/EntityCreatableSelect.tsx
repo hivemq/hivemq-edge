@@ -18,13 +18,8 @@ import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTa
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { PLCTagIcon, TopicFilterIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
+import { SelectEntityType } from '@/components/MQTT/types.ts'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
-
-export enum SelectEntityType {
-  TOPIC = 'TOPIC',
-  TOPIC_FILTER = 'TOPIC_FILTER',
-  TAG = 'TAG',
-}
 
 interface EntityOption extends OptionBase {
   label: string

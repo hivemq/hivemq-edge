@@ -100,7 +100,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
             TransitionType,
             StateType,
             StateType,
-            FsmState.Type | undefined
+            FsmState.Type | undefined,
           ]
           initData.formData = {
             ...initData.formData,

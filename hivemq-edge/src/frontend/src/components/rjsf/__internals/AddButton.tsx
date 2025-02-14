@@ -15,7 +15,7 @@ import { AddIcon } from '@chakra-ui/icons'
 export default function AddButton<
   T = never,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = never
+  F extends FormContextType = never,
 >({ uiSchema, registry, ...props }: IconButtonProps<T, S, F>) {
   const { translateString } = registry
   const { disabled, 'aria-label': ariaLabel, ...rest } = props

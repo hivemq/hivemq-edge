@@ -52,7 +52,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
     )
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
     onEdgesChange(
-      edges.filter((edge) => edge.source === id).map((e) => ({ id: e.id, type: 'remove' } as EdgeRemoveChange))
+      edges.filter((edge) => edge.source === id).map((e) => ({ id: e.id, type: 'remove' }) as EdgeRemoveChange)
     )
   }
 
