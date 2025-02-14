@@ -38,4 +38,12 @@ export const handlers = [
 
     return HttpResponse.json({ updated: data, id: combinerId }, { status: 200 })
   }),
+
+  http.get<CombinerParams>('*/management/combiners/:combinerId/mappings', () => {
+    return HttpResponse.json<DataCombiningList>({ items: [mockCombinerMapping] }, { status: 200 })
+  }),
+
+  http.get<MappingParams>('*/management/combiners/:combinerId/mappings/:mappingId/instructions', () => {
+    return HttpResponse.json<Array<Instruction>>([], { status: 200 })
+  }),
 ]
