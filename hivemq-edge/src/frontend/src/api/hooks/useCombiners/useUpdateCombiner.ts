@@ -20,7 +20,7 @@ export const useUpdateCombiner = () => {
   return useMutation<unknown, ApiError, UpdateCombinerProps>({
     mutationFn: updateCombiner,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMBINING_MAPPINGS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMBINER] })
     },
   })
 }

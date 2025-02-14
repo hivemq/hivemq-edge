@@ -19,7 +19,7 @@ export const useDeleteCombiner = () => {
   return useMutation<unknown, ApiError, DeleteCombinerProps>({
     mutationFn: deleteCombiner,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMBINING_MAPPINGS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMBINER] })
     },
   })
 }

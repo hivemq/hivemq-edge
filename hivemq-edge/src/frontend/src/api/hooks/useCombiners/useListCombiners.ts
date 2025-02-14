@@ -8,7 +8,7 @@ export const useListCombiners = () => {
   const appClient = useHttpClient()
 
   return useQuery<CombinerList, ApiError>({
-    queryKey: [QUERY_KEYS.COMBINING_MAPPINGS],
+    queryKey: [QUERY_KEYS.COMBINER],
     queryFn: () => appClient.combiners.getCombiners(),
   })
 }
