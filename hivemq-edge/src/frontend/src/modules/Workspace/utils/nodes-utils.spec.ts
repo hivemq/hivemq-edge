@@ -201,7 +201,7 @@ describe('createAdapterNode', () => {
         id: `adapter@${MOCK_ADAPTER_ID}`,
         position: {
           x: 625,
-          y: -66.66666666666669,
+          y: -400,
         },
       }),
       edgeConnector: expect.objectContaining({}),
