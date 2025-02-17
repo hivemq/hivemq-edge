@@ -71,9 +71,10 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const selectedCombinerCandidates = useMemo(() => {
     // TODO[29097] Decide which entities are eligible for combining. Hidden is EDGE, default are ADAPTER and BRIDGE;
-    return selectedNodes.filter(
+    const result = selectedNodes.filter(
       (node) => node.type === NodeTypes.ADAPTER_NODE || node.type === NodeTypes.BRIDGE_NODE
     ) as CombinerEligibleNode[]
+    return result.length ? result : undefined
   }, [selectedNodes])
 
   const onCreateGroup = () => {
@@ -136,7 +137,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }
 
   const onManageOrchestrators = () => {
-    if (!selectedGroupCandidates) return
+    if (!selectedCombinerCandidates) return
     const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
     if (!edgeNode) return
 
@@ -193,7 +194,8 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
       <ToolbarButtonGroup>
         <IconButton
-          data-testid="node-group-toolbar-orchestrator"
+          isDisabled={!selectedCombinerCandidates}
+          data-testid="node-group-toolbar-combiner"
           icon={<MdScheduleSend />}
           aria-label={t('Create an Orchestrator from the entities')}
           onClick={onManageOrchestrators}
