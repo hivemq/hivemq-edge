@@ -4,12 +4,12 @@ import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 import type { GenericObjectType } from '@rjsf/utils'
 
-import type { Adapter, Bridge, Listener, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
 import type { DeviceMetadata } from '../types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
-import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
+import { getBridgeTopics, discoverAdapterTopics } from './topics-utils'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
@@ -176,7 +176,7 @@ export const createAdapterNode = (
     data: adapter,
     position: positionStorage?.[idAdapter] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x * (posX - deltaX),
-      y: POS_EDGE.y - (POS_NODE_INC.y * posY) / 1.5,
+      y: POS_EDGE.y - POS_NODE_INC.y * posY * 1.5,
     },
   }
 
@@ -235,6 +235,41 @@ export const createAdapterNode = (
   }
 
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
+}
+
+export const createCombinerNode = (combiner: Combiner, index: number, theme: Partial<WithCSSVar<Dict>>) => {
+  const nodeCombiner: Node<Combiner, NodeTypes.COMBINER_NODE> = {
+    id: combiner.id,
+    type: NodeTypes.COMBINER_NODE,
+    sourcePosition: Position.Bottom,
+    data: combiner,
+    position: {
+      x: POS_EDGE.x + POS_NODE_INC.x * index * 2,
+      y: POS_EDGE.y - POS_NODE_INC.y * 0.75,
+    },
+  }
+
+  const edgeConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${combiner.id}`,
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Top',
+    source: combiner.id,
+    focusable: false,
+    type: 'default',
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: theme.colors.brand[500],
+    },
+    animated: false,
+    style: {
+      strokeWidth: 1.5,
+      stroke: theme.colors.brand[500],
+    },
+  }
+
+  return { nodeCombiner, edgeConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {
