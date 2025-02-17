@@ -2,15 +2,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $FieldMapping = {
-    description: `Defines how incoming data should be transformed before being sent out.`,
+export const $CombinerList = {
+    description: `The list of Combiner defined in this Edge instance`,
     properties: {
-        instructions: {
+        items: {
             type: 'array',
             contains: {
-                type: 'Instruction',
+                type: 'Combiner',
             },
-            isRequired: true,
         },
     },
 } as const;

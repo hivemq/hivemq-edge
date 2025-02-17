@@ -11,11 +11,13 @@ export const $SouthboundMapping = {
         tagName: {
             type: 'string',
             description: `The tag for which values hould be collected and sent out.`,
+            isRequired: true,
             format: 'mqtt-tag',
         },
         topicFilter: {
             type: 'string',
             description: `The filter defining what topics we will receive messages from.`,
+            isRequired: true,
         },
     },
 } as const;
