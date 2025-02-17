@@ -26,14 +26,14 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
-    public @NotNull Combiner toModel(final @NotNull DataCombiner dataCombiner) {
+    public @NotNull Combiner toModel() {
         final List<com.hivemq.edge.api.model.DataCombining> combining =
-                dataCombiner.dataCombinings().stream().map(e->e.toModel()).toList();
+                this.dataCombinings().stream().map(DataCombining::toModel).toList();
         final List<com.hivemq.edge.api.model.EntityReference> sources =
-                dataCombiner.entityReferences().stream().map(EntityReference::toModel).toList();
-        return new Combiner().id(dataCombiner.id())
-                .name(dataCombiner.name())
-                .description(dataCombiner.description())
+                this.entityReferences().stream().map(EntityReference::toModel).toList();
+        return new Combiner().id(id)
+                .name(name)
+                .description(description)
                 .sources(new EntityReferenceList().items(sources))
                 .mappings(new DataCombiningList().items(combining));
     }
@@ -52,7 +52,7 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
 
     public @NotNull DataCombinerEntity toPersistence(final @NotNull DataCombiner dataCombiner) {
         final List<DataCombiningEntity> combining =
-                dataCombiner.dataCombinings().stream().map(e->e.toPersistence()).toList();
+                dataCombiner.dataCombinings().stream().map(e -> e.toPersistence()).toList();
         final List<EntityReferenceEntity> sources =
                 dataCombiner.entityReferences().stream().map(EntityReference::toPersistence).toList();
         return new DataCombinerEntity(dataCombiner.id(),
