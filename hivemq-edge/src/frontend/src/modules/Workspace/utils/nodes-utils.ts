@@ -237,7 +237,12 @@ export const createAdapterNode = (
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
 }
 
-export const createCombinerNode = (combiner: Combiner, index: number, theme: Partial<WithCSSVar<Dict>>) => {
+export const createCombinerNode = (
+  combiner: Combiner,
+  index: number,
+  sources: Node[],
+  theme: Partial<WithCSSVar<Dict>>
+) => {
   const nodeCombiner: Node<Combiner, NodeTypes.COMBINER_NODE> = {
     id: combiner.id,
     type: NodeTypes.COMBINER_NODE,
@@ -248,6 +253,29 @@ export const createCombinerNode = (combiner: Combiner, index: number, theme: Par
       y: POS_EDGE.y - POS_NODE_INC.y * 0.75,
     },
   }
+
+  const sourceConnectors = sources.map<Edge>((source) => {
+    const edgeConnector: Edge = {
+      id: `${IdStubs.CONNECTOR}-${source.id}-${combiner.id}`,
+      target: combiner.id,
+      targetHandle: 'Top',
+      source: source.id,
+      focusable: false,
+      type: 'default',
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: theme.colors.brand[500],
+      },
+      animated: false,
+      style: {
+        strokeWidth: 1.5,
+        stroke: theme.colors.brand[500],
+      },
+    }
+    return edgeConnector
+  })
 
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${combiner.id}`,
@@ -269,7 +297,7 @@ export const createCombinerNode = (combiner: Combiner, index: number, theme: Par
     },
   }
 
-  return { nodeCombiner, edgeConnector }
+  return { nodeCombiner, edgeConnector, sourceConnectors }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

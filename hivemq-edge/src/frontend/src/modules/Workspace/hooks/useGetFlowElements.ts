@@ -17,8 +17,8 @@ import {
   createAdapterNode,
   createListenerNode,
   createCombinerNode,
-} from '../utils/nodes-utils.ts'
-import { applyLayout } from '../utils/layout-utils.ts'
+} from '@/modules/Workspace/utils/nodes-utils.ts'
+import { applyLayout } from '@/modules/Workspace/utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 
 const useGetFlowElements = () => {
@@ -85,11 +85,25 @@ const useGetFlowElements = () => {
 
     const nbCombiners = combinerList?.items?.length || 1
     const deltaPosition = Math.floor((nbCombiners - 1) / 2)
+
     combinerList?.items?.forEach((combiner, index) => {
-      const { nodeCombiner, edgeConnector } = createCombinerNode(combiner, (index - deltaPosition) / nbCombiners, theme)
+      const sources =
+        combiner.sources?.items
+          ?.map((entity) => {
+            return nodes.find((node) => node.data.id === entity.id)
+          })
+          // TODO[] Error message for missing references
+          .filter((node) => node) || []
+
+      const { nodeCombiner, edgeConnector, sourceConnectors } = createCombinerNode(
+        combiner,
+        (index - deltaPosition) / nbCombiners,
+        sources as Node[],
+        theme
+      )
 
       nodes.push(nodeCombiner)
-      edges.push(edgeConnector)
+      edges.push(edgeConnector, ...sourceConnectors)
     })
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
