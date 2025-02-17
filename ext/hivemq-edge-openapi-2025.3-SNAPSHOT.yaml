@@ -5537,7 +5537,6 @@ components:
           default: false
         maxQoS:
           $ref: '#/components/schemas/QoS'
-          default: EXACTLY_ONCE
         messageExpiryInterval:
           type: integer
           format: int64
@@ -5808,6 +5807,7 @@ components:
       - AT_MOST_ONCE
       - AT_LEAST_ONCE
       - EXACTLY_ONCE
+      default: EXACTLY_ONCE
     PolicySchema:
       type: object
       properties:
