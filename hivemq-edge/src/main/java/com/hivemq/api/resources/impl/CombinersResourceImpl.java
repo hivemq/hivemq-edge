@@ -1,5 +1,6 @@
 package com.hivemq.api.resources.impl;
 
+import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
@@ -49,6 +50,15 @@ public class CombinersResourceImpl implements CombinersApi {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
+
+        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combiner.getId());
+        if (instance.isPresent()) {
+            return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
+                    "DataCombiner already exists '%s'",
+                    combiner.getId())));
+        }
+
+
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
         try {
             combiningManager.addDataCombiner(dataCombiner).get();
@@ -58,7 +68,9 @@ public class CombinersResourceImpl implements CombinersApi {
             return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during add of data combiner."));
         } catch (final ExecutionException e) {
             final Throwable cause = e.getCause();
-            log.warn("Exception occurred during addition of data combining '{}':", combiner.getName(), cause);
+            if (cause instanceof IllegalArgumentException) {
+                log.warn("Exception occurred during addition of data combining '{}':", combiner.getName(), cause);
+            }
             return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during add of data combiner."));
         }
         return Response.ok().build();
@@ -77,18 +89,14 @@ public class CombinersResourceImpl implements CombinersApi {
         }
 
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-        try {
-            combiningManager.updateDataCombiner(dataCombiner).get();
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Thread was interrupted while data combiner was being updated. '{}'", combiner.getName());
-            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during update of data combiner."));
-        } catch (final ExecutionException e) {
-            final Throwable cause = e.getCause();
-            log.warn("Exception occurred during update of data combining '{}':", combiner.getName(), cause);
-            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during update of data combiner."));
+
+        final boolean updated = combiningManager.updateDataCombiner(dataCombiner);
+        if (updated) {
+            return Response.ok().build();
+        } else {
+            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
+                    combiner.getId())));
         }
-        return Response.ok().build();
     }
 
     @Override
@@ -160,11 +168,12 @@ public class CombinersResourceImpl implements CombinersApi {
                 .stream()
                 .filter(c -> c.id().equals(mappingId))
                 .flatMap(dataCombining -> dataCombining.instructions().stream())
-                .map(Instruction::toModel).toList();
+                .map(Instruction::toModel)
+                .toList();
 
 
         // TODO open api update needed (InstructionList is missing)
         throw new NotImplementedException();
-       // return Response.ok().entity().build();
+        // return Response.ok().entity().build();
     }
 }

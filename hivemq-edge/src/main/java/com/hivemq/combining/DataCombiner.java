@@ -50,14 +50,14 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
-    public @NotNull DataCombinerEntity toPersistence(final @NotNull DataCombiner dataCombiner) {
+    public @NotNull DataCombinerEntity toPersistence() {
         final List<DataCombiningEntity> combining =
-                dataCombiner.dataCombinings().stream().map(e -> e.toPersistence()).toList();
+                dataCombinings.stream().map(DataCombining::toPersistence).toList();
         final List<EntityReferenceEntity> sources =
-                dataCombiner.entityReferences().stream().map(EntityReference::toPersistence).toList();
-        return new DataCombinerEntity(dataCombiner.id(),
-                dataCombiner.name(),
-                dataCombiner.description(),
+                entityReferences.stream().map(EntityReference::toPersistence).toList();
+        return new DataCombinerEntity(id,
+                name,
+                description,
                 sources,
                 combining);
     }
