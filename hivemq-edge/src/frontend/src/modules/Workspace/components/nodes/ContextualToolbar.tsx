@@ -3,12 +3,16 @@ import { type FC, useMemo } from 'react'
 import type { Edge, Node } from 'reactflow'
 import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { Divider, Text, useTheme } from '@chakra-ui/react'
+import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
+import { MdScheduleSend } from 'react-icons/md'
+import { v4 as uuidv4 } from 'uuid'
 
-import type { Adapter } from '@/api/__generated__'
-import { Status } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
+import { EntityType, Status } from '@/api/__generated__'
+import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
+
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -18,6 +22,9 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
+
+// TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
+type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -38,6 +45,9 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const { t } = useTranslation()
   const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
+  const createCombiner = useCreateCombiner()
+  // TODO[30429] Need a workspace-wide feedback mechanism
+  const toast = useToast()
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedGroupCandidates = useMemo(() => {
@@ -58,6 +68,13 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
     return adapters.length >= 2 ? [...adapters, ...devices] : undefined
   }, [edges, nodes, selectedNodes])
+
+  const selectedCombinerCandidates = useMemo(() => {
+    // TODO[29097] Decide which entities are eligible for combining. Hidden is EDGE, default are ADAPTER and BRIDGE;
+    return selectedNodes.filter(
+      (node) => node.type === NodeTypes.ADAPTER_NODE || node.type === NodeTypes.BRIDGE_NODE
+    ) as CombinerEligibleNode[]
+  }, [selectedNodes])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
@@ -118,6 +135,34 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     onInsertGroupNode(newGroupNode, newAEdge, rect)
   }
 
+  const onManageOrchestrators = () => {
+    if (!selectedGroupCandidates) return
+    const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
+    if (!edgeNode) return
+
+    const newOrchestratorNodeId = uuidv4()
+    const links = selectedCombinerCandidates.map<EntityReference>((node) => {
+      const entity: EntityReference = {
+        type: node.type === NodeTypes.ADAPTER_NODE ? EntityType.ADAPTER : EntityType.BRIDGE,
+        id: node.data.id,
+      }
+
+      return entity
+    })
+
+    const newCombiner: Combiner = {
+      id: newOrchestratorNodeId,
+      name: 'untitled combiner',
+      sources: { items: links },
+    }
+
+    toast.promise(createCombiner.mutateAsync({ requestBody: newCombiner }), {
+      success: { title: 'Promise resolved', description: 'Looks great' },
+      error: { title: 'Promise rejected', description: 'Something wrong' },
+      loading: { title: 'Promise pending', description: 'Please wait' },
+    })
+  }
+
   // TODO[NVL] Weird side effect if first node has no toolbar; get the first suitable node instead?
   const [mainNodes] = selectedNodes
 
@@ -143,6 +188,15 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           icon={<ImMakeGroup />}
           aria-label={t('workspace.toolbar.command.group')}
           onClick={onCreateGroup}
+        />
+      </ToolbarButtonGroup>
+
+      <ToolbarButtonGroup>
+        <IconButton
+          data-testid="node-group-toolbar-orchestrator"
+          icon={<MdScheduleSend />}
+          aria-label={t('Create an Orchestrator from the entities')}
+          onClick={onManageOrchestrators}
         />
       </ToolbarButtonGroup>
 
