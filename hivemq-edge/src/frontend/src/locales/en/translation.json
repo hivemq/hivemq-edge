@@ -597,7 +597,8 @@
     "mapping": {
       "manager": {
         "header_NORTHBOUND": "Manage Northbound mappings",
-        "header_SOUTHBOUND": "Manage Southbound mappings"
+        "header_SOUTHBOUND": "Manage Southbound mappings",
+        "header_COMBINING": "Manage Data combining mappings"
       },
       "actions": {
         "submit": "Submit"
@@ -780,7 +781,8 @@
       "bridge": "Node: HiveMQ Bridge",
       "adapter": "Node: Adapter",
       "gateway": "Node: Gateway",
-      "group": "Node: Group"
+      "group": "Node: Group",
+      "combiner": "Node: Combiner"
     },
     "device": {
       "type_ADAPTER_NODE": "adapter",
@@ -807,6 +809,9 @@
           "common": "Manage mappings of the device",
           "northbound": "Edit Northbound mappings",
           "southbound": "Edit Southbound mappings"
+        },
+        "combiner": {
+          "create": "Create a data combiner from selection"
         },
         "edge": {
           "topicFilter": "Manage topic filters"

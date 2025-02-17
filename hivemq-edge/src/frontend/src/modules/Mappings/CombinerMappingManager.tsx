@@ -66,8 +66,7 @@ const CombinerMappingManager: FC = () => {
             // description={adapterProtocol?.name}
           />
         </DrawerHeader>
-        <DrawerBody display="flex" flexDirection="column" gap={6}></DrawerBody>
-        TODO
+        <DrawerBody display="flex" flexDirection="column" gap={6} />
         <DrawerFooter>
           {config.environment === 'development' && (
             <FormControl display="flex" alignItems="center">

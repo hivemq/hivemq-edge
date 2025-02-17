@@ -197,7 +197,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           isDisabled={!selectedCombinerCandidates}
           data-testid="node-group-toolbar-combiner"
           icon={<MdScheduleSend />}
-          aria-label={t('Create an Orchestrator from the entities')}
+          aria-label={t('workspace.toolbar.command.combiner.create')}
           onClick={onManageOrchestrators}
         />
       </ToolbarButtonGroup>
