@@ -181,6 +181,7 @@ public class LegacyHiveMQConfigEntity {
                 this.getRestrictionsConfig(),
                 this.getSecurityConfig(),
                 this.getUns(),
-                this.getUsageTracking());
+                this.getUsageTracking(),
+                List.of());
     }
 }

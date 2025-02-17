@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.persistence.mappings.fieldmapping;
+package com.hivemq.configuration.service;
 
+import com.hivemq.combining.DataCombining;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import org.jetbrains.annotations.NotNull;
 
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName) {
+import java.util.List;
 
-    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        return new Instruction(model.getSource(), model.getDestination());
-    }
+public interface DataCombiningConfigurationService {
 
-    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
-        return new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
-    }
+    @NotNull List<DataCombinerEntity> getAllConfigs();
 
+    void setAllConfigs(@NotNull List<DataCombinerEntity> allConfigs);
 }

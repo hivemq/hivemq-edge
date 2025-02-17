@@ -96,7 +96,7 @@ public class TestConfigurationBootstrap {
                 apiConfigurationService,
                 unsConfigurationService,
                 dynamicConfigurationService,
-                usageTrackingConfigurationService, protocolAdapterConfigurationService, moduleConfigurationService,
+                usageTrackingConfigurationService, protocolAdapterConfigurationService, new DataCombiningConfigurationServiceImpl(), moduleConfigurationService,
                 internalConfigurationService);
     }
 
