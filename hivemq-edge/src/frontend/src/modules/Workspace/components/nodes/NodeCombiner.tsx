@@ -1,31 +1,22 @@
 import type { FC } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { NodeProps } from 'reactflow'
 import { Handle, Position } from 'reactflow'
 import { Box, Icon, Text } from '@chakra-ui/react'
-import { LuCombine } from 'react-icons/lu'
 import { MdScheduleSend } from 'react-icons/md'
 
 import type { Combiner } from '@/api/__generated__'
 
-import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
-import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
 const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging }) => {
-  const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/combiner')
 
   return (
     <>
-      <ContextualToolbar id={id} title={data.id} onOpenPanel={onContextMenu} dragging={dragging}>
-        <ToolbarButtonGroup>
-          <IconButton icon={<LuCombine />} aria-label={t('Edit data combination')} onClick={onContextMenu} />
-        </ToolbarButtonGroup>
-      </ContextualToolbar>
+      <ContextualToolbar id={id} title={data.id} onOpenPanel={onContextMenu} dragging={dragging}></ContextualToolbar>
       <NodeWrapper
         isSelected={selected}
         wordBreak="break-word"
