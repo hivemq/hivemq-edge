@@ -8,23 +8,23 @@ export const combinerMappingUiSchema: UiSchema = {
   },
   'ui:tabs': [
     {
-      id: 'Combiner',
-      title: 'Combiner',
+      id: 'combinerTab',
+      title: i18nConfig.t('combiner.schema.tabs.combinerTab'),
       properties: ['id', 'name', 'description'],
     },
     {
-      id: 'Sources',
-      title: 'Sources',
+      id: 'sourcesTab',
+      title: i18nConfig.t('combiner.schema.tabs.sourcesTab'),
       properties: ['sources'],
     },
     {
-      id: 'Mappings',
-      title: 'Mappings',
+      id: 'mappingsTab',
+      title: i18nConfig.t('combiner.schema.tabs.mappingsTab'),
       properties: ['mappings'],
     },
   ],
 
-  'ui:description': i18nConfig.t('A short description for the combiner'),
+  'ui:description': i18nConfig.t('combiner.schema.description'),
 
   id: {
     'ui:title': 'Unique id',
@@ -33,7 +33,7 @@ export const combinerMappingUiSchema: UiSchema = {
   },
   description: {
     'ui:widget': 'textarea',
-    'ui:description': i18nConfig.t('A short description for the combiner'),
+    'ui:description': i18nConfig.t('combiner.schema.config.description'),
   },
   sources: {
     // 'ui:widget': 'hidden',

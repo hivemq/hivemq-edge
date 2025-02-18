@@ -1187,6 +1187,7 @@
     }
   },
   "combiner": {
+    "type": "Data Combiner",
     "unnamed": "< unnamed combiner >",
     "toast": {
       "loading": "Loading the data",
@@ -1203,6 +1204,17 @@
     },
     "error": {
       "noDataUri": "There was a problem loading the data"
+    },
+    "schema": {
+      "tabs": {
+        "combinerTab": "Configuration",
+        "sourcesTab": "Sources",
+        "mappingsTab": "Mappings"
+      },
+      "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
+      "config": {
+        "description": "A short description for the combiner"
+      }
     }
   }
 }

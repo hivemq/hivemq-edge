@@ -81,10 +81,9 @@ const CombinerMappingManager: FC = () => {
         <DrawerHeader>
           <Text>{t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}</Text>
           <NodeNameCard
-            name={selectedNode?.data.id}
+            name={selectedNode?.data.name}
             type={selectedNode?.type as NodeTypes}
-            // icon={adapterProtocol?.logoUrl}
-            // description={adapterProtocol?.name}
+            description={t('combiner.type')}
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
