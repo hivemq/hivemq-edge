@@ -31,7 +31,7 @@ const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging })
         <Box p={4} backgroundColor="gray.300" borderTopLeftRadius={30} borderBottomLeftRadius={30}>
           <Icon as={MdScheduleSend} boxSize={6} />
         </Box>
-        <Box flex={1} p={1}>
+        <Box flex={1} p={1} data-testid="combiner-description">
           <Text>{data.name}</Text>
         </Box>
       </NodeWrapper>
