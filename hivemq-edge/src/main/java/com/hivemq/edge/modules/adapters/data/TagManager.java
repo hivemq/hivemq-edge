@@ -45,7 +45,8 @@ public class TagManager {
 
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
-    public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
+    // TODO synchronized might be good enough, write read locks would be more granular and better
+    public synchronized void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         // TODO handle null
       //  lastValueForTag.put(tagName, dataPoints);
         final List<TagConsumer> tagConsumers = consumers.get(tagName);
@@ -55,7 +56,7 @@ public class TagManager {
     }
 
 
-    public void addConsumer(final @NotNull String tagName, final @NotNull TagConsumer consumer) {
+    public synchronized void addConsumer(final @NotNull String tagName, final @NotNull TagConsumer consumer) {
         consumers.compute(tagName, (tag, current) -> {
             if (current != null) {
                 current.add(consumer);
@@ -75,7 +76,7 @@ public class TagManager {
     }
 
 
-    public void removeConsumer(final @NotNull TagConsumer consumer) {
+    public synchronized void removeConsumer(final @NotNull TagConsumer consumer) {
         consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
             current.remove(consumer);
             return current;
