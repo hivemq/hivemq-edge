@@ -1,5 +1,6 @@
 package com.hivemq.combining;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,13 +30,20 @@ public class CombiningManager {
 
     private final @NotNull ConfigPersistence configPersistence;
     private final @NotNull EventService eventService;
-    private final Map<UUID, DataCombiner> idToDataCombiner = new ConcurrentHashMap<>();
+    private final @NotNull MetricRegistry metricRegistry;
+    private final Map<String, DataCombiner> idToDataCombiner = new ConcurrentHashMap<>();
 
     @Inject
     public CombiningManager(
-            final @NotNull ConfigPersistence configPersistence, final @NotNull EventService eventService) {
+            final @NotNull ConfigPersistence configPersistence,
+            final @NotNull EventService eventService,
+            final @NotNull MetricRegistry metricRegistry) {
         this.configPersistence = configPersistence;
         this.eventService = eventService;
+        this.metricRegistry = metricRegistry;
+        // TODO move to HiveMQMetrics
+        metricRegistry.registerGauge("com.hivemq.edge.data-combining.data-combiners.current",
+                () -> idToDataCombiner.values().size());
     }
 
 
@@ -58,11 +66,6 @@ public class CombiningManager {
         return CompletableFuture.completedFuture(null);
     }
 
-    public @NotNull CompletableFuture<Void> stop(final @NotNull DataCombiner dataCombiner) {
-        // TODO
-        return CompletableFuture.completedFuture(null);
-    }
-
     public @NotNull CompletableFuture<Void> stopAll() {
         // TODO
         return CompletableFuture.completedFuture(null);
@@ -75,7 +78,7 @@ public class CombiningManager {
                     "'"));
         }
 
-        idToDataCombiner.put(dataCombiner.id(), dataCombiner);
+        idToDataCombiner.put(dataCombiner.id().toString(), dataCombiner);
         final CompletableFuture<AddResult> ret = startCombiner(dataCombiner);
         configPersistence.addDataCombiner(dataCombiner);
         return ret;
@@ -90,17 +93,17 @@ public class CombiningManager {
     }
 
 
-    public @NotNull CompletableFuture<Void> deleteDataCombiner(final @NotNull UUID combinerId) {
-
-        return CompletableFuture.completedFuture(null);
+    public @NotNull CompletableFuture<Boolean> deleteDataCombiner(final @NotNull UUID combinerId) {
+        final boolean deleted = deleteDataCombinerInternal(combinerId);
+        return CompletableFuture.completedFuture(deleted);
     }
 
     public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
-        return Optional.ofNullable(idToDataCombiner.get(id));
+        return Optional.ofNullable(idToDataCombiner.get(id.toString()));
     }
 
-    public @NotNull Collection<DataCombiner> getAllCombiners() {
-        return idToDataCombiner.values();
+    public @NotNull List<DataCombiner> getAllCombiners() {
+        return idToDataCombiner.values().stream().toList();
     }
 
 
@@ -113,45 +116,30 @@ public class CombiningManager {
 
 
     private synchronized void createDataCombinerInternal(final @NotNull DataCombiner dataCombiner) {
-
-        if (idToDataCombiner.get(dataCombiner.id()) != null) {
+        if (idToDataCombiner.get(dataCombiner.id().toString()) != null) {
             throw new IllegalArgumentException("adapter already exists by id '" + dataCombiner.id() + "'");
         }
-
-        //TODO
-        //    protocolAdapterMetrics.increaseProtocolAdapterMetric(config.getProtocolId());
-
-
+        idToDataCombiner.put(dataCombiner.id().toString(), dataCombiner);
     }
 
 
     private synchronized boolean deleteDataCombinerInternal(final @NotNull UUID id) {
         Preconditions.checkNotNull(id);
-        final DataCombiner dataCombiner = idToDataCombiner.remove(id);
+        final DataCombiner dataCombiner = idToDataCombiner.remove(id.toString());
         if (dataCombiner != null) {
-            // TODO
-            //    protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterWrapper.getAdapterInformation()
-            //            .getProtocolId());
             try {
                 // stop in any case as some resources must be cleaned up even if the adapter is still being started and is not yet in started state
-                stop(dataCombiner).get();
+                stop(dataCombiner.id().toString()).get();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (final ExecutionException e) {
                 throw new RuntimeException(e);
             }
 
-            try {
-                //ensure the instance releases any hard state
-                // TODO
-                //   adapterWrapper.getAdapter().destroy();
-                return true;
-            } finally {
-                eventService.createDataCombiningEvent(id)
-                        .withSeverity(Event.SEVERITY.WARN)
-                        .withMessage(String.format("Data Combininh '%s' was deleted from the system permanently.", id))
-                        .fire();
-            }
+            eventService.createDataCombiningEvent(id)
+                    .withSeverity(Event.SEVERITY.WARN)
+                    .withMessage(String.format("Data Combininh '%s' was deleted from the system permanently.", id))
+                    .fire();
         } else {
             log.error("Tried removing non existing adapter '{}'", id);
         }
