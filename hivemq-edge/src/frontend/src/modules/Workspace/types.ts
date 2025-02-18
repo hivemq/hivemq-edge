@@ -25,6 +25,7 @@ export enum NodeTypes {
   CLUSTER_NODE = 'CLUSTER_NODE',
   HOST_NODE = 'HOST_NODE',
   DEVICE_NODE = 'DEVICE_NODE',
+  COMBINER_NODE = 'COMBINER_NODE',
 }
 
 export enum EdgeTypes {

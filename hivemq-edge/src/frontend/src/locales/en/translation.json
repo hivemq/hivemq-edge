@@ -597,7 +597,8 @@
     "mapping": {
       "manager": {
         "header_NORTHBOUND": "Manage Northbound mappings",
-        "header_SOUTHBOUND": "Manage Southbound mappings"
+        "header_SOUTHBOUND": "Manage Southbound mappings",
+        "header_COMBINING": "Manage Data combining mappings"
       },
       "actions": {
         "submit": "Submit"
@@ -780,7 +781,8 @@
       "bridge": "Node: HiveMQ Bridge",
       "adapter": "Node: Adapter",
       "gateway": "Node: Gateway",
-      "group": "Node: Group"
+      "group": "Node: Group",
+      "combiner": "Node: Combiner"
     },
     "device": {
       "type_ADAPTER_NODE": "adapter",
@@ -807,6 +809,9 @@
           "common": "Manage mappings of the device",
           "northbound": "Edit Northbound mappings",
           "southbound": "Edit Southbound mappings"
+        },
+        "combiner": {
+          "create": "Create a data combiner from selection"
         },
         "edge": {
           "topicFilter": "Manage topic filters"
@@ -1178,6 +1183,37 @@
       "noTagLoaded": "No tag created in your Edge",
       "cluster": {
         "noGrouping": "No data"
+      }
+    }
+  },
+  "combiner": {
+    "type": "Data Combiner",
+    "unnamed": "< unnamed combiner >",
+    "toast": {
+      "loading": "Loading the data",
+      "create": {
+        "title": "Create the combiner",
+        "success": "We've successfully created the combiner for you.",
+        "error": "There was a problem trying to create the combiner"
+      },
+      "update": {
+        "title": "Update the combiner",
+        "success": "We've successfully updated the combiner for you.",
+        "error": "There was a problem trying to update the combiner"
+      }
+    },
+    "error": {
+      "noDataUri": "There was a problem loading the data"
+    },
+    "schema": {
+      "tabs": {
+        "combinerTab": "Configuration",
+        "sourcesTab": "Sources",
+        "mappingsTab": "Mappings"
+      },
+      "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
+      "config": {
+        "description": "A short description for the combiner"
       }
     }
   }

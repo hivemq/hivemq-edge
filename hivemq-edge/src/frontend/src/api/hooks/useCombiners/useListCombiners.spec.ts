@@ -29,6 +29,26 @@ describe('useListCombiners', () => {
         {
           id: '6991ff43-9105-445f-bce3-976720df40a3',
           name: 'my-combiner',
+          sources: {
+            items: expect.arrayContaining([
+              {
+                id: 'my-adapter',
+                type: 'ADAPTER',
+              },
+              {
+                id: 'my-other-adapter',
+                type: 'ADAPTER',
+              },
+            ]),
+          },
+        },
+        {
+          id: 'fake1',
+          name: 'fake1',
+        },
+        {
+          id: 'fake2',
+          name: 'fake2',
         },
       ],
     })
