@@ -17,6 +17,7 @@ const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
+const CombinerMappingManager = lazy(() => import('../Mappings/CombinerMappingManager.tsx'))
 const TopicFilterManager = lazy(() => import('@/modules/TopicFilters/TopicFilterManager.tsx'))
 const ProtocolIntegrationStore = lazy(
   () => import('@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx')
@@ -102,6 +103,10 @@ export const routes = createBrowserRouter(
             {
               path: ':nodeType/:device?/:adapter?/:nodeId/southbound',
               element: <AdapterSubscriptionManager type={MappingType.SOUTHBOUND} />,
+            },
+            {
+              path: 'combiner/:combinerId',
+              element: <CombinerMappingManager />,
             },
           ],
         },

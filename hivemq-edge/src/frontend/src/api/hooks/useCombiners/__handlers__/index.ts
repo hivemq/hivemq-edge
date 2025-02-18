@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { Combiner, CombinerList, DataCombining, DataCombiningList, Instruction } from '../../../__generated__'
+import { EntityType } from '@/api/__generated__'
 
 interface CombinerParams {
   combinerId: string
@@ -14,6 +15,18 @@ const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
 export const mockCombiner: Combiner = {
   id: mockCombinerId,
   name: 'my-combiner',
+  sources: {
+    items: [
+      {
+        type: EntityType.ADAPTER,
+        id: 'my-adapter',
+      },
+      {
+        type: EntityType.ADAPTER,
+        id: 'my-other-adapter',
+      },
+    ],
+  },
 }
 
 export const mockCombinerMapping: DataCombining = {
@@ -28,7 +41,12 @@ export const mockCombinerMapping: DataCombining = {
 
 export const handlers = [
   http.get('*/management/combiners', () => {
-    return HttpResponse.json<CombinerList>({ items: [mockCombiner] }, { status: 200 })
+    return HttpResponse.json<CombinerList>(
+      {
+        items: [mockCombiner, { id: 'fake1', name: 'fake1' }, { id: 'fake2', name: 'fake2' }],
+      },
+      { status: 200 }
+    )
   }),
 
   http.get<CombinerParams>('*/management/combiners/:combinerId', ({ params }) => {

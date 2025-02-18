@@ -12,6 +12,7 @@ export interface ManagerContextType<T> {
 export enum MappingType {
   NORTHBOUND = 'NORTHBOUND',
   SOUTHBOUND = 'SOUTHBOUND',
+  COMBINING = 'COMBINING',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
