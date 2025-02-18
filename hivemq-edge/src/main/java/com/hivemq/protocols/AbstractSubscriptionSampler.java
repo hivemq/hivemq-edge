@@ -18,11 +18,10 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Objects;
@@ -34,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractSubscriptionSampler.class);
 
     private final long initialDelay;
     private final long period;
@@ -53,15 +51,22 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper protocolAdapter,
-            final @NotNull EventService eventService) {
+            final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapter.getAdapter();
-        this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
-        this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
+
+        if (protocolAdapter.getAdapter() instanceof final PollingProtocolAdapter adapter) {
+            this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
+            this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
+            this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
+        } else if (protocolAdapter.getAdapter() instanceof final BatchPollingProtocolAdapter adapter) {
+            this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
+            this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
+            this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
+        } else {
+            throw new IllegalArgumentException("Adapter must be a polling or batch polling protocol adapter");
+        }
         this.eventService = eventService;
-        this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
     }
