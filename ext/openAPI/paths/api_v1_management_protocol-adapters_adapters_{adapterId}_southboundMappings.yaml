@@ -1,0 +1,65 @@
+get:
+  description: Get the southbound mappings.
+  operationId: get-adapter-southboundMappings
+  parameters:
+    - description: The adapter id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SouthboundMappingList.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+  summary: Get the southbound mappings.
+  tags:
+    - Protocol Adapters
+put:
+  description: Update all southbound mappings of an adapter.
+  operationId: update-adapter-southboundMappings
+  parameters:
+    - description: The id of the adapter whose southbound mappings will be updated.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/SouthboundMappingList.yaml
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Missing tags
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update the to southbound mappings of an adapter.
+  tags:
+    - Protocol Adapters

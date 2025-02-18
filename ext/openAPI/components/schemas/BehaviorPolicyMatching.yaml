@@ -1,0 +1,8 @@
+type: object
+description: The matching rules the policy applies.
+properties:
+  clientIdRegex:
+    type: string
+    description: The regex pattern to match the client id against.
+required:
+  - clientIdRegex

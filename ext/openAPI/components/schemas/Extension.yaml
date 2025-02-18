@@ -1,0 +1,29 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  author:
+    type: string
+    description: The extension author
+  description:
+    type: string
+    description: The extension description
+    nullable: true
+  id:
+    type: string
+    description: A mandatory ID associated with the Extension
+  installed:
+    type: boolean
+    description: Is the extension installed
+    nullable: true
+  link:
+    $ref: ./Link.yaml
+  name:
+    type: string
+    description: The extension name
+  priority:
+    type: integer
+    format: int32
+    description: The extension priority
+  version:
+    type: string
+    description: The extension version

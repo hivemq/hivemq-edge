@@ -1,0 +1,40 @@
+get:
+  description: Get the up to date status of a bridge.
+  operationId: get-bridge-status
+  parameters:
+    - description: The name of the bridge to query.
+      in: path
+      name: bridgeId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            bridge-connection-status-result:
+              description: Example response with CONNECTED status.
+              summary: Bridge Connection Status Result
+              value:
+                status: CONNECTED
+                id: cloud
+                type: bridge
+          schema:
+            $ref: ../components/schemas/Status.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Query parameters invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bridge not found
+  summary: Get the up to date status of a bridge
+  tags:
+    - Bridges
