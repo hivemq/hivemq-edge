@@ -28,6 +28,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
@@ -46,7 +49,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter {
+public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusSpecificAdapterConfig adapterConfig;
@@ -95,11 +98,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         });
     }
 
-    public record ResulTuple(String tagName, Object value) {};
+    public record ResulTuple(String tagName, Object value) {}
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
         final var readRegisterFutures = tags.stream()
                 .map(tag -> readRegisters(modbusClient, tag)
@@ -133,7 +136,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
                                 lastSamples.put(tagName, entry.value());
                                 pollingOutput.addDataPoint(tagName, entry.value());
                             }
-                        } catch (InterruptedException | ExecutionException e) {
+                        } catch (final InterruptedException | ExecutionException e) {
                             log.error("Problem while accessing data in a completed future", e);
                             pollingOutput.fail(e,"Problem while accessing data in a completed future");
                             return;

@@ -26,6 +26,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -37,7 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter {
+public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationSpecificAdapterConfig adapterConfig;
@@ -82,7 +85,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
             // TODO
             new Thread(() -> {

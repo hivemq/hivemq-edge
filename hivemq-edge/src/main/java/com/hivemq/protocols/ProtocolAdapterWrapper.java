@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -35,6 +36,7 @@ import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.northbound.PerAdapterSampler;
+import com.hivemq.protocols.northbound.PerContextSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -200,13 +202,28 @@ public class ProtocolAdapterWrapper {
         return adapter instanceof PollingProtocolAdapter;
     }
 
+    public boolean isBatchPolling() {
+        return adapter instanceof BatchPollingProtocolAdapter;
+    }
+
     private void startPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull EventService eventService) {
-        if (isPolling()) {
-            log.debug("Schedule polling for protocol adapter with id '{}'", getId());
-            final PerAdapterSampler sampler = new PerAdapterSampler(this, getNorthboundMappings(), eventService, tagManager);
+
+        if (isBatchPolling()) {
+            log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
+            final PerAdapterSampler sampler =
+                    new PerAdapterSampler(this, getNorthboundMappings(), eventService, tagManager);
             protocolAdapterPollingService.schedulePolling(sampler);
+        }
+
+        if (isPolling()) {
+            getNorthboundMappings().forEach(adapterSubscription -> {
+                log.debug("Schedule polling for protocol adapter with id '{}'", getId());
+                final PerContextSampler sampler =
+                        new PerContextSampler(this, adapterSubscription, eventService, tagManager);
+                protocolAdapterPollingService.schedulePolling(sampler);
+            });
         }
     }
 

@@ -21,12 +21,10 @@ import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
-import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -38,23 +36,23 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class PerAdapterSampler extends AbstractSubscriptionSampler {
+public class PerContextSampler extends AbstractSubscriptionSampler {
 
-    private static final Logger log = LoggerFactory.getLogger(PerAdapterSampler.class);
+    private static final Logger log = LoggerFactory.getLogger(PerContextSampler.class);
 
 
-    private final @NotNull BatchPollingProtocolAdapter pollingProtocolAdapter;
-    private final @NotNull List<? extends PollingContext> pollingContext;
+    private final @NotNull PollingProtocolAdapter pollingProtocolAdapter;
+    private final @NotNull PollingContext pollingContext;
     private final @NotNull TagManager tagManager;
 
-    public PerAdapterSampler(
+    public PerContextSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
-            final @NotNull List<? extends PollingContext> pollingContexts,
+            final @NotNull PollingContext pollingContext,
             final @NotNull EventService eventService,
             final @NotNull TagManager tagManager) {
         super(protocolAdapterWrapper, eventService);
-        this.pollingProtocolAdapter = (BatchPollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-        this.pollingContext = pollingContexts;
+        this.pollingProtocolAdapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
+        this.pollingContext = pollingContext;
         this.tagManager = tagManager;
     }
 
@@ -66,7 +64,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            pollingProtocolAdapter.poll(new BatchPollingInputImpl(pollingContext), pollingOutput);
+            pollingProtocolAdapter.poll(new PollingInputImpl((List<PollingContext>) pollingContext), pollingOutput);
         } catch (final Throwable t) {
             pollingOutput.fail(t, null);
             throw t;
@@ -85,9 +83,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                 for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
                     tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
                 }
-
                 return CompletableFuture.completedFuture(null);
-                //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
             } else {
                 return CompletableFuture.completedFuture(null);
             }

@@ -25,6 +25,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
@@ -44,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
-public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
+public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger log = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
@@ -126,7 +129,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final var client = etherNetIP;
         if (client == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");

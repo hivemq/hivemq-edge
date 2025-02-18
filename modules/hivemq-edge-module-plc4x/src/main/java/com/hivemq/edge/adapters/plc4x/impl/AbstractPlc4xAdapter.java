@@ -24,9 +24,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
@@ -61,7 +61,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  * @author Simon L Johnson
  */
 public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<?>, C extends Plc4xToMqttMapping>
-        implements PollingProtocolAdapter {
+        implements BatchPollingProtocolAdapter {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -92,7 +92,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     @Override
-    public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
             for (final PollingContext pollingContext : pollingInput.getPollingContexts()) {
@@ -118,7 +118,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     protected void handleDataAndExceptions(
             final @NotNull Plc4xDataSample dataSample,
             final @Nullable Throwable throwable,
-            final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingOutput pollingOutput) {
         if (throwable != null) {
             pollingOutput.fail(throwable, null);
         } else {
