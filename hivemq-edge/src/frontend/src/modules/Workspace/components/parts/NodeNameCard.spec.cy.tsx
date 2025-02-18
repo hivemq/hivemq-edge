@@ -51,4 +51,12 @@ describe('NodeNameCard', () => {
     cy.getByTestId('node-name').should('not.exist')
     cy.getByTestId('node-description').should('not.exist')
   })
+
+  it('should render the combiner properly', () => {
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.COMBINER_NODE} />)
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.COMBINER_NODE)
+    cy.getByTestId('node-name').should('not.exist')
+    cy.getByTestId('node-description').should('not.exist')
+  })
 })
