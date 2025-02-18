@@ -75,6 +75,7 @@ public class CombiningManager {
                     "'"));
         }
 
+        idToDataCombiner.put(dataCombiner.id(), dataCombiner);
         final CompletableFuture<AddResult> ret = startCombiner(dataCombiner);
         configPersistence.addDataCombiner(dataCombiner);
         return ret;
@@ -83,7 +84,7 @@ public class CombiningManager {
     public boolean updateDataCombiner(final @NotNull DataCombiner dataCombining) {
         Preconditions.checkNotNull(dataCombining);
         return getCombinerById(dataCombining.id()).map(oldInstance -> {
-            updaterDataCombiner(dataCombining);
+            internalUpdateDataCombiner(dataCombining);
             return true;
         }).orElse(false);
     }
@@ -103,7 +104,7 @@ public class CombiningManager {
     }
 
 
-    private void updaterDataCombiner(final DataCombiner dataCombiner) {
+    private void internalUpdateDataCombiner(final DataCombiner dataCombiner) {
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
         syncFuture(startCombiner(dataCombiner));
