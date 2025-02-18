@@ -153,7 +153,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
     const newCombiner: Combiner = {
       id: newOrchestratorNodeId,
-      name: 'untitled combiner',
+      name: t('combiner.unnamed'),
       sources: { items: links },
     }
 
