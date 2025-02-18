@@ -3,9 +3,11 @@ import type { Edge, Node } from 'reactflow'
 import { Position } from 'reactflow'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
+import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import type { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
@@ -14,11 +16,11 @@ import { IdStubs, NodeTypes } from '../types.ts'
 import {
   createAdapterNode,
   createBridgeNode,
+  createCombinerNode,
   createEdgeNode,
   createListenerNode,
   getDefaultMetricsFor,
 } from './nodes-utils.ts'
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('createEdgeNode', () => {
   it('should create a default Edge node', async () => {
@@ -220,5 +222,66 @@ describe('getDefaultMetricsFor', () => {
     expect(getDefaultMetricsFor({ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } })).toStrictEqual([
       'com.hivemq.edge.protocol-adapters.simulation.my-adapter.read.publish.success.count',
     ])
+  })
+})
+
+describe('createCombinerNode', () => {
+  it('should create a default combiner node', async () => {
+    const actual = createCombinerNode(mockCombiner, 0, [], MOCK_THEME)
+
+    const mockId = '6991ff43-9105-445f-bce3-976720df40a3'
+    expect(actual).toStrictEqual({
+      nodeCombiner: expect.objectContaining({
+        id: mockId,
+        type: NodeTypes.COMBINER_NODE,
+        data: {
+          id: mockId,
+          name: 'my-combiner',
+          sources: {
+            items: [
+              {
+                id: 'my-adapter',
+                type: 'ADAPTER',
+              },
+              {
+                id: 'my-other-adapter',
+                type: 'ADAPTER',
+              },
+            ],
+          },
+        },
+      }),
+      edgeConnector: expect.objectContaining({
+        id: `connect-edge-${mockId}`,
+        source: mockId,
+        target: 'edge',
+        type: 'default',
+      }),
+      sourceConnectors: [],
+    })
+  })
+
+  it('should create links to sources', async () => {
+    const actual = createCombinerNode(mockCombiner, 0, [{ ...MOCK_NODE_EDGE, position: { x: 0, y: 0 } }], MOCK_THEME)
+
+    const mockId = '6991ff43-9105-445f-bce3-976720df40a3'
+    expect(actual).toStrictEqual({
+      nodeCombiner: expect.objectContaining({
+        id: mockId,
+      }),
+      edgeConnector: expect.objectContaining({
+        id: `connect-edge-${mockId}`,
+        source: mockId,
+        target: 'edge',
+      }),
+      sourceConnectors: [
+        expect.objectContaining({
+          id: `connect-idEdge-${mockId}`,
+          source: 'idEdge',
+          target: '6991ff43-9105-445f-bce3-976720df40a3',
+          type: 'default',
+        }),
+      ],
+    })
   })
 })
