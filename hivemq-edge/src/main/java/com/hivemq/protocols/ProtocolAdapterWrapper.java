@@ -229,7 +229,7 @@ public class ProtocolAdapterWrapper {
 
     private void stopPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService) {
-        if (isPolling()) {
+        if (isPolling() || isBatchPolling()) {
             log.debug("Stopping polling for protocol adapter with id '{}'", getId());
             protocolAdapterPollingService.stopPollingForAdapterInstance(getAdapter());
         }
