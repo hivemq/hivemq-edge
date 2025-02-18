@@ -1185,5 +1185,23 @@
         "noGrouping": "No data"
       }
     }
+  },
+  "combiner": {
+    "toast": {
+      "loading": "Loading the data",
+      "create": {
+        "title": "Create the combiner",
+        "success": "We've successfully created the combiner for you.",
+        "error": "There was a problem trying to create the combiner"
+      },
+      "update": {
+        "title": "Update the combiner",
+        "success": "We've successfully updated the combiner for you.",
+        "error": "There was a problem trying to update the combiner"
+      }
+    },
+    "error": {
+      "noDataUri": "There was a problem loading the data"
+    }
   }
 }
