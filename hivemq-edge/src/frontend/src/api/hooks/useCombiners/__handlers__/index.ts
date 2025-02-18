@@ -41,7 +41,12 @@ export const mockCombinerMapping: DataCombining = {
 
 export const handlers = [
   http.get('*/management/combiners', () => {
-    return HttpResponse.json<CombinerList>({ items: [mockCombiner] }, { status: 200 })
+    return HttpResponse.json<CombinerList>(
+      {
+        items: [mockCombiner, { id: 'fake1', name: 'fake1' }, { id: 'fake2', name: 'fake2' }],
+      },
+      { status: 200 }
+    )
   }),
 
   http.get<CombinerParams>('*/management/combiners/:combinerId', ({ params }) => {
