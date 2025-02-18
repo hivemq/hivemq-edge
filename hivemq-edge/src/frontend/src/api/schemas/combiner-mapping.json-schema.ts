@@ -11,18 +11,18 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
     Instruction: Instruction,
 
     EntityReference: {
-      description: `A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)`,
+      description: 'A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)',
       properties: {
         type: {
           enum: [EntityType.ADAPTER, EntityType.BRIDGE, EntityType.EDGE_BROKER],
         },
         id: {
           type: 'string',
-          description: `The id of the entity being references in the combiner`,
+          description: 'The id of the entity being references in the combiner',
         },
         isPrimary: {
           type: 'boolean',
-          description: `The source is the primary orchestrator of the combiner`,
+          description: 'The source is the primary orchestrator of the combiner',
         },
       },
     },
@@ -37,11 +37,11 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
       },
     },
     DataCombining: {
-      description: `Define individual rules for data combining, based on the entities selected in the Orchestrator`,
+      description: 'Define individual rules for data combining, based on the entities selected in the Orchestrator',
       properties: {
         id: {
           type: 'string',
-          description: `The unique id of the data combining mapping`,
+          description: 'The unique id of the data combining mapping',
           format: 'uuid',
         },
         sources: {
@@ -83,21 +83,22 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
       },
     },
     Combiner: {
-      description: `A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping`,
+      description:
+        'A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping',
       required: ['id', 'name'],
       properties: {
         id: {
           type: 'string',
-          description: `The unique id of the data combiner`,
+          description: 'The unique id of the data combiner',
           format: 'uuid',
         },
         name: {
           type: 'string',
-          description: `The user-facing name of the combiner`,
+          description: 'The user-facing name of the combiner',
         },
         description: {
           type: 'string',
-          description: `The user-facing description of the combiner`,
+          description: 'The user-facing description of the combiner',
         },
         sources: {
           $ref: '#/definitions/EntityReferenceList',
