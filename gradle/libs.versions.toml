@@ -41,6 +41,8 @@ netty = "4.1.117.Final"
 org_json = "20250107"
 pmd = "6.55.0"
 postgresql = "42.7.3"
+mysql= "8.0.33"
+mssql="12.8.1.jre11"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.16"
 spotBugs = "4.8.5"
@@ -115,6 +117,8 @@ netty-commons = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
 postgresql= { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+mysql= { module = "mysql:mysql-connector-java", version.ref = "mysql" }
+mssql= { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
 org_json = { module = "org.json:json", version.ref = "org_json" }
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
