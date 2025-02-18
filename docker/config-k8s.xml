@@ -71,6 +71,15 @@
             </https-listener>
             ${IF:HIVEMQ_HTTPS_ENABLED}
         </listeners>
+        <users>
+            <user>
+                <username>${ENV:HIVEMQ_ADMIN_USER}</username>
+                <password>${ENV:HIVEMQ_ADMIN_PASSWORD}</password>
+                <roles>
+                    <role>admin</role>
+                </roles>
+            </user>
+        </users>
     </admin-api>
     <persistence>
         <mode>${ENV:HIVEMQ_PERSISTENCE_MODE}</mode>
