@@ -19,7 +19,7 @@ describe('EntityRenderer', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'error')
   })
 
-  it.only('should render an adapter', () => {
+  it('should render an adapter', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
 

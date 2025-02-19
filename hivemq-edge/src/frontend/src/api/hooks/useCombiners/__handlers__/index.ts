@@ -1,5 +1,12 @@
 import { http, HttpResponse } from 'msw'
-import type { Combiner, CombinerList, DataCombining, DataCombiningList, Instruction } from '../../../__generated__'
+import type {
+  Combiner,
+  CombinerList,
+  DataCombining,
+  DataCombiningList,
+  EntityReference,
+  Instruction,
+} from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 
 interface CombinerParams {
