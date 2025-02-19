@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model;
+package com.hivemq.configuration.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.api.resources.examples.TagResourceExamples;
-import com.hivemq.edge.api.model.DomainTagList;
+import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
 
-class TagResourceExamplesTest {
+import java.util.List;
 
+public interface DataCombiningConfigurationService {
 
-    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
+    @NotNull List<DataCombinerEntity> getAllConfigs();
 
-    @Test
-    void assertThatExamplesAreParsable() throws JsonProcessingException {
-        objectMapper.readValue(TagResourceExamples.EXAMPLE_OPC_UA, DomainTagList.class);
-    }
+    void setAllConfigs(@NotNull List<DataCombinerEntity> allConfigs);
 }
