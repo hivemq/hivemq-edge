@@ -100,7 +100,7 @@ const CombinerMappingManager: FC = () => {
           )}
         </DrawerBody>
         <DrawerFooter>
-          {config.environment === 'development' && (
+          {config.isDevMode && (
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-alerts" mb="0">
                 {t('modals.native')}
