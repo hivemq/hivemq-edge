@@ -21,6 +21,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
@@ -97,11 +99,11 @@ public class EipPollingProtocolAdapterIT {
                 tagAddress,
                 new EipTagDefinition(tagAddress, tagType))));
 
-        final PollingInput input = mock(PollingInput.class);
+        final BatchPollingInput input = mock(BatchPollingInput.class);
         final List eipToMqttMapping1 = List.of(eipToMqttMapping);
         when(input.getPollingContexts()).thenReturn(eipToMqttMapping1);
 
-        final PollingOutput output = mock(PollingOutput.class);
+        final BatchPollingOutput output = mock();
 
         final EipPollingProtocolAdapter adapter =
                 new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
@@ -146,10 +148,10 @@ public class EipPollingProtocolAdapterIT {
                 TAG_INT,
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
-        final PollingInput input = mock(PollingInput.class);
+        final BatchPollingInput input = mock();
         when(input.getPollingContexts()).thenReturn((List)List.of(eipToMqttMapping));
 
-        final PollingOutput output = mock(PollingOutput.class);
+        final BatchPollingOutput output = mock();
 
         final EipPollingProtocolAdapter adapter =
                 new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
@@ -187,10 +189,10 @@ public class EipPollingProtocolAdapterIT {
                 TAG_INT,
                 new EipTagDefinition(TAG_INT, EipDataType.INT))));
 
-        final PollingInput input = mock(PollingInput.class);
+        final BatchPollingInput input = mock(BatchPollingInput.class);
         when(input.getPollingContexts()).thenReturn((List)List.of(eipToMqttMapping));
 
-        final PollingOutput output = mock(PollingOutput.class);
+        final BatchPollingOutput output = mock();
 
         final EipPollingProtocolAdapter adapter =
                 new EipPollingProtocolAdapter(EipProtocolAdapterInformation.INSTANCE, inputMock);
