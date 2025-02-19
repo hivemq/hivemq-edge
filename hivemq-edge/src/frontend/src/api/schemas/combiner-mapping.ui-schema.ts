@@ -1,5 +1,6 @@
 import type { UiSchema } from '@rjsf/utils'
 import i18nConfig from '@/config/i18n.config'
+import EntityReferenceTable from '@/modules/Mappings/components/combiner/EntityReferenceTable'
 
 /* istanbul ignore next -- @preserve */
 export const combinerMappingUiSchema: UiSchema = {
@@ -36,7 +37,10 @@ export const combinerMappingUiSchema: UiSchema = {
     'ui:description': i18nConfig.t('combiner.schema.config.description'),
   },
   sources: {
-    // 'ui:widget': 'hidden',
+    'ui:description': i18nConfig.t('combiner.schema.sources.description'),
+    items: {
+      'ui:widget': EntityReferenceTable,
+    },
   },
   mappings: {
     // 'ui:widget': 'hidden',

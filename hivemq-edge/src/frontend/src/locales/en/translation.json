@@ -1203,7 +1203,8 @@
       }
     },
     "error": {
-      "noDataUri": "There was a problem loading the data"
+      "noDataUri": "There was a problem loading the data",
+      "noValidReference": "This is not a valid reference to a Workspace entity"
     },
     "schema": {
       "tabs": {
@@ -1214,6 +1215,14 @@
       "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
       "config": {
         "description": "A short description for the combiner"
+      },
+      "sources": {
+        "description": "The list of sources available for this combiner",
+        "table": {
+          "action": "Actions",
+          "delete": "Delete the source",
+          "source": "Source"
+        }
       }
     }
   }
