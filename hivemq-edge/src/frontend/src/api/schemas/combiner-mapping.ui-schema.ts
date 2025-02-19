@@ -1,6 +1,7 @@
 import type { UiSchema } from '@rjsf/utils'
 import i18nConfig from '@/config/i18n.config'
 import EntityReferenceTable from '@/modules/Mappings/components/combiner/EntityReferenceTable'
+import { DataCombiningMappingWidget } from '@/modules/Mappings/components/combiner/DataCombiningMappingWidget'
 
 /* istanbul ignore next -- @preserve */
 export const combinerMappingUiSchema: UiSchema = {
@@ -43,6 +44,8 @@ export const combinerMappingUiSchema: UiSchema = {
     },
   },
   mappings: {
-    // 'ui:widget': 'hidden',
+    items: {
+      'ui:widget': DataCombiningMappingWidget,
+    },
   },
 }

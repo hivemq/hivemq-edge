@@ -1226,6 +1226,13 @@
           "delete": "Delete the source",
           "source": "Source"
         }
+      },
+      "mappings": {
+        "table": {
+          "action": "Actions",
+          "delete": "Delete the source",
+          "source": "Source"
+        }
       }
     }
   }
