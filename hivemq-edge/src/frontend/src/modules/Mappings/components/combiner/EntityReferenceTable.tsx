@@ -42,7 +42,7 @@ const EntityReferenceTable = (props: WidgetProps<WidgetProps<Array<EntityReferen
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
   return (
     <PaginatedTable<EntityReference>
-      aria-label={t('eventLog.title')}
+      aria-label={t('combiner.schema.sources.description')}
       data={props.value}
       columns={displayColumns}
       enablePaginationGoTo={false}
