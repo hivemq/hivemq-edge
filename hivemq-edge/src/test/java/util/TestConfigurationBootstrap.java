@@ -29,6 +29,7 @@ import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
@@ -62,7 +63,8 @@ public class TestConfigurationBootstrap {
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
-    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
 
     public TestConfigurationBootstrap() {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
@@ -96,7 +98,10 @@ public class TestConfigurationBootstrap {
                 apiConfigurationService,
                 unsConfigurationService,
                 dynamicConfigurationService,
-                usageTrackingConfigurationService, protocolAdapterConfigurationService, moduleConfigurationService,
+                usageTrackingConfigurationService,
+                protocolAdapterConfigurationService,
+                new DataCombiningConfigurationServiceImpl(),
+                moduleConfigurationService,
                 internalConfigurationService);
     }
 

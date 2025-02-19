@@ -85,6 +85,8 @@ public interface ConfigurationService {
 
     @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
 
+    @NotNull DataCombiningConfigurationService dataCombiningConfigurationService();
+
     @NotNull ModuleConfigurationService commercialModuleConfigurationService();
 
     @NotNull InternalConfigurationService internalConfigurationService();
