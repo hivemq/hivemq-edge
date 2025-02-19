@@ -24,6 +24,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
@@ -38,7 +41,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 
-public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
+public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
@@ -91,7 +94,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
@@ -109,7 +112,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
                 final var fileContentArray = Files.readAllBytes(path);
                 final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
                 pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
-            };
+            }
         } catch (final IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
