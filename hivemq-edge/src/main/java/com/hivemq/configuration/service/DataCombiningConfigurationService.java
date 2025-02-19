@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.service;
 
-import com.hivemq.combining.DataCombining;
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import org.jetbrains.annotations.NotNull;
 
