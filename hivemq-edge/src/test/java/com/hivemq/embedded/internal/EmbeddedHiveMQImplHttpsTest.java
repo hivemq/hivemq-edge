@@ -66,11 +66,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * [Unknown]:  HiveMQ
  * What is the two-letter country code for this unit?
  * [Unknown]:  DE
- * Is CN=HiveMQ, OU=HiveMQ, O=HiveMQ, L=HiveMQ, ST=HiveMQ, C=DE correct?
+ * Is CN=localhost, OU=HiveMQ, O=HiveMQ, L=HiveMQ, ST=HiveMQ, C=DE correct?
  * [no]:  yes
  * <p>
  * Generating 2,048 bit RSA key pair and self-signed certificate (SHA384withRSA) with a validity of 365 days
- * for: CN=HiveMQ, OU=HiveMQ, O=HiveMQ, L=HiveMQ, ST=HiveMQ, C=DE
+ * for: CN=localhost, OU=HiveMQ, O=HiveMQ, L=HiveMQ, ST=HiveMQ, C=DE
  * </code>
  * The keystore file is stored in the test/resources/keystores/.
  */
@@ -131,8 +131,7 @@ public class EmbeddedHiveMQImplHttpsTest {
         FileUtils.write(new File(conf, "config.xml"), configXmlString, StandardCharsets.UTF_8);
     }
 
-    //    @Test(timeout = 20000L)
-    @Test
+    @Test(timeout = 20000L)
     public void embeddedHiveMQ_whenHttpsEnabled_readsConfig() throws Exception {
         try (final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license)) {
             embeddedHiveMQ.start().join();
@@ -141,7 +140,7 @@ public class EmbeddedHiveMQImplHttpsTest {
 
             final List<Listener> mqttListeners = configurationService.listenerConfiguration().getListeners();
             assertEquals(1, mqttListeners.size(), "The listener count should be 1");
-            assertEquals(randomPort, mqttListeners.get(0).getPort());
+            assertEquals(randomPort, mqttListeners.get(0).getPort(), "The MQTT port should match");
 
             final List<ApiListener> apiListeners = configurationService.apiConfiguration().getListeners();
             assertEquals(1, apiListeners.size(), "The API listener count should be 1");
@@ -157,7 +156,7 @@ public class EmbeddedHiveMQImplHttpsTest {
 
             final HttpResponse<String> httpResponse =
                     httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            assertEquals(307, httpResponse.statusCode());
+            assertEquals(307, httpResponse.statusCode(), "The status code should be 307");
             HttpHeaders httpHeaders = httpResponse.headers();
             List<String> locations = httpHeaders.allValues("Location");
             assertEquals(1, locations.size(), "Location should exist in the response headers");
