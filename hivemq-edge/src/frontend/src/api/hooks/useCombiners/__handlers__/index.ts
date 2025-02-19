@@ -12,6 +12,11 @@ interface MappingParams extends CombinerParams {
 
 const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
 
+export const mockEntityReference: EntityReference = {
+  type: EntityType.ADAPTER,
+  id: 'my-adapter',
+}
+
 export const mockCombiner: Combiner = {
   id: mockCombinerId,
   name: 'my-combiner',
