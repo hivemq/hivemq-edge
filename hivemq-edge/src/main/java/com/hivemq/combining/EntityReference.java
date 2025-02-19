@@ -12,10 +12,8 @@ public record EntityReference(EntityType type, String id, boolean isPrimary) {
 
     }
 
-    public static @NotNull com.hivemq.edge.api.model.EntityReference toModel(final @NotNull EntityReference entityReference) {
-        return new com.hivemq.edge.api.model.EntityReference().id(entityReference.id)
-                .type(entityReference.type.toModel())
-                .isPrimary(entityReference.isPrimary);
+    public @NotNull com.hivemq.edge.api.model.EntityReference toModel() {
+        return new com.hivemq.edge.api.model.EntityReference().id(id).type(type.toModel()).isPrimary(isPrimary);
     }
 
     public static @NotNull EntityReference fromPersistence(final @NotNull EntityReferenceEntity entityReference) {

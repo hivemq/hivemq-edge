@@ -1,7 +1,6 @@
 package com.hivemq.combining;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.persistence.generic.AddResult;
@@ -72,20 +71,20 @@ public class CombiningManager {
     }
 
     public @NotNull CompletableFuture<AddResult> addDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        if (getCombinerById(dataCombiner.id()).isPresent()) {
+        final DataCombiner previousValue = idToDataCombiner.putIfAbsent(dataCombiner.id().toString(), dataCombiner);
+        if(previousValue!=null){
             return CompletableFuture.failedFuture(new IllegalArgumentException("data combiner already exists by id '" +
                     dataCombiner.id() +
                     "'"));
         }
 
-        idToDataCombiner.put(dataCombiner.id().toString(), dataCombiner);
+
         final CompletableFuture<AddResult> ret = startCombiner(dataCombiner);
         configPersistence.addDataCombiner(dataCombiner);
         return ret;
     }
 
     public boolean updateDataCombiner(final @NotNull DataCombiner dataCombining) {
-        Preconditions.checkNotNull(dataCombining);
         return getCombinerById(dataCombining.id()).map(oldInstance -> {
             internalUpdateDataCombiner(dataCombining);
             return true;
@@ -111,7 +110,7 @@ public class CombiningManager {
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
         syncFuture(startCombiner(dataCombiner));
-        configPersistence.updateDataCombiners(dataCombiner);
+        configPersistence.updateDataCombiner(dataCombiner);
     }
 
 
@@ -124,7 +123,6 @@ public class CombiningManager {
 
 
     private synchronized boolean deleteDataCombinerInternal(final @NotNull UUID id) {
-        Preconditions.checkNotNull(id);
         final DataCombiner dataCombiner = idToDataCombiner.remove(id.toString());
         if (dataCombiner != null) {
             try {

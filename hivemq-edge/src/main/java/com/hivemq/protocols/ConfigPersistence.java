@@ -103,7 +103,7 @@ public class ConfigPersistence {
                 .collect(Collectors.toList());
     }
 
-    public synchronized void updateDataCombiners(
+    public synchronized void updateDataCombiner(
             final @NotNull DataCombiner dataCombiner) {
         final @NotNull List<DataCombiner> allDataCombiners = allDataCombiners();
         if (allDataCombiners.removeIf(instance -> dataCombiner.id().equals(instance.id()))) {
