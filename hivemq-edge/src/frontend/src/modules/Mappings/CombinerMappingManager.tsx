@@ -91,7 +91,7 @@ const CombinerMappingManager: FC = () => {
           {selectedNode && (
             <ChakraRJSForm
               showNativeWidgets={showNativeWidgets}
-              id="adapter-mapping-form"
+              id="combiner-mapping-form"
               schema={combinerMappingJsonSchema}
               uiSchema={combinerMappingUiSchema}
               formData={selectedNode.data}
@@ -109,8 +109,8 @@ const CombinerMappingManager: FC = () => {
             </FormControl>
           )}
           {selectedNode && (
-            <Button variant="primary" type="submit" form="adapter-mapping-form" isLoading={updateCombiner.isPending}>
-              {t('protocolAdapter.mapping.actions.submit')}
+            <Button variant="primary" type="submit" form="combiner-mapping-form" isLoading={updateCombiner.isPending}>
+              {t('combiner.actions.submit')}
             </Button>
           )}
         </DrawerFooter>

@@ -1187,6 +1187,9 @@
     }
   },
   "combiner": {
+    "actions": {
+      "submit": "Submit"
+    },
     "type": "Data Combiner",
     "unnamed": "< unnamed combiner >",
     "toast": {
