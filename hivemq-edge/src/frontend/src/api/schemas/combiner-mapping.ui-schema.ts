@@ -46,7 +46,14 @@ export const combinerMappingUiSchema: UiSchema = {
   },
   mappings: {
     items: {
-      'ui:widget': DataCombiningMappingWidget,
+      'ui:widget': DataCombiningTableWidget,
+      // TODO[NVL] Add `ui:options to pass table configuration and the whole RJSF construct is fully generic!
+      items: {
+        'ui:field': DataCombiningEditorField,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      },
     },
   },
 }
