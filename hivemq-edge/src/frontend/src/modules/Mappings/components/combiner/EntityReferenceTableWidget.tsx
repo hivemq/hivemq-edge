@@ -11,7 +11,7 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { EntityRenderer } from './EntityRenderer'
 
-const EntityReferenceTable = (props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>>) => {
+const EntityReferenceTableWidget = (props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>>) => {
   const { t } = useTranslation()
   const { schema } = props
 
@@ -52,4 +52,4 @@ const EntityReferenceTable = (props: WidgetProps<WidgetProps<Array<EntityReferen
   )
 }
 
-export default EntityReferenceTable
+export default EntityReferenceTableWidget

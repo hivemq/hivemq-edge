@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import EntityReferenceTable from './EntityReferenceTable'
+import EntityReferenceTableWidget from './EntityReferenceTableWidget'
 import type { WidgetProps } from '@rjsf/utils'
 import type { RJSFSchema } from '@rjsf/utils/src/types'
 import type { EntityReference } from '@/api/__generated__'
@@ -45,7 +45,7 @@ describe('EntityReferenceTable', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<EntityReferenceTable {...MOCK_ADAPTER_PROPS} />)
+    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ADAPTER_PROPS} />)
 
     cy.get('table').should('have.attr', 'aria-label', 'The list of sources available for this combiner')
     cy.get('table thead tr th').should('have.length', 2)
@@ -60,7 +60,7 @@ describe('EntityReferenceTable', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<EntityReferenceTable {...MOCK_ADAPTER_PROPS} />)
+    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ADAPTER_PROPS} />)
     cy.checkAccessibility()
   })
 })
