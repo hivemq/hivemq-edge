@@ -11,7 +11,7 @@ import type { DataCombining } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
-import MappingDrawer from './MappingDrawer'
+import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
 
 export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchema, FormContextType>> = (props) => {
   const { t } = useTranslation()
@@ -80,7 +80,7 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
         enableColumnFilters={false}
       />
       {selectedItem != undefined && (
-        <MappingDrawer
+        <DataCombiningEditorDrawer
           onClose={() => setSelectedItem(undefined)}
           onSubmit={() => console.log('XXX')}
           schema={props.schema.items as RJSFSchema}
