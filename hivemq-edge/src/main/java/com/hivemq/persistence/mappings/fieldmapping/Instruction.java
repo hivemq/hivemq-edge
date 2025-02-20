@@ -17,10 +17,11 @@ package com.hivemq.persistence.mappings.fieldmapping;
 
 import org.jetbrains.annotations.NotNull;
 
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName) {
+public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName, @NotNull String origin) {
 
     public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        return new Instruction(model.getSource(), model.getDestination());
+        // TODO add source here
+        return new Instruction(model.getSource(), model.getDestination(), "");
     }
 
     public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
