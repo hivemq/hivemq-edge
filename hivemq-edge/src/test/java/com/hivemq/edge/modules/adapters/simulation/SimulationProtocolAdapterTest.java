@@ -21,6 +21,8 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
@@ -60,6 +62,7 @@ class SimulationProtocolAdapterTest {
                 "simulation",
                 "test-simulator"));
         when(input.getConfig()).thenReturn(protocolAdapterConfig);
+        when(input.getTags()).thenReturn(List.of(new SimulationTag("tag1", "description", new SimulationTagDefinition())));
         simulationProtocolAdapter =
                 new SimulationProtocolAdapter(SimulationProtocolAdapterInformation.INSTANCE, input, timeWaiter);
     }
