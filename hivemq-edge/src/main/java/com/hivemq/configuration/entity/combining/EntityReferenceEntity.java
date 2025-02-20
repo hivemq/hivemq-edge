@@ -32,26 +32,20 @@ public class EntityReferenceEntity {
     @XmlElement(name = "id")
     private final @NotNull String id;
 
-    @JsonProperty("isPrimary")
-    @XmlElement(name = "isPrimary")
-    private final boolean isPrimary;
-
     // no-arg for jaxb
     public EntityReferenceEntity() {
-        isPrimary = false;
         id = "";
         type = EntityType.EDGE_BROKER;
     }
 
-    public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id, final boolean isPrimary) {
+    public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
         this.type = type;
         this.id = id;
-        this.isPrimary = isPrimary;
     }
 
     @Override
     public @NotNull String toString() {
-        return "EntityReferenceEntity{" + "id='" + id + '\'' + ", type=" + type + ", isPrimary=" + isPrimary + '}';
+        return "EntityReferenceEntity{" + "id='" + id + '\'' + ", type=" + type + '}';
     }
 
     @Override
@@ -64,23 +58,18 @@ public class EntityReferenceEntity {
         }
 
         final EntityReferenceEntity that = (EntityReferenceEntity) o;
-        return isPrimary == that.isPrimary && type == that.type && id.equals(that.id);
+        return type == that.type && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + id.hashCode();
-        result = 31 * result + Boolean.hashCode(isPrimary);
         return result;
     }
 
     public @NotNull String getId() {
         return id;
-    }
-
-    public boolean isPrimary() {
-        return isPrimary;
     }
 
     public @NotNull EntityType getType() {
