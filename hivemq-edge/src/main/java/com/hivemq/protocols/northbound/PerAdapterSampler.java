@@ -15,16 +15,13 @@
  */
 package com.hivemq.protocols.northbound;
 
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
@@ -44,17 +41,14 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
 
 
     private final @NotNull BatchPollingProtocolAdapter pollingProtocolAdapter;
-    private final @NotNull List<? extends PollingContext> pollingContext;
     private final @NotNull TagManager tagManager;
 
     public PerAdapterSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
-            final @NotNull List<? extends PollingContext> pollingContexts,
             final @NotNull EventService eventService,
             final @NotNull TagManager tagManager) {
         super(protocolAdapterWrapper, eventService);
         this.pollingProtocolAdapter = (BatchPollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-        this.pollingContext = pollingContexts;
         this.tagManager = tagManager;
     }
 
@@ -66,7 +60,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            pollingProtocolAdapter.poll(new BatchPollingInputImpl(pollingContext), pollingOutput);
+            pollingProtocolAdapter.poll(new BatchPollingInputImpl(), pollingOutput);
         } catch (final Throwable t) {
             pollingOutput.fail(t, null);
             throw t;
@@ -78,10 +72,8 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                 pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
         return outputFuture.thenCompose(((pollingResult) -> {
             if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
-
                 final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
                 final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
-
                 for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
                     tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
                 }

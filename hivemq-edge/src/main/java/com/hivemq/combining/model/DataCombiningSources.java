@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.combining;
+package com.hivemq.combining.model;
 
 import com.hivemq.configuration.entity.combining.DataCombiningSourcesEntity;
 import org.jetbrains.annotations.NotNull;

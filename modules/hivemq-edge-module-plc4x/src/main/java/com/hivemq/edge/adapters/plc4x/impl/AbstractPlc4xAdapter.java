@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -69,7 +68,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
-    protected final @NotNull List<Tag> tags;
+    protected final @NotNull List<Plc4xTag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
@@ -88,18 +87,18 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream().map(tag -> (Plc4xTag)tag).toList();
     }
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
-            for (final PollingContext pollingContext : pollingInput.getPollingContexts()) {
-                final String tagName = pollingContext.getTagName();
+            for (final Plc4xTag tag : tags) {
+                final String tagName = tag.getName();
 
-                findTag(tagName).ifPresentOrElse(def -> tempConnection.read(pollingContext)
-                                .thenApply(response -> processReadResponse(pollingContext, response))
+                findTag(tagName).ifPresentOrElse(def -> tempConnection.read(tag)
+                                .thenApply(response -> processReadResponse(tag, response))
                                 .thenApply(data -> captureDataSample(data, (Plc4xTag) def))
                                 .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput)),
                         () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
@@ -203,9 +202,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final PollingContext context) {
-                return findTag(context.getTagName()).map(tag -> createTagAddressForSubscription(context,
-                        (Plc4xTag) tag)).orElseThrow(); //TODO this sucks
+            protected @NotNull String getTagAddressForSubscription(final Plc4xTag tag) {
+                return createTagAddressForSubscription(tag);
             }
         };
     }
@@ -249,8 +247,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(
-            final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.getDefinition().getDataType());
     }
@@ -279,11 +276,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     protected @NotNull Plc4xDataSample processReadResponse(
-            final @NotNull PollingContext subscription, final @NotNull PlcReadResponse readEvent) {
+            final @NotNull Plc4xTag tag, final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
         if (!(readEvent instanceof DefaultPlcReadResponse) ||
-                ((DefaultPlcReadResponse) readEvent).getValues().containsKey(subscription.getTagName())) {
-            final PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
+                ((DefaultPlcReadResponse) readEvent).getValues().containsKey(tag.getName())) {
+            final PlcResponseCode responseCode = readEvent.getResponseCode(tag.getName());
             if (responseCode == PlcResponseCode.OK) {
                 if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.ERROR) {
                     //Error was transient

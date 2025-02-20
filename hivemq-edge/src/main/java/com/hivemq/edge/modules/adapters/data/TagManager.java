@@ -47,8 +47,7 @@ public class TagManager {
 
     // TODO synchronized might be good enough, write read locks would be more granular and better
     public synchronized void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
-        // TODO handle null
-      //  lastValueForTag.put(tagName, dataPoints);
+        lastValueForTag.put(tagName, dataPoints);
         final List<TagConsumer> tagConsumers = consumers.get(tagName);
         if (tagConsumers != null) {
             consumers.get(tagName).forEach(c -> c.accept(dataPoints));
@@ -56,7 +55,8 @@ public class TagManager {
     }
 
 
-    public synchronized void addConsumer(final @NotNull String tagName, final @NotNull TagConsumer consumer) {
+    public synchronized void addConsumer(final @NotNull TagConsumer consumer) {
+        String tagName = consumer.getTagName();
         consumers.compute(tagName, (tag, current) -> {
             if (current != null) {
                 current.add(consumer);

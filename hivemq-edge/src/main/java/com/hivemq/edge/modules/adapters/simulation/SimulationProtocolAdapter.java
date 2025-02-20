@@ -33,8 +33,10 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -49,6 +51,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final @NotNull Random RANDOM = new Random();
     private final @NotNull String adapterId;
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
+    private final @NotNull List<SimulationTag> tags;
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -60,6 +63,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
         this.timeWaiter = timeWaiter;
         this.protocolAdapterState.setConnectionStatus(STATELESS);
+        this.tags = protocolAdapterInput.getTags().stream().map(tag  -> (SimulationTag)tag).toList();
     }
 
     @Override
@@ -86,44 +90,12 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void poll(
             final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-
-            // TODO
-            new Thread(() -> {
-                for (final PollingContext pollingContext : pollingInput.getPollingContexts()) {
-                    final int minDelay = adapterConfig.getMinDelay();
-                    final int maxDelay = adapterConfig.getMaxDelay();
-
-                    if (minDelay > maxDelay) {
-                        pollingOutput.fail(String.format(
-                                "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
-                                minDelay,
-                                maxDelay));
-                    } else if (minDelay == maxDelay && maxDelay > 0) {
-                        try {
-                            timeWaiter.sleep(minDelay);
-                        } catch (final InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            pollingOutput.fail("Thread was interrupted");
-                            return;
-                        }
-                    } else if (maxDelay > 0) {
-                        final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
-                        try {
-                            timeWaiter.sleep(sleepMS);
-                        } catch (final InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            pollingOutput.fail("Thread was interrupted");
-                            return;
-                        }
-                    }
-
-                    pollingOutput.addDataPoint(pollingContext.getTagName(),
-                            ThreadLocalRandom.current()
-                                    .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
-                                            Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
-                }
-                pollingOutput.finish();
-            }).start();
+        tags.forEach(tag -> {
+            pollingOutput.addDataPoint(tag.getName(), ThreadLocalRandom.current()
+                    .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                            Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
+        });
+        pollingOutput.finish();
 
     }
 
