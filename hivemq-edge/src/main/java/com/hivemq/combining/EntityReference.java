@@ -18,26 +18,25 @@ package com.hivemq.combining;
 import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
 import org.jetbrains.annotations.NotNull;
 
-public record EntityReference(EntityType type, String id, boolean isPrimary) {
+public record EntityReference(EntityType type, String id) {
 
     public static @NotNull EntityReference fromModel(final @NotNull com.hivemq.edge.api.model.EntityReference entityReference) {
         return new EntityReference(EntityType.fromModel(entityReference.getType()),
-                entityReference.getId(),
-                entityReference.getIsPrimary());
+                entityReference.getId());
 
     }
 
     public @NotNull com.hivemq.edge.api.model.EntityReference toModel() {
-        return new com.hivemq.edge.api.model.EntityReference().id(id).type(type.toModel()).isPrimary(isPrimary);
+        return new com.hivemq.edge.api.model.EntityReference().id(id).type(type.toModel());
     }
 
     public static @NotNull EntityReference fromPersistence(final @NotNull EntityReferenceEntity entityReference) {
-        return new EntityReference(entityReference.getType(), entityReference.getId(), entityReference.isPrimary());
+        return new EntityReference(entityReference.getType(), entityReference.getId());
 
     }
 
     public @NotNull EntityReferenceEntity toPersistence() {
-        return new EntityReferenceEntity(type, id, isPrimary);
+        return new EntityReferenceEntity(type, id);
     }
 
 }
