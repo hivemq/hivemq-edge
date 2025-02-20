@@ -90,12 +90,46 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void poll(
             final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        tags.forEach(tag -> {
-            pollingOutput.addDataPoint(tag.getName(), ThreadLocalRandom.current()
-                    .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
-                            Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
-        });
-        pollingOutput.finish();
+        new Thread(() -> {
+            for (final SimulationTag tag : tags) {
+                final int minDelay = adapterConfig.getMinDelay();
+                final int maxDelay = adapterConfig.getMaxDelay();
+
+                System.out.println("POLL!!!!1");
+                if (minDelay > maxDelay) {
+                    System.out.println("POLL!!!!2");
+                    pollingOutput.fail(String.format(
+                            "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
+                            minDelay,
+                            maxDelay));
+                } else if (minDelay == maxDelay && maxDelay > 0) {
+                    System.out.println("POLL!!!!3");
+                    try {
+                        timeWaiter.sleep(minDelay);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        pollingOutput.fail("Thread was interrupted");
+                        return;
+                    }
+                } else if (maxDelay > 0) {
+                    final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
+                    System.out.println("POLL!!!!4");
+                    try {
+                        timeWaiter.sleep(sleepMS);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        pollingOutput.fail("Thread was interrupted");
+                        return;
+                    }
+                }
+
+                pollingOutput.addDataPoint(tag.getName(),
+                        ThreadLocalRandom.current()
+                                .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                                        Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
+            }
+            pollingOutput.finish();
+        }).start();
 
     }
 
