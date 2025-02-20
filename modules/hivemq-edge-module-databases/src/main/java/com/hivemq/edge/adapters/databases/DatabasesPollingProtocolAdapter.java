@@ -91,7 +91,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
                         adapterConfig.getEncrypt());
                 }
             case MYSQL -> {
-                    return String.format("jdbc:mysql://%s:%s/%s?useSSL=%s",
+                    return String.format("jdbc:mysql://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
                             adapterConfig.getServer(),
                             adapterConfig.getPort(),
                             adapterConfig.getDatabase(),
