@@ -917,7 +917,7 @@
     }
   },
   "modals": {
-    "native": "Native UX",
+    "native": "Raw Form (DevX)",
     "generics": {
       "confirmation": "Are you sure? You can't undo this action afterward."
     },
