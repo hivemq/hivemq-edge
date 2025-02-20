@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: HiveMQ Edge REST API
-  version: "2025.3-SNAPSHOT"
+  version: "2025.4-SNAPSHOT"
   description: |
     Note: This should be restructured and divided in individual files, to match the requirements of the 30019 ticket (splitting openAPI)
 tags:
@@ -42,7 +42,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner already exists
   /api/v1/management/combiners/{combinerId}:
     get:
@@ -64,7 +64,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner not found
     delete:
       description: Delete the specified combiner.
@@ -81,7 +81,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner not found
     put:
       description: Update a combiner.
@@ -105,7 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner already exists
   /api/v1/management/combiners/{combinerId}/mappings:
     get:
@@ -127,7 +127,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner not found
   /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
     get:
@@ -147,13 +147,13 @@ paths:
                 type: array
                 description: List of instructions to be applied to incoming data
                 items:
-                  $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/Instruction'
+                  $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/Instruction'
           description: Success
         "404":
           content:
             application/json:
               schema:
-                $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
           description: Combiner not found
 components:
   parameters:
@@ -225,7 +225,16 @@ components:
           description: The unique id of the data combining mapping
         sources:
           type: object
+          #primary must be in the list of either tags or topicFilters
+          required:
+            - primary
+            - primaryType
           properties:
+            primary:
+              type: string
+            primaryType:
+              type: string
+              enum: [ TAG, TOPIC_FILTER ]
             tags:
               type: array
               description: The list of tags (names) used in the data combining
@@ -243,7 +252,7 @@ components:
           type: array
           description: List of instructions to be applied to incoming data
           items:
-            $ref: '../hivemq-edge-openapi-2025.3-SNAPSHOT.yaml#/components/schemas/Instruction'
+            $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/Instruction'
       required:
         - id
         - instructions
@@ -272,11 +281,6 @@ components:
         id:
           description: The id of the entity being references in the combiner
           type: string
-        isPrimary:
-          # We are still assuming one of the reference will have a special status
-          description: The source is the primary orchestrator of the combiner
-          type: boolean
-          default: false
       required:
         - id
         - type
