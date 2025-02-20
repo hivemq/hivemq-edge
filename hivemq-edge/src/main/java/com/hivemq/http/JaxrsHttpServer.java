@@ -58,9 +58,11 @@ public class JaxrsHttpServer {
 
     public static final int MAX_BINDING_PRIORITY = 1;
 
-    static final String MAX_REQ_TIME = "sun.net.httpserver.maxReqTime";
-    static final String MAX_RESP_TIME = "sun.net.httpserver.maxRspTime";
-    private static final Logger logger = LoggerFactory.getLogger(JaxrsHttpServer.class);
+    static final @NotNull String MAX_REQ_TIME = "sun.net.httpserver.maxReqTime";
+    static final @NotNull String MAX_RESP_TIME = "sun.net.httpserver.maxRspTime";
+    static final @NotNull String LOCATION_RELATIVE_RESOLUTION_DISABLED =
+            "jersey.config.server.headers.location.relative.resolution.disabled";
+    private static final @NotNull Logger logger = LoggerFactory.getLogger(JaxrsHttpServer.class);
     private final @NotNull List<HttpServer> httpServers = new ArrayList<>();
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull List<JaxrsHttpServerConfiguration> configs;
@@ -91,6 +93,10 @@ public class JaxrsHttpServer {
                     System.setProperty(MAX_RESP_TIME, "45");
 
                     ResourceConfig resources = resourceConfig == null ? new ResourceConfig() : resourceConfig;
+                    // https://github.com/eclipse-ee4j/jersey/issues/2986
+                    // This server property tells jersey not to resolve relative location
+                    // so that / -> /app/ doesn't get resolved to http://domain/app/.
+                    resources.property(LOCATION_RELATIVE_RESOLUTION_DISABLED, true);
 
                     for (JaxrsHttpServerConfiguration config : configs) {
 
