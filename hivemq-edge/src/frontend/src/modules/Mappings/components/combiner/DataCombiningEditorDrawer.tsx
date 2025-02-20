@@ -16,10 +16,12 @@ import {
 } from '@chakra-ui/react'
 import type { DataCombining } from '@/api/__generated__'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
+import type { CombinerContext } from '../../types'
 
 interface MappingDrawerProps<T> {
   schema: RJSFSchema
   uiSchema: UiSchema
+  formContext?: CombinerContext
   formData: T
   onClose: () => void
   onSubmit: (newItem: T | undefined) => void
@@ -44,6 +46,7 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
                 schema={props.schema}
                 uiSchema={props.uiSchema}
                 formData={props.formData}
+                formContext={props.formContext}
                 onSubmit={(e) => console.log('XXXXXXXX eee sub', e)}
               />
             </CardBody>

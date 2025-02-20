@@ -34,6 +34,7 @@ import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { useGetCombinedEntities } from '../../api/hooks/useDomainModel/useGetCombinedEntities'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -48,6 +49,12 @@ const CombinerMappingManager: FC = () => {
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
   }, [combinerId, nodes])
+
+  const entities = useMemo(() => {
+    return selectedNode?.data?.sources?.items || []
+  }, [selectedNode?.data?.sources?.items])
+
+  const sources = useGetCombinedEntities(entities)
 
   const handleClose = () => {
     onClose()
@@ -96,6 +103,7 @@ const CombinerMappingManager: FC = () => {
               uiSchema={combinerMappingUiSchema}
               formData={selectedNode.data}
               onSubmit={handleOnSubmit}
+              formContext={{ sources: sources }}
             />
           )}
         </DrawerBody>

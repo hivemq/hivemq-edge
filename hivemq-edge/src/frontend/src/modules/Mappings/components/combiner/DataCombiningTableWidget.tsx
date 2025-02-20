@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup, HStack } from '@chakra-ui/react'
-import type { RJSFSchema, FormContextType, WidgetProps } from '@rjsf/utils'
+import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
 import type { DataCombining } from '@/api/__generated__'
@@ -12,12 +12,11 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
+import type { CombinerContext } from '../../types'
 
-export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchema, FormContextType>> = (props) => {
+export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
-
-  console.log('XXXXXX main props', props)
 
   const displayColumns = useMemo<ColumnDef<DataCombining>[]>(() => {
     return [
@@ -86,6 +85,7 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
           schema={props.schema.items as RJSFSchema}
           uiSchema={props.uiSchema?.items}
           formData={props.value[selectedItem]}
+          formContext={props.formContext}
         />
       )}
     </>
