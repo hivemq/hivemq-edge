@@ -95,7 +95,7 @@ public class JaxrsHttpServer {
                     ResourceConfig resources = resourceConfig == null ? new ResourceConfig() : resourceConfig;
                     // https://github.com/eclipse-ee4j/jersey/issues/2986
                     // This server property tells jersey not to resolve relative location
-                    // so that / -> /app/ doesn't get resolved to http://domain/app/.
+                    // so that the Location of the response headers is /path/ instead of http://host:port/path/.
                     resources.property(LOCATION_RELATIVE_RESOLUTION_DISABLED, true);
 
                     for (JaxrsHttpServerConfiguration config : configs) {

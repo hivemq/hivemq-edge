@@ -35,7 +35,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * This test suite is for testing the embedded HiveMQ server when the Admin API is enabled.
@@ -93,12 +93,12 @@ public class EmbeddedHiveMQImplHttpTest {
             final ConfigurationService configurationService = embeddedHiveMQ.bootstrapConfig();
 
             final List<Listener> mqttListeners = configurationService.listenerConfiguration().getListeners();
-            assertEquals(1, mqttListeners.size(), "The listener count should be 1");
-            assertEquals(randomPort, mqttListeners.get(0).getPort(), "The MQTT port should match");
+            assertThat(mqttListeners.size()).as("The listener count should be 1").isOne();
+            assertThat(mqttListeners.get(0).getPort()).as("The MQTT port should match").isEqualTo(randomPort);
 
             final List<ApiListener> apiListeners = configurationService.apiConfiguration().getListeners();
-            assertEquals(1, apiListeners.size(), "The API listener count should be 1");
-            assertEquals(randomApiPort, apiListeners.get(0).getPort(), "The Admin API port should match");
+            assertThat(apiListeners.size()).as("The API listener count should be 1").isOne();
+            assertThat(apiListeners.get(0).getPort()).as("The Admin API port should match").isEqualTo(randomApiPort);
 
             final HttpClient httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
             final HttpRequest httpRequest =
@@ -106,12 +106,12 @@ public class EmbeddedHiveMQImplHttpTest {
 
             final HttpResponse<String> httpResponse =
                     httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            assertEquals(307, httpResponse.statusCode(), "The status code should be 307");
+            assertThat(httpResponse.statusCode()).as("The status code should be 307").isEqualTo(307);
             HttpHeaders httpHeaders = httpResponse.headers();
             List<String> locations = httpHeaders.allValues("Location");
-            assertEquals(1, locations.size(), "Location should exist in the response headers");
-            assertEquals("/app/", locations.get(0), "Location should be relative");
-            assertEquals("", httpResponse.body(), "Body should be empty");
+            assertThat(locations.size()).as("Location should exist in the response headers").isOne();
+            assertThat(locations.get(0)).as("Location should be relative").isEqualTo("/app/");
+            assertThat(httpResponse.body()).as("Body should be empty").isEqualTo("");
 
             embeddedHiveMQ.stop().join();
         }
