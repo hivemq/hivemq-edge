@@ -83,7 +83,6 @@ public class JaxrsBootstrapFactory {
                         final SSLParameters parameters = sslContext.getDefaultSSLParameters();
                         parameters.setProtocols(httpsListener.getProtocols().toArray(new String[0]));
                         parameters.setCipherSuites(httpsListener.getCipherSuites().toArray(new String[0]));
-                        // https://hivemq.kanbanize.com/ctrl_board/57/cards/26646/details/
                         // The SSL parameters needs to come from the supported ones, not the default ones.
                         params.setSSLParameters(sslContext.getSupportedSSLParameters());
                     }
