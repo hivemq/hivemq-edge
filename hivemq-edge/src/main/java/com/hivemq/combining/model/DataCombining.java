@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.combining;
+package com.hivemq.combining.model;
 
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
@@ -29,7 +29,7 @@ public record DataCombining(UUID id, DataCombiningSources sources, String destin
     public static @NotNull DataCombining fromModel(final @NotNull com.hivemq.edge.api.model.DataCombining model) {
         final List<Instruction> instructions = model.getInstructions().stream().map(Instruction::from).toList();
         return new DataCombining(model.getId(),
-                com.hivemq.combining.DataCombiningSources.fromModel(model.getSources()),
+                DataCombiningSources.fromModel(model.getSources()),
                 model.getDestination(),
                 instructions);
     }

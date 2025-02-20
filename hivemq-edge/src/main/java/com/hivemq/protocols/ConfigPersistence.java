@@ -15,7 +15,7 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.combining.DataCombiner;
+import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.service.ConfigurationService;
