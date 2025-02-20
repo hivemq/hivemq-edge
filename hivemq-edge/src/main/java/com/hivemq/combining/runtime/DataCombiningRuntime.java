@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.PrimaryType;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -42,7 +43,6 @@ public class DataCombiningRuntime {
     private final ConcurrentHashMap<String, List<DataPoint>> tagResults = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PUBLISH> topicFilterToPublish = new ConcurrentHashMap<>();
 
-
     public DataCombiningRuntime(
             final @NotNull DataCombining combining,
             final @NotNull LocalTopicTree localTopicTree,
@@ -67,7 +67,7 @@ public class DataCombiningRuntime {
         combining.sources()
             .tags()
             .stream()
-            .map(tag -> new InternalTagConsumer(tag, combining.id().toString(), true))
+            .map(tag -> new InternalTagConsumer(tag, combining.id().toString(), PrimaryType.TAG.equals(combining.sources().primaryType()) && tag.equals(combining.sources().primaryName())))
             .forEach(consumer -> {
                 tagManager.addConsumer(consumer);
                 consumers.add(consumer);
@@ -76,7 +76,7 @@ public class DataCombiningRuntime {
         combining.sources()
             .topicFilters()
             .forEach(topicFilter -> {
-                internalSubscriptions.add(subscribeTopicFilter(combining.id().toString(), topicFilter, true));
+                internalSubscriptions.add(subscribeTopicFilter(combining.id().toString(), topicFilter, PrimaryType.TOPIC_FILTER.equals(combining.sources().primaryType()) && topicFilter.equals(combining.sources().primaryName())));
             });
 
         internalSubscriptions.forEach(internalSubscription -> {

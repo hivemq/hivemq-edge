@@ -22,6 +22,7 @@ import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.EntityReference;
 import com.hivemq.combining.model.EntityType;
+import com.hivemq.combining.model.PrimaryType;
 import com.hivemq.combining.runtime.DataCombinerManager;
 import com.hivemq.combining.runtime.DataCombiningPublishService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
@@ -71,9 +72,9 @@ class DataCombinerManagerTest {
     private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(generatedUuid,
             "name",
             null,
-            List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString(), false)),
+            List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
             List.of(new DataCombining(UUID.randomUUID(),
-                    new DataCombiningSources(List.of(), List.of("#")),
+                    new DataCombiningSources("#", PrimaryType.TOPIC_FILTER, List.of(), List.of("#")),
                     "dest",
                     List.of())));
 
@@ -98,9 +99,9 @@ class DataCombinerManagerTest {
         final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
                 "update",
                 null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString(), false)),
+                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
                 List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(List.of(), List.of("#")),
+                        new DataCombiningSources("#", PrimaryType.TOPIC_FILTER, List.of(), List.of("#")),
                         "dest",
                         List.of())));
 
@@ -117,9 +118,9 @@ class DataCombinerManagerTest {
         final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
                 "update",
                 null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString(), false)),
+                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
                 List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(List.of(), List.of("#")),
+                        new DataCombiningSources("#", PrimaryType.TOPIC_FILTER, List.of(), List.of("#")),
                         "dest",
                         List.of())));
 

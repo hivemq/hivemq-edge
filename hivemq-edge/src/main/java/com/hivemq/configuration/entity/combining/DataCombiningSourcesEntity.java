@@ -16,15 +16,25 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.combining.model.PrimaryType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import java.util.List;
+import java.util.Objects;
 
 
 public class DataCombiningSourcesEntity {
+
+    @JsonProperty("primaryName")
+    @XmlElement(name = "primaryName")
+    private final @NotNull String primaryName;
+
+    @JsonProperty("primaryType")
+    @XmlElement(name = "primaryType")
+    private final @NotNull PrimaryType primaryType;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
@@ -40,32 +50,19 @@ public class DataCombiningSourcesEntity {
     public DataCombiningSourcesEntity() {
         tags = List.of();
         topicFilters = List.of();
+        primaryName = "";
+        primaryType = PrimaryType.TAG;
     }
 
-    public DataCombiningSourcesEntity(@NotNull final List<String> tags, @NotNull final List<String> topicFilters) {
+    public DataCombiningSourcesEntity(
+            final @NotNull String primaryName,
+            final @NotNull PrimaryType primaryType,
+            final @NotNull List<String> tags,
+            final @NotNull List<String> topicFilters) {
+        this.primaryName = primaryName;
+        this.primaryType = primaryType;
         this.tags = tags;
         this.topicFilters = topicFilters;
-    }
-
-    @Override
-    public String toString() {
-        return "DataCombiningSourcesEntity{" + "tags=" + tags + ", topicFilters=" + topicFilters + '}';
-    }
-
-    @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final DataCombiningSourcesEntity that = (DataCombiningSourcesEntity) o;
-        return tags.equals(that.tags) && topicFilters.equals(that.topicFilters);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = tags.hashCode();
-        result = 31 * result + topicFilters.hashCode();
-        return result;
     }
 
     public @NotNull List<String> getTags() {
@@ -74,6 +71,30 @@ public class DataCombiningSourcesEntity {
 
     public @NotNull List<String> getTopicFilters() {
         return topicFilters;
+    }
+
+    public @NotNull String getPrimaryName() {
+        return primaryName;
+    }
+
+    public @NotNull PrimaryType getPrimaryType() {
+        return primaryType;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final DataCombiningSourcesEntity that = (DataCombiningSourcesEntity) o;
+        return Objects.equals(getPrimaryName(), that.getPrimaryName()) &&
+                getPrimaryType() == that.getPrimaryType() &&
+                Objects.equals(getTags(), that.getTags()) &&
+                Objects.equals(getTopicFilters(), that.getTopicFilters());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPrimaryName(), getPrimaryType(), getTags(), getTopicFilters());
     }
 }
 
