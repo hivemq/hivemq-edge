@@ -56,8 +56,8 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
         <DrawerFooter>
           <ButtonGroup>
             <Button onClick={onClose}>{t('rjsf.MqttTransformationField.actions.cancel.aria-label')}</Button>
-            <Button onClick={() => onSubmit(undefined)} variant="primary">
-              {t('rjsf.MqttTransformationField.actions.save.aria-label')}
+            <Button variant="primary" type="submit" form="combiner-mapping-form">
+              {t('combiner.actions.save')}
             </Button>
           </ButtonGroup>
         </DrawerFooter>
