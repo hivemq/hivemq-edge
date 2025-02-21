@@ -61,9 +61,6 @@ public class DataCombiningRuntime {
 
     public void start() {
 
-        //TODO
-        log.error("ALL TAGS/FILTERS ARE PRIMARY");
-
         combining.sources()
             .tags()
             .stream()
