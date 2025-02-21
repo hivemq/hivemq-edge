@@ -16,7 +16,7 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.combining.EntityType;
+import com.hivemq.combining.model.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

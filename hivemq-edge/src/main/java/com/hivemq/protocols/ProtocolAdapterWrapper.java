@@ -17,6 +17,7 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -213,15 +214,27 @@ public class ProtocolAdapterWrapper {
         if (isBatchPolling()) {
             log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
             final PerAdapterSampler sampler =
-                    new PerAdapterSampler(this, getNorthboundMappings(), eventService, tagManager);
+                    new PerAdapterSampler(this, eventService, tagManager);
             protocolAdapterPollingService.schedulePolling(sampler);
         }
 
         if (isPolling()) {
-            getNorthboundMappings().forEach(adapterSubscription -> {
-                log.debug("Schedule polling for protocol adapter with id '{}'", getId());
+            config.getTags().forEach(tag -> {
                 final PerContextSampler sampler =
-                        new PerContextSampler(this, adapterSubscription, eventService, tagManager);
+                        new PerContextSampler(
+                                this,
+                            //TODO gtfo
+                            new PollingContextWrapper(
+                                    "unused",
+                                    tag.getName(),
+                                    MessageHandlingOptions.MQTTMessagePerTag,
+                                    false,
+                                    false,
+                                    List.of(),
+                                    1,
+                                    -1),
+                                eventService,
+                                tagManager);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }
@@ -277,7 +290,7 @@ public class ProtocolAdapterWrapper {
         for (final NorthboundMapping northboundMapping : getNorthboundMappings()) {
             final NorthboundTagConsumer northboundTagConsumer =
                     northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService);
-            tagManager.addConsumer(northboundMapping.getTagName(), northboundTagConsumer);
+            tagManager.addConsumer(northboundTagConsumer);
             consumers.add(northboundTagConsumer);
         }
     }

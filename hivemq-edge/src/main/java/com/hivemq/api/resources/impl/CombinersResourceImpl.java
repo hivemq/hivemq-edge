@@ -4,9 +4,9 @@ import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
-import com.hivemq.combining.CombiningManager;
-import com.hivemq.combining.DataCombiner;
-import com.hivemq.combining.DataCombining;
+import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataCombining;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -36,13 +36,13 @@ public class CombinersResourceImpl implements CombinersApi {
     private static final Logger log = LoggerFactory.getLogger(CombinersResourceImpl.class);
 
     private final @NotNull SystemInformation systemInformation;
-    private final @NotNull CombiningManager combiningManager;
+    private final @NotNull DataCombinerManager dataCombinerManager;
 
     @Inject
     public CombinersResourceImpl(
-            final @NotNull SystemInformation systemInformation, final @NotNull CombiningManager combiningManager) {
+            final @NotNull SystemInformation systemInformation, final @NotNull DataCombinerManager dataCombinerManager) {
         this.systemInformation = systemInformation;
-        this.combiningManager = combiningManager;
+        this.dataCombinerManager = dataCombinerManager;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class CombinersResourceImpl implements CombinersApi {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
 
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combiner.getId());
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combiner.getId());
         if (instance.isPresent()) {
             return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
                     "DataCombiner already exists '%s'",
@@ -61,7 +61,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
         try {
-            combiningManager.addDataCombiner(dataCombiner).get();
+            dataCombinerManager.addDataCombiner(dataCombiner).get();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted while data combiner was being added. '{}'", combiner.getName());
@@ -82,7 +82,7 @@ public class CombinersResourceImpl implements CombinersApi {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
 
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combiner.getId());
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combiner.getId());
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
                     combiner.getId())));
@@ -90,7 +90,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
 
-        final boolean updated = combiningManager.updateDataCombiner(dataCombiner);
+        final boolean updated = dataCombinerManager.updateDataCombiner(dataCombiner);
         if (updated) {
             return Response.ok().build();
         } else {
@@ -104,14 +104,14 @@ public class CombinersResourceImpl implements CombinersApi {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
                     combinerId)));
         }
 
         try {
-            combiningManager.deleteDataCombiner(combinerId).get();
+            dataCombinerManager.deleteDataCombiner(combinerId).get();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted while data combiner was being deleted. '{}'", combinerId);
@@ -127,7 +127,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
     @Override
     public @NotNull Response getCombiners() {
-        final Collection<DataCombiner> allCombiners = combiningManager.getAllCombiners();
+        final Collection<DataCombiner> allCombiners = dataCombinerManager.getAllCombiners();
         final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
         final CombinerList combinerList = new CombinerList().items(combiners);
         return Response.ok().entity(combinerList).build();
@@ -135,7 +135,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
     @Override
     public @NotNull Response getCombinersById(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
                     combinerId)));
@@ -145,7 +145,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
     @Override
     public @NotNull Response getCombinerMappings(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
                     combinerId)));
@@ -157,7 +157,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
     @Override
     public @NotNull Response getMappingInstructions(final @NotNull UUID combinerId, final @NotNull UUID mappingId) {
-        final @NotNull Optional<DataCombiner> instance = combiningManager.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = dataCombinerManager.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
                     combinerId)));

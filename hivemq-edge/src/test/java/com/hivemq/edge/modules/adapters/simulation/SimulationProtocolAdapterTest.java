@@ -21,6 +21,8 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
@@ -48,9 +50,7 @@ class SimulationProtocolAdapterTest {
     private final @NotNull ProtocolAdapterInput input = mock();
     private final @NotNull SimulationSpecificAdapterConfig protocolAdapterConfig = mock();
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
-    private final @NotNull SimulationToMqttMapping simulationPollingContext =
-            new SimulationToMqttMapping("test", 1, null, null, null, null);
-    private final @NotNull BatchPollingInputImpl pollingInput = new BatchPollingInputImpl(List.of(simulationPollingContext));
+    private final @NotNull BatchPollingInputImpl pollingInput = new BatchPollingInputImpl();
     private final @NotNull PollingOutputImpl pollingOutput =
             new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
     private final @NotNull TimeWaiter timeWaiter = mock();
@@ -62,6 +62,7 @@ class SimulationProtocolAdapterTest {
                 "simulation",
                 "test-simulator"));
         when(input.getConfig()).thenReturn(protocolAdapterConfig);
+        when(input.getTags()).thenReturn(List.of(new SimulationTag("tag1", "description", new SimulationTagDefinition())));
         simulationProtocolAdapter =
                 new SimulationProtocolAdapter(SimulationProtocolAdapterInformation.INSTANCE, input, timeWaiter);
     }

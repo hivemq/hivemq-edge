@@ -64,7 +64,7 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            pollingProtocolAdapter.poll(new PollingInputImpl((List<PollingContext>) pollingContext), pollingOutput);
+            pollingProtocolAdapter.poll(new PollingInputImpl(List.of(pollingContext)), pollingOutput);
         } catch (final Throwable t) {
             pollingOutput.fail(t, null);
             throw t;
