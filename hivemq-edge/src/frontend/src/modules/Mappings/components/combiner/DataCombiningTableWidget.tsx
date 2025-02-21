@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useMemo } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup, HStack } from '@chakra-ui/react'
@@ -19,6 +20,21 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
 
   const displayColumns = useMemo<ColumnDef<DataCombining>[]>(() => {
+    const handleAdd = () => {
+      const newMapping: DataCombining = {
+        id: uuidv4(),
+        sources: {
+          primary: '',
+          primaryType: DataCombining.primaryType.TAG,
+          tags: [],
+          topicFilters: [],
+        },
+        destination: '',
+        instructions: [],
+      }
+      props.onChange([...props.value, newMapping])
+    }
+
     return [
       // {
       //   accessorKey: 'id',
