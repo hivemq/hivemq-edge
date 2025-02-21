@@ -6,7 +6,7 @@ import type { RJSFSchema } from '@rjsf/utils/src/types'
 import type { EntityReference } from '@/api/__generated__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 
-const MOCK_ADAPTER_PROPS: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>> = {
+const MOCK_ENTITY_PROPS: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>> = {
   id: 'root_sources_items',
   label: 'items',
   name: 'items',
@@ -22,10 +22,6 @@ const MOCK_ADAPTER_PROPS: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSc
         id: {
           type: 'string',
           description: 'The id of the entity being references in the combiner',
-        },
-        isPrimary: {
-          type: 'boolean',
-          description: 'The source is the primary orchestrator of the combiner',
         },
       },
     },
@@ -45,7 +41,7 @@ describe('EntityReferenceTable', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ADAPTER_PROPS} />)
+    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ENTITY_PROPS} />)
 
     cy.get('table').should('have.attr', 'aria-label', 'The list of sources available for this combiner')
     cy.get('table thead tr th').should('have.length', 2)
@@ -60,7 +56,7 @@ describe('EntityReferenceTable', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ADAPTER_PROPS} />)
+    cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ENTITY_PROPS} />)
     cy.checkAccessibility()
   })
 })

@@ -14,9 +14,5 @@ export type EntityReference = {
      * The id of the entity being references in the combiner
      */
     id: string;
-    /**
-     * The source is the primary orchestrator of the combiner
-     */
-    isPrimary?: boolean;
 };
 

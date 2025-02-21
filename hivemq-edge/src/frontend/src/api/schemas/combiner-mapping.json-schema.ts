@@ -1,5 +1,5 @@
 import type { JSONSchema7 } from 'json-schema'
-import { EntityType } from '@/api/__generated__'
+import { DataCombining, EntityType } from '@/api/__generated__'
 import { Instruction } from './definitions/Instruction.json-schema'
 
 /**
@@ -19,10 +19,6 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
         id: {
           type: 'string',
           description: 'The id of the entity being references in the combiner',
-        },
-        isPrimary: {
-          type: 'boolean',
-          description: 'The source is the primary orchestrator of the combiner',
         },
       },
     },
@@ -46,6 +42,12 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
         },
         sources: {
           properties: {
+            primary: {
+              type: 'string',
+            },
+            primaryType: {
+              enum: [DataCombining.primaryType.TAG, DataCombining.primaryType.TOPIC_FILTER],
+            },
             tags: {
               type: 'array',
               items: {
@@ -85,7 +87,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
     Combiner: {
       description:
         'A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping',
-      required: ['id', 'name'],
+      required: ['id', 'name', 'sources'],
       properties: {
         id: {
           type: 'string',
