@@ -6206,7 +6206,16 @@ components:
           description: The unique id of the data combining mapping
         sources:
           type: object
+          required:
+            - primary
+            - primaryType
           properties:
+            primary:
+              #primary must be in the list of either tags or topicFilters
+              type: string
+            primaryType:
+              type: string
+              enum: [ TAG, TOPIC_FILTER ]
             tags:
               type: array
               description: The list of tags (names) used in the data combining
@@ -6253,11 +6262,6 @@ components:
         id:
           description: The id of the entity being references in the combiner
           type: string
-        isPrimary:
-          # We are still assuming one of the reference will have a special status
-          description: The source is the primary orchestrator of the combiner
-          type: boolean
-          default: false
       required:
         - id
         - type
