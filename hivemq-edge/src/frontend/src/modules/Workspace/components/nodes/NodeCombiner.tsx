@@ -19,6 +19,8 @@ const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging })
       <ContextualToolbar id={id} title={data.name} onOpenPanel={onContextMenu} dragging={dragging} />
       <NodeWrapper
         isSelected={selected}
+        onDoubleClick={onContextMenu}
+        onContextMenu={onContextMenu}
         wordBreak="break-word"
         textAlign="center"
         borderTopRadius={30}
