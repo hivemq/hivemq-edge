@@ -60,7 +60,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull String adapterId;
     private volatile @Nullable EtherNetIP etherNetIP;
 
-    private final @NotNull Map<String, EtherIpValue> lastSeenValues;
     private final @NotNull Map<String, EipTag> tags;
 
     public EipPollingProtocolAdapter(
@@ -74,7 +73,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
-        this.lastSeenValues = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -139,22 +137,12 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         final var tagAddresses = tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
         try {
             final var readCipData = client.readTags(tagAddresses);
-
             for (int i = 0; i < readCipData.length; i++) {
                 final var cipData = readCipData[i];
                 final var tagAddress = tagAddresses[i];
-                if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
-                    handleResult(cipData, tagAddress).forEach(it -> {
-                        if (!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
-                            pollingOutput.addDataPoint(tags.get(tagAddress).getName(), it.getValue());
-                            lastSeenValues.put(tagAddress, it);
-                        }
-                    });
-                } else {
-                    handleResult(cipData, tagAddress).forEach(it -> {
-                        pollingOutput.addDataPoint(tags.get(tagAddress).getName(), it.getValue());
-                    });
-                }
+                handleResult(cipData, tagAddress).forEach(it -> {
+                    pollingOutput.addDataPoint(tags.get(tagAddress).getName(), it.getValue());
+                });
             }
             pollingOutput.finish();
         } catch (final CipException e) {
