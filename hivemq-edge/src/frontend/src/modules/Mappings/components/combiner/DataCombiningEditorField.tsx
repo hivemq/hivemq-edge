@@ -1,5 +1,7 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Select } from 'chakra-react-select'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import {
   Box,
@@ -36,6 +38,13 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
 
   const { formData, formContext } = props
 
+  const primary = useMemo(() => {
+    const tags = formData?.sources.tags || []
+    const topicFilters = formData?.sources.topicFilters || []
+
+    return [...tags, ...topicFilters].map((entity) => ({ label: entity }))
+  }, [formData])
+
   return (
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
@@ -52,6 +61,14 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
             <JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />
             <JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />
           </VStack>
+          <Box>
+            <Select<{ label: string }>
+              options={primary}
+              value={undefined}
+              isClearable
+              placeholder={'Select a primary entity ...'}
+            />
+          </Box>
         </VStack>
         <VStack justifyContent="center">
           <HStack height={38}>
