@@ -78,7 +78,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ tags, topicFilte
       isLoading={isLoading}
       isMulti
       value={values}
-      aria-label={t('EntityCreatableSelect.aria-label')}
+      aria-label={t('combiner.schema.mappings.sources.description')}
       onChange={(newValue) => {
         if (newValue) onChange(newValue)
       }}

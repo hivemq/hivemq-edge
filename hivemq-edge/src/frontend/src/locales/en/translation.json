@@ -1207,7 +1207,8 @@
     },
     "error": {
       "noDataUri": "There was a problem loading the data",
-      "noValidReference": "This is not a valid reference to a Workspace entity"
+      "noValidReference": "This is not a valid reference to a Workspace entity",
+      "invalidData": "Invalid data"
     },
     "schema": {
       "tabs": {
@@ -1230,8 +1231,22 @@
       "mappings": {
         "table": {
           "action": "Actions",
-          "delete": "Delete the source",
+          "delete": "Delete the mapping",
+          "edit": "Edit the mapping",
+          "add": "Add a new mapping",
           "source": "Source"
+        },
+        "sources": {
+          "description": "Select the tags and topic filters to combine"
+        }
+      },
+      "mapping": {
+        "panel": {
+          "header": "Data combining mapping"
+        },
+        "action": {
+          "save": "Save",
+          "cancel": "Cancel"
         }
       }
     }

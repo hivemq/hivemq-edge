@@ -28,14 +28,14 @@ interface MappingDrawerProps<T> {
 }
 
 const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onClose, onSubmit, ...props }) => {
-  const { t } = useTranslation('components')
+  const { t } = useTranslation()
 
   return (
     <Drawer isOpen={true} placement="right" size="full" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent aria-label={t('rjsf.MqttTransformationField.tabs.editor')}>
+      <DrawerContent aria-label={t('combiner.schema.mapping.panel.header')}>
         <DrawerCloseButton />
-        <DrawerHeader>{t('rjsf.MqttTransformationField.tabs.editor')}</DrawerHeader>
+        <DrawerHeader>{t('combiner.schema.mapping.panel.header')}</DrawerHeader>
 
         <DrawerBody>
           <Card>
@@ -57,9 +57,9 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
 
         <DrawerFooter>
           <ButtonGroup>
-            <Button onClick={onClose}>{t('rjsf.MqttTransformationField.actions.cancel.aria-label')}</Button>
+            <Button onClick={onClose}>{t('combiner.schema.mapping.action.cancel')}</Button>
             <Button variant="primary" type="submit" form="combiner-mapping-form">
-              {t('combiner.actions.save')}
+              {t('combiner.schema.mapping.action.save')}
             </Button>
           </ButtonGroup>
         </DrawerFooter>
