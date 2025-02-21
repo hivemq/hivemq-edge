@@ -15,8 +15,8 @@
  */
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlElement;
 import java.util.Objects;
@@ -27,17 +27,24 @@ public class InstructionEntity {
     private final @NotNull String sourceFieldName;
     @XmlElement(name = "destination")
     private final @NotNull String destinationFieldName;
+    @XmlElement(name = "origin")
+    private final @NotNull String origin;
+
 
     // no- arg for JaxB
     public InstructionEntity() {
         sourceFieldName = "";
         destinationFieldName = "";
+        origin = "";
     }
 
     public InstructionEntity(
-            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
+            final @NotNull String sourceFieldName,
+            final @NotNull String destinationFieldName,
+            final @NotNull String origin) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
+        this.origin = origin;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -48,18 +55,26 @@ public class InstructionEntity {
         return sourceFieldName;
     }
 
+    public @NotNull String getOrigin() {
+        return origin;
+    }
+
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.sourceFieldName(), model.destinationFieldName());
+        return new InstructionEntity(model.sourceFieldName(), model.destinationFieldName(), model.origin());
     }
 
     public @NotNull Instruction to() {
-        return new Instruction(getSourceFieldName(), getDestinationFieldName());
+        return new Instruction(getSourceFieldName(), getDestinationFieldName(), getOrigin());
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final InstructionEntity that = (InstructionEntity) o;
         return Objects.equals(getSourceFieldName(), that.getSourceFieldName()) &&
                 Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
