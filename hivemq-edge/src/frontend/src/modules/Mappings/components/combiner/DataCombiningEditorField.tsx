@@ -24,14 +24,14 @@ import {
 import { FaRightFromBracket } from 'react-icons/fa6'
 
 import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks'
-import type { DataCombining } from '@/api/__generated__'
+import { DataCombining } from '@/api/__generated__'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import ErrorMessage from '@/components/ErrorMessage'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
+import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
-import type { CombinerContext } from '../../types'
 
 const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -53,7 +53,21 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
             <CombinedEntitySelect
               tags={formData?.sources?.tags}
               topicFilters={formData?.sources?.topicFilters}
-              options={formContext?.sources}
+              optionQueries={formContext?.sources}
+              onChange={(values) => {
+                if (!formData) return
+                const tag: string[] = []
+                const filter: string[] = []
+                values.forEach((entity) => {
+                  if (entity.type === DataCombining.primaryType.TAG) tag.push(entity.value)
+                  if (entity.type === DataCombining.primaryType.TOPIC_FILTER) filter.push(entity.value)
+                })
+
+                props.onChange({
+                  ...formData,
+                  sources: { ...formData.sources, tags: tag, topicFilters: filter },
+                })
+              }}
             />
           </Box>
           <VStack height={500} overflow={'auto'} alignItems={'flex-start'} tabIndex={0}>

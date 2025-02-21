@@ -47,7 +47,9 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
                 uiSchema={props.uiSchema}
                 formData={props.formData}
                 formContext={props.formContext}
-                onSubmit={(e) => console.log('XXXXXXXX eee sub', e)}
+                onSubmit={(e) => {
+                  onSubmit(e.formData)
+                }}
               />
             </CardBody>
           </Card>

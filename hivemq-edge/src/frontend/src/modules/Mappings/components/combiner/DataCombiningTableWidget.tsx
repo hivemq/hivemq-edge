@@ -8,7 +8,7 @@ import { ButtonGroup, HStack } from '@chakra-ui/react'
 import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
-import type { DataCombining } from '@/api/__generated__'
+import { DataCombining } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
@@ -18,6 +18,19 @@ import type { CombinerContext } from '../../types'
 export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
+
+  const handleOnSubmit = (data: DataCombining | undefined) => {
+    if (selectedItem === undefined) return
+    if (data) {
+      if (!props.value[selectedItem]) throw new Error('Invalid data')
+      if (data.id === props.value[selectedItem].id) throw new Error('Invalid data')
+
+      const newValues = [...props.value]
+      newValues[selectedItem] = data
+      props.onChange(newValues)
+    }
+    setSelectedItem(undefined)
+  }
 
   const displayColumns = useMemo<ColumnDef<DataCombining>[]>(() => {
     const handleAdd = () => {
@@ -76,13 +89,13 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
         footer: () => {
           return (
             <ButtonGroup isAttached size="sm">
-              <IconButton aria-label={t('combiner.schema.mappings.table.add')} icon={<LuPlus />} isDisabled={true} />
+              <IconButton aria-label={t('combiner.schema.mappings.table.add')} icon={<LuPlus />} onClick={handleAdd} />
             </ButtonGroup>
           )
         },
       },
     ]
-  }, [t])
+  }, [props, t])
 
   return (
     <>
@@ -97,7 +110,7 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
       {selectedItem != undefined && (
         <DataCombiningEditorDrawer
           onClose={() => setSelectedItem(undefined)}
-          onSubmit={() => console.log('XXX')}
+          onSubmit={handleOnSubmit}
           schema={props.schema.items as RJSFSchema}
           uiSchema={props.uiSchema?.items}
           formData={props.value[selectedItem]}
