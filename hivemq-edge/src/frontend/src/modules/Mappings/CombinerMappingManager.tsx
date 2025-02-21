@@ -76,7 +76,7 @@ const CombinerMappingManager: FC = () => {
       {
         success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
         error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
-        loading: { title: t('combiner.toast.update.title'), description: t('combiner.update.loading') },
+        loading: { title: t('combiner.toast.update.title'), description: t('combiner.toast.loading') },
       }
     )
   }

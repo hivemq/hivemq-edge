@@ -22,8 +22,8 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
   const handleOnSubmit = (data: DataCombining | undefined) => {
     if (selectedItem === undefined) return
     if (data) {
-      if (!props.value[selectedItem]) throw new Error('Invalid data')
-      if (data.id === props.value[selectedItem].id) throw new Error('Invalid data')
+      if (!props.value[selectedItem]) throw new Error(t('combiner.error.invalidData'))
+      if (data.id !== props.value[selectedItem].id) throw new Error(t('combiner.error.invalidData'))
 
       const newValues = [...props.value]
       newValues[selectedItem] = data

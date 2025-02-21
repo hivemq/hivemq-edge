@@ -1221,7 +1221,7 @@
         "description": "A short description for the combiner"
       },
       "sources": {
-        "description": "The list of sources available for this combiner",
+        "description": "The list of data sources available for this combiner",
         "table": {
           "action": "Actions",
           "delete": "Delete the source",
