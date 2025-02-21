@@ -63,9 +63,14 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
             <SelectTopic
               isMulti={false}
               isCreatable={true}
-              id={'id'}
+              id={'destination'}
               value={formData?.destination || null}
-              onChange={(e) => console.log(e)}
+              onChange={(e) => {
+                if (!props.formData) return
+
+                if (e && typeof e === 'string') props.onChange({ ...props.formData, destination: e })
+                else if (!e) props.onChange({ ...props.formData, destination: '' })
+              }}
             />
           </Box>
           <ButtonGroup size="sm" variant="outline" justifyContent={'flex-end'}>
