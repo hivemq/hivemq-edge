@@ -47,7 +47,7 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
               options={formContext?.sources}
             />
           </Box>
-          <VStack height={500} overflow={'auto'} alignItems={'flex-start'}>
+          <VStack height={500} overflow={'auto'} alignItems={'flex-start'} tabIndex={0}>
             <JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_PLAIN, title: 'my/tag/t1' }} hasExamples />
             <JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />
             <JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />
