@@ -95,7 +95,6 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
                 final int minDelay = adapterConfig.getMinDelay();
                 final int maxDelay = adapterConfig.getMaxDelay();
                 if (minDelay > maxDelay) {
-                    System.out.println("2");
                     pollingOutput.fail(String.format(
                             "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
                             minDelay,
