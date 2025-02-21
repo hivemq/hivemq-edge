@@ -42,7 +42,7 @@ const CombinerMappingManager: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { combinerId } = useParams()
-  const { nodes } = useWorkspaceStore()
+  const { nodes, onUpdateNode } = useWorkspaceStore()
   const toast = useToast()
   const updateCombiner = useUpdateCombiner()
 
@@ -61,16 +61,24 @@ const CombinerMappingManager: FC = () => {
     navigate('/workspace')
   }
 
+  const handleUpdateCombiner = (data: Combiner) => {
+    if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data)
+    handleClose()
+  }
+
   const handleOnSubmit = (data: IChangeEvent) => {
     if (!data.formData || !combinerId) return
 
     const promise = updateCombiner.mutateAsync({ combinerId: combinerId, requestBody: data.formData })
 
-    toast.promise(promise.then(handleClose), {
-      success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
-      error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
-      loading: { title: t('combiner.toast.update.title'), description: t('combiner.update.loading') },
-    })
+    toast.promise(
+      promise.then(() => handleUpdateCombiner(data.formData)),
+      {
+        success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
+        error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
+        loading: { title: t('combiner.toast.update.title'), description: t('combiner.update.loading') },
+      }
+    )
   }
 
   useEffect(() => {
