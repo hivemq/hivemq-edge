@@ -90,11 +90,13 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
             <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('combiner.schema.mappings.table.edit')}
+                data-testid={'combiner-mapping-list-edit'}
                 icon={<LuPencil />}
                 onClick={() => setSelectedItem(info.row.index)}
               />
               <IconButton
                 aria-label={t('combiner.schema.mappings.table.delete')}
+                data-testid={'combiner-mapping-list-delete'}
                 icon={<LuTrash />}
                 onClick={() => handleDelete(info.row.index)}
               />{' '}
@@ -104,7 +106,12 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         footer: () => {
           return (
             <ButtonGroup isAttached size="sm">
-              <IconButton aria-label={t('combiner.schema.mappings.table.add')} icon={<LuPlus />} onClick={handleAdd} />
+              <IconButton
+                data-testid={'combiner-mapping-list-add'}
+                aria-label={t('combiner.schema.mappings.table.add')}
+                icon={<LuPlus />}
+                onClick={handleAdd}
+              />
             </ButtonGroup>
           )
         },
