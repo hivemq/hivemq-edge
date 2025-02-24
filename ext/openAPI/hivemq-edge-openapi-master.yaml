@@ -6253,8 +6253,17 @@ components:
               items:
                 type: string
         destination:
-          type: string
-          format: mqtt-topic
+          type: object
+          properties:
+            topic:
+              type: string
+              format: mqtt-topic
+            schema:
+              # TODO This is a duplicate from the TopicSchema; reuse as a self-contained Schema
+              type: string
+              format: data-url
+              description: The optional json schema for this topic filter in the data
+                uri format.
         instructions:
           type: array
           description: List of instructions to be applied to incoming data
