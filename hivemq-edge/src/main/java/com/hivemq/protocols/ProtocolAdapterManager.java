@@ -173,9 +173,11 @@ public class ProtocolAdapterManager {
                             protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
-                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
+                    new ModuleServicesPerModuleImpl(
+                            moduleServices.adapterPublishService(),
                             eventService,
-                            protocolAdapterWritingService);
+                            protocolAdapterWritingService,
+                            tagManager);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(config.getAdapterId(),
