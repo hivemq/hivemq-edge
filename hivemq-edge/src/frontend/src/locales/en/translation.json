@@ -1210,7 +1210,7 @@
       "noDataUri": "There was a problem loading the data",
       "noValidReference": "This is not a valid reference to a Workspace entity",
       "invalidData": "Invalid data",
-      "noSchemaLoadedYet": "There are no schema available yet"
+      "noSchemaLoadedYet": "There are no schemas available yet"
     },
     "schema": {
       "tabs": {
