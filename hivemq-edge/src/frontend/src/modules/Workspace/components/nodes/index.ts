@@ -5,5 +5,6 @@ import NodeEdge from './NodeEdge.tsx'
 import NodeListener from './NodeListener.tsx'
 import NodeHost from './NodeHost.tsx'
 import NodeDevice from './NodeDevice.tsx'
+import NodeCombiner from './NodeCombiner'
 
-export { NodeGroup, NodeAdapter, NodeBridge, NodeEdge, NodeListener, NodeHost, NodeDevice }
+export { NodeGroup, NodeAdapter, NodeBridge, NodeEdge, NodeListener, NodeHost, NodeDevice, NodeCombiner }

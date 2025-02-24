@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
@@ -62,7 +62,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     }
 
     protected @NotNull String createConnectionString(final @NotNull T config) {
-        String queryString = connectionQueryStringProvider.getConnectionQueryString(config);
+        final String queryString = connectionQueryStringProvider.getConnectionQueryString(config);
         if (queryString != null && !queryString.trim().isEmpty()) {
             return String.format("%s://%s:%s?%s",
                     getProtocol().trim(),
@@ -79,7 +79,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             if (plcConnection == null) {
                 synchronized (lock) {
                     if (plcConnection == null) {
-                        String connectionString = createConnectionString(config);
+                        final String connectionString = createConnectionString(config);
                         if (log.isTraceEnabled()) {
                             log.trace("Connecting via PLC4X to {}.", connectionString);
                         }
@@ -126,17 +126,17 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         return plcConnection != null && plcConnection.isConnected();
     }
 
-    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull PollingContext plc4xPollingContext) {
+    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull Plc4xTag tag) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().canRead()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if (log.isTraceEnabled()) {
-            log.trace("Sending direct-read request to connection for {}.", plc4xPollingContext.getTagName());
+            log.trace("Sending direct-read request to connection for {}.", tag.getName());
         }
-        PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
-        builder.addTagAddress(plc4xPollingContext.getTagName(), getTagAddressForSubscription(plc4xPollingContext));
-        PlcReadRequest readRequest = builder.build();
+        final PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
+        builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag));
+        final PlcReadRequest readRequest = builder.build();
         //Ok - seems the reads are not thread safe
         synchronized (lock) {
             return readRequest.execute();
@@ -145,19 +145,19 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
 
     public @NotNull CompletableFuture<? extends PlcSubscriptionResponse> subscribe(
-            final @NotNull PollingContext subscription,
+            final @NotNull Plc4xTag tag,
             final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().canSubscribe()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if (log.isTraceEnabled()) {
-            log.trace("Sending subscribe request to connection for {}.", subscription.getTagName());
+            log.trace("Sending subscribe request to connection for {}.", tag.getName());
         }
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
 
         //TODO we're only registering for state change, could also register events
-        builder.addChangeOfStateTagAddress(subscription.getTagName(), getTagAddressForSubscription(subscription));
+        builder.addChangeOfStateTagAddress(tag.getName(), getTagAddressForSubscription(tag));
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
@@ -165,7 +165,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             if (throwable != null) {
                 log.warn("Connection subscription encountered an error;", throwable);
             } else {
-                for (String subscriptionName : plcSubscriptionResponse.getTagNames()) {
+                for (final String subscriptionName : plcSubscriptionResponse.getTagNames()) {
                     final PlcSubscriptionHandle subscriptionHandle =
                             plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
                     subscriptionHandle.register(consumer);
@@ -188,5 +188,5 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     /**
      * Each adapter type will have its own address format. The implementation should provide the defaults
      */
-    protected abstract @NotNull String getTagAddressForSubscription(@NotNull PollingContext subscription);
+    protected abstract @NotNull String getTagAddressForSubscription(@NotNull Plc4xTag tag);
 }

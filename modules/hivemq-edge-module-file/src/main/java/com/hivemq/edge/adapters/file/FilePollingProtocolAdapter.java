@@ -24,8 +24,10 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.payload.FileDataPoint;
@@ -39,7 +41,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 
-public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
+public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
@@ -47,7 +49,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull List<FileTag> tags;
 
     public FilePollingProtocolAdapter(
             final @NotNull String adapterId,
@@ -56,7 +58,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
         this.adapterId = adapterId;
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream().map(tag -> (FileTag)tag).toList();
         this.protocolAdapterState = input.getProtocolAdapterState();
     }
 
@@ -92,34 +94,25 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
-                .findFirst()
-                .ifPresentOrElse(def -> pollFile(pollingOutput, (FileTag) def),
-                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-    }
-
-    private static void pollFile(
-            final @NotNull PollingOutput pollingOutput, final @NotNull FileTag fileTag) {
-        final String absolutePathToFle = fileTag.getDefinition().getFilePath();
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+        String absolutePathToFle = "";
         try {
-            final Path path = Path.of(absolutePathToFle);
-            final long length = path.toFile().length();
-            final int limit = 64_000; // not a constant to have a more compact code example
-            if (length > limit) {
-                pollingOutput.fail(String.format("File '%s' of size '%d' exceeds the limit '%d'.",
-                        path.toAbsolutePath(),
-                        length,
-                        limit));
-                return;
+            for (final FileTag fileTag : tags) {
+                absolutePathToFle = fileTag.getDefinition().getFilePath();
+                final var path = Path.of(absolutePathToFle);
+                final var length = path.toFile().length();
+                final var limit = 64_000; // not a constant to have a more compact code example
+                if (length > limit) {
+                    pollingOutput.fail(String.format("File '%s' of size '%d' exceeds the limit '%d'.",
+                            path.toAbsolutePath(),
+                            length,
+                            limit));
+                    return;
+                }
+                final var fileContentArray = Files.readAllBytes(path);
+                final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
+                pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             }
-            final byte[] fileContent = Files.readAllBytes(path);
-            final Object value = fileTag.getDefinition().getContentType().map(fileContent);
-            pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
-            pollingOutput.finish();
         } catch (final IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
@@ -129,6 +122,12 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter {
                     e.getMessage());
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         }
+        pollingOutput.finish();
+    }
+
+    private static void pollFile(
+            final @NotNull PollingOutput pollingOutput, final @NotNull FileTag fileTag) {
+
     }
 
     @Override

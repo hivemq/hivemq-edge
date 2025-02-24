@@ -15,11 +15,12 @@
  */
 package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
+import org.assertj.core.groups.Tuple;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -35,7 +36,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
@@ -89,11 +89,19 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
-        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
-                protocolAdapter.getProtocolAdapterState().getConnectionStatus());
+        assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED)
+                .isEqualTo(protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
-        final PUBLISH publish = expectAdapterPublish();
+        final var received = expectAdapterPublish();
         protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
-        assertThat(new String(publish.getPayload())).contains("\"value\":" + jsonValue);
+
+        assertThat(received)
+                .extractingByKey(nodeId)
+                .satisfies(dataPoints -> {
+                    assertThat(dataPoints)
+                            .hasSize(1)
+                            .extracting(DataPoint::getTagName, DataPoint::getTagValue)
+                            .containsExactly(Tuple.tuple(nodeId, "{\"value\":" + jsonValue + "}"));
+                });
     }
 }

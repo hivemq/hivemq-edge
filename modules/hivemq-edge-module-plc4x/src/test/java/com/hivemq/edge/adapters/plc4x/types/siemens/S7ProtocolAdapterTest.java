@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
@@ -50,7 +49,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%IX200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -58,7 +57,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.WORD));
         assertEquals("%IW200:WORD",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -66,7 +65,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%IX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -74,7 +73,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23.DBW200", Plc4xDataType.DATA_TYPE.WCHAR));
         assertEquals("%DB23.DBX200:WCHAR",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -82,7 +81,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23.DBD200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -90,7 +89,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%DB23:200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -98,7 +97,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB100:DBX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:DBX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -106,7 +105,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23:200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -114,7 +113,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
@@ -124,8 +123,8 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
-            return super.createTagAddressForSubscription(subscription, tag);
+        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
+            return super.createTagAddressForSubscription(tag);
         }
     }
 

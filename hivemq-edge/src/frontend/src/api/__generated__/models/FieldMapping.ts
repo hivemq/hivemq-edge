@@ -10,9 +10,8 @@ import type { Instruction } from './Instruction';
  */
 export type FieldMapping = {
     /**
-     * TODO[28498] Changed manually until backend fixed
      * List of instructions to be applied to incoming data
      */
-    instructions?: Array<Instruction>;
+    instructions: Array<Instruction>;
 };
 

@@ -4,6 +4,7 @@ import { Card, CardBody, HStack, Icon, Image, StackDivider, Text, VStack } from 
 import { PiBridgeThin } from 'react-icons/pi'
 import { GrStatusUnknown } from 'react-icons/gr'
 import { ImMakeGroup } from 'react-icons/im'
+import { MdScheduleSend } from 'react-icons/md'
 
 import edgeLogo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
@@ -40,6 +41,8 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
         return (
           <Image data-testid="node-type-icon" data-nodeicon={type} objectFit="cover" w="24px" src={edgeLogo} alt="SS" />
         )
+      case NodeTypes.COMBINER_NODE:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={MdScheduleSend} fontSize="24px" />
 
       case NodeTypes.DEVICE_NODE:
         return (

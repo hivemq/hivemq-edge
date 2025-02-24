@@ -6,6 +6,9 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_THEME: Partial<WithCSSVar<Dict>> = {
   colors: {
+    brand: {
+      500: '#003e6e',
+    },
     status: {
       connected: {
         500: '#38A169',

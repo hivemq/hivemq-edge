@@ -27,6 +27,7 @@ import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
+import com.hivemq.api.resources.impl.CombinersResourceImpl;
 import com.hivemq.api.resources.impl.EventResourceImpl;
 import com.hivemq.api.resources.impl.FrontendResourceImpl;
 import com.hivemq.api.resources.impl.GatewayResourceImpl;
@@ -40,6 +41,7 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
+import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.EventsApi;
 import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.GatewayEndpointApi;
@@ -95,7 +97,8 @@ public abstract class ApiModule {
     abstract @NotNull PayloadSamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
     @Binds
     abstract @NotNull TopicFiltersApi topicFilterApi(@NotNull TopicFilterResourceImpl topicFilterResource);
-
+    @Binds
+    abstract @NotNull CombinersApi combinersApi(@NotNull CombinersResourceImpl bridgeResource);
 
     @Provides
     @Singleton

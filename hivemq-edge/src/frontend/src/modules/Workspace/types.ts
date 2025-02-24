@@ -25,6 +25,7 @@ export enum NodeTypes {
   CLUSTER_NODE = 'CLUSTER_NODE',
   HOST_NODE = 'HOST_NODE',
   DEVICE_NODE = 'DEVICE_NODE',
+  COMBINER_NODE = 'COMBINER_NODE',
 }
 
 export enum EdgeTypes {
@@ -69,6 +70,7 @@ export interface WorkspaceAction {
   onDeleteNode: (type: NodeTypes, adapterId: string) => void
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
+  onUpdateNode: <T>(id: string, data: T) => void
 }
 
 export interface TopicTreeMetadata {

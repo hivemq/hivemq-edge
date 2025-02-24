@@ -56,23 +56,22 @@ describe('NodeGroup', () => {
       .should('contain.text', 'The group title')
       .should('have.attr', 'data-groupopen', 'true')
 
-    cy.get('[role="toolbar"] button').should('have.length', 4)
-    cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Collapse group')
-    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Ungroup')
-    cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Group the selected adapters')
+    cy.getByTestId('node-group-toolbar-expand').should('have.attr', 'aria-label', 'Collapse group')
+    cy.getByTestId('node-group-toolbar-ungroup').should('have.attr', 'aria-label', 'Ungroup')
+    cy.getByTestId('node-group-toolbar-group').should('have.attr', 'aria-label', 'Group the selected adapters')
 
-    cy.get('[role="toolbar"] button').eq(3).should('have.attr', 'aria-label', 'Open the overview panel')
+    cy.getByTestId('node-group-toolbar-panel').should('have.attr', 'aria-label', 'Open the overview panel')
 
-    cy.get('[role="toolbar"] button').eq(0).click()
+    cy.getByTestId('node-group-toolbar-expand').click()
     cy.get(`#node-group-${MOCK_NODE_GROUP.id}`).should('have.attr', 'data-groupopen', 'false')
 
     cy.get('[role="alertdialog"]').should('not.exist')
-    cy.get('[role="toolbar"] button').eq(1).click()
+    cy.getByTestId('node-group-toolbar-ungroup').click()
     cy.get('[role="alertdialog"]').should('contain.text', 'Ungroup the adapters')
     cy.getByTestId('confirmation-cancel').click()
 
     cy.getByTestId('test-navigate-pathname').should('have.text', '/')
-    cy.get('[role="toolbar"] button').eq(3).click()
+    cy.getByTestId('node-group-toolbar-panel').click()
     cy.getByTestId('test-navigate-pathname').should('have.text', `/workspace/group/${MOCK_NODE_GROUP.id}`)
   })
 

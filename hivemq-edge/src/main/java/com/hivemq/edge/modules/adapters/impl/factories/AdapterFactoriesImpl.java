@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl.factories;
 
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -25,6 +26,18 @@ public class AdapterFactoriesImpl implements AdapterFactories {
 
     @Override
     public @NotNull DataPointFactory dataPointFactory() {
-        return DataPointImpl::new;
+        return new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+
+            @Override
+            public @NotNull DataPoint createJsonDataPoint(
+                    final @NotNull String tagName,
+                    final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue, true);
+            }
+        };
     }
 }

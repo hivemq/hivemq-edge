@@ -39,6 +39,7 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, draggin
         <ToolbarButtonGroup>
           <IconButton
             icon={<PLCTagIcon />}
+            data-testid="node-device-toolbar-metadata"
             aria-label={t('workspace.toolbar.command.device.metadata')}
             onClick={onContextMenu}
           />

@@ -49,7 +49,7 @@ public class InstructionEntity {
     }
 
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.getSourceFieldName(), model.getDestinationFieldName());
+        return new InstructionEntity(model.sourceFieldName(), model.destinationFieldName());
     }
 
     public @NotNull Instruction to() {

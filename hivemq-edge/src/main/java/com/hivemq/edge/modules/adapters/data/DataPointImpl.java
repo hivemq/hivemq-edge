@@ -24,10 +24,16 @@ import java.util.Objects;
 public class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
     private final @NotNull String tagName;
+    private final @NotNull boolean treatAsJson;
 
-    public DataPointImpl(final @NotNull String tagName, final @NotNull Object tagValue) {
+    public DataPointImpl(final @NotNull String tagName, final @NotNull Object tagValue, final boolean treatAsJson) {
         this.tagName = tagName;
         this.tagValue = tagValue;
+        this.treatAsJson = treatAsJson;
+    }
+
+    public DataPointImpl(final @NotNull String tagName, final @NotNull Object tagValue) {
+        this(tagName, tagValue, false);
     }
 
     @Override
@@ -41,19 +47,35 @@ public class DataPointImpl implements DataPoint {
     }
 
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public @NotNull boolean treatTagValueAsJson() {
+        return treatAsJson;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         final DataPointImpl dataPoint = (DataPointImpl) o;
-        return Objects.equals(tagValue, dataPoint.tagValue) && Objects.equals(tagName, dataPoint.tagName);
+        return treatAsJson == dataPoint.treatAsJson &&
+                Objects.equals(getTagValue(), dataPoint.getTagValue()) &&
+                Objects.equals(getTagName(), dataPoint.getTagName());
+    }
+
+    @Override
+    public String toString() {
+        return "DataPointImpl{" +
+                "tagValue=" +
+                tagValue +
+                ", tagName='" +
+                tagName +
+                '\'' +
+                ", treatAsJson=" +
+                treatAsJson +
+                '}';
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tagValue, tagName);
+        return Objects.hash(getTagValue(), getTagName(), treatAsJson);
     }
 }

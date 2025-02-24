@@ -99,7 +99,7 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
           )}
         </DrawerBody>
         <DrawerFooter>
-          {config.environment === 'development' && (
+          {config.isDevMode && (
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-alerts" mb="0">
                 {t('modals.native')}

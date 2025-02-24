@@ -15,6 +15,7 @@ import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
+import { handlers as combinerHandlers } from '@/api/hooks/useCombiners/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -27,7 +28,7 @@ vi.mock('@chakra-ui/react', async () => {
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     // window.localStorage.clear()
-    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers)
+    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers, ...combinerHandlers)
   })
 
   afterEach(() => {
@@ -36,9 +37,9 @@ describe('useGetFlowElements', () => {
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 5, 4],
-    [{ showGateway: true }, 6, 5],
-    [{ showGateway: false }, 5, 4],
+    [{}, 8, 8],
+    [{ showGateway: true }, 9, 9],
+    [{ showGateway: false }, 8, 8],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider(defaults) })
 

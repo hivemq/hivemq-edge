@@ -38,7 +38,10 @@ const PropertyItem: FC<PropertyItemProps> = ({
   }, [isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
-  const type = t('GenericSchema.data.type', { context: property.type || 'null', arrayType: property.arrayType })
+  const type = t('GenericSchema.data.type', {
+    context: property.type || 'null',
+    arrayType: property.arrayType || 'object',
+  })
   // TODO[NVL] key should be use for mapping. But what to use for display? key or title or both ?
   const propertyName = property.title
   const path = [...property.path, property.key].join('.')

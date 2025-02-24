@@ -53,12 +53,14 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
         <ToolbarButtonGroup>
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}
+            data-testid="node-adapter-toolbar-northbound"
             aria-label={t('workspace.toolbar.command.mappings.northbound')}
             onClick={() => navigate(`${adapterNavPath}/northbound`)}
           />
           {bidirectional && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
+              data-testid="node-adapter-toolbar-southbound"
               aria-label={t('workspace.toolbar.command.mappings.southbound')}
               onClick={() => navigate(`${adapterNavPath}/southbound`)}
             />

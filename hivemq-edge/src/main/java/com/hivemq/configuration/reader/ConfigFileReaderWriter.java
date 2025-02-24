@@ -137,7 +137,7 @@ public class ConfigFileReaderWriter {
         final AtomicLong fileModifiedTimestamp = new AtomicLong();
         try {
             fileModifiedTimestamp.set(Files.getLastModifiedTime(configFile.toPath()).toMillis());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException("Unable to read last modified time from " + configFile.getAbsolutePath(), e);
         }
 
@@ -168,7 +168,7 @@ public class ConfigFileReaderWriter {
                             log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
                             System.exit(0);
                         }
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
                     }
                 });
@@ -187,12 +187,12 @@ public class ConfigFileReaderWriter {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Map<Path, Long> findFilesToWatch(HiveMQConfigEntity entity) {
+    public static Map<Path, Long> findFilesToWatch(final HiveMQConfigEntity entity) {
         final Map<Path, Long> paths = new ConcurrentHashMap<>();
 
         entity.getBridgeConfig().forEach(cfg -> {
@@ -203,7 +203,7 @@ public class ConfigFileReaderWriter {
                     final Path path = Paths.get(keyStore.getPath());
                     try {
                         paths.put(path, Files.getLastModifiedTime(path).toMillis());
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -212,7 +212,7 @@ public class ConfigFileReaderWriter {
                     final Path path = Paths.get(trustStore.getPath());
                     try {
                         paths.put(path, Files.getLastModifiedTime(path).toMillis());
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -223,7 +223,7 @@ public class ConfigFileReaderWriter {
             final Path path = Paths.get(tls.getKeystoreEntity().getPath());
             try {
                 paths.put(path, Files.getLastModifiedTime(path).toMillis());
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -409,6 +409,9 @@ public class ConfigFileReaderWriter {
                 }
 
                 configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
+
+                configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
+
 
                 if (!validationErrors.isEmpty()) {
                     throw new JAXBException("Parsing failed");

@@ -16,11 +16,10 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -31,7 +30,6 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
@@ -50,17 +48,17 @@ import java.util.List;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter {
+public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<Tag> tags;
-    private final @NotNull List<PollingContext> northboundMappings;
+    private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull String adapterId;
+    private final @NotNull DataPointFactory dataPointFactory;
     private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper;
 
     public OpcUaProtocolAdapter(
@@ -70,10 +68,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.moduleServices = input.moduleServices();
-        this.northboundMappings = input.getPollingContexts();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
     }
 
     @Override
@@ -84,20 +82,22 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+
         if (opcUaClientWrapper == null) {
             synchronized (this) {
                 if (opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(adapterId,
+                        OpcUaClientWrapper.createAndConnect(
+                                adapterId,
                                 adapterConfig,
                                 tags,
-                                northboundMappings,
                                 protocolAdapterState,
                                 moduleServices.eventService(),
-                                moduleServices.adapterPublishService(),
+                                input.moduleServices().protocolAdapterTagStreamingService(),
                                 adapterInformation.getProtocolId(),
                                 protocolAdapterMetricsService,
-                                output).thenApply(wrapper -> {
+                                output,
+                                dataPointFactory).thenApply(wrapper -> {
                             protocolAdapterState.setConnectionStatus(CONNECTED);
                             output.startedSuccessfully();
                             opcUaClientWrapper = wrapper;
@@ -185,7 +185,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             tags.stream()
                     .filter(tag -> tag.getName().equals(input.getTagName()))
                     .findFirst()
-                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
+                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema(def, output),
                             () -> {
                                 log.warn(
                                         "The tag '{}' was not found during creation of schema for tags on remote plc. Available tags: {}",

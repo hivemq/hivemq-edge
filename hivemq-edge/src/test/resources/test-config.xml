@@ -343,6 +343,7 @@
             </northboundMappings>
         </protocol-adapter>
     </protocol-adapters>
+    <data-combiners/>
     <modules/>
     <internal/>
 </hivemq>

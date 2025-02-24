@@ -22,7 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.binaryschema.Struct;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
@@ -60,13 +60,11 @@ public class OpcUaJsonPayloadConverter {
 
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
-    private static @NotNull PollingContext pollingContext;
+    private static @NotNull OpcuaTag tag;
 
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull SerializationContext serializationContext,
-            final @NotNull DataValue dataValue,
-            final @NotNull PollingContext pollingContext) {
-        OpcUaJsonPayloadConverter.pollingContext = pollingContext;
+            final @NotNull DataValue dataValue) {
         final Object value = dataValue.getValue().getValue();
         final JsonObject jsonObject = new JsonObject();
 
@@ -74,14 +72,6 @@ public class OpcUaJsonPayloadConverter {
             addDataValueFields((DataValue) value, jsonObject);
         }
         jsonObject.add("value", convertValue(value, serializationContext));
-
-        if (pollingContext.getIncludeTimestamp()) {
-            jsonObject.addProperty("timestamp", System.currentTimeMillis());
-        }
-
-        if (pollingContext.getIncludeTagNames()) {
-            jsonObject.addProperty("tag", pollingContext.getTagName());
-        }
 
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }

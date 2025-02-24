@@ -49,6 +49,6 @@ public class InstructionModel {
     }
 
     public static InstructionModel from(final @NotNull Instruction instruction) {
-        return new InstructionModel(instruction.getSourceFieldName(), instruction.getDestinationFieldName());
+        return new InstructionModel(instruction.sourceFieldName(), instruction.destinationFieldName());
     }
 }

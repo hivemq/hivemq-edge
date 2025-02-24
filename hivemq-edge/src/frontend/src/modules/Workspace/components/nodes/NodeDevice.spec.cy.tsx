@@ -30,11 +30,10 @@ describe('NodeDevice', () => {
       />
     )
     cy.getByTestId('device-description').should('contain', 'Simulation')
-    cy.get('[role="toolbar"] button').should('have.length', 2)
-    cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Edit device tags')
+    cy.getByTestId('node-device-toolbar-metadata').should('have.attr', 'aria-label', 'Edit device tags')
 
     cy.getByTestId('test-navigate-pathname').should('have.text', '/')
-    cy.get('[role="toolbar"] button').eq(0).click()
+    cy.getByTestId('node-device-toolbar-metadata').click()
     cy.getByTestId('test-navigate-pathname').should('have.text', `/workspace/node/${MOCK_NODE_DEVICE.id}`)
   })
 

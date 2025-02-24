@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.adapters.file.FilePollingProtocolAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -36,21 +35,18 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
 
     @Override
     public @NotNull List<byte[]> convertToJson(
-            final @NotNull ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
+            @NotNull final List<DataPoint> dataPoints,
+            @NotNull final PollingContext pollingContext,
+            @NotNull final ObjectMapper objectMapper) {
         final List<byte[]> payloads = new ArrayList<>();
-        for (final DataPoint dataPoint : sample.getDataPoints()) {
+        for (final DataPoint dataPoint : dataPoints) {
             try {
-
-                final PollingContext pollingContext = sample.getPollingContext();
-
                 final FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
                 final FilePayload value = new FilePayload(pollingContext.getUserProperties(),
                         dataPoint.getTagValue(),
                         fileDataPoint.getTag().getDefinition().getContentType(),
                         pollingContext.getIncludeTagNames() ? dataPoint.getTagName() : null,
                         pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null);
-
-
                 payloads.add(objectMapper.writeValueAsBytes(value));
             } catch (final JsonProcessingException e) {
                 LOG.warn("Unable to create payload for data data point '{}'. Skipping this data point.", dataPoint);
@@ -58,4 +54,5 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
         }
         return payloads;
     }
+
 }

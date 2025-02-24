@@ -15,27 +15,9 @@
  */
 package com.hivemq.persistence.mappings.fieldmapping;
 
-import com.hivemq.api.model.mappings.fieldmapping.InstructionModel;
 import org.jetbrains.annotations.NotNull;
 
-public class Instruction {
-
-    private final @NotNull String destinationFieldName;
-    private final @NotNull String sourceFieldName;
-
-    public Instruction(
-            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
-        this.sourceFieldName = sourceFieldName;
-        this.destinationFieldName = destinationFieldName;
-    }
-
-    public @NotNull String getDestinationFieldName() {
-        return destinationFieldName;
-    }
-
-    public @NotNull String getSourceFieldName() {
-        return sourceFieldName;
-    }
+public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName) {
 
     public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
         return new Instruction(model.getSource(), model.getDestination());

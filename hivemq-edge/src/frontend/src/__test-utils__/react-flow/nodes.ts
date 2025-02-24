@@ -1,12 +1,13 @@
 import type { NodeProps } from 'reactflow'
 import { Position } from 'reactflow'
-import type { Listener } from '@/api/__generated__'
+import type { Combiner, Listener } from '@/api/__generated__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import type { DeviceMetadata, Group } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { mockCombiner } from '../../api/hooks/useCombiners/__handlers__'
 
 export const MOCK_DEFAULT_NODE = {
   selected: false,
@@ -61,5 +62,12 @@ export const MOCK_NODE_DEVICE: NodeProps<DeviceMetadata> = {
   id: 'idDevice',
   type: NodeTypes.DEVICE_NODE,
   data: { ...mockProtocolAdapter, sourceAdapterId: MOCK_ADAPTER_ID },
+  ...MOCK_DEFAULT_NODE,
+}
+
+export const MOCK_NODE_COMBINER: NodeProps<Combiner> = {
+  id: 'idCombiner',
+  type: NodeTypes.COMBINER_NODE,
+  data: mockCombiner,
   ...MOCK_DEFAULT_NODE,
 }
