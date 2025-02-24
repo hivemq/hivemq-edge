@@ -93,6 +93,13 @@ abstract class AbstractOpcUaPayloadConverterTest {
             public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue);
             }
+
+            @Override
+            public @NotNull DataPoint createJsonDataPoint(
+                    final @NotNull String tagName,
+                    final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue, true);
+            }
         });
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
     }

@@ -112,7 +112,7 @@ public class OpcUaSubscriptionConsumer {
 
                         }
                         var convertedPayload = new String(convertPayload(value, serializationContext));
-                        protocolAdapterTagStreamingService.feed(tag.getName(), List.of(dataPointFactory.create(tag.getName(), convertedPayload)));
+                        protocolAdapterTagStreamingService.feed(tag.getName(), List.of(dataPointFactory.createJsonDataPoint(tag.getName(), convertedPayload)));
                     });
         };
 

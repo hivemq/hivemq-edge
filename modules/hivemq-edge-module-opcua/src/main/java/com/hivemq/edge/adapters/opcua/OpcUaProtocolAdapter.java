@@ -185,7 +185,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             tags.stream()
                     .filter(tag -> tag.getName().equals(input.getTagName()))
                     .findFirst()
-                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema((OpcuaTag) def, output),
+                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema(def, output),
                             () -> {
                                 log.warn(
                                         "The tag '{}' was not found during creation of schema for tags on remote plc. Available tags: {}",
