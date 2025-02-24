@@ -4238,6 +4238,23 @@ paths:
       summary: Update a topic filter.
       tags:
         - Topic Filters
+  /api/v1/management/topic-filters/{filter}/schema:
+    get:
+      description: Get the schema of as topic filter referenced by its id
+      operationId: get-topicFilter-schema
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                # TODO This is a duplicate from the TopicSchema; reuse as a self-contained Schema
+                type: string
+                format: data-url
+                description: The optional json schema for this topic filter in the data uri format.
+          description: Success
+      summary: Get the schema of as topic filter referenced by its id
+      tags:
+        - Topic Filters
   /api/v1/management/uns/isa95:
     get:
       description: Obtain isa95 config.
