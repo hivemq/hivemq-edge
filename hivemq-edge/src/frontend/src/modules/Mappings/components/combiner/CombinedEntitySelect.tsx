@@ -9,6 +9,7 @@ import type { DomainTagList, DomainTag, TopicFilter, TopicFilterList } from '@/a
 import type { UseQueryResult } from '@tanstack/react-query'
 
 interface EntityReferenceSelectProps {
+  id?: string
   tags?: Array<string>
   topicFilters?: Array<string>
   optionQueries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]
@@ -22,7 +23,7 @@ interface EntityOption extends OptionBase {
   description?: string
 }
 
-const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ tags, topicFilters, optionQueries, onChange }) => {
+const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicFilters, optionQueries, onChange }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
     return optionQueries?.some((query) => query.isLoading) || false
@@ -73,6 +74,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ tags, topicFilte
 
   return (
     <Select<EntityOption, true, GroupBase<EntityOption>>
+      inputId={id}
+      id={'combiner-entity-select'}
+      instanceId={'entity'}
       options={allOptions}
       isLoading={isLoading}
       isMulti
@@ -81,15 +85,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ tags, topicFilte
       onChange={(newValue) => {
         if (newValue) onChange(newValue)
       }}
-      // placeholder={t('EntityCreatableSelect.placeholder', { context: type })}
+      isClearable
+      placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
       // noOptionsMessage={() => t('EntityCreatableSelect.options.noOptionsMessage', { context: type })}
-      // formatCreateLabel={(entity) => t('EntityCreatableSelect.options.createLabel', { context: type, entity: entity })}
-      // id={id}
-      // instanceId={type}
-      // inputId={`react-select-${type}-input`}
-      // isClearable
-      // isSearchable
-      // selectedOptionStyle="check"
       // components={customComponents(isMulti, type)}
       // filterOption={createFilter(filterConfig)}
     />
