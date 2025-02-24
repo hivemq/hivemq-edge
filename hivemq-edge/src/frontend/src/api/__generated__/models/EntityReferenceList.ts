@@ -6,6 +6,6 @@
 import type { EntityReference } from './EntityReference';
 
 export type EntityReferenceList = {
-    items?: Array<EntityReference>;
+    items: Array<EntityReference>;
 };
 

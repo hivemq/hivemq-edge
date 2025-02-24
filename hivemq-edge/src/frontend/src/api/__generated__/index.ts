@@ -31,7 +31,7 @@ export type { CapabilityList } from './models/CapabilityList';
 export type { Combiner } from './models/Combiner';
 export type { CombinerId } from './models/CombinerId';
 export type { CombinerList } from './models/CombinerList';
-export type { DataCombining } from './models/DataCombining';
+export { DataCombining } from './models/DataCombining';
 export type { DataCombiningList } from './models/DataCombiningList';
 export type { DataPoint } from './models/DataPoint';
 export type { DataPolicy } from './models/DataPolicy';

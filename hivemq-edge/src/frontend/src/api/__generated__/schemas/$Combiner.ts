@@ -22,6 +22,7 @@ export const $Combiner = {
         },
         sources: {
             type: 'EntityReferenceList',
+            isRequired: true,
         },
         mappings: {
             type: 'DataCombiningList',

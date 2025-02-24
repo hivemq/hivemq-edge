@@ -9,6 +9,6 @@ import type { Combiner } from './Combiner';
  * The list of Combiner defined in this Edge instance
  */
 export type CombinerList = {
-    items?: Array<Combiner>;
+    items: Array<Combiner>;
 };
 

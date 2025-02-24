@@ -19,6 +19,8 @@ const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging })
       <ContextualToolbar id={id} title={data.name} onOpenPanel={onContextMenu} dragging={dragging} />
       <NodeWrapper
         isSelected={selected}
+        onDoubleClick={onContextMenu}
+        onContextMenu={onContextMenu}
         wordBreak="break-word"
         textAlign="center"
         borderTopRadius={30}
@@ -32,7 +34,7 @@ const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging })
           <Icon as={MdScheduleSend} boxSize={6} />
         </Box>
         <Box flex={1} p={1} data-testid="combiner-description">
-          <Text>{data.name}</Text>
+          <Text noOfLines={2}>{data.name}</Text>
         </Box>
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} />

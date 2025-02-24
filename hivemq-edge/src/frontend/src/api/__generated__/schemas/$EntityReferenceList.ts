@@ -9,6 +9,7 @@ export const $EntityReferenceList = {
             contains: {
                 type: 'EntityReference',
             },
+            isRequired: true,
         },
     },
 } as const;

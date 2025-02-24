@@ -22,7 +22,7 @@ export type Combiner = {
      * The user-facing description of the combiner
      */
     description?: string;
-    sources?: EntityReferenceList;
+    sources: EntityReferenceList;
     mappings?: DataCombiningList;
 };
 
