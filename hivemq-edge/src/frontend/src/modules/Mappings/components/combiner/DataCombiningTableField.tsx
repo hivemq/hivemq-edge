@@ -4,8 +4,8 @@ import { useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack } from '@chakra-ui/react'
-import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
+import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
+import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
 import { DataCombining } from '@/api/__generated__'
@@ -45,7 +45,13 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         destination: '',
         instructions: [],
       }
-      props.onChange([...props.value, newMapping])
+      props.onChange([...(props.formData || []), newMapping])
+    }
+
+    const handleDelete = (index: number) => {
+      const newValues = [...(props.formData || [])]
+      newValues.splice(index, 1)
+      props.onChange(newValues)
     }
 
     return [
