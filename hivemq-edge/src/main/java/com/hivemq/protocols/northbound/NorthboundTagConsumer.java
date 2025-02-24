@@ -34,7 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -80,13 +82,27 @@ public class NorthboundTagConsumer implements TagConsumer{
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
 
-            final List<byte[]> jsonPayloadsAsBytes;
+            final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
-            if (jsonPayloadCreatorOverride != null) {
-                jsonPayloadsAsBytes =
-                        jsonPayloadCreatorOverride.convertToJson(dataPoints, pollingContext, objectMapper);
-            } else {
-                jsonPayloadsAsBytes = jsonPayloadCreator.convertToJson(dataPoints, pollingContext, objectMapper);
+
+            final List<DataPoint> jsonDataPoints =
+                    dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
+
+            jsonDataPoints.forEach(jsonDataPoint -> jsonPayloadsAsBytes.add(((String)jsonDataPoint.getTagValue()).getBytes(
+                    StandardCharsets.UTF_8)));
+
+            if (jsonDataPoints.isEmpty()) {
+                //No JSON data included, use the whole list.
+                jsonPayloadsAsBytes
+                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                                .convertToJson(dataPoints, pollingContext, objectMapper));
+            } else if(jsonDataPoints.size() < dataPoints.size()) {
+                //At least some JSON data included, remove the JSON entries.
+                var dataPointsCopied = new ArrayList<>(dataPoints);
+                dataPointsCopied.removeAll(jsonDataPoints);
+                jsonPayloadsAsBytes
+                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                        .convertToJson(dataPointsCopied, pollingContext, objectMapper));
             }
 
             for (final byte[] json : jsonPayloadsAsBytes) {

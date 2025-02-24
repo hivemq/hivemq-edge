@@ -15,32 +15,29 @@
  */
 package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 
-import com.google.common.collect.ImmutableList;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
-import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
@@ -52,10 +49,11 @@ import util.EmbeddedOpcUaServerExtension;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Objects.requireNonNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -67,26 +65,43 @@ abstract class AbstractOpcUaPayloadConverterTest {
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
 
     private final @NotNull ModuleServices moduleServices = mock();
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService = mock();
-    private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder =
-            new TestProtocolAdapterPublishBuilder();
     private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
-
+    private final @NotNull Map<String, List<DataPoint>> receivedDataPoints = new ConcurrentHashMap<>();
 
     @BeforeEach
     public void before() {
+        receivedDataPoints.clear();
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
                 "id",
                 "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
-        when(adapterPublishService.createPublish()).thenReturn(adapterPublishBuilder);
-        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(new ProtocolAdapterTagStreamingService() {
+            @Override
+            public void feed(final String tag, final List<DataPoint> dataPoints) {
+                receivedDataPoints.put(tag, dataPoints);
+            }
+        });
+        final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
+        when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+
+            @Override
+            public @NotNull DataPoint createJsonDataPoint(
+                    final @NotNull String tagName,
+                    final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue, true);
+            }
+        });
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
     }
 
     @NotNull
@@ -105,16 +120,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
-        when(protocolAdapterInput.getPollingContexts()).thenReturn(List.of(new NorthboundMapping(
-                subcribedNodeId,
-                "topic",
-                1,
-                10_0000L,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                false,
-                false,
-                List.of()
-                )));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
@@ -136,81 +141,12 @@ abstract class AbstractOpcUaPayloadConverterTest {
         return protocolAdapter;
     }
 
-    protected @NotNull PUBLISH expectAdapterPublish() {
+    protected @NotNull Map<String, List<DataPoint>> expectAdapterPublish() {
         Awaitility.await()
                 .pollInterval(10, TimeUnit.MILLISECONDS)
                 .timeout(Duration.ofSeconds(5))
-                .until(() -> !adapterPublishBuilder.getPublishes().isEmpty());
-        return adapterPublishBuilder.getPublishes().get(0);
+                .until(() -> !receivedDataPoints.isEmpty());
+        return receivedDataPoints;
     }
 
-    private static class TestProtocolAdapterPublishBuilder implements ProtocolAdapterPublishBuilder {
-
-        private final @NotNull PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        private final @NotNull ImmutableList.Builder<MqttUserProperty> userProperties = ImmutableList.builder();
-        private final @NotNull List<PUBLISH> publishes = new ArrayList<>();
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withTopic(final @NotNull String mqttTopic) {
-            builder.withTopic(mqttTopic);
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withPayload(final @NotNull byte[] payload) {
-            builder.withPayload(payload);
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withQoS(final int qos) {
-            builder.withQoS(requireNonNull(QoS.valueOf(qos)));
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withMessageExpiryInterval(final long messageExpiryInterval) {
-            builder.withMessageExpiryInterval(messageExpiryInterval);
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withUserProperty(
-                final @NotNull String name, final @NotNull String value) {
-            userProperties.add(new MqttUserProperty(name, value));
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withRetain(final boolean retained) {
-            builder.withRetain(retained);
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withAdapter(final @NotNull ProtocolAdapter adapter) {
-            return this;
-        }
-
-        @Override
-        public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
-                final @NotNull String key, final @NotNull String value) {
-            return this;
-        }
-
-        @Override
-        public @NotNull CompletableFuture<ProtocolPublishResult> send() {
-
-            publishes.add(builder.withHivemqId("hivemqId")
-                    .withUserProperties(Mqtt5UserProperties.of(userProperties.build()))
-                    .build());
-
-            return CompletableFuture.completedFuture(ProtocolPublishResult.DELIVERED);
-        }
-
-
-        public @NotNull List<PUBLISH> getPublishes() {
-            return publishes;
-        }
-    }
 }

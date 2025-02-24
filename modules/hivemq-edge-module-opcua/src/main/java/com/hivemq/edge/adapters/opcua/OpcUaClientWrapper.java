@@ -2,18 +2,17 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
@@ -60,23 +59,23 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaClientWrapper {
     private static final Logger log = LoggerFactory.getLogger(OpcUaClientWrapper.class);
 
-    private final String adapterId;
     public final @NotNull OpcUaClient client;
     public final @NotNull JsonToOpcUAConverter jsonToOpcUAConverter;
     public final @NotNull JsonSchemaGenerator jsonSchemaGenerator;
     public final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle;
+    public final @NotNull DataPointFactory dataPointFactory;
 
     public OpcUaClientWrapper(
-            final @NotNull String adapterId,
             final @NotNull OpcUaClient client,
             final @NotNull OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle,
             final @NotNull JsonToOpcUAConverter jsonToOpcUAConverter,
-            final @NotNull JsonSchemaGenerator jsonSchemaGenerator) {
-        this.adapterId = adapterId;
+            final @NotNull JsonSchemaGenerator jsonSchemaGenerator,
+            final @NotNull DataPointFactory dataPointFactory) {
         this.client = client;
         this.jsonToOpcUAConverter = jsonToOpcUAConverter;
         this.jsonSchemaGenerator = jsonSchemaGenerator;
         this.opcUaSubscriptionLifecycle = opcUaSubscriptionLifecycle;
+        this.dataPointFactory = dataPointFactory;
     }
 
     public @NotNull CompletableFuture<Void> stop() {
@@ -230,14 +229,14 @@ public class OpcUaClientWrapper {
     public static @NotNull CompletableFuture<OpcUaClientWrapper> createAndConnect(
             final @NotNull String adapterId,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig,
-            final @NotNull List<Tag> tags,
-            final @NotNull List<PollingContext> northboundsMappings,
+            final @NotNull List<OpcuaTag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull EventService eventService,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
+            final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService,
             final @NotNull String protocolId,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull ProtocolAdapterStartOutput output) throws UaException {
+            final @NotNull ProtocolAdapterStartOutput output,
+            final @NotNull DataPointFactory dataPointFactory) throws UaException {
         final String configPolicyUri = adapterConfig.getSecurity().getPolicy().getSecurityPolicy().getUri();
 
         final OpcUaClient opcUaClient = OpcUaClient.create(adapterConfig.getUri(),
@@ -270,14 +269,15 @@ public class OpcUaClientWrapper {
         });
 
         return opcUaClient.connect().thenCompose(uaClient -> {
-            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(opcUaClient,
+            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
+                    opcUaClient,
                     adapterId,
                     protocolId,
                     protocolAdapterMetricsService,
                     eventService,
-                    adapterPublishService,
-                    tags,
-                    adapterConfig.getOpcuaToMqttConfig());
+                    protocolAdapterTagStreamingService,
+                    adapterConfig.getOpcuaToMqttConfig(),
+                    dataPointFactory);
 
             opcUaClient.getSubscriptionManager().addSubscriptionListener(opcUaSubscriptionLifecycle);
 
@@ -286,12 +286,13 @@ public class OpcUaClientWrapper {
                 final JsonSchemaGenerator jsonSchemaGenerator =
                         new JsonSchemaGenerator(opcUaClient, new ObjectMapper());
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
-                    return opcUaSubscriptionLifecycle.subscribeAll(northboundsMappings)
-                            .thenApply(ignored -> new OpcUaClientWrapper(adapterId,
+                    return opcUaSubscriptionLifecycle.subscribeAll(tags)
+                            .thenApply(ignored -> new OpcUaClientWrapper(
                                     opcUaClient,
                                     opcUaSubscriptionLifecycle,
                                     jsonToOpcUAConverter,
-                                    jsonSchemaGenerator));
+                                    jsonSchemaGenerator,
+                                    dataPointFactory));
                 } else {
                     return CompletableFuture.completedFuture(null);
                 }
