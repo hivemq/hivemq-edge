@@ -61,12 +61,17 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       {
         accessorKey: 'destination',
         cell: (info) => {
-          return <Topic tagTitle={info.row.original.destination} />
+          if (info.row.original.destination) return <Topic tagTitle={info.row.original.destination} />
+          return <Text>{t('combiner.unset')}</Text>
         },
       },
       {
         accessorKey: 'sources',
         cell: (info) => {
+          const { sources } = info.row.original
+          const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
+          if (nbItems === 0) return <Text>{t('combiner.unset')}</Text>
+
           return (
             <HStack flexWrap={'wrap'}>
               {info.row.original.sources?.tags?.map((tag) => <PLCTag tagTitle={tag} key={tag} />)}
