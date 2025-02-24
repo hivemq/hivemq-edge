@@ -12,8 +12,10 @@ export type DataCombining = {
     /**
      * The unique id of the data combining mapping
      */
-    id?: string;
+    id: string;
     sources?: {
+        primary: string;
+        primaryType: DataCombining.primaryType;
         /**
          * The list of tags (names) used in the data combining
          */
@@ -29,4 +31,14 @@ export type DataCombining = {
      */
     instructions: Array<Instruction>;
 };
+
+export namespace DataCombining {
+
+    export enum primaryType {
+        TAG = 'TAG',
+        TOPIC_FILTER = 'TOPIC_FILTER',
+    }
+
+
+}
 

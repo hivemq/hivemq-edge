@@ -7,6 +7,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import { handlers } from './__handlers__'
 
 import type { DataCombiningList } from '../../__generated__'
+import { DataCombining } from '../../__generated__'
 import { useListCombinerMappings } from './useListCombinerMappings'
 
 describe('useListCombinerMappings', () => {
@@ -29,6 +30,8 @@ describe('useListCombinerMappings', () => {
         {
           id: '58677276-fc48-4a9a-880c-41c755f5063b',
           sources: {
+            primary: '',
+            primaryType: DataCombining.primaryType.TAG,
             tags: [],
             topicFilters: [],
           },

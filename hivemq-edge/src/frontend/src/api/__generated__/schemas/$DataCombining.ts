@@ -8,10 +8,19 @@ export const $DataCombining = {
         id: {
             type: 'string',
             description: `The unique id of the data combining mapping`,
+            isRequired: true,
             format: 'uuid',
         },
         sources: {
             properties: {
+                primary: {
+                    type: 'string',
+                    isRequired: true,
+                },
+                primaryType: {
+                    type: 'Enum',
+                    isRequired: true,
+                },
                 tags: {
                     type: 'array',
                     contains: {

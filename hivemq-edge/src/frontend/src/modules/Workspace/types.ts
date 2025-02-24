@@ -70,6 +70,7 @@ export interface WorkspaceAction {
   onDeleteNode: (type: NodeTypes, adapterId: string) => void
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
+  onUpdateNode: <T>(id: string, data: T) => void
 }
 
 export interface TopicTreeMetadata {

@@ -9,6 +9,7 @@ export const $DataCombiningList = {
             contains: {
                 type: 'DataCombining',
             },
+            isRequired: true,
         },
     },
 } as const;
