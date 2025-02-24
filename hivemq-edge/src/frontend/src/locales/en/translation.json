@@ -1209,7 +1209,8 @@
     "error": {
       "noDataUri": "There was a problem loading the data",
       "noValidReference": "This is not a valid reference to a Workspace entity",
-      "invalidData": "Invalid data"
+      "invalidData": "Invalid data",
+      "noSchemaLoadedYet": "There are no schema available yet"
     },
     "schema": {
       "tabs": {
@@ -1251,6 +1252,16 @@
         },
         "combinedSelector": {
           "placeholder": "Select tags and topic filters to combine ..."
+        },
+        "primary": {
+          "placeholder": "Select a primary data key ..."
+        }
+      },
+      "schemaManager": {
+        "header": "Create a schema",
+        "infer": {
+          "message": "We will create a new schema based on the combination of the sources",
+          "action": "Generate"
         }
       }
     }

@@ -68,7 +68,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
             />
           </Box>
           <VStack height={500} overflow={'auto'} alignItems={'flex-start'} justifyContent={'center'} tabIndex={0}>
-            <ErrorMessage message={'There are no schema available yet'} status={'info'} />
+            <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
             {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_PLAIN, title: 'my/tag/t1' }} hasExamples />*/}
             {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />*/}
             {/*<JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />*/}
@@ -76,9 +76,10 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <Box>
             <Select<{ label: string }>
               options={primary}
+              data-testid={'combiner-mapping-primary'}
               value={undefined}
               isClearable
-              placeholder={'Select a primary entity ...'}
+              placeholder={t('combiner.schema.mapping.primary.placeholder')}
             />
           </Box>
         </VStack>
@@ -110,13 +111,12 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               <PopoverContent>
                 <PopoverArrow />
                 <PopoverCloseButton />
-                <PopoverHeader>Create a schema</PopoverHeader>
+                <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
                 <PopoverBody>
-                  <Text>We will create a new schema based on the combination of the sources</Text>
+                  <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>
                 </PopoverBody>
                 <PopoverFooter gap={2} display={'flex'}>
-                  <Button>Generate</Button>
-                  <Button isDisabled>Download</Button>
+                  <Button isDisabled>{t('combiner.schema.schemaManager.infer.action')}</Button>
                 </PopoverFooter>
               </PopoverContent>
             </Popover>
@@ -127,15 +127,15 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               <PopoverContent>
                 <PopoverArrow />
                 <PopoverCloseButton />
-                <PopoverHeader>Confirmation!</PopoverHeader>
+                <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
                 <PopoverBody>
-                  <SchemaUploader onUpload={() => console.log('XXXXX')} />
+                  <SchemaUploader onUpload={() => console.log('uploaded')} />
                 </PopoverBody>
               </PopoverContent>
             </Popover>
           </ButtonGroup>
           <VStack height={420} justifyContent={'center'} alignItems={'center'}>
-            <ErrorMessage message={'There are no schema available yet'} status={'info'} />
+            <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
           </VStack>
         </VStack>
       </Stack>
