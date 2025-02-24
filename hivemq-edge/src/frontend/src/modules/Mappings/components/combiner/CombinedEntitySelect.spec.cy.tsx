@@ -14,7 +14,7 @@ import CombinedEntitySelect from './CombinedEntitySelect'
 interface EntityReferenceSelectProps {
   tags?: Array<string>
   topicFilters?: Array<string>
-  onChange: (value: MultiValue<any>) => void
+  onChange: (value: MultiValue<unknown>) => void
 }
 
 const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectProps>> = ({
