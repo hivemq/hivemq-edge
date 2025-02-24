@@ -1248,6 +1248,9 @@
         "action": {
           "save": "Save",
           "cancel": "Cancel"
+        },
+        "combinedSelector": {
+          "placeholder": "Select tags and topic filters to combine ..."
         }
       }
     }
