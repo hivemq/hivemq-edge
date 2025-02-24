@@ -17,18 +17,22 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
+import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
@@ -37,49 +41,48 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaSubscriptionConsumer {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
-    private final @NotNull PollingContext northboundMapping;
-    private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
+    public static final byte[] EMTPY_BYTES = new byte[]{};
+
     private final @NotNull ReadValueId readValueId;
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService;
     private final @NotNull EventService eventService;
-    private final @NotNull SerializationContext serializationContext;
-    private final @NotNull Optional<EndpointDescription> endpointDescription;
-    private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull String adapterId;
     private final @NotNull String protocolAdapterId;
     private final @NotNull UaSubscription uaSubscription;
+    private final @NotNull OpcuaTag tag;
+    private final @NotNull DataPointFactory dataPointFactory;
+    private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
+    private final @NotNull SerializationContext serializationContext;
 
     public OpcUaSubscriptionConsumer(
-            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
-            final @NotNull PollingContext northboundMapping,
             final @NotNull UaSubscription uaSubscription,
+            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
             final @NotNull ReadValueId readValueId,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService,
-            final @NotNull Optional<EndpointDescription> endpointDescription,
             final @NotNull SerializationContext serializationContext,
-            final @NotNull ProtocolAdapterMetricsService metricsHelper,
+            final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService,
+            final @NotNull EventService eventService,
             final @NotNull String adapterId,
-            final @NotNull String protocolAdapterId) {
-        this.northboundMapping = northboundMapping;
-        this.opcUaToMqttConfig = opcUaToMqttConfig;
+            final @NotNull String protocolAdapterId,
+            final @NotNull OpcuaTag tag,
+            final @NotNull DataPointFactory dataPointFactory) {
         this.readValueId = readValueId;
-        this.adapterPublishService = adapterPublishService;
+        this.protocolAdapterTagStreamingService = protocolAdapterTagStreamingService;
         this.eventService = eventService;
-        this.serializationContext = serializationContext;
-        this.endpointDescription = endpointDescription;
-        this.metricsHelper = metricsHelper;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
         this.uaSubscription = uaSubscription;
+        this.tag = tag;
+        this.dataPointFactory = dataPointFactory;
+        this.opcUaToMqttConfig = opcUaToMqttConfig;
+        this.serializationContext = serializationContext;
     }
 
     public CompletableFuture<SubscriptionResult> start() {
@@ -96,16 +99,22 @@ public class OpcUaSubscriptionConsumer {
                 new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting, parameters);
 
         final UaSubscription.ItemCreationCallback onItemCreated =
-                (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(northboundMapping,
-                        opcUaToMqttConfig,
-                        adapterPublishService,
-                        serializationContext,
-                        endpointDescription,
-                        readValueId.getNodeId(),
-                        metricsHelper,
-                        adapterId,
-                        eventService,
-                        protocolAdapterId));
+                (item, id) -> {
+                    final AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
+                    item.setValueConsumer(value -> {
+                        if (firstMessageReceived.compareAndSet(false, true)) {
+                            eventService.createAdapterEvent(adapterId, protocolAdapterId)
+                                    .withSeverity(Event.SEVERITY.INFO)
+                                    .withMessage(String.format("Adapter '%s' took first sample for tag '%s'",
+                                            adapterId,
+                                            tag.getName()))
+                                    .fire();
+
+                        }
+                        var convertedPayload = new String(convertPayload(value, serializationContext));
+                        protocolAdapterTagStreamingService.feed(tag.getName(), List.of(dataPointFactory.create(tag.getName(), convertedPayload)));
+                    });
+        };
 
         return uaSubscription
                 .createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
@@ -134,22 +143,23 @@ public class OpcUaSubscriptionConsumer {
                                     "')");
                         }
                     }
-                    return new SubscriptionResult(northboundMapping, uaSubscription, this);
+                    return new SubscriptionResult(tag, uaSubscription, this);
                 });
     }
 
-    public static class SubscriptionResult {
-        public final @NotNull PollingContext subscription;
-        public final @NotNull UaSubscription uaSubscription;
-        public final @NotNull OpcUaSubscriptionConsumer consumer;
+    public record SubscriptionResult (
+            @NotNull OpcuaTag opcuaTag,
+            @NotNull UaSubscription uaSubscription,
+            @NotNull OpcUaSubscriptionConsumer consumer) {}
 
-        public SubscriptionResult(
-                final @NotNull PollingContext subscription,
-                final @NotNull UaSubscription uaSubscription,
-                final @NotNull OpcUaSubscriptionConsumer consumer) {
-            this.subscription = subscription;
-            this.uaSubscription = uaSubscription;
-            this.consumer = consumer;
+    private static byte @NotNull [] convertPayload(
+            final @NotNull DataValue dataValue,
+            final @NotNull SerializationContext serializationContext) {
+        //null value, emtpy buffer
+        if (dataValue.getValue().getValue() == null) {
+            return EMTPY_BYTES;
         }
+        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext,
+                dataValue));
     }
 }

@@ -15,7 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -29,7 +32,9 @@ import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +65,15 @@ class OpcUaProtocolAdapterAuthTest {
         when(moduleServices.eventService()).thenReturn(mock(EventService.class));
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+
+        final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
+        when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+        });
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
     }
 
     @Test

@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
-public class TagManager {
+public class TagManager implements ProtocolAdapterTagStreamingService {
 
 
     private final @NotNull MetricsHolder metricsHolder;
@@ -46,6 +47,7 @@ public class TagManager {
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
     // TODO synchronized might be good enough, write read locks would be more granular and better
+    @Override
     public synchronized void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         lastValueForTag.put(tagName, dataPoints);
         final List<TagConsumer> tagConsumers = consumers.get(tagName);
