@@ -9,7 +9,6 @@ import type { DomainTagList, DomainTag, TopicFilter, TopicFilterList } from '@/a
 import type { UseQueryResult } from '@tanstack/react-query'
 
 interface EntityReferenceSelectProps {
-  id?: string
   tags?: Array<string>
   topicFilters?: Array<string>
   optionQueries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]

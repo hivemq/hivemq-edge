@@ -23,17 +23,14 @@ import {
 } from '@chakra-ui/react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 
-import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks'
 import { DataCombining } from '@/api/__generated__'
-import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import ErrorMessage from '@/components/ErrorMessage'
-import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
 
-const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
+export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
 
   const { formData, formContext } = props
@@ -70,10 +67,11 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
               }}
             />
           </Box>
-          <VStack height={500} overflow={'auto'} alignItems={'flex-start'} tabIndex={0}>
-            <JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_PLAIN, title: 'my/tag/t1' }} hasExamples />
-            <JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />
-            <JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />
+          <VStack height={500} overflow={'auto'} alignItems={'flex-start'} justifyContent={'center'} tabIndex={0}>
+            <ErrorMessage message={'There are no schema available yet'} status={'info'} />
+            {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_PLAIN, title: 'my/tag/t1' }} hasExamples />*/}
+            {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />*/}
+            {/*<JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />*/}
           </VStack>
           <Box>
             <Select<{ label: string }>
@@ -136,7 +134,7 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
               </PopoverContent>
             </Popover>
           </ButtonGroup>
-          <VStack minH={170} justifyContent={'center'}>
+          <VStack height={420} justifyContent={'center'} alignItems={'center'}>
             <ErrorMessage message={'There are no schema available yet'} status={'info'} />
           </VStack>
         </VStack>
@@ -144,5 +142,3 @@ const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, Combine
     </VStack>
   )
 }
-
-export default DataCombiningEditorField
