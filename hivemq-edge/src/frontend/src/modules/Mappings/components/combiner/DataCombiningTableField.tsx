@@ -15,17 +15,17 @@ import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
 import type { CombinerContext } from '../../types'
 
-export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
+export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
 
   const handleOnSubmit = (data: DataCombining | undefined) => {
     if (selectedItem === undefined) return
     if (data) {
-      if (!props.value[selectedItem]) throw new Error(t('combiner.error.invalidData'))
-      if (data.id !== props.value[selectedItem].id) throw new Error(t('combiner.error.invalidData'))
+      if (!props.formData?.[selectedItem]) throw new Error(t('combiner.error.invalidData'))
+      if (data.id !== props.formData?.[selectedItem].id) throw new Error(t('combiner.error.invalidData'))
 
-      const newValues = [...props.value]
+      const newValues = [...props.formData]
       newValues[selectedItem] = data
       props.onChange(newValues)
     }
@@ -82,7 +82,11 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
                 icon={<LuPencil />}
                 onClick={() => setSelectedItem(info.row.index)}
               />
-              <IconButton aria-label={t('combiner.schema.mappings.table.delete')} icon={<LuTrash />} />
+              <IconButton
+                aria-label={t('combiner.schema.mappings.table.delete')}
+                icon={<LuTrash />}
+                onClick={() => handleDelete(info.row.index)}
+              />{' '}
             </ButtonGroup>
           )
         },
@@ -101,19 +105,19 @@ export const DataCombiningTableWidget: FC<WidgetProps<DataCombining[], RJSFSchem
     <>
       <PaginatedTable<DataCombining>
         aria-label={t('combiner.schema.sources.description')}
-        data={props.value}
+        data={props.formData || []}
         columns={displayColumns}
         enablePaginationGoTo={false}
         enablePaginationSizes={false}
         enableColumnFilters={false}
       />
-      {selectedItem != undefined && (
+      {selectedItem != undefined && props.formData?.[selectedItem] && (
         <DataCombiningEditorDrawer
           onClose={() => setSelectedItem(undefined)}
           onSubmit={handleOnSubmit}
           schema={props.schema.items as RJSFSchema}
           uiSchema={props.uiSchema?.items}
-          formData={props.value[selectedItem]}
+          formData={props.formData?.[selectedItem]}
           formContext={props.formContext}
         />
       )}
