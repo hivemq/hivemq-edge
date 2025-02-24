@@ -4162,6 +4162,19 @@ paths:
       tags:
         - Topic Filters
   /api/v1/management/topic-filters/{filter}:
+    get:
+      description: Get a topic filter by its id
+      operationId: get-topicFilter
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicFilter'
+          description: Success
+      summary: Get a topic filter by its id
+      tags:
+        - Topic Filters
     delete:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
