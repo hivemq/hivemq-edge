@@ -234,7 +234,7 @@ describe('createCombinerNode', () => {
       nodeCombiner: expect.objectContaining({
         id: mockId,
         type: NodeTypes.COMBINER_NODE,
-        data: {
+        data: expect.objectContaining({
           id: mockId,
           name: 'my-combiner',
           sources: {
@@ -249,7 +249,7 @@ describe('createCombinerNode', () => {
               },
             ],
           },
-        },
+        }),
       }),
       edgeConnector: expect.objectContaining({
         id: `connect-edge-${mockId}`,

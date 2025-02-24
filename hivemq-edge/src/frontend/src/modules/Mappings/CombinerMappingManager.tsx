@@ -34,6 +34,7 @@ import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import { useGetCombinedEntities } from '../../api/hooks/useDomainModel/useGetCombinedEntities'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -41,7 +42,7 @@ const CombinerMappingManager: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { combinerId } = useParams()
-  const { nodes } = useWorkspaceStore()
+  const { nodes, onUpdateNode } = useWorkspaceStore()
   const toast = useToast()
   const updateCombiner = useUpdateCombiner()
 
@@ -49,9 +50,20 @@ const CombinerMappingManager: FC = () => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
   }, [combinerId, nodes])
 
+  const entities = useMemo(() => {
+    return selectedNode?.data?.sources?.items || []
+  }, [selectedNode?.data?.sources?.items])
+
+  const sources = useGetCombinedEntities(entities)
+
   const handleClose = () => {
     onClose()
     navigate('/workspace')
+  }
+
+  const handleUpdateCombiner = (data: Combiner) => {
+    if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data)
+    handleClose()
   }
 
   const handleOnSubmit = (data: IChangeEvent) => {
@@ -59,11 +71,14 @@ const CombinerMappingManager: FC = () => {
 
     const promise = updateCombiner.mutateAsync({ combinerId: combinerId, requestBody: data.formData })
 
-    toast.promise(promise.then(handleClose), {
-      success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
-      error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
-      loading: { title: t('combiner.toast.update.title'), description: t('combiner.update.loading') },
-    })
+    toast.promise(
+      promise.then(() => handleUpdateCombiner(data.formData)),
+      {
+        success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
+        error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
+        loading: { title: t('combiner.toast.update.title'), description: t('combiner.toast.loading') },
+      }
+    )
   }
 
   useEffect(() => {
@@ -91,16 +106,17 @@ const CombinerMappingManager: FC = () => {
           {selectedNode && (
             <ChakraRJSForm
               showNativeWidgets={showNativeWidgets}
-              id="adapter-mapping-form"
+              id="combiner-main-form"
               schema={combinerMappingJsonSchema}
               uiSchema={combinerMappingUiSchema}
               formData={selectedNode.data}
               onSubmit={handleOnSubmit}
+              formContext={{ sources: sources }}
             />
           )}
         </DrawerBody>
         <DrawerFooter>
-          {config.environment === 'development' && (
+          {config.isDevMode && (
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-alerts" mb="0">
                 {t('modals.native')}
@@ -109,8 +125,8 @@ const CombinerMappingManager: FC = () => {
             </FormControl>
           )}
           {selectedNode && (
-            <Button variant="primary" type="submit" form="adapter-mapping-form" isLoading={updateCombiner.isPending}>
-              {t('protocolAdapter.mapping.actions.submit')}
+            <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
+              {t('combiner.actions.submit')}
             </Button>
           )}
         </DrawerFooter>

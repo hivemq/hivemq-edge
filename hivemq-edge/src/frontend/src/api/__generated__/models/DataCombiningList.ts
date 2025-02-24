@@ -6,6 +6,6 @@
 import type { DataCombining } from './DataCombining';
 
 export type DataCombiningList = {
-    items?: Array<DataCombining>;
+    items: Array<DataCombining>;
 };
 

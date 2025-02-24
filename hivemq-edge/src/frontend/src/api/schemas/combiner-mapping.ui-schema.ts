@@ -1,5 +1,8 @@
 import type { UiSchema } from '@rjsf/utils'
 import i18nConfig from '@/config/i18n.config'
+import { DataCombiningTableField } from '@/modules/Mappings/components/combiner/DataCombiningTableField'
+import { EntityReferenceTableWidget } from '@/modules/Mappings/components/combiner/EntityReferenceTableWidget'
+import { DataCombiningEditorField } from '@/modules/Mappings/components/combiner/DataCombiningEditorField'
 
 /* istanbul ignore next -- @preserve */
 export const combinerMappingUiSchema: UiSchema = {
@@ -36,9 +39,21 @@ export const combinerMappingUiSchema: UiSchema = {
     'ui:description': i18nConfig.t('combiner.schema.config.description'),
   },
   sources: {
-    // 'ui:widget': 'hidden',
+    'ui:description': i18nConfig.t('combiner.schema.sources.description'),
+    items: {
+      'ui:widget': EntityReferenceTableWidget,
+    },
   },
   mappings: {
-    // 'ui:widget': 'hidden',
+    items: {
+      'ui:field': DataCombiningTableField,
+      // TODO[NVL] Add `ui:options to pass table configuration and the whole RJSF construct is fully generic!
+      items: {
+        'ui:field': DataCombiningEditorField,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      },
+    },
   },
 }

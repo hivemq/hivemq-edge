@@ -10,6 +10,7 @@ export const $CombinerList = {
             contains: {
                 type: 'Combiner',
             },
+            isRequired: true,
         },
     },
 } as const;

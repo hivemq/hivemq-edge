@@ -14,9 +14,5 @@ export const $EntityReference = {
             description: `The id of the entity being references in the combiner`,
             isRequired: true,
         },
-        isPrimary: {
-            type: 'boolean',
-            description: `The source is the primary orchestrator of the combiner`,
-        },
     },
 } as const;
