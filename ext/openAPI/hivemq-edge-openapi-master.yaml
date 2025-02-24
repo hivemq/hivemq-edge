@@ -6238,14 +6238,10 @@ components:
           type: object
           required:
             - primary
-            - primaryType
           properties:
             primary:
+              $ref: '#/components/schemas/DataIdentifierReference'
               #primary must be in the list of either tags or topicFilters
-              type: string
-            primaryType:
-              type: string
-              enum: [ TAG, TOPIC_FILTER ]
             tags:
               type: array
               description: The list of tags (names) used in the data combining
@@ -6295,3 +6291,16 @@ components:
       required:
         - id
         - type
+    DataIdentifierReference:
+      type: object
+      description: A reference to one of the data identifiers (topic filter or tag) in Edge
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: The name (segmented) of the tag or topic filter
+        type:
+          type: string
+          enum: [ TAG, TOPIC_FILTER ]
