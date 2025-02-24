@@ -1,10 +1,10 @@
 /// <reference types="cypress" />
 
-import EntityReferenceTableWidget from './EntityReferenceTableWidget'
 import type { WidgetProps } from '@rjsf/utils'
 import type { RJSFSchema } from '@rjsf/utils/src/types'
 import type { EntityReference } from '@/api/__generated__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
+import { EntityReferenceTableWidget } from './EntityReferenceTableWidget'
 
 const MOCK_ENTITY_PROPS: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>> = {
   id: 'root_sources_items',
@@ -43,12 +43,12 @@ describe('EntityReferenceTable', () => {
   it('should render properly', () => {
     cy.mountWithProviders(<EntityReferenceTableWidget {...MOCK_ENTITY_PROPS} />)
 
-    cy.get('table').should('have.attr', 'aria-label', 'The list of sources available for this combiner')
+    cy.get('table').should('have.attr', 'aria-label', 'The list of data sources available for this combiner')
     cy.get('table thead tr th').should('have.length', 2)
     cy.get('table thead tr th').eq(0).should('have.text', 'Source')
     cy.get('table thead tr th').eq(1).should('have.text', 'Actions')
 
-    cy.get('table tbody tr').should('have.length', 3)
+    cy.get('table tbody tr').should('have.length', 2)
 
     cy.get('nav').should('be.visible').should('have.attr', 'aria-label', 'Pagination')
     cy.get('nav').find('[role="group"]').should('have.length', 2)

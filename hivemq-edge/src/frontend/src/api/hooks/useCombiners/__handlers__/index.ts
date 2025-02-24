@@ -1,12 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import type {
-  Combiner,
-  CombinerList,
-  DataCombining,
-  DataCombiningList,
-  EntityReference,
-  Instruction,
-} from '@/api/__generated__'
+import { DataCombining } from '@/api/__generated__'
+import type { Combiner, CombinerList, DataCombiningList, EntityReference, Instruction } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 
 interface CombinerParams {
@@ -43,13 +37,18 @@ export const mockCombiner: Combiner = {
     items: [
       {
         id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
-        sources: { tags: ['my/tag/t1', 'my/tag/t3'], topicFilters: ['my/topic/+/temp'] },
+        sources: {
+          primary: '',
+          primaryType: DataCombining.primaryType.TAG,
+          tags: ['my/tag/t1', 'my/tag/t3'],
+          topicFilters: ['my/topic/+/temp'],
+        },
         destination: 'my/first/topic',
         instructions: [],
       },
       {
         id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
-        sources: { tags: [], topicFilters: [] },
+        sources: { primary: '', primaryType: DataCombining.primaryType.TAG, tags: [], topicFilters: [] },
         destination: 'my/other/topic',
         instructions: [],
       },
@@ -60,6 +59,8 @@ export const mockCombiner: Combiner = {
 export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
+    primary: '',
+    primaryType: DataCombining.primaryType.TAG,
     tags: [],
     topicFilters: [],
   },
@@ -73,7 +74,13 @@ export const handlers = [
       {
         items: [
           mockCombiner,
-          { id: '5e08d9f3-113d-46f2-8418-9a8bf980cc10', name: 'fake1' },
+          {
+            id: '5e08d9f3-113d-46f2-8418-9a8bf980cc10',
+            name: 'fake1',
+            sources: {
+              items: [],
+            },
+          },
           {
             id: '2d2ec927-1ff5-4e1a-b307-ab135cc189fd',
             name: 'fake2',
