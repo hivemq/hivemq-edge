@@ -8,6 +8,8 @@ import { handlers } from './__handlers__'
 
 import { useListCombiners } from './useListCombiners'
 import type { CombinerList } from '../../__generated__'
+import { DataCombining } from '../../__generated__'
+import { EntityType } from '../../__generated__'
 
 describe('useListCombiners', () => {
   afterEach(() => {
@@ -41,14 +43,49 @@ describe('useListCombiners', () => {
               },
             ]),
           },
+          mappings: {
+            items: [
+              {
+                destination: 'my/first/topic',
+                id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
+                instructions: [],
+                sources: {
+                  primary: '',
+                  primaryType: DataCombining.primaryType.TAG,
+                  tags: ['my/tag/t1', 'my/tag/t3'],
+                  topicFilters: ['my/topic/+/temp'],
+                },
+              },
+              {
+                destination: 'my/other/topic',
+                id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
+                instructions: [],
+                sources: {
+                  primary: '',
+                  primaryType: DataCombining.primaryType.TAG,
+                  tags: [],
+                  topicFilters: [],
+                },
+              },
+            ],
+          },
         },
         {
-          id: 'fake1',
+          id: '5e08d9f3-113d-46f2-8418-9a8bf980cc10',
           name: 'fake1',
+          sources: { items: [] },
         },
         {
-          id: 'fake2',
+          id: '2d2ec927-1ff5-4e1a-b307-ab135cc189fd',
           name: 'fake2',
+          sources: {
+            items: [
+              {
+                id: '444',
+                type: EntityType.ADAPTER,
+              },
+            ],
+          },
         },
       ],
     })
