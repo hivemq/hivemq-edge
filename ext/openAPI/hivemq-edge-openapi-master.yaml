@@ -6217,6 +6217,7 @@ components:
         - id
         - name
         - sources
+        - mappings
     DataCombiningList:
       type: object
       properties:
@@ -6272,6 +6273,8 @@ components:
       required:
         - id
         - instructions
+        - destination
+        - sources
     EntityReferenceList:
       type: object
       properties:
@@ -6284,6 +6287,7 @@ components:
     EntityType:
       type: string
       description: These are the prime entities owning tags and topic filters
+      # TODO The list of enums needs to be updated and reused across frontend
       enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
     EntityReference:
       type: object
