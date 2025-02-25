@@ -106,10 +106,8 @@ public class InternalPublishServiceImpl implements InternalPublishService {
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                System.err.println("FAILED");
                 return Futures.immediateFuture(PublishReturnCode.FAILED);
             } else {
-                System.err.println("publish");
                 // TODO perhaps we need to merge the original publish
                 return publish(modifiedPublish, executorService, sender);
             }
