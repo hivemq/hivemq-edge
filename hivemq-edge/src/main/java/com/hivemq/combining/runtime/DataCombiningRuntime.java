@@ -64,7 +64,7 @@ public class DataCombiningRuntime {
         combining.sources()
             .tags()
             .stream()
-            .map(tag -> new InternalTagConsumer(tag, combining.id().toString(), PrimaryType.TAG.equals(combining.sources().primaryType()) && tag.equals(combining.sources().primaryName())))
+            .map(tag -> new InternalTagConsumer(tag, combining, PrimaryType.TAG.equals(combining.sources().primaryType()) && tag.equals(combining.sources().primaryName())))
             .forEach(consumer -> {
                 tagManager.addConsumer(consumer);
                 consumers.add(consumer);
@@ -73,7 +73,7 @@ public class DataCombiningRuntime {
         combining.sources()
             .topicFilters()
             .forEach(topicFilter -> {
-                internalSubscriptions.add(subscribeTopicFilter(combining.id().toString(), topicFilter, PrimaryType.TOPIC_FILTER.equals(combining.sources().primaryType()) && topicFilter.equals(combining.sources().primaryName())));
+                internalSubscriptions.add(subscribeTopicFilter(combining, topicFilter, PrimaryType.TOPIC_FILTER.equals(combining.sources().primaryType()) && topicFilter.equals(combining.sources().primaryName())));
             });
 
         internalSubscriptions.forEach(internalSubscription -> {
@@ -89,20 +89,20 @@ public class DataCombiningRuntime {
         });
     }
 
-    public InternalSubscription subscribeTopicFilter(final @NotNull String dataCombiningid, final @NotNull String topicFilter, final boolean isPrimary) {
-        final String clientId = dataCombiningid + "#";
+    public InternalSubscription subscribeTopicFilter(final @NotNull DataCombining dataCombining, final @NotNull String topicFilter, final boolean isPrimary) {
+        final String clientId = dataCombining.id() + "#";
         final QoS qos = QoS.EXACTLY_ONCE;
 
         final var subscription = new InternalSubscription(
                 clientId,
                 topicFilter,
-                dataCombiningid,
-                new QueueConsumer(clientQueuePersistence, dataCombiningid + "/" + topicFilter, singleWriterService) {
+                dataCombining.id().toString(),
+                new QueueConsumer(clientQueuePersistence, dataCombining.id() + "/" + topicFilter, singleWriterService) {
             @Override
             public void process(final @NotNull PUBLISH publish) {
                 topicFilterToPublish.put(topicFilter, publish);
                 if(isPrimary) {
-                    triggerPublish();
+                    triggerPublish(dataCombining);
                 }
             }
         });
@@ -115,7 +115,7 @@ public class DataCombiningRuntime {
         return subscription;
     }
 
-    public void triggerPublish() {
+    public void triggerPublish(final @NotNull DataCombining dataCombining) {
         final var tagsToDataPoints = Map.copyOf(tagResults);
         final var topicFilterResults = Map.copyOf(topicFilterToPublish);
 
@@ -132,7 +132,7 @@ public class DataCombiningRuntime {
         });
 
         try {
-            dataCombiningPublishService.publish(combining.id().toString(), combining.destination(), mapper.writeValueAsBytes(outgoing));
+            dataCombiningPublishService.publish(combining.id().toString(), combining.destination(), mapper.writeValueAsBytes(outgoing), dataCombining);
         } catch (final JsonProcessingException e) {
             log.error("Can't produce JSON", e);
             throw new RuntimeException(e);
@@ -143,11 +143,11 @@ public class DataCombiningRuntime {
     public final class InternalTagConsumer implements TagConsumer{
         private final @NotNull String tagName;
         private final boolean isPrimary;
-        private final @NotNull String dataCombiningUuid;
+        private final @NotNull DataCombining dataCombining;
 
-        public InternalTagConsumer(final @NotNull String tagName, final @NotNull String dataCombiningUuid, final boolean isPrimary) {
+        public InternalTagConsumer(final @NotNull String tagName, final @NotNull DataCombining dataCombining, final boolean isPrimary) {
             this.tagName = tagName;
-            this.dataCombiningUuid = dataCombiningUuid;
+            this.dataCombining = dataCombining;
             this.isPrimary = isPrimary;
         }
 
@@ -160,7 +160,7 @@ public class DataCombiningRuntime {
         public void accept(final List<DataPoint> dataPoints) {
             tagResults.put(tagName, dataPoints);
             if(isPrimary) {
-                triggerPublish();
+                triggerPublish(dataCombining);
             }
         }
     }
@@ -169,5 +169,5 @@ public class DataCombiningRuntime {
         public String getQueueId() {
             return sharedName() + "/" + topic();
         }
-    };
+    }
 }
