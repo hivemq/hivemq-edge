@@ -5,14 +5,14 @@ import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
 
 import { DataCombining } from '@/api/__generated__'
-import type { DomainTagList, DomainTag, TopicFilter, TopicFilterList } from '@/api/__generated__'
-import type { UseQueryResult } from '@tanstack/react-query'
+import type { DomainTag, TopicFilter } from '@/api/__generated__'
+import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps {
   id?: string
   tags?: Array<string>
   topicFilters?: Array<string>
-  optionQueries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]
+  formContext?: CombinerContext
   onChange: (value: MultiValue<EntityOption>) => void
 }
 
@@ -20,27 +20,29 @@ interface EntityOption extends OptionBase {
   label: string
   value: string
   type: string
+  adapterId?: string
   description?: string
 }
 
-const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicFilters, optionQueries, onChange }) => {
+const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicFilters, formContext, onChange }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
-    return optionQueries?.some((query) => query.isLoading) || false
-  }, [optionQueries])
+    return formContext?.queries?.some((query) => query.isLoading) || false
+  }, [formContext?.queries])
 
   const allOptions = useMemo(() => {
     if (isLoading) return []
 
     return (
-      optionQueries?.reduce<EntityOption[]>((acc, queryResult) => {
+      formContext?.queries?.reduce<EntityOption[]>((acc, queryResult) => {
         if (!queryResult.data) return acc
         if (!queryResult.data.items.length) return acc
         if ((queryResult.data.items[0] as DomainTag).name) {
-          const options = (queryResult.data.items as DomainTag[]).map<EntityOption>((tag) => ({
+          const options = (queryResult.data.items as DomainTag[]).map<EntityOption>((tag, index) => ({
             label: tag.name,
             value: tag.name,
             description: tag.description,
+            adapterId: formContext.entities?.[index]?.id,
             type: DataCombining.primaryType.TAG,
           }))
           acc.push(...options)
@@ -58,7 +60,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
         return acc
       }, []) || []
     )
-  }, [isLoading, optionQueries])
+  }, [formContext?.entities, formContext?.queries, isLoading])
 
   const values = useMemo(() => {
     const tagValue =
