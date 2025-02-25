@@ -91,7 +91,7 @@ const CombinerMappingManager: FC = () => {
   return (
     <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent aria-label={t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}>
         <DrawerCloseButton />
         <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
