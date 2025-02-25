@@ -35,7 +35,7 @@ export const useGetCombinedDataSchemas = (dataIdentifiers: DataReference[]) => {
             queryKey: [QUERY_KEYS.DISCOVERY_TOPIC_FILTERS, dataPoint.id, QUERY_KEYS.DISCOVERY_SCHEMAS],
             queryFn: async () => {
               const { items } = await appClient.topicFilters.getTopicFilters()
-              // TODO[NVL] Definitely a hack
+              // TODO[NVL] Definitely a hack; cannot return undefined
               return items.find((e) => e.topicFilter === dataPoint.id)?.schema
             },
           }
