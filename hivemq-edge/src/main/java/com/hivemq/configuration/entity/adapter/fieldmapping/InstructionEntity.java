@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,19 +24,21 @@ import java.util.Objects;
 
 public class InstructionEntity {
 
+    @JsonProperty("source")
     @XmlElement(name = "source")
-    private final @NotNull String sourceFieldName;
+    private @NotNull String sourceFieldName;
+
+    @JsonProperty("destination")
     @XmlElement(name = "destination")
-    private final @NotNull String destinationFieldName;
+    private @NotNull String destinationFieldName;
+
+    @JsonProperty("origin")
     @XmlElement(name = "origin")
-    private final @NotNull String origin;
+    private @NotNull String origin;
 
 
     // no- arg for JaxB
     public InstructionEntity() {
-        sourceFieldName = "";
-        destinationFieldName = "";
-        origin = "";
     }
 
     public InstructionEntity(

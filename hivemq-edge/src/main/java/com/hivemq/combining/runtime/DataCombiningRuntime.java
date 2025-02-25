@@ -75,7 +75,6 @@ public class DataCombiningRuntime {
     }
 
     public void start() {
-
         combining.sources()
             .tags()
             .stream()
@@ -147,7 +146,7 @@ public class DataCombiningRuntime {
         });
 
         try {
-            dataCombiningPublishService.publish(combining.id().toString(), combining.destination(), mapper.writeValueAsBytes(outgoing), dataCombining);
+            dataCombiningPublishService.publish(combining.destination(), mapper.writeValueAsBytes(outgoing), dataCombining);
         } catch (final JsonProcessingException e) {
             log.error("Can't produce JSON", e);
             throw new RuntimeException(e);

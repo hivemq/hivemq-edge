@@ -55,11 +55,11 @@ public class DataCombiningPublishService {
     }
 
     public void publish(
-            final @NotNull String clientId,
             final @NotNull String topic,
             final @NotNull byte[] payload,
             final @NotNull DataCombining dataCombining) {
-        final var publish = new PUBLISHFactory.Mqtt5Builder().withHivemqId(hiveMQId.get())
+        final var publish = new PUBLISHFactory.Mqtt5Builder()
+                .withHivemqId(hiveMQId.get())
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withRetain(false)

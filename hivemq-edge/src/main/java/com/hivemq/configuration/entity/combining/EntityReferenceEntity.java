@@ -26,16 +26,14 @@ public class EntityReferenceEntity {
 
     @JsonProperty("type")
     @XmlElement(name = "type")
-    private final @NotNull EntityType type;
+    private @NotNull EntityType type;
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private final @NotNull String id;
+    private @NotNull String id;
 
     // no-arg for jaxb
     public EntityReferenceEntity() {
-        id = "";
-        type = EntityType.EDGE_BROKER;
     }
 
     public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
