@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
+import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
@@ -35,12 +36,15 @@ import java.util.concurrent.CompletableFuture;
 public class DataCombiningTransformationServiceProvider {
 
     private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
+    private final @NotNull InternalPublishService internalPublishService;
 
     @Inject
     public DataCombiningTransformationServiceProvider(
-            final @NotNull EdgeCoreFactoryService edgeCoreFactoryService) {
+            final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
+            final @NotNull InternalPublishService internalPublishService) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
 
+        this.internalPublishService = internalPublishService;
     }
 
     public @NotNull DataCombiningTransformationService get() {
@@ -49,6 +53,6 @@ public class DataCombiningTransformationServiceProvider {
         if (serviceFactory == null) {
             return new DataCombiningTransformationServiceNoop();
         }
-        return serviceFactory.build();
+        return serviceFactory.build(internalPublishService);
     }
 }
