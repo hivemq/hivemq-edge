@@ -29,6 +29,7 @@ import ErrorMessage from '@/components/ErrorMessage'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
+import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -36,8 +37,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const { formData, formContext } = props
 
   const primary = useMemo(() => {
-    const tags = formData?.sources.tags || []
-    const topicFilters = formData?.sources.topicFilters || []
+    const tags = formData?.sources?.tags || []
+    const topicFilters = formData?.sources?.topicFilters || []
 
     return [...tags, ...topicFilters].map((entity) => ({ label: entity }))
   }, [formData])
@@ -50,7 +51,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
             <CombinedEntitySelect
               tags={formData?.sources?.tags}
               topicFilters={formData?.sources?.topicFilters}
-              optionQueries={formContext?.sources}
+              formContext={formContext}
               onChange={(values) => {
                 if (!formData) return
                 const tag: string[] = []
@@ -62,16 +63,14 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
                 props.onChange({
                   ...formData,
+                  // @ts-ignore TODO check for type clash on primary
                   sources: { ...formData.sources, tags: tag, topicFilters: filter },
                 })
               }}
             />
           </Box>
           <VStack height={500} overflow={'auto'} alignItems={'flex-start'} justifyContent={'center'} tabIndex={0}>
-            <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
-            {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_PLAIN, title: 'my/tag/t1' }} hasExamples />*/}
-            {/*<JsonSchemaBrowser schema={{ ...MOCK_MQTT_SCHEMA_REFS, title: 'my/tag/t3' }} hasExamples />*/}
-            {/*<JsonSchemaBrowser schema={{ ...GENERATE_DATA_MODELS(true), title: 'my/tag/t3' }} hasExamples />*/}
+            <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
           </VStack>
           <Box>
             <Select<{ label: string }>
