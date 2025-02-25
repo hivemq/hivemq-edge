@@ -4165,6 +4165,8 @@ paths:
     get:
       description: Get the specified topic filter
       operationId: get-topicFilter
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
       responses:
         "200":
           content:
@@ -4179,13 +4181,7 @@ paths:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that should be deleted.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       responses:
         "200":
           description: Success
@@ -4208,13 +4204,7 @@ paths:
       description: Update a topic filter
       operationId: update-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that will be updated.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       requestBody:
         content:
           application/json:
@@ -4242,6 +4232,8 @@ paths:
     get:
       description: Get the schema of the specified topic filter
       operationId: get-topicFilter-schema
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
       responses:
         "200":
           content:
@@ -4545,6 +4537,14 @@ components:
       schema:
         type: string
   parameters:
+    TopicFilterId:
+      name: filter
+      description: The URL-encoded filter of the topic filter that should be deleted.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: urlencoded
     CombinerId:
       name: combinerId
       description: The unique id of the combiner to retrieve.
