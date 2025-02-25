@@ -23,18 +23,19 @@ import {
 
 import config from '@/config'
 
+import type { CombinerContext } from './types'
 import { MappingType } from './types'
 import type { Combiner } from '@/api/__generated__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
 import { useUpdateCombiner } from '@/api/hooks/useCombiners/useUpdateCombiner'
+import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
-import { useGetCombinedEntities } from '../../api/hooks/useDomainModel/useGetCombinedEntities'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -111,7 +112,7 @@ const CombinerMappingManager: FC = () => {
               uiSchema={combinerMappingUiSchema}
               formData={selectedNode.data}
               onSubmit={handleOnSubmit}
-              formContext={{ sources: sources }}
+              formContext={{ queries: sources, entities } as CombinerContext}
             />
           )}
         </DrawerBody>
