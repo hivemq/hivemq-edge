@@ -23,14 +23,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-public record DataCombining(UUID id, DataCombiningSources sources, String destination,
+public record DataCombining(UUID id, DataCombiningSources sources, DataCombiningDestination destination,
                             List<com.hivemq.persistence.mappings.fieldmapping.Instruction> instructions) {
 
     public static @NotNull DataCombining fromModel(final @NotNull com.hivemq.edge.api.model.DataCombining model) {
         final List<Instruction> instructions = model.getInstructions().stream().map(Instruction::from).toList();
         return new DataCombining(model.getId(),
                 DataCombiningSources.fromModel(model.getSources()),
-                model.getDestination(),
+                DataCombiningDestination.from(model.getDestination()),
                 instructions);
     }
 
@@ -39,7 +39,7 @@ public record DataCombining(UUID id, DataCombiningSources sources, String destin
                 instructions.stream().map(Instruction::toModel).toList();
         return new com.hivemq.edge.api.model.DataCombining().id(id)
                 .sources(sources.toModel())
-                .destination(destination)
+                .destination(destination.toModel())
                 .instructions(instructionsAsModelClass);
     }
 
@@ -48,12 +48,12 @@ public record DataCombining(UUID id, DataCombiningSources sources, String destin
         final List<Instruction> instructions = model.getInstructions().stream().map(InstructionEntity::to).toList();
         return new DataCombining(model.getId(),
                 DataCombiningSources.fromPersistence(model.getSources()),
-                model.getDestination(),
+                DataCombiningDestination.fromPersistence(model.getDestination()),
                 instructions);
     }
 
     public @NotNull DataCombiningEntity toPersistence() {
         final List<InstructionEntity> instructions = this.instructions().stream().map(InstructionEntity::from).toList();
-        return new DataCombiningEntity(this.id(), this.sources.toPersistence(), this.destination, instructions);
+        return new DataCombiningEntity(this.id(), this.sources.toPersistence(), this.destination().toPersistence(), instructions);
     }
 }

@@ -20,6 +20,7 @@ import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.NotFoundError;
 import com.hivemq.api.errors.topicfilters.TopicFilterNotFoundError;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.TopicFiltersApi;
@@ -88,6 +89,29 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
     }
 
     @Override
+    public Response getTopicFilter(final String filter) {
+        final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
+        if(topicFilter==null){
+            return ErrorResponseUtil.errorResponse(new NotFoundError());
+        } else {
+            return Response.ok(topicFilter.toModel()).build();
+        }
+    }
+
+    @Override
+    public Response getTopicFilterSchema(final String filter) {
+        final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
+        if(topicFilter==null){
+            return ErrorResponseUtil.errorResponse(new NotFoundError());
+        } else {
+            // TODO actually we only want to return the schema, for now we return everything
+            return Response.ok(topicFilter.toModel()).build();
+        }
+    }
+
+
+
+    @Override
     public @NotNull Response deleteTopicFilter(final @NotNull String filterUriEncoded) {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
@@ -104,6 +128,7 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
                 return ErrorResponseUtil.errorResponse(new InternalServerError("Internal Error"));
         }
     }
+
 
     @Override
     public @NotNull Response updateTopicFilter(
