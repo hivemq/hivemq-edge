@@ -55,7 +55,9 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
       <ButtonGroup size="sm" variant="outline" justifyContent={'flex-end'}>
         <Popover>
           <PopoverTrigger>
-            <Button isDisabled>{t('combiner.schema.schemaManager.action.infer')}</Button>
+            <Button data-testid={'combiner-destination-infer'} isDisabled>
+              {t('combiner.schema.schemaManager.action.infer')}
+            </Button>
           </PopoverTrigger>
           <PopoverContent>
             <PopoverArrow />
@@ -71,9 +73,11 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
         </Popover>
         <Popover>
           <PopoverTrigger>
-            <Button isDisabled={!isTopicDefined}>{t('combiner.schema.schemaManager.action.upload')}</Button>
+            <Button data-testid={'combiner-destination-upload'} isDisabled={!isTopicDefined}>
+              {t('combiner.schema.schemaManager.action.upload')}
+            </Button>
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent data-testid={'combiner-destination-upload-content'}>
             <PopoverArrow />
             <PopoverCloseButton />
             <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
@@ -82,7 +86,11 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
             </PopoverBody>
           </PopoverContent>
         </Popover>
-        <Button onClick={handleSchemaDownload} isDisabled={!isSchemaDefined}>
+        <Button
+          data-testid={'combiner-destination-download'}
+          onClick={handleSchemaDownload}
+          isDisabled={!isSchemaDefined}
+        >
           {t('combiner.schema.schemaManager.action.download')}
         </Button>
       </ButtonGroup>
