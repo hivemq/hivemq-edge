@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.persistence.mappings.fieldmapping;
+package com.hivemq.exceptions;
 
 import org.jetbrains.annotations.NotNull;
 
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName, @NotNull String origin) {
+public class StacklessException extends Exception {
 
-    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        // TODO add source here
-        return new Instruction(model.getSource(), model.getDestination(), "");
+    public StacklessException(final @NotNull String message) {
+        super(message);
     }
 
-    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
-        return new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
+    // makes this exception much cheaper, but we wont get a nice stack trace.
+    @Override
+    public synchronized @NotNull Throwable fillInStackTrace() {
+        return this;
     }
-
 }

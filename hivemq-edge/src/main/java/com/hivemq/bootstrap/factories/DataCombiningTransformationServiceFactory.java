@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.persistence.mappings.fieldmapping;
+package com.hivemq.bootstrap.factories;
 
+import com.hivemq.combining.mapping.DataCombiningTransformationService;
+import com.hivemq.mqtt.services.InternalPublishService;
 import org.jetbrains.annotations.NotNull;
 
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName, @NotNull String origin) {
-
-    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        // TODO add source here
-        return new Instruction(model.getSource(), model.getDestination(), "");
-    }
-
-    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
-        return new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
-    }
-
+public interface DataCombiningTransformationServiceFactory {
+    @NotNull
+    DataCombiningTransformationService build(final @NotNull InternalPublishService internalPublishService);
 }

@@ -22,8 +22,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.hivemq.bootstrap.factories.HandlerResult;
+import com.hivemq.bootstrap.factories.InternalPublishServiceHandling;
+import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -31,6 +32,8 @@ import com.hivemq.mqtt.topic.tree.TopicSubscribers;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.hivemq.configuration.service.InternalConfigurations.ACKNOWLEDGE_INCOMING_PUBLISH_AFTER_PERSISTING_ENABLED;
 
@@ -56,6 +60,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence;
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull PublishDistributor publishDistributor;
+    private final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider;
 
     private final boolean acknowledgeAfterPersist;
 
@@ -63,18 +68,19 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     public InternalPublishServiceImpl(
             final @NotNull RetainedMessagePersistence retainedMessagePersistence,
             final @NotNull LocalTopicTree topicTree,
-            final @NotNull PublishDistributor publishDistributor) {
-
+            final @NotNull PublishDistributor publishDistributor,
+            final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider) {
         this.retainedMessagePersistence = retainedMessagePersistence;
         this.topicTree = topicTree;
         this.publishDistributor = publishDistributor;
+        this.internalPublishServiceHandlingProvider = internalPublishServiceHandlingProvider;
         this.acknowledgeAfterPersist = ACKNOWLEDGE_INCOMING_PUBLISH_AFTER_PERSISTING_ENABLED.get();
     }
 
 
     @NotNull
     public ListenableFuture<PublishReturnCode> publish(
-            @NotNull PUBLISH publish, @NotNull ExecutorService executorService, @Nullable String sender) {
+            @NotNull final PUBLISH publish, @NotNull final ExecutorService executorService, @Nullable final String sender) {
         Preconditions.checkNotNull(publish, "PUBLISH can not be null");
         Preconditions.checkNotNull(executorService, "executorService can not be null");
 
@@ -88,6 +94,26 @@ public class InternalPublishServiceImpl implements InternalPublishService {
         return Futures.whenAllComplete(publishReturnCodeFuture, persistFuture)
                 .call(() -> publishReturnCodeFuture.get(), executorService);
     }
+
+    @Override
+    public @NotNull ListenableFuture<PublishReturnCode> applyDataHubAndPublish(
+            final @NotNull PUBLISH publish,
+            final @NotNull ExecutorService executorService,
+            final @Nullable String sender) {
+
+
+        final ListenableFuture<HandlerResult> handlerFuture = internalPublishServiceHandlingProvider.get().apply(publish, sender);
+        return Futures.transformAsync(handlerFuture, handlerResult -> {
+            final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
+            if (handlerResult.isPreventPublish() || modifiedPublish == null) {
+                return Futures.immediateFuture(PublishReturnCode.FAILED);
+            } else {
+                // TODO perhaps we need to merge the original publish
+                return publish(modifiedPublish, executorService, sender);
+            }
+        }, Executors.newSingleThreadExecutor());
+    }
+
 
     private ListenableFuture<Void> persistRetainedMessage(
             final PUBLISH publish, final ExecutorService executorService) {

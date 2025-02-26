@@ -16,7 +16,9 @@
 package com.hivemq.bootstrap.ioc;
 
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.bootstrap.factories.DataCombiningTransformationServiceProvider;
 import com.hivemq.bootstrap.factories.WritingServiceProvider;
+import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import dagger.Binds;
 import dagger.Module;
@@ -26,17 +28,11 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Singleton;
 
 @Module
-public abstract class AdapterModule {
+public abstract class CombiningModule {
 
     @Provides
     @Singleton
-    static @NotNull InternalProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
-        return writingServiceProvider.get();
+    static @NotNull DataCombiningTransformationService dataCombiningTransformationService(final DataCombiningTransformationServiceProvider provider) {
+        return provider.get();
     }
-
-    @Singleton
-    @Binds
-    abstract @NotNull ProtocolAdapterMetricsService  protocolAdapterMetricsService(final @NotNull ProtocolAdapterMetricsService persistenceBootstrapService);
-
-
 }
