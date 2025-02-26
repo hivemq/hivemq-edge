@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -42,8 +43,8 @@ public class DataCombiningSourcesEntity {
 
     // no-arg for jaxb
     public DataCombiningSourcesEntity() {
-        tags = List.of();
-        topicFilters = List.of();
+        tags = new ArrayList<>();
+        topicFilters = new ArrayList<>();
         primaryIdentifier = null;
     }
 

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,7 +52,7 @@ public class DataCombiningEntity {
         this.destination = new DataCombiningDestinationEntity();
         this.id = UUID.randomUUID();
         this.sources = new DataCombiningSourcesEntity();
-        this.instructions = List.of();
+        this.instructions = new ArrayList<>();
     }
 
     public DataCombiningEntity(

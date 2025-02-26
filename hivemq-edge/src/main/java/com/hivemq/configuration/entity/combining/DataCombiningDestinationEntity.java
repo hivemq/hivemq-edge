@@ -6,8 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 
-// can not because of JaxB
-@SuppressWarnings("ClassCanBeRecord")
 public class DataCombiningDestinationEntity {
 
     @JsonProperty("topic")
