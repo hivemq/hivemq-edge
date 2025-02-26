@@ -836,11 +836,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     }).collect(Collectors.toList());
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
-                    // TODO for now simulation does not need tags
-                    if (adapter.getProtocolAdapterInformation().getProtocolId().equals("simulation")) {
-                        requiredTags.clear();
-                    }
-
                     if (requiredTags.isEmpty()) {
                         if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
                             log.info("Successfully updated northbound mappings for adapter '{}'.", adapterId);
