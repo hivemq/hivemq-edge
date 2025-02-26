@@ -17,9 +17,16 @@ package com.hivemq.combining.model;
 
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record DataIdentifierReference(String id, Type type) {
-    public static @NotNull DataIdentifierReference from(final @NotNull com.hivemq.edge.api.model.DataIdentifierReference model) {
+
+
+    public static @Nullable DataIdentifierReference from(final @Nullable com.hivemq.edge.api.model.DataIdentifierReference model) {
+        if (model == null) {
+            return null;
+        }
+
         return new DataIdentifierReference(model.getId(), Type.from(model.getType()));
     }
 

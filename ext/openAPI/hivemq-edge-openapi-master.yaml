@@ -103,7 +103,7 @@ paths:
       responses:
         default:
           content:
-            '*/*': {}
+            '*/*': { }
           description: default response
   /api/v1/auth/authenticate:
     post:
@@ -259,7 +259,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -277,7 +277,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -301,7 +301,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -319,7 +319,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -354,7 +354,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -401,7 +401,7 @@ paths:
                     version: latest
               behavior:
                 id: Mqtt.events
-                arguments: {}
+                arguments: { }
               onTransitions:
                 - fromState: Any.*
                   toState: Any.*
@@ -439,10 +439,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -586,10 +586,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -655,7 +655,7 @@ paths:
                     version: latest
               behavior:
                 id: Mqtt.events
-                arguments: {}
+                arguments: { }
               onTransitions:
                 - fromState: Any.*
                   toState: Any.*
@@ -693,10 +693,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -1549,8 +1549,8 @@ paths:
                               title: Mqtt.events
                               description: This FSM does not require any arguments.
                               type: object
-                              required: []
-                              properties: {}
+                              required: [ ]
+                              properties: { }
                       - if:
                           type: object
                           properties:
@@ -1563,8 +1563,8 @@ paths:
                               title: Publish.duplicate options
                               description: This FSM does not require any arguments.
                               type: object
-                              required: []
-                              properties: {}
+                              required: [ ]
+                              properties: { }
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
@@ -1637,7 +1637,7 @@ paths:
                       - title: Mqtt.drop
                         description: Drops the MQTT packet that is currently processed
                         type: object
-                        required: []
+                        required: [ ]
                         metaData:
                           isTerminal: false
                           isDataOnly: false
@@ -1673,12 +1673,12 @@ paths:
                       - title: Mqtt.disconnect
                         description: Disconnects the client
                         type: object
-                        required: []
+                        required: [ ]
                         metaData:
                           isTerminal: true
                           isDataOnly: false
                           hasArguments: false
-                        properties: {}
+                        properties: { }
                       - title: Serdes.deserialize
                         description: Deserializes a binary MQTT message payload into
                           a data object based on the configured JSON Schema or Protobuf
@@ -2540,7 +2540,7 @@ paths:
                           imageUrl: ""
                           external: true
                     modules:
-                      items: []
+                      items: [ ]
                     extensions:
                       items:
                         - id: extension-1
@@ -2697,12 +2697,12 @@ paths:
                         password: '*****'
                         loopPreventionEnabled: true
                         loopPreventionHopCount: 1
-                        remoteSubscriptions: []
+                        remoteSubscriptions: [ ]
                         localSubscriptions:
                           - filters:
                               - '#'
                             destination: "prefix/{#}/bridge/${bridge.name}"
-                            excludes: []
+                            excludes: [ ]
                             customUserProperties:
                               - key: test1
                                 value: test2
@@ -2713,8 +2713,8 @@ paths:
                           keystorePassword: ""
                           privateKeyPassword: ""
                           truststorePassword: ""
-                          protocols: []
-                          cipherSuites: []
+                          protocols: [ ]
+                          cipherSuites: [ ]
                           keystoreType: JKS
                           truststoreType: JKS
                           verifyHostname: true
@@ -2834,12 +2834,12 @@ paths:
                     password: password
                     loopPreventionEnabled: true
                     loopPreventionHopCount: 1
-                    remoteSubscriptions: []
+                    remoteSubscriptions: [ ]
                     localSubscriptions:
                       - filters:
                           - '#'
                         destination: "prefix/{#}/bridge/${bridge.name}"
-                        excludes: []
+                        excludes: [ ]
                         customUserProperties:
                           - key: test1
                             value: test2
@@ -2850,8 +2850,8 @@ paths:
                       keystorePassword: ""
                       privateKeyPassword: ""
                       truststorePassword: ""
-                      protocols: []
-                      cipherSuites: []
+                      protocols: [ ]
+                      cipherSuites: [ ]
                       keystoreType: JKS
                       truststoreType: JKS
                       verifyHostname: true
@@ -3026,7 +3026,7 @@ paths:
                 event-list-result:
                   description: Example response with several events.
                   summary: Event List result
-                  value: {}
+                  value: { }
               schema:
                 $ref: '#/components/schemas/EventList'
           description: Success
@@ -3277,7 +3277,7 @@ paths:
                                 description: ""
                                 nodeType: VALUE
                                 selectable: true
-                                children: []
+                                children: [ ]
               schema:
                 $ref: '#/components/schemas/ValuesTree'
           description: Success
@@ -5323,6 +5323,8 @@ components:
       type: object
       description: List of instructions to be applied to incoming data
       properties:
+        sourceRef:
+          $ref: '#/components/schemas/DataIdentifierReference'
         destination:
           type: string
           description: The field in the output object where the data will be written
@@ -6289,7 +6291,7 @@ components:
       type: string
       description: These are the prime entities owning tags and topic filters
       # TODO The list of enums needs to be updated and reused across frontend
-      enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
+      enum: [ ADAPTER, DEVICE, BRIDGE, EDGE_BROKER ]
     EntityReference:
       type: object
       description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)

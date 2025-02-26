@@ -33,10 +33,10 @@ public class DataCombiningDestinationEntity {
 
     public DataCombiningDestinationEntity() {
         this.topic = "";
-        this.schema ="";
+        this.schema = "";
     }
 
-    public DataCombiningDestinationEntity(@NotNull final String schema, @NotNull final String topic) {
+    public DataCombiningDestinationEntity(@NotNull final String topic, @NotNull final String schema) {
         this.schema = schema;
         this.topic = topic;
     }
