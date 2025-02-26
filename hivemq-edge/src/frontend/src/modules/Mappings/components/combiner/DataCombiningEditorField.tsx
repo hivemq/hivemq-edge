@@ -93,12 +93,13 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               isMulti={false}
               isCreatable={true}
               id={'destination'}
-              value={formData?.destination || null}
-              onChange={(e) => {
+              value={formData?.destination?.topic || null}
+              onChange={(topic) => {
                 if (!props.formData) return
 
-                if (e && typeof e === 'string') props.onChange({ ...props.formData, destination: e })
-                else if (!e) props.onChange({ ...props.formData, destination: '' })
+                if (topic && typeof topic === 'string')
+                  props.onChange({ ...props.formData, destination: { topic: topic } })
+                else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
               }}
             />
           </Box>
