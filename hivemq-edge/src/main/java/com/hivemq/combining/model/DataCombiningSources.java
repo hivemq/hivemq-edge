@@ -21,23 +21,30 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 
-public record DataCombiningSources(@NotNull String primaryName, @NotNull PrimaryType primaryType, @NotNull List<String> tags, @NotNull List<String> topicFilters) {
+public record DataCombiningSources(DataIdentifierReference primaryReference, List<String> tags,
+                                   List<String> topicFilters) {
 
     public static @NotNull DataCombiningSources fromModel(final @NotNull com.hivemq.edge.api.model.DataCombiningSources model) {
-        return new DataCombiningSources(model.getPrimary(), PrimaryType.fromModel(model.getPrimaryType()), model.getTags(), model.getTopicFilters());
+        return new DataCombiningSources(DataIdentifierReference.from(model.getPrimary()),
+                model.getTags(),
+                model.getTopicFilters());
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombiningSources toModel() {
-        return new com.hivemq.edge.api.model.DataCombiningSources().primary(primaryName()).primaryType(primaryType().toModel()).tags(tags).topicFilters(topicFilters);
+        return new com.hivemq.edge.api.model.DataCombiningSources().primary(primaryReference().to())
+                .tags(tags)
+                .topicFilters(topicFilters);
     }
 
 
     public static @NotNull DataCombiningSources fromPersistence(final @NotNull DataCombiningSourcesEntity persistenceModel) {
-        return new DataCombiningSources(persistenceModel.getPrimaryName(), persistenceModel.getPrimaryType(), persistenceModel.getTags(), persistenceModel.getTopicFilters());
+        return new DataCombiningSources(DataIdentifierReference.fromPersistence(persistenceModel.getPrimaryIdentifier()),
+                persistenceModel.getTags(),
+                persistenceModel.getTopicFilters());
     }
 
     public @NotNull DataCombiningSourcesEntity toPersistence() {
-        return new DataCombiningSourcesEntity(primaryName(), primaryType(), tags(), topicFilters());
+        return new DataCombiningSourcesEntity(primaryReference().toPersistence(), tags(), topicFilters());
     }
 
 }
