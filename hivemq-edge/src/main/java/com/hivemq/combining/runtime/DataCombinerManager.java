@@ -40,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
+import static com.hivemq.metrics.HiveMQMetrics.DATA_COMBINERS_COUNT_CURRENT;
 import static com.hivemq.persistence.util.FutureUtils.syncFuture;
 
 @Singleton
@@ -77,29 +78,22 @@ public class DataCombinerManager {
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
         this.dataCombiningPublishService = dataCombiningPublishService;
-
-        // TODO move to HiveMQMetrics
-        metricRegistry.registerGauge("com.hivemq.edge.data-combining.data-combiners.current",
-                () -> idToDataCombiner.values().size());
+        metricRegistry.registerGauge(DATA_COMBINERS_COUNT_CURRENT.name(), () -> idToDataCombiner.values().size());
     }
 
     public void start() {
         log.debug("Starting data combiners");
-        configPersistence
-                .allDataCombiners()
-                .forEach(dataCombiner ->
-                        idToDataCombiningStates.put(dataCombiner.id(), createDataCombiningStates(dataCombiner)));
+        configPersistence.allDataCombiners()
+                .forEach(dataCombiner -> idToDataCombiningStates.put(dataCombiner.id(),
+                        createDataCombiningStates(dataCombiner)));
 
-        idToDataCombiningStates.values().stream()
-                .flatMap(Collection::stream)
-                .forEach(DataCombiningRuntime::start);
+        idToDataCombiningStates.values().stream().flatMap(Collection::stream).forEach(DataCombiningRuntime::start);
     }
 
-    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(DataCombiner dataCombiner) {
+    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
         final List<DataCombiningRuntime> dataCombiningRuntimes = dataCombiner.dataCombinings()
                 .stream()
-                .map(dataCombining -> new DataCombiningRuntime(
-                        dataCombining,
+                .map(dataCombining -> new DataCombiningRuntime(dataCombining,
                         localTopicTree,
                         tagManager,
                         clientQueuePersistence,
@@ -131,15 +125,13 @@ public class DataCombinerManager {
 
     public @NotNull CompletableFuture<Void> stopAll() {
         return CompletableFuture.runAsync(() -> {
-            idToDataCombiningStates.values().stream()
-                    .flatMap(Collection::stream)
-                    .forEach(DataCombiningRuntime::stop);
+            idToDataCombiningStates.values().stream().flatMap(Collection::stream).forEach(DataCombiningRuntime::stop);
         });
     }
 
     public @NotNull CompletableFuture<AddResult> addDataCombiner(final @NotNull DataCombiner dataCombiner) {
         final DataCombiner previousValue = idToDataCombiner.putIfAbsent(dataCombiner.id(), dataCombiner);
-        if(previousValue!=null){
+        if (previousValue != null) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("data combiner already exists by id '" +
                     dataCombiner.id() +
                     "'"));
