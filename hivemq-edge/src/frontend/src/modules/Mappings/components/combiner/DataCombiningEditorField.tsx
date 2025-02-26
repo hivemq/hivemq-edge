@@ -3,33 +3,15 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Select } from 'chakra-react-select'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  HStack,
-  Icon,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverHeader,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
-  Stack,
-  Text,
-  VStack,
-  PopoverFooter,
-} from '@chakra-ui/react'
+import { Box, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 
 import { DataCombining } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
-import ErrorMessage from '@/components/ErrorMessage'
-import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
+import { DestinationSchemaLoader } from './DestinationSchemaLoader'
 
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -103,40 +85,17 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               }}
             />
           </Box>
-          <ButtonGroup size="sm" variant="outline" justifyContent={'flex-end'}>
-            <Popover>
-              <PopoverTrigger>
-                <Button>{t('topicFilter.schema.tabs.infer')}</Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
-                <PopoverBody>
-                  <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>
-                </PopoverBody>
-                <PopoverFooter gap={2} display={'flex'}>
-                  <Button isDisabled>{t('combiner.schema.schemaManager.infer.action')}</Button>
-                </PopoverFooter>
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger>
-                <Button>{t('topicFilter.schema.tabs.upload')}</Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
-                <PopoverBody>
-                  <SchemaUploader onUpload={() => console.log('uploaded')} />
-                </PopoverBody>
-              </PopoverContent>
-            </Popover>
-          </ButtonGroup>
-          <VStack height={420} justifyContent={'center'} alignItems={'center'}>
-            <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
-          </VStack>
+          <DestinationSchemaLoader
+            formData={props.formData}
+            onChange={(schema) => {
+              if (!props.formData) return
+
+              props.onChange({
+                ...props.formData,
+                destination: { topic: props.formData.destination.topic, schema: schema },
+              })
+            }}
+          />
         </VStack>
       </Stack>
     </VStack>
