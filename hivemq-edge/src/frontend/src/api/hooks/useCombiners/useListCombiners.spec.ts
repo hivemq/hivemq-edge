@@ -46,7 +46,7 @@ describe('useListCombiners', () => {
           mappings: {
             items: [
               {
-                destination: 'my/first/topic',
+                destination: { topic: 'my/first/topic' },
                 id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
                 instructions: [],
                 sources: {
@@ -57,7 +57,7 @@ describe('useListCombiners', () => {
                 },
               },
               {
-                destination: 'my/other/topic',
+                destination: { topic: 'my/other/topic' },
                 id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
                 instructions: [],
                 sources: {
