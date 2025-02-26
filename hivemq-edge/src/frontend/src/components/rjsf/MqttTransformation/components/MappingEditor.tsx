@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CardProps } from '@chakra-ui/react'
-import { Button, Card, CardBody, CardHeader, Heading, HStack, List, ListItem } from '@chakra-ui/react'
+import { Button, Card, CardBody, CardHeader, Heading, HStack } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
 import type { Instruction } from '@/api/__generated__'
@@ -10,9 +10,9 @@ import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWriti
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
-import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { MappingInstructionList } from './MappingInstructionList'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
@@ -64,39 +64,13 @@ const MappingEditor: FC<MappingEditorProps> = ({
         {!isSuccess && !isError && !isLoading && (
           <ErrorMessage message={t('rjsf.MqttTransformationField.destination.prompt')} status="info" />
         )}
-        {isSuccess && (
-          <List>
-            {properties.map((property) => {
-              const instruction = instructions
-                ? instructions.findIndex((instruction) => instruction.destination === property.key)
-                : -1
-              return (
-                <ListItem key={property.key}>
-                  <MappingInstruction
-                    showTransformation={showTransformation}
-                    property={property}
-                    instruction={instruction !== -1 ? instructions?.[instruction] : undefined}
-                    onChange={(source, destination) => {
-                      let newMappings = [...(instructions || [])]
-                      if (source) {
-                        const newItem: Instruction = {
-                          source: source,
-                          destination: destination,
-                        }
-                        if (instruction !== -1) {
-                          newMappings[instruction] = newItem
-                        } else newMappings.push(newItem)
-                      } else {
-                        newMappings = newMappings.filter((mapped) => mapped.destination !== destination)
-                      }
-
-                      onChange?.(newMappings)
-                    }}
-                  />
-                </ListItem>
-              )
-            })}
-          </List>
+        {isSuccess && instructions && (
+          <MappingInstructionList
+            instructions={instructions}
+            schema={data}
+            onChange={onChange}
+            showTransformation={showTransformation}
+          />
         )}
       </CardBody>
     </Card>
