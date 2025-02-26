@@ -1,5 +1,5 @@
 import type { JSONSchema7 } from 'json-schema'
-import { DataCombining, EntityType } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import { Instruction } from './definitions/Instruction.json-schema'
 
 /**
@@ -9,7 +9,18 @@ import { Instruction } from './definitions/Instruction.json-schema'
 export const combinerMappingJsonSchema: JSONSchema7 = {
   definitions: {
     Instruction: Instruction,
-
+    DataIdentifierReference: {
+      description: `A reference to one of the data identifiers (topic filter or tag) in Edge`,
+      properties: {
+        id: {
+          type: 'string',
+          description: `The name (segmented) of the tag or topic filter`,
+        },
+        type: {
+          enum: [DataIdentifierReference.type.TAG, DataIdentifierReference.type.TOPIC_FILTER],
+        },
+      },
+    },
     EntityReference: {
       description: 'A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)',
       properties: {
@@ -43,10 +54,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
         sources: {
           properties: {
             primary: {
-              type: 'string',
-            },
-            primaryType: {
-              enum: [DataCombining.primaryType.TAG, DataCombining.primaryType.TOPIC_FILTER],
+              $ref: '#/definitions/DataIdentifierReference',
             },
             tags: {
               type: 'array',
