@@ -34,7 +34,8 @@ public class ProtocolAdapter {
     public enum Capability {
         @Schema(description = "The adapter is able to read tags or values from the connected device") READ,
         @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER,
-        @Schema(description = "The adapter is able to write data to the connected device") WRITE;
+        @Schema(description = "The adapter is able to write data to the connected device") WRITE,
+        @Schema(description = "The adapter is able to be used a data source for combination") COMBINE;
 
         public static @NotNull Capability from(final ProtocolAdapterCapability capability) {
             switch (capability) {
@@ -44,6 +45,8 @@ public class ProtocolAdapter {
                     return DISCOVER;
                 case WRITE:
                     return WRITE;
+                case COMBINE:
+                    return COMBINE;
                 default:
                     throw new IllegalArgumentException("No capability found for " + capability);
             }
@@ -103,7 +106,7 @@ public class ProtocolAdapter {
     private final @NotNull Set<Capability> capabilities;
 
     @JsonProperty("configSchema")
-    @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
+    @Schema(description = "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.")
     private final @NotNull JsonNode configSchema;
 
     @JsonProperty("uiSchema")
