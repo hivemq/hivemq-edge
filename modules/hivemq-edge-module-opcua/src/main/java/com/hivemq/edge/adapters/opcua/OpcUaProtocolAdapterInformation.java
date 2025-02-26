@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
-public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation{
+public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
     public static final String PROTOCOL_ID = "opcua";
@@ -99,7 +99,10 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE, ProtocolAdapterCapability.DISCOVER);
+        return EnumSet.of(ProtocolAdapterCapability.READ,
+                ProtocolAdapterCapability.WRITE,
+                ProtocolAdapterCapability.DISCOVER,
+                ProtocolAdapterCapability.COMBINE);
     }
 
     @Override
