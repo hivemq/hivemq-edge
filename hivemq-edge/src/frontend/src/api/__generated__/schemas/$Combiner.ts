@@ -26,6 +26,7 @@ export const $Combiner = {
         },
         mappings: {
             type: 'DataCombiningList',
+            isRequired: true,
         },
     },
 } as const;

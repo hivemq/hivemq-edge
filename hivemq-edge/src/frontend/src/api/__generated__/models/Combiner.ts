@@ -23,6 +23,6 @@ export type Combiner = {
      */
     description?: string;
     sources: EntityReferenceList;
-    mappings?: DataCombiningList;
+    mappings: DataCombiningList;
 };
 

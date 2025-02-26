@@ -14,11 +14,7 @@ export const $DataCombining = {
         sources: {
             properties: {
                 primary: {
-                    type: 'string',
-                    isRequired: true,
-                },
-                primaryType: {
-                    type: 'Enum',
+                    type: 'DataIdentifierReference',
                     isRequired: true,
                 },
                 tags: {
@@ -34,6 +30,7 @@ export const $DataCombining = {
                     },
                 },
             },
+            isRequired: true,
         },
         destination: {
             properties: {
