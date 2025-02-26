@@ -79,8 +79,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               onChange={(topic) => {
                 if (!props.formData) return
 
-                if (topic && typeof topic === 'string')
-                  props.onChange({ ...props.formData, destination: { topic: topic } })
+                if (topic && typeof topic === 'string') props.onChange({ ...props.formData, destination: { topic } })
                 else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
               }}
             />
@@ -92,7 +91,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
               props.onChange({
                 ...props.formData,
-                destination: { topic: props.formData.destination.topic, schema: schema },
+                destination: { topic: props.formData.destination.topic, schema },
               })
             }}
           />

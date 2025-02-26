@@ -105,15 +105,6 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
         <VStack w="100%" height={420} justifyContent={'center'} alignItems={'flex-start'}>
           <JsonSchemaBrowser schema={schema.schema} isDraggable hasExamples />
         </VStack>
-        // <VStack w="100%" height={420} justifyContent={'center'} alignItems={'stretch'} gap={3}>
-        //   <MappingInstructionList
-        //     schema={schema.schema}
-        //     instructions={[]}
-        //     display={'flex'}
-        //     flexDirection={'column'}
-        //     gap={4}
-        //   />
-        // </VStack>
       )}
     </>
   )
