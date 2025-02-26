@@ -63,8 +63,16 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
           },
         },
         destination: {
-          type: 'string',
-          format: 'mqtt-topic',
+          type: 'object',
+          properties: {
+            topic: {
+              type: 'string',
+              format: 'mqtt-topic',
+            },
+            schema: {
+              type: 'string',
+            },
+          },
         },
         instructions: {
           type: 'array',
