@@ -29,31 +29,28 @@ import java.util.UUID;
 public class DataCombinerEntity {
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private final @NotNull UUID id;
+    private @NotNull UUID id;
 
     @JsonProperty("name")
     @XmlElement(name = "name")
-    private final @NotNull String name;
+    private @NotNull String name;
 
     @JsonProperty("description")
     @XmlElement(name = "description")
-    private final @NotNull String description;
+    private @NotNull String description;
 
     @JsonProperty("entityReferences")
-    @XmlElementWrapper(name = "entityReferences", required = true)
-    private final @NotNull List<EntityReferenceEntity> entityReferenceEntities;
+    @XmlElementWrapper(name = "entity-references")
+    @XmlElement(name = "entity-reference")
+    private @NotNull List<EntityReferenceEntity> entityReferenceEntities;
 
     @JsonProperty("dataCombinings")
-    @XmlElementWrapper(name = "dataCombinings", required = true)
-    private final @NotNull List<DataCombiningEntity> dataCombiningEntities;
+    @XmlElementWrapper(name = "data-combinings")
+    @XmlElement(name = "data-combining")
+    private @NotNull List<DataCombiningEntity> dataCombiningEntities;
 
     // no-arg for jaxb
     public DataCombinerEntity() {
-        dataCombiningEntities = List.of();
-        entityReferenceEntities = List.of();
-        description = "";
-        name = "";
-        id = UUID.randomUUID();
     }
 
     public DataCombinerEntity(

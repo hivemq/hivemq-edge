@@ -29,29 +29,25 @@ import java.util.Objects;
 public class DataCombiningSourcesEntity {
 
     @JsonProperty("primaryName")
-    @XmlElement(name = "primaryName")
-    private final @NotNull String primaryName;
+    @XmlElement(name = "primary-name")
+    private @NotNull String primaryName;
 
     @JsonProperty("primaryType")
-    @XmlElement(name = "primaryType")
-    private final @NotNull PrimaryType primaryType;
+    @XmlElement(name = "primary-type")
+    private @NotNull PrimaryType primaryType;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
-    private final @NotNull List<String> tags;
+    private @NotNull List<String> tags;
 
     @JsonProperty("topicFilters")
-    @XmlElementWrapper(name = "topicFilters")
-    @XmlElement(name = "topicFilter")
-    private final @NotNull List<String> topicFilters;
+    @XmlElementWrapper(name = "topic-filters")
+    @XmlElement(name = "topic-filter")
+    private @NotNull List<String> topicFilters;
 
     // no-arg for jaxb
     public DataCombiningSourcesEntity() {
-        tags = List.of();
-        topicFilters = List.of();
-        primaryName = "";
-        primaryType = PrimaryType.TAG;
     }
 
     public DataCombiningSourcesEntity(

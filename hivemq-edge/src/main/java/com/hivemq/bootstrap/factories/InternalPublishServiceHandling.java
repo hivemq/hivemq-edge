@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.persistence.mappings.fieldmapping;
+package com.hivemq.bootstrap.factories;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName, @NotNull String origin) {
+public interface InternalPublishServiceHandling {
 
-    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        // TODO add source here
-        return new Instruction(model.getSource(), model.getDestination(), "");
-    }
-
-    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
-        return new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
-    }
+    @NotNull ListenableFuture<HandlerResult> apply(final @NotNull PUBLISH originalPublish, final @NotNull String clientId);
 
 }

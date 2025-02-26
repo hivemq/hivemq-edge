@@ -31,26 +31,23 @@ public class DataCombiningEntity {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private final @NotNull UUID id;
+    private @NotNull UUID id;
 
     @JsonProperty("sources")
     @XmlElement(name = "sources")
-    private final @NotNull DataCombiningSourcesEntity sources;
+    private @NotNull DataCombiningSourcesEntity sources;
 
     @JsonProperty("destination")
     @XmlElement(name = "destination")
-    private final @NotNull String destination;
+    private @NotNull String destination;
 
     @JsonProperty("instructions")
     @XmlElementWrapper(name = "instructions")
-    private final @NotNull List<InstructionEntity> instructions;
+    @XmlElement(name = "instruction")
+    private @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
     public DataCombiningEntity() {
-        this.destination = "";
-        this.id = UUID.randomUUID();
-        this.sources = new DataCombiningSourcesEntity();
-        this.instructions = List.of();
     }
 
     public DataCombiningEntity(
