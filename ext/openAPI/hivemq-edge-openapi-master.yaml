@@ -4162,17 +4162,26 @@ paths:
       tags:
         - Topic Filters
   /api/v1/management/topic-filters/{filter}:
+    get:
+      description: Get the specified topic filter
+      operationId: get-topicFilter
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicFilter'
+          description: Success
+      summary: Get the specified topic filter
+      tags:
+        - Topic Filters
     delete:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that should be deleted.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       responses:
         "200":
           description: Success
@@ -4195,13 +4204,7 @@ paths:
       description: Update a topic filter
       operationId: update-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that will be updated.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       requestBody:
         content:
           application/json:
@@ -4223,6 +4226,25 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
       summary: Update a topic filter.
+      tags:
+        - Topic Filters
+  /api/v1/management/topic-filters/{filter}/schema:
+    get:
+      description: Get the schema of the specified topic filter
+      operationId: get-topicFilter-schema
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                # TODO This is a duplicate from the TopicSchema; reuse as a self-contained Schema
+                type: string
+                format: data-url
+                description: The optional json schema for this topic filter in the data uri format.
+          description: Success
+      summary: Get the schema of the specified topic filter
       tags:
         - Topic Filters
   /api/v1/management/uns/isa95:
@@ -4515,6 +4537,14 @@ components:
       schema:
         type: string
   parameters:
+    TopicFilterId:
+      name: filter
+      description: The URL-encoded filter of the topic filter that should be deleted.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: urlencoded
     CombinerId:
       name: combinerId
       description: The unique id of the combiner to retrieve.
@@ -6187,6 +6217,7 @@ components:
         - id
         - name
         - sources
+        - mappings
     DataCombiningList:
       type: object
       properties:
@@ -6208,14 +6239,10 @@ components:
           type: object
           required:
             - primary
-            - primaryType
           properties:
             primary:
+              $ref: '#/components/schemas/DataIdentifierReference'
               #primary must be in the list of either tags or topicFilters
-              type: string
-            primaryType:
-              type: string
-              enum: [ TAG, TOPIC_FILTER ]
             tags:
               type: array
               description: The list of tags (names) used in the data combining
@@ -6227,8 +6254,17 @@ components:
               items:
                 type: string
         destination:
-          type: string
-          format: mqtt-topic
+          type: object
+          properties:
+            topic:
+              type: string
+              format: mqtt-topic
+            schema:
+              # TODO This is a duplicate from the TopicSchema; reuse as a self-contained Schema
+              type: string
+              format: data-url
+              description: The optional json schema for this topic filter in the data
+                uri format.
         instructions:
           type: array
           description: List of instructions to be applied to incoming data
@@ -6237,6 +6273,8 @@ components:
       required:
         - id
         - instructions
+        - destination
+        - sources
     EntityReferenceList:
       type: object
       properties:
@@ -6249,6 +6287,7 @@ components:
     EntityType:
       type: string
       description: These are the prime entities owning tags and topic filters
+      # TODO The list of enums needs to be updated and reused across frontend
       enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
     EntityReference:
       type: object
@@ -6265,3 +6304,16 @@ components:
       required:
         - id
         - type
+    DataIdentifierReference:
+      type: object
+      description: A reference to one of the data identifiers (topic filter or tag) in Edge
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: The name (segmented) of the tag or topic filter
+        type:
+          type: string
+          enum: [ TAG, TOPIC_FILTER ]

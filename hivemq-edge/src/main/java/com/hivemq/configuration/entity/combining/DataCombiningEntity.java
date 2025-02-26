@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,29 +32,33 @@ public class DataCombiningEntity {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private @NotNull UUID id;
+    private final @NotNull UUID id;
 
     @JsonProperty("sources")
     @XmlElement(name = "sources")
-    private @NotNull DataCombiningSourcesEntity sources;
+    private final @NotNull DataCombiningSourcesEntity sources;
 
     @JsonProperty("destination")
     @XmlElement(name = "destination")
-    private @NotNull String destination;
+    private final @NotNull DataCombiningDestinationEntity destination;
 
     @JsonProperty("instructions")
     @XmlElementWrapper(name = "instructions")
     @XmlElement(name = "instruction")
-    private @NotNull List<InstructionEntity> instructions;
+    private final @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
     public DataCombiningEntity() {
+        this.destination = new DataCombiningDestinationEntity();
+        this.id = UUID.randomUUID();
+        this.sources = new DataCombiningSourcesEntity();
+        this.instructions = new ArrayList<>();
     }
 
     public DataCombiningEntity(
             final @NotNull UUID id,
             final @NotNull DataCombiningSourcesEntity sources,
-            final @NotNull String destination,
+            final @NotNull DataCombiningDestinationEntity destination,
             final @NotNull List<InstructionEntity> instructions) {
         this.id = id;
         this.sources = sources;
@@ -97,9 +102,6 @@ public class DataCombiningEntity {
         return result;
     }
 
-    public @NotNull String getDestination() {
-        return destination;
-    }
 
     public @NotNull UUID getId() {
         return id;
@@ -111,5 +113,9 @@ public class DataCombiningEntity {
 
     public @NotNull DataCombiningSourcesEntity getSources() {
         return sources;
+    }
+
+    public @NotNull DataCombiningDestinationEntity getDestination() {
+        return destination;
     }
 }

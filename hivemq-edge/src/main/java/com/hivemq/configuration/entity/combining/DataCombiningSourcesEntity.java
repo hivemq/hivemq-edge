@@ -16,47 +16,43 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.combining.model.PrimaryType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 
 public class DataCombiningSourcesEntity {
 
-    @JsonProperty("primaryName")
-    @XmlElement(name = "primary-name")
-    private @NotNull String primaryName;
-
-    @JsonProperty("primaryType")
-    @XmlElement(name = "primary-type")
-    private @NotNull PrimaryType primaryType;
+    @JsonProperty("primaryReference")
+    @XmlElement(name = "primary-reference")
+    private final @NotNull DataIdentifierReferenceEntity primaryIdentifier;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
-    private @NotNull List<String> tags;
+    private final @NotNull List<String> tags;
 
     @JsonProperty("topicFilters")
     @XmlElementWrapper(name = "topic-filters")
     @XmlElement(name = "topic-filter")
-    private @NotNull List<String> topicFilters;
+    private final @NotNull List<String> topicFilters;
 
     // no-arg for jaxb
     public DataCombiningSourcesEntity() {
+        tags = new ArrayList<>();
+        topicFilters = new ArrayList<>();
+        primaryIdentifier = null;
     }
 
     public DataCombiningSourcesEntity(
-            final @NotNull String primaryName,
-            final @NotNull PrimaryType primaryType,
+            final @NotNull DataIdentifierReferenceEntity primaryIdentifier,
             final @NotNull List<String> tags,
             final @NotNull List<String> topicFilters) {
-        this.primaryName = primaryName;
-        this.primaryType = primaryType;
+        this.primaryIdentifier = primaryIdentifier;
         this.tags = tags;
         this.topicFilters = topicFilters;
     }
@@ -69,28 +65,31 @@ public class DataCombiningSourcesEntity {
         return topicFilters;
     }
 
-    public @NotNull String getPrimaryName() {
-        return primaryName;
-    }
-
-    public @NotNull PrimaryType getPrimaryType() {
-        return primaryType;
+    public @NotNull DataIdentifierReferenceEntity getPrimaryIdentifier() {
+        return primaryIdentifier;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         final DataCombiningSourcesEntity that = (DataCombiningSourcesEntity) o;
-        return Objects.equals(getPrimaryName(), that.getPrimaryName()) &&
-                getPrimaryType() == that.getPrimaryType() &&
-                Objects.equals(getTags(), that.getTags()) &&
-                Objects.equals(getTopicFilters(), that.getTopicFilters());
+        return primaryIdentifier.equals(that.primaryIdentifier) &&
+                tags.equals(that.tags) &&
+                topicFilters.equals(that.topicFilters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPrimaryName(), getPrimaryType(), getTags(), getTopicFilters());
+        int result = primaryIdentifier.hashCode();
+        result = 31 * result + tags.hashCode();
+        result = 31 * result + topicFilters.hashCode();
+        return result;
     }
 }
 

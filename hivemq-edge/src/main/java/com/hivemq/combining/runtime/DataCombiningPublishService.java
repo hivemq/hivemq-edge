@@ -17,6 +17,7 @@ package com.hivemq.combining.runtime;
 
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataCombiningDestination;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -55,15 +56,15 @@ public class DataCombiningPublishService {
     }
 
     public void publish(
-            final @NotNull String topic,
+            final @NotNull DataCombiningDestination dataCombiningDestination,
             final @NotNull byte[] payload,
             final @NotNull DataCombining dataCombining) {
-        final var publish = new PUBLISHFactory.Mqtt5Builder()
-                .withHivemqId(hiveMQId.get())
+
+        final var publish = new PUBLISHFactory.Mqtt5Builder().withHivemqId(hiveMQId.get())
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withRetain(false)
-                .withTopic(topic)
+                .withTopic(dataCombiningDestination.topic())
                 .withPayload(payload)
                 .withMessageExpiryInterval(MESSAGE_EXPIRY_INTERVAL_NOT_SET)
                 .withResponseTopic(null)
