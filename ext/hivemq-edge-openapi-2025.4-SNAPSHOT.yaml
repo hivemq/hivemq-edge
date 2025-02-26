@@ -14,12 +14,11 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: "2025.4-SNAPSHOT"
+  version: 2025.4-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
-  - description: Services to obtain and validate security tokens with the HiveMQ Edge
-      API.
+  - description: Services to obtain and validate security tokens with the HiveMQ Edge API.
     name: Authentication Endpoint
   - description: Explore and interact with the Bridges configured on your Gateway.
     name: Bridges
@@ -39,57 +38,54 @@ tags:
     name: Topic Filters
   - description: Configure Unified Namespace.
     name: UNS
-  - description: This resource bundles endpoints for the available Finite State Machines
-      (FSMs) for Behavior Policies for the HiveMQ Data Hub. Currently this is limited
-      to getting the available FSMs.
+  - description: This resource bundles endpoints for the available Finite State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub. Currently this is limited to getting the available FSMs.
     name: Data Hub - FSM
-  - description: This resource bundles endpoints for the available Functions for the
-      HiveMQ Data Hub. Currently this is limited to getting the available Functions.
+  - description: This resource bundles endpoints for the available Functions for the HiveMQ Data Hub. Currently this is limited to getting the available Functions.
     name: Data Hub - Functions
   - description: |-
       Policies describe how you want the HiveMQ broker to validate the behavior of MQTT clients.
       Each policy has four sections:
-      
+
       - Matching: Specifies which clients the policy engine validates.
       - Deserialization: Specifies deserializers for different message payloads.
       - Behavior: Specifies the behavior that is considered valid for matched clients.
       - onTransitions: Specifies custom actions that are executed when a client transitions to a different state within the specified behavior model that is valid for that client.
       These endpoints can be used to create, update, delete, and list behavior policies.
-      
+
       For more information on all capabilities the HiveMQ Data Hub offers, see the [HiveMQ documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
     name: Data Hub - Behavior Policies
   - description: |-
       Data Policies describe how you want the HiveMQ broker to apply schemas to incoming MQTT message payload data and act on the validation results.
       Each policy has four sections:
-      
+
       - Matching: Specifies which packets the policy engine validates.
       - Validation: Specifies how the packets are validated. For example, based on a JSON Schema.
       - OnSuccess: Defines which actions are executed when the outcome of a validation is successful.
       - OnFailure: Defines which actions are executed when the validation fails.
-      
+
       These endpoints can be used to create, update, delete, and list data policies.
-      
+
       For more information on all capabilities the HiveMQ Data Hub offers, see the [HiveMQ documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
     name: Data Hub - Data Policies
   - description: |-
       A schema defines the expected structure and format of incoming MQTT message payload data.
-      
+
       This endpoint can be used to create, get, and delete schemas.
-      
+
       Schemas can be enforced with the use of a policy.
-      
+
       Currently, the following schema definitions are supported:
-      
+
       - [JSON Schema](https://json-schema.org/)
       - [Protocol Buffers (Protobuf)](https://protobuf.dev/)
-      
+
       For more information on how to define and use a schema in HiveMQ, see [Schemas](https://docs.hivemq.com/hivemq/latest/data-hub/schemas.html).
     name: Data Hub - Schemas
   - description: |-
       A script represents custom logic that can be executed in response to MQTT messages.
-      
+
       This endpoint can be used to create, get, and delete scripts.
-      
+
       For more information on how to define and use a script in HiveMQ, see [Scripts](https://docs.hivemq.com/hivemq/latest/data-hub/scripts.html).
     name: Data Hub - Scripts
   - description: |+
@@ -107,8 +103,7 @@ paths:
           description: default response
   /api/v1/auth/authenticate:
     post:
-      description: Authorize the presented user to obtain a secure token for use on
-        the API.
+      description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: authenticate
       requestBody:
         content:
@@ -116,7 +111,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UsernamePasswordCredentials'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -128,30 +123,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiBearerToken'
           description: Username & Password Credentials to Authenticate as.
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Error in request.
-        "401":
+        '401':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: The requested credentials could not be authenticated.
-      summary: Authorize the presented user to obtain a secure token for use on the
-        API.
+      summary: Authorize the presented user to obtain a secure token for use on the API.
       tags:
         - Authentication
         - Authentication Endpoint
   /api/v1/auth/refresh-token:
     post:
-      description: Authorize the presented user to obtain a secure token for use on
-        the API.
+      description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: refresh-token
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -163,7 +156,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiBearerToken'
           description: Obtain a new JWT from a previously authentication token.
-        "401":
+        '401':
           content:
             application/json:
               schema:
@@ -175,8 +168,7 @@ paths:
         - Authentication Endpoint
   /api/v1/auth/validate-token:
     post:
-      description: Authorize the presented user to obtain a secure token for use on
-        the API.
+      description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: validate-token
       requestBody:
         content:
@@ -184,77 +176,71 @@ paths:
             schema:
               $ref: '#/components/schemas/ApiBearerToken'
       responses:
-        "200":
+        '200':
           description: The token was valid
-        "401":
+        '401':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: The token was invalid
-      summary: Authorize the presented user to obtain a secure token for use on the
-        API.
+      summary: Authorize the presented user to obtain a secure token for use on the API.
       tags:
         - Authentication
         - Authentication Endpoint
   /api/v1/data-hub/behavior-validation/policies:
     get:
-      description: "Get all policies. \n\n This endpoint returns the content of the\
-        \ policies with the content-type `application/json`. \n\n "
+      description: |-
+        Get all policies. 
+
+         This endpoint returns the content of the policies with the content-type `application/json`. 
+
+         
       operationId: getAllBehaviorPolicies
       parameters:
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior,\
-          \ onTransitions"
-          example: "id,createdAt"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior, onTransitions'
+          example: id,createdAt
           in: query
           name: fields
           schema:
             type: string
-        - description: Comma-separated list of policy ids used for filtering. Multiple
-            filters can be applied together.
-          example: "policy1,policy2"
+        - description: Comma-separated list of policy ids used for filtering. Multiple filters can be applied together.
+          example: policy1,policy2
           in: query
           name: policyIds
           schema:
             type: string
-        - description: Comma-separated list of MQTT client identifiers that are used
-            for filtering. Client identifiers are matched by the retrieved policies.
-            Multiple filters can be applied together.
-          example: "client1,client2"
+        - description: Comma-separated list of MQTT client identifiers that are used for filtering. Client identifiers are matched by the retrieved policies. Multiple filters can be applied together.
+          example: client1,client2
           in: query
           name: clientIds
           schema:
             type: string
-        - description: Specifies the page size for the returned results. Has to be between
-            10 and 500. Default page size is 50. Limit is ignored if the 'topic' query
-            parameter is set.
+        - description: Specifies the page size for the returned results. Has to be between 10 and 500. Default page size is 50. Limit is ignored if the 'topic' query parameter is set.
           example: 100
           in: query
           name: limit
           schema:
             type: integer
             format: int32
-        - description: The cursor that has been returned by the previous result page.
-            Do not pass this parameter if you want to fetch the first page.
+        - description: The cursor that has been returned by the previous result page. Do not pass this parameter if you want to fetch the first page.
           in: query
           name: cursor
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
                 list-response-a:
-                  description: Example response with multiple policies. No more pages
-                    left
-                  summary: "Multiple results, last page"
+                  description: Example response with multiple policies. No more pages left
+                  summary: Multiple results, last page
                   value:
                     items:
                       - id: P18
-                        createdAt: 2023-07-28T07:27:24.531Z
-                        lastUpdatedAt: 2023-07-28T07:27:24.531Z
+                        createdAt: '2023-07-28T07:27:24.531Z'
+                        lastUpdatedAt: '2023-07-28T07:27:24.531Z'
                         matching:
                           clientIdRegex: .*
                         behavior:
@@ -271,8 +257,8 @@ paths:
                                     level: INFO
                                     message: transition happened
                       - id: P19
-                        createdAt: 2023-07-28T07:27:24.532Z
-                        lastUpdatedAt: 2023-07-28T07:27:24.532Z
+                        createdAt: '2023-07-28T07:27:24.532Z'
+                        lastUpdatedAt: '2023-07-28T07:27:24.532Z'
                         matching:
                           clientIdRegex: .*
                         behavior:
@@ -289,14 +275,13 @@ paths:
                                     level: INFO
                                     message: transition happened
                 list-response-b:
-                  description: Example response with multiple policies. More pages
-                    left
-                  summary: "Multiple results, more pages left"
+                  description: Example response with multiple policies. More pages left
+                  summary: Multiple results, more pages left
                   value:
                     items:
                       - id: P0
-                        createdAt: 2023-07-28T07:44:35.382Z
-                        lastUpdatedAt: 2023-07-28T07:44:35.382Z
+                        createdAt: '2023-07-28T07:44:35.382Z'
+                        lastUpdatedAt: '2023-07-28T07:44:35.382Z'
                         matching:
                           clientIdRegex: .*
                         behavior:
@@ -313,8 +298,8 @@ paths:
                                     level: INFO
                                     message: transition happened
                       - id: P1
-                        createdAt: 2023-07-28T07:44:35.405Z
-                        lastUpdatedAt: 2023-07-28T07:44:35.405Z
+                        createdAt: '2023-07-28T07:44:35.405Z'
+                        lastUpdatedAt: '2023-07-28T07:44:35.405Z'
                         matching:
                           clientIdRegex: .*
                         behavior:
@@ -333,9 +318,8 @@ paths:
                     _links:
                       next: /api/v1/data-hub/behavior-validation/policies?cursor=a-Wva-QBoB5yAX_HJ0WRQ8ng==&limit=2
                 list-response-c:
-                  description: Example response with requested fields and multiple
-                    policies. More pages left
-                  summary: "Multiple results, requested 'id' field"
+                  description: Example response with requested fields and multiple policies. More pages left
+                  summary: Multiple results, requested 'id' field
                   value:
                     items:
                       - id: P0
@@ -348,8 +332,8 @@ paths:
                   value:
                     items:
                       - id: policy1
-                        createdAt: 2023-07-28T07:34:14.150Z
-                        lastUpdatedAt: 2023-07-28T07:34:14.150Z
+                        createdAt: '2023-07-28T07:34:14.150Z'
+                        lastUpdatedAt: '2023-07-28T07:34:14.150Z'
                         matching:
                           clientIdRegex: .*
                         behavior:
@@ -368,7 +352,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicyList'
           description: Success
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -387,7 +371,7 @@ paths:
           application/json:
             example:
               id: wildcardLogBehaviorPolicy
-              createdAt: 2023-08-23T10:14:38.447Z
+              createdAt: '2023-08-23T10:14:38.447Z'
               matching:
                 clientIdRegex: .*
               deserialization:
@@ -417,7 +401,7 @@ paths:
         description: The policy that should be created.
         required: true
       responses:
-        "201":
+        '201':
           content:
             application/json:
               examples:
@@ -426,8 +410,8 @@ paths:
                   summary: Policy was created successfully
                   value:
                     id: wildcardLogBehaviorPolicy
-                    createdAt: 2023-08-23T10:14:38.447Z
-                    lastUpdatedAt: 2023-08-23T10:14:38.447Z
+                    createdAt: '2023-08-23T10:14:38.447Z'
+                    lastUpdatedAt: '2023-08-23T10:14:38.447Z'
                     matching:
                       clientIdRegex: .*
                     deserialization:
@@ -456,31 +440,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Policy creation failed
-        "409":
+        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Already exists
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
-        "503":
+        '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily unavailable
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -491,7 +475,10 @@ paths:
         - Data Hub - Behavior Policies
   /api/v1/data-hub/behavior-validation/policies/{policyId}:
     delete:
-      description: "Deletes an existing policy. \n\n "
+      description: |-
+        Deletes an existing policy. 
+
+         
       operationId: deleteBehaviorPolicy
       parameters:
         - description: The identifier of the policy to delete.
@@ -508,33 +495,33 @@ paths:
           schema:
             type: string
       responses:
-        "204":
-          description: "Success, no response body"
-        "400":
+        '204':
+          description: Success, no response body
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Policy not found
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Precondition failed
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -544,8 +531,12 @@ paths:
       tags:
         - Data Hub - Behavior Policies
     get:
-      description: "Get a specific policy. \n\n This endpoint returns the content\
-        \ of the policy with the content-type `application/json`. \n\n "
+      description: |-
+        Get a specific policy. 
+
+         This endpoint returns the content of the policy with the content-type `application/json`. 
+
+         
       operationId: getBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -555,16 +546,14 @@ paths:
           required: true
           schema:
             type: string
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior,\
-          \ onTransitions"
-          example: "id,createdAt"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior, onTransitions'
+          example: id,createdAt
           in: query
           name: fields
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -573,8 +562,8 @@ paths:
                   summary: Get  Policy
                   value:
                     id: wildcardLogBehaviorPolicy
-                    createdAt: 2023-08-23T10:14:38.447Z
-                    lastUpdatedAt: 2023-08-23T10:14:38.447Z
+                    createdAt: '2023-08-23T10:14:38.447Z'
+                    lastUpdatedAt: '2023-08-23T10:14:38.447Z'
                     matching:
                       clientIdRegex: .*
                     deserialization:
@@ -603,13 +592,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Invalid query parameter
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -619,8 +608,11 @@ paths:
       tags:
         - Data Hub - Behavior Policies
     put:
-      description: "Update a behavior policy\n\nThe path parameter 'policyId' must\
-        \ match the 'id' of the policy in the request body.\n "
+      description: |-
+        Update a behavior policy
+
+        The path parameter 'policyId' must match the 'id' of the policy in the request body.
+         
       operationId: updateBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -641,7 +633,7 @@ paths:
           application/json:
             example:
               id: wildcardLogBehaviorPolicy
-              createdAt: 2023-08-23T10:14:38.447Z
+              createdAt: '2023-08-23T10:14:38.447Z'
               matching:
                 clientIdRegex: .*
               deserialization:
@@ -671,7 +663,7 @@ paths:
         description: The policy that should be updated.
         required: true
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -680,8 +672,8 @@ paths:
                   summary: Policy was updated successfully
                   value:
                     id: wildcardLogBehaviorPolicy
-                    createdAt: 2023-08-23T10:14:38.447Z
-                    lastUpdatedAt: 2023-09-26T11:17:22.311Z
+                    createdAt: '2023-08-23T10:14:38.447Z'
+                    lastUpdatedAt: '2023-09-26T11:17:22.311Z'
                     matching:
                       clientIdRegex: .*
                     deserialization:
@@ -710,37 +702,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Policy creation failed
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Policy not found
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Precondition failed
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal error
-        "503":
+        '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Temporarily unavailable
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -764,7 +756,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -777,30 +769,30 @@ paths:
                         behaviorId: Publish.quota
                         stateType: INTERMEDIATE
                         stateName: Connected
-                        firstSetAt: 2023-09-05T09:46:47.854Z
+                        firstSetAt: '2023-09-05T09:46:47.854Z'
                         arguments:
                           minPublishes: 5
                           maxPublishes: 10
                         variables:
-                          minPublishes: "5"
-                          publishCount: "0"
-                          maxPublishes: "10"
+                          minPublishes: '5'
+                          publishCount: '0'
+                          maxPublishes: '10'
               schema:
                 $ref: '#/components/schemas/FsmStatesInformationListItem'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Client is disconnected
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -811,69 +803,63 @@ paths:
         - Data Hub - State
   /api/v1/data-hub/data-validation/policies:
     get:
-      description: "Get all data policies. \n\n This endpoint returns the content\
-        \ of the policies with the content-type `application/json`. \n\n "
+      description: |-
+        Get all data policies. 
+
+         This endpoint returns the content of the policies with the content-type `application/json`. 
+
+         
       operationId: getAllDataPolicies
       parameters:
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess,\
-          \ onFailure"
-          example: "id,createdAt"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess, onFailure'
+          example: id,createdAt
           in: query
           name: fields
           schema:
             type: string
-        - description: Comma-separated list of policy IDs used for filtering. Multiple
-            filters can be applied together.
-          example: "policy1,policy2"
+        - description: Comma-separated list of policy IDs used for filtering. Multiple filters can be applied together.
+          example: policy1,policy2
           in: query
           name: policyIds
           schema:
             type: string
-        - description: Comma-separated list of schema IDs used for filtering. Multiple
-            filters can be applied together.
-          example: "schema1,schema2"
+        - description: Comma-separated list of schema IDs used for filtering. Multiple filters can be applied together.
+          example: schema1,schema2
           in: query
           name: schemaIds
           schema:
             type: string
-        - description: MQTT topic string that the retrieved policies must match. Returned
-            policies are sorted in the same way as they are applied to matching publishes.
-            'topic' filtering does not support pagination
+        - description: MQTT topic string that the retrieved policies must match. Returned policies are sorted in the same way as they are applied to matching publishes. 'topic' filtering does not support pagination
           example: topic/my-topic
           in: query
           name: topic
           schema:
             type: string
-        - description: Specifies the page size for the returned results. The value must
-            be between 10 and 500. The default page size is 50. The limit is ignored
-            if the 'topic' query parameter is set.
+        - description: Specifies the page size for the returned results. The value must be between 10 and 500. The default page size is 50. The limit is ignored if the 'topic' query parameter is set.
           example: 100
           in: query
           name: limit
           schema:
             type: integer
             format: int32
-        - description: The cursor that has been returned by the previous result page.
-            Do not pass this parameter if you want to fetch the first page.
+        - description: The cursor that has been returned by the previous result page. Do not pass this parameter if you want to fetch the first page.
           in: query
           name: cursor
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
                 list-response-a:
-                  description: Example response with multiple policies. No more pages
-                    left
-                  summary: "Multiple results, last page"
+                  description: Example response with multiple policies. No more pages left
+                  summary: Multiple results, last page
                   value:
                     items:
                       - id: policy1
-                        createdAt: 2023-04-26T13:32:47.032Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.032Z
+                        createdAt: '2023-04-26T13:32:47.032Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.032Z'
                         matching:
                           topicFilter: topic1
                         validation:
@@ -883,26 +869,24 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: "${clientId} sent a publish on topic '${topic}'\
-                              \ with result '${validationResult}'"
+                                message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
                         onFailure:
                           pipeline:
                             - id: logFailureOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: "${clientId} sent an invalid publish on topic\
-                              \ '${topic}' with result '${validationResult}'"
+                                message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
                       - id: policy2
-                        createdAt: 2023-04-26T13:32:47.049Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.049Z
+                        createdAt: '2023-04-26T13:32:47.049Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.049Z'
                         matching:
                           topicFilter: topic2
                         validation:
@@ -912,32 +896,29 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: "${clientId} sent a publish on topic '${topic}'\
-                              \ with result '${validationResult}'"
+                                message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
                         onFailure:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: "${clientId} sent an invalid publish on topic\
-                              \ '${topic}' with result '${validationResult}'"
+                                message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
                 list-response-b:
-                  description: Example response with multiple policies. More pages
-                    left
-                  summary: "Multiple results, more pages left"
+                  description: Example response with multiple policies. More pages left
+                  summary: Multiple results, more pages left
                   value:
                     items:
                       - id: policy1
-                        createdAt: 2023-04-26T13:32:47.032Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.032Z
+                        createdAt: '2023-04-26T13:32:47.032Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.032Z'
                         matching:
                           topicFilter: topic1
                         validation:
@@ -947,26 +928,24 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: $clientId sent a publish on topic '$topic' with
-                                  result '$validationResult'
+                                message: $clientId sent a publish on topic '$topic' with result '$validationResult'
                         onFailure:
                           pipeline:
                             - id: logFailureOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: $clientId sent an invalid publish on topic '$topic'
-                                  with result '$validationResult'
+                                message: $clientId sent an invalid publish on topic '$topic' with result '$validationResult'
                       - id: policy2
-                        createdAt: 2023-04-26T13:32:47.049Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.049Z
+                        createdAt: '2023-04-26T13:32:47.049Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.049Z'
                         matching:
                           topicFilter: topic2
                         validation:
@@ -976,26 +955,24 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: $clientId sent a publish on topic '$topic' with
-                                  result '$validationResult'
+                                message: $clientId sent a publish on topic '$topic' with result '$validationResult'
                         onFailure:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: $clientId sent an invalid publish on topic '$topic'
-                                  with result '$validationResult'
+                                message: $clientId sent an invalid publish on topic '$topic' with result '$validationResult'
                       - id: policy3
-                        createdAt: 2023-04-26T13:32:47.049Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.049Z
+                        createdAt: '2023-04-26T13:32:47.049Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.049Z'
                         matching:
                           topicFilter: topic3
                         validation:
@@ -1005,29 +982,26 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: $clientId sent a publish on topic '$topic' with
-                                  result '$validationResult'
+                                message: $clientId sent a publish on topic '$topic' with result '$validationResult'
                         onFailure:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: $clientId sent an invalid publish on topic '$topic'
-                                  with result '$validationResult'
+                                message: $clientId sent an invalid publish on topic '$topic' with result '$validationResult'
                     _links:
                       next: /api/v1/data-validation/policies?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3
                 list-response-c:
-                  description: Example response with requested fields and multiple
-                    policies. More pages left
-                  summary: "Multiple results, requested 'id' field"
+                  description: Example response with requested fields and multiple policies. More pages left
+                  summary: Multiple results, requested 'id' field
                   value:
                     items:
                       - id: policy1
@@ -1041,8 +1015,8 @@ paths:
                   value:
                     items:
                       - id: policy1
-                        createdAt: 2023-04-26T13:32:47.032Z
-                        lastUpdatedAt: 2023-04-26T13:32:47.032Z
+                        createdAt: '2023-04-26T13:32:47.032Z'
+                        lastUpdatedAt: '2023-04-26T13:32:47.032Z'
                         matching:
                           topicFilter: topic1
                         validation:
@@ -1052,45 +1026,43 @@ paths:
                                 strategy: ALL_OF
                                 schemas:
                                   - schemaId: schema
-                                    version: "1"
+                                    version: '1'
                         onSuccess:
                           pipeline:
                             - id: logSuccessOperation
                               functionId: System.log
                               arguments:
                                 level: DEBUG
-                                message: $clientId sent a publish on topic '$topic' with
-                                  result '$validationResult'
+                                message: $clientId sent a publish on topic '$topic' with result '$validationResult'
                         onFailure:
                           pipeline:
                             - id: logFailureOperation
                               functionId: System.log
                               arguments:
                                 level: WARN
-                                message: $clientId sent an invalid publish on topic '$topic'
-                                  with result '$validationResult'
+                                message: $clientId sent an invalid publish on topic '$topic' with result '$validationResult'
               schema:
                 $ref: '#/components/schemas/DataPolicyList'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -1118,29 +1090,27 @@ paths:
                       strategy: ALL_OF
                       schemas:
                         - schemaId: schema
-                          version: "1"
+                          version: '1'
               onSuccess:
                 pipeline:
                   - id: logOperationSuccess
                     functionId: System.log
                     arguments:
                       level: DEBUG
-                      message: "${clientId} sent a publish on topic '${topic}' with\
-                      \ result '${validationResult}'"
+                      message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
               onFailure:
                 pipeline:
                   - id: logOperationFailure
                     functionId: System.log
                     arguments:
                       level: WARN
-                      message: "${clientId} sent an invalid publish on topic '${topic}'\
-                      \ with result '${validationResult}'"
+                      message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
             schema:
               $ref: '#/components/schemas/DataPolicy'
         description: The data policy to create.
         required: true
       responses:
-        "201":
+        '201':
           content:
             application/json:
               examples:
@@ -1149,8 +1119,8 @@ paths:
                   summary: Policy was created successfully
                   value:
                     id: policy1
-                    createdAt: 2023-04-19T13:35:00.930Z
-                    lastUpdatedAt: 2023-04-19T13:35:00.930Z
+                    createdAt: '2023-04-19T13:35:00.930Z'
+                    lastUpdatedAt: '2023-04-19T13:35:00.930Z'
                     matching:
                       topicFilter: topic/+
                     validation:
@@ -1160,51 +1130,49 @@ paths:
                             strategy: ALL_OF
                             schemas:
                               - schemaId: schema1
-                                version: "1"
+                                version: '1'
                     onSuccess:
                       pipeline:
                         - id: logOperationSuccess
                           functionId: System.log
                           arguments:
                             level: DEBUG
-                            message: "${clientId} sent a publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
                     onFailure:
                       pipeline:
                         - id: logOperationFailure
                           functionId: System.log
                           arguments:
                             level: WARN
-                            message: "${clientId} sent an invalid publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
               schema:
                 $ref: '#/components/schemas/DataPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy creation failed
-        "409":
+        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy already present
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -1215,7 +1183,10 @@ paths:
         - Data Hub - Data Policies
   /api/v1/data-hub/data-validation/policies/{policyId}:
     delete:
-      description: "Deletes an existing data policy. \n\n "
+      description: |-
+        Deletes an existing data policy. 
+
+         
       operationId: deleteDataPolicy
       parameters:
         - description: The identifier of the data policy to delete.
@@ -1232,27 +1203,27 @@ paths:
           schema:
             type: string
       responses:
-        "204":
-          description: "Success, no response body"
-        "400":
+        '204':
+          description: Success, no response body
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -1262,8 +1233,12 @@ paths:
       tags:
         - Data Hub - Data Policies
     get:
-      description: "Get a specific data policy. \n\n This endpoint returns the content\
-        \ of the policy with the content-type `application/json`. \n\n "
+      description: |-
+        Get a specific data policy. 
+
+         This endpoint returns the content of the policy with the content-type `application/json`. 
+
+         
       operationId: getDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1273,16 +1248,14 @@ paths:
           required: true
           schema:
             type: string
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess,\
-          \ onFailure"
-          example: "id,createdAt"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess, onFailure'
+          example: id,createdAt
           in: query
           name: fields
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -1291,8 +1264,8 @@ paths:
                   summary: Get Policy
                   value:
                     id: policy1
-                    createdAt: 2023-04-19T13:35:00.930Z
-                    lastUpdatedAt: 2023-04-19T13:35:00.930Z
+                    createdAt: '2023-04-19T13:35:00.930Z'
+                    lastUpdatedAt: '2023-04-19T13:35:00.930Z'
                     matching:
                       topicFilter: topic/+
                     validation:
@@ -1302,27 +1275,25 @@ paths:
                             strategy: ALL_OF
                             schemas:
                               - schemaId: schema1
-                                version: "1"
+                                version: '1'
                     onSuccess:
                       pipeline:
                         - id: logOperationSuccess
                           functionId: System.log
                           arguments:
                             level: DEBUG
-                            message: "${clientId} sent a publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
                     onFailure:
                       pipeline:
                         - id: logOperationFailure
                           functionId: System.log
                           arguments:
                             level: WARN
-                            message: "${clientId} sent an invalid publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
               schema:
                 $ref: '#/components/schemas/DataPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               examples:
@@ -1336,7 +1307,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Bad request
-        "404":
+        '404':
           content:
             application/json:
               examples:
@@ -1354,9 +1325,12 @@ paths:
       tags:
         - Data Hub - Data Policies
     put:
-      description: "Update a data policy\n\nThe path parameter 'policyId' must match\
-        \ the 'id' of the policy in the request body.\n The matching part of policies\
-        \ cannot be changed with an update.\n "
+      description: |-
+        Update a data policy
+
+        The path parameter 'policyId' must match the 'id' of the policy in the request body.
+         The matching part of policies cannot be changed with an update.
+         
       operationId: updateDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1386,29 +1360,27 @@ paths:
                       strategy: ALL_OF
                       schemas:
                         - schemaId: schema
-                          version: "1"
+                          version: '1'
               onSuccess:
                 pipeline:
                   - id: logOperationSuccess
                     functionId: System.log
                     arguments:
                       level: DEBUG
-                      message: "${clientId} sent a publish on topic '${topic}' with\
-                      \ result '${validationResult}'"
+                      message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
               onFailure:
                 pipeline:
                   - id: logOperationFailure
                     functionId: System.log
                     arguments:
                       level: WARN
-                      message: "${clientId} sent an invalid publish on topic '${topic}'\
-                      \ with result '${validationResult}'"
+                      message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
             schema:
               $ref: '#/components/schemas/DataPolicy'
         description: The data policy that should be updated.
         required: true
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -1417,8 +1389,8 @@ paths:
                   summary: Policy was updated successfully
                   value:
                     id: policy1
-                    createdAt: 2023-04-19T13:35:00.930Z
-                    lastUpdatedAt: 2023-09-26T11:17:22.311Z
+                    createdAt: '2023-04-19T13:35:00.930Z'
+                    lastUpdatedAt: '2023-09-26T11:17:22.311Z'
                     matching:
                       topicFilter: topic/+
                     validation:
@@ -1428,51 +1400,49 @@ paths:
                             strategy: ALL_OF
                             schemas:
                               - schemaId: schema1
-                                version: "1"
+                                version: '1'
                     onSuccess:
                       pipeline:
                         - id: logOperationSuccess
                           functionId: System.log
                           arguments:
                             level: DEBUG
-                            message: "${clientId} sent a publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent a publish on topic '${topic}' with result '${validationResult}'
                     onFailure:
                       pipeline:
                         - id: logOperationFailure
                           functionId: System.log
                           arguments:
                             level: WARN
-                            message: "${clientId} sent an invalid publish on topic '${topic}'\
-                            \ with result '${validationResult}'"
+                            message: ${clientId} sent an invalid publish on topic '${topic}' with result '${validationResult}'
               schema:
                 $ref: '#/components/schemas/DataPolicy'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy creation failed
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: DataPolicy not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Request resource temporary unavailable
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -1483,12 +1453,10 @@ paths:
         - Data Hub - Data Policies
   /api/v1/data-hub/fsm:
     get:
-      description: This endpoints provides the means to get information on the available
-        Finite State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub.
-        The information is provided in form of a Json Schema.
+      description: This endpoints provides the means to get information on the available Finite State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
       operationId: getFsms
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -1518,11 +1486,7 @@ paths:
                           properties:
                             arguments:
                               title: Publish.quota options
-                              description: "When you configure a publish-quota model,\
-                              \ at least one of the available arguments must be present.\
-                              \ Data Hub uses the default value for the missing parameter.\\\
-                              nThe default value for minimum is 0. The default value\
-                              \ for maxPublishes is UNLIMITED."
+                              description: When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\nThe default value for minimum is 0. The default value for maxPublishes is UNLIMITED.
                               type: object
                               required:
                                 - minPublishes
@@ -1530,13 +1494,11 @@ paths:
                                 minPublishes:
                                   type: number
                                   title: minPublishes
-                                  description: Defines the minimal number of published
-                                    messages that must be reached
+                                  description: Defines the minimal number of published messages that must be reached
                                 maxPublishes:
                                   type: number
                                   title: maxPublishes
-                                  description: Defines the maximum number of published
-                                    messages that must be reached
+                                  description: Defines the maximum number of published messages that must be reached
                       - if:
                           type: object
                           properties:
@@ -1568,7 +1530,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -1579,12 +1541,10 @@ paths:
         - Data Hub - FSM
   /api/v1/data-hub/functions:
     get:
-      description: This endpoints provides the means to get information on the available
-        Functions for the HiveMQ Data Hub. The information is provided in form of
-        a Json Schema.
+      description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
       operationId: getFunctions
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -1607,15 +1567,13 @@ paths:
                           name:
                             type: string
                             title: name
-                            description: Specifies the name of the user property. Multiple
-                              user properties with the same name are allowed.
+                            description: Specifies the name of the user property. Multiple user properties with the same name are allowed.
                           value:
                             type: string
                             title: value
                             description: Specifies the value of the user property.
                       - title: Delivery.redirectTo
-                        description: Redirects an MQTT PUBLISH message to a specified
-                          topic
+                        description: Redirects an MQTT PUBLISH message to a specified topic
                         type: object
                         required:
                           - topic
@@ -1627,13 +1585,11 @@ paths:
                           topic:
                             type: string
                             title: topic
-                            description: The destination MQTT topic according to MQTT
-                              specification
+                            description: The destination MQTT topic according to MQTT specification
                           applyPolicies:
                             type: string
                             title: applyPolicies
-                            description: Defines whether policies are executed after
-                              publishing to a different topic.
+                            description: Defines whether policies are executed after publishing to a different topic.
                       - title: Mqtt.drop
                         description: Drops the MQTT packet that is currently processed
                         type: object
@@ -1646,8 +1602,7 @@ paths:
                           reasonString:
                             type: string
                             title: reasonString
-                            description: Specifies the reason string that is responded
-                              to MQTT5 clients.
+                            description: Specifies the reason string that is responded to MQTT5 clients.
                       - title: System.log
                         description: Logs a message on the given level
                         type: object
@@ -1662,14 +1617,11 @@ paths:
                           level:
                             type: string
                             title: Log Level
-                            description: Specifies the log level of the function in
-                              the hivemq.log file
+                            description: Specifies the log level of the function in the hivemq.log file
                           message:
                             type: string
                             title: Message
-                            description: "Adds a user-defined string that prints to\
-                            \ the log file. For more information, see Example log\
-                            \ message"
+                            description: Adds a user-defined string that prints to the log file. For more information, see Example log message
                       - title: Mqtt.disconnect
                         description: Disconnects the client
                         type: object
@@ -1680,9 +1632,7 @@ paths:
                           hasArguments: false
                         properties: {}
                       - title: Serdes.deserialize
-                        description: Deserializes a binary MQTT message payload into
-                          a data object based on the configured JSON Schema or Protobuf
-                          schema.
+                        description: Deserializes a binary MQTT message payload into a data object based on the configured JSON Schema or Protobuf schema.
                         type: object
                         required:
                           - schemaId
@@ -1695,15 +1645,13 @@ paths:
                           schemaId:
                             type: string
                             title: schemaId
-                            description: The identifier of the JSON Schema to be used
-                              for deserialization.
+                            description: The identifier of the JSON Schema to be used for deserialization.
                           schemaVersion:
                             type: string
                             title: schemaVersion
                             description: The version of the schema to be used for deserialization.
                       - title: Metrics.Counter.increment
-                        description: "Increments a metric of type counter, which can\
-                        \ be accessed with monitoring"
+                        description: Increments a metric of type counter, which can be accessed with monitoring
                         type: object
                         required:
                           - metricName
@@ -1720,12 +1668,9 @@ paths:
                           incrementBy:
                             type: string
                             title: incrementBy
-                            description: Specifies the amount by which the counter should
-                              be incremented. Negative values are supported.
+                            description: Specifies the amount by which the counter should be incremented. Negative values are supported.
                       - title: Serdes.serialize
-                        description: Serializes a data object into a binary MQTT message
-                          payload based on the configured JSON Schema (PROTOBUF currently
-                          not supported).
+                        description: Serializes a data object into a binary MQTT message payload based on the configured JSON Schema (PROTOBUF currently not supported).
                         type: object
                         required:
                           - schemaId
@@ -1738,8 +1683,7 @@ paths:
                           schemaId:
                             type: string
                             title: schemaId
-                            description: The identifier of the JSON Schema to be used
-                              for serialization
+                            description: The identifier of the JSON Schema to be used for serialization
                           schemaVersion:
                             type: string
                             title: schemaVersion
@@ -1747,7 +1691,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -1758,98 +1702,94 @@ paths:
         - Data Hub - Functions
   /api/v1/data-hub/schemas:
     get:
-      description: "Get all schemas. \n\n This endpoint returns the content of the\
-        \ schemas with the content-type `application/json`. \n\n "
+      description: |-
+        Get all schemas. 
+
+         This endpoint returns the content of the schemas with the content-type `application/json`. 
+
+         
       operationId: getAllSchemas
       parameters:
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, type, schemaDefinition, createdAt"
-          example: "id,createdAt"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt'
+          example: id,createdAt
           in: query
           name: fields
           schema:
             type: string
-        - description: Comma-separated list of schema types used for filtering. Multiple
-            filters can be applied together.
-          example: "JSON,PROTOBUF"
+        - description: Comma-separated list of schema types used for filtering. Multiple filters can be applied together.
+          example: JSON,PROTOBUF
           in: query
           name: types
           schema:
             type: string
-        - description: Comma-separated list of schema ids used for filtering. Multiple
-            filters can be applied together.
-          example: "schema1,schema2"
+        - description: Comma-separated list of schema ids used for filtering. Multiple filters can be applied together.
+          example: schema1,schema2
           in: query
           name: schemaIds
           schema:
             type: string
-        - description: Specifies the page size for the returned results. Has to be between
-            10 and 500. Default page size is 50.
+        - description: Specifies the page size for the returned results. Has to be between 10 and 500. Default page size is 50.
           example: 100
           in: query
           name: limit
           schema:
             type: integer
             format: int32
-        - description: The cursor that has been returned by the previous result page.
-            Do not pass this parameter if you want to fetch the first page.
+        - description: The cursor that has been returned by the previous result page. Do not pass this parameter if you want to fetch the first page.
           in: query
           name: cursor
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
                 list-response-a:
-                  description: Example response with multiple schemas. No more pages
-                    left
-                  summary: "Multiple results, last page"
+                  description: Example response with multiple schemas. No more pages left
+                  summary: Multiple results, last page
                   value:
                     items:
                       - id: schema1
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:28:35.164Z
+                        createdAt: '2023-03-01T13:28:35.164Z'
                       - id: schema2
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:38:35.164Z
+                        createdAt: '2023-03-01T13:38:35.164Z'
                       - id: schema3
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:48:35.164Z
+                        createdAt: '2023-03-01T13:48:35.164Z'
                 list-response-b:
-                  description: Example response with multiple schemas. More pages
-                    left
-                  summary: "Multiple results, more pages left"
+                  description: Example response with multiple schemas. More pages left
+                  summary: Multiple results, more pages left
                   value:
                     items:
                       - id: schema1
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:28:35.164Z
+                        createdAt: '2023-03-01T13:28:35.164Z'
                       - id: schema2
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:38:35.164Z
+                        createdAt: '2023-03-01T13:38:35.164Z'
                       - id: schema3
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:48:35.164Z
+                        createdAt: '2023-03-01T13:48:35.164Z'
                     _links:
                       next: /api/v1/data-hub/schemas?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3
                 list-response-c:
-                  description: Example response with requested fields and multiple
-                    schemas. More pages left
-                  summary: "Multiple results, requested 'id' field"
+                  description: Example response with requested fields and multiple schemas. More pages left
+                  summary: Multiple results, requested 'id' field
                   value:
                     items:
                       - id: schema1
@@ -1866,32 +1806,31 @@ paths:
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:28:35.164Z
+                        createdAt: '2023-03-01T13:28:35.164Z'
                 list-response-e:
-                  description: Example response with all versions of specific schema
-                    id.
-                  summary: "List versions of one schema, last page"
+                  description: Example response with all versions of specific schema id.
+                  summary: List versions of one schema, last page
                   value:
                     items:
                       - id: schema1
                         version: 1
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:28:35.164Z
+                        createdAt: '2023-03-01T13:28:35.164Z'
                       - id: schema1
                         version: 2
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:38:35.164Z
+                        createdAt: '2023-03-01T13:38:35.164Z'
                       - id: schema1
                         version: 3
                         type: JSON
                         schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                        createdAt: 2023-03-01T13:48:35.164Z
+                        createdAt: '2023-03-01T13:48:35.164Z'
               schema:
                 $ref: '#/components/schemas/SchemaList'
           description: Success
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -1924,7 +1863,7 @@ paths:
         description: The schema that should be created.
         required: true
       responses:
-        "201":
+        '201':
           content:
             application/json:
               examples:
@@ -1936,35 +1875,35 @@ paths:
                     version: 1
                     type: JSON
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                    createdAt: 2023-03-01T13:28:35.164Z
+                    createdAt: '2023-03-01T13:28:35.164Z'
               schema:
                 $ref: '#/components/schemas/PolicySchema'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Schema could not be validatetd
-        "409":
+        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Schema already exists
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Mismatch between schema and etag
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -1975,8 +1914,10 @@ paths:
         - Data Hub - Schemas
   /api/v1/data-hub/schemas/{schemaId}:
     delete:
-      description: "Deletes the selected schema and all associated versions of the\
-        \ schema. \n\n "
+      description: |-
+        Deletes the selected schema and all associated versions of the schema. 
+
+         
       operationId: deleteSchema
       parameters:
         - description: The schema identifier of the schema versions to delete.
@@ -1993,33 +1934,33 @@ paths:
           schema:
             type: string
       responses:
-        "204":
-          description: "Success, no response body"
-        "400":
+        '204':
+          description: Success, no response body
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Schema referenced
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Schema not found
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Mismatch between schema and etag
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -2029,9 +1970,12 @@ paths:
       tags:
         - Data Hub - Schemas
     get:
-      description: "Get a specific schema. \n\n This endpoint returns the content\
-        \ of the latest version of the schema with the content-type `application/json`.\
-        \ \n\n "
+      description: |-
+        Get a specific schema. 
+
+         This endpoint returns the content of the latest version of the schema with the content-type `application/json`. 
+
+         
       operationId: getSchema
       parameters:
         - description: The identifier of the schema.
@@ -2041,15 +1985,14 @@ paths:
           required: true
           schema:
             type: string
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, type, schemaDefinition, createdAt"
-          example: "id,type"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt'
+          example: id,type
           in: query
           name: fields
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2061,23 +2004,23 @@ paths:
                     version: 1
                     type: JSON
                     schemaDefinition: ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
-                    createdAt: 2023-03-01T13:28:35.164Z
+                    createdAt: '2023-03-01T13:28:35.164Z'
               schema:
                 $ref: '#/components/schemas/PolicySchema'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: A url parameter is missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Schema not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -2091,43 +2034,38 @@ paths:
       description: Get all scripts.
       operationId: getAllScripts
       parameters:
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, version, description, runtime, functionType, createdAt"
-          example: "id,createdAt,source"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, version, description, runtime, functionType, createdAt'
+          example: id,createdAt,source
           in: query
           name: fields
           schema:
             type: string
-        - description: Comma-separated list of function types used for filtering. Multiple
-            filters can be applied together.
+        - description: Comma-separated list of function types used for filtering. Multiple filters can be applied together.
           example: TRANSFORMATION
           in: query
           name: functionTypes
           schema:
             type: string
-        - description: Comma-separated list of script ids used for filtering. Multiple
-            filters can be applied together.
-          example: "script1,script2"
+        - description: Comma-separated list of script ids used for filtering. Multiple filters can be applied together.
+          example: script1,script2
           in: query
           name: scriptIds
           schema:
             type: string
-        - description: Specifies the page size for the returned results. Has to be between
-            10 and 500. Default page size is 50.
+        - description: Specifies the page size for the returned results. Has to be between 10 and 500. Default page size is 50.
           example: 100
           in: query
           name: limit
           schema:
             type: integer
             format: int32
-        - description: The cursor that has been returned by the previous result page.
-            Do not pass this parameter if you want to fetch the first page.
+        - description: The cursor that has been returned by the previous result page. Do not pass this parameter if you want to fetch the first page.
           in: query
           name: cursor
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2138,34 +2076,32 @@ paths:
                     items:
                       - id: my-transform.js
                         version: 1
-                        createdAt: 2023-11-21T13:08:09.898Z
+                        createdAt: '2023-11-21T13:08:09.898Z'
                         description: This script prefixes topics with 'transformed/'
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
                 list-response-b:
                   description: Example response with multiple sripts. More pages left
-                  summary: "Multiple results, more pages left"
+                  summary: Multiple results, more pages left
                   value:
                     items:
                       - id: my-transform.js
                         version: 1
-                        createdAt: 2023-11-21T13:08:09.898Z
+                        createdAt: '2023-11-21T13:08:09.898Z'
                         description: This script prefixes topics with 'transformed/'
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
                       - id: my-transform-new.js
                         version: 1
-                        createdAt: 2023-11-21T13:17:53.085Z
-                        description: "This script adds the user property ('foo', 'bar')\
-                        \ to a publish"
+                        createdAt: '2023-11-21T13:17:53.085Z'
+                        description: This script adds the user property ('foo', 'bar') to a publish
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsgcHVibGlzaC51c2VyUHJvcGVydGllcy5wdXNoKHtuYW1lOiAnZm9vJywgdmFsdWU6ICdiYXInfSk7IHJldHVybiBwdWJsaXNoOyB9
                     _links:
                       next: /api/v1/data-hub/scripts?cursor=a-WfW-QB4L4Q==&limit=3
                 list-response-c:
-                  description: Example response with requested fields and multiple
-                    scripts. More pages left
-                  summary: "Multiple results, requested 'id' field"
+                  description: Example response with requested fields and multiple scripts. More pages left
+                  summary: Multiple results, requested 'id' field
                   value:
                     items:
                       - id: script1
@@ -2174,20 +2110,19 @@ paths:
                     _links:
                       next: /api/v1/data-hub/scripts?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3&fields=id
                 list-response-e:
-                  description: Example response with all versions of specific script
-                    id.
-                  summary: "List versions of one script, last page"
+                  description: Example response with all versions of specific script id.
+                  summary: List versions of one script, last page
                   value:
                     items:
                       - id: my-transform.js
                         version: 1
-                        createdAt: 2023-11-21T13:08:09.898Z
+                        createdAt: '2023-11-21T13:08:09.898Z'
                         description: This script prefixes topics with 'transformed/'
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
                       - id: my-transform.js
                         version: 2
-                        createdAt: 2023-11-21T13:17:53.085Z
+                        createdAt: '2023-11-21T13:17:53.085Z'
                         description: This script prefixes topics with 'transformed/'
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsgcHVibGlzaC51c2VyUHJvcGVydGllcy5wdXNoKHtuYW1lOiAnZm9vJywgdmFsdWU6ICdiYXInfSk7IHJldHVybiBwdWJsaXNoOyB9
@@ -2198,21 +2133,20 @@ paths:
                     items:
                       - id: my-transform.js
                         version: 1
-                        createdAt: 2023-11-21T13:08:09.898Z
+                        createdAt: '2023-11-21T13:08:09.898Z'
                         description: This script prefixes topics with 'transformed/'
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
                       - id: my-transform-new.js
                         version: 1
-                        createdAt: 2023-11-21T13:17:53.085Z
-                        description: "This script adds the user property ('foo', 'bar')\
-                        \ to a publish"
+                        createdAt: '2023-11-21T13:17:53.085Z'
+                        description: This script adds the user property ('foo', 'bar') to a publish
                         functionType: TRANSFORMATION
                         source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsgcHVibGlzaC51c2VyUHJvcGVydGllcy5wdXNoKHtuYW1lOiAnZm9vJywgdmFsdWU6ICdiYXInfSk7IHJldHVybiBwdWJsaXNoOyB9
               schema:
                 $ref: '#/components/schemas/ScriptList'
           description: Success
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -2244,7 +2178,7 @@ paths:
         description: The script that should be created.
         required: true
       responses:
-        "201":
+        '201':
           content:
             application/json:
               examples:
@@ -2254,44 +2188,44 @@ paths:
                   value:
                     id: my-transform.js
                     version: 1
-                    createdAt: 2023-11-21T13:08:09.898Z
+                    createdAt: '2023-11-21T13:08:09.898Z'
                     description: This script prefixes topics with 'transformed/'
                     functionType: TRANSFORMATION
                     source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
               schema:
                 $ref: '#/components/schemas/Script'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script is invalid
-        "409":
+        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script is already present
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script doesn't match etag
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Temporary not available
-        "507":
+        '507':
           content:
             application/json:
               schema:
@@ -2319,33 +2253,33 @@ paths:
           schema:
             type: string
       responses:
-        "204":
-          description: "Success, no response body"
-        "400":
+        '204':
+          description: Success, no response body
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script is referenced
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script not found
-        "412":
+        '412':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script doesn't match etag
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -2365,15 +2299,14 @@ paths:
           required: true
           schema:
             type: string
-        - description: "Comma-separated list of fields to include in the response. Allowed\
-          \ values are: id, version, description, runtime, functionType, createdAt"
-          example: "id,createdAt,source"
+        - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, version, description, runtime, functionType, createdAt'
+          example: id,createdAt,source
           in: query
           name: fields
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2383,32 +2316,32 @@ paths:
                   value:
                     id: my-transform.js
                     version: 1
-                    createdAt: 2023-11-21T13:08:09.898Z
+                    createdAt: '2023-11-21T13:08:09.898Z'
                     description: This script prefixes topics with 'transformed/'
                     functionType: TRANSFORMATION
                     source: ZnVuY3Rpb24gdHJhbnNmb3JtKHB1Ymxpc2gsIGNvbnRleHQpIHsKICAgcHVibGlzaC50b3BpYyA9ICJ0cmFuc2Zvcm1lZC8iICsgcHVibGlzaC50b3BpYzsKICAgcmV0dXJuIHB1Ymxpc2g7Cn0=
               schema:
                 $ref: '#/components/schemas/Script'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: URL parameter missing
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Script not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server error
-        "503":
+        '503':
           content:
             application/json:
               schema:
@@ -2422,7 +2355,7 @@ paths:
       description: Obtain gateway capabilities.
       operationId: get-capabilities
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2450,7 +2383,7 @@ paths:
       description: Obtain configuration.
       operationId: get-configuration
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2464,80 +2397,51 @@ paths:
                     cloudLink:
                       displayText: HiveMQ Cloud
                       url: https://hivemq.com/cloud
-                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
-                        \ kasd gubergren,"
+                      description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                       external: true
                     gitHubLink:
                       displayText: GitHub
                       url: https://github.com/hivemq/hivemq-edge
-                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
-                        \ kasd gubergren,"
+                      description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                       external: true
                     documentationLink:
                       displayText: Documentation
                       url: https://github.com/hivemq/hivemq-edge/README.MD
-                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
-                        \ kasd gubergren,"
+                      description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                       external: true
                     firstUseInformation:
                       firstUse: false
                       prefillUsername: admin
                       prefillPassword: password
                       firstUseTitle: Welcome To HiveMQ Edge
-                      firstUseDescription: "Lorem ipsum dolor sit amet, consetetur\
-                        \ sadipscing elitr, sed diam nonumy eirmod tempor invidunt\
-                        \ ut labore et dolore magna aliquyam erat, sed diam voluptua.\
-                        \ At vero eos et accusam et justo duo dolores et ea rebum.\
-                        \ Stet clita kasd gubergren, no sea takimata sanctus est Lorem\
-                        \ ipsum dolor sit amet."
+                      firstUseDescription: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
                     ctas:
                       items:
                         - displayText: Connect My First Device
                           url: ./protocol-adapters?from=dashboard-cta
-                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
-                          \ clita kasd gubergren,"
+                          description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                           external: false
                         - displayText: Connect To My MQTT Broker
                           url: ./bridges?from=dashboard-cta
-                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
-                          \ clita kasd gubergren,"
+                          description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                           external: false
                         - displayText: Learn More
                           url: resources?from=dashboard-cta
-                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
-                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
-                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
-                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
-                          \ clita kasd gubergren,"
+                          description: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
                           external: false
                     resources:
                       items:
                         - displayText: Power Of Smart Manufacturing
                           url: https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
-                          description: ""
-                          target: ""
-                          imageUrl: ""
+                          description: ''
+                          target: ''
+                          imageUrl: ''
                           external: true
                         - displayText: Power Of Smart Manufacturing
                           url: https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
-                          description: ""
-                          target: ""
-                          imageUrl: ""
+                          description: ''
+                          target: ''
+                          imageUrl: ''
                           external: true
                     modules:
                       items: []
@@ -2546,8 +2450,7 @@ paths:
                         - id: extension-1
                           version: 1.0.0
                           name: My First Extension
-                          description: Some extension description here which could span
-                            multiple lines
+                          description: Some extension description here which could span multiple lines
                           author: HiveMQ
                           priority: 0
                         - id: hivemq-allow-all-extension
@@ -2567,7 +2470,7 @@ paths:
       description: Obtain gateway notifications.
       operationId: get-notifications
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2578,10 +2481,7 @@ paths:
                     items:
                       - level: WARNING
                         title: Default Credentials Need Changing!
-                        description: Your gateway access is configured to use the default
-                          username/password combination. This is a security risk. Please
-                          ensure you modify your access credentials in your configuration.xml
-                          file.
+                        description: Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your configuration.xml file.
               schema:
                 $ref: '#/components/schemas/NotificationList'
           description: Success
@@ -2593,13 +2493,13 @@ paths:
       description: Obtain gateway configuration.
       operationId: get-xml-configuration
       responses:
-        "200":
+        '200':
           content:
             application/xml:
               schema:
                 type: string
           description: Success
-        "405":
+        '405':
           content:
             application/xml:
               schema:
@@ -2613,7 +2513,7 @@ paths:
       description: Obtain listener.
       operationId: get-listeners
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2639,7 +2539,7 @@ paths:
       description: Endpoint to determine whether the gateway is considered UP.
       operationId: liveness
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2658,7 +2558,7 @@ paths:
       description: Endpoint to determine whether the gateway is considered ready.
       operationId: readiness
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2677,7 +2577,7 @@ paths:
       description: Get all bridges configured in the system.
       operationId: getBridges
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2701,7 +2601,7 @@ paths:
                         localSubscriptions:
                           - filters:
                               - '#'
-                            destination: "prefix/{#}/bridge/${bridge.name}"
+                            destination: prefix/{#}/bridge/${bridge.name}
                             excludes: []
                             customUserProperties:
                               - key: test1
@@ -2710,9 +2610,9 @@ paths:
                             maxQoS: 0
                         tlsConfiguration:
                           enabled: true
-                          keystorePassword: ""
-                          privateKeyPassword: ""
-                          truststorePassword: ""
+                          keystorePassword: ''
+                          privateKeyPassword: ''
+                          truststorePassword: ''
                           protocols: []
                           cipherSuites: []
                           keystoreType: JKS
@@ -2741,9 +2641,9 @@ paths:
         description: The new bridge.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
@@ -2757,7 +2657,7 @@ paths:
       description: Obtain the details.
       operationId: get-bridges-status
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2787,15 +2687,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -2815,7 +2715,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2838,7 +2738,7 @@ paths:
                     localSubscriptions:
                       - filters:
                           - '#'
-                        destination: "prefix/{#}/bridge/${bridge.name}"
+                        destination: prefix/{#}/bridge/${bridge.name}
                         excludes: []
                         customUserProperties:
                           - key: test1
@@ -2847,9 +2747,9 @@ paths:
                         maxQoS: 0
                     tlsConfiguration:
                       enabled: true
-                      keystorePassword: ""
-                      privateKeyPassword: ""
-                      truststorePassword: ""
+                      keystorePassword: ''
+                      privateKeyPassword: ''
+                      truststorePassword: ''
                       protocols: []
                       cipherSuites: []
                       keystoreType: JKS
@@ -2864,13 +2764,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Bridge'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -2895,15 +2795,15 @@ paths:
             schema:
               $ref: '#/components/schemas/Bridge'
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -2924,7 +2824,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2938,13 +2838,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -2972,7 +2872,7 @@ paths:
         description: The command to transition the bridge runtime status.
         required: true
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -2985,13 +2885,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatusTransitionResult'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Query parameters invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3019,7 +2919,7 @@ paths:
             type: integer
             format: int64
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3058,21 +2958,21 @@ paths:
         description: The new adapter.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter failed validation
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3086,7 +2986,7 @@ paths:
       description: Obtain a list of configured adapters.
       operationId: getAdapters
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3106,7 +3006,7 @@ paths:
                               destination: test
                               qos: 0
                         adapterRuntimeInformation:
-                          lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                          lastStartedAttemptTime: '2023-06-28T10:57:18.707+01'
                           numberOfDaemonProcesses: 1
                           connectionStatus:
                             status: CONNECTED
@@ -3130,9 +3030,9 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3152,7 +3052,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3171,7 +3071,7 @@ paths:
                           destination: test
                           qos: 0
                     adapterRuntimeInformation:
-                      lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                      lastStartedAttemptTime: '2023-06-28T10:57:18.707+01'
                       numberOfDaemonProcesses: 1
                       connectionStatus:
                         status: CONNECTED
@@ -3180,7 +3080,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Adapter'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3205,21 +3105,21 @@ paths:
             schema:
               $ref: '#/components/schemas/Adapter'
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3230,8 +3130,7 @@ paths:
         - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/discover:
     get:
-      description: Obtain a list of available values accessible via this protocol
-        adapter.
+      description: Obtain a list of available values accessible via this protocol adapter.
       operationId: discoverDataPoints
       parameters:
         - description: The adapter Id.
@@ -3252,7 +3151,7 @@ paths:
             type: integer
             format: int32
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3268,32 +3167,32 @@ paths:
                         children:
                           - id: grouping-1
                             name: Addresses 1-16
-                            description: ""
+                            description: ''
                             nodeType: FOLDER
                             selectable: false
                             children:
                               - id: address-location-1
-                                name: "1"
-                                description: ""
+                                name: '1'
+                                description: ''
                                 nodeType: VALUE
                                 selectable: true
                                 children: []
               schema:
                 $ref: '#/components/schemas/ValuesTree'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Protocol adapter does not support discovery
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3314,13 +3213,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NorthboundMappingList'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3345,21 +3244,21 @@ paths:
             schema:
               $ref: '#/components/schemas/NorthboundMappingList'
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Missing tags
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3380,13 +3279,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SouthboundMappingList'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3411,21 +3310,21 @@ paths:
             schema:
               $ref: '#/components/schemas/SouthboundMappingList'
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Missing tags
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3446,7 +3345,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3460,13 +3359,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3493,7 +3392,7 @@ paths:
         description: The command to transition the adapter runtime status.
         required: true
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3506,13 +3405,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatusTransitionResult'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3533,7 +3432,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3551,7 +3450,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3578,21 +3477,21 @@ paths:
         description: The domain tag.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "409":
+        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Tag already exists
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3617,15 +3516,15 @@ paths:
             schema:
               $ref: '#/components/schemas/DomainTagList'
       responses:
-        "200":
+        '200':
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3653,15 +3552,15 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3693,21 +3592,21 @@ paths:
             schema:
               $ref: '#/components/schemas/DomainTag'
       responses:
-        "200":
+        '200':
           description: Success
-        "403":
+        '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -3735,15 +3634,15 @@ paths:
         description: The new adapter.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter is invalid
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3757,7 +3656,7 @@ paths:
       description: Get all northbound mappings
       operationId: get-northboundMappings
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -3771,7 +3670,7 @@ paths:
       description: Get all southbound mappings.
       operationId: get-southboundMappings
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -3785,7 +3684,7 @@ paths:
       description: Obtain the details.
       operationId: get-adapters-status
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3815,13 +3714,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TagSchema'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3835,7 +3734,7 @@ paths:
       description: Get the list of all domain tags created in this Edge instance
       operationId: get-domain-tags
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3869,7 +3768,7 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3887,7 +3786,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DomainTag'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3901,7 +3800,7 @@ paths:
       description: Obtain a list of available protocol adapter types.
       operationId: getAdapterTypes
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -3922,7 +3821,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -3942,7 +3841,7 @@ paths:
                               destination: test
                               qos: 0
                         adapterRuntimeInformation:
-                          lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                          lastStartedAttemptTime: '2023-06-28T10:57:18.707+01'
                           numberOfDaemonProcesses: 1
                           connectionStatus:
                             status: CONNECTED
@@ -3951,7 +3850,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdaptersList'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -3962,19 +3861,16 @@ paths:
         - Protocol Adapters
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
     get:
-      description: Get a json schema that explains the json schema that is used to
-        write to a PLC for the given tag name."
+      description: Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
       operationId: get-writing-schema
       parameters:
-        - description: The id of the adapter for which the Json Schema for writing to
-            a PLC gets created.
+        - description: The id of the adapter for which the Json Schema for writing to a PLC gets created.
           in: path
           name: adapterId
           required: true
           schema:
             type: string
-        - description: The tag name (urlencoded) for which the Json Schema for writing
-            to a PLC gets created.
+        - description: The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.
           in: path
           name: tagName
           required: true
@@ -3982,7 +3878,7 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -4000,20 +3896,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
-        "500":
+        '500':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
-      summary: Get a json schema that explains the json schema that is used to write
-        to a PLC for the given tag name.
+      summary: Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.
       tags:
         - Protocol Adapters
   /api/v1/management/sampling/schema/{topic}:
@@ -4029,19 +3924,19 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: No samples found
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -4063,7 +3958,7 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -4084,7 +3979,7 @@ paths:
             type: string
             format: urlencoded
       responses:
-        "200":
+        '200':
           description: Success
       summary: Start sampling for the given topic.
       tags:
@@ -4094,7 +3989,7 @@ paths:
       description: Get the list of all topic filters created in this Edge instance
       operationId: get-topicFilters
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -4124,15 +4019,15 @@ paths:
         description: The topic filter.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "403":
+        '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Already Present
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -4150,9 +4045,9 @@ paths:
             schema:
               $ref: '#/components/schemas/TopicFilterList'
       responses:
-        "200":
+        '200':
           description: Success
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -4162,27 +4057,36 @@ paths:
       tags:
         - Topic Filters
   /api/v1/management/topic-filters/{filter}:
+    get:
+      description: Get the specified topic filter
+      operationId: get-topicFilter
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicFilter'
+          description: Success
+      summary: Get the specified topic filter
+      tags:
+        - Topic Filters
     delete:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that should be deleted.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       responses:
-        "200":
+        '200':
           description: Success
-        "403":
+        '403':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Already Present
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -4195,28 +4099,22 @@ paths:
       description: Update a topic filter
       operationId: update-topicFilter
       parameters:
-        - description: The URL-encoded filter of the topic filter that will be updated.
-          in: path
-          name: filter
-          required: true
-          schema:
-            type: string
-            format: urlencoded
+        - $ref: '#/components/parameters/TopicFilterId'
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TopicFilter'
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Topic filter failed validation
-        "500":
+        '500':
           content:
             application/json:
               schema:
@@ -4225,12 +4123,30 @@ paths:
       summary: Update a topic filter.
       tags:
         - Topic Filters
+  /api/v1/management/topic-filters/{filter}/schema:
+    get:
+      description: Get the schema of the specified topic filter
+      operationId: get-topicFilter-schema
+      parameters:
+        - $ref: '#/components/parameters/TopicFilterId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: data-url
+                description: The optional json schema for this topic filter in the data uri format.
+          description: Success
+      summary: Get the schema of the specified topic filter
+      tags:
+        - Topic Filters
   /api/v1/management/uns/isa95:
     get:
       description: Obtain isa95 config.
       operationId: get-isa95
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -4262,9 +4178,9 @@ paths:
         description: The updated isa95 configuration.
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
@@ -4278,7 +4194,7 @@ paths:
       description: Obtain the latest sample for the metric requested.
       operationId: getMetrics
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -4338,7 +4254,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples:
@@ -4346,12 +4262,12 @@ paths:
                   description: Example response with metrics listed.
                   summary: Metric Sample
                   value:
-                    sampleTime: 2023-06-28T11:39:12.789+01
+                    sampleTime: '2023-06-28T11:39:12.789+01'
                     value: 0
               schema:
                 $ref: '#/components/schemas/DataPoint'
           description: Success
-        "400":
+        '400':
           content:
             application/json:
               schema:
@@ -4369,7 +4285,7 @@ paths:
       tags:
         - Combiners
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -4389,9 +4305,9 @@ paths:
         description: The combiner to add
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "409":
+        '409':
           content:
             application/json:
               schema:
@@ -4407,13 +4323,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CombinerId'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Combiner'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -4428,9 +4344,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CombinerId'
       responses:
-        "200":
+        '200':
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -4452,9 +4368,9 @@ paths:
         description: The new content of the combiner
         required: true
       responses:
-        "200":
+        '200':
           description: Success
-        "409":
+        '409':
           content:
             application/json:
               schema:
@@ -4470,13 +4386,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CombinerId'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DataCombiningList'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -4493,7 +4409,7 @@ paths:
         - $ref: '#/components/parameters/CombinerId'
         - $ref: '#/components/parameters/MappingId'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -4502,7 +4418,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Instruction'
           description: Success
-        "404":
+        '404':
           content:
             application/json:
               schema:
@@ -4511,10 +4427,18 @@ paths:
 components:
   headers:
     ETag:
-      description: 'Identifier for a specific version of a resource'
+      description: Identifier for a specific version of a resource
       schema:
         type: string
   parameters:
+    TopicFilterId:
+      name: filter
+      description: The URL-encoded filter of the topic filter that should be deleted.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: urlencoded
     CombinerId:
       name: combinerId
       description: The unique id of the combiner to retrieve.
@@ -4540,11 +4464,10 @@ components:
         id:
           type: string
           format: string
-          description: "The adapter id, must be unique and only contain alpha numeric\
-            \ characters with spaces and hyphens."
+          description: The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.
           maxLength: 500
           minLength: 1
-          pattern: "^([a-zA-Z_0-9-_])*$"
+          pattern: ^([a-zA-Z_0-9-_])*$
         status:
           $ref: '#/components/schemas/Status'
         type:
@@ -4590,16 +4513,14 @@ components:
           description: The token associated a set of authenticated credentials
     BehaviorPolicy:
       type: object
-      description: A policy which is used to validate and execute certain actions
-        based on the validation result.
+      description: A policy which is used to validate and execute certain actions based on the validation result.
       properties:
         behavior:
           $ref: '#/components/schemas/BehaviorPolicyBehavior'
         createdAt:
           type: string
           format: date-time
-          description: The formatted UTC timestamp indicating when the policy was
-            created.
+          description: The formatted UTC timestamp indicating when the policy was created.
           readOnly: true
         deserialization:
           $ref: '#/components/schemas/BehaviorPolicyDeserialization'
@@ -4609,8 +4530,7 @@ components:
         lastUpdatedAt:
           type: string
           format: date-time
-          description: The formatted UTC timestamp indicating when the policy was
-            updated the last time.
+          description: The formatted UTC timestamp indicating when the policy was updated the last time.
           readOnly: true
         matching:
           $ref: '#/components/schemas/BehaviorPolicyMatching'
@@ -4624,8 +4544,7 @@ components:
         - matching
     BehaviorPolicyBehavior:
       type: object
-      description: "The behavior referenced by the policy, that is validated by the\
-        \ policy."
+      description: The behavior referenced by the policy, that is validated by the policy.
       properties:
         arguments:
           type: object
@@ -4637,8 +4556,7 @@ components:
         - id
     BehaviorPolicyDeserialization:
       type: object
-      description: The deserializers used by the policy for particular message and/or
-        payload types.
+      description: The deserializers used by the policy for particular message and/or payload types.
       properties:
         publish:
           $ref: '#/components/schemas/BehaviorPolicyDeserializer'
@@ -4674,8 +4592,7 @@ components:
         - clientIdRegex
     BehaviorPolicyOnEvent:
       type: object
-      description: "One or more operations that are triggered on the event. When this\
-        \ field is empty, the transition does not trigger any operations."
+      description: One or more operations that are triggered on the event. When this field is empty, the transition does not trigger any operations.
       properties:
         pipeline:
           type: array
@@ -4701,12 +4618,10 @@ components:
           $ref: '#/components/schemas/BehaviorPolicyOnEvent'
         fromState:
           type: string
-          description: The exact state from which the transition happened. Alternatively
-            a state filter can be used.
+          description: The exact state from which the transition happened. Alternatively a state filter can be used.
         toState:
           type: string
-          description: The exact state to which the transition happened. Alternatively
-            a state filter can be used.
+          description: The exact state to which the transition happened. Alternatively a state filter can be used.
       required:
         - fromState
         - toState
@@ -4727,17 +4642,15 @@ components:
           nullable: true
         host:
           type: string
-          description: "The host the bridge connects to - a well formed hostname,\
-            \ ipv4 or ipv6 value."
+          description: The host the bridge connects to - a well formed hostname, ipv4 or ipv6 value.
           maxLength: 255
         id:
           type: string
           format: string
-          description: "The bridge id, must be unique and only contain alpha numeric\
-            \ characters with spaces and hyphens."
+          description: The bridge id, must be unique and only contain alpha numeric characters with spaces and hyphens.
           maxLength: 500
           minLength: 1
-          pattern: "^([a-zA-Z_0-9-_])*$"
+          pattern: ^([a-zA-Z_0-9-_])*$
         keepAlive:
           type: integer
           format: int32
@@ -4770,10 +4683,7 @@ components:
           nullable: true
         persist:
           type: boolean
-          description: "If this flag is set to true, any outgoing mqtt messages with\
-            \ QoS-1 or QoS-2 will be persisted on disc in case disc persistence is\
-            \ active.If this flag is set to false, the QoS of any outgoing mqtt messages\
-            \ will be set to QoS-0 and no traffic will be persisted on disc."
+          description: If this flag is set to true, any outgoing mqtt messages with QoS-1 or QoS-2 will be persisted on disc in case disc persistence is active.If this flag is set to false, the QoS of any outgoing mqtt messages will be set to QoS-0 and no traffic will be persisted on disc.
           nullable: true
         port:
           type: integer
@@ -4792,7 +4702,6 @@ components:
           default: 3600
           description: The sessionExpiry associated the the MQTT connection.
           minimum: 0
-          # TODO add maximum for session expiry (4294967295 seems to be too big for Java long)
         status:
           $ref: '#/components/schemas/Status'
         tlsConfiguration:
@@ -4885,8 +4794,7 @@ components:
           description: A description for the capability
         displayName:
           type: string
-          description: "A human readable name, intended to be used to display at front\
-            \ end."
+          description: A human readable name, intended to be used to display at front end.
         id:
           type: string
           enum:
@@ -4920,14 +4828,12 @@ components:
           description: The value of the data point
     DataPolicy:
       type: object
-      description: A data policy which is used to validate and execute certain actions
-        based on the validation result.
+      description: A data policy which is used to validate and execute certain actions based on the validation result.
       properties:
         createdAt:
           type: string
           format: date-time
-          description: The formatted UTC timestamp indicating when the policy was
-            created.
+          description: The formatted UTC timestamp indicating when the policy was created.
           readOnly: true
         id:
           type: string
@@ -4935,8 +4841,7 @@ components:
         lastUpdatedAt:
           type: string
           format: date-time
-          description: The formatted UTC timestamp indicating when the policy was
-            updated the last time.
+          description: The formatted UTC timestamp indicating when the policy was updated the last time.
           readOnly: true
         matching:
           $ref: '#/components/schemas/DataPolicyMatching'
@@ -4951,14 +4856,11 @@ components:
         - matching
     DataPolicyAction:
       type: object
-      description: "One or more operations the outcome of the validation triggers.\
-        \  When this field is empty, the outcome of the policy validation does not\
-        \ trigger any operations."
+      description: One or more operations the outcome of the validation triggers.  When this field is empty, the outcome of the policy validation does not trigger any operations.
       properties:
         pipeline:
           type: array
-          description: "The pipeline to execute, when this action is triggered. The\
-            \ operations in the pipeline are executed in-order."
+          description: The pipeline to execute, when this action is triggered. The operations in the pipeline are executed in-order.
           items:
             $ref: '#/components/schemas/PolicyOperation'
     DataPolicyList:
@@ -4983,9 +4885,7 @@ components:
         - topicFilter
     DataPolicyValidation:
       type: object
-      description: "The section of the policy that defines how incoming MQTT messages\
-        \ are validated. If this section is empty, the result of the policy validation\
-        \ is always successful."
+      description: The section of the policy that defines how incoming MQTT messages are validated. If this section is empty, the result of the policy validation is always successful.
       properties:
         validators:
           type: array
@@ -5071,8 +4971,7 @@ components:
           $ref: '#/components/schemas/TypeIdentifier'
         message:
           type: string
-          description: The message associated with the event. A message will be no
-            more than 1024 characters in length
+          description: The message associated with the event. A message will be no more than 1024 characters in length
         payload:
           $ref: '#/components/schemas/Payload'
         severity:
@@ -5148,8 +5047,7 @@ components:
         - items
     FieldMapping:
       type: object
-      description: Defines how incoming data should be transformed before being sent
-        out.
+      description: Defines how incoming data should be transformed before being sent out.
       properties:
         instructions:
           type: array
@@ -5164,8 +5062,7 @@ components:
       properties:
         firstUse:
           type: boolean
-          description: A mandatory Boolean indicating if the gateway is in firstUse
-            mode
+          description: A mandatory Boolean indicating if the gateway is in firstUse mode
         firstUseDescription:
           type: string
           description: A description string to use when firstUse = true.
@@ -5176,13 +5073,11 @@ components:
           nullable: true
         prefillPassword:
           type: string
-          description: A String indicating if the prefill data for the username/password
-            page.
+          description: A String indicating if the prefill data for the username/password page.
           nullable: true
         prefillUsername:
           type: string
-          description: A String indicating if the prefill data for the username/password
-            page.
+          description: A String indicating if the prefill data for the username/password page.
           nullable: true
       required:
         - firstUse
@@ -5262,7 +5157,7 @@ components:
           type: string
           description: The area
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*$"
+          pattern: ^[a-zA-Z0-9 -_]*$
         enabled:
           type: boolean
           description: Should UNS be available
@@ -5270,7 +5165,7 @@ components:
           type: string
           description: The enterprise
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*"
+          pattern: ^[a-zA-Z0-9 -_]*
         prefixAllTopics:
           type: boolean
           description: Should all topics be prefixed with UNS placeholders
@@ -5278,25 +5173,24 @@ components:
           type: string
           description: The productionLine
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*$"
+          pattern: ^[a-zA-Z0-9 -_]*$
         site:
           type: string
           description: The site
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*$"
+          pattern: ^[a-zA-Z0-9 -_]*$
         workCell:
           type: string
           description: The workCell
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*$"
+          pattern: ^[a-zA-Z0-9 -_]*$
     Instruction:
       type: object
       description: List of instructions to be applied to incoming data
       properties:
         destination:
           type: string
-          description: The field in the output object where the data will be written
-            to
+          description: The field in the output object where the data will be written to
         source:
           type: string
           description: The field in the input object where the data will be read from
@@ -5321,8 +5215,7 @@ components:
           nullable: true
         external:
           type: boolean
-          description: A mandatory Boolean indicating if the link is internal to the
-            context or an external webLink
+          description: A mandatory Boolean indicating if the link is internal to the context or an external webLink
         imageUrl:
           type: string
           description: An optional imageUrl associated with the Link
@@ -5651,8 +5544,7 @@ components:
       properties:
         payload:
           type: string
-          description: The payload of the sample. The bytes are base64 encoded to
-            ensure compatibility even if the payload is a arbitrary byte sequence.
+          description: The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.
       required:
         - payload
     PayloadSampleList:
@@ -5667,16 +5559,14 @@ components:
         - items
     PolicyOperation:
       type: object
-      description: The pipeline to execute when this action is triggered. The operations
-        in the pipeline are executed in order.
+      description: The pipeline to execute when this action is triggered. The operations in the pipeline are executed in order.
       properties:
         arguments:
           type: object
           description: The required arguments of the referenced function.
         functionId:
           type: string
-          description: The unique id of the referenced function to execute in this
-            operation.
+          description: The unique id of the referenced function to execute in this operation.
         id:
           type: string
           description: The unique id of the operation in the pipeline.
@@ -5786,7 +5676,7 @@ components:
           description: The unique name of the category to be used in API communication.
           maxLength: 256
           minLength: 1
-          pattern: "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"
+          pattern: ^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$
       required:
         - displayName
         - name
@@ -5859,8 +5749,7 @@ components:
           description: The identifier of the schema.
         version:
           type: string
-          description: The version of the schema. The value "latest" may be used to
-            always refer to the latest schema.
+          description: The version of the schema. The value "latest" may be used to always refer to the latest schema.
       required:
         - schemaId
         - version
@@ -5993,10 +5882,7 @@ components:
         callbackTimeoutMillis:
           type: integer
           format: int32
-          description: The callback timeout specifies the minimum amount of time (in
-            milliseconds) that the API advises the client to backoff before rechecking
-            the (runtime or connection) status of this object. This is only applicable
-            when the status is 'PENDING'.
+          description: The callback timeout specifies the minimum amount of time (in milliseconds) that the API advises the client to backoff before rechecking the (runtime or connection) status of this object. This is only applicable when the status is 'PENDING'.
         identifier:
           type: string
           description: The identifier of the object in transition
@@ -6078,8 +5964,7 @@ components:
         schema:
           type: string
           format: data-url
-          description: The optional json schema for this topic filter in the data
-            uri format.
+          description: The optional json schema for this topic filter in the data uri format.
         topicFilter:
           type: string
           format: mqtt-topic-filter
@@ -6104,8 +5989,7 @@ components:
           type: string
         identifier:
           type: string
-          description: "The identifier associated with the object, a combination of\
-            \ type and identifier is used to uniquely identify an object in the system"
+          description: The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system
         type:
           type: string
           description: The type of the associated object/entity
@@ -6148,13 +6032,11 @@ components:
         serverPath:
           type: string
           default: /mqtt
-          description: The server path used by the bridge client. This must be setup
-            as path at the remote broker
+          description: The server path used by the bridge client. This must be setup as path at the remote broker
         subProtocol:
           type: string
           default: mqtt
-          description: The sub-protocol used by the bridge client. This must be supported
-            by the remote broker
+          description: The sub-protocol used by the bridge client. This must be supported by the remote broker
     CombinerList:
       type: object
       description: The list of Combiner defined in this Edge instance
@@ -6187,6 +6069,7 @@ components:
         - id
         - name
         - sources
+        - mappings
     DataCombiningList:
       type: object
       properties:
@@ -6208,14 +6091,9 @@ components:
           type: object
           required:
             - primary
-            - primaryType
           properties:
             primary:
-              #primary must be in the list of either tags or topicFilters
-              type: string
-            primaryType:
-              type: string
-              enum: [ TAG, TOPIC_FILTER ]
+              $ref: '#/components/schemas/DataIdentifierReference'
             tags:
               type: array
               description: The list of tags (names) used in the data combining
@@ -6227,8 +6105,15 @@ components:
               items:
                 type: string
         destination:
-          type: string
-          format: mqtt-topic
+          type: object
+          properties:
+            topic:
+              type: string
+              format: mqtt-topic
+            schema:
+              type: string
+              format: data-url
+              description: The optional json schema for this topic filter in the data uri format.
         instructions:
           type: array
           description: List of instructions to be applied to incoming data
@@ -6237,6 +6122,8 @@ components:
       required:
         - id
         - instructions
+        - destination
+        - sources
     EntityReferenceList:
       type: object
       properties:
@@ -6249,13 +6136,14 @@ components:
     EntityType:
       type: string
       description: These are the prime entities owning tags and topic filters
-      enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
+      enum:
+        - ADAPTER
+        - DEVICE
+        - BRIDGE
+        - EDGE_BROKER
     EntityReference:
       type: object
       description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
-      # We need this because we don't have a mechanism to identify a prime entity from an id
-      # Adapter/bridge ids are user-facing not uuid)
-      # id are unique within their types but not across all entities
       properties:
         type:
           $ref: '#/components/schemas/EntityType'
@@ -6265,3 +6153,18 @@ components:
       required:
         - id
         - type
+    DataIdentifierReference:
+      type: object
+      description: A reference to one of the data identifiers (topic filter or tag) in Edge
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: The name (segmented) of the tag or topic filter
+        type:
+          type: string
+          enum:
+            - TAG
+            - TOPIC_FILTER
