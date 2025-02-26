@@ -36,7 +36,7 @@ const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectPro
           tags={tags}
           topicFilters={topicFilters}
           onChange={onChange}
-          optionQueries={sources}
+          formContext={{ queries: sources, entities: mockCombiner.sources.items }}
         />
       </FormControl>
       {children}

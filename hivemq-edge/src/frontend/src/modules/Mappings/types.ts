@@ -1,7 +1,7 @@
 import type { GenericObjectType } from '@rjsf/utils'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import type { AlertProps } from '@chakra-ui/react'
-import type { ApiError, DomainTagList, TopicFilterList } from '@/api/__generated__'
+import type { ApiError, DomainTagList, EntityReference, TopicFilterList } from '@/api/__generated__'
 import type { UseQueryResult } from '@tanstack/react-query'
 
 export interface ManagerContextType<T> {
@@ -43,5 +43,6 @@ export interface MappingValidation extends Pick<AlertProps, 'status'> {
 }
 
 export interface CombinerContext {
-  sources?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]
+  queries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]
+  entities?: EntityReference[]
 }
