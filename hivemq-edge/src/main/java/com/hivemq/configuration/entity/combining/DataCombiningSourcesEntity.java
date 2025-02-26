@@ -28,7 +28,7 @@ import java.util.List;
 public class DataCombiningSourcesEntity {
 
     @JsonProperty("primaryReference")
-    @XmlElement(name = "primaryReference")
+    @XmlElement(name = "primary-reference")
     private final @NotNull DataIdentifierReferenceEntity primaryIdentifier;
 
     @JsonProperty("tags")
