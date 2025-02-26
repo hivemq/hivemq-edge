@@ -5188,6 +5188,8 @@ components:
       type: object
       description: List of instructions to be applied to incoming data
       properties:
+        sourceRef:
+          $ref: '#/components/schemas/DataIdentifierReference'
         destination:
           type: string
           description: The field in the output object where the data will be written to

@@ -15,10 +15,12 @@
  */
 package com.hivemq.combining.runtime;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -32,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -141,21 +145,33 @@ public class DataCombiningRuntime {
 
         final Map<String, Object> outgoing = new HashMap<>();
 
-        topicFilterResults.forEach((topicFilter, publish) -> outgoing.put(topicFilter,
-                new String(publish.getPayload())));
+        final ObjectNode rootNode = mapper.createObjectNode();
 
-        tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> outgoing.put(dataPoint.getTagName(),
-                dataPoint.getTagValue().toString())));
+        topicFilterResults.forEach((topicFilter, publish) -> {
+            try {
+                final JsonNode jsonNode = mapper.readTree(publish.getPayload());
+                final String fieldName =
+                        SourceSanitizer.sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
+                rootNode.set(fieldName, jsonNode);
+            } catch (final IOException e) {
+                log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
+                throw new RuntimeException(e);
+            }
+        });
 
-        try {
-            dataCombiningPublishService.publish(combining.destination(),
-                    mapper.writeValueAsBytes(outgoing),
-                    dataCombining);
-        } catch (final JsonProcessingException e) {
-            log.error("Can't produce JSON", e);
-            throw new RuntimeException(e);
-        }
+        tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
+            try {
+                final JsonNode jsonNode = mapper.readTree(dataPoint.getTagValue().toString());
+                final String fieldName =
+                        SourceSanitizer.sanitize(new DataIdentifierReference(dataPoint.getTagName(), TAG));
+                rootNode.set(fieldName, jsonNode);
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }));
 
+        final byte[] payload = rootNode.toString().getBytes(StandardCharsets.UTF_8);
+        dataCombiningPublishService.publish(combining.destination(), payload, dataCombining);
     }
 
     public final class InternalTagConsumer implements TagConsumer {
