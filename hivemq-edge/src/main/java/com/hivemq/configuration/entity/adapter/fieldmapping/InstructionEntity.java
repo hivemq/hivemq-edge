@@ -16,9 +16,13 @@
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.Null;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 
@@ -34,8 +38,7 @@ public class InstructionEntity {
 
     @JsonProperty("origin")
     @XmlElement(name = "origin")
-    private @NotNull String origin;
-
+    private @Nullable DataIdentifierReferenceEntity origin;
 
     // no- arg for JaxB
     public InstructionEntity() {
@@ -44,7 +47,7 @@ public class InstructionEntity {
     public InstructionEntity(
             final @NotNull String sourceFieldName,
             final @NotNull String destinationFieldName,
-            final @NotNull String origin) {
+            final @Nullable DataIdentifierReferenceEntity origin) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
         this.origin = origin;
@@ -58,16 +61,20 @@ public class InstructionEntity {
         return sourceFieldName;
     }
 
-    public @NotNull String getOrigin() {
+    public @Nullable DataIdentifierReferenceEntity getOrigin() {
         return origin;
     }
 
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.sourceFieldName(), model.destinationFieldName(), model.origin());
+        return new InstructionEntity(model.sourceFieldName(),
+                model.destinationFieldName(),
+                model.dataIdentifierReference() != null ? model.dataIdentifierReference().toPersistence() : null);
     }
 
     public @NotNull Instruction to() {
-        return new Instruction(getSourceFieldName(), getDestinationFieldName(), getOrigin());
+        return new Instruction(getSourceFieldName(),
+                getDestinationFieldName(),
+                getOrigin() != null ? DataIdentifierReference.fromPersistence(getOrigin()) : null);
     }
 
     @Override
