@@ -35,7 +35,7 @@ describe('useListCombinerMappings', () => {
             tags: [],
             topicFilters: [],
           },
-          destination: 'my/topic',
+          destination: { topic: 'my/topic' },
           instructions: [],
         },
       ],

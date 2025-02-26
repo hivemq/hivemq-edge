@@ -43,13 +43,13 @@ export const mockCombiner: Combiner = {
           tags: ['my/tag/t1', 'my/tag/t3'],
           topicFilters: ['my/topic/+/temp'],
         },
-        destination: 'my/first/topic',
+        destination: { topic: 'my/first/topic' },
         instructions: [],
       },
       {
         id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
         sources: { primary: '', primaryType: DataCombining.primaryType.TAG, tags: [], topicFilters: [] },
-        destination: 'my/other/topic',
+        destination: { topic: 'my/other/topic' },
         instructions: [],
       },
     ],
@@ -64,7 +64,7 @@ export const mockCombinerMapping: DataCombining = {
     tags: [],
     topicFilters: [],
   },
-  destination: 'my/topic',
+  destination: { topic: 'my/topic' },
   instructions: [],
 }
 

@@ -1259,6 +1259,11 @@
       },
       "schemaManager": {
         "header": "Create a schema",
+        "action": {
+          "infer": "Infer a schema",
+          "upload": "Upload a new schema",
+          "download": "Download the schema"
+        },
         "infer": {
           "message": "We will create a new schema based on the combination of the sources",
           "action": "Generate"
