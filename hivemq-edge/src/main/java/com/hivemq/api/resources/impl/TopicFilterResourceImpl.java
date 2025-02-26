@@ -112,9 +112,7 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
             if (schemaAsDataUrl == null) {
                 return ErrorResponseUtil.errorResponse(new NotFoundError());
             }
-            System.err.println(schemaAsDataUrl.getData());
             final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()));
-            // TODO actually we only want to return the schema, for now we return everything
             return Response.ok(schema).build();
         }
     }
