@@ -25,7 +25,13 @@ export type DataCombining = {
          */
         topicFilters?: Array<string>;
     };
-    destination?: string;
+    destination: {
+        topic?: string;
+        /**
+         * The optional json schema for this topic filter in the data uri format.
+         */
+        schema?: string;
+    };
     /**
      * List of instructions to be applied to incoming data
      */

@@ -36,8 +36,18 @@ export const $DataCombining = {
             },
         },
         destination: {
-            type: 'string',
-            format: 'mqtt-topic',
+            properties: {
+                topic: {
+                    type: 'string',
+                    format: 'mqtt-topic',
+                },
+                schema: {
+                    type: 'string',
+                    description: `The optional json schema for this topic filter in the data uri format.`,
+                    format: 'data-url',
+                },
+            },
+            isRequired: true,
         },
         instructions: {
             type: 'array',
