@@ -5753,6 +5753,7 @@ components:
               - READ
               - DISCOVER
               - WRITE
+              - COMBINE
           uniqueItems: true
         category:
           $ref: '#/components/schemas/ProtocolAdapterCategory'
