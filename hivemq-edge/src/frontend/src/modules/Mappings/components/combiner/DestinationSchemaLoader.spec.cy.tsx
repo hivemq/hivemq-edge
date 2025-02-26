@@ -1,11 +1,11 @@
-import { DataCombining } from '@/api/__generated__'
+import type { DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { DestinationSchemaLoader } from './DestinationSchemaLoader'
 
 const mockDataCombining: DataCombining = {
   id: '1f64f351-dcef-4ca1-ad09-26cd07f45be4',
   sources: {
-    primary: '',
-    primaryType: DataCombining.primaryType.TAG,
+    primary: { id: '', type: DataIdentifierReference.type.TAG },
     tags: [],
     topicFilters: [],
   },

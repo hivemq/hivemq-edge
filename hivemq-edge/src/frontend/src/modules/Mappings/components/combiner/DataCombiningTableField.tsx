@@ -8,7 +8,8 @@ import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
-import { DataCombining } from '@/api/__generated__'
+import type { DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
@@ -37,8 +38,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       const newMapping: DataCombining = {
         id: uuidv4(),
         sources: {
-          primary: '',
-          primaryType: DataCombining.primaryType.TAG,
+          primary: { id: '', type: DataIdentifierReference.type.TAG },
           tags: [],
           topicFilters: [],
         },

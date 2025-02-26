@@ -1,6 +1,13 @@
 import { http, HttpResponse } from 'msw'
-import { DataCombining } from '@/api/__generated__'
-import type { Combiner, CombinerList, DataCombiningList, EntityReference, Instruction } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
+import type {
+  Combiner,
+  CombinerList,
+  DataCombiningList,
+  EntityReference,
+  Instruction,
+  DataCombining,
+} from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 
 interface CombinerParams {
@@ -38,8 +45,7 @@ export const mockCombiner: Combiner = {
       {
         id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
         sources: {
-          primary: '',
-          primaryType: DataCombining.primaryType.TAG,
+          primary: { id: '', type: DataIdentifierReference.type.TAG },
           tags: ['my/tag/t1', 'my/tag/t3'],
           topicFilters: ['my/topic/+/temp'],
         },
@@ -48,7 +54,7 @@ export const mockCombiner: Combiner = {
       },
       {
         id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
-        sources: { primary: '', primaryType: DataCombining.primaryType.TAG, tags: [], topicFilters: [] },
+        sources: { primary: { id: '', type: DataIdentifierReference.type.TAG }, tags: [], topicFilters: [] },
         destination: { topic: 'my/other/topic' },
         instructions: [],
       },
@@ -59,8 +65,7 @@ export const mockCombiner: Combiner = {
 export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
-    primary: '',
-    primaryType: DataCombining.primaryType.TAG,
+    primary: { id: '', type: DataIdentifierReference.type.TAG },
     tags: [],
     topicFilters: [],
   },
@@ -80,6 +85,7 @@ export const handlers = [
             sources: {
               items: [],
             },
+            mappings: { items: [] },
           },
           {
             id: '2d2ec927-1ff5-4e1a-b307-ab135cc189fd',
@@ -92,6 +98,7 @@ export const handlers = [
                 },
               ],
             },
+            mappings: { items: [] },
           },
         ],
       },
