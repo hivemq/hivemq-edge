@@ -155,6 +155,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       id: newOrchestratorNodeId,
       name: t('combiner.unnamed'),
       sources: { items: links },
+      mappings: { items: [] },
     }
 
     toast.promise(createCombiner.mutateAsync({ requestBody: newCombiner }), {
