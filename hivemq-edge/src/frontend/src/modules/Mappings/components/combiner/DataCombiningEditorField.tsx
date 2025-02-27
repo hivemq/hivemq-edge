@@ -6,7 +6,7 @@ import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { Box, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 
-import type { DataCombining } from '@/api/__generated__'
+import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import type { CombinerContext } from '@/modules/Mappings/types'
@@ -93,6 +93,15 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               props.onChange({
                 ...props.formData,
                 destination: { topic: props.formData.destination.topic, schema },
+              })
+            }}
+            onChangeInstructions={(v: Instruction[]) => {
+              if (!props.formData) return
+              if (!v.length) return
+
+              props.onChange({
+                ...props.formData,
+                instructions: v,
               })
             }}
           />
