@@ -279,7 +279,6 @@ public class ProtocolAdapterWrapper {
 
 
     private void destroyAndUnsubscribeTagConsumers() {
-        // TODO check if a destroy makes sense here
         for (final NorthboundTagConsumer consumer : consumers) {
             tagManager.removeConsumer(consumer);
         }
