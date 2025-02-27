@@ -50,6 +50,6 @@ public interface InternalPublishService {
     @NotNull ListenableFuture<PublishReturnCode> applyDataHubAndPublish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
-            final @Nullable String sender);
+            final @NotNull String sender);
 
 }

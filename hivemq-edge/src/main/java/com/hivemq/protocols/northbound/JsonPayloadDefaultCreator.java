@@ -74,7 +74,6 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
             final @NotNull List<DataPoint> dataPoints, final PollingContext pollingContext) {
         final List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
-        // TODO perhaps we need to somehow transfer the data point?
         final Long timestamp = pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null;
         if (dataPoints.size() > 1 &&
                 pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {

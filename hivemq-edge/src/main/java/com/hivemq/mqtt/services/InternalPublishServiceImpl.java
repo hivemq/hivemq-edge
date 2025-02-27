@@ -26,6 +26,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.InternalPublishServiceHandling;
 import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.mqtt.topic.tree.TopicSubscribers;
@@ -92,14 +93,14 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                 handlePublish(publish, executorService, sender);
 
         return Futures.whenAllComplete(publishReturnCodeFuture, persistFuture)
-                .call(() -> publishReturnCodeFuture.get(), executorService);
+                .call(publishReturnCodeFuture::get, executorService);
     }
 
     @Override
     public @NotNull ListenableFuture<PublishReturnCode> applyDataHubAndPublish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
-            final @Nullable String sender) {
+            final @NotNull String sender) {
 
 
         final ListenableFuture<HandlerResult> handlerFuture = internalPublishServiceHandlingProvider.get().apply(publish, sender);
@@ -108,15 +109,15 @@ public class InternalPublishServiceImpl implements InternalPublishService {
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
                 return Futures.immediateFuture(PublishReturnCode.FAILED);
             } else {
-                // TODO perhaps we need to merge the original publish
+                // already merged original and modified publish.
                 return publish(modifiedPublish, executorService, sender);
             }
         }, Executors.newSingleThreadExecutor());
     }
 
 
-    private ListenableFuture<Void> persistRetainedMessage(
-            final PUBLISH publish, final ExecutorService executorService) {
+    private @NotNull ListenableFuture<Void> persistRetainedMessage(
+            final PUBLISH publish, final @NotNull ExecutorService executorService) {
 
         //Retained messages need to be persisted and thus we need to make that non-blocking
         if (publish.isRetain()) {

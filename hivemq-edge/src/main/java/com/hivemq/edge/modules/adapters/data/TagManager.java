@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Singleton
 public class TagManager implements ProtocolAdapterTagStreamingService {
@@ -38,6 +40,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     // is it intended that we might send very old data?
     // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted on config change anyway
     private final Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     @Inject
     public TagManager(final @NotNull MetricsHolder metricsHolder) {
@@ -46,46 +49,56 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
-    // TODO synchronized might be good enough, write read locks would be more granular and better
     @Override
-    public synchronized void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
+    public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         lastValueForTag.put(tagName, dataPoints);
-        final List<TagConsumer> tagConsumers = consumers.get(tagName);
-        if (tagConsumers != null) {
-            consumers.get(tagName).forEach(c -> c.accept(dataPoints));
-        }
-    }
-
-
-    public synchronized void addConsumer(final @NotNull TagConsumer consumer) {
-        String tagName = consumer.getTagName();
-        consumers.compute(tagName, (tag, current) -> {
-            if (current != null) {
-                current.add(consumer);
-                return current;
-            } else {
-                final List<TagConsumer> consumers = new ArrayList<>();
-                consumers.add(consumer);
-                return consumers;
+        try {
+            readWriteLock.readLock().lock();
+            final List<TagConsumer> tagConsumers = consumers.get(tagName);
+            if (tagConsumers != null) {
+                consumers.get(tagName).forEach(c -> c.accept(dataPoints));
             }
-        });
-
-        // if there is a value present in the cache, we sent it to the consumer
-        final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
-        if (dataPoints != null) {
-            consumer.accept(dataPoints);
+        } finally {
+            readWriteLock.readLock().unlock();
         }
     }
 
 
-    public synchronized void removeConsumer(final @NotNull TagConsumer consumer) {
-        consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
-            current.remove(consumer);
-            return current;
-        });
+    public void addConsumer(final @NotNull TagConsumer consumer) {
+        try {
+            readWriteLock.writeLock().lock();
+            final String tagName = consumer.getTagName();
+            consumers.compute(tagName, (tag, current) -> {
+                if (current != null) {
+                    current.add(consumer);
+                    return current;
+                } else {
+                    final List<TagConsumer> consumers = new ArrayList<>();
+                    consumers.add(consumer);
+                    return consumers;
+                }
+            });
+
+            // if there is a value present in the cache, we sent it to the consumer
+            final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
+            if (dataPoints != null) {
+                consumer.accept(dataPoints);
+            }
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
-    // TODO remove consumer
 
-
+    public void removeConsumer(final @NotNull TagConsumer consumer) {
+        try {
+            readWriteLock.writeLock().lock();
+            consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
+                current.remove(consumer);
+                return current;
+            });
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
+    }
 }
