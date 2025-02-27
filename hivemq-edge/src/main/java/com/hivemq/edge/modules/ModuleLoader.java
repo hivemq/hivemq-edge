@@ -126,13 +126,24 @@ public class ModuleLoader {
         modules.add(new ModuleLoader.EdgeModule(jarFile, isolatedClassloader, false));
     }
 
-    protected void loadFromWorkspace(final ClassLoader parentClassloader) {
+    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
         final File userDir = new File(System.getProperty("user.dir"));
-        if (userDir.getName().equals("hivemq-edge")) {
-            discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
-        } else if (userDir.getName().equals("hivemq-edge-composite")) {
-            discoverWorkspaceModule(new File(userDir, "../hivemq-edge/modules"), parentClassloader);
+        loadFromWorkspace(parentClassloader, userDir);
+    }
+
+    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File file) {
+        if (file.exists() && file.isDirectory()) {
+            if (file.getName().equals("hivemq-edge")) {
+                discoverWorkspaceModule(new File(file, "modules"), parentClassloader);
+            } else if (file.getName().equals("hivemq-edge-composite")) {
+                discoverWorkspaceModule(new File(file, "../hivemq-edge/modules"), parentClassloader);
+            } else {
+                final @Nullable File parentFile = file.getParentFile();
+                if (parentFile != null) {
+                    loadFromWorkspace(parentClassloader, parentFile);
+                }
+            }
         }
     }
 

@@ -187,6 +187,25 @@
         "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/images/bacnet-adapter-logo.png",
         "external" : true
       }
+    },
+    {
+      "id" : "mtconnect",
+      "version" : "2025.3",
+      "name" : "MTConnect Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to existing MTConnect devices.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#mtconnect-protocol-adapter",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-mtconnect/src/main/resources/httpd/images/mtconnect-icon.png",
+        "external" : true
+      }
     }
   ],
   "properties" : {  }
