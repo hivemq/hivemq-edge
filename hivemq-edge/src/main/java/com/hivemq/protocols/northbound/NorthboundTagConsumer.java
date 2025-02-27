@@ -51,8 +51,6 @@ public class NorthboundTagConsumer implements TagConsumer{
     private final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
-
-    // TODO does this really need to be atomic
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
 
     public NorthboundTagConsumer(
@@ -98,7 +96,7 @@ public class NorthboundTagConsumer implements TagConsumer{
                                 .convertToJson(dataPoints, pollingContext, objectMapper));
             } else if(jsonDataPoints.size() < dataPoints.size()) {
                 //At least some JSON data included, remove the JSON entries.
-                var dataPointsCopied = new ArrayList<>(dataPoints);
+                final var dataPointsCopied = new ArrayList<>(dataPoints);
                 dataPointsCopied.removeAll(jsonDataPoints);
                 jsonPayloadsAsBytes
                         .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)

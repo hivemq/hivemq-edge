@@ -4,9 +4,10 @@ import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
-import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.runtime.DataCombinerManager;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -14,7 +15,6 @@ import com.hivemq.edge.api.model.CombinerList;
 import com.hivemq.edge.api.model.DataCombiningList;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.util.ErrorResponseUtil;
-import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,8 @@ public class CombinersResourceImpl implements CombinersApi {
 
     @Inject
     public CombinersResourceImpl(
-            final @NotNull SystemInformation systemInformation, final @NotNull DataCombinerManager dataCombinerManager) {
+            final @NotNull SystemInformation systemInformation,
+            final @NotNull DataCombinerManager dataCombinerManager) {
         this.systemInformation = systemInformation;
         this.dataCombinerManager = dataCombinerManager;
     }
@@ -170,10 +171,13 @@ public class CombinersResourceImpl implements CombinersApi {
                 .flatMap(dataCombining -> dataCombining.instructions().stream())
                 .map(Instruction::toModel)
                 .toList();
+        return Response.ok().entity(new InstructionList(instructions)).build();
+    }
 
 
-        // TODO open api update needed (InstructionList is missing)
-        throw new NotImplementedException();
-        // return Response.ok().entity().build();
+    public static class InstructionList extends ItemsResponse<com.hivemq.edge.api.model.Instruction> {
+        public InstructionList(final @NotNull List<com.hivemq.edge.api.model.Instruction> items) {
+            super(items);
+        }
     }
 }
