@@ -32,7 +32,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
   return (
     <List {...props}>
       {properties.map((property) => {
-        const instruction = instructions
+        const instructionIndex = instructions
           ? instructions.findIndex((instruction) => instruction.destination === property.key)
           : -1
         return (
@@ -40,7 +40,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
             <MappingInstruction
               showTransformation={showTransformation}
               property={property}
-              instruction={instruction !== -1 ? instructions?.[instruction] : undefined}
+              instruction={instructionIndex !== -1 ? instructions?.[instructionIndex] : undefined}
               onChange={(source, destination, sourceRef) => {
                 let newMappings = [...(instructions || [])]
                 if (source) {
@@ -49,8 +49,8 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
                     destination: destination,
                     sourceRef: sourceRef,
                   }
-                  if (instruction !== -1) {
-                    newMappings[instruction] = newItem
+                  if (instructionIndex !== -1) {
+                    newMappings[instructionIndex] = newItem
                   } else newMappings.push(newItem)
                 } else {
                   newMappings = newMappings.filter((mapped) => mapped.destination !== destination)

@@ -70,11 +70,10 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
         const target = dropTarget.source.data as unknown as FlatJSONSchema7 & {
           dataReference: DataReference | undefined
         }
-        let sourceRef: DataIdentifierReference | undefined = undefined
-        if (target.dataReference) {
-          sourceRef = { id: target.dataReference.id, type: target.dataReference.type }
-        }
 
+        const sourceRef: DataIdentifierReference | undefined = target.dataReference
+          ? { id: target.dataReference.id, type: target.dataReference.type }
+          : undefined
         onChange?.([...target.path, target.key].join('.') as string, property.key as string, sourceRef)
       },
     })
