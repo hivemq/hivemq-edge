@@ -162,7 +162,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public @NotNull DataCombiningConfigurationService dataCombiningConfigurationService() {
-        // TODO is proxy correct
         return proxy(DataCombiningConfigurationService.class, dataCombiningConfigurationService);
     }
 

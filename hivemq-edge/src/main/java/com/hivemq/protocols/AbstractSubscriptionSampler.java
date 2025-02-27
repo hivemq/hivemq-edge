@@ -92,10 +92,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         }
     }
 
-
-    // TODO this has to be done in the consumer
-
-
     @Override
     public @NotNull ProtocolAdapter getAdapter() {
         return protocolAdapter.getAdapter();
