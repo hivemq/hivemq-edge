@@ -5,20 +5,22 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import type { JsonNode } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 
-import { DataReferenceType, useGetCombinedDataSchemas } from './useGetCombinedDataSchemas'
+import type { DataReference } from './useGetCombinedDataSchemas'
+import { useGetCombinedDataSchemas } from './useGetCombinedDataSchemas'
 import { mappingHandlers } from '../useProtocolAdapters/__handlers__/mapping.mocks'
 import { handlers } from '../useTopicFilters/__handlers__'
 
-const mockFFF = [
+const mockDataReferences: DataReference[] = [
   {
     id: 'my-tag',
     adapterId: 'string',
-    type: DataReferenceType.TAG,
+    type: DataIdentifierReference.type.TAG,
   },
   {
     id: 'a/topic/+/filter',
-    type: DataReferenceType.TOPIC_FILTER,
+    type: DataIdentifierReference.type.TOPIC_FILTER,
   },
 ]
 
@@ -33,7 +35,7 @@ describe('useGetCombinedDataSchemas', () => {
   })
 
   it('should load the data', async () => {
-    const { result } = renderHook(() => useGetCombinedDataSchemas(mockFFF), { wrapper })
+    const { result } = renderHook(() => useGetCombinedDataSchemas(mockDataReferences), { wrapper })
     await waitFor(() => {
       expect(result.current).not.toBeUndefined()
       expect(result.current.every((e) => e.isLoading)).toBeFalsy()
