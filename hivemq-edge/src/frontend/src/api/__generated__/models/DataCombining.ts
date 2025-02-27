@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { DataIdentifierReference } from './DataIdentifierReference';
 import type { Instruction } from './Instruction';
 
 /**
@@ -13,9 +14,8 @@ export type DataCombining = {
      * The unique id of the data combining mapping
      */
     id: string;
-    sources?: {
-        primary: string;
-        primaryType: DataCombining.primaryType;
+    sources: {
+        primary: DataIdentifierReference;
         /**
          * The list of tags (names) used in the data combining
          */
@@ -37,14 +37,4 @@ export type DataCombining = {
      */
     instructions: Array<Instruction>;
 };
-
-export namespace DataCombining {
-
-    export enum primaryType {
-        TAG = 'TAG',
-        TOPIC_FILTER = 'TOPIC_FILTER',
-    }
-
-
-}
 

@@ -1,15 +1,14 @@
 import { expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 
+import type { CombinerList } from '@/api/__generated__'
+import { EntityType, DataIdentifierReference } from '@/api/__generated__'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { handlers } from './__handlers__'
 
 import { useListCombiners } from './useListCombiners'
-import type { CombinerList } from '../../__generated__'
-import { DataCombining } from '../../__generated__'
-import { EntityType } from '../../__generated__'
 
 describe('useListCombiners', () => {
   afterEach(() => {
@@ -50,8 +49,7 @@ describe('useListCombiners', () => {
                 id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
                 instructions: [],
                 sources: {
-                  primary: '',
-                  primaryType: DataCombining.primaryType.TAG,
+                  primary: { id: '', type: DataIdentifierReference.type.TAG },
                   tags: ['my/tag/t1', 'my/tag/t3'],
                   topicFilters: ['my/topic/+/temp'],
                 },
@@ -61,8 +59,7 @@ describe('useListCombiners', () => {
                 id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
                 instructions: [],
                 sources: {
-                  primary: '',
-                  primaryType: DataCombining.primaryType.TAG,
+                  primary: { id: '', type: DataIdentifierReference.type.TAG },
                   tags: [],
                   topicFilters: [],
                 },
@@ -74,6 +71,7 @@ describe('useListCombiners', () => {
           id: '5e08d9f3-113d-46f2-8418-9a8bf980cc10',
           name: 'fake1',
           sources: { items: [] },
+          mappings: { items: [] },
         },
         {
           id: '2d2ec927-1ff5-4e1a-b307-ab135cc189fd',
@@ -86,6 +84,7 @@ describe('useListCombiners', () => {
               },
             ],
           },
+          mappings: { items: [] },
         },
       ],
     })

@@ -1,4 +1,5 @@
-import { DataCombining } from '@/api/__generated__'
+import type { DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
@@ -7,8 +8,7 @@ import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 const mockFormData: DataCombining = {
   ...mockCombinerMapping,
   sources: {
-    primary: '',
-    primaryType: DataCombining.primaryType.TAG,
+    primary: { id: '', type: DataIdentifierReference.type.TAG },
     tags: ['test'],
     topicFilters: ['truc'],
   },

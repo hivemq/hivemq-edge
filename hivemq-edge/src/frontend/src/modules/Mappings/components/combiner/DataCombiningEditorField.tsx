@@ -6,7 +6,8 @@ import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { Box, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 import { FaRightFromBracket } from 'react-icons/fa6'
 
-import { DataCombining } from '@/api/__generated__'
+import type { DataCombining, Instruction } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
@@ -39,8 +40,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 const tag: string[] = []
                 const filter: string[] = []
                 values.forEach((entity) => {
-                  if (entity.type === DataCombining.primaryType.TAG) tag.push(entity.value)
-                  if (entity.type === DataCombining.primaryType.TOPIC_FILTER) filter.push(entity.value)
+                  if (entity.type === DataIdentifierReference.type.TAG) tag.push(entity.value)
+                  if (entity.type === DataIdentifierReference.type.TOPIC_FILTER) filter.push(entity.value)
                 })
 
                 props.onChange({
@@ -92,6 +93,15 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               props.onChange({
                 ...props.formData,
                 destination: { topic: props.formData.destination.topic, schema },
+              })
+            }}
+            onChangeInstructions={(v: Instruction[]) => {
+              if (!props.formData) return
+              if (!v.length) return
+
+              props.onChange({
+                ...props.formData,
+                instructions: v,
               })
             }}
           />

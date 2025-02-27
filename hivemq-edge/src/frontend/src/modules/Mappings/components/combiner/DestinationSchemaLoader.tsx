@@ -17,19 +17,24 @@ import {
   VStack,
 } from '@chakra-ui/react'
 
-import type { DataCombining } from '@/api/__generated__'
+import type { DataCombining, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
-import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
+import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
 import { downloadJSON } from '@/extensions/datahub/utils/download.utils'
 
 interface DestinationSchemaLoaderProps {
   formData?: DataCombining
   onChange: (schema: string) => void
+  onChangeInstructions: (v: Instruction[]) => void
 }
 
-export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ formData, onChange }) => {
+export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
+  formData,
+  onChange,
+  onChangeInstructions,
+}) => {
   const { t } = useTranslation()
   const isTopicDefined = Boolean(formData?.destination?.topic && formData?.destination?.topic !== '')
   const isSchemaDefined = Boolean(formData?.destination?.schema && formData?.destination?.schema !== '')
@@ -43,6 +48,10 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
 
     const handler = validateSchemaFromDataURI(formData?.destination?.schema)
     if (handler.schema) downloadJSON<JSONSchema7>(handler.schema.title || 'topic-untitled', handler.schema)
+  }
+
+  const handleInstructionChange = (v: Instruction[] | undefined) => {
+    if (v) onChangeInstructions(v)
   }
 
   const schema = useMemo(() => {
@@ -102,8 +111,15 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({ form
       )}
 
       {schema?.schema && (
-        <VStack w="100%" height={420} justifyContent={'center'} alignItems={'flex-start'}>
-          <JsonSchemaBrowser schema={schema.schema} isDraggable hasExamples />
+        <VStack w="100%" height={420} justifyContent={'center'} alignItems={'stretch'} gap={3}>
+          <MappingInstructionList
+            schema={schema.schema}
+            instructions={formData?.instructions || []}
+            onChange={handleInstructionChange}
+            display={'flex'}
+            flexDirection={'column'}
+            gap={4}
+          />
         </VStack>
       )}
     </>
