@@ -81,13 +81,17 @@ public class DataCombiningRuntime {
     }
 
     public void start() {
+        log.debug("Starting data combining {}", combining.id());
         combining.sources()
                 .tags()
                 .stream()
-                .map(tag -> new InternalTagConsumer(tag,
-                        combining,
-                        TAG.equals(combining.sources().primaryReference().type()) &&
-                                tag.equals(combining.sources().primaryReference().id())))
+                .map(tag -> {
+                    log.debug("Starting tag consumer for tag {}", tag);
+                    return new InternalTagConsumer(tag,
+                            combining,
+                            TAG.equals(combining.sources().primaryReference().type()) &&
+                                    tag.equals(combining.sources().primaryReference().id()));
+                })
                 .forEach(consumer -> {
                     tagManager.addConsumer(consumer);
                     consumers.add(consumer);
@@ -95,10 +99,13 @@ public class DataCombiningRuntime {
 
         combining.sources()
                 .topicFilters()
-                .forEach(topicFilter -> internalSubscriptions.add(subscribeTopicFilter(combining,
-                        topicFilter,
-                        TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                                topicFilter.equals(combining.sources().primaryReference().id()))));
+                .forEach(topicFilter -> {
+                    log.debug("Starting mqtt consumer for filter {}", topicFilter);
+                    internalSubscriptions.add(subscribeTopicFilter(combining,
+                            topicFilter,
+                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
+                                    topicFilter.equals(combining.sources().primaryReference().id())));
+                });
 
         internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
     }
