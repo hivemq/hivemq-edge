@@ -1,1 +1,1 @@
-com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory
+com.hivemq.edge.adapters.mtconnect.MtConnectProtocolAdapterFactory
