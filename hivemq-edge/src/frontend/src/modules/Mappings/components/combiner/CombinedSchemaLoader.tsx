@@ -23,6 +23,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
   const allDataReferences = useMemo(() => {
     return formContext?.queries?.reduce<DataReference[]>((acc, cur) => {
       const firstItem = cur.data?.items?.[0]
+      if (!firstItem) return acc
       if ((firstItem as DomainTag).name) {
         const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag, index) => ({
           id: tag.name,
