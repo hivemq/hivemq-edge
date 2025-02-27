@@ -383,8 +383,6 @@ public class ConfigFileReaderWriter {
                 configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
 
-                log.error("CONTENT:{} ", configFileContent);
-
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
                 final StreamSource streamSource = new StreamSource(is);
