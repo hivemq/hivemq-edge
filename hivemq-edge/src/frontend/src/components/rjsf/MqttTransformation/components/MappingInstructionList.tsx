@@ -41,12 +41,13 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
               showTransformation={showTransformation}
               property={property}
               instruction={instruction !== -1 ? instructions?.[instruction] : undefined}
-              onChange={(source, destination) => {
+              onChange={(source, destination, sourceRef) => {
                 let newMappings = [...(instructions || [])]
                 if (source) {
                   const newItem: Instruction = {
                     source: source,
                     destination: destination,
+                    sourceRef: sourceRef,
                   }
                   if (instruction !== -1) {
                     newMappings[instruction] = newItem
