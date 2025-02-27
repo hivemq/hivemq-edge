@@ -6,6 +6,7 @@ import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
 
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
@@ -15,6 +16,7 @@ interface PropertyItemProps {
   hasTooltip?: boolean
   hasExamples?: boolean
   hasDescription?: boolean
+  dataReference?: DataReference
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -23,6 +25,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
   hasTooltip = false,
   hasExamples = false,
   hasDescription = false,
+  dataReference,
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
@@ -33,9 +36,9 @@ const PropertyItem: FC<PropertyItemProps> = ({
     if (!element) return
     return draggable({
       element,
-      getInitialData: () => ({ ...property }),
+      getInitialData: () => ({ ...property, dataReference }),
     })
-  }, [isDraggable, property, property.type])
+  }, [dataReference, isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
   const type = t('GenericSchema.data.type', {

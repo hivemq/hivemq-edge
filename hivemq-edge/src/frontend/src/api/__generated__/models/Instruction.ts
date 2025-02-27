@@ -3,10 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { DataIdentifierReference } from './DataIdentifierReference';
+
 /**
  * List of instructions to be applied to incoming data
  */
 export type Instruction = {
+    sourceRef?: DataIdentifierReference;
     /**
      * The field in the output object where the data will be written to
      */

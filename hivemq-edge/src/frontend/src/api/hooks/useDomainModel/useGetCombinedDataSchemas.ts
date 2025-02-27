@@ -1,17 +1,11 @@
 import { useQueries } from '@tanstack/react-query'
 
 import { QUERY_KEYS } from '@/api/utils.ts'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import type { SchemaHandler } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
-export enum DataReferenceType {
-  TAG = 'TAG',
-  TOPIC_FILTER = 'TOPIC_FILTER',
-}
-
-export type DataReference = {
-  id: string
-  type: DataReferenceType
+export interface DataReference extends DataIdentifierReference {
   adapterId?: string
   schema?: SchemaHandler
 }
@@ -21,7 +15,7 @@ export const useGetCombinedDataSchemas = (dataIdentifiers: DataReference[]) => {
 
   return useQueries({
     queries: dataIdentifiers.map((dataPoint) => {
-      return dataPoint.type === DataReferenceType.TAG
+      return dataPoint.type === DataIdentifierReference.type.TAG
         ? {
             queryKey: [QUERY_KEYS.ADAPTERS, dataPoint.adapterId, QUERY_KEYS.DISCOVERY_TAGS, dataPoint.id],
             queryFn: () =>

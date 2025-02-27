@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Box, Heading } from '@chakra-ui/react'
 
 import type { DataCombining, DomainTag, TopicFilter } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
-import { DataReferenceType } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import ErrorMessage from '@/components/ErrorMessage'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import type { CombinerContext } from '@/modules/Mappings/types'
@@ -26,14 +26,14 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
       if ((firstItem as DomainTag).name) {
         const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag, index) => ({
           id: tag.name,
-          type: DataReferenceType.TAG,
+          type: DataIdentifierReference.type.TAG,
           adapterId: formContext.entities?.[index]?.id,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
         const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
           id: topicFilter.topicFilter,
-          type: DataReferenceType.TOPIC_FILTER,
+          type: DataIdentifierReference.type.TOPIC_FILTER,
           adapterId: undefined,
         }))
         acc.push(...topicFilterDataReferences)
@@ -95,6 +95,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
         }
         return (
           <JsonSchemaBrowser
+            dataReference={dataReference}
             key={dataReference.id}
             schema={{ ...dataReference.schema?.schema, title: dataReference.id }}
             isDraggable

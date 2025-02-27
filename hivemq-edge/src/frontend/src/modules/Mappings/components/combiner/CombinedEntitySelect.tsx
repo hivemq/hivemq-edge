@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
 
-import { DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
@@ -19,7 +19,7 @@ interface EntityReferenceSelectProps {
 interface EntityOption extends OptionBase {
   label: string
   value: string
-  type: string
+  type: DataIdentifierReference.type
   adapterId?: string
   description?: string
 }
@@ -43,7 +43,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
             value: tag.name,
             description: tag.description,
             adapterId: formContext.entities?.[index]?.id,
-            type: DataCombining.primaryType.TAG,
+            type: DataIdentifierReference.type.TAG,
           }))
           acc.push(...options)
         } else if ((queryResult.data.items[0] as TopicFilter).topicFilter) {
@@ -51,7 +51,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
             label: topicFilter.topicFilter,
             value: topicFilter.topicFilter,
             description: topicFilter.description,
-            type: DataCombining.primaryType.TOPIC_FILTER,
+            type: DataIdentifierReference.type.TAG,
           }))
 
           acc.push(...options)
@@ -64,12 +64,12 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
 
   const values = useMemo(() => {
     const tagValue =
-      tags?.map<EntityOption>((value) => ({ value: value, label: value, type: DataCombining.primaryType.TAG })) || []
+      tags?.map<EntityOption>((value) => ({ value: value, label: value, type: DataIdentifierReference.type.TAG })) || []
     const topicFilter =
       topicFilters?.map<EntityOption>((value) => ({
         value: value,
         label: value,
-        type: DataCombining.primaryType.TOPIC_FILTER,
+        type: DataIdentifierReference.type.TOPIC_FILTER,
       })) || []
     return [...tagValue, ...topicFilter]
   }, [tags, topicFilters])
