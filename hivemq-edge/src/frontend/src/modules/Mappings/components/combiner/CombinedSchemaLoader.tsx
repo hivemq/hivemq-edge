@@ -95,6 +95,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
         }
         return (
           <JsonSchemaBrowser
+            dataReference={dataReference}
             key={dataReference.id}
             schema={{ ...dataReference.schema?.schema, title: dataReference.id }}
             isDraggable

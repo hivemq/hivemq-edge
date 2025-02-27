@@ -19,7 +19,8 @@ import {
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
-import type { Instruction } from '@/api/__generated__'
+import type { DataIdentifierReference, Instruction } from '@/api/__generated__'
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
@@ -36,7 +37,7 @@ interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
   instruction?: Instruction
-  onChange?: (source: string | undefined, destination: string) => void
+  onChange?: (source: string | undefined, destination: string, sourceRef?: DataIdentifierReference) => void
 }
 
 const MappingInstruction: FC<MappingInstructionProps> = ({
@@ -66,8 +67,15 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
       },
       onDrop: (dropTarget) => {
         setState(DropState.COMPLETED)
-        const target = dropTarget.source.data as unknown as FlatJSONSchema7
-        onChange?.([...target.path, target.key].join('.') as string, property.key as string)
+        const target = dropTarget.source.data as unknown as FlatJSONSchema7 & {
+          dataReference: DataReference | undefined
+        }
+        let sourceRef: DataIdentifierReference | undefined = undefined
+        if (target.dataReference) {
+          sourceRef = { id: target.dataReference.id, type: target.dataReference.type }
+        }
+
+        onChange?.([...target.path, target.key].join('.') as string, property.key as string, sourceRef)
       },
     })
   }, [onChange, property])
