@@ -103,5 +103,13 @@
         </data-hub>
         ${IF:HIVEMQ_DATAHUB_ENABLED}
     </modules>
+    ${IF:HIVEMQ_DATAHUB_ENABLED}
+    <internal>
+        <option>
+            <key>data-hub.preset.root-folder</key>
+            <value>/datahubinit</value>
+        </option>
+    </internal>
+    ${IF:HIVEMQ_DATAHUB_ENABLED}
     ${FRAGMENT:/fragment/config}
 </hivemq>
