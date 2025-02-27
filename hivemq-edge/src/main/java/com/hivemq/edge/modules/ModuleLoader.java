@@ -148,14 +148,23 @@ public class ModuleLoader {
         loadFromWorkspace(parentClassloader, userDir);
     }
 
-    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File file) {
-        if (file.exists() && file.isDirectory()) {
-            if (file.getName().equals("hivemq-edge")) {
-                discoverWorkspaceModule(new File(file, "modules"), parentClassloader);
-            } else if (file.getName().equals("hivemq-edge-composite")) {
-                discoverWorkspaceModule(new File(file, "../hivemq-edge/modules"), parentClassloader);
+    /**
+     * Load from workspace recursively from the current dir and its parent dir by looking for
+     * folder name matching 'hivemq-edge' or 'hivemq-edge-composite'.
+     * <p>
+     * This allows modules to be loaded from any subprojects when dev mode is turned on.
+     *
+     * @param parentClassloader the parent classloader
+     * @param currentDir        the current dir
+     */
+    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File currentDir) {
+        if (currentDir.exists() && currentDir.isDirectory()) {
+            if (currentDir.getName().equals("hivemq-edge")) {
+                discoverWorkspaceModule(new File(currentDir, "modules"), parentClassloader);
+            } else if (currentDir.getName().equals("hivemq-edge-composite")) {
+                discoverWorkspaceModule(new File(currentDir, "../hivemq-edge/modules"), parentClassloader);
             } else {
-                final @Nullable File parentFile = file.getParentFile();
+                final @Nullable File parentFile = currentDir.getParentFile();
                 if (parentFile != null) {
                     loadFromWorkspace(parentClassloader, parentFile);
                 }
