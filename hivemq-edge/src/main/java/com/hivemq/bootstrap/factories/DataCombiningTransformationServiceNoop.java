@@ -30,4 +30,14 @@ public class DataCombiningTransformationServiceNoop implements DataCombiningTran
             final @NotNull DataCombining dataCombining) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void removeScriptForDataCombining(final DataCombining combining) {
+
+    }
+
+    @Override
+    public void addScriptForDataCombining(@NotNull final DataCombining combining) {
+
+    }
 }
