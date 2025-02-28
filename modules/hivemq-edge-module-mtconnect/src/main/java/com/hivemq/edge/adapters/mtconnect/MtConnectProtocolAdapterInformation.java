@@ -38,16 +38,18 @@ import java.util.List;
 public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new MtConnectProtocolAdapterInformation();
+    public static final @NotNull String PROTOCOL_ID = "mtconnect";
+    public static final @NotNull String PROTOCOL_NAME = "MTConnect";
+    public static final @NotNull String MODULE_NAME = "hivemq-edge-module-mtconnect";
     private static final @NotNull Logger LOG = LoggerFactory.getLogger(MtConnectProtocolAdapterInformation.class);
     private static final int CURRENT_CONFIG_VERSION = 1;
-    private static final @NotNull String PROTOCOL_ID = "mtconnect";
 
     protected MtConnectProtocolAdapterInformation() {
     }
 
     @Override
     public @NotNull String getProtocolName() {
-        return "MTConnect";
+        return PROTOCOL_NAME;
     }
 
     @Override
