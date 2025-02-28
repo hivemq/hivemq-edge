@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
 import {
   Button,
+  ButtonGroup,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -35,6 +36,7 @@ import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
+import DangerZone from './components/DangerZone'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -113,15 +115,18 @@ const CombinerMappingManager: FC = () => {
             />
           )}
         </DrawerBody>
-        <DrawerFooter>
-          {config.isDevMode && (
-            <FormControl display="flex" alignItems="center">
-              <FormLabel htmlFor="email-alerts" mb="0">
-                {t('modals.native')}
-              </FormLabel>
-              <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
-            </FormControl>
-          )}
+        <DrawerFooter justifyContent={'space-between'}>
+          <ButtonGroup>
+            {config.isDevMode && (
+              <FormControl display="flex" alignItems="center">
+                <FormLabel htmlFor="email-alerts" mb="0">
+                  {t('modals.native')}
+                </FormLabel>
+                <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
+              </FormControl>
+            )}
+            {selectedNode && <DangerZone onSubmit={handleOnDelete} />}
+          </ButtonGroup>
           {selectedNode && (
             <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
               {t('combiner.actions.submit')}
