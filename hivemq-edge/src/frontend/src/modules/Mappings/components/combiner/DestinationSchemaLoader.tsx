@@ -61,7 +61,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   return (
     <>
-      <ButtonGroup size="sm" variant="outline" justifyContent={'flex-end'}>
+      <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2}>
         <Popover>
           <PopoverTrigger>
             <Button data-testid={'combiner-destination-infer'} isDisabled>
@@ -105,13 +105,13 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
       </ButtonGroup>
 
       {!formData?.destination?.schema && (
-        <VStack w="100%" height={420} justifyContent={'center'} alignItems={'center'}>
+        <VStack flex={1} justifyContent={'center'} alignItems={'center'}>
           <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
         </VStack>
       )}
 
       {schema?.schema && (
-        <VStack w="100%" height={420} justifyContent={'center'} alignItems={'stretch'} gap={3}>
+        <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
           <MappingInstructionList
             schema={schema.schema}
             instructions={formData?.instructions || []}
