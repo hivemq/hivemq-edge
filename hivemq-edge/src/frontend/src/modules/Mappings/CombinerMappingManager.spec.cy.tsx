@@ -1,15 +1,15 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import type { Node } from 'reactflow'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes.ts'
 import { NodeTypes } from '@/modules/Workspace/types'
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import CombinerMappingManager from './CombinerMappingManager'
 
 const getWrapperWith = (initialNodes?: Node[]) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
-    const { nodes } = useWorkspaceStore()
+    const { pathname } = useLocation()
+
     return (
       <ReactFlowTesting
         config={{
@@ -18,7 +18,7 @@ const getWrapperWith = (initialNodes?: Node[]) => {
           },
         }}
         showDashboard={true}
-        dashboard={<div data-testid="data-length">{nodes.length}</div>}
+        dashboard={<div data-testid="data-pathname">{pathname}</div>}
       >
         <Routes>
           <Route path="/node/:combinerId" element={children}></Route>
@@ -85,6 +85,31 @@ describe('CombinerMappingManager', () => {
     cy.get('[role="tablist"] [role="tab"]').eq(2).should('have.text', 'Mappings')
 
     // TODO[NVL] More tests. But we need a strategy for testing OpenAPI/JSONSchema/RJSF forms
+  })
+
+  it('should render the toolbar properly', () => {
+    cy.intercept('PUT', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
+    cy.mountWithProviders(<CombinerMappingManager />, {
+      routerProps: { initialEntries: [`/node/idCombiner`] },
+      wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+    })
+
+    cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
+
+    cy.get('footer').within(() => {
+      cy.get('button').eq(0).should('have.text', 'Delete')
+      cy.get('button').eq(1).should('have.text', 'Submit')
+
+      cy.get('button').eq(1).click()
+    })
+
+    cy.wait('@delete')
+    cy.get('[role="dialog"]').should('not.exist')
+    cy.getByTestId('data-pathname').should('have.text', '/workspace')
+
+    cy.get('[role="status"]').should('contain.text', 'Update the combiner')
+    cy.get('[role="status"]').should('contain.text', "We've successfully updated the combiner for you.")
+    cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
   })
 
   it('should be accessible', () => {

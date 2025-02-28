@@ -1188,7 +1188,14 @@
   },
   "combiner": {
     "actions": {
-      "submit": "Submit"
+      "submit": "Submit",
+      "delete": "Delete"
+    },
+    "modal": {
+      "delete": {
+        "header": "Delete the Combiner?",
+        "message": "Do you want to delete the combiner and its content? The action cannot be reversed."
+      }
     },
     "type": "Data Combiner",
     "unnamed": "< unnamed combiner >",
@@ -1204,6 +1211,11 @@
         "title": "Update the combiner",
         "success": "We've successfully updated the combiner for you.",
         "error": "There was a problem trying to update the combiner"
+      },
+      "delete": {
+        "title": "Delete the combiner",
+        "success": "We've successfully deleted the combiner for you.",
+        "error": "There was a problem trying to delete the combiner"
       }
     },
     "error": {
