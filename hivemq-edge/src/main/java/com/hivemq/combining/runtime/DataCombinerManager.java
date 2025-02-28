@@ -21,10 +21,6 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.generic.AddResult;
 import com.hivemq.protocols.ConfigPersistence;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.metrics.HiveMQMetrics.DATA_COMBINERS_COUNT_CURRENT;
-import static com.hivemq.persistence.util.FutureUtils.syncFuture;
 
 @Singleton
 public class DataCombinerManager {
@@ -52,31 +47,19 @@ public class DataCombinerManager {
 
     private final @NotNull ConfigPersistence configPersistence;
     private final @NotNull EventService eventService;
-    private final @NotNull LocalTopicTree localTopicTree;
-    private final @NotNull TagManager tagManager;
-    private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final Map<UUID, DataCombiningInformation> idToDataCombiningInformation = new ConcurrentHashMap<>();
+    private final @NotNull DataCombiningRuntimeFactory dataCombiningRuntimeFactory;
+    private final @NotNull Map<UUID, DataCombiningInformation> idToDataCombiningInformation = new ConcurrentHashMap<>();
 
     @Inject
     public DataCombinerManager(
             final @NotNull ConfigPersistence configPersistence,
             final @NotNull EventService eventService,
             final @NotNull MetricRegistry metricRegistry,
-            final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull TagManager tagManager,
-            final @NotNull ClientQueuePersistence clientQueuePersistence,
-            final @NotNull SingleWriterService singleWriterService,
-            final @NotNull DataCombiningPublishService dataCombiningPublishService,
+            final @NotNull DataCombiningRuntimeFactory dataCombiningRuntimeFactory,
             final @NotNull ShutdownHooks shutdownHooks) {
         this.configPersistence = configPersistence;
         this.eventService = eventService;
-        this.localTopicTree = localTopicTree;
-        this.tagManager = tagManager;
-        this.clientQueuePersistence = clientQueuePersistence;
-        this.singleWriterService = singleWriterService;
-        this.dataCombiningPublishService = dataCombiningPublishService;
+        this.dataCombiningRuntimeFactory = dataCombiningRuntimeFactory;
         metricRegistry.registerGauge(DATA_COMBINERS_COUNT_CURRENT.name(),
                 () -> idToDataCombiningInformation.values().size());
         shutdownHooks.add(new HiveMQShutdownHook() {
@@ -110,12 +93,7 @@ public class DataCombinerManager {
     private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
         return dataCombiner.dataCombinings()
                 .stream()
-                .map(dataCombining -> new DataCombiningRuntime(dataCombining,
-                        localTopicTree,
-                        tagManager,
-                        clientQueuePersistence,
-                        singleWriterService,
-                        dataCombiningPublishService))
+                .map(dataCombiningRuntimeFactory::build)
                 .toList();
     }
 
@@ -159,9 +137,8 @@ public class DataCombinerManager {
         }
 
 
-        return CompletableFuture.runAsync(() -> {
-            createDataCombinerInternal(dataCombiner);
-        }).thenApply(ignored -> AddResult.success());
+        createDataCombinerInternal(dataCombiner);
+        return CompletableFuture.completedFuture(AddResult.success());
     }
 
     public boolean updateDataCombiner(final @NotNull DataCombiner dataCombining) {
@@ -194,7 +171,6 @@ public class DataCombinerManager {
     private void internalUpdateDataCombiner(final DataCombiner dataCombiner) {
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
-        syncFuture(startCombiner(dataCombiner));
         configPersistence.updateDataCombiner(dataCombiner);
     }
 

@@ -25,12 +25,10 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.combining.runtime.DataCombinerManager;
-import com.hivemq.combining.runtime.DataCombiningPublishService;
-import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.combining.runtime.DataCombiningRuntime;
+import com.hivemq.combining.runtime.DataCombiningRuntimeFactory;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.protocols.ConfigPersistence;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,30 +50,25 @@ class DataCombinerManagerTest {
 
     private final @NotNull ConfigPersistence configPersistence = mock();
     private final @NotNull EventService eventService = mock();
-    private final @NotNull LocalTopicTree localTopicTree = mock();
-    private final @NotNull TagManager tagManager = mock();
-    private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
-    private final @NotNull DataCombiningPublishService dataCombiningPublishService = mock();
-    private final @NotNull SingleWriterService singleWriterService= mock();
     private final @NotNull MetricRegistry metricRegistry = new MetricRegistry();
+    private final @NotNull DataCombiningRuntime dataCombiningRuntime = mock();
+    private final @NotNull DataCombiningRuntimeFactory dataCombiningRuntimeFactory = mock();
 
-    private final @NotNull DataCombinerManager dataCombinerManager =
-            new DataCombinerManager(
-                    configPersistence,
-                    eventService,
-                    metricRegistry,
-                    localTopicTree,
-                    tagManager,
-                    clientQueuePersistence,
-                    singleWriterService,
-                    dataCombiningPublishService);
+    private final ShutdownHooks shutdownHooks = new ShutdownHooks();
+
+    private final @NotNull DataCombinerManager dataCombinerManager = new DataCombinerManager(configPersistence,
+            eventService,
+            metricRegistry,
+            dataCombiningRuntimeFactory,
+            shutdownHooks);
 
     private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(generatedUuid,
             "name",
             null,
             List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
             List.of(new DataCombining(UUID.randomUUID(),
-                    new DataCombiningSources(new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+                    new DataCombiningSources(new DataIdentifierReference("#",
+                            DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
                     new DataCombiningDestination("dest", "{}"),
                     List.of())));
 
@@ -83,6 +76,7 @@ class DataCombinerManagerTest {
     @BeforeEach
     void setUp() {
         when(eventService.createDataCombiningEvent(any())).thenReturn(new EventBuilderImpl(event -> {}));
+        when(dataCombiningRuntimeFactory.build(any())).thenReturn(dataCombiningRuntime);
     }
 
     @Test
@@ -102,7 +96,8 @@ class DataCombinerManagerTest {
                 null,
                 List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
                 List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+                        new DataCombiningSources(new DataIdentifierReference("#",
+                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
                         new DataCombiningDestination("dest", "{}"),
                         List.of())));
 
@@ -121,7 +116,8 @@ class DataCombinerManagerTest {
                 null,
                 List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
                 List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+                        new DataCombiningSources(new DataIdentifierReference("#",
+                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
                         new DataCombiningDestination("dest", "{}"),
                         List.of())));
 
