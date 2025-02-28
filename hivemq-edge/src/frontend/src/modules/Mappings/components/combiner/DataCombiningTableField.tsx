@@ -61,7 +61,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       {
         accessorKey: 'destination',
         cell: (info) => {
-          if (info.row.original.destination) return <Topic tagTitle={info.row.original.destination.topic} />
+          if (info.row.original.destination.topic) return <Topic tagTitle={info.row.original.destination.topic} />
           return <Text>{t('combiner.unset')}</Text>
         },
       },

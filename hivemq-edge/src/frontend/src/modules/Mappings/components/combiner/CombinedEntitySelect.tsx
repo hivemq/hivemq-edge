@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
+import { Box } from '@chakra-ui/react'
 
 import { DataIdentifierReference } from '@/api/__generated__'
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
@@ -75,24 +76,26 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
   }, [tags, topicFilters])
 
   return (
-    <Select<EntityOption, true, GroupBase<EntityOption>>
-      inputId={id}
-      id={'combiner-entity-select'}
-      instanceId={'entity'}
-      options={allOptions}
-      isLoading={isLoading}
-      isMulti
-      value={values}
-      aria-label={t('combiner.schema.mappings.sources.description')}
-      onChange={(newValue) => {
-        if (newValue) onChange(newValue)
-      }}
-      isClearable
-      placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
-      // noOptionsMessage={() => t('EntityCreatableSelect.options.noOptionsMessage', { context: type })}
-      // components={customComponents(isMulti, type)}
-      // filterOption={createFilter(filterConfig)}
-    />
+    <Box maxW={'25vw'}>
+      <Select<EntityOption, true, GroupBase<EntityOption>>
+        inputId={id}
+        id={'combiner-entity-select'}
+        instanceId={'entity'}
+        options={allOptions}
+        isLoading={isLoading}
+        isMulti
+        value={values}
+        aria-label={t('combiner.schema.mappings.sources.description')}
+        onChange={(newValue) => {
+          if (newValue) onChange(newValue)
+        }}
+        isClearable
+        placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
+        // noOptionsMessage={() => t('EntityCreatableSelect.options.noOptionsMessage', { context: type })}
+        // components={customComponents(isMulti, type)}
+        // filterOption={createFilter(filterConfig)}
+      />
+    </Box>
   )
 }
 

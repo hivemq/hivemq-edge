@@ -13,9 +13,11 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
+  useBoolean,
 } from '@chakra-ui/react'
 import type { DataCombining } from '@/api/__generated__'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
+import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import type { CombinerContext } from '../../types'
 
 interface MappingDrawerProps<T> {
@@ -29,12 +31,14 @@ interface MappingDrawerProps<T> {
 
 const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onClose, onSubmit, ...props }) => {
   const { t } = useTranslation()
+  const [isExpanded, setExpanded] = useBoolean(true)
 
   return (
-    <Drawer isOpen={true} placement="right" size="full" onClose={onClose} variant="hivemq">
+    <Drawer isOpen={true} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={onClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('combiner.schema.mapping.panel.header')}>
         <DrawerCloseButton />
+        <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>{t('combiner.schema.mapping.panel.header')}</DrawerHeader>
 
         <DrawerBody>

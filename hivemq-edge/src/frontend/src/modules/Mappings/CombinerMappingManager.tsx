@@ -30,7 +30,6 @@ import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-s
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
 import { useUpdateCombiner } from '@/api/hooks/useCombiners/useUpdateCombiner'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
-import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
@@ -39,7 +38,6 @@ import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
-  const [isExpanded, setExpanded] = useBoolean(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { combinerId } = useParams()
@@ -89,11 +87,10 @@ const CombinerMappingManager: FC = () => {
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={handleClose} variant="hivemq">
+    <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}>
         <DrawerCloseButton />
-        <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
           <Text>{t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}</Text>
           <NodeNameCard

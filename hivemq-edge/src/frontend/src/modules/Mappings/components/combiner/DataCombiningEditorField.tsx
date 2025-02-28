@@ -52,7 +52,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               }}
             />
           </Box>
-          <VStack height={500} overflow={'auto'} alignItems={'flex-start'} justifyContent={'center'} tabIndex={0}>
+          <VStack height={'60vh'} overflow={'auto'} alignItems={'flex-start'} justifyContent={'center'} tabIndex={0}>
             <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
           </VStack>
           <Box>
@@ -71,7 +71,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           </HStack>
         </VStack>
         <VStack flex={1} alignItems="stretch" maxW="50vw">
-          <Box>
+          <Box maxW={'25vw'}>
             <SelectTopic
               isMulti={false}
               isCreatable={true}
