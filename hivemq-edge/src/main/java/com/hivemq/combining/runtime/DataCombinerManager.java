@@ -83,9 +83,11 @@ public class DataCombinerManager {
 
     public void start() {
         log.debug("Starting data combiners");
-        configPersistence.allDataCombiners()
-                .forEach(dataCombiner -> idToDataCombiningStates.put(dataCombiner.id(),
-                        createDataCombiningStates(dataCombiner)));
+        configPersistence.allDataCombiners().forEach(dataCombiner -> {
+            idToDataCombiner.put(dataCombiner.id(), dataCombiner);
+            idToDataCombiningStates.put(dataCombiner.id(), createDataCombiningStates(dataCombiner));
+        });
+
 
         idToDataCombiningStates.values().stream().flatMap(Collection::stream).forEach(DataCombiningRuntime::start);
     }
