@@ -77,7 +77,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
       } else {
         dataReference.schema = {
           status: 'warning',
-          message: t('topicFilter.schema.status.missing'),
+          message: t('topicFilter.error.schema.noAssignedSchema', { context: dataReference.type }),
         }
       }
       return dataReference
