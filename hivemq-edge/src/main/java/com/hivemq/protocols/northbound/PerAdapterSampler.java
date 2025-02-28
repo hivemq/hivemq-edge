@@ -77,9 +77,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                 for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
                     tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
                 }
-
                 return CompletableFuture.completedFuture(null);
-                //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
             } else {
                 return CompletableFuture.completedFuture(null);
             }

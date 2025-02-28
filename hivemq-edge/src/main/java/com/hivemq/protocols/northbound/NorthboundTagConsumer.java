@@ -35,12 +35,13 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class NorthboundTagConsumer implements TagConsumer{
+public class NorthboundTagConsumer implements TagConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
 
@@ -79,10 +80,17 @@ public class NorthboundTagConsumer implements TagConsumer{
         Preconditions.checkArgument(pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
 
-        if(pollingContext.publishChangedDataOnly()){
+        if (pollingContext.publishChangedDataOnly()) {
             // check for the last data points and early return if they are the same
             // TODO implement the correct equals
 
+            // hashset offers better performance on containsAll
+            // we define a equals on our DataPointImpl, however as the value is a generic object. we must hope that the
+            // implementer of the data point value class also implements equals correctly.
+            // we ignore the order and only compare the content, easiest way is to do a containsAll in both directions.
+            if (new HashSet<>(lastValues).containsAll(dataPoints) && new HashSet<>(dataPoints).containsAll(lastValues)){
+                return;
+            }
         }
 
 
@@ -92,23 +100,20 @@ public class NorthboundTagConsumer implements TagConsumer{
             final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
-            final List<DataPoint> jsonDataPoints =
-                    dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
+            final List<DataPoint> jsonDataPoints = dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
 
-            jsonDataPoints.forEach(jsonDataPoint -> jsonPayloadsAsBytes.add(((String)jsonDataPoint.getTagValue()).getBytes(
+            jsonDataPoints.forEach(jsonDataPoint -> jsonPayloadsAsBytes.add(((String) jsonDataPoint.getTagValue()).getBytes(
                     StandardCharsets.UTF_8)));
 
             if (jsonDataPoints.isEmpty()) {
                 //No JSON data included, use the whole list.
-                jsonPayloadsAsBytes
-                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                                .convertToJson(dataPoints, pollingContext, objectMapper));
-            } else if(jsonDataPoints.size() < dataPoints.size()) {
+                jsonPayloadsAsBytes.addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                        .convertToJson(dataPoints, pollingContext, objectMapper));
+            } else if (jsonDataPoints.size() < dataPoints.size()) {
                 //At least some JSON data included, remove the JSON entries.
                 final var dataPointsCopied = new ArrayList<>(dataPoints);
                 dataPointsCopied.removeAll(jsonDataPoints);
-                jsonPayloadsAsBytes
-                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                jsonPayloadsAsBytes.addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
                         .convertToJson(dataPointsCopied, pollingContext, objectMapper));
             }
 
