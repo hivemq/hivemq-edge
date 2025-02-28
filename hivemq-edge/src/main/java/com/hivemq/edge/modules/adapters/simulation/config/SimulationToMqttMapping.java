@@ -124,4 +124,9 @@ public class SimulationToMqttMapping implements PollingContext {
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return false;
+    }
 }

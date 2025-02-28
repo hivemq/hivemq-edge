@@ -38,7 +38,7 @@ class NorthboundMappingModelTest {
                 false,
                 List.of(),
                 QoSModel.EXACTLY_ONCE,
-                Long.MAX_VALUE);
+                Long.MAX_VALUE, false);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
     }
@@ -53,7 +53,8 @@ class NorthboundMappingModelTest {
                 false,
                 List.of(),
                 QoSModel.EXACTLY_ONCE,
-                Long.MAX_VALUE);
+                Long.MAX_VALUE,
+                false);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
 

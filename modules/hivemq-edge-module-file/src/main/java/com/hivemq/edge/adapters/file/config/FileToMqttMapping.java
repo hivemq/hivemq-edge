@@ -77,8 +77,18 @@ public class FileToMqttMapping implements PollingContext {
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
-    @JsonProperty(value = "tagName")
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "Tag Name",
+                       description = "The name of the tag that defines the data point on the plc.",
+                       required = true,
+                       format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
+
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
 
     @JsonCreator
     public FileToMqttMapping(
@@ -88,7 +98,8 @@ public class FileToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName) {
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
@@ -96,6 +107,9 @@ public class FileToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.tagName = tagName;
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -130,6 +144,11 @@ public class FileToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 
     @Override

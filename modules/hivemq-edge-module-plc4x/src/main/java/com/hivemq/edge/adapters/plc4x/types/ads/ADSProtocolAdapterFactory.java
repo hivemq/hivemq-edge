@@ -72,7 +72,7 @@ public class ADSProtocolAdapterFactory
 
         final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
-        for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyAdsAdapterConfig.getSubscriptions()) {
+        for (final LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyAdsAdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),
                     "not set",
                     new Plc4xTagDefinition(subscription.getTagAddress(), subscription.getDataType())));
@@ -82,7 +82,8 @@ public class ADSProtocolAdapterFactory
                     subscription.getIncludeTimestamp(),
                     subscription.getIncludeTagNames(),
                     subscription.getTagName(),
-                    subscription.getUserProperties()));
+                    subscription.getUserProperties(),
+                    false));
         }
 
 

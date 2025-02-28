@@ -74,18 +74,28 @@ public class HttpToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean includeTimestamp;
 
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
+
     @JsonCreator
     public HttpToMqttMapping(
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp) {
+            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.tagName = tagName;
         this.mqttTopic = mqttTopic;
         this.mqttQos = requireNonNullElse(mqttQos, 0);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -122,5 +132,10 @@ public class HttpToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 }

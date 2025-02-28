@@ -80,6 +80,13 @@ public class EipToMqttMapping implements PollingContext {
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
+
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
+
     @JsonCreator
     public EipToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
@@ -88,7 +95,8 @@ public class EipToMqttMapping implements PollingContext {
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
+            @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
@@ -96,6 +104,9 @@ public class EipToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -130,5 +141,10 @@ public class EipToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 }

@@ -65,7 +65,7 @@ public class FileProtocolAdapterFactory
     @Override
     @NotNull
     public ConfigTagsTuple tryConvertLegacyConfig(
-            @NotNull ObjectMapper objectMapper, @NotNull Map<String, Object> config) {
+            @NotNull final ObjectMapper objectMapper, @NotNull final Map<String, Object> config) {
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
@@ -83,7 +83,8 @@ public class FileProtocolAdapterFactory
                     context.getIncludeTimestamp(),
                     context.getIncludeTagNames(),
                     context.getUserProperties(),
-                    newTagName);
+                    newTagName,
+                    false);
             fileToMqttMappings.add(fileToMqttMapping);
         }
 

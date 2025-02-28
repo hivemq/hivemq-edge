@@ -72,7 +72,7 @@ public class S7ProtocolAdapterFactory
 
         final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
         final List<Plc4xTag> tags = new ArrayList<>();
-        for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
+        for (final LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
             tags.add(new Plc4xTag(subscription.getTagName(),
                     "not set",
                     new Plc4xTagDefinition(subscription.getTagAddress(), subscription.getDataType())));
@@ -82,7 +82,8 @@ public class S7ProtocolAdapterFactory
                     subscription.getIncludeTimestamp(),
                     subscription.getIncludeTagNames(),
                     subscription.getTagName(),
-                    subscription.getUserProperties()));
+                    subscription.getUserProperties(),
+                    false));
         }
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),

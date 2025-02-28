@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -85,31 +84,35 @@ public class OpcUaProtocolAdapterFactory
             publishingIntervals.add(subscription.getPublishingInterval());
             serverQueueSizes.add(subscription.getServerQueueSize());
 
-            opcuaToMqttMappings.add(new OpcUaToMqttMapping(
-                    subscription.getMqttTopic(),
+            opcuaToMqttMappings.add(new OpcUaToMqttMapping(subscription.getMqttTopic(),
                     subscription.getQos(),
-                    subscription.getMessageExpiryInterval() != null ? subscription.getMessageExpiryInterval().longValue() : 4294967295L,
-                    newTagName));
+                    subscription.getMessageExpiryInterval() != null ?
+                            subscription.getMessageExpiryInterval().longValue() :
+                            4294967295L,
+                    newTagName,
+                    false));
         }
 
         final Optional<Integer> publishingInterval = publishingIntervals.stream().max(Integer::compareTo);
         final Optional<Integer> serverQueueSize = serverQueueSizes.stream().min(Integer::compareTo);
 
-        if(publishingIntervals.size() > 1 || serverQueueSizes.size() > 1) {
-            log.warn("There are multiple values for publishingInterval and serverQueueSize set, picking publishingInterval={} and serverQueueSize={}", publishingIntervals, serverQueueSize);
+        if (publishingIntervals.size() > 1 || serverQueueSizes.size() > 1) {
+            log.warn(
+                    "There are multiple values for publishingInterval and serverQueueSize set, picking publishingInterval={} and serverQueueSize={}",
+                    publishingIntervals,
+                    serverQueueSize);
         }
 
-        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(
-                publishingInterval.orElse(null),
-                serverQueueSize.orElse(null));
+        final OpcUaToMqttConfig opcuaToMqttConfig =
+                new OpcUaToMqttConfig(publishingInterval.orElse(null), serverQueueSize.orElse(null));
 
-        return new ConfigTagsTuple(legacyOpcUaAdapterConfig.getId(), new OpcUaSpecificAdapterConfig(
-                legacyOpcUaAdapterConfig.getUri(),
-                legacyOpcUaAdapterConfig.getOverrideUri(),
-                legacyOpcUaAdapterConfig.getAuth(),
-                legacyOpcUaAdapterConfig.getTls(),
-                opcuaToMqttConfig,
-                legacyOpcUaAdapterConfig.getSecurity()),
+        return new ConfigTagsTuple(legacyOpcUaAdapterConfig.getId(),
+                new OpcUaSpecificAdapterConfig(legacyOpcUaAdapterConfig.getUri(),
+                        legacyOpcUaAdapterConfig.getOverrideUri(),
+                        legacyOpcUaAdapterConfig.getAuth(),
+                        legacyOpcUaAdapterConfig.getTls(),
+                        opcuaToMqttConfig,
+                        legacyOpcUaAdapterConfig.getSecurity()),
                 tags,
                 opcuaToMqttMappings);
     }

@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -70,19 +69,25 @@ public class Plc4xToMqttMapping implements PollingContext {
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    private boolean includeTimestamp;
+    private final boolean includeTimestamp;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    private boolean includeTagNames;
+    private final boolean includeTagNames;
 
     @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
-    private @NotNull List<MqttUserProperty> userProperties;
+    private final @NotNull List<MqttUserProperty> userProperties;
+
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
 
     @JsonCreator
     public Plc4xToMqttMapping(
@@ -92,7 +97,8 @@ public class Plc4xToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
@@ -100,6 +106,9 @@ public class Plc4xToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -134,5 +143,10 @@ public class Plc4xToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 }

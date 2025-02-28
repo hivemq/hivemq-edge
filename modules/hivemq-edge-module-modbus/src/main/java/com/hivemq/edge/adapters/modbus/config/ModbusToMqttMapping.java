@@ -81,7 +81,11 @@ public class ModbusToMqttMapping implements PollingContext {
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
-
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
 
     @JsonCreator
     public ModbusToMqttMapping(
@@ -91,7 +95,8 @@ public class ModbusToMqttMapping implements PollingContext {
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
-            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.tagName = tagName;
@@ -99,6 +104,9 @@ public class ModbusToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -133,5 +141,10 @@ public class ModbusToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 }

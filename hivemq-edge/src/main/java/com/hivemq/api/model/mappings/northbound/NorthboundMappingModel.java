@@ -17,6 +17,7 @@ package com.hivemq.api.model.mappings.northbound;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.api.model.JavaScriptConstants;
@@ -65,6 +66,12 @@ public class NorthboundMappingModel {
     @Schema(description = "The message expiry interval.")
     private final long messageExpiryInterval;
 
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
+
     @JsonCreator
     public NorthboundMappingModel(
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
@@ -74,7 +81,9 @@ public class NorthboundMappingModel {
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
             @JsonProperty(value = "maxQoS") final @Nullable QoSModel maxQoS,
-            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
+            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
+
         this.topic = topic;
         this.tagName = tagName;
         this.messageHandlingOptions =
@@ -86,6 +95,9 @@ public class NorthboundMappingModel {
         // we must set a upper limit for the expiry interval as JS otherwise will wrongly round it which leads to an exception when sending it back to the backend
         this.messageExpiryInterval = Math.min(Objects.requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE),
                 JavaScriptConstants.JS_MAX_SAFE_INTEGER);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTopic() {
@@ -131,7 +143,8 @@ public class NorthboundMappingModel {
                 this.includeTimestamp,
                 userProperties.stream()
                         .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()),
+                this.publishChangedDataOnly);
     }
 
     public static NorthboundMappingModel from(final @NotNull NorthboundMapping northboundMapping) {
@@ -145,6 +158,7 @@ public class NorthboundMappingModel {
                         .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
                         .collect(Collectors.toList()),
                 QoSModel.fromNumber(northboundMapping.getMqttQos()),
-                northboundMapping.getMessageExpiryInterval());
+                northboundMapping.getMessageExpiryInterval(),
+                northboundMapping.publishChangedDataOnly());
     }
 }

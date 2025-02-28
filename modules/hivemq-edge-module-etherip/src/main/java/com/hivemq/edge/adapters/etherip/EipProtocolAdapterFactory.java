@@ -80,7 +80,8 @@ public class EipProtocolAdapterFactory
                     context.getIncludeTimestamp(),
                     context.getIncludeTagNames(),
                     context.getTagName(),
-                    context.getUserProperties()));
+                    context.getUserProperties(),
+                    false));
         }
 
         final EipToMqttConfig eipToMqttConfig = new EipToMqttConfig(legacyEipAdapterConfig.getPollingIntervalMillis(),

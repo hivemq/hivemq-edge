@@ -213,27 +213,24 @@ public class ProtocolAdapterWrapper {
 
         if (isBatchPolling()) {
             log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
-            final PerAdapterSampler sampler =
-                    new PerAdapterSampler(this, eventService, tagManager);
+            final PerAdapterSampler sampler = new PerAdapterSampler(this, eventService, tagManager);
             protocolAdapterPollingService.schedulePolling(sampler);
         }
 
         if (isPolling()) {
             config.getTags().forEach(tag -> {
-                final PerContextSampler sampler =
-                        new PerContextSampler(
-                                this,
-                            new PollingContextWrapper(
-                                    "unused",
-                                    tag.getName(),
-                                    MessageHandlingOptions.MQTTMessagePerTag,
-                                    false,
-                                    false,
-                                    List.of(),
-                                    1,
-                                    -1),
-                                eventService,
-                                tagManager);
+                final PerContextSampler sampler = new PerContextSampler(this,
+                        new PollingContextWrapper("unused",
+                                tag.getName(),
+                                MessageHandlingOptions.MQTTMessagePerTag,
+                                false,
+                                false,
+                                List.of(),
+                                1,
+                                -1,
+                                false),
+                        eventService,
+                        tagManager);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }

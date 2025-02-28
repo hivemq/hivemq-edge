@@ -25,11 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
-import static java.util.Objects.requireNonNullElseGet;
 
 public class OpcUaToMqttMapping implements PollingContext {
 
@@ -41,7 +39,8 @@ public class OpcUaToMqttMapping implements PollingContext {
     private final long messageExpiryInterval;
 
     @JsonProperty(value = "tagName", required = true)
-    @ModuleConfigField(title = "Tag Name", description = "The name of the tag that defines the data point on the plc.",
+    @ModuleConfigField(title = "Tag Name",
+                       description = "The name of the tag that defines the data point on the plc.",
                        required = true,
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
@@ -61,16 +60,27 @@ public class OpcUaToMqttMapping implements PollingContext {
                        defaultValue = "0")
     private final int qos;
 
+
+    @JsonProperty(value = "publishChangedDataOnly")
+    @ModuleConfigField(title = "publishChangedDataOnly",
+                       description = "Flag, whether only changes in data should be published",
+                       defaultValue = "false")
+    private boolean publishChangedDataOnly = false;
+
     @JsonCreator
     public OpcUaToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval,
-            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName) {
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 1);
         this.tagName = tagName;
         this.messageExpiryInterval = requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE);
+        if (publishChangedDataOnly != null) {
+            this.publishChangedDataOnly = publishChangedDataOnly;
+        }
     }
 
     public @NotNull String getTagName() {
@@ -110,5 +120,10 @@ public class OpcUaToMqttMapping implements PollingContext {
     @Override
     public @Nullable Long getMessageExpiryInterval() {
         return messageExpiryInterval;
+    }
+
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 }

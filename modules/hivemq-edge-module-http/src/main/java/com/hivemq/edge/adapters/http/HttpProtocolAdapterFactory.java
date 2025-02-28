@@ -72,7 +72,7 @@ public class HttpProtocolAdapterFactory
 
         // create tag first
         final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID();
-        ArrayList<HttpTag> tags = new ArrayList<>();
+        final ArrayList<HttpTag> tags = new ArrayList<>();
         tags.add(new HttpTag(newTagName,
                 "not set",
                 new HttpTagDefinition(legacyHttpAdapterConfig.getUrl(),
@@ -86,6 +86,7 @@ public class HttpProtocolAdapterFactory
                 legacyHttpAdapterConfig.getDestination(),
                 legacyHttpAdapterConfig.getQos(),
                 List.of(),
+                false,
                 false);
 
         final HttpToMqttConfig httpToMqttConfig =
@@ -95,8 +96,7 @@ public class HttpProtocolAdapterFactory
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly());
 
         return new ConfigTagsTuple(legacyHttpAdapterConfig.getId(),
-                new HttpSpecificAdapterConfig(
-                        legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                new HttpSpecificAdapterConfig(legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                         httpToMqttConfig,
                         legacyHttpAdapterConfig.isAllowUntrustedCertificates()),
                 tags,

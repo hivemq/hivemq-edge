@@ -89,7 +89,8 @@ public class ModbusProtocolAdapterFactory
                     context.getMessageHandlingOptions(),
                     context.getIncludeTimestamp(),
                     context.getIncludeTagNames(),
-                    context.getLegacyProperties());
+                    context.getLegacyProperties(),
+                    false);
             modbusToMqttMappings.add(modbusToMqttMapping);
         }
 

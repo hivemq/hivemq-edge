@@ -33,6 +33,7 @@ class PollingContextWrapper implements PollingContext {
     private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
     private final long messageExpiryInterval;
+    private final boolean publishChangedDataOnly;
 
     public PollingContextWrapper(
             final String topic,
@@ -42,7 +43,8 @@ class PollingContextWrapper implements PollingContext {
             final boolean includeTimestamp,
             final List<MqttUserProperty> userProperties,
             final int maxQoS,
-            final long messageExpiryInterval) {
+            final long messageExpiryInterval,
+            final boolean publishChangedDataOnly) {
         this.topic = topic;
         this.tagName = tagName;
         this.messageHandlingOptions = messageHandlingOptions;
@@ -51,6 +53,7 @@ class PollingContextWrapper implements PollingContext {
         this.userProperties = userProperties;
         this.maxQoS = maxQoS;
         this.messageExpiryInterval = messageExpiryInterval;
+        this.publishChangedDataOnly = publishChangedDataOnly;
     }
 
     @Override
@@ -93,6 +96,11 @@ class PollingContextWrapper implements PollingContext {
         return messageExpiryInterval;
     }
 
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
+    }
+
     public static @NotNull PollingContextWrapper from(final NorthboundMapping northboundMapping) {
         return new PollingContextWrapper(northboundMapping.getMqttTopic(),
                 northboundMapping.getTagName(),
@@ -101,6 +109,7 @@ class PollingContextWrapper implements PollingContext {
                 northboundMapping.getIncludeTimestamp(),
                 List.copyOf(northboundMapping.getUserProperties()),
                 northboundMapping.getMqttQos(),
-                northboundMapping.getMessageExpiryInterval());
+                northboundMapping.getMessageExpiryInterval(),
+                northboundMapping.publishChangedDataOnly());
     }
 }

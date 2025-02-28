@@ -52,6 +52,7 @@ public class NorthboundTagConsumer implements TagConsumer{
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
+    private final @NotNull List<DataPoint> lastValues = new ArrayList<>();
 
     public NorthboundTagConsumer(
             final @NotNull PollingContext pollingContext,
@@ -77,6 +78,14 @@ public class NorthboundTagConsumer implements TagConsumer{
 
         Preconditions.checkArgument(pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
+
+        if(pollingContext.publishChangedDataOnly()){
+            // check for the last data points and early return if they are the same
+            // TODO implement the correct equals
+
+        }
+
+
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
 

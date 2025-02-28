@@ -39,6 +39,7 @@ public class NorthboundMapping implements PollingContext {
     private final boolean includeTimestamp;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
+    private final boolean publishChangedDataOnly;
     private final long messageExpiryInterval;
 
     public NorthboundMapping(
@@ -49,7 +50,8 @@ public class NorthboundMapping implements PollingContext {
             final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,
             final boolean includeTimestamp,
-            final @NotNull List<MqttUserProperty> userProperties) {
+            final @NotNull List<MqttUserProperty> userProperties,
+            final boolean publishChangedDataOnly) {
         this.tagName = tagName;
         this.topic = topic;
         this.messageHandlingOptions = messageHandlingOptions;
@@ -58,6 +60,7 @@ public class NorthboundMapping implements PollingContext {
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
         this.maxQoS = maxQoS;
+        this.publishChangedDataOnly = publishChangedDataOnly;
     }
 
     public @NotNull String getMqttTopic() {
@@ -92,6 +95,11 @@ public class NorthboundMapping implements PollingContext {
         return this.messageExpiryInterval;
     }
 
+    @Override
+    public boolean publishChangedDataOnly() {
+        return publishChangedDataOnly;
+    }
+
     public static NorthboundMapping fromModel(final com.hivemq.edge.api.model.NorthboundMapping model) {
         return new NorthboundMapping(model.getTagName(),
                 model.getTopic(),
@@ -105,6 +113,8 @@ public class NorthboundMapping implements PollingContext {
                         model.getUserProperties()
                                 .stream()
                                 .map(u -> new MqttUserProperty(u.getName(), u.getValue()))
-                                .collect(Collectors.toList()));
+                                .collect(Collectors.toList()),
+                model.getPublishChangedDataOnly()
+        );
     }
 }

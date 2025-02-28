@@ -5586,6 +5586,10 @@ components:
           description: User properties to be added to each outgoing mqtt message.
           items:
             $ref: '#/components/schemas/MqttUserProperty'
+          publishChangedDataOnly:
+            type: boolean
+            description: Flag, whether only changes in data should be published
+            default: false
       required:
         - tagName
         - topic
