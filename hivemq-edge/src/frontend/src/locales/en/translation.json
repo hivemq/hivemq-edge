@@ -1268,7 +1268,9 @@
           "cancel": "Cancel"
         },
         "combinedSelector": {
-          "placeholder": "Select tags and topic filters to combine ..."
+          "placeholder": "Select tags and topic filters to combine ...",
+          "type_TAG": "Tag",
+          "type_TOPIC_FILTER": "Topic Filter"
         },
         "primary": {
           "placeholder": "Select a primary data key ..."

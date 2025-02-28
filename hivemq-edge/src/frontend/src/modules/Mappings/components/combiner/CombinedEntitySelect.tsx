@@ -2,8 +2,9 @@ import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
+import { chakraComponents } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
-import { Box } from '@chakra-ui/react'
+import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
@@ -52,7 +53,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
             label: topicFilter.topicFilter,
             value: topicFilter.topicFilter,
             description: topicFilter.description,
-            type: DataIdentifierReference.type.TAG,
+            type: DataIdentifierReference.type.TOPIC_FILTER,
           }))
 
           acc.push(...options)
@@ -98,9 +99,29 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
         }}
         isClearable
         placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
-        // noOptionsMessage={() => t('EntityCreatableSelect.options.noOptionsMessage', { context: type })}
-        // components={customComponents(isMulti, type)}
-        // filterOption={createFilter(filterConfig)}
+        components={{
+          Option: ({ children, ...props }) => {
+            return (
+              <chakraComponents.Option {...props}>
+                <VStack gap={0} alignItems="stretch" w="100%">
+                  <HStack>
+                    <Box flex={1}>
+                      <Text flex={1}>{props.data.label}</Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
+                      </Text>
+                    </Box>
+                  </HStack>
+                  <Text fontSize="sm" noOfLines={3} ml={2} lineHeight={'normal'} textAlign={'justify'}>
+                    {props.data.description}
+                  </Text>
+                </VStack>
+              </chakraComponents.Option>
+            )
+          },
+        }}
       />
     </Box>
   )
