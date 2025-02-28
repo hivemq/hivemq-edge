@@ -67,7 +67,6 @@ public class DataCombinerManager {
             public @NotNull String name() {
                 return "Data Combiner Manager Shutdown";
             }
-
             @Override
             public void run() {
                 stopAll();
@@ -81,8 +80,6 @@ public class DataCombinerManager {
             idToDataCombiningInformation.put(dataCombiner.id(),
                     new DataCombiningInformation(dataCombiner, createDataCombiningStates(dataCombiner)));
         });
-
-
         idToDataCombiningInformation.values()
                 .stream()
                 .map(DataCombiningInformation::dataCombiningRuntimes)
@@ -90,43 +87,6 @@ public class DataCombinerManager {
                 .forEach(DataCombiningRuntime::start);
     }
 
-    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
-        return dataCombiner.dataCombinings()
-                .stream()
-                .map(dataCombiningRuntimeFactory::build)
-                .toList();
-    }
-
-    public synchronized @NotNull CompletableFuture<AddResult> startCombiner(final @NotNull DataCombiner dataCombiner) {
-        log.debug("Starting data combiner with id '{}'", dataCombiner.id());
-        if (idToDataCombiningInformation.get(dataCombiner.id()) != null) {
-            return CompletableFuture.completedFuture(AddResult.failed(AddResult.PutStatus.ALREADY_EXISTS));
-        }
-        final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
-        dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
-        idToDataCombiningInformation.put(dataCombiner.id(),
-                new DataCombiningInformation(dataCombiner, dataCombiningRuntimes));
-        return CompletableFuture.completedFuture(AddResult.success());
-    }
-
-    public synchronized @NotNull CompletableFuture<Void> stop(final @NotNull UUID dataCombinerId) {
-        final var toBeStopped = idToDataCombiningInformation.remove(dataCombinerId);
-        if (toBeStopped != null) {
-            return CompletableFuture.runAsync(() -> toBeStopped.dataCombiningRuntimes()
-                    .forEach(DataCombiningRuntime::stop));
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-    public synchronized @NotNull CompletableFuture<Void> stopAll() {
-        return CompletableFuture.runAsync(() -> {
-            idToDataCombiningInformation.values()
-                    .stream()
-                    .map(DataCombiningInformation::dataCombiningRuntimes)
-                    .flatMap(Collection::stream)
-                    .forEach(DataCombiningRuntime::stop);
-        });
-    }
 
     public synchronized @NotNull CompletableFuture<AddResult> addDataCombiner(final @NotNull DataCombiner dataCombiner) {
         final DataCombiningInformation previousValue = idToDataCombiningInformation.get(dataCombiner.id());
@@ -152,6 +112,25 @@ public class DataCombinerManager {
     public @NotNull CompletableFuture<Boolean> deleteDataCombiner(final @NotNull UUID combinerId) {
         final boolean deleted = deleteDataCombinerInternal(combinerId);
         return CompletableFuture.completedFuture(deleted);
+    }
+
+    public synchronized @NotNull CompletableFuture<Void> stop(final @NotNull UUID dataCombinerId) {
+        final var toBeStopped = idToDataCombiningInformation.remove(dataCombinerId);
+        if (toBeStopped != null) {
+            return CompletableFuture.runAsync(() -> toBeStopped.dataCombiningRuntimes()
+                    .forEach(DataCombiningRuntime::stop));
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    public synchronized @NotNull CompletableFuture<Void> stopAll() {
+        return CompletableFuture.runAsync(() -> {
+            idToDataCombiningInformation.values()
+                    .stream()
+                    .map(DataCombiningInformation::dataCombiningRuntimes)
+                    .flatMap(Collection::stream)
+                    .forEach(DataCombiningRuntime::stop);
+        });
     }
 
     public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
@@ -208,6 +187,13 @@ public class DataCombinerManager {
             log.error("Tried removing non existing adapter '{}'", id);
         }
         return false;
+    }
+
+    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
+        return dataCombiner.dataCombinings()
+                .stream()
+                .map(dataCombiningRuntimeFactory::build)
+                .toList();
     }
 
     record DataCombiningInformation(DataCombiner dataCombiner, List<DataCombiningRuntime> dataCombiningRuntimes) {
