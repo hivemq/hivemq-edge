@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.mtconnect;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -25,8 +27,26 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
+import java.net.Socket;
+import java.net.http.HttpClient;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
@@ -35,6 +55,8 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
+    private final @NotNull Map<String, Tag> tagMap;
+    private volatile @Nullable HttpClient httpClient = null;
 
     public MtConnectProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -43,6 +65,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
+        this.tagMap = input.getTags().stream().collect(Collectors.toMap(Tag::getName, Function.identity()));
     }
 
     @Override
@@ -56,6 +79,16 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
+            if (httpClient == null) {
+                final HttpClient.Builder builder = HttpClient.newBuilder();
+                builder.version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.NORMAL)
+                        .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
+                if (adapterConfig.isAllowUntrustedCertificates()) {
+                    builder.sslContext(createTrustAllContext());
+                }
+                httpClient = builder.build();
+            }
             output.startedSuccessfully();
         } catch (final Exception e) {
             output.failStart(e, null);
@@ -66,18 +99,42 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
+        httpClient = null;
         protocolAdapterStopOutput.stoppedSuccessfully();
-    }
-
-
-    @Override
-    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
-        return adapterInformation;
     }
 
     @Override
     public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        pollingOutput.finish();
+        final HttpClient httpClient = this.httpClient;
+        if (httpClient == null) {
+            pollingOutput.fail(new ProtocolAdapterException(),
+                    "No response was created, because the HTTP client is null.");
+            return;
+        }
+        final PollingContext pollingContext = pollingInput.getPollingContext();
+        final String tagName = pollingContext.getTagName();
+        Optional.ofNullable(tagMap.get(tagName))
+                .ifPresentOrElse(tag -> pollXml(pollingOutput, httpClient, tag, pollingContext),
+                        () -> pollFail(pollingOutput, tagName));
+    }
+
+    protected void pollXml(
+            final @NotNull PollingOutput pollingOutput,
+            final @NotNull HttpClient httpClient,
+            final @NotNull Tag tag,
+            final @NotNull PollingContext pollingContext) {
+        // TODO
+    }
+
+    protected void pollFail(final @NotNull PollingOutput pollingOutput, final @NotNull String tagName) {
+        pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
+                tagName +
+                "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
     }
 
     @Override
@@ -88,5 +145,61 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
+
+    protected @NotNull SSLContext createTrustAllContext() {
+        try {
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            final X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
+                @Override
+                public void checkClientTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s) {
+                }
+
+                @Override
+                public void checkServerTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s) {
+                }
+
+                @Override
+                public X509Certificate @NotNull [] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+
+                @Override
+                public void checkClientTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s,
+                        final @NotNull Socket socket) {
+                }
+
+                @Override
+                public void checkServerTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s,
+                        final @NotNull Socket socket) {
+                }
+
+                @Override
+                public void checkClientTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s,
+                        final @NotNull SSLEngine sslEngine) {
+                }
+
+                @Override
+                public void checkServerTrusted(
+                        final X509Certificate @NotNull [] x509Certificates,
+                        final @NotNull String s,
+                        final @NotNull SSLEngine sslEngine) {
+                }
+            };
+            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+            return sslContext;
+        } catch (final NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

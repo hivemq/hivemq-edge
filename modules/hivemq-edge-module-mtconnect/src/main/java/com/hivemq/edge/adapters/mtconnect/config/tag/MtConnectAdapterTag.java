@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class MtConnectAdapterTag implements Tag {
-
     @JsonProperty(value = "name", required = true)
     @ModuleConfigField(title = "name",
                        description = "name of the tag to be used in mappings",
