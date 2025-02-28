@@ -63,18 +63,16 @@ const CombinerMappingManager: FC = () => {
     navigate('/workspace')
   }
 
-  const handleUpdateCombiner = (data: Combiner) => {
-    if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data)
-    handleClose()
-  }
-
   const handleOnSubmit = (data: IChangeEvent) => {
     if (!data.formData || !combinerId) return
 
-    const promise = updateCombiner.mutateAsync({ combinerId: combinerId, requestBody: data.formData })
+    const promise = updateCombiner.mutateAsync({ combinerId, requestBody: data.formData })
 
     toast.promise(
-      promise.then(() => handleUpdateCombiner(data.formData)),
+      promise.then(() => {
+        if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data.formData)
+        handleClose()
+      }),
       {
         success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
         error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
