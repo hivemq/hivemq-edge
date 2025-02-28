@@ -26,11 +26,25 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
+import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
+import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -39,31 +53,56 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class MtConnectProtocolAdapterTest {
-    private @NotNull ProtocolAdapterInformation information;
     private @NotNull ProtocolAdapterInput<MtConnectAdapterConfig> adapterInput;
-    private @NotNull ProtocolAdapterStartInput startInput;
-    private @NotNull ProtocolAdapterStartOutput startOutput;
-    private @NotNull ProtocolAdapterStopInput stopInput;
-    private @NotNull ProtocolAdapterStopOutput stopOutput;
-    private @NotNull ProtocolAdapterState state;
+    private @NotNull MtConnectAdapterConfig config;
+    private @NotNull HttpClient httpClient;
+    private @NotNull ProtocolAdapterInformation information;
+    private @NotNull PollingContext pollingContext;
     private @NotNull PollingInput pollingInput;
     private @NotNull PollingOutput pollingOutput;
-    private @NotNull MtConnectAdapterConfig config;
-    private @NotNull PollingContext pollingContext;
+    private @NotNull ProtocolAdapterStartInput startInput;
+    private @NotNull ProtocolAdapterStartOutput startOutput;
+    private @NotNull ProtocolAdapterState state;
+    private @NotNull ProtocolAdapterStopInput stopInput;
+    private @NotNull ProtocolAdapterStopOutput stopOutput;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     public void setUp() {
-        information = mock(ProtocolAdapterInformation.class);
         adapterInput = (ProtocolAdapterInput<MtConnectAdapterConfig>) mock(ProtocolAdapterInput.class);
-        startInput = mock(ProtocolAdapterStartInput.class);
-        startOutput = mock(ProtocolAdapterStartOutput.class);
-        stopInput = mock(ProtocolAdapterStopInput.class);
-        stopOutput = mock(ProtocolAdapterStopOutput.class);
-        state = mock(ProtocolAdapterState.class);
+        config = mock(MtConnectAdapterConfig.class);
+        httpClient = mock(HttpClient.class);
+        information = mock(ProtocolAdapterInformation.class);
+        pollingContext = mock(PollingContext.class);
         pollingInput = mock(PollingInput.class);
         pollingOutput = mock(PollingOutput.class);
-        config = mock(MtConnectAdapterConfig.class);
-        pollingContext = mock(PollingContext.class);
+        startInput = mock(ProtocolAdapterStartInput.class);
+        startOutput = mock(ProtocolAdapterStartOutput.class);
+        state = mock(ProtocolAdapterState.class);
+        stopInput = mock(ProtocolAdapterStopInput.class);
+        stopOutput = mock(ProtocolAdapterStopOutput.class);
+    }
+
+    protected @NotNull String getXml(final @NotNull String fileName) {
+        final String filePath = "/smstestbed/" + fileName;
+        try {
+            return IOUtils.resourceToString(filePath, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            fail();
+            return "";
+        }
+    }
+
+    protected @NotNull String getVolatileDataStreamCurrent() {
+        return getXml("volatile-data-stream-current.xml");
+    }
+
+    protected @NotNull String getVolatileDataStreamSchema() {
+        return new File("src/test/resources/smstestbed/volatile-data-stream-schema.xml").getAbsolutePath();
+    }
+
+    protected @NotNull String getVolatileDataStreamTimeSeries() {
+        return getXml("volatile-data-stream-time-series.xml");
     }
 
     @Test
@@ -80,15 +119,15 @@ public class MtConnectProtocolAdapterTest {
     public void whenTagIsNotFoundInTagMap_thenPollShouldFail() {
         when(config.isAllowUntrustedCertificates()).thenReturn(false);
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
-        when(adapterInput.getAdapterId()).thenReturn("test");
+        when(adapterInput.getAdapterId()).thenReturn("smstestbed");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
         when(adapterInput.getConfig()).thenReturn(config);
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
-        when(pollingContext.getTagName()).thenReturn("test");
+        when(pollingContext.getTagName()).thenReturn("smstestbed");
         MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tagMap).as("TagMap should be empty").isNotNull().isEmpty();
-        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("test");
+        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("smstestbed");
         adapter.start(startInput, startOutput);
         verify(state).setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
         verify(startOutput).startedSuccessfully();
@@ -97,5 +136,37 @@ public class MtConnectProtocolAdapterTest {
         adapter.stop(stopInput, stopOutput);
         verify(stopOutput).stoppedSuccessfully();
         assertThat(adapter.httpClient).as("HttpClient is set to null in stop()").isNull();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void whenTagIsFound_thenPollXmlShouldBeCalled() throws IOException {
+        when(config.isAllowUntrustedCertificates()).thenReturn(false);
+        when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
+        when(adapterInput.getAdapterId()).thenReturn("smstestbed");
+        when(adapterInput.getProtocolAdapterState()).thenReturn(state);
+        when(adapterInput.getConfig()).thenReturn(config);
+        when(adapterInput.getTags()).thenReturn(List.of(new MtConnectAdapterTag("tagName",
+                "tagDescription",
+                new MtConnectAdapterTagDefinition("http://localhost/vds",
+                        getVolatileDataStreamSchema(),
+                        5,
+                        List.of()))));
+        when(pollingInput.getPollingContext()).thenReturn(pollingContext);
+        when(pollingContext.getTagName()).thenReturn("tagName");
+        HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn(getVolatileDataStreamCurrent());
+        CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.completedFuture(httpResponse);
+        when(httpClient.sendAsync(isA(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(
+                completableFuture);
+        MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        adapter.httpClient = httpClient;
+        assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
+        assertThat(adapter.tagMap).as("TagMap should not be empty").isNotEmpty().containsKey("tagName");
+        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("smstestbed");
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+        verify(pollingOutput).finish();
     }
 }
