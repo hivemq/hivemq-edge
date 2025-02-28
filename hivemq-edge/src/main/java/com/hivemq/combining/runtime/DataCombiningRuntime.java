@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.edge.modules.adapters.data.TagManager;
@@ -55,6 +56,7 @@ public class DataCombiningRuntime {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
+    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
 
     private final @NotNull ObjectMapper mapper;
 
@@ -70,42 +72,41 @@ public class DataCombiningRuntime {
             final @NotNull TagManager tagManager,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService,
-            final @NotNull DataCombiningPublishService dataCombiningPublishService) {
+            final @NotNull DataCombiningPublishService dataCombiningPublishService,
+            final @NotNull DataCombiningTransformationService dataCombiningTransformationService) {
         this.combining = combining;
         this.localTopicTree = localTopicTree;
         this.tagManager = tagManager;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
         this.dataCombiningPublishService = dataCombiningPublishService;
+        this.dataCombiningTransformationService = dataCombiningTransformationService;
         this.mapper = new ObjectMapper();
     }
 
     public void start() {
         log.debug("Starting data combining {}", combining.id());
-        combining.sources()
-                .tags()
-                .stream()
-                .map(tag -> {
-                    log.debug("Starting tag consumer for tag {}", tag);
-                    return new InternalTagConsumer(tag,
-                            combining,
-                            TAG.equals(combining.sources().primaryReference().type()) &&
-                                    tag.equals(combining.sources().primaryReference().id()));
-                })
-                .forEach(consumer -> {
-                    tagManager.addConsumer(consumer);
-                    consumers.add(consumer);
-                });
+        // prepare the script for the data combining
+        dataCombiningTransformationService.addScriptForDataCombining(combining);
 
-        combining.sources()
-                .topicFilters()
-                .forEach(topicFilter -> {
-                    log.debug("Starting mqtt consumer for filter {}", topicFilter);
-                    internalSubscriptions.add(subscribeTopicFilter(combining,
-                            topicFilter,
-                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                                    topicFilter.equals(combining.sources().primaryReference().id())));
-                });
+        combining.sources().tags().stream().map(tag -> {
+            log.debug("Starting tag consumer for tag {}", tag);
+            return new InternalTagConsumer(tag,
+                    combining,
+                    TAG.equals(combining.sources().primaryReference().type()) &&
+                            tag.equals(combining.sources().primaryReference().id()));
+        }).forEach(consumer -> {
+            tagManager.addConsumer(consumer);
+            consumers.add(consumer);
+        });
+
+        combining.sources().topicFilters().forEach(topicFilter -> {
+            log.debug("Starting mqtt consumer for filter {}", topicFilter);
+            internalSubscriptions.add(subscribeTopicFilter(combining,
+                    topicFilter,
+                    TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
+                            topicFilter.equals(combining.sources().primaryReference().id())));
+        });
 
         internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
     }
@@ -118,6 +119,8 @@ public class DataCombiningRuntime {
                     sub.topic(),
                     sub.sharedName()); //I guess we should keep the subscription?
         });
+
+        dataCombiningTransformationService.removeScriptForDataCombining(combining);
     }
 
     public @NotNull InternalSubscription subscribeTopicFilter(
@@ -149,11 +152,7 @@ public class DataCombiningRuntime {
     public void triggerPublish(final @NotNull DataCombining dataCombining) {
         final var tagsToDataPoints = Map.copyOf(tagResults);
         final var topicFilterResults = Map.copyOf(topicFilterToPublish);
-
-        final Map<String, Object> outgoing = new HashMap<>();
-
         final ObjectNode rootNode = mapper.createObjectNode();
-
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
                 final JsonNode jsonNode = mapper.readTree(publish.getPayload());

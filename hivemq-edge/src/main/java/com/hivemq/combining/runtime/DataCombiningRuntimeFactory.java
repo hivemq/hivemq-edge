@@ -15,18 +15,16 @@
  */
 package com.hivemq.combining.runtime;
 
+import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.function.Function;
 
 @Singleton
 public class DataCombiningRuntimeFactory {
@@ -36,6 +34,7 @@ public class DataCombiningRuntimeFactory {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull TagManager tagManager;
+    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
 
     @Inject
     public DataCombiningRuntimeFactory(
@@ -43,13 +42,15 @@ public class DataCombiningRuntimeFactory {
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService,
             final @NotNull DataCombiningPublishService dataCombiningPublishService,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull DataCombiningTransformationService dataCombiningTransformationService) {
 
         this.localTopicTree = localTopicTree;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
         this.dataCombiningPublishService = dataCombiningPublishService;
         this.tagManager = tagManager;
+        this.dataCombiningTransformationService = dataCombiningTransformationService;
     }
 
     public @NotNull DataCombiningRuntime build(
@@ -59,7 +60,8 @@ public class DataCombiningRuntimeFactory {
                 tagManager,
                 clientQueuePersistence,
                 singleWriterService,
-                dataCombiningPublishService);
+                dataCombiningPublishService,
+                dataCombiningTransformationService);
     }
 
 }
