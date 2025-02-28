@@ -29,32 +29,44 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
+import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
 public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(MtConnectProtocolAdapter.class);
+    private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
     protected final @NotNull Map<String, Tag> tagMap;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
+    private final @NotNull String version;
     protected volatile @Nullable HttpClient httpClient = null;
 
     public MtConnectProtocolAdapter(
@@ -65,6 +77,19 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tagMap = input.getTags().stream().collect(Collectors.toMap(Tag::getName, Function.identity()));
+        this.version = input.getVersion();
+    }
+
+    protected @NotNull BiConsumer<HttpResponse<String>, Throwable> processHttpResponse(final @NotNull PollingOutput pollingOutput) {
+        return (httpResponse, throwable) -> {
+            if (throwable == null) {
+                // TODO
+                pollingOutput.finish();
+            }
+            if (throwable != null) {
+                pollingOutput.fail(throwable, null);
+            }
+        };
     }
 
     @Override
@@ -104,7 +129,6 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        final HttpClient httpClient = this.httpClient;
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(),
                     "No response was created, because the HTTP client is null.");
@@ -113,16 +137,28 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         final PollingContext pollingContext = pollingInput.getPollingContext();
         final String tagName = pollingContext.getTagName();
         Optional.ofNullable(tagMap.get(tagName))
-                .ifPresentOrElse(tag -> pollXml(pollingOutput, httpClient, tag, pollingContext),
+                .ifPresentOrElse(tag -> pollXml(pollingOutput, tag, pollingContext),
                         () -> pollFail(pollingOutput, tagName));
     }
 
     protected void pollXml(
             final @NotNull PollingOutput pollingOutput,
-            final @NotNull HttpClient httpClient,
             final @NotNull Tag tag,
             final @NotNull PollingContext pollingContext) {
-        // TODO
+        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
+        final HttpRequest.Builder builder = HttpRequest.newBuilder();
+        final String url = definition.getUrl();
+        builder.uri(URI.create(url));
+        builder.timeout(Duration.ofSeconds(definition.getHttpConnectTimeoutSeconds()));
+        builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
+        definition.getHttpHeaders()
+                .forEach(adapterHttpHeader -> builder.setHeader(adapterHttpHeader.getName(),
+                        adapterHttpHeader.getValue()));
+        builder.GET();
+        final HttpRequest httpRequest = builder.build();
+        final CompletableFuture<HttpResponse<String>> responseFuture =
+                Objects.requireNonNull(httpClient).sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString());
+        responseFuture.whenComplete(processHttpResponse(pollingOutput));
     }
 
     protected void pollFail(final @NotNull PollingOutput pollingOutput, final @NotNull String tagName) {

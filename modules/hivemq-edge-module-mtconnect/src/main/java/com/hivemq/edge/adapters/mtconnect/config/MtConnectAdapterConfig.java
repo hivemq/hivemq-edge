@@ -65,7 +65,7 @@ public class MtConnectAdapterConfig implements ProtocolSpecificAdapterConfig {
                        numberMin = 1,
                        required = true,
                        defaultValue = "1000")
-    private int pollingIntervalMillis = 1000;
+    private int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
