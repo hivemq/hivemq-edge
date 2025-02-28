@@ -48,12 +48,20 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
     const tags = formData?.sources?.tags || []
     const topicFilters = formData?.sources?.topicFilters || []
     const indexes = [...tags, ...topicFilters]
-    return allDataReferences?.filter((dataReference) => indexes.includes(dataReference.id)) || []
+
+    const selectedReferences = allDataReferences?.filter((dataReference) => indexes.includes(dataReference.id)) || []
+    return selectedReferences.reduce<DataReference[]>((acc, current) => {
+      const isAlreadyIn = acc.find((item) => item.id === current.id && item.type === current.type)
+      if (!isAlreadyIn) {
+        return acc.concat([current])
+      }
+      return acc
+    }, [])
   }, [allDataReferences, formData?.sources?.tags, formData?.sources?.topicFilters])
 
   const queries = useGetCombinedDataSchemas(allSchemas)
 
-  const test = useMemo(() => {
+  const displayedSchemas = useMemo(() => {
     return allSchemas.map((dataReference, index) => {
       const { data } = queries[index]
 
@@ -76,11 +84,11 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
     })
   }, [allSchemas, queries, t])
 
-  if (!test.length) return <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
+  if (!displayedSchemas.length) return <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
 
   return (
     <>
-      {test.map((dataReference) => {
+      {displayedSchemas.map((dataReference) => {
         const hasSchema = dataReference.schema?.status === 'success' && dataReference.schema.schema
 
         if (!hasSchema) {
