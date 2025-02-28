@@ -1,5 +1,5 @@
 import { type FC, useEffect, useMemo } from 'react'
-import type { Node } from 'reactflow'
+import type { Node, NodeRemoveChange } from 'reactflow'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
@@ -29,7 +29,7 @@ import { MappingType } from './types'
 import type { Combiner } from '@/api/__generated__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
-import { useUpdateCombiner } from '@/api/hooks/useCombiners/useUpdateCombiner'
+import { useUpdateCombiner, useDeleteCombiner } from '@/api/hooks/useCombiners/'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import ErrorMessage from '@/components/ErrorMessage'
@@ -43,9 +43,10 @@ const CombinerMappingManager: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { combinerId } = useParams()
-  const { nodes, onUpdateNode } = useWorkspaceStore()
+  const { nodes, onUpdateNode, onNodesChange } = useWorkspaceStore()
   const toast = useToast()
   const updateCombiner = useUpdateCombiner()
+  const deleteCombiner = useDeleteCombiner()
 
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
@@ -78,6 +79,22 @@ const CombinerMappingManager: FC = () => {
         success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
         error: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.error') },
         loading: { title: t('combiner.toast.update.title'), description: t('combiner.toast.loading') },
+      }
+    )
+  }
+
+  const handleOnDelete = () => {
+    if (!combinerId) return
+    const promise = deleteCombiner.mutateAsync({ combinerId })
+    toast.promise(
+      promise.then(() => {
+        if (selectedNode) onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
+        handleClose()
+      }),
+      {
+        success: { title: t('combiner.toast.delete.title'), description: t('combiner.toast.delete.success') },
+        error: { title: t('combiner.toast.delete.title'), description: t('combiner.toast.delete.error') },
+        loading: { title: t('combiner.toast.delete.title'), description: t('combiner.toast.loading') },
       }
     )
   }
