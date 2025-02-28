@@ -25,7 +25,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public class MtConnectAdapterConfig implements ProtocolSpecificAdapterConfig, MtConnectAdapterConstants {
+public class MtConnectAdapterConfig implements ProtocolSpecificAdapterConfig {
+    private static final boolean DEFAULT_ALLOW_UNTRUSTED_CERTIFICATES = false;
+    private static final int DEFAULT_POLLING_INTERVAL_MILLIS = 1000;
+    private static final int DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS = 5;
+    private static final int MIN_HTTP_CONNECT_TIMEOUT_SECONDS = 1;
+    private static final int MAX_HTTP_CONNECT_TIMEOUT_SECONDS = 60;
+    private static final int DEFAULT_MAX_POLLING_ERRORS_BEFORE_REMOVAL = 10;
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty("allowUntrustedCertificates")
