@@ -50,13 +50,12 @@ import java.util.stream.Collectors;
 
 
 public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
-
-    private final @NotNull MtConnectAdapterConfig adapterConfig;
-    private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    protected final @NotNull Map<String, Tag> tagMap;
+    protected final @NotNull MtConnectAdapterConfig adapterConfig;
+    protected final @NotNull ProtocolAdapterInformation adapterInformation;
+    protected final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private final @NotNull Map<String, Tag> tagMap;
-    private volatile @Nullable HttpClient httpClient = null;
+    protected volatile @Nullable HttpClient httpClient = null;
 
     public MtConnectProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
