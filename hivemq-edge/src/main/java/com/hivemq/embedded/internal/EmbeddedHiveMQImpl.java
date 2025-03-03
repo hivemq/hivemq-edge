@@ -99,7 +99,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         log.info("Setting default authentication behavior to ALLOW ALL");
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
 
-        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null, license);
+        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null, license, conf);
         // we create the metric registry here to make it accessible before start
         metricRegistry = new MetricRegistry();
 

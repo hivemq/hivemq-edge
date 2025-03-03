@@ -51,7 +51,7 @@ public class TopicFilterPersistenceReaderWriter {
     @Inject
     public TopicFilterPersistenceReaderWriter(
             final @NotNull SystemInformation systemInformation) {
-        this.persistenceFile = new File(systemInformation.getConfigFolder(), PERSISTENCE_FILE_NAME);
+        this.persistenceFile = new File(systemInformation.getSecondaryHiveMQHomeFolder(), PERSISTENCE_FILE_NAME);
         xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonXmlAnnotationIntrospector(),
                 new JaxbAnnotationIntrospector(TypeFactory.defaultInstance())));
         xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);

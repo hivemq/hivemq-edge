@@ -45,6 +45,12 @@ public interface SystemInformation {
     File getHiveMQHomeFolder();
 
     /**
+     * @return a secondary folder where additional configs like topic filters are stored
+     */
+    @NotNull
+    File getSecondaryHiveMQHomeFolder();
+
+    /**
      * /**
      *
      * @return the config folder of HiveMQ

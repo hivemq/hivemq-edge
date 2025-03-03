@@ -42,6 +42,7 @@ public class SystemInformationImpl implements SystemInformation {
 
     private @NotNull File homeFolder;
     private @NotNull File configFolder;
+    private @NotNull File secondaryConfigFolder;
     private @NotNull File logFolder;
     private @NotNull File licenseFolder;
     private @NotNull File dataFolder;
@@ -63,13 +64,14 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     public SystemInformationImpl(final boolean usePathOfRunningJar) {
-        this(usePathOfRunningJar, false, null, null, null, null, null);
+        this(usePathOfRunningJar, false, null, null, null, null, null, null);
     }
 
     public SystemInformationImpl(
             final boolean usePathOfRunningJar,
             final boolean embedded,
             final @Nullable File configFolder,
+            final @Nullable File secondaryConfigFolder,
             final @Nullable File dataFolder,
             final @Nullable File pluginFolder,
             final @Nullable File modulesFolder,
@@ -79,6 +81,7 @@ public class SystemInformationImpl implements SystemInformation {
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
+        this.secondaryConfigFolder = secondaryConfigFolder;
         this.dataFolder = dataFolder;
         this.pluginFolder = pluginFolder;
         this.modulesFolder = modulesFolder;
@@ -110,6 +113,24 @@ public class SystemInformationImpl implements SystemInformation {
                         false
                 )
         );
+
+        final String secondaryConfigFolderName = getSystemPropertyOrEnvironmentVariable(
+                SystemProperties.CONFIG_FOLDER_SECONDARY,
+                EnvironmentVariables.CONFIG_FOLDER_SECONDARY);
+
+        if (secondaryConfigFolderName == null) {
+            secondaryConfigFolder = configFolder;
+        } else {
+            secondaryConfigFolder = Objects.requireNonNullElseGet(
+                    configFolder,
+                    () -> setUpHiveMQFolder(
+                            SystemProperties.CONFIG_FOLDER_SECONDARY,
+                            EnvironmentVariables.CONFIG_FOLDER_SECONDARY,
+                            "conf",
+                            false
+                    )
+            );
+        }
 
         licenseFolder = Objects.requireNonNullElseGet(
                 licenseFolder,
@@ -185,6 +206,12 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public @NotNull File getConfigFolder() {
         return configFolder;
+    }
+
+
+    @Override
+    public @NotNull File getSecondaryHiveMQHomeFolder() {
+        return secondaryConfigFolder;
     }
 
     @Override
