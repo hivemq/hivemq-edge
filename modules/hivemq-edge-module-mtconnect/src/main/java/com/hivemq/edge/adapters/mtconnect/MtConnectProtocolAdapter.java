@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.mtconnect;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -32,11 +36,13 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.modelmbean.XMLParseException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -72,6 +78,9 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(MtConnectProtocolAdapter.class);
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
     private static final @NotNull String HEADER_CONTENT_TYPE = "Content-Type";
+    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull XmlMapper XML_MAPPER = new XmlMapper();
+    private static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
     protected final @NotNull Map<String, Tag> tagMap;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -98,7 +107,9 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         return httpResponse.statusCode() >= 200 && httpResponse.statusCode() < 300;
     }
 
-    protected @NotNull BiConsumer<HttpResponse<String>, Throwable> processHttpResponse(final @NotNull PollingOutput pollingOutput) {
+    protected @NotNull BiConsumer<HttpResponse<String>, Throwable> processHttpResponse(
+            final @NotNull PollingOutput pollingOutput,
+            final @NotNull MtConnectAdapterTagDefinition definition) {
         return (httpResponse, throwable) -> {
             if (throwable == null) {
                 if (isSuccessfulResponse(httpResponse)) {
@@ -109,7 +120,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
                                     CONTENT_TYPE_APPLICATION_XML.equals(value))
                             .orElse(false)) {
                         try {
-                            pollingOutput.addDataPoint(processXml(httpResponse.body()));
+                            pollingOutput.addDataPoint(processXml(httpResponse.body(), definition));
                         } catch (final Exception e) {
                             throwable = e;
                         }
@@ -129,9 +140,31 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         };
     }
 
-    protected @NotNull DataPoint processXml(String body) {
-        // TODO
-        return adapterFactories.dataPointFactory().create(DATA, null);
+    protected @NotNull DataPoint processXml(
+            final @NotNull String body,
+            final @NotNull MtConnectAdapterTagDefinition definition)
+            throws JsonProcessingException, XMLParseException {
+        final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
+        final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
+        if (jsonNodeSchemaLocation == null) {
+            throw new XMLParseException("Attribute schemaLocation is not found");
+        }
+        // There are some custom schemas not supported by this module.
+        // Enable the schema validation will cause those messages fail the validation.
+        if (definition.isEnableSchemaValidation()) {
+            MtConnectSchema schema = MtConnectSchema.of(jsonNodeSchemaLocation.asText());
+            if (schema == null) {
+                throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is not support");
+            }
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Publishing data {} version {}.{}",
+                        schema.getType().getRootNodeName(),
+                        schema.getMajorVersion(),
+                        schema.getMinorVersion());
+            }
+        }
+        final @NotNull String jsonString = OBJECT_MAPPER.writeValueAsString(rootNode);
+        return adapterFactories.dataPointFactory().create(DATA, jsonString);
     }
 
     @Override
@@ -200,7 +233,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         final HttpRequest httpRequest = builder.build();
         final CompletableFuture<HttpResponse<String>> responseFuture =
                 Objects.requireNonNull(httpClient).sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString());
-        responseFuture.whenComplete(processHttpResponse(pollingOutput));
+        responseFuture.whenComplete(processHttpResponse(pollingOutput, definition));
     }
 
     protected void pollFail(final @NotNull PollingOutput pollingOutput, final @NotNull String tagName) {
