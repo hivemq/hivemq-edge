@@ -15,6 +15,8 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
 
 import type { CombinerContext } from '@/modules/Mappings/types'
+import { validateSchemaFromDataURI } from '../../TopicFilters/utils/topic-filter.schema'
+import { getPropertyListFrom } from '../../../components/rjsf/MqttTransformation/utils/json-schema.utils'
 
 // TODO[NVL] Context is not part of the customValidator props; need to get a better construction of props
 export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | TopicFilterList, Error>[]) => {
@@ -98,6 +100,24 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
     [allDataSourcesFromEntities]
   )
 
+  /**
+   * Verify that the schema of a destination topic is valid
+   */
+  const validateDestinationSchema = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
+    (formData, errors) => {
+      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema)
+      if (handleSchema.status !== 'success' || !handleSchema.schema)
+        errors.destination?.schema?.addError(handleSchema.error || handleSchema.message)
+      else {
+        const properties = getPropertyListFrom(handleSchema.schema)
+        if (!properties.length)
+          errors.destination?.schema?.addError("The destination schema doesn't have any property to be mapped into")
+      }
+      return errors
+    },
+    []
+  )
+
   const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       validateSourceCapability(formData, errors)
@@ -106,11 +126,12 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
         if (!errors.mappings?.items?.[index]) return
 
         validateDataSources(entity, errors.mappings.items[index])
+        validateDestinationSchema(entity, errors.mappings.items[index])
       })
 
       return errors
     },
-    [validateDataSources, validateSourceCapability]
+    [validateDataSources, validateDestinationSchema, validateSourceCapability]
   )
 
   return validateCombiner
