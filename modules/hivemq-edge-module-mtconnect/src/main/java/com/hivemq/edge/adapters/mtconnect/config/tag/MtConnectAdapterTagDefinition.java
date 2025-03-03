@@ -43,6 +43,13 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
                        required = true)
     private final @NotNull String url;
 
+    @JsonProperty(value = "enableSchemaValidation")
+    @ModuleConfigField(title = "Enable Schema Validation",
+                       description = "Enable the MTConnect schema validation",
+                       format = ModuleConfigField.FieldType.BOOLEAN,
+                       defaultValue = "false")
+    private final boolean enableSchemaValidation;
+
     @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
@@ -54,14 +61,20 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
     @JsonCreator
     public MtConnectAdapterTagDefinition(
             @JsonProperty(value = "url", required = true) final @NotNull String url,
+            @JsonProperty(value = "enableSchemaValidation") final boolean enableSchemaValidation,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpHeaders") final @Nullable List<MtConnectAdapterHttpHeader> httpHeaders) {
         this.url = url;
+        this.enableSchemaValidation = enableSchemaValidation;
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
         this.httpConnectTimeoutSeconds = Optional.ofNullable(httpConnectTimeoutSeconds)
                 .map(s -> Math.min(s, MAX_HTTP_CONNECT_TIMEOUT_SECONDS))
                 .map(s -> Math.max(s, MIN_HTTP_CONNECT_TIMEOUT_SECONDS))
                 .orElse(DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS);
+    }
+
+    public boolean isEnableSchemaValidation() {
+        return enableSchemaValidation;
     }
 
     public @NotNull List<MtConnectAdapterHttpHeader> getHttpHeaders() {

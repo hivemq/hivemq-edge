@@ -17,7 +17,9 @@ package com.hivemq.edge.adapters.mtconnect;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -57,16 +59,26 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+
 
 public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
+    private static final @NotNull String DATA = "data";
+    // https://www.ietf.org/rfc/rfc2376.txt
+    private static final @NotNull String CONTENT_TYPE_APPLICATION_XML = "application/xml";
+    // https://www.ietf.org/rfc/rfc2376.txt
+    private static final @NotNull String CONTENT_TYPE_TEXT_XML = "text/xml";
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(MtConnectProtocolAdapter.class);
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
+    private static final @NotNull String HEADER_CONTENT_TYPE = "Content-Type";
     protected final @NotNull Map<String, Tag> tagMap;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
     private final @NotNull String version;
+    private final @NotNull AdapterFactories adapterFactories;
     protected volatile @Nullable HttpClient httpClient = null;
 
     public MtConnectProtocolAdapter(
@@ -75,21 +87,51 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
+        this.adapterFactories = input.adapterFactories();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tagMap = input.getTags().stream().collect(Collectors.toMap(Tag::getName, Function.identity()));
         this.version = input.getVersion();
     }
 
+    private static boolean isSuccessfulResponse(final @NotNull HttpResponse<?> httpResponse) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+        return httpResponse.statusCode() >= 200 && httpResponse.statusCode() < 300;
+    }
+
     protected @NotNull BiConsumer<HttpResponse<String>, Throwable> processHttpResponse(final @NotNull PollingOutput pollingOutput) {
         return (httpResponse, throwable) -> {
             if (throwable == null) {
-                // TODO
-                pollingOutput.finish();
+                if (isSuccessfulResponse(httpResponse)) {
+                    // Let's make sure the response body is XML.
+                    if (httpResponse.headers()
+                            .firstValue(HEADER_CONTENT_TYPE)
+                            .map(value -> CONTENT_TYPE_TEXT_XML.equals(value) ||
+                                    CONTENT_TYPE_APPLICATION_XML.equals(value))
+                            .orElse(false)) {
+                        try {
+                            pollingOutput.addDataPoint(processXml(httpResponse.body()));
+                        } catch (final Exception e) {
+                            throwable = e;
+                        }
+                    } else {
+                        throwable = new RuntimeException("Response is not XML");
+                    }
+                    protocolAdapterState.setConnectionStatus(STATELESS);
+                } else {
+                    protocolAdapterState.setConnectionStatus(ERROR);
+                }
             }
-            if (throwable != null) {
+            if (throwable == null) {
+                pollingOutput.finish();
+            } else {
                 pollingOutput.fail(throwable, null);
             }
         };
+    }
+
+    protected @NotNull DataPoint processXml(String body) {
+        // TODO
+        return adapterFactories.dataPointFactory().create(DATA, null);
     }
 
     @Override
