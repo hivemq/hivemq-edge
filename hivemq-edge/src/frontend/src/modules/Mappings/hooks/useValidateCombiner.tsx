@@ -1,8 +1,15 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { CustomValidator, RJSFSchema } from '@rjsf/utils'
 import type { UseQueryResult } from '@tanstack/react-query'
 
-import type { Combiner, DomainTagList, TopicFilterList } from '@/api/__generated__'
+import type {
+  Combiner,
+  DataCombining,
+  DomainTag,
+  DomainTagList,
+  TopicFilter,
+  TopicFilterList,
+} from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
@@ -13,6 +20,25 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | TopicFilterList, Error>[]) => {
   const { data: adapterInfo } = useGetAdapterTypes()
   const { data: adapters } = useListProtocolAdapters()
+
+  const allDataSourcesFromEntities = useMemo(() => {
+    return queries.reduce<{ tags: string[]; topicFilters: string[] }>(
+      (acc, cur) => {
+        const items = cur.data?.items
+        if (!items?.[0]) return acc
+
+        if ((items[0] as DomainTag).name) {
+          acc.tags.push(...(items as DomainTag[]).map((e) => e.name))
+        }
+        if ((items[0] as TopicFilter).topicFilter) {
+          acc.topicFilters.push(...(items as TopicFilter[]).map((e) => e.topicFilter))
+        }
+
+        return acc
+      },
+      { tags: [], topicFilters: [] }
+    )
+  }, [queries])
 
   /**
    * Verify that a connected entity is eligible for data combining:
@@ -51,6 +77,27 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
     [adapterInfo?.items, adapters]
   )
 
+  /**
+   * Verify that a data source (tag or topic filter) belongs to a connected entity
+   */
+  const validateDataSources = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
+    (formData, errors) => {
+      formData?.sources?.tags?.map((tag) => {
+        if (!allDataSourcesFromEntities.tags.includes(tag))
+          errors.sources?.tags?.addError(`The tag ${tag} is not defined in any of the combiner's sources`)
+      })
+      formData?.sources?.topicFilters?.map((topicFilter) => {
+        if (!allDataSourcesFromEntities.topicFilters.includes(topicFilter))
+          errors.sources?.tags?.addError(
+            `The topic filter ${topicFilter} is not defined in any of the combiner's sources`
+          )
+      })
+
+      return errors
+    },
+    [allDataSourcesFromEntities]
+  )
+
   const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       validateSourceCapability(formData, errors)
@@ -58,13 +105,12 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
       formData?.mappings?.items?.forEach((entity, index) => {
         if (!errors.mappings?.items?.[index]) return
 
-        console.log('XXX', queries, entity)
-        // TODO
+        validateDataSources(entity, errors.mappings.items[index])
       })
 
       return errors
     },
-    [queries, validateSourceCapability]
+    [validateDataSources, validateSourceCapability]
   )
 
   return validateCombiner
