@@ -15,8 +15,11 @@
  */
 package com.hivemq.edge.adapters.mtconnect;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -34,8 +37,11 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
+import javax.management.modelmbean.XMLParseException;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -47,6 +53,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,6 +64,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class MtConnectProtocolAdapterTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private @NotNull ProtocolAdapterInput<MtConnectAdapterConfig> adapterInput;
     private @NotNull MtConnectAdapterConfig config;
     private @NotNull HttpClient httpClient;
@@ -99,6 +107,10 @@ public class MtConnectProtocolAdapterTest {
 
     protected @NotNull String getVolatileDataStreamCurrent() {
         return getXml("volatile-data-stream-current.xml");
+    }
+
+    protected @NotNull String getVolatileDataStreamSchema() {
+        return getXml("volatile-data-stream-schema.xml");
     }
 
     protected @NotNull String getVolatileDataStreamTimeSeries() {
@@ -155,16 +167,18 @@ public class MtConnectProtocolAdapterTest {
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
         when(pollingContext.getTagName()).thenReturn("tagName");
-        HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        final ArgumentCaptor<DataPoint> argumentCaptorDataPoint = ArgumentCaptor.forClass(DataPoint.class);
+        final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body()).thenReturn(getVolatileDataStreamCurrent());
         when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Content-Type", List.of("application/xml")),
                 (name, value) -> true));
-        CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.completedFuture(httpResponse);
-        ArgumentCaptor<HttpRequest> argumentCaptorHttpRequest = ArgumentCaptor.forClass(HttpRequest.class);
+        final CompletableFuture<HttpResponse<String>> completableFuture =
+                CompletableFuture.completedFuture(httpResponse);
+        final ArgumentCaptor<HttpRequest> argumentCaptorHttpRequest = ArgumentCaptor.forClass(HttpRequest.class);
         when(httpClient.sendAsync(argumentCaptorHttpRequest.capture(), any(HttpResponse.BodyHandler.class))).thenReturn(
                 completableFuture);
-        MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         adapter.httpClient = httpClient;
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tagMap).as("TagMap should not be empty").isNotEmpty().containsKey("tagName");
@@ -172,8 +186,52 @@ public class MtConnectProtocolAdapterTest {
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
         verify(pollingOutput).finish();
-        HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
+        verify(pollingOutput).addDataPoint(argumentCaptorDataPoint.capture());
+        final HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
         assertThat(httpHeaders.firstValue("name").orElse("")).isEqualTo("value");
         assertThat(httpHeaders.firstValue("User-Agent").orElse("")).startsWith("HiveMQ-Edge");
+        assertThat(argumentCaptorDataPoint.getValue().getTagName()).isEqualTo("data");
+        final String jsonString = (String) argumentCaptorDataPoint.getValue().getTagValue();
+        final JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
+        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
+                "urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
+    }
+
+    @Test
+    public void whenSchemaValidationIsDisabled_thenCustomSchemaShouldPass() throws IOException, XMLParseException {
+        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
+        final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamTimeSeries(),
+                new MtConnectAdapterTagDefinition("", false, 10, List.of()));
+        assertThat(dataPoint).isNotNull();
+        assertThat(dataPoint.getTagName()).isEqualTo("data");
+        final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
+        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
+                "urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(boolean enableSchemaValidation)
+            throws IOException, XMLParseException {
+        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
+        final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamSchema(),
+                new MtConnectAdapterTagDefinition("", enableSchemaValidation, 10, List.of()));
+        assertThat(dataPoint).isNotNull();
+        assertThat(dataPoint.getTagName()).isEqualTo("data");
+        final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
+        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
+                "urn:mtconnect.org:MTConnectDevices:1.3 /schemas/MTConnectDevices_1.3.xsd");
+    }
+
+    @Test
+    public void whenSchemaValidationIsEnabled_thenCustomSchemaShouldFail() throws IOException, XMLParseException {
+        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
+        final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        assertThatThrownBy(() -> adapter.processXml(getVolatileDataStreamCurrent(),
+                new MtConnectAdapterTagDefinition("", true, 10, List.of()))).isInstanceOf(XMLParseException.class)
+                .hasMessage(
+                        "XML Parse Exception: Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
     }
 }

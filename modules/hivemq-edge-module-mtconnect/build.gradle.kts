@@ -40,6 +40,7 @@ dependencies {
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
+    compileOnly(libs.jackson.dataformat.xml)
 }
 
 dependencies {
@@ -48,6 +49,7 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.jackson.databind)
+    testImplementation(libs.jackson.dataformat.xml)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.junitJupiter)
 }
