@@ -50,31 +50,18 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
                        numberMin = MIN_HTTP_CONNECT_TIMEOUT_SECONDS,
                        numberMax = MAX_HTTP_CONNECT_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
-   
-    @JsonProperty(value = "schemaFile", required = true)
-    @ModuleConfigField(title = "Schema File",
-                       description = "The file that contains the MTConnect schema",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true)
-    private final @NotNull String schemaFile;
 
     @JsonCreator
     public MtConnectAdapterTagDefinition(
             @JsonProperty(value = "url", required = true) final @NotNull String url,
-            @JsonProperty(value = "schemaFile", required = true) final @NotNull String schemaFile,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpHeaders") final @Nullable List<MtConnectAdapterHttpHeader> httpHeaders) {
         this.url = url;
-        this.schemaFile = schemaFile;
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
         this.httpConnectTimeoutSeconds = Optional.ofNullable(httpConnectTimeoutSeconds)
                 .map(s -> Math.min(s, MAX_HTTP_CONNECT_TIMEOUT_SECONDS))
                 .map(s -> Math.max(s, MIN_HTTP_CONNECT_TIMEOUT_SECONDS))
                 .orElse(DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS);
-    }
-
-    public @NotNull String getSchemaFile() {
-        return schemaFile;
     }
 
     public @NotNull List<MtConnectAdapterHttpHeader> getHttpHeaders() {
