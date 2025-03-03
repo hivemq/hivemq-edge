@@ -7,22 +7,57 @@ import type {
   DataCombining,
   DomainTag,
   DomainTagList,
+  EntityReference,
   TopicFilter,
   TopicFilterList,
 } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
+import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 
+import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
-import { validateSchemaFromDataURI } from '../../TopicFilters/utils/topic-filter.schema'
-import { getPropertyListFrom } from '../../../components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
 // TODO[NVL] Context is not part of the customValidator props; need to get a better construction of props
-export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | TopicFilterList, Error>[]) => {
+export const useValidateCombiner = (
+  queries: UseQueryResult<DomainTagList | TopicFilterList, Error>[],
+  entities: EntityReference[]
+) => {
   const { data: adapterInfo } = useGetAdapterTypes()
   const { data: adapters } = useListProtocolAdapters()
 
+  // TODO[NVL] This is a duplicate from CombinedSchemaLoader; refactor
+  const allReferences = useMemo<DataReference[]>(() => {
+    return queries?.reduce<DataReference[]>((acc, cur) => {
+      const firstItem = cur.data?.items?.[0]
+      if (!firstItem) return acc
+      if ((firstItem as DomainTag).name) {
+        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag, index) => ({
+          id: tag.name,
+          type: DataIdentifierReference.type.TAG,
+          adapterId: entities?.[index]?.id,
+        }))
+        acc.push(...tagDataReferences)
+      } else if ((firstItem as TopicFilter).topicFilter) {
+        const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
+          id: topicFilter.topicFilter,
+          type: DataIdentifierReference.type.TOPIC_FILTER,
+          adapterId: undefined,
+        }))
+        acc.push(...topicFilterDataReferences)
+      }
+
+      return acc
+    }, [])
+  }, [entities, queries])
+
+  const allSchemaReferences = useGetCombinedDataSchemas(allReferences)
+
+  // TODO[NVL] This is overlapping with allReferences; refactor
   const allDataSourcesFromEntities = useMemo(() => {
     return queries.reduce<{ tags: string[]; topicFilters: string[] }>(
       (acc, cur) => {
@@ -118,6 +153,22 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
     []
   )
 
+  /**
+   * Verify that every schema of the data sources is valid or that there is at least one valid schema
+   * TODO[NVL] Should that first validation even be made?
+   */
+  const validateDataSourceSchemas = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
+    (formData, errors) => {
+      const hasAtLeastOneSchema = allSchemaReferences.some((e) => e.data !== undefined && e.isSuccess)
+      if (!hasAtLeastOneSchema) {
+        errors.sources?.addError('At least one schema should be available')
+      }
+
+      return errors
+    },
+    [allSchemaReferences]
+  )
+
   const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       validateSourceCapability(formData, errors)
@@ -126,12 +177,13 @@ export const useValidateCombiner = (queries: UseQueryResult<DomainTagList | Topi
         if (!errors.mappings?.items?.[index]) return
 
         validateDataSources(entity, errors.mappings.items[index])
+        validateDataSourceSchemas(entity, errors.mappings.items[index])
         validateDestinationSchema(entity, errors.mappings.items[index])
       })
 
       return errors
     },
-    [validateDataSources, validateDestinationSchema, validateSourceCapability]
+    [validateDataSourceSchemas, validateDataSources, validateDestinationSchema, validateSourceCapability]
   )
 
   return validateCombiner

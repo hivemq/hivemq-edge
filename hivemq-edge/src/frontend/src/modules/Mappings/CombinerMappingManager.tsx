@@ -63,7 +63,7 @@ const CombinerMappingManager: FC = () => {
   }, [selectedNode?.data?.sources?.items])
 
   const sources = useGetCombinedEntities(entities)
-  const validateCombiner = useValidateCombiner(sources)
+  const validateCombiner = useValidateCombiner(sources, entities)
   const updateCombiner = useUpdateCombiner()
   const deleteCombiner = useDeleteCombiner()
 
