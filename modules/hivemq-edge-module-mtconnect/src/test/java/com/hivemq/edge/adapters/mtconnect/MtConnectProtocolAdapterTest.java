@@ -29,6 +29,7 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,10 +145,12 @@ public class MtConnectProtocolAdapterTest {
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
         when(adapterInput.getAdapterId()).thenReturn("smstestbed");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
+        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
         when(adapterInput.getTags()).thenReturn(List.of(new MtConnectAdapterTag("tagName",
                 "tagDescription",
                 new MtConnectAdapterTagDefinition("http://localhost/vds",
+                        false,
                         5,
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
@@ -154,6 +158,8 @@ public class MtConnectProtocolAdapterTest {
         HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body()).thenReturn(getVolatileDataStreamCurrent());
+        when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Content-Type", List.of("application/xml")),
+                (name, value) -> true));
         CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.completedFuture(httpResponse);
         ArgumentCaptor<HttpRequest> argumentCaptorHttpRequest = ArgumentCaptor.forClass(HttpRequest.class);
         when(httpClient.sendAsync(argumentCaptorHttpRequest.capture(), any(HttpResponse.BodyHandler.class))).thenReturn(
