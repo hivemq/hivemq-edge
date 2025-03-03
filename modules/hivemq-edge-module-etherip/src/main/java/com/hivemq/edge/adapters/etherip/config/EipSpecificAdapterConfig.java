@@ -107,7 +107,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         return slot;
     }
 
-    public @Nullable EipToMqttConfig getEipToMqttConfig() {
+    public @NotNull EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
     }
 

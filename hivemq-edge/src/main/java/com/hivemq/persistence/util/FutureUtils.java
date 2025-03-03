@@ -18,6 +18,7 @@ package com.hivemq.persistence.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @author Lukas Brandl
@@ -75,5 +78,15 @@ public class FutureUtils {
                 log.error("Uncaught exception", throwable);
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    public static void syncFuture(final @NotNull Future<?> future) {
+        try {
+            future.get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (final ExecutionException e) {
+            log.error("Exception happened while async execution: ", e.getCause());
+        }
     }
 }

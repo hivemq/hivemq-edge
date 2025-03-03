@@ -40,6 +40,7 @@ export default tsEslint.config(
       'unused-expressions': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       'cypress/no-unnecessary-waiting': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
     },
   }
 )

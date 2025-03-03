@@ -59,6 +59,15 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="data-combiners" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                            <xs:any processContents="skip"/>
+                        </xs:choice>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="modules" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>

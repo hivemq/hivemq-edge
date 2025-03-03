@@ -17,6 +17,7 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
+import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,7 @@ public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
     private @Nullable AdapterHandlingFactory adapterHandlingFactory;
+    private @Nullable InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory;
 
 
     public void supplyHandlerFactory(final @NotNull HandlerFactory handlerFactory) {
@@ -34,6 +36,10 @@ public class HandlerService {
         this.adapterHandlingFactory = adapterHandlingFactory;
     }
 
+    public void supplyInternalPublishServiceHandlingFactory(final @NotNull InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory) {
+        this.internalPublishServiceHandlingFactory = internalPublishServiceHandlingFactory;
+    }
+
 
     public @Nullable HandlerFactory getHandlerFactory() {
         return handlerFactory;
@@ -41,5 +47,13 @@ public class HandlerService {
 
     public @Nullable AdapterHandlingFactory getAdapterHandlerFactory() {
         return adapterHandlingFactory;
+    }
+
+    public @Nullable InternalPublishServiceHandlingFactory get() {
+        return internalPublishServiceHandlingFactory;
+    }
+
+    public @Nullable InternalPublishServiceHandlingFactory getInternalPublishServiceHandlingFactory() {
+        return internalPublishServiceHandlingFactory;
     }
 }

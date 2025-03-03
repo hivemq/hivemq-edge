@@ -28,6 +28,7 @@ import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.api.resources.impl.RootResource;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
+import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.EventsApi;
 import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.GatewayEndpointApi;
@@ -86,6 +87,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy;
     private final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy;
     private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
+    private final @NotNull Lazy<CombinersApi> combinersApiLazy;
 
 
     @Inject
@@ -106,7 +108,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<ITokenVerifier> tokenVerifier,
             final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy,
             final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy,
-            final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy) {
+            final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy,
+            final @NotNull Lazy<CombinersApi> combinersApiLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -124,6 +127,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.genericAPIHolderLazy = genericAPIHolderLazy;
         this.samplingResourceLazy = samplingResourceLazy;
         this.topicFilterApiLazy = topicFilterApiLazy;
+        this.combinersApiLazy = combinersApiLazy;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -163,6 +167,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized sampling API resources");
         register(topicFilterApiLazy.get());
         logger.trace("Initialized topic filter API resources");
+        register(combinersApiLazy.get());
+        logger.trace("Initialized combiners API resources");
     }
 
     protected void registerMappers() {

@@ -1,7 +1,8 @@
 import type { GenericObjectType } from '@rjsf/utils'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import type { AlertProps } from '@chakra-ui/react'
-import type { ApiError } from '@/api/__generated__'
+import type { ApiError, DomainTagList, EntityReference, TopicFilterList } from '@/api/__generated__'
+import type { UseQueryResult } from '@tanstack/react-query'
 
 export interface ManagerContextType<T> {
   schema?: RJSFSchema
@@ -12,6 +13,7 @@ export interface ManagerContextType<T> {
 export enum MappingType {
   NORTHBOUND = 'NORTHBOUND',
   SOUTHBOUND = 'SOUTHBOUND',
+  COMBINING = 'COMBINING',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,4 +40,9 @@ export interface DeprecatedMappingManagerType<T = any> {
 
 export interface MappingValidation extends Pick<AlertProps, 'status'> {
   errors: string[]
+}
+
+export interface CombinerContext {
+  queries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[]
+  entities?: EntityReference[]
 }

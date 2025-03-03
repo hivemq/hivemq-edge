@@ -37,10 +37,13 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.protocols.northbound.JsonPayloadDefaultCreator;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -79,6 +82,9 @@ class ProtocolAdapterManagerTest {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager = mock();
     private final @NotNull ConfigPersistence configPersistence = mock();
+    private final @NotNull NorthboundConsumerFactory northboundConsumerFactory = mock();
+    private final @NotNull TagManager tagManager = mock();
+
     private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
 
 
@@ -88,8 +94,7 @@ class ProtocolAdapterManagerTest {
 
     @BeforeEach
     void setUp() {
-        protocolAdapterManager = new ProtocolAdapterManager(
-                metricRegistry,
+        protocolAdapterManager = new ProtocolAdapterManager(metricRegistry,
                 moduleServices,
                 objectMapper,
                 remoteService,
@@ -102,7 +107,9 @@ class ProtocolAdapterManagerTest {
                 jsonPayloadDefaultCreator,
                 protocolAdapterWritingService,
                 protocolAdapterFactoryManager,
-                executorService);
+                executorService,
+                northboundConsumerFactory,
+                tagManager);
     }
 
     @AfterEach
@@ -121,15 +128,16 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -145,15 +153,16 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         protocolAdapterManager.start(adapterWrapper).get();
 
@@ -173,21 +182,23 @@ class ProtocolAdapterManagerTest {
                 any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STOPPED, adapterWrapper.getRuntimeStatus());
         verify(remoteService).fireUsageEvent(any());
-        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()), any());
+        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
+                any());
     }
 
     @Test
@@ -200,21 +211,23 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(),
                 anyString())).thenThrow(new RuntimeException("we failed start"));
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STOPPED, adapterWrapper.getRuntimeStatus());
         verify(remoteService, never()).fireUsageEvent(any());
-        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()), any());
+        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
+                any());
     }
 
     @Test
@@ -223,18 +236,20 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.stopWriting(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(protocolAdapterWritingService.stopWriting(any(),
+                any())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(true),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
@@ -249,18 +264,20 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.stopWriting(any(), any())).thenReturn(CompletableFuture.failedFuture(new IllegalArgumentException()));
+        when(protocolAdapterWritingService.stopWriting(any(),
+                any())).thenReturn(CompletableFuture.failedFuture(new IllegalArgumentException()));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
-                mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
                 new TestWritingAdapter(false),
                 mock(),
                 mock(),
-                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"));
+                new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
+                northboundConsumerFactory,
+                tagManager);
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 

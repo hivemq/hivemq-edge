@@ -597,7 +597,8 @@
     "mapping": {
       "manager": {
         "header_NORTHBOUND": "Manage Northbound mappings",
-        "header_SOUTHBOUND": "Manage Southbound mappings"
+        "header_SOUTHBOUND": "Manage Southbound mappings",
+        "header_COMBINING": "Manage Data combining mappings"
       },
       "actions": {
         "submit": "Submit"
@@ -780,7 +781,8 @@
       "bridge": "Node: HiveMQ Bridge",
       "adapter": "Node: Adapter",
       "gateway": "Node: Gateway",
-      "group": "Node: Group"
+      "group": "Node: Group",
+      "combiner": "Node: Combiner"
     },
     "device": {
       "type_ADAPTER_NODE": "adapter",
@@ -807,6 +809,9 @@
           "common": "Manage mappings of the device",
           "northbound": "Edit Northbound mappings",
           "southbound": "Edit Southbound mappings"
+        },
+        "combiner": {
+          "create": "Create a data combiner from selection"
         },
         "edge": {
           "topicFilter": "Manage topic filters"
@@ -912,7 +917,7 @@
     }
   },
   "modals": {
-    "native": "Native UX",
+    "native": "Raw Form (DevX)",
     "generics": {
       "confirmation": "Are you sure? You can't undo this action afterward."
     },
@@ -1106,7 +1111,9 @@
         "noBase64Data": "The data is not properly encoded as a `base64` string",
         "noJSON": "The data is not properly encoded as a `JSON` object",
         "ajvValidationFails": "Internal validation error",
-        "ajvNoProperties": "Not a valid JSONSchema: `properties` is missing"
+        "ajvNoProperties": "Not a valid JSONSchema: `properties` is missing",
+        "noAssignedSchema_TAG": "Your tag is currently not assigned a schema",
+        "noAssignedSchema_TOPIC_FILTER": "Your topic filter is currently not assigned a schema"
       }
     },
     "toast": {
@@ -1178,6 +1185,121 @@
       "noTagLoaded": "No tag created in your Edge",
       "cluster": {
         "noGrouping": "No data"
+      }
+    }
+  },
+  "combiner": {
+    "actions": {
+      "submit": "Submit",
+      "delete": "Delete"
+    },
+    "modal": {
+      "delete": {
+        "header": "Delete the Combiner?",
+        "message": "Do you want to delete the combiner and its content? The action cannot be reversed."
+      }
+    },
+    "type": "Data Combiner",
+    "unnamed": "< unnamed combiner >",
+    "unset": "< unset >",
+    "toast": {
+      "loading": "Loading the data",
+      "create": {
+        "title": "Create the combiner",
+        "success": "We've successfully created the combiner for you.",
+        "error": "There was a problem trying to create the combiner"
+      },
+      "update": {
+        "title": "Update the combiner",
+        "success": "We've successfully updated the combiner for you.",
+        "error": "There was a problem trying to update the combiner"
+      },
+      "delete": {
+        "title": "Delete the combiner",
+        "success": "We've successfully deleted the combiner for you.",
+        "error": "There was a problem trying to delete the combiner"
+      }
+    },
+    "error": {
+      "noDataUri": "There was a problem loading the data",
+      "noValidReference": "This is not a valid reference to a Workspace entity",
+      "invalidData": "Invalid data",
+      "noSchemaLoadedYet": "There are no schemas available yet",
+      "validation": {
+        "notValidReference": "This is not a valid reference to a Workspace entity",
+        "notCombineCapability": "The adapter does not support data combining and cannot be used as a source",
+        "notEdgeSource": "The Edge broker must be connected to the combiner's sources",
+        "notDataSourceOwner_TAG": "The tag {{ tag }} is not defined in any of the combiner's sources",
+        "notDataSourceOwner_TOPIC_FILTER": "The topic filter {{ topicFilter }} is not defined in any of the combiner's sources",
+        "notDestinationProperties": "The destination schema doesn't have any property to be mapped into",
+        "notMinimumRequiredSchema": "At least one schema should be available",
+        "notDataSourceProperties_TAG": "The destination schema doesn't have any property to be mapped into",
+        "notDataSourceProperties_TOPIC_FILTER": "The destination schema doesn't have any property to be mapped into",
+        "notInstructionSourcePath": "The instruction is not a recognised destination property",
+        "notInstructionDestinationPath": "The instruction is not a recognised source property"
+      }
+    },
+    "schema": {
+      "tabs": {
+        "combinerTab": "Configuration",
+        "sourcesTab": "Sources",
+        "mappingsTab": "Mappings"
+      },
+      "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
+      "config": {
+        "description": "A short description for the combiner"
+      },
+      "sources": {
+        "description": "The list of data sources available for this combiner",
+        "table": {
+          "action": "Actions",
+          "delete": "Delete the source",
+          "source": "Source"
+        },
+        "edge": {
+          "description": "Always added as the owner of the topic filters"
+        }
+      },
+      "mappings": {
+        "table": {
+          "action": "Actions",
+          "delete": "Delete the mapping",
+          "edit": "Edit the mapping",
+          "add": "Add a new mapping",
+          "source": "Source"
+        },
+        "sources": {
+          "description": "Select the tags and topic filters to combine"
+        }
+      },
+      "mapping": {
+        "panel": {
+          "header": "Data combining mapping"
+        },
+        "action": {
+          "save": "Save",
+          "cancel": "Cancel"
+        },
+        "combinedSelector": {
+          "placeholder": "Select tags and topic filters to combine ...",
+          "type_TAG": "Tag",
+          "type_TOPIC_FILTER": "Topic Filter"
+        },
+        "primary": {
+          "placeholder": "Select a primary data key ..."
+        }
+      },
+      "schemaManager": {
+        "header": "Create a schema",
+        "action": {
+          "infer": "Infer a schema",
+          "upload": "Upload a new schema",
+          "download": "Download the schema"
+        },
+        "infer": {
+          "message": "We will create a new schema based on the combination of the sources",
+          "action": "Generate"
+        }
       }
     }
   }

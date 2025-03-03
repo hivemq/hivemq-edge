@@ -1,0 +1,287 @@
+openapi: 3.0.1
+info:
+  title: HiveMQ Edge REST API
+  version: "2025.4-SNAPSHOT"
+  description: |
+    Note: This should be restructured and divided in individual files, to match the requirements of the 30019 ticket (splitting openAPI)
+tags:
+  - description: Data combining mappings, using the Combiner / Orchestrator paradigm
+    name: Combiners
+paths:
+  /api/v1/management/combiners:
+    get:
+      description: Get all combiners
+      summary: Get all combiners
+      operationId: get-combiners
+      tags:
+        - Combiners
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombinerList'
+          description: Success
+    post:
+      description: Add a new combiner.
+      summary: Add a new combiner
+      operationId: add-combiner
+      tags:
+        - Combiners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The combiner to add
+        required: true
+      responses:
+        "200":
+          description: Success
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/combiners/{combinerId}:
+    get:
+      description: Get a combiner by its unique Id.
+      summary: Get a combiner
+      operationId: getCombinersById
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Combiner'
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    delete:
+      description: Delete the specified combiner.
+      summary: Delete a combiner
+      operationId: delete-combiner
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        "200":
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    put:
+      description: Update a combiner.
+      summary: Update a combiner
+      operationId: update-combiner
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The new content of the combiner
+        required: true
+      responses:
+        "200":
+          description: Success
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/combiners/{combinerId}/mappings:
+    get:
+      description: Get all data combining mappings for the given combiner
+      summary: Get all mappings
+      operationId: getCombinerMappings
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataCombiningList'
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+  /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
+    get:
+      description: Get all the instructions for a designated mapping
+      summary: Get all instructions
+      operationId: getMappingInstructions
+      tags:
+        - Combiners
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+        - $ref: '#/components/parameters/MappingId'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of instructions to be applied to incoming data
+                items:
+                  $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/Instruction'
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/ProblemDetails'
+          description: Combiner not found
+components:
+  parameters:
+    CombinerId:
+      name: combinerId
+      description: The unique id of the combiner to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MappingId:
+      name: mappingId
+      description: The unique id of the mapping to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CombinerList:
+      type: object
+      description: The list of Combiner defined in this Edge instance
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Combiner'
+      required:
+        - items
+    Combiner:
+      type: object
+      description: A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique id of the data combiner
+        name:
+          type: string
+          description: The user-facing name of the combiner
+        description:
+          type: string
+          description: The user-facing description of the combiner
+        sources:
+          $ref: '#/components/schemas/EntityReferenceList'
+        mappings:
+          $ref: '#/components/schemas/DataCombiningList'
+      required:
+        - id
+        - name
+        - sources
+    DataCombiningList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataCombining'
+      required:
+        - items
+    DataCombining:
+      type: object
+      description: Define individual rules for data combining, based on the entities selected in the Orchestrator
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique id of the data combining mapping
+        sources:
+          type: object
+          #primary must be in the list of either tags or topicFilters
+          required:
+            - primary
+            - primaryType
+          properties:
+            primary:
+              type: string
+            primaryType:
+              type: string
+              enum: [ TAG, TOPIC_FILTER ]
+            tags:
+              type: array
+              description: The list of tags (names) used in the data combining
+              items:
+                type: string
+            topicFilters:
+              type: array
+              description: The list of topic filters (names) used in the data combining
+              items:
+                type: string
+        destination:
+          type: string
+          format: mqtt-topic
+        instructions:
+          type: array
+          description: List of instructions to be applied to incoming data
+          items:
+            $ref: '../hivemq-edge-openapi-2025.4-SNAPSHOT.yaml#/components/schemas/Instruction'
+      required:
+        - id
+        - instructions
+    EntityReferenceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+      required:
+        - items
+    EntityType:
+      type: string
+      description: These are the prime entities owning tags and topic filters
+      enum: [ADAPTER, DEVICE, BRIDGE, EDGE_BROKER]
+    EntityReference:
+      type: object
+      description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
+      # We need this because we don't have a mechanism to identify a prime entity from an id
+      # Adapter/bridge ids are user-facing not uuid)
+      # id are unique within their types but not across all entities
+      properties:
+        type:
+          $ref: '#/components/schemas/EntityType'
+        id:
+          description: The id of the entity being references in the combiner
+          type: string
+      required:
+        - id
+        - type
+

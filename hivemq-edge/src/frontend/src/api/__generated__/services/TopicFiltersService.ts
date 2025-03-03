@@ -69,6 +69,25 @@ export class TopicFiltersService {
     }
 
     /**
+     * Get the specified topic filter
+     * Get the specified topic filter
+     * @param filter The URL-encoded filter of the topic filter that should be deleted.
+     * @returns TopicFilter Success
+     * @throws ApiError
+     */
+    public getTopicFilter(
+        filter: string,
+    ): CancelablePromise<TopicFilter> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/topic-filters/{filter}',
+            path: {
+                'filter': filter,
+            },
+        });
+    }
+
+    /**
      * Delete an topic filter
      * Delete the specified topic filter.
      * @param filter The URL-encoded filter of the topic filter that should be deleted.
@@ -94,7 +113,7 @@ export class TopicFiltersService {
     /**
      * Update a topic filter.
      * Update a topic filter
-     * @param filter The URL-encoded filter of the topic filter that will be updated.
+     * @param filter The URL-encoded filter of the topic filter that should be deleted.
      * @param requestBody
      * @returns any Success
      * @throws ApiError
@@ -114,6 +133,25 @@ export class TopicFiltersService {
             errors: {
                 400: `Topic filter failed validation`,
                 500: `Internal Server Error`,
+            },
+        });
+    }
+
+    /**
+     * Get the schema of the specified topic filter
+     * Get the schema of the specified topic filter
+     * @param filter The URL-encoded filter of the topic filter that should be deleted.
+     * @returns string Success
+     * @throws ApiError
+     */
+    public getTopicFilterSchema(
+        filter: string,
+    ): CancelablePromise<string> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/topic-filters/{filter}/schema',
+            path: {
+                'filter': filter,
             },
         });
     }
