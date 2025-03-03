@@ -26,16 +26,18 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
+import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -97,10 +99,6 @@ public class MtConnectProtocolAdapterTest {
         return getXml("volatile-data-stream-current.xml");
     }
 
-    protected @NotNull String getVolatileDataStreamSchema() {
-        return new File("src/test/resources/smstestbed/volatile-data-stream-schema.xml").getAbsolutePath();
-    }
-
     protected @NotNull String getVolatileDataStreamTimeSeries() {
         return getXml("volatile-data-stream-time-series.xml");
     }
@@ -149,16 +147,16 @@ public class MtConnectProtocolAdapterTest {
         when(adapterInput.getTags()).thenReturn(List.of(new MtConnectAdapterTag("tagName",
                 "tagDescription",
                 new MtConnectAdapterTagDefinition("http://localhost/vds",
-                        getVolatileDataStreamSchema(),
                         5,
-                        List.of()))));
+                        List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
         when(pollingContext.getTagName()).thenReturn("tagName");
         HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body()).thenReturn(getVolatileDataStreamCurrent());
         CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.completedFuture(httpResponse);
-        when(httpClient.sendAsync(isA(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(
+        ArgumentCaptor<HttpRequest> argumentCaptorHttpRequest = ArgumentCaptor.forClass(HttpRequest.class);
+        when(httpClient.sendAsync(argumentCaptorHttpRequest.capture(), any(HttpResponse.BodyHandler.class))).thenReturn(
                 completableFuture);
         MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         adapter.httpClient = httpClient;
@@ -168,5 +166,8 @@ public class MtConnectProtocolAdapterTest {
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
         verify(pollingOutput).finish();
+        HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
+        assertThat(httpHeaders.firstValue("name").orElse("")).isEqualTo("value");
+        assertThat(httpHeaders.firstValue("User-Agent").orElse("")).startsWith("HiveMQ-Edge");
     }
 }
