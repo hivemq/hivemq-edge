@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import type { CustomValidator, RJSFSchema } from '@rjsf/utils'
 import type { UseQueryResult } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import type {
   Combiner,
@@ -27,6 +28,7 @@ export const useValidateCombiner = (
   queries: UseQueryResult<DomainTagList | TopicFilterList, Error>[],
   entities: EntityReference[]
 ) => {
+  const { t } = useTranslation()
   const { data: adapterInfo } = useGetAdapterTypes()
   const { data: adapters } = useListProtocolAdapters()
 
@@ -93,12 +95,10 @@ export const useValidateCombiner = (
             ? adapterInfo?.items.find((protocol) => protocol.id === adapter.type)
             : undefined
           if (!adapter || !protocolAdapter)
-            errors.sources?.items?.[index]?.addError('This is not a valid reference to a Workspace entity')
+            errors.sources?.items?.[index]?.addError(t('combiner.error.validation.notValidReference'))
           else {
             if (protocolAdapter.capabilities && !protocolAdapter.capabilities.includes('COMBINE')) {
-              errors.sources?.items?.[index]?.addError(
-                'The adapter does not support data combining and cannot be used as a source'
-              )
+              errors.sources?.items?.[index]?.addError(t('combiner.error.validation.notCombineCapability'))
             }
           }
         }
@@ -106,12 +106,12 @@ export const useValidateCombiner = (
 
       const hasEdge = formData?.sources.items?.filter((e) => e.type === EntityType.EDGE_BROKER)
       if (!hasEdge || hasEdge.length !== 1) {
-        errors.sources?.items?.addError("The Edge broker must be connected to the combiner's sources")
+        errors.sources?.items?.addError(t('combiner.error.validation.notEdgeSource'))
       }
 
       return errors
     },
-    [adapterInfo?.items, adapters]
+    [adapterInfo?.items, adapters, t]
   )
 
   /**
@@ -121,18 +121,26 @@ export const useValidateCombiner = (
     (formData, errors) => {
       formData?.sources?.tags?.map((tag) => {
         if (!allDataSourcesFromEntities.tags.includes(tag))
-          errors.sources?.tags?.addError(`The tag ${tag} is not defined in any of the combiner's sources`)
+          errors.sources?.tags?.addError(
+            t('combiner.error.validation.notDataSourceOwner', {
+              context: DataIdentifierReference.type.TAG,
+              tag,
+            })
+          )
       })
       formData?.sources?.topicFilters?.map((topicFilter) => {
         if (!allDataSourcesFromEntities.topicFilters.includes(topicFilter))
           errors.sources?.tags?.addError(
-            `The topic filter ${topicFilter} is not defined in any of the combiner's sources`
+            t('combiner.error.validation.notDataSourceOwner', {
+              context: DataIdentifierReference.type.TOPIC_FILTER,
+              topicFilter,
+            })
           )
       })
 
       return errors
     },
-    [allDataSourcesFromEntities]
+    [allDataSourcesFromEntities.tags, allDataSourcesFromEntities.topicFilters, t]
   )
 
   /**
@@ -146,11 +154,11 @@ export const useValidateCombiner = (
       else {
         const properties = getPropertyListFrom(handleSchema.schema)
         if (!properties.length)
-          errors.destination?.schema?.addError("The destination schema doesn't have any property to be mapped into")
+          errors.destination?.schema?.addError(t('combiner.error.validation.notDestinationProperties'))
       }
       return errors
     },
-    []
+    [t]
   )
 
   /**
@@ -158,15 +166,15 @@ export const useValidateCombiner = (
    * TODO[NVL] Should that first validation even be made?
    */
   const validateDataSourceSchemas = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
-    (formData, errors) => {
+    (_, errors) => {
       const hasAtLeastOneSchema = allSchemaReferences.some((e) => e.data !== undefined && e.isSuccess)
       if (!hasAtLeastOneSchema) {
-        errors.sources?.addError('At least one schema should be available')
+        errors.sources?.addError(t('combiner.error.validation.notMinimumRequiredSchema'))
       }
 
       return errors
     },
-    [allSchemaReferences]
+    [allSchemaReferences, t]
   )
 
   const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
