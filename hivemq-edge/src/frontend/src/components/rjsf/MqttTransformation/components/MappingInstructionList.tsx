@@ -6,7 +6,6 @@ import type { ListProps } from '@chakra-ui/react'
 import { List, ListItem } from '@chakra-ui/react'
 
 import type { Instruction } from '@/api/__generated__'
-import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
@@ -25,8 +24,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
   ...props
 }) => {
   const properties = useMemo(() => {
-    const allProperties = getPropertyListFrom(schema)
-    return allProperties.filter(filterSupportedProperties)
+    return getPropertyListFrom(schema)
   }, [schema])
 
   return (
