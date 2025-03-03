@@ -12,13 +12,13 @@ import type {
   TopicFilter,
   TopicFilterList,
 } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
@@ -78,6 +78,22 @@ export const useValidateCombiner = (
       { tags: [], topicFilters: [] }
     )
   }, [queries])
+
+  const allPathsFromSources = useMemo<string[]>(() => {
+    return allSchemaReferences.reduce<string[]>((acc, cur) => {
+      let flat: FlatJSONSchema7[] = []
+      if (typeof cur.data === 'string') {
+        const handleSchema = validateSchemaFromDataURI(cur.data)
+        flat = handleSchema.schema ? getPropertyListFrom(handleSchema.schema) : []
+      } else {
+        flat = cur.data ? getPropertyListFrom(cur.data) : []
+      }
+      const hhh = flat.map((e) => [...e.path, e.key].join('.'))
+      acc.push(...hhh)
+
+      return Array.from(new Set(acc))
+    }, [])
+  }, [allSchemaReferences])
 
   /**
    * Verify that a connected entity is eligible for data combining:
@@ -206,6 +222,28 @@ export const useValidateCombiner = (
     [allSchemaReferences, t]
   )
 
+  const validateInstructions = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
+    (formData, errors) => {
+      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema)
+      const properties = handleSchema.schema && getPropertyListFrom(handleSchema.schema)
+
+      const knownPaths = properties?.map((e) => [...e.path, e.key].join('.')) || []
+
+      formData?.instructions?.forEach((instruction, index) => {
+        if (!knownPaths.includes(instruction.destination))
+          errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionDestinationPath'))
+
+        // TODO[NVL] check validity of source path
+
+        if (!allPathsFromSources.includes(instruction.source))
+          errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionSourcePath'))
+      })
+
+      return errors
+    },
+    []
+  )
+
   const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       validateSourceCapability(formData, errors)
@@ -216,11 +254,18 @@ export const useValidateCombiner = (
         validateDataSources(entity, errors.mappings.items[index])
         validateDataSourceSchemas(entity, errors.mappings.items[index])
         validateDestinationSchema(entity, errors.mappings.items[index])
+        validateInstructions(entity, errors.mappings.items[index])
       })
 
       return errors
     },
-    [validateDataSourceSchemas, validateDataSources, validateDestinationSchema, validateSourceCapability]
+    [
+      validateDataSourceSchemas,
+      validateDataSources,
+      validateDestinationSchema,
+      validateInstructions,
+      validateSourceCapability,
+    ]
   )
 
   return validateCombiner

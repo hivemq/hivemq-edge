@@ -1234,7 +1234,9 @@
         "notDestinationProperties": "The destination schema doesn't have any property to be mapped into",
         "notMinimumRequiredSchema": "At least one schema should be available",
         "notDataSourceProperties_TAG": "The destination schema doesn't have any property to be mapped into",
-        "notDataSourceProperties_TOPIC_FILTER": "The destination schema doesn't have any property to be mapped into"
+        "notDataSourceProperties_TOPIC_FILTER": "The destination schema doesn't have any property to be mapped into",
+        "notInstructionSourcePath": "The instruction is not a recognised destination property",
+        "notInstructionDestinationPath": "The instruction is not a recognised source property"
       }
     },
     "schema": {
