@@ -19,10 +19,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.combining.model.DataCombiner;
-import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.persistence.generic.AddResult;
 import com.hivemq.protocols.ConfigPersistence;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.metrics.HiveMQMetrics.DATA_COMBINERS_COUNT_CURRENT;
-import static com.hivemq.persistence.util.FutureUtils.syncFuture;
 
 @Singleton
 public class DataCombinerManager {
@@ -50,100 +47,65 @@ public class DataCombinerManager {
 
     private final @NotNull ConfigPersistence configPersistence;
     private final @NotNull EventService eventService;
-    private final @NotNull MetricRegistry metricRegistry;
-    private final @NotNull LocalTopicTree localTopicTree;
-    private final @NotNull TagManager tagManager;
-    private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final Map<UUID, DataCombiner> idToDataCombiner = new ConcurrentHashMap<>();
-    private final Map<UUID, List<DataCombiningRuntime>> idToDataCombiningStates = new ConcurrentHashMap<>();
-
+    private final @NotNull DataCombiningRuntimeFactory dataCombiningRuntimeFactory;
+    private final @NotNull Map<UUID, DataCombiningInformation> idToDataCombiningInformation = new ConcurrentHashMap<>();
 
     @Inject
     public DataCombinerManager(
             final @NotNull ConfigPersistence configPersistence,
             final @NotNull EventService eventService,
             final @NotNull MetricRegistry metricRegistry,
-            final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull TagManager tagManager,
-            final @NotNull ClientQueuePersistence clientQueuePersistence,
-            final @NotNull SingleWriterService singleWriterService,
-            final @NotNull DataCombiningPublishService dataCombiningPublishService) {
+            final @NotNull DataCombiningRuntimeFactory dataCombiningRuntimeFactory,
+            final @NotNull ShutdownHooks shutdownHooks) {
         this.configPersistence = configPersistence;
         this.eventService = eventService;
-        this.metricRegistry = metricRegistry;
-        this.localTopicTree = localTopicTree;
-        this.tagManager = tagManager;
-        this.clientQueuePersistence = clientQueuePersistence;
-        this.singleWriterService = singleWriterService;
-        this.dataCombiningPublishService = dataCombiningPublishService;
-        metricRegistry.registerGauge(DATA_COMBINERS_COUNT_CURRENT.name(), () -> idToDataCombiner.values().size());
+        this.dataCombiningRuntimeFactory = dataCombiningRuntimeFactory;
+        metricRegistry.registerGauge(DATA_COMBINERS_COUNT_CURRENT.name(),
+                () -> idToDataCombiningInformation.values().size());
+        shutdownHooks.add(new HiveMQShutdownHook() {
+            @Override
+            public @NotNull String name() {
+                return "Data Combiner Manager Shutdown";
+            }
+
+            @Override
+            public void run() {
+                try {
+                    stopAll().get();
+                } catch (final InterruptedException e) {
+                    log.warn("Shutdown of DataCombinerManager was interrupted.");
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                } catch (final ExecutionException e) {
+                    log.warn("Exception was thrown during the shutdown of DataCombinerManager:", e);
+                }
+            }
+        });
     }
 
     public void start() {
         log.debug("Starting data combiners");
         configPersistence.allDataCombiners().forEach(dataCombiner -> {
-            idToDataCombiner.put(dataCombiner.id(), dataCombiner);
-            idToDataCombiningStates.put(dataCombiner.id(), createDataCombiningStates(dataCombiner));
+            idToDataCombiningInformation.put(dataCombiner.id(),
+                    new DataCombiningInformation(dataCombiner, createDataCombiningStates(dataCombiner)));
         });
-
-
-        idToDataCombiningStates.values().stream().flatMap(Collection::stream).forEach(DataCombiningRuntime::start);
-    }
-
-    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
-        final List<DataCombiningRuntime> dataCombiningRuntimes = dataCombiner.dataCombinings()
+        idToDataCombiningInformation.values()
                 .stream()
-                .map(dataCombining -> new DataCombiningRuntime(dataCombining,
-                        localTopicTree,
-                        tagManager,
-                        clientQueuePersistence,
-                        singleWriterService,
-                        dataCombiningPublishService))
-                .toList();
-        return dataCombiningRuntimes;
+                .map(DataCombiningInformation::dataCombiningRuntimes)
+                .flatMap(Collection::stream)
+                .forEach(DataCombiningRuntime::start);
     }
 
-    public @NotNull CompletableFuture<AddResult> startCombiner(final @NotNull DataCombiner dataCombiner) {
-        log.debug("Starting data combiner with id '{}'", dataCombiner.id());
-        if (idToDataCombiner.putIfAbsent(dataCombiner.id(), dataCombiner) != null) {
-            return CompletableFuture.completedFuture(AddResult.failed(AddResult.PutStatus.ALREADY_EXISTS));
-        }
-        return CompletableFuture.runAsync(() -> {
-            final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
-            dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
-            idToDataCombiningStates.put(dataCombiner.id(), dataCombiningRuntimes);
-        }).thenApply(ignored -> AddResult.success());
-    }
 
-    public @NotNull CompletableFuture<Void> stop(final @NotNull UUID dataCombinerId) {
-        final var toBeStopped = idToDataCombiningStates.remove(dataCombinerId);
-        if (toBeStopped != null) {
-            return CompletableFuture.runAsync(() -> toBeStopped.forEach(DataCombiningRuntime::stop));
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-    public @NotNull CompletableFuture<Void> stopAll() {
-        return CompletableFuture.runAsync(() -> {
-            idToDataCombiningStates.values().stream().flatMap(Collection::stream).forEach(DataCombiningRuntime::stop);
-        });
-    }
-
-    public @NotNull CompletableFuture<AddResult> addDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        final DataCombiner previousValue = idToDataCombiner.putIfAbsent(dataCombiner.id(), dataCombiner);
+    public synchronized @NotNull CompletableFuture<AddResult> addDataCombiner(final @NotNull DataCombiner dataCombiner) {
+        final DataCombiningInformation previousValue = idToDataCombiningInformation.get(dataCombiner.id());
         if (previousValue != null) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("data combiner already exists by id '" +
                     dataCombiner.id() +
                     "'"));
         }
-        return CompletableFuture.runAsync(() -> {
-            configPersistence.addDataCombiner(dataCombiner);
-            final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
-            dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
-            idToDataCombiningStates.put(dataCombiner.id(), dataCombiningRuntimes);
-        }).thenApply(ignored -> AddResult.success());
+        createDataCombinerInternal(dataCombiner);
+        return CompletableFuture.completedFuture(AddResult.success());
     }
 
     public boolean updateDataCombiner(final @NotNull DataCombiner dataCombining) {
@@ -159,37 +121,56 @@ public class DataCombinerManager {
         return CompletableFuture.completedFuture(deleted);
     }
 
+    public synchronized @NotNull CompletableFuture<Void> stopAll() {
+        return CompletableFuture.runAsync(() -> {
+            idToDataCombiningInformation.values()
+                    .stream()
+                    .map(DataCombiningInformation::dataCombiningRuntimes)
+                    .flatMap(Collection::stream)
+                    .forEach(DataCombiningRuntime::stop);
+        });
+    }
+
     public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
-        return Optional.ofNullable(idToDataCombiner.get(id));
+        final DataCombiningInformation dataCombiningInformation = idToDataCombiningInformation.get(id);
+        if (dataCombiningInformation == null) {
+            return Optional.empty();
+        } else {
+            return Optional.of(dataCombiningInformation.dataCombiner());
+        }
     }
 
     public @NotNull List<DataCombiner> getAllCombiners() {
-        return idToDataCombiner.values().stream().toList();
+        return idToDataCombiningInformation.values().stream().map(DataCombiningInformation::dataCombiner).toList();
     }
 
 
     private void internalUpdateDataCombiner(final DataCombiner dataCombiner) {
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
-        syncFuture(startCombiner(dataCombiner));
         configPersistence.updateDataCombiner(dataCombiner);
     }
 
 
     private synchronized void createDataCombinerInternal(final @NotNull DataCombiner dataCombiner) {
-        if (idToDataCombiner.get(dataCombiner.id()) != null) {
+        if (idToDataCombiningInformation.get(dataCombiner.id()) != null) {
             throw new IllegalArgumentException("adapter already exists by id '" + dataCombiner.id() + "'");
         }
-        idToDataCombiner.put(dataCombiner.id(), dataCombiner);
+
+        final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
+        idToDataCombiningInformation.put(dataCombiner.id(),
+                new DataCombiningInformation(dataCombiner, dataCombiningRuntimes));
+
+        dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
+        configPersistence.addDataCombiner(dataCombiner);
     }
 
 
     private synchronized boolean deleteDataCombinerInternal(final @NotNull UUID id) {
-        final DataCombiner dataCombiner = idToDataCombiner.remove(id);
-        if (dataCombiner != null) {
+        final DataCombiningInformation dataCombiningInformation = idToDataCombiningInformation.remove(id);
+        if (dataCombiningInformation != null) {
             try {
-                // stop in any case as some resources must be cleaned up even if the adapter is still being started and is not yet in started state
-                stop(dataCombiner.id()).get();
+                stop(dataCombiningInformation).get();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (final ExecutionException e) {
@@ -206,5 +187,17 @@ public class DataCombinerManager {
         return false;
     }
 
+    private synchronized @NotNull CompletableFuture<Void> stop(final @NotNull DataCombiningInformation toBeStopped) {
+        // stopping is fast no reason for async
+        toBeStopped.dataCombiningRuntimes().forEach(DataCombiningRuntime::stop);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
+        return dataCombiner.dataCombinings().stream().map(dataCombiningRuntimeFactory::build).toList();
+    }
+
+    record DataCombiningInformation(DataCombiner dataCombiner, List<DataCombiningRuntime> dataCombiningRuntimes) {
+    }
 
 }

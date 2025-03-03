@@ -26,4 +26,8 @@ public interface DataCombiningTransformationService {
     @NotNull CompletableFuture<Void> applyMappings(
             final @NotNull PUBLISH mergedPublish, final @NotNull DataCombining dataCombining);
 
+    void removeScriptForDataCombining(@NotNull DataCombining combining);
+
+    void addScriptForDataCombining(@NotNull DataCombining combining);
+
 }
