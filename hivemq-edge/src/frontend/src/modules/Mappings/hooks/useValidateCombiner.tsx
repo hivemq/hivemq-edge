@@ -81,15 +81,15 @@ export const useValidateCombiner = (
 
   const allPathsFromSources = useMemo<string[]>(() => {
     return allSchemaReferences.reduce<string[]>((acc, cur) => {
-      let flat: FlatJSONSchema7[] = []
+      let flatList: FlatJSONSchema7[]
       if (typeof cur.data === 'string') {
         const handleSchema = validateSchemaFromDataURI(cur.data)
-        flat = handleSchema.schema ? getPropertyListFrom(handleSchema.schema) : []
+        flatList = handleSchema.schema ? getPropertyListFrom(handleSchema.schema) : []
       } else {
-        flat = cur.data ? getPropertyListFrom(cur.data) : []
+        flatList = cur.data ? getPropertyListFrom(cur.data) : []
       }
-      const hhh = flat.map((e) => [...e.path, e.key].join('.'))
-      acc.push(...hhh)
+      const fullPaths = flatList.map((e) => [...e.path, e.key].join('.'))
+      acc.push(...fullPaths)
 
       return Array.from(new Set(acc))
     }, [])
@@ -241,10 +241,10 @@ export const useValidateCombiner = (
 
       return errors
     },
-    []
+    [allPathsFromSources, t]
   )
 
-  const validateCombiner = useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
+  return useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       validateSourceCapability(formData, errors)
 
@@ -267,6 +267,4 @@ export const useValidateCombiner = (
       validateSourceCapability,
     ]
   )
-
-  return validateCombiner
 }
