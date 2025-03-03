@@ -76,7 +76,11 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
         const sourceRef: DataIdentifierReference | undefined = target.dataReference
           ? { id: target.dataReference.id, type: target.dataReference.type }
           : undefined
-        onChange?.([...target.path, target.key].join('.') as string, property.key as string, sourceRef)
+        onChange?.(
+          [...target.path, target.key].join('.') as string,
+          [...property.path, property.key].join('.') as string,
+          sourceRef
+        )
       },
     })
   }, [onChange, property])
@@ -87,7 +91,9 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
   const onHandleClear = () => {
     setState(DropState.IDLE)
-    onChange?.(undefined, property.key as string)
+    const fullPath = [...property.path, property.key].join('.')
+
+    onChange?.(undefined, fullPath as string)
   }
 
   if (!isSupported)

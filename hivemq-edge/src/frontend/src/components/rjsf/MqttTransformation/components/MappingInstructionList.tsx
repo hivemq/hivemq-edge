@@ -31,7 +31,10 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
     <List {...props}>
       {properties.map((property) => {
         const instructionIndex = instructions
-          ? instructions.findIndex((instruction) => instruction.destination === property.key)
+          ? instructions.findIndex((instruction) => {
+              const fullPath = [...property.path, property.key].join('.')
+              return instruction.destination === fullPath
+            })
           : -1
         return (
           <ListItem key={property.key}>
