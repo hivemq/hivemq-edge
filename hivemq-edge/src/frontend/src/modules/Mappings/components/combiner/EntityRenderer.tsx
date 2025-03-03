@@ -39,9 +39,21 @@ const BridgeEntityRenderer: FC<EntityRendererProps> = ({ reference }) => {
   return <NodeNameCard type={NodeTypes.BRIDGE_NODE} name={data?.id} />
 }
 
+const BrokerEntityRenderer: FC<EntityRendererProps> = () => {
+  const { t } = useTranslation()
+  return (
+    <NodeNameCard
+      type={NodeTypes.EDGE_NODE}
+      name={t('branding.appName')}
+      description={t('combiner.schema.sources.edge.description')}
+    />
+  )
+}
+
 export const EntityRenderer: FC<EntityRendererProps> = ({ reference }) => {
   const { t } = useTranslation()
   if (reference.type === EntityType.BRIDGE) return <BridgeEntityRenderer reference={reference} />
   if (reference.type === EntityType.ADAPTER) return <AdapterEntityRenderer reference={reference} />
+  if (reference.type === EntityType.EDGE_BROKER) return <BrokerEntityRenderer reference={reference} />
   return <ErrorMessage message={t('combiner.error.noValidReference')} />
 }

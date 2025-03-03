@@ -5,8 +5,8 @@ import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
 import { Box } from '@chakra-ui/react'
 
-import { DataIdentifierReference } from '@/api/__generated__'
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps {
@@ -34,7 +34,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
   const allOptions = useMemo(() => {
     if (isLoading) return []
 
-    return (
+    const combinedOptions =
       formContext?.queries?.reduce<EntityOption[]>((acc, queryResult) => {
         if (!queryResult.data) return acc
         if (!queryResult.data.items.length) return acc
@@ -60,7 +60,14 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
 
         return acc
       }, []) || []
-    )
+
+    return combinedOptions.reduce<EntityOption[]>((acc, current) => {
+      const isAlreadyIn = acc.find((item) => item.value === current.value && item.type === current.type)
+      if (!isAlreadyIn) {
+        return acc.concat([current])
+      }
+      return acc
+    }, [])
   }, [formContext?.entities, formContext?.queries, isLoading])
 
   const values = useMemo(() => {
