@@ -1111,7 +1111,9 @@
         "noBase64Data": "The data is not properly encoded as a `base64` string",
         "noJSON": "The data is not properly encoded as a `JSON` object",
         "ajvValidationFails": "Internal validation error",
-        "ajvNoProperties": "Not a valid JSONSchema: `properties` is missing"
+        "ajvNoProperties": "Not a valid JSONSchema: `properties` is missing",
+        "noAssignedSchema_TAG": "Your tag is currently not assigned a schema",
+        "noAssignedSchema_TOPIC_FILTER": "Your topic filter is currently not assigned a schema"
       }
     },
     "toast": {
@@ -1240,6 +1242,9 @@
           "action": "Actions",
           "delete": "Delete the source",
           "source": "Source"
+        },
+        "edge": {
+          "description": "Always added as the owner of the topic filters"
         }
       },
       "mappings": {

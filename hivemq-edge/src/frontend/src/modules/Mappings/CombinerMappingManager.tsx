@@ -27,6 +27,7 @@ import config from '@/config'
 import type { CombinerContext } from './types'
 import { MappingType } from './types'
 import type { Combiner } from '@/api/__generated__'
+import { EntityType } from '@/api/__generated__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
 import { useUpdateCombiner, useDeleteCombiner } from '@/api/hooks/useCombiners/'
@@ -34,6 +35,7 @@ import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombine
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import ErrorMessage from '@/components/ErrorMessage'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
+import { IdStubs } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import DangerZone from './components/DangerZone'
@@ -53,7 +55,12 @@ const CombinerMappingManager: FC = () => {
   }, [combinerId, nodes])
 
   const entities = useMemo(() => {
-    return selectedNode?.data?.sources?.items || []
+    const entities = selectedNode?.data?.sources?.items || []
+    const isBridgeIn = Boolean(
+      entities.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
+    )
+    if (!isBridgeIn) entities.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+    return entities
   }, [selectedNode?.data?.sources?.items])
 
   const sources = useGetCombinedEntities(entities)
