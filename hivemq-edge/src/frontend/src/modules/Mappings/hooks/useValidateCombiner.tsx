@@ -233,8 +233,6 @@ export const useValidateCombiner = (
         if (!knownPaths.includes(instruction.destination))
           errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionDestinationPath'))
 
-        // TODO[NVL] check validity of source path
-
         if (!allPathsFromSources.includes(instruction.source))
           errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionSourcePath'))
       })
@@ -244,27 +242,20 @@ export const useValidateCombiner = (
     [allPathsFromSources, t]
   )
 
-  return useCallback<CustomValidator<Combiner, RJSFSchema, CombinerContext>>(
-    (formData, errors) => {
-      validateSourceCapability(formData, errors)
+  const validateCombiner: CustomValidator<Combiner, RJSFSchema, CombinerContext> = (formData, errors) => {
+    validateSourceCapability(formData, errors)
 
-      formData?.mappings?.items?.forEach((entity, index) => {
-        if (!errors.mappings?.items?.[index]) return
+    formData?.mappings?.items?.forEach((entity, index) => {
+      if (!errors.mappings?.items?.[index]) return
 
-        validateDataSources(entity, errors.mappings.items[index])
-        validateDataSourceSchemas(entity, errors.mappings.items[index])
-        validateDestinationSchema(entity, errors.mappings.items[index])
-        validateInstructions(entity, errors.mappings.items[index])
-      })
+      validateDataSources(entity, errors.mappings.items[index])
+      validateDataSourceSchemas(entity, errors.mappings.items[index])
+      validateDestinationSchema(entity, errors.mappings.items[index])
+      validateInstructions(entity, errors.mappings.items[index])
+    })
 
-      return errors
-    },
-    [
-      validateDataSourceSchemas,
-      validateDataSources,
-      validateDestinationSchema,
-      validateInstructions,
-      validateSourceCapability,
-    ]
-  )
+    return errors
+  }
+
+  return validateCombiner
 }
