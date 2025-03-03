@@ -17,6 +17,7 @@ interface PropertyItemProps {
   hasExamples?: boolean
   hasDescription?: boolean
   dataReference?: DataReference
+  hasPathAsName?: boolean
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -25,6 +26,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
   hasTooltip = false,
   hasExamples = false,
   hasDescription = false,
+  hasPathAsName = false,
   dataReference,
 }) => {
   const { t } = useTranslation('components')
@@ -83,7 +85,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
         </Tooltip>
         <Tooltip label={path} placement="top" isDisabled={!hasTooltip} hasArrow>
           <Badge data-testid="property-name" aria-label={path}>
-            {propertyName}
+            {hasPathAsName ? path : propertyName}
           </Badge>
         </Tooltip>
       </HStack>
