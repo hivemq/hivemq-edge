@@ -37,6 +37,7 @@ interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
   instruction?: Instruction
+  showPathAsName?: boolean
   onChange?: (source: string | undefined, destination: string, sourceRef?: DataIdentifierReference) => void
 }
 
@@ -45,6 +46,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   instruction,
   onChange,
   showTransformation = false,
+  showPathAsName = false,
 }) => {
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
@@ -92,7 +94,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
     return (
       <Card size="sm" variant="outline" w="100%">
         <CardHeader as={HStack} justifyContent="space-between">
-          <PropertyItem property={property} hasTooltip />
+          <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
           <Alert status="warning" size="sm" variant="left-accent" w="140px">
             <AlertIcon />
             {t('rjsf.MqttTransformationField.validation.notSupported')}
@@ -105,7 +107,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
     <HStack>
       <Card size="sm" variant="outline" w="100%">
         <CardHeader>
-          <PropertyItem property={property} hasTooltip />
+          <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
         </CardHeader>
 
         <CardBody display="flex" flexDirection="row" gap={2}>

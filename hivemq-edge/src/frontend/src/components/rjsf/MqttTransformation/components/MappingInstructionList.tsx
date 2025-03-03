@@ -37,6 +37,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
           <ListItem key={property.key}>
             <MappingInstruction
               showTransformation={showTransformation}
+              showPathAsName={true}
               property={property}
               instruction={instructionIndex !== -1 ? instructions?.[instructionIndex] : undefined}
               onChange={(source, destination, sourceRef) => {
