@@ -39,6 +39,7 @@ import { IdStubs } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import DangerZone from './components/DangerZone'
+import { useValidateCombiner } from './hooks/useValidateCombiner'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -47,8 +48,6 @@ const CombinerMappingManager: FC = () => {
   const { combinerId } = useParams()
   const { nodes, onUpdateNode, onNodesChange } = useWorkspaceStore()
   const toast = useToast()
-  const updateCombiner = useUpdateCombiner()
-  const deleteCombiner = useDeleteCombiner()
 
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
@@ -64,6 +63,9 @@ const CombinerMappingManager: FC = () => {
   }, [selectedNode?.data?.sources?.items])
 
   const sources = useGetCombinedEntities(entities)
+  const validateCombiner = useValidateCombiner(sources, entities)
+  const updateCombiner = useUpdateCombiner()
+  const deleteCombiner = useDeleteCombiner()
 
   const handleClose = () => {
     onClose()
@@ -134,6 +136,7 @@ const CombinerMappingManager: FC = () => {
               formData={selectedNode.data}
               onSubmit={handleOnSubmit}
               formContext={{ queries: sources, entities } as CombinerContext}
+              customValidate={validateCombiner}
             />
           )}
         </DrawerBody>

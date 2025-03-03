@@ -1224,7 +1224,20 @@
       "noDataUri": "There was a problem loading the data",
       "noValidReference": "This is not a valid reference to a Workspace entity",
       "invalidData": "Invalid data",
-      "noSchemaLoadedYet": "There are no schemas available yet"
+      "noSchemaLoadedYet": "There are no schemas available yet",
+      "validation": {
+        "notValidReference": "This is not a valid reference to a Workspace entity",
+        "notCombineCapability": "The adapter does not support data combining and cannot be used as a source",
+        "notEdgeSource": "The Edge broker must be connected to the combiner's sources",
+        "notDataSourceOwner_TAG": "The tag {{ tag }} is not defined in any of the combiner's sources",
+        "notDataSourceOwner_TOPIC_FILTER": "The topic filter {{ topicFilter }} is not defined in any of the combiner's sources",
+        "notDestinationProperties": "The destination schema doesn't have any property to be mapped into",
+        "notMinimumRequiredSchema": "At least one schema should be available",
+        "notDataSourceProperties_TAG": "The destination schema doesn't have any property to be mapped into",
+        "notDataSourceProperties_TOPIC_FILTER": "The destination schema doesn't have any property to be mapped into",
+        "notInstructionSourcePath": "The instruction is not a recognised destination property",
+        "notInstructionDestinationPath": "The instruction is not a recognised source property"
+      }
     },
     "schema": {
       "tabs": {
