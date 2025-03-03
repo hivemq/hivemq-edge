@@ -15,6 +15,7 @@
  */
 package com.hivemq.bootstrap.factories;
 
+import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
@@ -37,14 +38,16 @@ public class DataCombiningTransformationServiceProvider {
 
     private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
     private final @NotNull InternalPublishService internalPublishService;
+    private final @NotNull MetricRegistry metricRegistry;
 
     @Inject
     public DataCombiningTransformationServiceProvider(
             final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
-            final @NotNull InternalPublishService internalPublishService) {
+            final @NotNull InternalPublishService internalPublishService,
+            final @NotNull MetricRegistry metricRegistry) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
-
         this.internalPublishService = internalPublishService;
+        this.metricRegistry = metricRegistry;
     }
 
     public @NotNull DataCombiningTransformationService get() {
@@ -53,6 +56,6 @@ public class DataCombiningTransformationServiceProvider {
         if (serviceFactory == null) {
             return new DataCombiningTransformationServiceNoop();
         }
-        return serviceFactory.build(internalPublishService);
+        return serviceFactory.build(internalPublishService, metricRegistry);
     }
 }
