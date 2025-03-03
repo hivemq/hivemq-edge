@@ -166,11 +166,40 @@ export const useValidateCombiner = (
    * TODO[NVL] Should that first validation even be made?
    */
   const validateDataSourceSchemas = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
-    (_, errors) => {
+    (formData, errors) => {
       const hasAtLeastOneSchema = allSchemaReferences.some((e) => e.data !== undefined && e.isSuccess)
       if (!hasAtLeastOneSchema) {
         errors.sources?.addError(t('combiner.error.validation.notMinimumRequiredSchema'))
       }
+
+      const nbTag = formData?.sources.tags?.length || 0
+      allSchemaReferences.forEach((query, index) => {
+        if (typeof query.data === 'string') {
+          const handleSchema = validateSchemaFromDataURI(query.data)
+          if (handleSchema.status !== 'success' || !handleSchema.schema) {
+            // TODO[NVL] Need to know if tag or topic filter; this hack might not work
+            if (index > nbTag) errors.sources?.topicFilters?.addError(handleSchema.error || handleSchema.message)
+            else errors.sources?.tags?.addError(handleSchema.error || handleSchema.message)
+          } else {
+            const properties = getPropertyListFrom(handleSchema.schema)
+            if (!properties.length) {
+              // TODO[NVL] Need to know if tag or topic filter; this hack might not work
+              if (index > nbTag)
+                errors.sources?.topicFilters?.addError(
+                  t('combiner.error.validation.notDataSourceProperties', {
+                    context: DataIdentifierReference.type.TOPIC_FILTER,
+                  })
+                )
+              else
+                errors.sources?.tags?.addError(
+                  t('combiner.error.validation.notDataSourceProperties', {
+                    context: DataIdentifierReference.type.TAG,
+                  })
+                )
+            }
+          }
+        }
+      })
 
       return errors
     },
