@@ -32,6 +32,7 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +65,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class MtConnectProtocolAdapterTest {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private @NotNull ProtocolAdapterInput<MtConnectAdapterConfig> adapterInput;
     private @NotNull MtConnectAdapterConfig config;
     private @NotNull HttpClient httpClient;
@@ -193,8 +194,14 @@ public class MtConnectProtocolAdapterTest {
         assertThat(argumentCaptorDataPoint.getValue().getTagName()).isEqualTo("data");
         final String jsonString = (String) argumentCaptorDataPoint.getValue().getTagValue();
         final JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
-        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
+        assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION).asText()).isEqualTo(
                 "urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
+        assertThat(jsonNode.get("Streams")).isNotNull();
+        final JsonNode jsonNodeDeviceStreams = jsonNode.get("Streams").get("DeviceStream");
+        assertThat(jsonNodeDeviceStreams).isNotNull();
+        assertThat(jsonNodeDeviceStreams.isArray()).isTrue();
+        assertThat(jsonNodeDeviceStreams.size()).isEqualTo(8);
+
     }
 
     @Test
@@ -206,7 +213,7 @@ public class MtConnectProtocolAdapterTest {
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
-        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
+        assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION).asText()).isEqualTo(
                 "urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
     }
 
@@ -221,12 +228,12 @@ public class MtConnectProtocolAdapterTest {
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
-        assertThat(jsonNode.get("schemaLocation").asText()).isEqualTo(
-                "urn:mtconnect.org:MTConnectDevices:1.3 /schemas/MTConnectDevices_1.3.xsd");
+        assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION)
+                .asText()).isEqualTo(MtConnectSchema.Devices_1_3.getLocation());
     }
 
     @Test
-    public void whenSchemaValidationIsEnabled_thenCustomSchemaShouldFail() throws IOException, XMLParseException {
+    public void whenSchemaValidationIsEnabled_thenCustomSchemaShouldFail() {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThatThrownBy(() -> adapter.processXml(getVolatileDataStreamCurrent(),
