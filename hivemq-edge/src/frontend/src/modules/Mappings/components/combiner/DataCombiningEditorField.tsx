@@ -28,15 +28,24 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 if (!formData) return
                 const tag: string[] = []
                 const filter: string[] = []
+
+                let isPrimary = false
                 values.forEach((entity) => {
                   if (entity.type === DataIdentifierReference.type.TAG) tag.push(entity.value)
                   if (entity.type === DataIdentifierReference.type.TOPIC_FILTER) filter.push(entity.value)
+                  if (formData.sources.primary?.type === entity.type && formData.sources.primary?.id === entity.value)
+                    isPrimary = true
                 })
 
                 props.onChange({
                   ...formData,
-                  // @ts-ignore TODO check for type clash on primary
-                  sources: { ...formData.sources, tags: tag, topicFilters: filter },
+                  sources: {
+                    ...formData.sources,
+                    tags: tag,
+                    topicFilters: filter,
+                    // @ts-ignore TODO[30935] check for type clash on primary
+                    primary: isPrimary ? formData.sources.primary : undefined,
+                  },
                 })
               }}
             />
