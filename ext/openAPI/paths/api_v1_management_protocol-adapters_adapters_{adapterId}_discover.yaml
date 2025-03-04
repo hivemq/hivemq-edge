@@ -1,0 +1,72 @@
+get:
+  description: Obtain a list of available values accessible via this protocol adapter.
+  operationId: discoverDataPoints
+  parameters:
+    - description: The adapter Id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: The root to browse.
+      in: query
+      name: root
+      schema:
+        type: string
+    - description: The recursive depth to include. Must be larger than 0.
+      in: query
+      name: depth
+      schema:
+        type: integer
+        format: int32
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            discover:
+              description: An example discovery request.
+              value:
+                items:
+                  - id: holding-registers
+                    name: Holding Registers
+                    description: Holding Registers
+                    nodeType: FOLDER
+                    selectable: false
+                    children:
+                      - id: grouping-1
+                        name: Addresses 1-16
+                        description: ''
+                        nodeType: FOLDER
+                        selectable: false
+                        children:
+                          - id: address-location-1
+                            name: '1'
+                            description: ''
+                            nodeType: VALUE
+                            selectable: true
+                            children: []
+          schema:
+            $ref: ../components/schemas/ValuesTree.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Protocol adapter does not support discovery
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Discover a list of available data points
+  tags:
+    - Protocol Adapters

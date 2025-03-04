@@ -1,0 +1,22 @@
+get:
+  description: Obtain the details.
+  operationId: get-adapters-status
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            example-connection-status:
+              description: Example connection status list.
+              summary: Example connection status
+              value:
+                items:
+                  - status: CONNECTED
+                    id: cloud
+                    type: bridge
+          schema:
+            $ref: ../components/schemas/StatusList.yaml
+      description: The Connection Details Verification Result.
+  summary: Get the status of all the adapters in the system.
+  tags:
+    - Protocol Adapters

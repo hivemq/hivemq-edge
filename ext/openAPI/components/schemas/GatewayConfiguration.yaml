@@ -1,0 +1,26 @@
+type: object
+properties:
+  cloudLink:
+    $ref: ./Link.yaml
+  ctas:
+    $ref: ./LinkList.yaml
+  documentationLink:
+    $ref: ./Link.yaml
+  environment:
+    $ref: ./EnvironmentProperties.yaml
+  extensions:
+    $ref: ./ExtensionList.yaml
+  firstUseInformation:
+    $ref: ./FirstUseInformation.yaml
+  gitHubLink:
+    $ref: ./Link.yaml
+  hivemqId:
+    type: string
+    description: The current id of hivemq edge. Changes at restart.
+  modules:
+    $ref: ./ModuleList.yaml
+  resources:
+    $ref: ./LinkList.yaml
+  trackingAllowed:
+    type: boolean
+    description: Is the tracking of user actions allowed.
