@@ -34,14 +34,14 @@ export const useValidateCombiner = (
 
   // TODO[NVL] This is a duplicate from CombinedSchemaLoader; refactor
   const allReferences = useMemo<DataReference[]>(() => {
-    return queries?.reduce<DataReference[]>((acc, cur) => {
+    return queries?.reduce<DataReference[]>((acc, cur, currentIndex) => {
       const firstItem = cur.data?.items?.[0]
       if (!firstItem) return acc
       if ((firstItem as DomainTag).name) {
-        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag, index) => ({
+        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => ({
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: entities?.[index]?.id,
+          adapterId: entities?.[currentIndex]?.id,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
