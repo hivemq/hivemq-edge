@@ -1,7 +1,4 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Select } from 'chakra-react-select'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { Box, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
 import { FaRightFromBracket } from 'react-icons/fa6'
@@ -13,18 +10,10 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 import { DestinationSchemaLoader } from './DestinationSchemaLoader'
+import { PrimarySelect } from './PrimarySelect'
 
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
-  const { t } = useTranslation()
-
   const { formData, formContext } = props
-
-  const primary = useMemo(() => {
-    const tags = formData?.sources?.tags || []
-    const topicFilters = formData?.sources?.topicFilters || []
-
-    return [...tags, ...topicFilters].map((entity) => ({ label: entity }))
-  }, [formData])
 
   return (
     <VStack alignItems="stretch" gap={4}>
@@ -39,15 +28,24 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 if (!formData) return
                 const tag: string[] = []
                 const filter: string[] = []
+
+                let isPrimary = false
                 values.forEach((entity) => {
                   if (entity.type === DataIdentifierReference.type.TAG) tag.push(entity.value)
                   if (entity.type === DataIdentifierReference.type.TOPIC_FILTER) filter.push(entity.value)
+                  if (formData.sources.primary?.type === entity.type && formData.sources.primary?.id === entity.value)
+                    isPrimary = true
                 })
 
                 props.onChange({
                   ...formData,
-                  // @ts-ignore TODO check for type clash on primary
-                  sources: { ...formData.sources, tags: tag, topicFilters: filter },
+                  sources: {
+                    ...formData.sources,
+                    tags: tag,
+                    topicFilters: filter,
+                    // @ts-ignore TODO[30935] check for type clash on primary
+                    primary: isPrimary ? formData.sources.primary : undefined,
+                  },
                 })
               }}
             />
@@ -56,12 +54,25 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
             <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
           </VStack>
           <Box>
-            <Select<{ label: string }>
-              options={primary}
-              data-testid={'combiner-mapping-primary'}
-              value={undefined}
-              isClearable
-              placeholder={t('combiner.schema.mapping.primary.placeholder')}
+            <PrimarySelect
+              formData={formData}
+              onChange={(values) => {
+                if (!props.formData) return
+
+                props.onChange({
+                  ...props.formData,
+                  sources: {
+                    ...props.formData.sources,
+                    // @ts-ignore TODO[30935] check for type clash on primary
+                    primary: values
+                      ? {
+                          id: values.value,
+                          type: values.type,
+                        }
+                      : undefined,
+                  },
+                })
+              }}
             />
           </Box>
         </VStack>
