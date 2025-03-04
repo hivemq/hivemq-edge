@@ -70,6 +70,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 
 
 public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
+    public static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
     private static final @NotNull String DATA = "data";
     // https://www.ietf.org/rfc/rfc2376.txt
     private static final @NotNull String CONTENT_TYPE_APPLICATION_XML = "application/xml";
@@ -80,7 +81,6 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     private static final @NotNull String HEADER_CONTENT_TYPE = "Content-Type";
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final @NotNull XmlMapper XML_MAPPER = new XmlMapper();
-    private static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
     protected final @NotNull Map<String, Tag> tagMap;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
