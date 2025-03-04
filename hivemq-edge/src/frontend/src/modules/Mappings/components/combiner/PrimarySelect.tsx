@@ -11,11 +11,12 @@ interface PrimaryOption {
   type: DataIdentifierReference.type
 }
 interface PrimarySelectProps {
+  id?: string
   formData?: DataCombining
   onChange: (newValue: SingleValue<PrimaryOption>) => void
 }
 
-export const PrimarySelect: FC<PrimarySelectProps> = ({ formData, onChange }) => {
+export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, onChange }) => {
   const { t } = useTranslation()
 
   const primaryOptions = useMemo(() => {
@@ -47,12 +48,14 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ formData, onChange }) =>
 
   return (
     <Select<PrimaryOption>
+      id={id}
       options={primaryOptions}
       data-testid={'combiner-mapping-primaryOptions'}
       value={primaryValue}
       onChange={onChange}
       isClearable
       placeholder={t('combiner.schema.mapping.primary.placeholder')}
+      aria-label={t('combiner.schema.mapping.primary.label')}
     />
   )
 }

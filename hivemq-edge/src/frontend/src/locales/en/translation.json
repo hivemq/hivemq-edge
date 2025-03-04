@@ -1286,6 +1286,7 @@
           "type_TOPIC_FILTER": "Topic Filter"
         },
         "primary": {
+          "label": "The primary data key of the mapping",
           "placeholder": "Select a primary data key ..."
         }
       },
