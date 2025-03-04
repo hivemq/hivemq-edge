@@ -21,15 +21,17 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
 
   // TODO[NVL] This is almost a duplicate of the CombinedEntitySelect; reuse
   const allDataReferences = useMemo(() => {
-    return formContext?.queries?.reduce<DataReference[]>((acc, cur) => {
+    return formContext?.queries?.reduce<DataReference[]>((acc, cur, currentIndex) => {
       const firstItem = cur.data?.items?.[0]
       if (!firstItem) return acc
       if ((firstItem as DomainTag).name) {
-        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag, index) => ({
-          id: tag.name,
-          type: DataIdentifierReference.type.TAG,
-          adapterId: formContext.entities?.[index]?.id,
-        }))
+        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => {
+          return {
+            id: tag.name,
+            type: DataIdentifierReference.type.TAG,
+            adapterId: formContext.entities?.[currentIndex]?.id,
+          }
+        })
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
         const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
@@ -70,7 +72,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
         dataReference.schema = validateSchemaFromDataURI(data)
       } else if (typeof data === 'object') {
         dataReference.schema = {
-          schema: data,
+          schema: data || undefined,
           status: 'success',
           message: t('topicFilter.schema.status.success'),
         }
