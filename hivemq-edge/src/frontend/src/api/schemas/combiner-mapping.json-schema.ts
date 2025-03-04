@@ -11,6 +11,8 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
     Instruction: Instruction,
     DataIdentifierReference: {
       description: `A reference to one of the data identifiers (topic filter or tag) in Edge`,
+      required: ['id', 'type'],
+
       properties: {
         id: {
           type: 'string',
@@ -45,6 +47,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
     },
     DataCombining: {
       description: 'Define individual rules for data combining, based on the entities selected in the Orchestrator',
+      required: ['id', 'sources'],
       properties: {
         id: {
           type: 'string',
@@ -52,6 +55,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
           format: 'uuid',
         },
         sources: {
+          required: ['primary'],
           properties: {
             primary: {
               $ref: '#/definitions/DataIdentifierReference',
