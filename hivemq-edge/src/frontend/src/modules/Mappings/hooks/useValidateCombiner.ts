@@ -134,7 +134,7 @@ export const useValidateCombiner = (
 
       return errors
     },
-    [adapterInfo?.items, adapters, t]
+    [hasAdapterCapability, t]
   )
 
   /**
