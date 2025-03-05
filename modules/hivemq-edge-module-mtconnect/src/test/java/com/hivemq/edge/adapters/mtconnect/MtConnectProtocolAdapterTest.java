@@ -34,6 +34,7 @@ import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
+import jakarta.xml.bind.JAXBException;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -205,7 +206,8 @@ public class MtConnectProtocolAdapterTest {
     }
 
     @Test
-    public void whenSchemaValidationIsDisabled_thenCustomSchemaShouldPass() throws IOException, XMLParseException {
+    public void whenSchemaValidationIsDisabled_thenCustomSchemaShouldPass()
+            throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamTimeSeries(),
@@ -220,7 +222,7 @@ public class MtConnectProtocolAdapterTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(boolean enableSchemaValidation)
-            throws IOException, XMLParseException {
+            throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamSchema(),
