@@ -6,10 +6,30 @@
 
 The [Schema](https://github.com/mtconnect/schema) validation is XSD based. That implies a considerable performance overhead if the validation is performed per message. In general, there are 2 options:
 
-1. Completely turn off the schema validation.
-2. Implement the validation in Java to improve the performance.
+1. No Validation - Turn off the schema validation.
+2. Complete Validation - Implement the validation in Java to improve the performance.
 
-(1) gets rid of the performance overhead, but allows malformed data to be sent to the broker. (2) performs the validation with a better performance, but still slows down the processing of the messages a little bit.
+|                  | No Validation | Complete Validation |
+| ---------------- | ------------- | ------------------- |
+| Performance      | Excellent     | Slow                |
+| Dev Cost         | Low           | High                |
+| Malformed Schema | Allow         | Disallow            |
+| Custom Schema    | Support       | Not Support         |
+
+### Schema Validation Code Generation
+
+- Download [jaxb-ri](https://eclipse-ee4j.github.io/jaxb-ri/) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
+- Download [Xerces2 Java Binary (XML Schema 1.1)](https://xerces.apache.org/mirrors.cgi) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
+- Add `xerces-2_12_2-xml-schema-1.1/xml-apis.jar` and `xerces-2_12_2-xml-schema-1.1/xercesImpl.jar` to the classpath.
+- `git clone https://github.com/mtconnect/schema.git` to a local folder.
+- Navigate to `modules/hivemq-edge-module-mtconnect` folder.
+- For each of the XML schema files, run the following commands.
+
+```bash
+export CLASSPATH=$CLASSPATH:$(pwd)/xerces-2_12_2/xml-apis.jar:$(pwd)/xerces-2_12_2/xercesImpl.jar
+jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3 ../../schema/MTConnectDevices_1.3.xsd
+```
+
 
 ## Test
 
@@ -27,3 +47,4 @@ There is a [Smart Manufacturing Systems (SMS) Test Bed](https://www.nist.gov/lab
 - [mtconnect.org](https://www.mtconnect.org/)
 - [Github](http://www.github.com/mtconnect)
 - [Schema](https://github.com/mtconnect/schema)
+- [jaxb-ri](https://eclipse-ee4j.github.io/jaxb-ri/)

@@ -37,6 +37,8 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -47,6 +49,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
+import java.io.StringReader;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -143,7 +146,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     protected @NotNull DataPoint processXml(
             final @NotNull String body,
             final @NotNull MtConnectAdapterTagDefinition definition)
-            throws JsonProcessingException, XMLParseException {
+            throws JsonProcessingException, XMLParseException, JAXBException {
         final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
         final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
         if (jsonNodeSchemaLocation == null) {
@@ -155,6 +158,17 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             MtConnectSchema schema = MtConnectSchema.of(jsonNodeSchemaLocation.asText());
             if (schema == null) {
                 throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is not support");
+            }
+            // The unmarshal call brings additional performance overhead.
+            final @NotNull Optional<Unmarshaller> unmarshallerOptional = schema.getUnmarshaller();
+            if (unmarshallerOptional.isPresent()) {
+                try (StringReader stringReader = new StringReader(body)) {
+                    final @NotNull Unmarshaller unmarshaller = unmarshallerOptional.get();
+                    unmarshaller.unmarshal(stringReader);
+                } catch (final Exception e) {
+                    throw new XMLParseException(e,
+                            "Incoming XML message failed to conform " + jsonNodeSchemaLocation.asText());
+                }
             }
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Publishing data {} version {}.{}",
