@@ -31,8 +31,8 @@ describe('useListCombinerMappings', () => {
           id: '58677276-fc48-4a9a-880c-41c755f5063b',
           sources: {
             primary: { id: '', type: DataIdentifierReference.type.TAG },
-            tags: [],
-            topicFilters: [],
+            tags: ['my/tag/t1', 'my/tag/t3'],
+            topicFilters: ['my/topic/+/temp'],
           },
           destination: { topic: 'my/topic' },
           instructions: [],
