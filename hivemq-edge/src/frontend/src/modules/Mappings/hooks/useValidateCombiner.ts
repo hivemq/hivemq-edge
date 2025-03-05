@@ -243,6 +243,11 @@ export const useValidateCombiner = (
   )
 
   const validateCombiner: CustomValidator<Combiner, RJSFSchema, CombinerContext> = (formData, errors) => {
+    if (!formData) {
+      errors.addError(t('combiner.error.validation.notValidPayload'))
+      return errors
+    }
+
     validateSourceCapability(formData, errors)
 
     formData?.mappings?.items?.forEach((entity, index) => {
