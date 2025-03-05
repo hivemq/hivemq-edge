@@ -48,6 +48,7 @@
     "@nivo/sankey": "^0.88.0",
     "@nivo/sunburst": "^0.88.0",
     "@nivo/tree": "^0.88.0",
+    "@redocly/cli": "^1.28.5",
     "@rjsf/chakra-ui": "^5.23.1",
     "@rjsf/core": "^5.23.1",
     "@rjsf/utils": "^5.23.1",
@@ -125,7 +126,6 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@types/uuid": "^9.0.8",
-    "typescript-eslint": "^8.18.2",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-istanbul": "^3.0.5",
     "@vitest/ui": "^3.0.5",
@@ -151,6 +151,7 @@
     "stylelint-config-standard": "^37.0.0",
     "stylelint-config-standard-scss": "^14.0.0",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.18.2",
     "vite": "^6.1.0",
     "vite-plugin-istanbul": "^6.0.2",
     "vitest": "^3.0.5"

@@ -1,0 +1,33 @@
+get:
+  description: Obtain a JsonSchema based in the stored samples for a given topic.
+  operationId: getSchemaForTopic
+  parameters:
+    - description: The topic.
+      in: path
+      name: topic
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/JsonNode.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: No samples found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Obtain a JsonSchema based in the stored samples for a given topic.
+  tags:
+    - Payload Sampling
