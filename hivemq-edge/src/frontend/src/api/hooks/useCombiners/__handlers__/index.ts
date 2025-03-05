@@ -62,6 +62,17 @@ export const mockCombiner: Combiner = {
   },
 }
 
+export const mockEmptyCombiner: Combiner = {
+  id: mockCombinerId,
+  name: 'my-combiner',
+  sources: {
+    items: [],
+  },
+  mappings: {
+    items: [],
+  },
+}
+
 export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {

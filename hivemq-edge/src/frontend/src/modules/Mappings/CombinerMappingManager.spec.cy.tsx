@@ -2,7 +2,12 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import type { Node } from 'reactflow'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
-import { MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes.ts'
+import { MOCK_DEFAULT_NODE, MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes.ts'
+import { MockAdapterType } from '@/__test-utils__/adapters/types'
+import { MOCK_DEVICE_TAGS, mockAdapter, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
+import { mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
+
 import { NodeTypes } from '@/modules/Workspace/types'
 import CombinerMappingManager from './CombinerMappingManager'
 
@@ -73,8 +78,6 @@ describe('CombinerMappingManager', () => {
     })
     cy.get('header').should('contain.text', 'Manage Data combining mappings')
 
-    cy.get('[role="alert"]').should('not.exist')
-
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.COMBINER_NODE)
     cy.getByTestId('node-name').should('contain.text', 'my-combiner')
     cy.getByTestId('node-description').should('contain.text', 'Data Combiner')
@@ -84,15 +87,18 @@ describe('CombinerMappingManager', () => {
     cy.get('[role="tablist"] [role="tab"]').eq(1).should('have.text', 'Sources')
     cy.get('[role="tablist"] [role="tab"]').eq(2).should('have.text', 'Mappings')
 
-    // TODO[NVL] More tests. But we need a strategy for testing OpenAPI/JSONSchema/RJSF forms
+    // TODO[TEST] More tests. But we need a strategy for testing OpenAPI/JSONSchema/RJSF forms
   })
 
   it('should render the toolbar properly', () => {
-    cy.intercept('PUT', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
+    cy.intercept('DELETE', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
     cy.mountWithProviders(<CombinerMappingManager />, {
       routerProps: { initialEntries: [`/node/idCombiner`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
     })
+
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(500)
 
     cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
 
@@ -100,10 +106,79 @@ describe('CombinerMappingManager', () => {
       cy.get('button').eq(0).should('have.text', 'Delete')
       cy.get('button').eq(1).should('have.text', 'Submit')
 
-      cy.get('button').eq(1).click()
+      cy.get('button').eq(0).click()
+    })
+
+    cy.get('section[role="alertdialog"]').should('be.visible')
+    cy.get('section[role="alertdialog"]').within(() => {
+      cy.get('footer button').eq(1).click()
     })
 
     cy.wait('@delete')
+    cy.get('[role="dialog"]').should('not.exist')
+    cy.getByTestId('data-pathname').should('have.text', '/workspace')
+
+    cy.get('[role="status"]').should('contain.text', 'Delete the combiner')
+    cy.get('[role="status"]').should('contain.text', "We've successfully deleted the combiner for you.")
+    cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+  })
+
+  it('should publish properly', () => {
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/my-adapter/tags', {
+      items: MOCK_DEVICE_TAGS('my-adapter', MockAdapterType.OPC_UA),
+    }).as('getTags1')
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/my-other-adapter/tags', {
+      items: MOCK_DEVICE_TAGS('my-other-adapter', MockAdapterType.OPC_UA),
+    }).as('getTags2')
+    cy.intercept('/api/v1/management/topic-filters', {
+      items: [
+        MOCK_TOPIC_FILTER,
+        {
+          topicFilter: 'another/filter',
+          description: 'This is a topic filter',
+        },
+      ],
+    }).as('getTopicFilters')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] }).as(
+      'getProtocols'
+    )
+    cy.intercept('api/v1/management/protocol-adapters/adapters', {
+      items: [
+        {
+          ...mockAdapter,
+          id: 'my-adapter',
+          type: 'opcua',
+        },
+        {
+          ...mockAdapter,
+          id: 'my-other-adapter',
+          type: 'opcua',
+        },
+      ],
+    }).as('getAdapters')
+    cy.intercept('PUT', 'api/v1/management/combiners/**', { updated: 'the combiner' }).as('update')
+
+    cy.mountWithProviders(<CombinerMappingManager />, {
+      routerProps: { initialEntries: [`/node/idCombiner`] },
+      wrapper: getWrapperWith([
+        {
+          id: 'idCombiner',
+          type: NodeTypes.COMBINER_NODE,
+          data: mockEmptyCombiner,
+          ...MOCK_DEFAULT_NODE,
+          position: { x: 0, y: 0 },
+        },
+      ]),
+    })
+
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(500)
+
+    cy.get('footer').within(() => {
+      cy.get('button').eq(1).click()
+    })
+
+    cy.wait('@update')
     cy.get('[role="dialog"]').should('not.exist')
     cy.getByTestId('data-pathname').should('have.text', '/workspace')
 
