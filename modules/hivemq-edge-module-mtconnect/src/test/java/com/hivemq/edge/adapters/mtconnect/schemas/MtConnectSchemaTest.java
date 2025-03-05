@@ -24,23 +24,35 @@ import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MtConnectSchemaTest {
     @Test
-    public void whenGetUnmarshallerIsCallForDevices_1_3_thenXmlValidationShouldPass() throws Exception {
-        JAXBContext jaxbContext = JAXBContext.newInstance(MTConnectDevicesType.class);
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        try (StringReader stringReader = new StringReader(IOUtils.resourceToString(
+    public void whenInputXmlIsCorrect_1_3_thenXmlValidationShouldPass() throws Exception {
+        final JAXBContext jaxbContext = JAXBContext.newInstance(MTConnectDevicesType.class);
+        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(
                 "/smstestbed/volatile-data-stream-schema.xml",
                 StandardCharsets.UTF_8))) {
-            JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+            final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
             assertThat(element.getValue()).isNotNull();
-            MTConnectDevicesType mtConnectDevicesType = (MTConnectDevicesType) element.getValue();
+            final MTConnectDevicesType mtConnectDevicesType = (MTConnectDevicesType) element.getValue();
             assertThat(mtConnectDevicesType).isNotNull();
             assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(8);
         }
     }
 
+    @Test
+    public void whenInputXmlIsIncorrect_1_3_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_3.getUnmarshaller();
+        String xmlString =
+                IOUtils.resourceToString("/smstestbed/volatile-data-stream-schema.xml", StandardCharsets.UTF_8);
+        xmlString = xmlString.replace("<Header ", "<Test ");
+        try (final StringReader stringReader = new StringReader(xmlString)) {
+            assertThatThrownBy(() -> Objects.requireNonNull(unmarshaller).unmarshal(stringReader));
+        }
+    }
 }
