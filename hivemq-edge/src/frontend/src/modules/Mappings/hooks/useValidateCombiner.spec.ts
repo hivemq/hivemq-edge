@@ -4,7 +4,7 @@ import { createErrorHandler, toErrorList } from '@rjsf/utils'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import type { AdaptersList, Combiner, ProtocolAdaptersList } from '@/api/__generated__'
+import type { AdaptersList, Combiner, DataCombining, ProtocolAdaptersList } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import {
   handlers as failCapabilityHandlers,
@@ -163,4 +163,33 @@ describe('useValidateCombiner', () => {
       expect(errors).toStrictEqual([])
     })
   })
+
+  describe('validateDataSources', () => {
+    const getFormData = (mappings: DataCombining[]): Combiner => ({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: [
+          {
+            id: 'the edge name',
+            type: EntityType.EDGE_BROKER,
+          },
+          {
+            id: 'opcua-1',
+            type: EntityType.ADAPTER,
+          },
+        ],
+      },
+      mappings: {
+        items: mappings,
+      },
+    })
+
+    it('should validate an empty list of mappings', async () => {
+      const errors = await renderValidateHook(getFormData([]))
+      expect(errors).toStrictEqual([])
+    })
+  })
+
+  // TODO[TEST] Complete the test suite
 })
