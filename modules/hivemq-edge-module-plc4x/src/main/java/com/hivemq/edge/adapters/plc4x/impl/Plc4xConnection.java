@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -126,16 +127,16 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         return plcConnection != null && plcConnection.isConnected();
     }
 
-    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull Plc4xTag tag) {
+    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().canRead()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if (log.isTraceEnabled()) {
-            log.trace("Sending direct-read request to connection for {}.", tag.getName());
+            log.trace("Sending direct-read request to connection for {}.", tags);
         }
         final PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
-        builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag));
+        tags.forEach(tag -> builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag)));
         final PlcReadRequest readRequest = builder.build();
         //Ok - seems the reads are not thread safe
         synchronized (lock) {
