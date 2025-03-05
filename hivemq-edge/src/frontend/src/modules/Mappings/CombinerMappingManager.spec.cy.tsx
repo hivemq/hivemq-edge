@@ -73,8 +73,6 @@ describe('CombinerMappingManager', () => {
     })
     cy.get('header').should('contain.text', 'Manage Data combining mappings')
 
-    cy.get('[role="alert"]').should('not.exist')
-
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.COMBINER_NODE)
     cy.getByTestId('node-name').should('contain.text', 'my-combiner')
     cy.getByTestId('node-description').should('contain.text', 'Data Combiner')
@@ -88,11 +86,14 @@ describe('CombinerMappingManager', () => {
   })
 
   it('should render the toolbar properly', () => {
-    cy.intercept('PUT', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
+    cy.intercept('DELETE', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
     cy.mountWithProviders(<CombinerMappingManager />, {
       routerProps: { initialEntries: [`/node/idCombiner`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
     })
+
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(500)
 
     cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
 
@@ -100,16 +101,23 @@ describe('CombinerMappingManager', () => {
       cy.get('button').eq(0).should('have.text', 'Delete')
       cy.get('button').eq(1).should('have.text', 'Submit')
 
-      cy.get('button').eq(1).click()
+      cy.get('button').eq(0).click()
+    })
+
+    cy.get('section[role="alertdialog"]').should('be.visible')
+    cy.get('section[role="alertdialog"]').within(() => {
+      cy.get('footer button').eq(1).click()
     })
 
     cy.wait('@delete')
     cy.get('[role="dialog"]').should('not.exist')
     cy.getByTestId('data-pathname').should('have.text', '/workspace')
 
-    cy.get('[role="status"]').should('contain.text', 'Update the combiner')
-    cy.get('[role="status"]').should('contain.text', "We've successfully updated the combiner for you.")
+    cy.get('[role="status"]').should('contain.text', 'Delete the combiner')
+    cy.get('[role="status"]').should('contain.text', "We've successfully deleted the combiner for you.")
     cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+
+    cy.getByTestId('data-pathname').should('have.text', '/workspace')
   })
 
   it('should be accessible', () => {
