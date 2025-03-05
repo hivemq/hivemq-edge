@@ -160,10 +160,9 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
                 throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is not support");
             }
             // The unmarshal call brings additional performance overhead.
-            final @NotNull Optional<Unmarshaller> unmarshallerOptional = schema.getUnmarshaller();
-            if (unmarshallerOptional.isPresent()) {
+            final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
+            if (unmarshaller != null) {
                 try (StringReader stringReader = new StringReader(body)) {
-                    final @NotNull Unmarshaller unmarshaller = unmarshallerOptional.get();
                     unmarshaller.unmarshal(stringReader);
                 } catch (final Exception e) {
                     throw new XMLParseException(e,

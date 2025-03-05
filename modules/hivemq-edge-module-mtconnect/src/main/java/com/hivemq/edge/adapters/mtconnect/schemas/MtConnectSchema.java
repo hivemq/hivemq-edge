@@ -129,16 +129,17 @@ public enum MtConnectSchema {
         return type;
     }
 
-    public @NotNull Optional<Unmarshaller> getUnmarshaller() throws JAXBException {
+    public @Nullable Unmarshaller getUnmarshaller() throws JAXBException {
         if (mtConnectType == null) {
-            return Optional.empty();
-        }
-        if (jaxbContext == null) {
+            return null;
+        } if (jaxbContext == null) {
             // There is no additional synchronization.
             // So there might be contention, but that's a one-time cost.
             // The overall performance is better than a synchronized block.
             jaxbContext = JAXBContext.newInstance(mtConnectType);
         }
-        return Optional.of(jaxbContext.createUnmarshaller());
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        unmarshaller.setEventHandler(new MtConnectSchemaValidationEventHandler());
+        return unmarshaller;
     }
 }
