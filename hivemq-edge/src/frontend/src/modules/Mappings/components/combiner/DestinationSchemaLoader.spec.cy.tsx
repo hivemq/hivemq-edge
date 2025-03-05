@@ -18,7 +18,7 @@ describe('DestinationSchemaLoader', () => {
     cy.viewport(800, 800)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const onChange = cy.stub().as('onChange')
     cy.mountWithProviders(<DestinationSchemaLoader formData={mockDataCombining} onChange={onChange} />)
 

@@ -24,7 +24,7 @@ describe('DataCombiningEditorDrawer', () => {
     cy.viewport(800, 800)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const onClose = cy.stub().as('onClose')
     const onSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(
