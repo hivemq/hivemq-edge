@@ -4,12 +4,13 @@ import { createErrorHandler, toErrorList } from '@rjsf/utils'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import type { Combiner } from '@/api/__generated__'
+import type { AdaptersList, Combiner, ProtocolAdaptersList } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
-import { handlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { handlers, mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockCombinerId, mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
 
 import { useValidateCombiner } from './useValidateCombiner'
+import { http, HttpResponse } from 'msw'
 
 describe('useValidateCombiner', () => {
   beforeEach(() => {
@@ -28,7 +29,7 @@ describe('useValidateCombiner', () => {
       expect(result.current).not.toBeUndefined()
     })
 
-    const formValidation = result.current(formData, errors)
+    const formValidation = result.current?.(formData, errors)
     return toErrorList(formValidation)
   }
 
@@ -41,7 +42,7 @@ describe('useValidateCombiner', () => {
     ])
   })
 
-  it('should validate capability', async () => {
+  it('should fail to validate capability', async () => {
     const errors = await renderValidateHook({
       id: mockCombinerId,
       name: 'my-combiner',
@@ -65,5 +66,93 @@ describe('useValidateCombiner', () => {
         message: 'This is not a valid reference to a Workspace entity',
       }),
     ])
+  })
+
+  it('should fail to validate capability', async () => {
+    const errors = await renderValidateHook({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: [
+          {
+            id: 'my-adapter',
+            type: EntityType.ADAPTER,
+          },
+        ],
+      },
+      mappings: {
+        items: [],
+      },
+    })
+    expect(errors).toStrictEqual([
+      expect.objectContaining({
+        message: "The Edge broker must be connected to the combiner's sources",
+      }),
+      expect.objectContaining({
+        message: 'The adapter does not support data combining and cannot be used as a source',
+      }),
+    ])
+  })
+
+  it('should fail to validate capability', async () => {
+    const errors = await renderValidateHook({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: [
+          {
+            id: 'the edge name',
+            type: EntityType.EDGE_BROKER,
+          },
+          {
+            id: 'my-adapter',
+            type: EntityType.ADAPTER,
+          },
+        ],
+      },
+      mappings: {
+        items: [],
+      },
+    })
+    expect(errors).toStrictEqual([
+      expect.objectContaining({
+        message: 'The adapter does not support data combining and cannot be used as a source',
+      }),
+    ])
+  })
+
+  it('should validate capability properly', async () => {
+    server.resetHandlers()
+    const capabilityHandlers = [
+      http.get('*/protocol-adapters/types', () => {
+        return HttpResponse.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter_OPCUA] }, { status: 200 })
+      }),
+
+      http.get('*/protocol-adapters/adapters', () => {
+        return HttpResponse.json<AdaptersList>({ items: [mockAdapter_OPCUA] }, { status: 200 })
+      }),
+    ]
+    server.use(...capabilityHandlers)
+
+    const errors = await renderValidateHook({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: [
+          {
+            id: 'the edge name',
+            type: EntityType.EDGE_BROKER,
+          },
+          {
+            id: 'opcua-1',
+            type: EntityType.ADAPTER,
+          },
+        ],
+      },
+      mappings: {
+        items: [],
+      },
+    })
+    expect(errors).toStrictEqual([])
   })
 })
