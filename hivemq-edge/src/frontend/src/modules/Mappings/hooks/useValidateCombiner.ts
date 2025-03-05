@@ -29,8 +29,21 @@ export const useValidateCombiner = (
   entities: EntityReference[]
 ) => {
   const { t } = useTranslation()
-  const { data: adapterInfo } = useGetAdapterTypes()
-  const { data: adapters } = useListProtocolAdapters()
+  const { data: adapterInfo, isSuccess: isProtocolSuccess } = useGetAdapterTypes()
+  const { data: adapters, isSuccess: isAdapterSuccess } = useListProtocolAdapters()
+
+  const isSuccess = isProtocolSuccess && isAdapterSuccess
+
+  const hasAdapterCapability = useCallback(
+    (id: string) => {
+      const adapter = adapters?.find((e) => e.id === id)
+      const protocolAdapter = adapter ? adapterInfo?.items.find((protocol) => protocol.id === adapter.type) : undefined
+      if (!adapter || !protocolAdapter) return undefined
+
+      return protocolAdapter.capabilities && protocolAdapter.capabilities.includes('COMBINE')
+    },
+    [adapterInfo?.items, adapters]
+  )
 
   // TODO[NVL] This is a duplicate from CombinedSchemaLoader; refactor
   const allReferences = useMemo<DataReference[]>(() => {
@@ -106,17 +119,11 @@ export const useValidateCombiner = (
     (formData, errors) => {
       formData?.sources.items.forEach((entity, index) => {
         if (entity.type === EntityType.ADAPTER) {
-          const adapter = adapters?.find((e) => e.id === entity.id)
-          const protocolAdapter = adapter
-            ? adapterInfo?.items.find((protocol) => protocol.id === adapter.type)
-            : undefined
-          if (!adapter || !protocolAdapter)
+          const isCapable = hasAdapterCapability(entity.id)
+          if (isCapable === undefined)
             errors.sources?.items?.[index]?.addError(t('combiner.error.validation.notValidReference'))
-          else {
-            if (protocolAdapter.capabilities && !protocolAdapter.capabilities.includes('COMBINE')) {
-              errors.sources?.items?.[index]?.addError(t('combiner.error.validation.notCombineCapability'))
-            }
-          }
+          else if (!isCapable)
+            errors.sources?.items?.[index]?.addError(t('combiner.error.validation.notCombineCapability'))
         }
       })
 
@@ -127,7 +134,7 @@ export const useValidateCombiner = (
 
       return errors
     },
-    [adapterInfo?.items, adapters, t]
+    [hasAdapterCapability, t]
   )
 
   /**
@@ -243,6 +250,11 @@ export const useValidateCombiner = (
   )
 
   const validateCombiner: CustomValidator<Combiner, RJSFSchema, CombinerContext> = (formData, errors) => {
+    if (!formData) {
+      errors.addError(t('combiner.error.validation.notValidPayload'))
+      return errors
+    }
+
     validateSourceCapability(formData, errors)
 
     formData?.mappings?.items?.forEach((entity, index) => {
@@ -257,5 +269,5 @@ export const useValidateCombiner = (
     return errors
   }
 
-  return validateCombiner
+  return isSuccess ? validateCombiner : undefined
 }

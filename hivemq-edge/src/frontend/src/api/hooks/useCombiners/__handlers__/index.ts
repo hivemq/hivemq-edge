@@ -18,7 +18,7 @@ interface MappingParams extends CombinerParams {
   mappingId: string
 }
 
-const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
+export const mockCombinerId = '6991ff43-9105-445f-bce3-976720df40a3'
 
 export const mockEntityReference: EntityReference = {
   type: EntityType.ADAPTER,
@@ -77,8 +77,8 @@ export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
     primary: { id: '', type: DataIdentifierReference.type.TAG },
-    tags: [],
-    topicFilters: [],
+    tags: ['my/tag/t1', 'my/tag/t3'],
+    topicFilters: ['my/topic/+/temp'],
   },
   destination: { topic: 'my/topic' },
   instructions: [],

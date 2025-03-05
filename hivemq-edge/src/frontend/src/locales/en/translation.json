@@ -1226,6 +1226,7 @@
       "invalidData": "Invalid data",
       "noSchemaLoadedYet": "There are no schemas available yet",
       "validation": {
+        "notValidPayload": "The combiner payload must be defined",
         "notValidReference": "This is not a valid reference to a Workspace entity",
         "notCombineCapability": "The adapter does not support data combining and cannot be used as a source",
         "notEdgeSource": "The Edge broker must be connected to the combiner's sources",
@@ -1286,6 +1287,7 @@
           "type_TOPIC_FILTER": "Topic Filter"
         },
         "primary": {
+          "label": "The primary data key of the mapping",
           "placeholder": "Select a primary data key ..."
         }
       },
