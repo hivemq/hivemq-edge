@@ -37,6 +37,7 @@ const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectPro
           topicFilters={topicFilters}
           onChange={onChange}
           formContext={{ queries: sources, entities: mockCombiner.sources.items }}
+          maxW={'75vw'}
         />
       </FormControl>
       {children}

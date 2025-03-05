@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next'
 import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { chakraComponents } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
+import type { BoxProps } from '@chakra-ui/react'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
-interface EntityReferenceSelectProps {
+interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
   id?: string
   tags?: Array<string>
   topicFilters?: Array<string>
@@ -26,7 +27,14 @@ interface EntityOption extends OptionBase {
   description?: string
 }
 
-const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicFilters, formContext, onChange }) => {
+const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
+  id,
+  tags,
+  topicFilters,
+  formContext,
+  onChange,
+  ...boxProps
+}) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
     return formContext?.queries?.some((query) => query.isLoading) || false
@@ -84,7 +92,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, tags, topicF
   }, [tags, topicFilters])
 
   return (
-    <Box maxW={'25vw'}>
+    <Box maxW={'25vw'} {...boxProps}>
       <Select<EntityOption, true, GroupBase<EntityOption>>
         inputId={id}
         id={'combiner-entity-select'}
