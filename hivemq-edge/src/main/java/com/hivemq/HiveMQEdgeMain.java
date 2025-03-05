@@ -182,7 +182,7 @@ public class HiveMQEdgeMain {
     }
 
     public static void main(final String @NotNull [] args) throws Exception {
-        log.info("Starting HiveMQ Edge... ");
+        log.info("Starting HiveMQ Edge...");
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
         final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
