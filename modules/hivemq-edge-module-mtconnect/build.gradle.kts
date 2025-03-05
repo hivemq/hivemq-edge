@@ -41,16 +41,19 @@ dependencies {
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.jackson.dataformat.xml)
+    // V4 supports XSD 1.1
+    implementation(libs.jakarta.xml.bind.api.v4)
+    implementation(libs.jaxb.impl.v4)
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.apache.commonsIO)
     testImplementation(libs.assertj)
-    testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.jackson.databind)
     testImplementation(libs.jackson.dataformat.xml)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.mockito.junitJupiter)
 }
 
