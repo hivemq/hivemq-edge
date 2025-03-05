@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import type { FC, PropsWithChildren } from 'react'
 import { Box, FormControl, FormLabel } from '@chakra-ui/react'
 import type { MultiValue } from 'chakra-react-select'
@@ -70,7 +68,7 @@ describe('CombinedEntitySelect', () => {
     cy.get('#combiner-entity-select').click()
     cy.get('#react-select-entity-listbox').find('[role="option').as('options')
     cy.get('@options').should('have.length', 4)
-    cy.get('@options').eq(0).should('have.text', 'my-adapter/power/off')
+    cy.get('@options').eq(0).should('contain.text', 'my-adapter/power/off').should('contain.text', 'Tag')
   })
 
   it('should be accessible', () => {
