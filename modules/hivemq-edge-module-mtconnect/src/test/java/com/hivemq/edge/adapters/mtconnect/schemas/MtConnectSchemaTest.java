@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.mtconnect.schemas;
 import com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -46,13 +47,14 @@ public class MtConnectSchemaTest {
     }
 
     @Test
-    public void whenInputXmlIsIncorrect_1_3_thenXmlValidationShouldPass() throws Exception {
+    public void whenInputXmlIsIncorrect_1_3_thenXmlValidationShouldFailed() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_3.getUnmarshaller();
         String xmlString =
                 IOUtils.resourceToString("/smstestbed/volatile-data-stream-schema.xml", StandardCharsets.UTF_8);
         xmlString = xmlString.replace("<Header ", "<Test ");
         try (final StringReader stringReader = new StringReader(xmlString)) {
-            assertThatThrownBy(() -> Objects.requireNonNull(unmarshaller).unmarshal(stringReader));
+            assertThatThrownBy(() -> Objects.requireNonNull(unmarshaller).unmarshal(stringReader)).isInstanceOf(
+                    JAXBException.class).hasMessageStartingWith("unexpected element");
         }
     }
 }
