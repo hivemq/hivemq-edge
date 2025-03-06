@@ -34,6 +34,7 @@ import jakarta.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DataItemFilterType")
 @XmlType(name = "DataItemFilterType", propOrder = {
     "value"
 })
@@ -45,6 +46,7 @@ public class DataItemFilterType {
      */
     @XmlValue
     protected float value;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "type")
     @XmlAttribute(name = "type", required = true)
     protected FilterType type;
 

@@ -47,6 +47,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ComponentType")
 @XmlType(name = "ComponentType", propOrder = {
     "description",
     "configuration",
@@ -63,35 +64,43 @@ public abstract class ComponentType {
      * The descriptive information about this component
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Description")
     @XmlElement(name = "Description")
     protected ComponentDescriptionType description;
     /**
      * The configuration information about this component
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Configuration")
     @XmlElement(name = "Configuration")
     protected ComponentConfigurationType configuration;
     /**
      * The component's Data Items
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "DataItems")
     @XmlElement(name = "DataItems")
     protected DataItemsType dataItems;
     /**
      * The sub components
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Components")
     @XmlElement(name = "Components")
     protected ComponentsType components;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "id")
     @XmlAttribute(name = "id", required = true)
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlID
     protected String id;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "nativeName")
     @XmlAttribute(name = "nativeName")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String nativeName;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "sampleInterval")
     @XmlAttribute(name = "sampleInterval")
     protected Float sampleInterval;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "sampleRate")
     @XmlAttribute(name = "sampleRate")
     protected Float sampleRate;
 

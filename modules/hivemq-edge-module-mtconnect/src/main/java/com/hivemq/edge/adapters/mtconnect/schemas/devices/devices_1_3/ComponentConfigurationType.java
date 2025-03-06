@@ -41,6 +41,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ComponentConfigurationType")
 @XmlType(name = "ComponentConfigurationType", propOrder = {
     "content"
 })

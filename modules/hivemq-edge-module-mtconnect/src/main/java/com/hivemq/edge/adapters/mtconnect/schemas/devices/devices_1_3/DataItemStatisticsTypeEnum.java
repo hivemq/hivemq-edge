@@ -34,6 +34,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * }</pre>
  * 
  */
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DataItemStatisticsTypeEnum")
 @XmlType(name = "DataItemStatisticsTypeEnum")
 @XmlEnum
 public enum DataItemStatisticsTypeEnum {

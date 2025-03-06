@@ -37,6 +37,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "CommonComponentType")
 @XmlType(name = "CommonComponentType")
 @XmlSeeAlso({
     ControllerType.class,
@@ -56,8 +57,10 @@ public class CommonComponentType
     extends ComponentType
 {
 
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "uuid")
     @XmlAttribute(name = "uuid")
     protected String uuid;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "name")
     @XmlAttribute(name = "name")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String name;

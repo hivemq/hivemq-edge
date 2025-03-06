@@ -26,6 +26,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * }</pre>
  * 
  */
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "FilterType")
 @XmlType(name = "FilterType")
 @XmlEnum
 public enum FilterType {
