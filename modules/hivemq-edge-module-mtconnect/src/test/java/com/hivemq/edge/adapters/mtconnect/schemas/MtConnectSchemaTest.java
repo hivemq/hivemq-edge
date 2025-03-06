@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.mtconnect.schemas;
 
 import com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType;
-import jakarta.xml.bind.JAXBContext;
+import com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -32,13 +32,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MtConnectSchemaTest {
     @Test
-    public void whenInputXmlIsCorrect_1_3_thenXmlValidationShouldPass() throws Exception {
-        final JAXBContext jaxbContext = JAXBContext.newInstance(MTConnectDevicesType.class);
-        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+    public void whenInputXmlIsDevices_1_3_smstestbed_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_3.getUnmarshaller();
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(
-                "/smstestbed/volatile-data-stream-schema.xml",
+                "/devices/devices-1-3-smstestbed.xml",
                 StandardCharsets.UTF_8))) {
-            final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
             assertThat(element.getValue()).isNotNull();
             final MTConnectDevicesType mtConnectDevicesType = (MTConnectDevicesType) element.getValue();
             assertThat(mtConnectDevicesType).isNotNull();
@@ -47,10 +47,23 @@ public class MtConnectSchemaTest {
     }
 
     @Test
-    public void whenInputXmlIsIncorrect_1_3_thenXmlValidationShouldFailed() throws Exception {
+    public void whenInputXmlIsStreams_1_3_smstestbed_current_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Streams_1_3.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/streams/streams-1-3.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final MTConnectStreamsType mtConnectStreamsType = (MTConnectStreamsType) element.getValue();
+            assertThat(mtConnectStreamsType).isNotNull();
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(1);
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(17);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsIncorrectDevices_1_3_smstestbed_thenXmlValidationShouldFailed() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_3.getUnmarshaller();
-        String xmlString =
-                IOUtils.resourceToString("/smstestbed/volatile-data-stream-schema.xml", StandardCharsets.UTF_8);
+        String xmlString = IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml", StandardCharsets.UTF_8);
         xmlString = xmlString.replace("<Header ", "<Test ");
         try (final StringReader stringReader = new StringReader(xmlString)) {
             assertThatThrownBy(() -> Objects.requireNonNull(unmarshaller).unmarshal(stringReader)).isInstanceOf(
