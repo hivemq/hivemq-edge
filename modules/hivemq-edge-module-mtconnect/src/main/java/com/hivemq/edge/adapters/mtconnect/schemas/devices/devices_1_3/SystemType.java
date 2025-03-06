@@ -32,6 +32,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "SystemType")
 @XmlType(name = "SystemType")
 @XmlSeeAlso({
     PneumaticType.class,

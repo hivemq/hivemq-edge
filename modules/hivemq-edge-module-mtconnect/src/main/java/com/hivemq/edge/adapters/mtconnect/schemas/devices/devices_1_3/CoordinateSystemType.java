@@ -27,6 +27,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * }</pre>
  * 
  */
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "CoordinateSystemType")
 @XmlType(name = "CoordinateSystemType")
 @XmlEnum
 public enum CoordinateSystemType {

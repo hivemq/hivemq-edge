@@ -37,6 +37,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ChannelsType")
 @XmlType(name = "ChannelsType", propOrder = {
     "channel"
 })
@@ -46,6 +47,7 @@ public class ChannelsType {
      * A calabration channel
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Channel")
     @XmlElement(name = "Channel", required = true)
     protected List<ChannelType> channel;
 

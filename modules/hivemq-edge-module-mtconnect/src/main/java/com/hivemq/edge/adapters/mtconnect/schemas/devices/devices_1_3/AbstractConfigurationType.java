@@ -32,6 +32,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "AbstractConfigurationType")
 @XmlType(name = "AbstractConfigurationType")
 @XmlSeeAlso({
     SensorConfigurationType.class

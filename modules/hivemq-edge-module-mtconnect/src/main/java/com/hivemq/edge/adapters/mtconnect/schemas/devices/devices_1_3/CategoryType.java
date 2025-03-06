@@ -28,6 +28,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * }</pre>
  * 
  */
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "CategoryType")
 @XmlType(name = "CategoryType")
 @XmlEnum
 public enum CategoryType {

@@ -37,6 +37,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "AssetCountsType")
 @XmlType(name = "AssetCountsType", propOrder = {
     "assetCount"
 })
@@ -46,6 +47,7 @@ public class AssetCountsType {
      * The number of assets for a given type
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "AssetCount")
     @XmlElement(name = "AssetCount", required = true)
     protected List<AssetCountType> assetCount;
 

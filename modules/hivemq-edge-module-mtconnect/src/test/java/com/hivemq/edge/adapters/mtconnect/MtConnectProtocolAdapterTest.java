@@ -234,10 +234,9 @@ public class MtConnectProtocolAdapterTest {
             assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION)
                     .asText()).isEqualTo(MtConnectSchema.Devices_1_3.getLocation());
         }
-        // TODO
-//        assertThat(jsonNode.get("Header")).isNotNull();
-//        assertThat(jsonNode.get("Devices")).isNotNull();
-//        assertThat(jsonNode.get("Streams")).isNull();
+        assertThat(jsonNode.get("Header")).isNotNull();
+        assertThat(jsonNode.get("Devices")).isNotNull();
+        assertThat(jsonNode.get("Streams")).isNull();
     }
 
     @Test

@@ -46,6 +46,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DataItemConstraintsType")
 @XmlType(name = "DataItemConstraintsType", propOrder = {
     "value",
     "minimum",
@@ -59,18 +60,21 @@ public class DataItemConstraintsType {
      *                 vocabularies.
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Value")
     @XmlElement(name = "Value")
     protected List<DataItemValueElementType> value;
     /**
      * A minimum value for this data item.
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Minimum")
     @XmlElement(name = "Minimum")
     protected String minimum;
     /**
      * A maximum value for this data item.
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Maximum")
     @XmlElement(name = "Maximum")
     protected String maximum;
     /**
@@ -78,6 +82,7 @@ public class DataItemConstraintsType {
      *             required.
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Filter")
     @XmlElement(name = "Filter")
     protected DataItemFilterType filter;
 

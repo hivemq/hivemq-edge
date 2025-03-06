@@ -32,6 +32,7 @@ import jakarta.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DataItemValueElementType")
 @XmlType(name = "DataItemValueElementType", propOrder = {
     "value"
 })

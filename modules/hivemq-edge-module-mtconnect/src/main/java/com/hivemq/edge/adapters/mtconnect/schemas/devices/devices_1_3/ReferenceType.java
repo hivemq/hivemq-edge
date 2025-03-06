@@ -38,6 +38,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ReferenceType")
 @XmlType(name = "ReferenceType", propOrder = {
     "value"
 })
@@ -45,9 +46,11 @@ public class ReferenceType {
 
     @XmlValue
     protected String value;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "dataItemId")
     @XmlAttribute(name = "dataItemId", required = true)
     @XmlIDREF
     protected Object dataItemId;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "name")
     @XmlAttribute(name = "name")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String name;

@@ -54,6 +54,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DataItemType")
 @XmlType(name = "DataItemType", propOrder = {
     "source",
     "constraints"
@@ -65,41 +66,56 @@ public class DataItemType {
      *             etc... that collects the data.
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Source")
     @XmlElement(name = "Source")
     protected SourceType source;
     /**
      * Limits on the set of possible values
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Constraints")
     @XmlElement(name = "Constraints")
     protected DataItemConstraintsType constraints;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "name")
     @XmlAttribute(name = "name")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String name;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "id")
     @XmlAttribute(name = "id", required = true)
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlID
     protected String id;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "type")
     @XmlAttribute(name = "type", required = true)
     protected String type;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "subType")
     @XmlAttribute(name = "subType")
     protected String subType;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "statistic")
     @XmlAttribute(name = "statistic")
     protected String statistic;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "units")
     @XmlAttribute(name = "units")
     protected String units;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "nativeUnits")
     @XmlAttribute(name = "nativeUnits")
     protected String nativeUnits;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "nativeScale")
     @XmlAttribute(name = "nativeScale")
     protected Float nativeScale;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "category")
     @XmlAttribute(name = "category", required = true)
     protected CategoryType category;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "coordinateSystem")
     @XmlAttribute(name = "coordinateSystem")
     protected CoordinateSystemType coordinateSystem;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "sampleRate")
     @XmlAttribute(name = "sampleRate")
     protected Float sampleRate;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "representation")
     @XmlAttribute(name = "representation")
     protected RepresentationType representation;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "significantDigits")
     @XmlAttribute(name = "significantDigits")
     protected BigInteger significantDigits;
 

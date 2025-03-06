@@ -31,6 +31,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "HydraulicType")
 @XmlType(name = "HydraulicType")
 public class HydraulicType
     extends SystemType

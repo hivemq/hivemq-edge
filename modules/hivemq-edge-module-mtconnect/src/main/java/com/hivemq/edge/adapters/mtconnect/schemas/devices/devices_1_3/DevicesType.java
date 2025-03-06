@@ -37,6 +37,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DevicesType")
 @XmlType(name = "DevicesType", propOrder = {
     "device"
 })
@@ -46,6 +47,7 @@ public class DevicesType {
      * A piece of equipment
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Device")
     @XmlElement(name = "Device", required = true)
     protected List<DeviceType> device;
 
