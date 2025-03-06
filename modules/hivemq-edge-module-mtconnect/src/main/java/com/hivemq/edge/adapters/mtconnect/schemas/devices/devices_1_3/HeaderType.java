@@ -48,6 +48,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "HeaderType")
 @XmlType(name = "HeaderType", propOrder = {
     "assetCounts"
 })
@@ -57,23 +58,32 @@ public class HeaderType {
      * The asset statistics
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "AssetCounts")
     @XmlElement(name = "AssetCounts")
     protected AssetCountsType assetCounts;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "version")
     @XmlAttribute(name = "version", required = true)
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String version;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "creationTime")
     @XmlAttribute(name = "creationTime", required = true)
     protected XMLGregorianCalendar creationTime;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "testIndicator")
     @XmlAttribute(name = "testIndicator")
     protected Boolean testIndicator;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "instanceId")
     @XmlAttribute(name = "instanceId", required = true)
     protected BigInteger instanceId;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "sender")
     @XmlAttribute(name = "sender", required = true)
     protected String sender;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "bufferSize")
     @XmlAttribute(name = "bufferSize", required = true)
     protected long bufferSize;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "assetBufferSize")
     @XmlAttribute(name = "assetBufferSize", required = true)
     protected long assetBufferSize;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "assetCount")
     @XmlAttribute(name = "assetCount", required = true)
     protected long assetCount;
 

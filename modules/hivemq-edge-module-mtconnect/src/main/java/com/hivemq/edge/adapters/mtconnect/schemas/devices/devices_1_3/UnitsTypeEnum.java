@@ -59,6 +59,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * }</pre>
  * 
  */
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "UnitsTypeEnum")
 @XmlType(name = "UnitsTypeEnum")
 @XmlEnum
 public enum UnitsTypeEnum {

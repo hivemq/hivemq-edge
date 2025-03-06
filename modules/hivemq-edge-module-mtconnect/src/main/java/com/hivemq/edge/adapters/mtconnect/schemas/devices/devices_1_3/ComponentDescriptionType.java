@@ -47,6 +47,7 @@ import org.w3c.dom.Element;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ComponentDescriptionType")
 @XmlType(name = "ComponentDescriptionType", propOrder = {
     "content"
 })
@@ -60,13 +61,17 @@ public class ComponentDescriptionType {
     @XmlMixed
     @XmlAnyElement(lax = true)
     protected List<Object> content;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "manufacturer")
     @XmlAttribute(name = "manufacturer")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String manufacturer;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "model")
     @XmlAttribute(name = "model")
     protected String model;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "serialNumber")
     @XmlAttribute(name = "serialNumber")
     protected String serialNumber;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "station")
     @XmlAttribute(name = "station")
     protected String station;
 

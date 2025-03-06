@@ -31,6 +31,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "MaterialHandlerType")
 @XmlType(name = "MaterialHandlerType")
 public class MaterialHandlerType
     extends InterfaceType

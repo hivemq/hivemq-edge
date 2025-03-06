@@ -36,6 +36,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "InterfaceType")
 @XmlType(name = "InterfaceType", propOrder = {
     "references"
 })
@@ -53,6 +54,7 @@ public abstract class InterfaceType
      * A list of referenced components and data items
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "References")
     @XmlElement(name = "References")
     protected ReferencesType references;
 

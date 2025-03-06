@@ -36,6 +36,7 @@ import jakarta.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "SourceType")
 @XmlType(name = "SourceType", propOrder = {
     "value"
 })
@@ -47,9 +48,11 @@ public class SourceType {
      */
     @XmlValue
     protected String value;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "componentId")
     @XmlAttribute(name = "componentId")
     @XmlIDREF
     protected Object componentId;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "dataItemId")
     @XmlAttribute(name = "dataItemId")
     @XmlIDREF
     protected Object dataItemId;

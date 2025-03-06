@@ -38,15 +38,19 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "DeviceType")
 @XmlType(name = "DeviceType")
 public class DeviceType
     extends ComponentType
 {
 
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "iso841Class")
     @XmlAttribute(name = "iso841Class")
     protected BigInteger iso841Class;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "uuid")
     @XmlAttribute(name = "uuid", required = true)
     protected String uuid;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "name")
     @XmlAttribute(name = "name", required = true)
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String name;

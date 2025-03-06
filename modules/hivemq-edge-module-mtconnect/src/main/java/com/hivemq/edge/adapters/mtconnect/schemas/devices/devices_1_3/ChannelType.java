@@ -46,6 +46,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "ChannelType")
 @XmlType(name = "ChannelType", propOrder = {
     "description",
     "calibrationDate",
@@ -58,12 +59,14 @@ public class ChannelType {
      * A text description of the channel
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Description")
     @XmlElement(name = "Description")
     protected String description;
     /**
      * The date and time the sensor was calibrated
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "CalibrationDate")
     @XmlElement(name = "CalibrationDate")
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar calibrationDate;
@@ -71,6 +74,7 @@ public class ChannelType {
      * The date and time the sensor was calibrated
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "NextCalibrationDate")
     @XmlElement(name = "NextCalibrationDate")
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar nextCalibrationDate;
@@ -78,10 +82,13 @@ public class ChannelType {
      * The initials of the person who calibrated this sensor
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "CalibrationInitials")
     @XmlElement(name = "CalibrationInitials")
     protected String calibrationInitials;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "number")
     @XmlAttribute(name = "number", required = true)
     protected BigInteger number;
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "name")
     @XmlAttribute(name = "name")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String name;

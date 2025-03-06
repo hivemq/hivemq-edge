@@ -73,28 +73,41 @@ public class MtConnectSchemaJsonAnnotationTest {
         final StringBuilder sb = new StringBuilder(toBePatchedContent.length() << 1);
         int position = 0;
         for (AnnotationTree annotationTree : context.getAnnotationTreeMap().values()) {
-            final int lineStartPosition = toBePatchedContent.lastIndexOf("\n", (int) annotationTree.startPosition);
+            assertThat(annotationTree.name).doesNotContain("\"");
+            final int lineStartPosition = toBePatchedContent.lastIndexOf("\n", (int) annotationTree.startPosition) + 1;
             final int lineEndPosition = toBePatchedContent.indexOf("\n", (int) annotationTree.endPosition) + 1;
-            assertThat(lineStartPosition).isGreaterThan(position);
+            assertThat(lineStartPosition).isGreaterThanOrEqualTo(position);
             assertThat(lineEndPosition).isGreaterThan(lineStartPosition);
             if (lineStartPosition > position) {
                 sb.append(toBePatchedContent, position, lineStartPosition);
             }
+            @Nullable String annotationName = null;
             switch (annotationTree.type) {
                 case XmlProperty -> {
-                    sb.append(toBePatchedContent, lineStartPosition, lineEndPosition);
+                    annotationName = JsonProperty.class.getName();
                 }
                 case XmlType -> {
-                    sb.append(toBePatchedContent, lineStartPosition, lineEndPosition);
+                    annotationName = JsonTypeName.class.getName();
                 }
                 default -> {
                     // Skip
                 }
             }
+            if (annotationName != null) {
+                sb.append(" ".repeat((int) annotationTree.startPosition - lineStartPosition));
+                sb.append("@").append(annotationName).append("(value = \"").append(annotationTree.name).append("\")\n");
+                sb.append(toBePatchedContent, lineStartPosition, lineEndPosition);
+            }
             position = lineEndPosition;
+        }
+        if (position < toBePatchedContent.length()) {
+            sb.append(toBePatchedContent, position, toBePatchedContent.length());
         }
         final String patchedContent = sb.toString();
         assertThat(patchedContent).isNotEmpty();
+        if (!toBePatchedContent.equals(patchedContent)) {
+            Files.writeString(filePath, patchedContent, StandardCharsets.UTF_8);
+        }
     }
 
     @Test
@@ -163,9 +176,15 @@ public class MtConnectSchemaJsonAnnotationTest {
     protected static class AnnotationScanner extends TreePathScanner<AnnotationScanner, AnnotationContext> {
         private static final @NotNull String NAME = "name";
         private static final @NotNull String VALUE = "value";
-        private static final @NotNull Map<String, TreeType> XML_TAG_NAME_MAP = Map.of(XmlType.class.getSimpleName(),
+        private static final @NotNull Map<String, TreeType> XML_TAG_NAME_MAP = Map.of(XmlType.class.getName(),
                 TreeType.XmlType,
+                XmlType.class.getSimpleName(),
+                TreeType.XmlType,
+                XmlElement.class.getName(),
+                TreeType.XmlProperty,
                 XmlElement.class.getSimpleName(),
+                TreeType.XmlProperty,
+                XmlAttribute.class.getName(),
                 TreeType.XmlProperty,
                 XmlAttribute.class.getSimpleName(),
                 TreeType.XmlProperty);
@@ -182,8 +201,8 @@ public class MtConnectSchemaJsonAnnotationTest {
         public @NotNull MtConnectSchemaJsonAnnotationTest.AnnotationScanner visitAnnotation(
                 final @NotNull com.sun.source.tree.AnnotationTree tree,
                 final @NotNull MtConnectSchemaJsonAnnotationTest.AnnotationContext context) {
-            if (tree.getAnnotationType() instanceof final IdentifierTree identifierTree) {
-                final String annotationName = identifierTree.getName().toString();
+            final @Nullable String annotationName = tree.getAnnotationType().toString();
+            if (annotationName != null) {
                 AnnotationTree annotationTree = null;
                 TreeType xmlTreeType = XML_TAG_NAME_MAP.get(annotationName);
                 if (xmlTreeType != null) {

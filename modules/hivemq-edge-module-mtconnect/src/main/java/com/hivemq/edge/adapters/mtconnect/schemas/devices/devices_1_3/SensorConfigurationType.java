@@ -45,6 +45,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "SensorConfigurationType")
 @XmlType(name = "SensorConfigurationType", propOrder = {
     "firmwareVersion",
     "calibrationDate",
@@ -61,12 +62,14 @@ public class SensorConfigurationType
      * The firmware version
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "FirmwareVersion")
     @XmlElement(name = "FirmwareVersion", required = true)
     protected String firmwareVersion;
     /**
      * The date and time the sensor was calibrated
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "CalibrationDate")
     @XmlElement(name = "CalibrationDate")
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar calibrationDate;
@@ -74,6 +77,7 @@ public class SensorConfigurationType
      * The date and time the sensor was calibrated
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "NextCalibrationDate")
     @XmlElement(name = "NextCalibrationDate")
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar nextCalibrationDate;
@@ -81,6 +85,7 @@ public class SensorConfigurationType
      * The initials of the person who calibrated this sensor
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "CalibrationInitials")
     @XmlElement(name = "CalibrationInitials")
     protected String calibrationInitials;
     /**
@@ -93,6 +98,7 @@ public class SensorConfigurationType
      * The sensor channels
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Channels")
     @XmlElement(name = "Channels")
     protected ChannelsType channels;
 

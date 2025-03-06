@@ -36,6 +36,7 @@ import jakarta.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
+@com.fasterxml.jackson.annotation.JsonTypeName(value = "MTConnectDevicesType")
 @XmlType(name = "MTConnectDevicesType", propOrder = {
     "header",
     "devices"
@@ -46,12 +47,14 @@ public class MTConnectDevicesType {
      * Protocol dependent information
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Header")
     @XmlElement(name = "Header", required = true)
     protected HeaderType header;
     /**
      * The equipment
      * 
      */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Devices")
     @XmlElement(name = "Devices", required = true)
     protected DevicesType devices;
 
