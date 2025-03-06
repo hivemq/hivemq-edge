@@ -84,5 +84,32 @@
     <persistence>
         <mode>${ENV:HIVEMQ_PERSISTENCE_MODE}</mode>
     </persistence>
+
+    <modules>
+        ${IF:HIVEMQ_DATAHUB_ENABLED}
+        <data-hub>
+            <data-validation>
+                <enabled>true</enabled>
+            </data-validation>
+            <behavior-validation>
+                <enabled>true</enabled>
+            </behavior-validation>
+            <scripting>
+                <enabled>true</enabled>
+            </scripting>
+            <scriptstate-persistence>
+                <file>${ENV:HIVEMQ_DATAHUB_SCRIPTSTATE_PATH}</file>
+            </scriptstate-persistence>
+        </data-hub>
+        ${IF:HIVEMQ_DATAHUB_ENABLED}
+    </modules>
+    ${IF:HIVEMQ_DATAHUB_ENABLED}
+    <internal>
+        <option>
+            <key>data-hub.preset.root-folder</key>
+            <value>/datahubinit</value>
+        </option>
+    </internal>
+    ${IF:HIVEMQ_DATAHUB_ENABLED}
     ${FRAGMENT:/fragment/config}
 </hivemq>

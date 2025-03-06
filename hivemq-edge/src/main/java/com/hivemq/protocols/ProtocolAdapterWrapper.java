@@ -15,29 +15,35 @@
  */
 package com.hivemq.protocols;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.protocols.northbound.NorthboundTagConsumer;
+import com.hivemq.protocols.northbound.PerAdapterSampler;
+import com.hivemq.protocols.northbound.PerContextSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -53,8 +59,11 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
-    private volatile @NotNull ProtocolAdapterConfig config;
+    private final @NotNull ProtocolAdapterConfig config;
+    private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
+    private final @NotNull TagManager tagManager;
     protected @Nullable Long lastStartAttemptTime;
+    private final List<NorthboundTagConsumer> consumers = new ArrayList<>();
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -64,7 +73,9 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterState protocolAdapterState) {
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
+            final @NotNull TagManager tagManager) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -73,13 +84,12 @@ public class ProtocolAdapterWrapper {
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = protocolAdapterState;
         this.config = config;
+        this.northboundConsumerFactory = northboundConsumerFactory;
+        this.tagManager = tagManager;
     }
 
     public @NotNull CompletableFuture<Void> start(
-            final boolean writingEnabled,
-            final @NotNull ModuleServices moduleServices,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadCreator) {
+            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
         initStartAttempt();
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
@@ -88,11 +98,8 @@ public class ProtocolAdapterWrapper {
         final CompletableFuture<Void> startFuture = output.getStartFuture();
 
         return startFuture.thenCompose(r -> {
-            startPolling(protocolAdapterPollingService,
-                    objectMapper,
-                    input.moduleServices().adapterPublishService(),
-                    input.moduleServices().eventService(),
-                    jsonPayloadCreator);
+            createAndSubscribeTagConsumer();
+            startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
             return startWriting(writingEnabled, protocolAdapterWritingService);
         }).thenApply(r -> {
             setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -101,18 +108,19 @@ public class ProtocolAdapterWrapper {
 
     }
 
-    public CompletableFuture<Void> stop() {
+    public @NotNull CompletableFuture<Void> stop() {
+        destroyAndUnsubscribeTagConsumers();
         final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
         final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
         adapter.stop(input, output);
         stopPolling(protocolAdapterPollingService);
-        return stopWriting(protocolAdapterWritingService)
-                .thenApply(r -> {
-                    //only transition to stopped whne it succeeded
-                    setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                    return null;
-                });
+        return stopWriting(protocolAdapterWritingService).thenApply(r -> {
+            //only transition to stopped whne it succeeded
+            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            return null;
+        });
     }
+
 
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
@@ -195,48 +203,63 @@ public class ProtocolAdapterWrapper {
         return adapter instanceof PollingProtocolAdapter;
     }
 
+    public boolean isBatchPolling() {
+        return adapter instanceof BatchPollingProtocolAdapter;
+    }
+
     private void startPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadCreator) {
+            final @NotNull EventService eventService) {
+
+        if (isBatchPolling()) {
+            log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
+            final PerAdapterSampler sampler =
+                    new PerAdapterSampler(this, eventService, tagManager);
+            protocolAdapterPollingService.schedulePolling(sampler);
+        }
+
         if (isPolling()) {
-            log.debug("Schedule polling for protocol adapter with id '{}'", getId());
-            getNorthboundMappings()
-                    .forEach(adapterSubscription -> {
-                        final PerSubscriptionSampler sampler = new PerSubscriptionSampler(
+            config.getTags().forEach(tag -> {
+                final PerContextSampler sampler =
+                        new PerContextSampler(
                                 this,
-                                objectMapper,
-                                adapterPublishService,
-                                adapterSubscription,
+                            new PollingContextWrapper(
+                                    "unused",
+                                    tag.getName(),
+                                    MessageHandlingOptions.MQTTMessagePerTag,
+                                    false,
+                                    false,
+                                    List.of(),
+                                    1,
+                                    -1),
                                 eventService,
-                                jsonPayloadCreator);
-                        protocolAdapterPollingService.schedulePolling(sampler);
-                    });
+                                tagManager);
+                protocolAdapterPollingService.schedulePolling(sampler);
+            });
         }
     }
 
     private void stopPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService) {
-        if (isPolling()) {
+        if (isPolling() || isBatchPolling()) {
             log.debug("Stopping polling for protocol adapter with id '{}'", getId());
             protocolAdapterPollingService.stopPollingForAdapterInstance(getAdapter());
         }
     }
 
-    private @NotNull CompletableFuture<Void> startWriting(final boolean writingEnabled, final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
+    private @NotNull CompletableFuture<Void> startWriting(
+            final boolean writingEnabled,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         if (writingEnabled && isWriting()) {
             log.debug("Start writing for protocol adapter with id '{}'", getId());
 
             final List<SouthboundMapping> southboundMappings = getSouthboundMappings();
-            final List<InternalWritingContext> writingContexts = southboundMappings.stream()
-                    .map(InternalWritingContextImpl::new)
-                    .collect(Collectors.toList());
+            final List<InternalWritingContext> writingContexts =
+                    southboundMappings.stream().map(InternalWritingContextImpl::new).collect(Collectors.toList());
 
             return protocolAdapterWritingService.startWriting((WritingProtocolAdapter) getAdapter(),
-                            getProtocolAdapterMetricsService(),
-                            writingContexts);
+                    getProtocolAdapterMetricsService(),
+                    writingContexts);
         } else {
             return CompletableFuture.completedFuture(null);
         }
@@ -253,5 +276,22 @@ public class ProtocolAdapterWrapper {
             return CompletableFuture.completedFuture(null);
         }
     }
+
+
+    private void destroyAndUnsubscribeTagConsumers() {
+        for (final NorthboundTagConsumer consumer : consumers) {
+            tagManager.removeConsumer(consumer);
+        }
+    }
+
+    private void createAndSubscribeTagConsumer() {
+        for (final NorthboundMapping northboundMapping : getNorthboundMappings()) {
+            final NorthboundTagConsumer northboundTagConsumer =
+                    northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService);
+            tagManager.addConsumer(northboundTagConsumer);
+            consumers.add(northboundTagConsumer);
+        }
+    }
+
 
 }

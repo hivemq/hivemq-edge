@@ -6,6 +6,7 @@ import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
 
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
@@ -15,6 +16,8 @@ interface PropertyItemProps {
   hasTooltip?: boolean
   hasExamples?: boolean
   hasDescription?: boolean
+  dataReference?: DataReference
+  hasPathAsName?: boolean
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -23,6 +26,8 @@ const PropertyItem: FC<PropertyItemProps> = ({
   hasTooltip = false,
   hasExamples = false,
   hasDescription = false,
+  hasPathAsName = false,
+  dataReference,
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
@@ -33,12 +38,15 @@ const PropertyItem: FC<PropertyItemProps> = ({
     if (!element) return
     return draggable({
       element,
-      getInitialData: () => ({ ...property }),
+      getInitialData: () => ({ ...property, dataReference }),
     })
-  }, [isDraggable, property, property.type])
+  }, [dataReference, isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
-  const type = t('GenericSchema.data.type', { context: property.type || 'null', arrayType: property.arrayType })
+  const type = t('GenericSchema.data.type', {
+    context: property.type || 'null',
+    arrayType: property.arrayType || 'object',
+  })
   // TODO[NVL] key should be use for mapping. But what to use for display? key or title or both ?
   const propertyName = property.title
   const path = [...property.path, property.key].join('.')
@@ -77,7 +85,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
         </Tooltip>
         <Tooltip label={path} placement="top" isDisabled={!hasTooltip} hasArrow>
           <Badge data-testid="property-name" aria-label={path}>
-            {propertyName}
+            {hasPathAsName ? path : propertyName}
           </Badge>
         </Tooltip>
       </HStack>

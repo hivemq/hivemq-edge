@@ -40,7 +40,8 @@ public class IfUtil {
             "HIVEMQ_HTTPS_ENABLED",
             "HIVEMQ_MQTT_ENABLED",
             "HIVEMQ_MQTTS_ENABLED",
-            "HIVEMQ_MQTTS_CLIENTAUTH_ENABLED");
+            "HIVEMQ_MQTTS_CLIENTAUTH_ENABLED",
+            "HIVEMQ_DATAHUB_ENABLED");
 
     /**
      * Get a Java system property or system environment variable with the specified name.

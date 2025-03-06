@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -29,19 +28,15 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
-import com.hivemq.adapter.sdk.api.writing.WritingInput;
-import com.hivemq.adapter.sdk.api.writing.WritingOutput;
-import com.hivemq.adapter.sdk.api.writing.WritingPayload;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.model.HttpData;
-import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
@@ -68,6 +63,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
@@ -77,7 +73,7 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLA
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter {
+public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -88,7 +84,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull List<HttpTag> tags;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -104,7 +100,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream().map(tag -> (HttpTag)tag).toList();
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
@@ -119,7 +115,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(STATELESS);
             if (httpClient == null) {
@@ -151,7 +148,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
         final HttpClient httpClient = this.httpClient;
         if (httpClient == null) {
@@ -159,24 +156,38 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             return;
         }
 
-        final PollingContext httpToMqttMapping = pollingInput.getPollingContext();
+        final List<CompletableFuture<HttpData>> pollingFutures =
+                tags.stream().map(tag -> pollHttp(httpClient, tag)).toList();
 
-        // first resolve the tag
-        final String tagName = pollingInput.getPollingContext().getTagName();
-        tags.stream()
-                .filter(tag -> tag.getName().equals(tagName))
-                .findFirst()
-                .ifPresentOrElse(def -> pollHttp(httpClient, pollingOutput, (HttpTag) def, httpToMqttMapping),
-                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-
+        CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+                .whenComplete((result, throwable) -> {
+                    if(throwable != null) {
+                        pollingOutput.fail(throwable, "Error while polling tags.");
+                    } else {
+                        try {
+                            for (final CompletableFuture<HttpData> future : pollingFutures) {
+                                    final var data = future.get();
+                                    if (data.isSuccessStatusCode()) {
+                                        protocolAdapterState.setConnectionStatus(STATELESS);
+                                    } else {
+                                        protocolAdapterState.setConnectionStatus(ERROR);
+                                    }
+                                    if (data.isSuccessStatusCode() ||
+                                            !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
+                                        data.getDataPoints().forEach(pollingOutput::addDataPoint);
+                                    }
+                            }
+                            pollingOutput.finish();
+                        } catch (final InterruptedException | ExecutionException e) {
+                            pollingOutput.fail(e, "Exception while accessing data of completed future.");
+                        }
+                    }
+                });
     }
 
-    private void pollHttp(
+    private CompletableFuture<HttpData> pollHttp(
             final @NotNull HttpClient httpClient,
-            final @NotNull PollingOutput pollingOutput,
-            final @NotNull HttpTag httpTag, final @NotNull PollingContext httpToMqttMapping) {
+            final @NotNull HttpTag httpTag) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
@@ -209,88 +220,66 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
-                pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                                tagDef.getHttpRequestMethod()),
-                        "There was an unexpected value present in the request config: " +
-                                tagDef.getHttpRequestMethod());
-                return;
-
-
+                return CompletableFuture
+                            .failedFuture(
+                                new IllegalStateException("There was an unexpected value present in the request config: " + tagDef.getHttpRequestMethod()));
         }
 
-        final CompletableFuture<HttpResponse<String>> responseFuture =
-                httpClient.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return httpClient
+                    .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
+    }
 
-        final CompletableFuture<HttpData> dataFuture = responseFuture.thenApply(httpResponse -> {
-            Object payloadData = null;
-            String responseContentType = null;
+    private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,
+                                          final @NotNull String tagName) {
+        Object payloadData = null;
+        String responseContentType = null;
 
-            if (isSuccessStatusCode(httpResponse.statusCode())) {
-                final String bodyData = httpResponse.body();
-                //-- if the content type is json, then apply the JSON to the output data,
-                //-- else encode using base64 (as we dont know what the content is).
-                if (bodyData != null) {
-                    responseContentType = httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
-                    responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ?
-                            JSON_MIME_TYPE :
-                            responseContentType;
-                    if (JSON_MIME_TYPE.equals(responseContentType)) {
-                        try {
-                            payloadData = objectMapper.readTree(bodyData);
-                        } catch (final Exception e) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Invalid JSON data was [{}]", bodyData);
-                            }
-                            moduleServices.eventService()
-                                    .createAdapterEvent(adapterId, adapterInformation.getProtocolId())
-                                    .withSeverity(Event.SEVERITY.WARN)
-                                    .withMessage(String.format(
-                                            "Http response on adapter '%s' could not be parsed as JSON data.",
-                                            adapterId))
-                                    .fire();
-                            throw new RuntimeException("unable to parse JSON data from HTTP response");
+        if (isSuccessStatusCode(httpResponse.statusCode())) {
+            final String bodyData = httpResponse.body();
+            //-- if the content type is json, then apply the JSON to the output data,
+            //-- else encode using base64 (as we dont know what the content is).
+            if (bodyData != null) {
+                responseContentType = httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
+                responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ?
+                        JSON_MIME_TYPE :
+                        responseContentType;
+                if (JSON_MIME_TYPE.equals(responseContentType)) {
+                    try {
+                        payloadData = objectMapper.readTree(bodyData);
+                    } catch (final Exception e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Invalid JSON data was [{}]", bodyData);
                         }
-                    } else {
-                        if (responseContentType == null) {
-                            responseContentType = PLAIN_MIME_TYPE;
-                        }
-                        final String base64 =
-                                Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                        payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
+                        moduleServices.eventService()
+                                .createAdapterEvent(adapterId, adapterInformation.getProtocolId())
+                                .withSeverity(Event.SEVERITY.WARN)
+                                .withMessage(String.format(
+                                        "Http response on adapter '%s' could not be parsed as JSON data.",
+                                        adapterId))
+                                .fire();
+                        throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
+                } else {
+                    if (responseContentType == null) {
+                        responseContentType = PLAIN_MIME_TYPE;
+                    }
+                    final String base64 =
+                            Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                    payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
                 }
             }
+        }
 
-            final HttpData data = new HttpData(httpToMqttMapping,
-                    url,
-                    httpResponse.statusCode(),
-                    responseContentType,
-                    adapterFactories.dataPointFactory());
-            //When the body is empty, just include the metadata
-            if (payloadData != null) {
-                data.addDataPoint(RESPONSE_DATA, payloadData);
-            }
-            return data;
-        });
-
-        dataFuture.whenComplete((data, throwable) -> {
-            if (throwable != null) {
-                pollingOutput.fail(throwable, null);
-                return;
-            }
-
-            if (data.isSuccessStatusCode()) {
-                protocolAdapterState.setConnectionStatus(STATELESS);
-            } else {
-                protocolAdapterState.setConnectionStatus(ERROR);
-            }
-
-            if (data.isSuccessStatusCode() ||
-                    !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
-                data.getDataPoints().forEach(pollingOutput::addDataPoint);
-            }
-            pollingOutput.finish();
-        });
+        final HttpData data = new HttpData(url,
+                httpResponse.statusCode(),
+                responseContentType,
+                adapterFactories.dataPointFactory());
+        //When the body is empty, just include the metadata
+        if (payloadData != null) {
+            data.addDataPoint(tagName, payloadData);
+        }
+        return data;
     }
 
     @Override
@@ -303,73 +292,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         return adapterConfig.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 
-    //Deactivated for now
-    public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
-        if (httpClient == null) {
-            writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
-            return;
-        }
-        final @NotNull WritingContext mqttToHttpMapping = writingInput.getWritingContext();
-        tags.stream()
-                .filter(tag -> tag.getName().equals(mqttToHttpMapping.getTagName()))
-                .findFirst()
-                .ifPresentOrElse(def -> writeHttp(writingInput, writingOutput, (HttpTag) def, mqttToHttpMapping),
-                        () -> writingOutput.fail("Writing for protocol adapter failed because the used tag '" +
-                                mqttToHttpMapping.getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-    }
-
-    private void writeHttp(
-            final @NotNull WritingInput writingInput,
-            final @NotNull WritingOutput writingOutput,
-            final @NotNull HttpTag httpTag, final @NotNull WritingContext writingContext) {
-        final HttpTagDefinition tagDef = httpTag.getDefinition();
-        final String url = httpTag.getDefinition().getUrl();
-
-        final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(url));
-        builder.timeout(Duration.ofSeconds(tagDef.getHttpRequestTimeoutSeconds()));
-        builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
-        tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
-
-        final HttpPayload httpPayload = (HttpPayload) writingInput.getWritingPayload();
-        final String payloadAsString = httpPayload.getValue().toString();
-
-        switch (tagDef.getHttpRequestMethod()) {
-            case POST:
-                builder.POST(HttpRequest.BodyPublishers.ofString(payloadAsString));
-                builder.header(CONTENT_TYPE_HEADER, JSON_MIME_TYPE);
-                break;
-            case PUT:
-                builder.PUT(HttpRequest.BodyPublishers.ofString(payloadAsString));
-                builder.header(CONTENT_TYPE_HEADER, JSON_MIME_TYPE);
-                break;
-            default:
-                writingOutput.fail(new IllegalStateException("Unsupported request method: " +
-                                tagDef.getHttpRequestMethod()),
-                        "There was an unexpected value present in the request config: " +
-                                tagDef.getHttpRequestMethod());
-                return;
-        }
-
-        final CompletableFuture<HttpResponse<String>> responseFuture =
-                httpClient.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
-
-        responseFuture.thenAccept(httpResponse -> {
-            if (isSuccessStatusCode(httpResponse.statusCode())) {
-                writingOutput.finish();
-            } else {
-                writingOutput.fail(String.format("Forwarding a message to url '%s' failed with status code '%d",
-                        url,
-                        httpResponse.statusCode()));
-            }
-        });
-    }
-
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         output.finish(JsonSchema.createJsonSchema());
     }
 

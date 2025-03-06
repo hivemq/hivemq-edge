@@ -230,7 +230,7 @@ export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
   logoUrl: '/module/images/opc-ua-icon.jpg',
   author: 'HiveMQ',
   installed: true,
-  capabilities: ['READ', 'DISCOVER', 'WRITE'],
+  capabilities: ['READ', 'DISCOVER', 'WRITE', 'COMBINE'],
   category: {
     name: 'INDUSTRIAL',
     displayName: 'Industrial',

@@ -5,6 +5,9 @@
 export const $Instruction = {
     description: `List of instructions to be applied to incoming data`,
     properties: {
+        sourceRef: {
+            type: 'DataIdentifierReference',
+        },
         destination: {
             type: 'string',
             description: `The field in the output object where the data will be written to`,

@@ -24,6 +24,7 @@ import {
   NodeListener,
   NodeHost,
   NodeDevice,
+  NodeCombiner,
 } from '@/modules/Workspace/components/nodes'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
@@ -40,6 +41,7 @@ const ReactFlowWrapper = () => {
       [NodeTypes.LISTENER_NODE]: NodeListener,
       [NodeTypes.HOST_NODE]: NodeHost,
       [NodeTypes.DEVICE_NODE]: NodeDevice,
+      [NodeTypes.COMBINER_NODE]: NodeCombiner,
     }),
     []
   )
