@@ -56,7 +56,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
@@ -97,28 +96,6 @@ public class MtConnectProtocolAdapterTest {
         stopOutput = mock(ProtocolAdapterStopOutput.class);
     }
 
-    protected @NotNull String getXml(final @NotNull String fileName) {
-        final String filePath = "/smstestbed/" + fileName;
-        try {
-            return IOUtils.resourceToString(filePath, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            fail();
-            return "";
-        }
-    }
-
-    protected @NotNull String getVolatileDataStreamCurrent() {
-        return getXml("volatile-data-stream-current.xml");
-    }
-
-    protected @NotNull String getVolatileDataStreamSchema() {
-        return getXml("volatile-data-stream-schema.xml");
-    }
-
-    protected @NotNull String getVolatileDataStreamTimeSeries() {
-        return getXml("volatile-data-stream-time-series.xml");
-    }
-
     @Test
     public void whenProtocolAdapterStateIsNull_thenStartShouldFail() {
         when(adapterInput.getProtocolAdapterState()).thenReturn(null);
@@ -133,15 +110,15 @@ public class MtConnectProtocolAdapterTest {
     public void whenTagIsNotFoundInTagMap_thenPollShouldFail() {
         when(config.isAllowUntrustedCertificates()).thenReturn(false);
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
-        when(adapterInput.getAdapterId()).thenReturn("smstestbed");
+        when(adapterInput.getAdapterId()).thenReturn("streams");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
         when(adapterInput.getConfig()).thenReturn(config);
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
-        when(pollingContext.getTagName()).thenReturn("smstestbed");
+        when(pollingContext.getTagName()).thenReturn("streams");
         MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tagMap).as("TagMap should be empty").isNotNull().isEmpty();
-        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("smstestbed");
+        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         verify(state).setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
         verify(startOutput).startedSuccessfully();
@@ -157,7 +134,7 @@ public class MtConnectProtocolAdapterTest {
     public void whenTagIsFound_thenPollXmlShouldBeCalled() throws IOException {
         when(config.isAllowUntrustedCertificates()).thenReturn(false);
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
-        when(adapterInput.getAdapterId()).thenReturn("smstestbed");
+        when(adapterInput.getAdapterId()).thenReturn("streams");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
@@ -172,7 +149,8 @@ public class MtConnectProtocolAdapterTest {
         final ArgumentCaptor<DataPoint> argumentCaptorDataPoint = ArgumentCaptor.forClass(DataPoint.class);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(getVolatileDataStreamCurrent());
+        when(httpResponse.body()).thenReturn(IOUtils.resourceToString("/streams/streams-1-3-smstestbed-current.xml",
+                StandardCharsets.UTF_8));
         when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Content-Type", List.of("application/xml")),
                 (name, value) -> true));
         final CompletableFuture<HttpResponse<String>> completableFuture =
@@ -184,7 +162,7 @@ public class MtConnectProtocolAdapterTest {
         adapter.httpClient = httpClient;
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tagMap).as("TagMap should not be empty").isNotEmpty().containsKey("tagName");
-        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("smstestbed");
+        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
         verify(pollingOutput).finish();
@@ -210,8 +188,9 @@ public class MtConnectProtocolAdapterTest {
             throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
-        final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamTimeSeries(),
-                new MtConnectAdapterTagDefinition("", false, 10, List.of()));
+        final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString(
+                "/streams/streams-1-3-smstestbed-time-series.xml",
+                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", false, 10, List.of()));
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
@@ -225,8 +204,8 @@ public class MtConnectProtocolAdapterTest {
             throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
-        final DataPoint dataPoint = adapter.processXml(getVolatileDataStreamSchema(),
-                new MtConnectAdapterTagDefinition("", enableSchemaValidation, 10, List.of()));
+        final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml",
+                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", enableSchemaValidation, 10, List.of()));
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
@@ -243,8 +222,10 @@ public class MtConnectProtocolAdapterTest {
     public void whenSchemaValidationIsEnabled_thenCustomSchemaShouldFail() {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
-        assertThatThrownBy(() -> adapter.processXml(getVolatileDataStreamCurrent(),
-                new MtConnectAdapterTagDefinition("", true, 10, List.of()))).isInstanceOf(XMLParseException.class)
+        assertThatThrownBy(() -> adapter.processXml(IOUtils.resourceToString(
+                "/streams/streams-1-3-smstestbed-current.xml",
+                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", true, 10, List.of()))).isInstanceOf(
+                        XMLParseException.class)
                 .hasMessage(
                         "XML Parse Exception: Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
     }
