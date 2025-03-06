@@ -32,7 +32,7 @@ import static com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchemaType.Err
 import static com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchemaType.Streams;
 
 public enum MtConnectSchema {
-    Assets_1_2(Assets, 1, 2, "urn:mtconnect.org:MTConnectAssets:1.2 /schemas/MTConnectAssets_1.2.xsd", null),
+    Assets_1_2(Assets, 1, 2, "urn:mtconnect.org:MTConnectAssets:1.2 /schemas/MTConnectAssets_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_2.MTConnectAssetsType.class),
     Assets_1_3(Assets, 1, 3, "urn:mtconnect.org:MTConnectAssets:1.3 /schemas/MTConnectAssets_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_3.MTConnectAssetsType.class),
     Assets_1_4(Assets, 1, 4, "urn:mtconnect.org:MTConnectAssets:1.4 /schemas/MTConnectAssets_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_4.MTConnectAssetsType.class),
     Assets_1_5(Assets, 1, 5, "urn:mtconnect.org:MTConnectAssets:1.5 /schemas/MTConnectAssets_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_5.MTConnectAssetsType.class),
@@ -46,7 +46,7 @@ public enum MtConnectSchema {
     Assets_2_4(Assets, 2, 4, "urn:mtconnect.org:MTConnectAssets:2.4 /schemas/MTConnectAssets_2.4.xsd", null),
     Devices_1_0(Devices, 1, 0, "urn:mtconnect.org:MTConnectDevices:1.0 /schemas/MTConnectDevices_1.0.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType.class),
     Devices_1_1(Devices, 1, 1, "urn:mtconnect.org:MTConnectDevices:1.1 /schemas/MTConnectDevices_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType.class),
-    Devices_1_2(Devices, 1, 2, "urn:mtconnect.org:MTConnectDevices:1.2 /schemas/MTConnectDevices_1.2.xsd", null),
+    Devices_1_2(Devices, 1, 2, "urn:mtconnect.org:MTConnectDevices:1.2 /schemas/MTConnectDevices_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_2.MTConnectDevicesType.class),
     Devices_1_3(Devices, 1, 3, "urn:mtconnect.org:MTConnectDevices:1.3 /schemas/MTConnectDevices_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType.class),
     Devices_1_4(Devices, 1, 4, "urn:mtconnect.org:MTConnectDevices:1.4 /schemas/MTConnectDevices_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType.class),
     Devices_1_5(Devices, 1, 5, "urn:mtconnect.org:MTConnectDevices:1.5 /schemas/MTConnectDevices_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType.class),
@@ -59,7 +59,7 @@ public enum MtConnectSchema {
     Devices_2_3(Devices, 2, 3, "urn:mtconnect.org:MTConnectDevices:2.3 /schemas/MTConnectDevices_2.3.xsd", null),
     Devices_2_4(Devices, 2, 4, "urn:mtconnect.org:MTConnectDevices:2.4 /schemas/MTConnectDevices_2.4.xsd", null),
     Error_1_1(Error, 1, 1, "urn:mtconnect.org:MTConnectError:1.1 /schemas/MTConnectError_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_1.MTConnectErrorType.class),
-    Error_1_2(Error, 1, 2, "urn:mtconnect.org:MTConnectError:1.2 /schemas/MTConnectError_1.2.xsd", null),
+    Error_1_2(Error, 1, 2, "urn:mtconnect.org:MTConnectError:1.2 /schemas/MTConnectError_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_2.MTConnectErrorType.class),
     Error_1_3(Error, 1, 3, "urn:mtconnect.org:MTConnectError:1.3 /schemas/MTConnectError_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3.MTConnectErrorType.class),
     Error_1_4(Error, 1, 4, "urn:mtconnect.org:MTConnectError:1.4 /schemas/MTConnectError_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_4.MTConnectErrorType.class),
     Error_1_5(Error, 1, 5, "urn:mtconnect.org:MTConnectError:1.5 /schemas/MTConnectError_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_5.MTConnectErrorType.class),
@@ -72,7 +72,7 @@ public enum MtConnectSchema {
     Error_2_3(Error, 2, 3, "urn:mtconnect.org:MTConnectError:2.3 /schemas/MTConnectError_2.3.xsd", null),
     Error_2_4(Error, 2, 4, "urn:mtconnect.org:MTConnectError:2.4 /schemas/MTConnectError_2.4.xsd", null),
     Streams_1_1(Streams, 1, 1, "urn:mtconnect.org:MTConnectStreams:1.1 /schemas/MTConnectStreams_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_1.MTConnectStreamsType.class),
-    Streams_1_2(Streams, 1, 2, "urn:mtconnect.org:MTConnectStreams:1.2 /schemas/MTConnectStreams_1.2.xsd", null),
+    Streams_1_2(Streams, 1, 2, "urn:mtconnect.org:MTConnectStreams:1.2 /schemas/MTConnectStreams_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_2.MTConnectStreamsType.class),
     Streams_1_3(Streams, 1, 3, "urn:mtconnect.org:MTConnectStreams:1.3 /schemas/MTConnectStreams_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType.class),
     Streams_1_4(Streams, 1, 4, "urn:mtconnect.org:MTConnectStreams:1.4 /schemas/MTConnectStreams_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_4.MTConnectStreamsType.class),
     Streams_1_5(Streams, 1, 5, "urn:mtconnect.org:MTConnectStreams:1.5 /schemas/MTConnectStreams_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType.class),
