@@ -105,4 +105,20 @@ public class MtConnectSchemaTest {
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(3);
         }
     }
+
+    @Test
+    public void whenInputXmlIsStreams_1_5_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Streams_1_5.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/streams/streams-1-5.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType
+                    mtConnectStreamsType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType) element.getValue();
+            assertThat(mtConnectStreamsType).isNotNull();
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(1);
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(4);
+        }
+    }
 }
