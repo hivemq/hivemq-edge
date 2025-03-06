@@ -44,6 +44,10 @@ jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-api
 
 - After all the schema files are generated, run test case `MtConnectSchemaJsonAnnotationTest` to convert the XML annotations to Jackson annotations. This is a one-time process and the test case is able to generate the Jackson annotations in an incremental way. By default, this test case is skipped if jaxb-ri or xerces is not found.
 
+**Known Issues**
+
+- xlink in `MTConnectDevices_1.5.xsd` is not supported yet.
+
 ## Test
 
 ### Test Bed
