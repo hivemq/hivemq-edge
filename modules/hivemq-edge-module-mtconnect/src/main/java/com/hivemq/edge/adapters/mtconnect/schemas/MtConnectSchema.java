@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,8 +44,8 @@ public enum MtConnectSchema {
     Assets_2_2(Assets, 2, 2, "urn:mtconnect.org:MTConnectAssets:2.2 /schemas/MTConnectAssets_2.2.xsd", null),
     Assets_2_3(Assets, 2, 3, "urn:mtconnect.org:MTConnectAssets:2.3 /schemas/MTConnectAssets_2.3.xsd", null),
     Assets_2_4(Assets, 2, 4, "urn:mtconnect.org:MTConnectAssets:2.4 /schemas/MTConnectAssets_2.4.xsd", null),
-    Devices_1_0(Devices, 1, 0, "urn:mtconnect.org:MTConnectDevices:1.0 /schemas/MTConnectDevices_1.0.xsd", null),
-    Devices_1_1(Devices, 1, 1, "urn:mtconnect.org:MTConnectDevices:1.1 /schemas/MTConnectDevices_1.1.xsd", null),
+    Devices_1_0(Devices, 1, 0, "urn:mtconnect.org:MTConnectDevices:1.0 /schemas/MTConnectDevices_1.0.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType.class),
+    Devices_1_1(Devices, 1, 1, "urn:mtconnect.org:MTConnectDevices:1.1 /schemas/MTConnectDevices_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType.class),
     Devices_1_2(Devices, 1, 2, "urn:mtconnect.org:MTConnectDevices:1.2 /schemas/MTConnectDevices_1.2.xsd", null),
     Devices_1_3(Devices, 1, 3, "urn:mtconnect.org:MTConnectDevices:1.3 /schemas/MTConnectDevices_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType.class),
     Devices_1_4(Devices, 1, 4, "urn:mtconnect.org:MTConnectDevices:1.4 /schemas/MTConnectDevices_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType.class),
@@ -59,7 +58,7 @@ public enum MtConnectSchema {
     Devices_2_2(Devices, 2, 2, "urn:mtconnect.org:MTConnectDevices:2.2 /schemas/MTConnectDevices_2.2.xsd", null),
     Devices_2_3(Devices, 2, 3, "urn:mtconnect.org:MTConnectDevices:2.3 /schemas/MTConnectDevices_2.3.xsd", null),
     Devices_2_4(Devices, 2, 4, "urn:mtconnect.org:MTConnectDevices:2.4 /schemas/MTConnectDevices_2.4.xsd", null),
-    Error_1_1(Error, 1, 1, "urn:mtconnect.org:MTConnectError:1.1 /schemas/MTConnectError_1.1.xsd", null),
+    Error_1_1(Error, 1, 1, "urn:mtconnect.org:MTConnectError:1.1 /schemas/MTConnectError_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_1.MTConnectErrorType.class),
     Error_1_2(Error, 1, 2, "urn:mtconnect.org:MTConnectError:1.2 /schemas/MTConnectError_1.2.xsd", null),
     Error_1_3(Error, 1, 3, "urn:mtconnect.org:MTConnectError:1.3 /schemas/MTConnectError_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3.MTConnectErrorType.class),
     Error_1_4(Error, 1, 4, "urn:mtconnect.org:MTConnectError:1.4 /schemas/MTConnectError_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_4.MTConnectErrorType.class),
@@ -72,7 +71,7 @@ public enum MtConnectSchema {
     Error_2_2(Error, 2, 2, "urn:mtconnect.org:MTConnectError:2.2 /schemas/MTConnectError_2.2.xsd", null),
     Error_2_3(Error, 2, 3, "urn:mtconnect.org:MTConnectError:2.3 /schemas/MTConnectError_2.3.xsd", null),
     Error_2_4(Error, 2, 4, "urn:mtconnect.org:MTConnectError:2.4 /schemas/MTConnectError_2.4.xsd", null),
-    Streams_1_1(Streams, 1, 1, "urn:mtconnect.org:MTConnectStreams:1.1 /schemas/MTConnectStreams_1.1.xsd", null),
+    Streams_1_1(Streams, 1, 1, "urn:mtconnect.org:MTConnectStreams:1.1 /schemas/MTConnectStreams_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_1.MTConnectStreamsType.class),
     Streams_1_2(Streams, 1, 2, "urn:mtconnect.org:MTConnectStreams:1.2 /schemas/MTConnectStreams_1.2.xsd", null),
     Streams_1_3(Streams, 1, 3, "urn:mtconnect.org:MTConnectStreams:1.3 /schemas/MTConnectStreams_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType.class),
     Streams_1_4(Streams, 1, 4, "urn:mtconnect.org:MTConnectStreams:1.4 /schemas/MTConnectStreams_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_4.MTConnectStreamsType.class),
@@ -132,7 +131,8 @@ public enum MtConnectSchema {
     public @Nullable Unmarshaller getUnmarshaller() throws JAXBException {
         if (mtConnectType == null) {
             return null;
-        } if (jaxbContext == null) {
+        }
+        if (jaxbContext == null) {
             // There is no additional synchronization.
             // So there might be contention, but that's a one-time cost.
             // The overall performance is better than a synchronized block.
