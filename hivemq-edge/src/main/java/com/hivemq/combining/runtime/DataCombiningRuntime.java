@@ -207,7 +207,7 @@ public class DataCombiningRuntime {
     }
 
     public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
-                                       @NotNull QueueConsumer queueConsumer) {
+                                       @NotNull QueueConsumer                queueConsumer) {
         public String getQueueId() {
             return sharedName() + "/" + topic();
         }

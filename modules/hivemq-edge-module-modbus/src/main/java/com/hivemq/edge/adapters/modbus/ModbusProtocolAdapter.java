@@ -20,18 +20,17 @@ import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.etherip.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
@@ -41,9 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -56,9 +53,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     private final @NotNull ModbusClient modbusClient;
-    private final @NotNull Map<String, Object> lastSamples = new ConcurrentHashMap<>();
+    private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
     private final @NotNull List<ModbusTag> tags;
     private final @NotNull String adapterId;
+    private final @NotNull DataPointFactory dataPointFactory;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -67,9 +65,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream().map(t -> (ModbusTag)t).toList();
         this.modbusClient =
                 new ModbusClient(input.getAdapterId(), adapterConfig);
+
     }
 
     @Override
@@ -116,26 +116,21 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         log.error("Unable to read tags from modbus", throwable);
                         pollingOutput.fail(throwable, "Unable to read tags from modbus");
                     }
+
+
                     for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
                         try {
                             final var entry = readRegisterFuture.get();
-                            final String tagName = entry.tagName();
-                            final Object dataPoint = lastSamples.get(tagName);
-                            if (dataPoint != null) {
-                                if (!dataPoint.equals(entry.value())) {
-                                    //value changed, remember and forward
-                                    lastSamples.put(tagName, entry.value());
-                                    pollingOutput.addDataPoint(tagName, entry.value());
-                                } else {
-                                    //value didn't exist, remember and forward
-                                    lastSamples.put(tagName, entry.value());
-                                    pollingOutput.addDataPoint(tagName, entry.value());
+                            final var tagName = entry.tagName();
+                            final var tags = List.of(dataPointFactory.create(tagName, entry.value()));
+                            if (adapterConfig.getModbusToMQTTConfig().getPublishChangedDataOnly()) {
+                                if (lastSamples.replaceIfValueIsNew(tagName, tags)) {
+                                    tags.forEach(pollingOutput::addDataPoint);
                                 }
                             } else {
-                                //value didn't exist, remember and forward
-                                lastSamples.put(tagName, entry.value());
-                                pollingOutput.addDataPoint(tagName, entry.value());
+                                tags.forEach(pollingOutput::addDataPoint);
                             }
+
                         } catch (final InterruptedException | ExecutionException e) {
                             log.error("Problem while accessing data in a completed future", e);
                             pollingOutput.fail(e,"Problem while accessing data in a completed future");

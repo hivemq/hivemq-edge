@@ -55,6 +55,7 @@ public class EtherIpValueFactory {
                     case STRUCT_STRING:
                         return Optional.empty();
                 }
+                log.warn("Unable to parse tag {}, type {} not supported", tagAddress, dataType);
                 return Optional.empty();
             } else {
                 log.debug("Got value {} for type {} for tag address {}", cipData.getString(), dataType, tagAddress);
