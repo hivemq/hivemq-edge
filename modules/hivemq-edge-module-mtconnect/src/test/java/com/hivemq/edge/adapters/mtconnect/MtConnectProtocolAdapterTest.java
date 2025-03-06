@@ -230,8 +230,14 @@ public class MtConnectProtocolAdapterTest {
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
-        assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION)
-                .asText()).isEqualTo(MtConnectSchema.Devices_1_3.getLocation());
+        if (!enableSchemaValidation) {
+            assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION)
+                    .asText()).isEqualTo(MtConnectSchema.Devices_1_3.getLocation());
+        }
+        // TODO
+//        assertThat(jsonNode.get("Header")).isNotNull();
+//        assertThat(jsonNode.get("Devices")).isNotNull();
+//        assertThat(jsonNode.get("Streams")).isNull();
     }
 
     @Test

@@ -21,13 +21,13 @@ The [Schema](https://github.com/mtconnect/schema) validation is XSD based. That 
 - Download [jaxb-ri](https://eclipse-ee4j.github.io/jaxb-ri/) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
 - Download [Xerces2 Java Binary (XML Schema 1.1)](https://xerces.apache.org/mirrors.cgi) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
 - Add `xerces-2_12_2-xml-schema-1.1/xml-apis.jar` and `xerces-2_12_2-xml-schema-1.1/xercesImpl.jar` to the classpath.
-- `git clone https://github.com/mtconnect/schema.git` to a local folder.
+- `git clone https://github.com/mtconnect/schema.git` to `../../mtconnect`.
 - Navigate to `modules/hivemq-edge-module-mtconnect` folder.
 - For each of the XML schema files, run the following commands.
 
 ```bash
 export CLASSPATH=$CLASSPATH:$(pwd)/xerces-2_12_2/xml-apis.jar:$(pwd)/xerces-2_12_2/xercesImpl.jar
-jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3 ../../schema/MTConnectDevices_1.3.xsd
+jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3 ../../mtconnect/schema/MTConnectDevices_1.3.xsd
 ```
 
 

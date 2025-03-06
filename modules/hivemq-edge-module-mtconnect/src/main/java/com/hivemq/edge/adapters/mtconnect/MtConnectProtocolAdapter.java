@@ -37,6 +37,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
+import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
@@ -152,6 +153,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         if (jsonNodeSchemaLocation == null) {
             throw new XMLParseException("Attribute schemaLocation is not found");
         }
+        final @NotNull String jsonString;
         // There are some custom schemas not supported by this module.
         // Enable the schema validation will cause those messages fail the validation.
         if (definition.isEnableSchemaValidation()) {
@@ -161,9 +163,12 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             }
             // The unmarshal call brings additional performance overhead.
             final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
-            if (unmarshaller != null) {
+            if (unmarshaller == null) {
+                throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is to be supported");
+            } else {
                 try (StringReader stringReader = new StringReader(body)) {
-                    unmarshaller.unmarshal(stringReader);
+                    final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+                    jsonString = OBJECT_MAPPER.writeValueAsString(element.getValue());
                 } catch (final Exception e) {
                     throw new XMLParseException(e,
                             "Incoming XML message failed to conform " + jsonNodeSchemaLocation.asText());
@@ -175,8 +180,9 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
                         schema.getMajorVersion(),
                         schema.getMinorVersion());
             }
+        } else {
+            jsonString = OBJECT_MAPPER.writeValueAsString(rootNode);
         }
-        final @NotNull String jsonString = OBJECT_MAPPER.writeValueAsString(rootNode);
         return adapterFactories.dataPointFactory().create(DATA, jsonString);
     }
 
