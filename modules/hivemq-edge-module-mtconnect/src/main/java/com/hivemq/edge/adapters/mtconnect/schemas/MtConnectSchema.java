@@ -51,7 +51,7 @@ public enum MtConnectSchema {
     Assets_2_1(Assets, 2, 1, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_2_1.MTConnectAssetsType.class),
     Assets_2_2(Assets, 2, 2, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_2_2.MTConnectAssetsType.class),
     Assets_2_3(Assets, 2, 3, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_2_3.MTConnectAssetsType.class),
-    Assets_2_4(Assets, 2, 4, null),
+    Assets_2_4(Assets, 2, 4, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_2_4.MTConnectAssetsType.class),
     Devices_1_0(Devices, 1, 0, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType.class),
     Devices_1_1(Devices, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType.class),
     Devices_1_2(Devices, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_2.MTConnectDevicesType.class),
@@ -65,7 +65,7 @@ public enum MtConnectSchema {
     Devices_2_1(Devices, 2, 1, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_1.MTConnectDevicesType.class),
     Devices_2_2(Devices, 2, 2, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_2.MTConnectDevicesType.class),
     Devices_2_3(Devices, 2, 3, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_3.MTConnectDevicesType.class),
-    Devices_2_4(Devices, 2, 4, null),
+    Devices_2_4(Devices, 2, 4, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_4.MTConnectDevicesType.class),
     Error_1_1(Error, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_1.MTConnectErrorType.class),
     Error_1_2(Error, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_2.MTConnectErrorType.class),
     Error_1_3(Error, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3.MTConnectErrorType.class),
@@ -78,7 +78,7 @@ public enum MtConnectSchema {
     Error_2_1(Error, 2, 1, com.hivemq.edge.adapters.mtconnect.schemas.error.error_2_1.MTConnectErrorType.class),
     Error_2_2(Error, 2, 2, com.hivemq.edge.adapters.mtconnect.schemas.error.error_2_2.MTConnectErrorType.class),
     Error_2_3(Error, 2, 3, com.hivemq.edge.adapters.mtconnect.schemas.error.error_2_3.MTConnectErrorType.class),
-    Error_2_4(Error, 2, 4, null),
+    Error_2_4(Error, 2, 4, com.hivemq.edge.adapters.mtconnect.schemas.error.error_2_4.MTConnectErrorType.class),
     Streams_1_1(Streams, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_1.MTConnectStreamsType.class),
     Streams_1_2(Streams, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_2.MTConnectStreamsType.class),
     Streams_1_3(Streams, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType.class),
@@ -91,7 +91,7 @@ public enum MtConnectSchema {
     Streams_2_1(Streams, 2, 1, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_1.MTConnectStreamsType.class),
     Streams_2_2(Streams, 2, 2, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_2.MTConnectStreamsType.class),
     Streams_2_3(Streams, 2, 3, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_3.MTConnectStreamsType.class),
-    Streams_2_4(Streams, 2, 4, null),
+    Streams_2_4(Streams, 2, 4, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_4.MTConnectStreamsType.class),
     ;
 
     private static final @NotNull Map<String, MtConnectSchema> LOCATION_TO_SCHEMA_MAP =
@@ -137,106 +137,108 @@ public enum MtConnectSchema {
         if (mtConnectSchema == null && location != null) {
             final Matcher matcher = PATTERN_LOCATION.matcher(location);
             if (matcher.find()) {
-                final MtConnectSchemaType type = MtConnectSchemaType.of(matcher.group(1));
+                final @Nullable MtConnectSchemaType type = MtConnectSchemaType.of(matcher.group(1));
                 final int majorVersion = Integer.parseInt(matcher.group(2));
                 final int minorVersion = Integer.parseInt(matcher.group(3));
-                switch (type) {
-                    case Assets -> {
-                        switch (majorVersion) {
-                            case 1 -> {
-                                switch (minorVersion) {
-                                    case 2 -> mtConnectSchema = Assets_1_2;
-                                    case 3 -> mtConnectSchema = Assets_1_3;
-                                    case 4 -> mtConnectSchema = Assets_1_4;
-                                    case 5 -> mtConnectSchema = Assets_1_5;
-                                    case 6 -> mtConnectSchema = Assets_1_6;
-                                    case 7 -> mtConnectSchema = Assets_1_7;
-                                    case 8 -> mtConnectSchema = Assets_1_8;
+                if (type != null) {
+                    switch (type) {
+                        case Assets -> {
+                            switch (majorVersion) {
+                                case 1 -> {
+                                    switch (minorVersion) {
+                                        case 2 -> mtConnectSchema = Assets_1_2;
+                                        case 3 -> mtConnectSchema = Assets_1_3;
+                                        case 4 -> mtConnectSchema = Assets_1_4;
+                                        case 5 -> mtConnectSchema = Assets_1_5;
+                                        case 6 -> mtConnectSchema = Assets_1_6;
+                                        case 7 -> mtConnectSchema = Assets_1_7;
+                                        case 8 -> mtConnectSchema = Assets_1_8;
+                                    }
                                 }
-                            }
-                            case 2 -> {
-                                switch (minorVersion) {
-                                    case 0 -> mtConnectSchema = Assets_2_0;
-                                    case 1 -> mtConnectSchema = Assets_2_1;
-                                    case 2 -> mtConnectSchema = Assets_2_2;
-                                    case 3 -> mtConnectSchema = Assets_2_3;
-                                    case 4 -> mtConnectSchema = Assets_2_4;
-                                }
-                            }
-                        }
-                    }
-                    case Devices -> {
-                        switch (majorVersion) {
-                            case 1 -> {
-                                switch (minorVersion) {
-                                    case 0 -> mtConnectSchema = Devices_1_0;
-                                    case 1 -> mtConnectSchema = Devices_1_1;
-                                    case 2 -> mtConnectSchema = Devices_1_2;
-                                    case 3 -> mtConnectSchema = Devices_1_3;
-                                    case 4 -> mtConnectSchema = Devices_1_4;
-                                    case 5 -> mtConnectSchema = Devices_1_5;
-                                    case 6 -> mtConnectSchema = Devices_1_6;
-                                    case 7 -> mtConnectSchema = Devices_1_7;
-                                    case 8 -> mtConnectSchema = Devices_1_8;
-                                }
-                            }
-                            case 2 -> {
-                                switch (minorVersion) {
-                                    case 0 -> mtConnectSchema = Devices_2_0;
-                                    case 1 -> mtConnectSchema = Devices_2_1;
-                                    case 2 -> mtConnectSchema = Devices_2_2;
-                                    case 3 -> mtConnectSchema = Devices_2_3;
-                                    case 4 -> mtConnectSchema = Devices_2_4;
+                                case 2 -> {
+                                    switch (minorVersion) {
+                                        case 0 -> mtConnectSchema = Assets_2_0;
+                                        case 1 -> mtConnectSchema = Assets_2_1;
+                                        case 2 -> mtConnectSchema = Assets_2_2;
+                                        case 3 -> mtConnectSchema = Assets_2_3;
+                                        case 4 -> mtConnectSchema = Assets_2_4;
+                                    }
                                 }
                             }
                         }
-                    }
-                    case Error -> {
-                        switch (majorVersion) {
-                            case 1 -> {
-                                switch (minorVersion) {
-                                    case 1 -> mtConnectSchema = Error_1_1;
-                                    case 2 -> mtConnectSchema = Error_1_2;
-                                    case 3 -> mtConnectSchema = Error_1_3;
-                                    case 4 -> mtConnectSchema = Error_1_4;
-                                    case 5 -> mtConnectSchema = Error_1_5;
-                                    case 6 -> mtConnectSchema = Error_1_6;
-                                    case 7 -> mtConnectSchema = Error_1_7;
-                                    case 8 -> mtConnectSchema = Error_1_8;
+                        case Devices -> {
+                            switch (majorVersion) {
+                                case 1 -> {
+                                    switch (minorVersion) {
+                                        case 0 -> mtConnectSchema = Devices_1_0;
+                                        case 1 -> mtConnectSchema = Devices_1_1;
+                                        case 2 -> mtConnectSchema = Devices_1_2;
+                                        case 3 -> mtConnectSchema = Devices_1_3;
+                                        case 4 -> mtConnectSchema = Devices_1_4;
+                                        case 5 -> mtConnectSchema = Devices_1_5;
+                                        case 6 -> mtConnectSchema = Devices_1_6;
+                                        case 7 -> mtConnectSchema = Devices_1_7;
+                                        case 8 -> mtConnectSchema = Devices_1_8;
+                                    }
                                 }
-                            }
-                            case 2 -> {
-                                switch (minorVersion) {
-                                    case 0 -> mtConnectSchema = Error_2_0;
-                                    case 1 -> mtConnectSchema = Error_2_1;
-                                    case 2 -> mtConnectSchema = Error_2_2;
-                                    case 3 -> mtConnectSchema = Error_2_3;
-                                    case 4 -> mtConnectSchema = Error_2_4;
+                                case 2 -> {
+                                    switch (minorVersion) {
+                                        case 0 -> mtConnectSchema = Devices_2_0;
+                                        case 1 -> mtConnectSchema = Devices_2_1;
+                                        case 2 -> mtConnectSchema = Devices_2_2;
+                                        case 3 -> mtConnectSchema = Devices_2_3;
+                                        case 4 -> mtConnectSchema = Devices_2_4;
+                                    }
                                 }
                             }
                         }
-                    }
-                    case Streams -> {
-                        switch (majorVersion) {
-                            case 1 -> {
-                                switch (minorVersion) {
-                                    case 1 -> mtConnectSchema = Streams_1_1;
-                                    case 2 -> mtConnectSchema = Streams_1_2;
-                                    case 3 -> mtConnectSchema = Streams_1_3;
-                                    case 4 -> mtConnectSchema = Streams_1_4;
-                                    case 5 -> mtConnectSchema = Streams_1_5;
-                                    case 6 -> mtConnectSchema = Streams_1_6;
-                                    case 7 -> mtConnectSchema = Streams_1_7;
-                                    case 8 -> mtConnectSchema = Streams_1_8;
+                        case Error -> {
+                            switch (majorVersion) {
+                                case 1 -> {
+                                    switch (minorVersion) {
+                                        case 1 -> mtConnectSchema = Error_1_1;
+                                        case 2 -> mtConnectSchema = Error_1_2;
+                                        case 3 -> mtConnectSchema = Error_1_3;
+                                        case 4 -> mtConnectSchema = Error_1_4;
+                                        case 5 -> mtConnectSchema = Error_1_5;
+                                        case 6 -> mtConnectSchema = Error_1_6;
+                                        case 7 -> mtConnectSchema = Error_1_7;
+                                        case 8 -> mtConnectSchema = Error_1_8;
+                                    }
+                                }
+                                case 2 -> {
+                                    switch (minorVersion) {
+                                        case 0 -> mtConnectSchema = Error_2_0;
+                                        case 1 -> mtConnectSchema = Error_2_1;
+                                        case 2 -> mtConnectSchema = Error_2_2;
+                                        case 3 -> mtConnectSchema = Error_2_3;
+                                        case 4 -> mtConnectSchema = Error_2_4;
+                                    }
                                 }
                             }
-                            case 2 -> {
-                                switch (minorVersion) {
-                                    case 0 -> mtConnectSchema = Streams_2_0;
-                                    case 1 -> mtConnectSchema = Streams_2_1;
-                                    case 2 -> mtConnectSchema = Streams_2_2;
-                                    case 3 -> mtConnectSchema = Streams_2_3;
-                                    case 4 -> mtConnectSchema = Streams_2_4;
+                        }
+                        case Streams -> {
+                            switch (majorVersion) {
+                                case 1 -> {
+                                    switch (minorVersion) {
+                                        case 1 -> mtConnectSchema = Streams_1_1;
+                                        case 2 -> mtConnectSchema = Streams_1_2;
+                                        case 3 -> mtConnectSchema = Streams_1_3;
+                                        case 4 -> mtConnectSchema = Streams_1_4;
+                                        case 5 -> mtConnectSchema = Streams_1_5;
+                                        case 6 -> mtConnectSchema = Streams_1_6;
+                                        case 7 -> mtConnectSchema = Streams_1_7;
+                                        case 8 -> mtConnectSchema = Streams_1_8;
+                                    }
+                                }
+                                case 2 -> {
+                                    switch (minorVersion) {
+                                        case 0 -> mtConnectSchema = Streams_2_0;
+                                        case 1 -> mtConnectSchema = Streams_2_1;
+                                        case 2 -> mtConnectSchema = Streams_2_2;
+                                        case 3 -> mtConnectSchema = Streams_2_3;
+                                        case 4 -> mtConnectSchema = Streams_2_4;
+                                    }
                                 }
                             }
                         }

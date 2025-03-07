@@ -16,8 +16,12 @@
 package com.hivemq.edge.adapters.mtconnect.schemas;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public enum MtConnectSchemaType {
     Assets,
@@ -27,10 +31,10 @@ public enum MtConnectSchemaType {
     ;
 
     private static final @NotNull Map<@NotNull String, @NotNull MtConnectSchemaType> TYPE_MAP =
-            Map.of(Assets.name(), Assets, Devices.name(), Devices, Error.name(), Error, Streams.name(), Streams);
+            Stream.of(values()).collect(Collectors.toMap(MtConnectSchemaType::name, Function.identity()));
     private final @NotNull String rootNodeName = "MTConnect" + name();
 
-    public static @NotNull MtConnectSchemaType of(@NotNull final String type) {
+    public static @Nullable MtConnectSchemaType of(@NotNull final String type) {
         return TYPE_MAP.get(type);
     }
 
