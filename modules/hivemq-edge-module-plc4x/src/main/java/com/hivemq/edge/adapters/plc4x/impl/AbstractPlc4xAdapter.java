@@ -16,7 +16,9 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -27,6 +29,7 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
+import com.hivemq.edge.adapters.plc4x.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -46,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
@@ -70,7 +75,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     protected volatile @Nullable Plc4xConnection<T> connection;
-    private final @NotNull Map<String, Plc4xDataSample> lastSamples = new HashMap<>(1);
+    private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
+    private final @NotNull DataPointFactory dataPointFactory;
 
     public enum ReadType {
         Read,
@@ -85,6 +91,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.tags = input.getTags().stream().map(tag -> (Plc4xTag)tag).toList();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
     }
 
     @Override
@@ -97,7 +104,20 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         if (t != null) {
                             pollingOutput.fail(t, null);
                         } else {
-                            sample.getDataPoints().forEach(pollingOutput::addDataPoint);
+                            if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
+                                final var tagsToValueList = sample.getDataPoints()
+                                        .stream()
+                                        .collect(Collectors.groupingBy(DataPoint::getTagName,
+                                                Collectors.mapping(Function.identity(), Collectors.toList())));
+                                tagsToValueList.forEach((tagName,tagValues) -> {
+                                    if (lastSamples.replaceIfValueIsNew(tagName, tagValues)) {
+                                        tagValues.forEach(pollingOutput::addDataPoint);
+                                    }
+                                });
+                            } else {
+                                sample.getDataPoints().forEach(pollingOutput::addDataPoint);
+                            }
+
                             pollingOutput.finish();
                         }
                     });
