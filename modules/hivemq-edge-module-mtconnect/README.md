@@ -15,6 +15,7 @@ The [Schema](https://github.com/mtconnect/schema) validation is XSD based. That 
 | Dev Cost         | Low           | High                |
 | Malformed Schema | Allow         | Disallow            |
 | Custom Schema    | Support       | Not Support         |
+| Type Cast        | Loose         | Strict              |
 
 ### Schema Validation Code Generation
 
@@ -44,9 +45,24 @@ jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-api
 
 - After all the schema files are generated, run test case `MtConnectSchemaJsonAnnotationTest` to convert the XML annotations to Jackson annotations. This is a one-time process and the test case is able to generate the Jackson annotations in an incremental way. By default, this test case is skipped if jaxb-ri or xerces is not found.
 
-**Known Issues**
+#### Known Issues
 
-- xlink in `MTConnectDevices_1.5.xsd` is not supported yet.
+##### Property Already Defined
+
+```sh
+parsing a schema...
+[ERROR] Property "Type" is already defined. Use <jaxb:property> to resolve this conflict.
+  line 5174 of file:/.../mtconnect/schema/MTConnectDevices_1.5.xsd
+
+[ERROR] The following location is relevant to the above error
+  line 5064 of file:/.../mtconnect/schema/MTConnectDevices_1.5.xsd
+```
+
+This issued is caused by the absence of name in `<xs:attribute ref='xlink:type' use='optional' fixed='locator'>...</xs:attribute>`. So the default name becomes `type` which conflicts with the inherited property `type`. To resolve this issue, please follow the steps as follows.
+
+1. Add a name to the attribute `<xs:attribute name='type1' ref='xlink:type' use='optional' fixed='locator'>...</xs:attribute>`.
+2. Run the xjc command.
+3. Replace `@XmlAttribute(name = "type1")` with `@XmlAttribute(name = "type")` in `mtconnect/schemas/devices/devices_1_5/DeviceRelationshipType.java`.
 
 ## Test
 
