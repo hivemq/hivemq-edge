@@ -53,7 +53,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     private final @NotNull ModbusClient modbusClient;
-    private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
+    private final @NotNull PublishChangedDataOnlyHandler publishChangedDataOnlyHandler = new PublishChangedDataOnlyHandler();
     private final @NotNull List<ModbusTag> tags;
     private final @NotNull String adapterId;
     private final @NotNull DataPointFactory dataPointFactory;
@@ -87,7 +87,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        lastSamples.clear();
+        publishChangedDataOnlyHandler.clear();
         modbusClient.disconnect().whenComplete((unused, t) -> {
             if (t == null) {
                 output.stoppedSuccessfully();
@@ -124,7 +124,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                             final var tagName = entry.tagName();
                             final var tags = List.of(dataPointFactory.create(tagName, entry.value()));
                             if (adapterConfig.getModbusToMQTTConfig().getPublishChangedDataOnly()) {
-                                if (lastSamples.replaceIfValueIsNew(tagName, tags)) {
+                                if (publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, tags)) {
                                     tags.forEach(pollingOutput::addDataPoint);
                                 }
                             } else {
