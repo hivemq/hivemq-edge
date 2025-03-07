@@ -148,30 +148,25 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             final @NotNull String body,
             final @NotNull MtConnectAdapterTagDefinition definition)
             throws JsonProcessingException, XMLParseException, JAXBException {
-        final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
-        final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
-        if (jsonNodeSchemaLocation == null) {
-            throw new XMLParseException("Attribute schemaLocation is not found");
-        }
-        final @NotNull String jsonString;
+        @Nullable String jsonString = null;
         // There are some custom schemas not supported by this module.
         // Enable the schema validation will cause those messages fail the validation.
         if (definition.isEnableSchemaValidation()) {
-            MtConnectSchema schema = MtConnectSchema.of(jsonNodeSchemaLocation.asText());
+            final @Nullable String schemaLocation = MtConnectSchema.extractSchemaLocation(body);
+            final @Nullable MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
             if (schema == null) {
-                throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is not support");
+                throw new XMLParseException("Schema " + schemaLocation + " is not support");
             }
             // The unmarshal call brings additional performance overhead.
             final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
             if (unmarshaller == null) {
-                throw new XMLParseException("Schema " + jsonNodeSchemaLocation.asText() + " is to be supported");
+                throw new XMLParseException("Schema " + schemaLocation + " is to be supported");
             } else {
                 try (StringReader stringReader = new StringReader(body)) {
                     final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
                     jsonString = OBJECT_MAPPER.writeValueAsString(element.getValue());
                 } catch (final Exception e) {
-                    throw new XMLParseException(e,
-                            "Incoming XML message failed to conform " + jsonNodeSchemaLocation.asText());
+                    throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
                 }
             }
             if (LOGGER.isTraceEnabled()) {
@@ -180,7 +175,13 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
                         schema.getMajorVersion(),
                         schema.getMinorVersion());
             }
-        } else {
+        }
+        if (jsonString == null) {
+            final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
+            final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
+            if (jsonNodeSchemaLocation == null) {
+                throw new XMLParseException("Attribute schemaLocation is not found");
+            }
             jsonString = OBJECT_MAPPER.writeValueAsString(rootNode);
         }
         return adapterFactories.dataPointFactory().create(DATA, jsonString);

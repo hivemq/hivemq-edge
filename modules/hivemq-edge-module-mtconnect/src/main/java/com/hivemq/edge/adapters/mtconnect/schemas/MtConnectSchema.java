@@ -21,8 +21,16 @@ import jakarta.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,62 +40,67 @@ import static com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchemaType.Err
 import static com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchemaType.Streams;
 
 public enum MtConnectSchema {
-    Assets_1_2(Assets, 1, 2, "urn:mtconnect.org:MTConnectAssets:1.2 /schemas/MTConnectAssets_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_2.MTConnectAssetsType.class),
-    Assets_1_3(Assets, 1, 3, "urn:mtconnect.org:MTConnectAssets:1.3 /schemas/MTConnectAssets_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_3.MTConnectAssetsType.class),
-    Assets_1_4(Assets, 1, 4, "urn:mtconnect.org:MTConnectAssets:1.4 /schemas/MTConnectAssets_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_4.MTConnectAssetsType.class),
-    Assets_1_5(Assets, 1, 5, "urn:mtconnect.org:MTConnectAssets:1.5 /schemas/MTConnectAssets_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_5.MTConnectAssetsType.class),
-    Assets_1_6(Assets, 1, 6, "urn:mtconnect.org:MTConnectAssets:1.6 /schemas/MTConnectAssets_1.6.xsd", com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_6.MTConnectAssetsType.class),
-    Assets_1_7(Assets, 1, 7, "urn:mtconnect.org:MTConnectAssets:1.7 /schemas/MTConnectAssets_1.7.xsd", null),
-    Assets_1_8(Assets, 1, 8, "urn:mtconnect.org:MTConnectAssets:1.8 /schemas/MTConnectAssets_1.8.xsd", null),
-    Assets_2_0(Assets, 2, 0, "urn:mtconnect.org:MTConnectAssets:2.0 /schemas/MTConnectAssets_2.0.xsd", null),
-    Assets_2_1(Assets, 2, 1, "urn:mtconnect.org:MTConnectAssets:2.1 /schemas/MTConnectAssets_2.1.xsd", null),
-    Assets_2_2(Assets, 2, 2, "urn:mtconnect.org:MTConnectAssets:2.2 /schemas/MTConnectAssets_2.2.xsd", null),
-    Assets_2_3(Assets, 2, 3, "urn:mtconnect.org:MTConnectAssets:2.3 /schemas/MTConnectAssets_2.3.xsd", null),
-    Assets_2_4(Assets, 2, 4, "urn:mtconnect.org:MTConnectAssets:2.4 /schemas/MTConnectAssets_2.4.xsd", null),
-    Devices_1_0(Devices, 1, 0, "urn:mtconnect.org:MTConnectDevices:1.0 /schemas/MTConnectDevices_1.0.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType.class),
-    Devices_1_1(Devices, 1, 1, "urn:mtconnect.org:MTConnectDevices:1.1 /schemas/MTConnectDevices_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType.class),
-    Devices_1_2(Devices, 1, 2, "urn:mtconnect.org:MTConnectDevices:1.2 /schemas/MTConnectDevices_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_2.MTConnectDevicesType.class),
-    Devices_1_3(Devices, 1, 3, "urn:mtconnect.org:MTConnectDevices:1.3 /schemas/MTConnectDevices_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType.class),
-    Devices_1_4(Devices, 1, 4, "urn:mtconnect.org:MTConnectDevices:1.4 /schemas/MTConnectDevices_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType.class),
-    Devices_1_5(Devices, 1, 5, "urn:mtconnect.org:MTConnectDevices:1.5 /schemas/MTConnectDevices_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType.class),
-    Devices_1_6(Devices, 1, 6, "urn:mtconnect.org:MTConnectDevices:1.6 /schemas/MTConnectDevices_1.6.xsd", com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_6.MTConnectDevicesType.class),
-    Devices_1_7(Devices, 1, 7, "urn:mtconnect.org:MTConnectDevices:1.7 /schemas/MTConnectDevices_1.7.xsd", null),
-    Devices_1_8(Devices, 1, 8, "urn:mtconnect.org:MTConnectDevices:1.8 /schemas/MTConnectDevices_1.8.xsd", null),
-    Devices_2_0(Devices, 2, 0, "urn:mtconnect.org:MTConnectDevices:2.0 /schemas/MTConnectDevices_2.0.xsd", null),
-    Devices_2_1(Devices, 2, 1, "urn:mtconnect.org:MTConnectDevices:2.1 /schemas/MTConnectDevices_2.1.xsd", null),
-    Devices_2_2(Devices, 2, 2, "urn:mtconnect.org:MTConnectDevices:2.2 /schemas/MTConnectDevices_2.2.xsd", null),
-    Devices_2_3(Devices, 2, 3, "urn:mtconnect.org:MTConnectDevices:2.3 /schemas/MTConnectDevices_2.3.xsd", null),
-    Devices_2_4(Devices, 2, 4, "urn:mtconnect.org:MTConnectDevices:2.4 /schemas/MTConnectDevices_2.4.xsd", null),
-    Error_1_1(Error, 1, 1, "urn:mtconnect.org:MTConnectError:1.1 /schemas/MTConnectError_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_1.MTConnectErrorType.class),
-    Error_1_2(Error, 1, 2, "urn:mtconnect.org:MTConnectError:1.2 /schemas/MTConnectError_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_2.MTConnectErrorType.class),
-    Error_1_3(Error, 1, 3, "urn:mtconnect.org:MTConnectError:1.3 /schemas/MTConnectError_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3.MTConnectErrorType.class),
-    Error_1_4(Error, 1, 4, "urn:mtconnect.org:MTConnectError:1.4 /schemas/MTConnectError_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_4.MTConnectErrorType.class),
-    Error_1_5(Error, 1, 5, "urn:mtconnect.org:MTConnectError:1.5 /schemas/MTConnectError_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_5.MTConnectErrorType.class),
-    Error_1_6(Error, 1, 6, "urn:mtconnect.org:MTConnectError:1.6 /schemas/MTConnectError_1.6.xsd", com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_6.MTConnectErrorType.class),
-    Error_1_7(Error, 1, 7, "urn:mtconnect.org:MTConnectError:1.7 /schemas/MTConnectError_1.7.xsd", null),
-    Error_1_8(Error, 1, 8, "urn:mtconnect.org:MTConnectError:1.8 /schemas/MTConnectError_1.8.xsd", null),
-    Error_2_0(Error, 2, 0, "urn:mtconnect.org:MTConnectError:2.0 /schemas/MTConnectError_2.0.xsd", null),
-    Error_2_1(Error, 2, 1, "urn:mtconnect.org:MTConnectError:2.1 /schemas/MTConnectError_2.1.xsd", null),
-    Error_2_2(Error, 2, 2, "urn:mtconnect.org:MTConnectError:2.2 /schemas/MTConnectError_2.2.xsd", null),
-    Error_2_3(Error, 2, 3, "urn:mtconnect.org:MTConnectError:2.3 /schemas/MTConnectError_2.3.xsd", null),
-    Error_2_4(Error, 2, 4, "urn:mtconnect.org:MTConnectError:2.4 /schemas/MTConnectError_2.4.xsd", null),
-    Streams_1_1(Streams, 1, 1, "urn:mtconnect.org:MTConnectStreams:1.1 /schemas/MTConnectStreams_1.1.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_1.MTConnectStreamsType.class),
-    Streams_1_2(Streams, 1, 2, "urn:mtconnect.org:MTConnectStreams:1.2 /schemas/MTConnectStreams_1.2.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_2.MTConnectStreamsType.class),
-    Streams_1_3(Streams, 1, 3, "urn:mtconnect.org:MTConnectStreams:1.3 /schemas/MTConnectStreams_1.3.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType.class),
-    Streams_1_4(Streams, 1, 4, "urn:mtconnect.org:MTConnectStreams:1.4 /schemas/MTConnectStreams_1.4.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_4.MTConnectStreamsType.class),
-    Streams_1_5(Streams, 1, 5, "urn:mtconnect.org:MTConnectStreams:1.5 /schemas/MTConnectStreams_1.5.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType.class),
-    Streams_1_6(Streams, 1, 6, "urn:mtconnect.org:MTConnectStreams:1.6 /schemas/MTConnectStreams_1.6.xsd", com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_6.MTConnectStreamsType.class),
-    Streams_1_7(Streams, 1, 7, "urn:mtconnect.org:MTConnectStreams:1.7 /schemas/MTConnectStreams_1.7.xsd", null),
-    Streams_1_8(Streams, 1, 8, "urn:mtconnect.org:MTConnectStreams:1.8 /schemas/MTConnectStreams_1.8.xsd", null),
-    Streams_2_0(Streams, 2, 0, "urn:mtconnect.org:MTConnectStreams:2.0 /schemas/MTConnectStreams_2.0.xsd", null),
-    Streams_2_1(Streams, 2, 1, "urn:mtconnect.org:MTConnectStreams:2.1 /schemas/MTConnectStreams_2.1.xsd", null),
-    Streams_2_2(Streams, 2, 2, "urn:mtconnect.org:MTConnectStreams:2.2 /schemas/MTConnectStreams_2.2.xsd", null),
-    Streams_2_3(Streams, 2, 3, "urn:mtconnect.org:MTConnectStreams:2.3 /schemas/MTConnectStreams_2.3.xsd", null),
-    Streams_2_4(Streams, 2, 4, "urn:mtconnect.org:MTConnectStreams:2.4 /schemas/MTConnectStreams_2.4.xsd", null),
+    Assets_1_2(Assets, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_2.MTConnectAssetsType.class),
+    Assets_1_3(Assets, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_3.MTConnectAssetsType.class),
+    Assets_1_4(Assets, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_4.MTConnectAssetsType.class),
+    Assets_1_5(Assets, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_5.MTConnectAssetsType.class),
+    Assets_1_6(Assets, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_6.MTConnectAssetsType.class),
+    Assets_1_7(Assets, 1, 7, null),
+    Assets_1_8(Assets, 1, 8, null),
+    Assets_2_0(Assets, 2, 0, null),
+    Assets_2_1(Assets, 2, 1, null),
+    Assets_2_2(Assets, 2, 2, null),
+    Assets_2_3(Assets, 2, 3, null),
+    Assets_2_4(Assets, 2, 4, null),
+    Devices_1_0(Devices, 1, 0, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType.class),
+    Devices_1_1(Devices, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType.class),
+    Devices_1_2(Devices, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_2.MTConnectDevicesType.class),
+    Devices_1_3(Devices, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3.MTConnectDevicesType.class),
+    Devices_1_4(Devices, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType.class),
+    Devices_1_5(Devices, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType.class),
+    Devices_1_6(Devices, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_6.MTConnectDevicesType.class),
+    Devices_1_7(Devices, 1, 7, null),
+    Devices_1_8(Devices, 1, 8, null),
+    Devices_2_0(Devices, 2, 0, null),
+    Devices_2_1(Devices, 2, 1, null),
+    Devices_2_2(Devices, 2, 2, null),
+    Devices_2_3(Devices, 2, 3, null),
+    Devices_2_4(Devices, 2, 4, null),
+    Error_1_1(Error, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_1.MTConnectErrorType.class),
+    Error_1_2(Error, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_2.MTConnectErrorType.class),
+    Error_1_3(Error, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3.MTConnectErrorType.class),
+    Error_1_4(Error, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_4.MTConnectErrorType.class),
+    Error_1_5(Error, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_5.MTConnectErrorType.class),
+    Error_1_6(Error, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_6.MTConnectErrorType.class),
+    Error_1_7(Error, 1, 7, null),
+    Error_1_8(Error, 1, 8, null),
+    Error_2_0(Error, 2, 0, null),
+    Error_2_1(Error, 2, 1, null),
+    Error_2_2(Error, 2, 2, null),
+    Error_2_3(Error, 2, 3, null),
+    Error_2_4(Error, 2, 4, null),
+    Streams_1_1(Streams, 1, 1, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_1.MTConnectStreamsType.class),
+    Streams_1_2(Streams, 1, 2, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_2.MTConnectStreamsType.class),
+    Streams_1_3(Streams, 1, 3, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3.MTConnectStreamsType.class),
+    Streams_1_4(Streams, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_4.MTConnectStreamsType.class),
+    Streams_1_5(Streams, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType.class),
+    Streams_1_6(Streams, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_6.MTConnectStreamsType.class),
+    Streams_1_7(Streams, 1, 7, null),
+    Streams_1_8(Streams, 1, 8, null),
+    Streams_2_0(Streams, 2, 0, null),
+    Streams_2_1(Streams, 2, 1, null),
+    Streams_2_2(Streams, 2, 2, null),
+    Streams_2_3(Streams, 2, 3, null),
+    Streams_2_4(Streams, 2, 4, null),
     ;
 
     private static final @NotNull Map<String, MtConnectSchema> LOCATION_TO_SCHEMA_MAP =
             Stream.of(values()).collect(Collectors.toMap(MtConnectSchema::getLocation, Function.identity()));
+    private static final @NotNull String SCHEMA_LOCATION = "schemaLocation";
+    private static final @NotNull String XMLSCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance";
+    private static final @NotNull String MT_CONNECT = "MTConnect";
+    private static final @NotNull Pattern PATTERN_LOCATION =
+            Pattern.compile("MTConnect(Assets|Devices|Error|Streams)_(\\d+)\\.(\\d+)\\.xsd$");
     private final int majorVersion;
     private final int minorVersion;
     private final @NotNull String location;
@@ -99,17 +112,174 @@ public enum MtConnectSchema {
             @NotNull final MtConnectSchemaType type,
             final int majorVersion,
             final int minorVersion,
-            @NotNull final String location,
             final @Nullable Class<?> mtConnectType) {
-        this.location = location;
+        this.location = "urn:mtconnect.org:MTConnect" +
+                type.name() +
+                ":" +
+                majorVersion +
+                "." +
+                minorVersion +
+                " /schemas/MTConnect" +
+                type.name() +
+                "_" +
+                majorVersion +
+                "." +
+                minorVersion +
+                ".xsd";
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
         this.type = type;
         this.mtConnectType = mtConnectType;
     }
 
-    public static @Nullable MtConnectSchema of(final @NotNull String location) {
-        return LOCATION_TO_SCHEMA_MAP.get(location);
+    public static @Nullable MtConnectSchema of(final @Nullable String location) {
+        MtConnectSchema mtConnectSchema = LOCATION_TO_SCHEMA_MAP.get(location);
+        if (mtConnectSchema == null && location != null) {
+            Matcher matcher = PATTERN_LOCATION.matcher(location);
+            if (matcher.find()) {
+                final MtConnectSchemaType type = MtConnectSchemaType.of(matcher.group(1));
+                final int majorVersion = Integer.parseInt(matcher.group(2));
+                final int minorVersion = Integer.parseInt(matcher.group(3));
+                switch (type) {
+                    case Assets -> {
+                        switch (majorVersion) {
+                            case 1 -> {
+                                switch (minorVersion) {
+                                    case 2 -> mtConnectSchema = Assets_1_2;
+                                    case 3 -> mtConnectSchema = Assets_1_3;
+                                    case 4 -> mtConnectSchema = Assets_1_4;
+                                    case 5 -> mtConnectSchema = Assets_1_5;
+                                    case 6 -> mtConnectSchema = Assets_1_6;
+                                    case 7 -> mtConnectSchema = Assets_1_7;
+                                    case 8 -> mtConnectSchema = Assets_1_8;
+                                }
+                            }
+                            case 2 -> {
+                                switch (minorVersion) {
+                                    case 0 -> mtConnectSchema = Assets_2_0;
+                                    case 1 -> mtConnectSchema = Assets_2_1;
+                                    case 2 -> mtConnectSchema = Assets_2_2;
+                                    case 3 -> mtConnectSchema = Assets_2_3;
+                                    case 4 -> mtConnectSchema = Assets_2_4;
+                                }
+                            }
+                        }
+                    }
+                    case Devices -> {
+                        switch (majorVersion) {
+                            case 1 -> {
+                                switch (minorVersion) {
+                                    case 0 -> mtConnectSchema = Devices_1_0;
+                                    case 1 -> mtConnectSchema = Devices_1_1;
+                                    case 2 -> mtConnectSchema = Devices_1_2;
+                                    case 3 -> mtConnectSchema = Devices_1_3;
+                                    case 4 -> mtConnectSchema = Devices_1_4;
+                                    case 5 -> mtConnectSchema = Devices_1_5;
+                                    case 6 -> mtConnectSchema = Devices_1_6;
+                                    case 7 -> mtConnectSchema = Devices_1_7;
+                                    case 8 -> mtConnectSchema = Devices_1_8;
+                                }
+                            }
+                            case 2 -> {
+                                switch (minorVersion) {
+                                    case 0 -> mtConnectSchema = Devices_2_0;
+                                    case 1 -> mtConnectSchema = Devices_2_1;
+                                    case 2 -> mtConnectSchema = Devices_2_2;
+                                    case 3 -> mtConnectSchema = Devices_2_3;
+                                    case 4 -> mtConnectSchema = Devices_2_4;
+                                }
+                            }
+                        }
+                    }
+                    case Error -> {
+                        switch (majorVersion) {
+                            case 1 -> {
+                                switch (minorVersion) {
+                                    case 1 -> mtConnectSchema = Error_1_1;
+                                    case 2 -> mtConnectSchema = Error_1_2;
+                                    case 3 -> mtConnectSchema = Error_1_3;
+                                    case 4 -> mtConnectSchema = Error_1_4;
+                                    case 5 -> mtConnectSchema = Error_1_5;
+                                    case 6 -> mtConnectSchema = Error_1_6;
+                                    case 7 -> mtConnectSchema = Error_1_7;
+                                    case 8 -> mtConnectSchema = Error_1_8;
+                                }
+                            }
+                            case 2 -> {
+                                switch (minorVersion) {
+                                    case 0 -> mtConnectSchema = Error_2_0;
+                                    case 1 -> mtConnectSchema = Error_2_1;
+                                    case 2 -> mtConnectSchema = Error_2_2;
+                                    case 3 -> mtConnectSchema = Error_2_3;
+                                    case 4 -> mtConnectSchema = Error_2_4;
+                                }
+                            }
+                        }
+                    }
+                    case Streams -> {
+                        switch (majorVersion) {
+                            case 1 -> {
+                                switch (minorVersion) {
+                                    case 1 -> mtConnectSchema = Streams_1_1;
+                                    case 2 -> mtConnectSchema = Streams_1_2;
+                                    case 3 -> mtConnectSchema = Streams_1_3;
+                                    case 4 -> mtConnectSchema = Streams_1_4;
+                                    case 5 -> mtConnectSchema = Streams_1_5;
+                                    case 6 -> mtConnectSchema = Streams_1_6;
+                                    case 7 -> mtConnectSchema = Streams_1_7;
+                                    case 8 -> mtConnectSchema = Streams_1_8;
+                                }
+                            }
+                            case 2 -> {
+                                switch (minorVersion) {
+                                    case 0 -> mtConnectSchema = Streams_2_0;
+                                    case 1 -> mtConnectSchema = Streams_2_1;
+                                    case 2 -> mtConnectSchema = Streams_2_2;
+                                    case 3 -> mtConnectSchema = Streams_2_3;
+                                    case 4 -> mtConnectSchema = Streams_2_4;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return mtConnectSchema;
+    }
+
+    public static @Nullable String extractSchemaLocation(final @NotNull String str) {
+        try (final StringReader stringReader = new StringReader(str)) {
+            return extractSchemaLocation(stringReader);
+        }
+    }
+
+    public static @Nullable String extractSchemaLocation(final @NotNull Reader reader) {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        XMLStreamReader xmlStreamReader = null;
+        try {
+            xmlStreamReader = xmlInputFactory.createXMLStreamReader(reader);
+            while (xmlStreamReader.hasNext()) {
+                if (xmlStreamReader.next() == XMLStreamConstants.START_ELEMENT &&
+                        xmlStreamReader.getLocalName().startsWith(MT_CONNECT)) {
+                    for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
+                        final String attributeName = xmlStreamReader.getAttributeLocalName(i);
+                        final String attributeNamespace = xmlStreamReader.getAttributeNamespace(i);
+                        if (SCHEMA_LOCATION.equals(attributeName) && XMLSCHEMA_INSTANCE.equals(attributeNamespace)) {
+                            return xmlStreamReader.getAttributeValue(i);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (xmlStreamReader != null) {
+                try {
+                    xmlStreamReader.close();
+                } catch (XMLStreamException ignored) {
+                }
+            }
+        }
+        return null;
     }
 
     public int getMajorVersion() {
