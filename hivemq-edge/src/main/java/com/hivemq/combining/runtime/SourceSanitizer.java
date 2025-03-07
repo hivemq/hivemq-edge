@@ -25,7 +25,8 @@ public class SourceSanitizer {
     }
 
     private static @NotNull String sanitizeId(final @NotNull String id){
-        final String escaped = id.replaceAll("//.", "/");
+        final String escaped = id.replaceAll("\\.", "/");
         return escaped;
     }
+
 }
