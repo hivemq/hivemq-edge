@@ -10,6 +10,7 @@ package com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlSchemaType;
 import jakarta.xml.bind.annotation.XmlType;
 
 
@@ -28,6 +29,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *       <attribute name="deviceUuidRef" use="required" type="{urn:mtconnect.org:MTConnectDevices:1.5}UuidType" />
  *       <attribute name="role" type="{urn:mtconnect.org:MTConnectDevices:1.5}DeviceRoleEnumType" />
  *       <attribute name="href" type="{http://www.w3.org/1999/xlink}hrefType" />
+ *       <attribute name="type1" type="{http://www.w3.org/2001/XMLSchema}anySimpleType" fixed="locator" />
  *     </extension>
  *   </complexContent>
  * </complexType>
@@ -80,6 +82,16 @@ public class DeviceRelationshipType
     @com.fasterxml.jackson.annotation.JsonProperty(value = "href")
     @XmlAttribute(name = "href")
     protected String href;
+    /**
+     * The XLink type attribute MUST have a fixed value of locator as
+     *               defined in W3C XLink 1.1 https://www.w3.org/TR/xlink11/ section
+     *               5.4 Locator Attribute (href).
+     * 
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "type")
+    @XmlAttribute(name = "type")
+    @XmlSchemaType(name = "anySimpleType")
+    protected String type1;
 
     /**
      * A reference to the associated piece of equipment. The value
@@ -171,6 +183,37 @@ public class DeviceRelationshipType
      */
     public void setHref(String value) {
         this.href = value;
+    }
+
+    /**
+     * The XLink type attribute MUST have a fixed value of locator as
+     *               defined in W3C XLink 1.1 https://www.w3.org/TR/xlink11/ section
+     *               5.4 Locator Attribute (href).
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getType1() {
+        if (type1 == null) {
+            return "locator";
+        } else {
+            return type1;
+        }
+    }
+
+    /**
+     * Sets the value of the type1 property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     * @see #getType1()
+     */
+    public void setType1(String value) {
+        this.type1 = value;
     }
 
 }
