@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.mtconnect;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -40,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
 import javax.management.modelmbean.XMLParseException;
@@ -142,6 +143,7 @@ public class MtConnectProtocolAdapterTest {
                 "tagDescription",
                 new MtConnectAdapterTagDefinition("http://localhost/vds",
                         false,
+                        true,
                         5,
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
         when(pollingInput.getPollingContext()).thenReturn(pollingContext);
@@ -190,7 +192,7 @@ public class MtConnectProtocolAdapterTest {
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString(
                 "/streams/streams-1-3-smstestbed-time-series.xml",
-                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", false, 10, List.of()));
+                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", false, true, 10, List.of()));
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
@@ -199,13 +201,16 @@ public class MtConnectProtocolAdapterTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(boolean enableSchemaValidation)
+    @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+    public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(
+            boolean enableSchemaValidation,
+            boolean includeNull)
             throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml",
-                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", enableSchemaValidation, 10, List.of()));
+                        StandardCharsets.UTF_8),
+                new MtConnectAdapterTagDefinition("", enableSchemaValidation, includeNull, 10, List.of()));
         assertThat(dataPoint).isNotNull();
         assertThat(dataPoint.getTagName()).isEqualTo("data");
         final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
@@ -216,6 +221,16 @@ public class MtConnectProtocolAdapterTest {
         assertThat(jsonNode.get("Header")).isNotNull();
         assertThat(jsonNode.get("Devices")).isNotNull();
         assertThat(jsonNode.get("Streams")).isNull();
+        if (includeNull) {
+            if (enableSchemaValidation) {
+                assertThat(jsonNode.get("Header").has("AssetCounts")).isTrue();
+                assertThat(jsonNode.get("Header").get("AssetCounts")).isInstanceOf(NullNode.class);
+            } else {
+                assertThat(jsonNode.get("Header").has("AssetCounts")).isFalse();
+            }
+        } else {
+            assertThat(jsonNode.get("Header").has("AssetCounts")).isFalse();
+        }
     }
 
     @Test
@@ -223,9 +238,9 @@ public class MtConnectProtocolAdapterTest {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThatThrownBy(() -> adapter.processXml(IOUtils.resourceToString(
-                "/streams/streams-1-3-smstestbed-current.xml",
-                StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", true, 10, List.of()))).isInstanceOf(
-                        XMLParseException.class)
+                        "/streams/streams-1-3-smstestbed-current.xml",
+                        StandardCharsets.UTF_8),
+                new MtConnectAdapterTagDefinition("", true, true, 10, List.of()))).isInstanceOf(XMLParseException.class)
                 .hasMessage(
                         "XML Parse Exception: Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
     }
