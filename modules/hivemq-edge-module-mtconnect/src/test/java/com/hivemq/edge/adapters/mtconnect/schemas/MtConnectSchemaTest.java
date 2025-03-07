@@ -58,10 +58,19 @@ public class MtConnectSchemaTest {
     }
 
     @Test
+    public void whenInputXmlIsDevices_1_4_thenSchemaLocationShouldBeDetected() throws Exception {
+        final String schemaLocation = MtConnectSchema.extractSchemaLocation(IOUtils.resourceToString(
+                "/devices/devices-1-4.xml",
+                StandardCharsets.UTF_8));
+        assertThat(schemaLocation).isNotNull();
+        final MtConnectSchema mtConnectSchema = MtConnectSchema.of(schemaLocation);
+        assertThat(mtConnectSchema).isNotNull().isEqualTo(MtConnectSchema.Devices_1_4);
+    }
+
+    @Test
     public void whenInputXmlIsDevices_1_4_thenXmlValidationShouldPass() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_4.getUnmarshaller();
-        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(
-                "/devices/devices-1-4.xml",
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-4.xml",
                 StandardCharsets.UTF_8))) {
             final JAXBElement<?> element =
                     (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
@@ -88,6 +97,16 @@ public class MtConnectSchemaTest {
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(1);
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(17);
         }
+    }
+
+    @Test
+    public void whenInputXmlIsStreams_1_4_thenSchemaLocationShouldBeDetected() throws Exception {
+        final String schemaLocation = MtConnectSchema.extractSchemaLocation(IOUtils.resourceToString(
+                "/streams/streams-1-4.xml",
+                StandardCharsets.UTF_8));
+        assertThat(schemaLocation).isNotNull();
+        final MtConnectSchema mtConnectSchema = MtConnectSchema.of(schemaLocation);
+        assertThat(mtConnectSchema).isNotNull().isEqualTo(MtConnectSchema.Streams_1_4);
     }
 
     @Test
