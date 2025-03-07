@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.mtconnect.schemas;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 public enum MtConnectSchemaType {
     Assets,
     Devices,
@@ -24,7 +26,13 @@ public enum MtConnectSchemaType {
     Streams,
     ;
 
+    private static final @NotNull Map<@NotNull String, @NotNull MtConnectSchemaType> TYPE_MAP =
+            Map.of(Assets.name(), Assets, Devices.name(), Devices, Error.name(), Error, Streams.name(), Streams);
     private final @NotNull String rootNodeName = "MTConnect" + name();
+
+    public static @NotNull MtConnectSchemaType of(@NotNull final String type) {
+        return TYPE_MAP.get(type);
+    }
 
     public @NotNull String getRootNodeName() {
         return rootNodeName;
