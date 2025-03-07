@@ -45,7 +45,7 @@ public enum MtConnectSchema {
     Assets_1_4(Assets, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_4.MTConnectAssetsType.class),
     Assets_1_5(Assets, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_5.MTConnectAssetsType.class),
     Assets_1_6(Assets, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_6.MTConnectAssetsType.class),
-    Assets_1_7(Assets, 1, 7, null),
+    Assets_1_7(Assets, 1, 7, com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_7.MTConnectAssetsType.class),
     Assets_1_8(Assets, 1, 8, null),
     Assets_2_0(Assets, 2, 0, null),
     Assets_2_1(Assets, 2, 1, null),
@@ -59,7 +59,7 @@ public enum MtConnectSchema {
     Devices_1_4(Devices, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType.class),
     Devices_1_5(Devices, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType.class),
     Devices_1_6(Devices, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_6.MTConnectDevicesType.class),
-    Devices_1_7(Devices, 1, 7, null),
+    Devices_1_7(Devices, 1, 7, com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_7.MTConnectDevicesType.class),
     Devices_1_8(Devices, 1, 8, null),
     Devices_2_0(Devices, 2, 0, null),
     Devices_2_1(Devices, 2, 1, null),
@@ -72,7 +72,7 @@ public enum MtConnectSchema {
     Error_1_4(Error, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_4.MTConnectErrorType.class),
     Error_1_5(Error, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_5.MTConnectErrorType.class),
     Error_1_6(Error, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_6.MTConnectErrorType.class),
-    Error_1_7(Error, 1, 7, null),
+    Error_1_7(Error, 1, 7, com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_7.MTConnectErrorType.class),
     Error_1_8(Error, 1, 8, null),
     Error_2_0(Error, 2, 0, null),
     Error_2_1(Error, 2, 1, null),
@@ -85,7 +85,7 @@ public enum MtConnectSchema {
     Streams_1_4(Streams, 1, 4, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_4.MTConnectStreamsType.class),
     Streams_1_5(Streams, 1, 5, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_5.MTConnectStreamsType.class),
     Streams_1_6(Streams, 1, 6, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_6.MTConnectStreamsType.class),
-    Streams_1_7(Streams, 1, 7, null),
+    Streams_1_7(Streams, 1, 7, com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_7.MTConnectStreamsType.class),
     Streams_1_8(Streams, 1, 8, null),
     Streams_2_0(Streams, 2, 0, null),
     Streams_2_1(Streams, 2, 1, null),
@@ -135,7 +135,7 @@ public enum MtConnectSchema {
     public static @Nullable MtConnectSchema of(final @Nullable String location) {
         MtConnectSchema mtConnectSchema = LOCATION_TO_SCHEMA_MAP.get(location);
         if (mtConnectSchema == null && location != null) {
-            Matcher matcher = PATTERN_LOCATION.matcher(location);
+            final Matcher matcher = PATTERN_LOCATION.matcher(location);
             if (matcher.find()) {
                 final MtConnectSchemaType type = MtConnectSchemaType.of(matcher.group(1));
                 final int majorVersion = Integer.parseInt(matcher.group(2));
@@ -254,7 +254,7 @@ public enum MtConnectSchema {
     }
 
     public static @Nullable String extractSchemaLocation(final @NotNull Reader reader) {
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         XMLStreamReader xmlStreamReader = null;
         try {
             xmlStreamReader = xmlInputFactory.createXMLStreamReader(reader);
@@ -308,7 +308,7 @@ public enum MtConnectSchema {
             // The overall performance is better than a synchronized block.
             jaxbContext = JAXBContext.newInstance(mtConnectType);
         }
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         unmarshaller.setEventHandler(new MtConnectSchemaValidationEventHandler());
         return unmarshaller;
     }
