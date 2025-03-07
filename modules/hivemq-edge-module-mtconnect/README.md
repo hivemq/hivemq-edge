@@ -30,6 +30,8 @@ repos
 │   └── hivemq-edge
 │       └── modules
 │           └── hivemq-edge-module-mtconnect
+│               ├── jaxb-ri
+│               └── xerces-2_12_2-xml-schema-1.1
 └── mtconnect
 ```
 
