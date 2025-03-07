@@ -247,9 +247,9 @@ public enum MtConnectSchema {
         return mtConnectSchema;
     }
 
-    public static @Nullable String extractSchemaLocation(final @NotNull String str) {
-        try (final StringReader stringReader = new StringReader(str)) {
-            return extractSchemaLocation(stringReader);
+    public static @Nullable String extractSchemaLocation(final @NotNull String xmlString) {
+        try (final StringReader xmlStringReader = new StringReader(xmlString)) {
+            return extractSchemaLocation(xmlStringReader);
         }
     }
 
