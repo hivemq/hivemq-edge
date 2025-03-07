@@ -50,6 +50,13 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
                        defaultValue = "false")
     private final boolean enableSchemaValidation;
 
+    @JsonProperty(value = "includeNull")
+    @ModuleConfigField(title = "Include Null",
+                       description = "Include null objects in the JSON output",
+                       format = ModuleConfigField.FieldType.BOOLEAN,
+                       defaultValue = "false")
+    private final boolean includeNull;
+
     @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
@@ -62,10 +69,12 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
     public MtConnectAdapterTagDefinition(
             @JsonProperty(value = "url", required = true) final @NotNull String url,
             @JsonProperty(value = "enableSchemaValidation") final boolean enableSchemaValidation,
+            @JsonProperty(value = "includeNull") final boolean includeNull,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpHeaders") final @Nullable List<MtConnectAdapterHttpHeader> httpHeaders) {
         this.url = url;
         this.enableSchemaValidation = enableSchemaValidation;
+        this.includeNull = includeNull;
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
         this.httpConnectTimeoutSeconds = Optional.ofNullable(httpConnectTimeoutSeconds)
                 .map(s -> Math.min(s, MAX_HTTP_CONNECT_TIMEOUT_SECONDS))
@@ -75,6 +84,10 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
 
     public boolean isEnableSchemaValidation() {
         return enableSchemaValidation;
+    }
+
+    public boolean isIncludeNull() {
+        return includeNull;
     }
 
     public @NotNull List<MtConnectAdapterHttpHeader> getHttpHeaders() {

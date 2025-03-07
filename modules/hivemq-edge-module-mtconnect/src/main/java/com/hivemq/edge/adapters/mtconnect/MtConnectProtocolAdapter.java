@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.mtconnect;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,8 +84,14 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(MtConnectProtocolAdapter.class);
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
     private static final @NotNull String HEADER_CONTENT_TYPE = "Content-Type";
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull ObjectMapper OBJECT_MAPPER_INCLUDE_NULL = new ObjectMapper();
+    private static final @NotNull ObjectMapper OBJECT_MAPPER_EXCLUDE_NULL = new ObjectMapper();
     private static final @NotNull XmlMapper XML_MAPPER = new XmlMapper();
+
+    static {
+        OBJECT_MAPPER_EXCLUDE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
     protected final @NotNull Map<String, Tag> tagMap;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -148,6 +155,8 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             final @NotNull String body,
             final @NotNull MtConnectAdapterTagDefinition definition)
             throws JsonProcessingException, XMLParseException, JAXBException {
+        final ObjectMapper objectMapper =
+                definition.isIncludeNull() ? OBJECT_MAPPER_INCLUDE_NULL : OBJECT_MAPPER_EXCLUDE_NULL;
         @Nullable String jsonString = null;
         // There are some custom schemas not supported by this module.
         // Enable the schema validation will cause those messages fail the validation.
@@ -164,7 +173,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             } else {
                 try (StringReader stringReader = new StringReader(body)) {
                     final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
-                    jsonString = OBJECT_MAPPER.writeValueAsString(element.getValue());
+                    jsonString = objectMapper.writeValueAsString(element.getValue());
                 } catch (final Exception e) {
                     throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
                 }
@@ -182,7 +191,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             if (jsonNodeSchemaLocation == null) {
                 throw new XMLParseException("Attribute schemaLocation is not found");
             }
-            jsonString = OBJECT_MAPPER.writeValueAsString(rootNode);
+            jsonString = objectMapper.writeValueAsString(rootNode);
         }
         return adapterFactories.dataPointFactory().create(DATA, jsonString);
     }
