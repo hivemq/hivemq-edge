@@ -52,13 +52,7 @@ parsing a schema...
   line 5064 of file:/.../mtconnect/schema/MTConnectDevices_1.5.xsd
 ```
 
-This issued is caused by the absence of property name in `<xs:attribute ref='xlink:type' use='optional' fixed='locator'>...</xs:attribute>`. So the default property name becomes `type` which conflicts with the inherited property name `type`. To resolve this issue, please follow the steps as follows.
-
-1. Add a name to the attribute `<xs:attribute name='type1' ref='xlink:type' use='optional' fixed='locator'>...</xs:attribute>`.
-2. Run the xjc command.
-3. Replace `@XmlAttribute(name = "type1")` with `@XmlAttribute(name = "type")` in `mtconnect/schemas/devices/devices_1_5/DeviceRelationshipType.java`.
-
-This fix applies to devices 1.5+.
+This issued is caused by the absence of property name in `<xs:attribute ref='xlink:type' use='optional' fixed='locator'>...</xs:attribute>`. So the default property name becomes `type` which conflicts with the inherited property name `type`. Test cases in `MtConnectSchemaPatchTest` are able to fix this issue.
 
 ## Test
 
