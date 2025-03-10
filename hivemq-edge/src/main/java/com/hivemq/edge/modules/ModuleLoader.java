@@ -21,6 +21,7 @@ import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,10 +146,30 @@ public class ModuleLoader {
     protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
         final File userDir = new File(System.getProperty("user.dir"));
-        if (userDir.getName().equals("hivemq-edge")) {
-            discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
-        } else if (userDir.getName().equals("hivemq-edge-composite")) {
-            discoverWorkspaceModule(new File(userDir, "../hivemq-edge/modules"), parentClassloader);
+        loadFromWorkspace(parentClassloader, userDir);
+    }
+
+    /**
+     * Load from workspace recursively from the current dir and its parent dir by looking for
+     * folder name matching 'hivemq-edge' or 'hivemq-edge-composite'.
+     * <p>
+     * This allows modules to be loaded from any subprojects when dev mode is turned on.
+     *
+     * @param parentClassloader the parent classloader
+     * @param currentDir        the current dir
+     */
+    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File currentDir) {
+        if (currentDir.exists() && currentDir.isDirectory()) {
+            if (currentDir.getName().equals("hivemq-edge")) {
+                discoverWorkspaceModule(new File(currentDir, "modules"), parentClassloader);
+            } else if (currentDir.getName().equals("hivemq-edge-composite")) {
+                discoverWorkspaceModule(new File(currentDir, "../hivemq-edge/modules"), parentClassloader);
+            } else {
+                final @Nullable File parentFile = currentDir.getParentFile();
+                if (parentFile != null) {
+                    loadFromWorkspace(parentClassloader, parentFile);
+                }
+            }
         }
     }
 
