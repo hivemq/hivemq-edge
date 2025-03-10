@@ -22,30 +22,22 @@ The [Schema](https://github.com/mtconnect/schema) validation is XSD based. That 
 - Download [jaxb-ri](https://eclipse-ee4j.github.io/jaxb-ri/) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
 - Download [Xerces2 Java Binary (XML Schema 1.1)](https://xerces.apache.org/mirrors.cgi) and unzip it to `modules/hivemq-edge-module-mtconnect` folder.
 - Add `xerces-2_12_2-xml-schema-1.1/xml-apis.jar` and `xerces-2_12_2-xml-schema-1.1/xercesImpl.jar` to the classpath.
-- `git clone https://github.com/mtconnect/schema.git` to `../../../../mtconnect`. Here is a sample directory structure.
+- `git clone https://github.com/mtconnect/schema.git` to to `modules/hivemq-edge-module-mtconnect` folder. Here is a sample directory structure.
 
 ```
-repos
-├── HiveMQ
-│   └── hivemq-edge
-│       └── modules
-│           └── hivemq-edge-module-mtconnect
-│               ├── jaxb-ri
-│               └── xerces-2_12_2-xml-schema-1.1
-└── mtconnect
+HiveMQ
+└── hivemq-edge
+    └── modules
+        └── hivemq-edge-module-mtconnect
+            ├── jaxb-ri
+            ├── schema
+            └── xerces-2_12_2-xml-schema-1.1
 ```
 
-- Navigate to `modules/hivemq-edge-module-mtconnect` folder.
-- For each of the XML schema files, run the following commands.
+- Run all test cases in `MtConnectSchemaPatchTest` to generate the schema patch files. By default, those test cases are skipped if `schema` folder is not found.
+- Navigate to `schema` and run `./patch-script.sh`.
 
-```bash
-jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_3 ../../../../mtconnect/schema/MTConnectAssets_1.3.xsd
-jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_3 ../../../../mtconnect/schema/MTConnectDevices_1.3.xsd
-jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.error.error_1_3 ../../../../mtconnect/schema/MTConnectError_1.3.xsd
-jaxb-ri/bin/xjc.sh -classpath "${CLASSPATH}:xerces-2_12_2-xml-schema-1.1/xml-apis.jar:xerces-2_12_2-xml-schema-1.1/xercesImpl.jar" -d src/main/java -p com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_1_3 ../../../../mtconnect/schema/MTConnectStreams_1.3.xsd
-```
-
-- After all the schema files are generated, run test case `MtConnectSchemaJsonAnnotationTest` to convert the XML annotations to Jackson annotations. This is a one-time process and the test case is able to generate the Jackson annotations in an incremental way. By default, this test case is skipped if jaxb-ri or xerces is not found.
+- After all the schema files are generated, run all test cases `MtConnectSchemaJsonAnnotationTest` to convert the XML annotations to Jackson annotations. This is a one-time process and the test case is able to generate the Jackson annotations in an incremental way. By default, those test cases are skipped if `jaxb-ri` or `xerces` is not found.
 
 #### Known Issues
 
