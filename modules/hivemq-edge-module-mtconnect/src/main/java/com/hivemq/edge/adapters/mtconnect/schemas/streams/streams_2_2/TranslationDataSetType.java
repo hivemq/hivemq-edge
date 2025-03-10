@@ -8,9 +8,12 @@
 package com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_2;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 
 
@@ -39,11 +42,20 @@ import jakarta.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @com.fasterxml.jackson.annotation.JsonTypeName(value = "TranslationDataSetType")
-@XmlType(name = "TranslationDataSetType")
+@XmlType(name = "TranslationDataSetType", propOrder = {
+    "entry"
+})
 public class TranslationDataSetType
     extends EventType
 {
 
+    /**
+     * Constraints for Entry Values
+     * 
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "Entry")
+    @XmlElement(name = "Entry")
+    protected List<TranslationEntryType> entry;
     /**
      * The number of entries
      * 
@@ -51,6 +63,40 @@ public class TranslationDataSetType
     @com.fasterxml.jackson.annotation.JsonProperty(value = "count")
     @XmlAttribute(name = "count", required = true)
     protected BigInteger count;
+
+    /**
+     * Constraints for Entry Values
+     * 
+     * Gets the value of the entry property.
+     * 
+     * <p>This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the entry property.</p>
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * </p>
+     * <pre>
+     * getEntry().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link TranslationEntryType }
+     * </p>
+     * 
+     * 
+     * @return
+     *     The value of the entry property.
+     */
+    public List<TranslationEntryType> getEntry() {
+        if (entry == null) {
+            entry = new ArrayList<>();
+        }
+        return this.entry;
+    }
 
     /**
      * The number of entries
