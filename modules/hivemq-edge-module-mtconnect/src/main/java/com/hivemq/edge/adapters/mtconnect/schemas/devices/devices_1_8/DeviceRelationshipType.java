@@ -10,7 +10,6 @@ package com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_8;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
-import jakarta.xml.bind.annotation.XmlSchemaType;
 import jakarta.xml.bind.annotation.XmlType;
 
 
@@ -30,7 +29,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *       <attribute name="deviceUuidRef" use="required" type="{urn:mtconnect.org:MTConnectDevices:1.8}UuidType" />
  *       <attribute name="role" type="{urn:mtconnect.org:MTConnectDevices:1.8}DeviceRoleEnumType" />
  *       <attribute name="href" type="{http://www.w3.org/1999/xlink}hrefType" />
- *       <attribute name="type" type="{http://www.w3.org/2001/XMLSchema}anySimpleType" fixed="locator" />
+ *       <attribute ref="{http://www.w3.org/1999/xlink}type fixed="locator""/>
  *     </extension>
  *   </complexContent>
  * </complexType>
@@ -81,9 +80,8 @@ public class DeviceRelationshipType
      * 
      */
     @com.fasterxml.jackson.annotation.JsonProperty(value = "type")
-    @XmlAttribute(name = "type")
-    @XmlSchemaType(name = "anySimpleType")
-    protected String type1;
+    @XmlAttribute(name = "type", namespace = "http://www.w3.org/1999/xlink")
+    protected TypeType typeOfDeviceRelationship;
 
     /**
      * A reference to the device uuid
@@ -175,28 +173,28 @@ public class DeviceRelationshipType
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link TypeType }
      *     
      */
-    public String getType1() {
-        if (type1 == null) {
-            return "locator";
+    public TypeType getTypeOfDeviceRelationship() {
+        if (typeOfDeviceRelationship == null) {
+            return TypeType.LOCATOR;
         } else {
-            return type1;
+            return typeOfDeviceRelationship;
         }
     }
 
     /**
-     * Sets the value of the type1 property.
+     * Sets the value of the typeOfDeviceRelationship property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link TypeType }
      *     
-     * @see #getType1()
+     * @see #getTypeOfDeviceRelationship()
      */
-    public void setType1(String value) {
-        this.type1 = value;
+    public void setTypeOfDeviceRelationship(TypeType value) {
+        this.typeOfDeviceRelationship = value;
     }
 
 }

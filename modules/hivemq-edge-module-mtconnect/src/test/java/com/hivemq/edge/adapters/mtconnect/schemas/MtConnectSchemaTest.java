@@ -19,6 +19,7 @@ import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
@@ -138,6 +139,23 @@ public class MtConnectSchemaTest {
             assertThat(mtConnectStreamsType).isNotNull();
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(1);
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(4);
+        }
+    }
+
+    @Test
+    @Disabled
+    public void whenInputXmlIsStreams_2_0_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Streams_2_0.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/streams/streams-2-0.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_0.MTConnectStreamsType
+                    mtConnectStreamsType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.streams.streams_2_0.MTConnectStreamsType) element.getValue();
+            assertThat(mtConnectStreamsType).isNotNull();
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(2);
+            assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(2);
         }
     }
 }
