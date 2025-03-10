@@ -21,6 +21,7 @@ import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
