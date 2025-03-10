@@ -143,7 +143,6 @@ public class MtConnectSchemaTest {
     }
 
     @Test
-    @Disabled
     public void whenInputXmlIsStreams_2_0_thenXmlValidationShouldPass() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Streams_2_0.getUnmarshaller();
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/streams/streams-2-0.xml",

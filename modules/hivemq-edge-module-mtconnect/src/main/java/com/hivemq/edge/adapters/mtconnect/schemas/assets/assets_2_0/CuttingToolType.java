@@ -67,8 +67,8 @@ public class CuttingToolType
      * <p>
      * You are getting this "catch-all" property because of the following reason: 
      * The field name "CuttingToolLifeCycle" is used by two different parts of a schema. See: 
-     * line 12530 of file:/Users/yingda.cao/coding/public/mtconnect/schema/MTConnectAssets_2.0.xsd
-     * line 12518 of file:/Users/yingda.cao/coding/public/mtconnect/schema/MTConnectAssets_2.0.xsd
+     * line 12530 of file:/Users/yingda.cao/coding/HiveMQ/hivemq-edge/modules/hivemq-edge-module-mtconnect/schema/MTConnectAssets_2.0.xsd
+     * line 12518 of file:/Users/yingda.cao/coding/HiveMQ/hivemq-edge/modules/hivemq-edge-module-mtconnect/schema/MTConnectAssets_2.0.xsd
      * <p>
      * To get rid of this property, apply a property customization to one 
      * of both of the following declarations to change their names:
@@ -109,8 +109,8 @@ public class CuttingToolType
      * <p>
      * You are getting this "catch-all" property because of the following reason: 
      * The field name "CuttingToolLifeCycle" is used by two different parts of a schema. See: 
-     * line 12530 of file:/Users/yingda.cao/coding/public/mtconnect/schema/MTConnectAssets_2.0.xsd
-     * line 12518 of file:/Users/yingda.cao/coding/public/mtconnect/schema/MTConnectAssets_2.0.xsd
+     * line 12530 of file:/Users/yingda.cao/coding/HiveMQ/hivemq-edge/modules/hivemq-edge-module-mtconnect/schema/MTConnectAssets_2.0.xsd
+     * line 12518 of file:/Users/yingda.cao/coding/HiveMQ/hivemq-edge/modules/hivemq-edge-module-mtconnect/schema/MTConnectAssets_2.0.xsd
      * <p>
      * To get rid of this property, apply a property customization to one 
      * of both of the following declarations to change their names:
