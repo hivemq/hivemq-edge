@@ -1,0 +1,34 @@
+get:
+  description: Obtain the latest sample for the metric requested.
+  operationId: getSample
+  parameters:
+    - description: The metric to search for.
+      in: path
+      name: metricName
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            metric-sample:
+              description: Example response with metrics listed.
+              summary: Metric Sample
+              value:
+                sampleTime: '2023-06-28T11:39:12.789+01'
+                value: 0
+          schema:
+            $ref: ../components/schemas/DataPoint.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: URL parameter missing
+  summary: Obtain the latest sample for the metric requested
+  tags:
+    - Metrics
+    - Metrics Endpoint
