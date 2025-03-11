@@ -30,6 +30,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MtConnectSchemaTest {
     @Test
+    public void whenInputXmlIsAssets_1_2_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Assets_1_2.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/assets/assets-1-2.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_2.MTConnectAssetsType
+                    mtConnectAssetsType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.assets.assets_1_2.MTConnectAssetsType) element.getValue();
+            assertThat(mtConnectAssetsType).isNotNull();
+            assertThat(mtConnectAssetsType.getAssets().getAsset()).hasSize(1);
+        }
+    }
+
+    @Test
     public void whenInputXmlIsDevices_1_0_thenXmlValidationShouldPass() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_0.getUnmarshaller();
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-0.xml",
