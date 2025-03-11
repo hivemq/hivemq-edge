@@ -30,6 +30,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MtConnectSchemaTest {
     @Test
+    public void whenInputXmlIsDevices_1_0_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_0.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-0.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_0.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
+        }
+    }
+
+    @Test
     public void whenInputXmlIsDevices_1_1_thenXmlValidationShouldPass() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_1.getUnmarshaller();
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-1.xml",
@@ -94,6 +110,86 @@ public class MtConnectSchemaTest {
             final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType
                     mtConnectDevicesType =
                     (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_4.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsDevices_1_5_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_5.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-5.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_5.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsDevices_1_7_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_7.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-7.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_7.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_7.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsDevices_1_8_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_8.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-8.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_8.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_8.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsDevices_2_0_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_2_0.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-2-0.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_0.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_0.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(2);
+        }
+    }
+
+    @Test
+    public void whenInputXmlIsDevices_2_2_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_2_2.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-2-2.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_2.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_2_2.MTConnectDevicesType) element.getValue();
             assertThat(mtConnectDevicesType).isNotNull();
             assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(1);
         }
