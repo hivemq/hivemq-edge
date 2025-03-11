@@ -19,7 +19,6 @@ import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
@@ -30,6 +29,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MtConnectSchemaTest {
+    @Test
+    public void whenInputXmlIsDevices_1_1_thenXmlValidationShouldPass() throws Exception {
+        final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_1.getUnmarshaller();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString("/devices/devices-1-1.xml",
+                StandardCharsets.UTF_8))) {
+            final JAXBElement<?> element =
+                    (JAXBElement<?>) Objects.requireNonNull(unmarshaller).unmarshal(stringReader);
+            assertThat(element.getValue()).isNotNull();
+            final com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType
+                    mtConnectDevicesType =
+                    (com.hivemq.edge.adapters.mtconnect.schemas.devices.devices_1_1.MTConnectDevicesType) element.getValue();
+            assertThat(mtConnectDevicesType).isNotNull();
+            assertThat(mtConnectDevicesType.getDevices().getDevice()).hasSize(3);
+        }
+    }
+
     @Test
     public void whenInputXmlIsIncorrectDevices_1_3_smstestbed_thenXmlValidationShouldFailed() throws Exception {
         final Unmarshaller unmarshaller = MtConnectSchema.Devices_1_3.getUnmarshaller();
