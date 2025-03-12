@@ -21,8 +21,11 @@ import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -282,6 +285,37 @@ public class MtConnectSchemaTest {
             assertThat(mtConnectStreamsType).isNotNull();
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream()).hasSize(2);
             assertThat(mtConnectStreamsType.getStreams().getDeviceStream().get(0).getComponentStream()).hasSize(2);
+        }
+    }
+
+    @Test
+    public void whenSchemaLocationCouldBeNotStandard_thenDetectAsMuchAsPossible() throws IOException {
+        final Map<String, MtConnectSchema> schemaMap = new HashMap<>();
+        schemaMap.putAll(Map.of(
+                "/assets/assets-1-2.xml", MtConnectSchema.Assets_1_2));
+        schemaMap.putAll(Map.of(
+                "/devices/devices-1-0.xml", MtConnectSchema.Devices_1_0,
+                "/devices/devices-1-1.xml", MtConnectSchema.Devices_1_1,
+                "/devices/devices-1-3-smstestbed.xml", MtConnectSchema.Devices_1_3,
+                "/devices/devices-1-4.xml", MtConnectSchema.Devices_1_4,
+                "/devices/devices-1-5.xml", MtConnectSchema.Devices_1_5,
+                "/devices/devices-1-7.xml", MtConnectSchema.Devices_1_7,
+                "/devices/devices-1-8.xml", MtConnectSchema.Devices_1_8,
+                "/devices/devices-2-0.xml", MtConnectSchema.Devices_2_0,
+                "/devices/devices-2-2.xml", MtConnectSchema.Devices_2_2));
+        schemaMap.putAll(Map.of(
+                "/streams/streams-1-3.xml", MtConnectSchema.Streams_1_3,
+                "/streams/streams-1-4.xml", MtConnectSchema.Streams_1_4,
+                "/streams/streams-1-5.xml", MtConnectSchema.Streams_1_5,
+                "/streams/streams-2-0.xml", MtConnectSchema.Streams_2_0));
+        for (final Map.Entry<String, MtConnectSchema> entry : schemaMap.entrySet()) {
+            final String path = entry.getKey();
+            final MtConnectSchema expectedSchema = entry.getValue();
+            final String xmlString = IOUtils.resourceToString(path, StandardCharsets.UTF_8);
+            final String schemaLocation = MtConnectSchema.extractSchemaLocation(xmlString);
+            assertThat(expectedSchema).isNotNull();
+            final MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
+            assertThat(schema).as("Cannot parse " + schemaLocation + " in " + path).isNotNull().isEqualTo(expectedSchema);
         }
     }
 }

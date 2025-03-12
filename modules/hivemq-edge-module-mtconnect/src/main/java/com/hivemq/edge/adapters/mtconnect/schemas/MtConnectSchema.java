@@ -100,7 +100,7 @@ public enum MtConnectSchema {
     private static final @NotNull String XMLSCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final @NotNull String MT_CONNECT = "MTConnect";
     private static final @NotNull Pattern PATTERN_LOCATION =
-            Pattern.compile("MTConnect(Assets|Devices|Error|Streams)_(\\d+)\\.(\\d+)\\.xsd$");
+            Pattern.compile("MTConnect(Assets|Devices|Error|Streams)[:_](\\d+)\\.(\\d+)[\\. ]");
     private final int majorVersion;
     private final int minorVersion;
     private final @NotNull String location;
