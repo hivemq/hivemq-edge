@@ -1,14 +1,14 @@
 {
-  "ui:tabs" : [
+  "ui:tabs": [
     {
-      "id" : "coreFields",
-      "title" : "Settings",
-      "properties" : [
+      "id": "coreFields",
+      "title": "Connection",
+      "properties": [
         "id"
       ]
     }
   ],
-  "ui:order" : [
+  "ui:order": [
     "id",
     "*"
   ]
