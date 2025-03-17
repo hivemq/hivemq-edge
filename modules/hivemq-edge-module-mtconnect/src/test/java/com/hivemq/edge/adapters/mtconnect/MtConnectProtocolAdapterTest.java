@@ -19,15 +19,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
@@ -71,9 +71,8 @@ public class MtConnectProtocolAdapterTest {
     private @NotNull MtConnectAdapterConfig config;
     private @NotNull HttpClient httpClient;
     private @NotNull ProtocolAdapterInformation information;
-    private @NotNull PollingContext pollingContext;
-    private @NotNull PollingInput pollingInput;
-    private @NotNull PollingOutput pollingOutput;
+    private @NotNull BatchPollingInput pollingInput;
+    private @NotNull BatchPollingOutput pollingOutput;
     private @NotNull ProtocolAdapterStartInput startInput;
     private @NotNull ProtocolAdapterStartOutput startOutput;
     private @NotNull ProtocolAdapterState state;
@@ -87,9 +86,8 @@ public class MtConnectProtocolAdapterTest {
         config = mock(MtConnectAdapterConfig.class);
         httpClient = mock(HttpClient.class);
         information = mock(ProtocolAdapterInformation.class);
-        pollingContext = mock(PollingContext.class);
-        pollingInput = mock(PollingInput.class);
-        pollingOutput = mock(PollingOutput.class);
+        pollingInput = mock(BatchPollingInput.class);
+        pollingOutput = mock(BatchPollingOutput.class);
         startInput = mock(ProtocolAdapterStartInput.class);
         startOutput = mock(ProtocolAdapterStartOutput.class);
         state = mock(ProtocolAdapterState.class);
@@ -102,29 +100,27 @@ public class MtConnectProtocolAdapterTest {
         when(adapterInput.getProtocolAdapterState()).thenReturn(null);
         MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThat(adapter).isNotNull();
-        assertThat(adapter.tagMap).isNotNull().isEmpty();
+        assertThat(adapter.tags).isNotNull().isEmpty();
         adapter.start(startInput, startOutput);
         verify(startOutput).failStart(isA(NullPointerException.class), isNull());
     }
 
     @Test
-    public void whenTagIsNotFoundInTagMap_thenPollShouldFail() {
+    public void whenTagsIsEmpty_thenPollShouldFail() {
         when(config.isAllowUntrustedCertificates()).thenReturn(false);
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
         when(adapterInput.getAdapterId()).thenReturn("streams");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
         when(adapterInput.getConfig()).thenReturn(config);
-        when(pollingInput.getPollingContext()).thenReturn(pollingContext);
-        when(pollingContext.getTagName()).thenReturn("streams");
         MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
-        assertThat(adapter.tagMap).as("TagMap should be empty").isNotNull().isEmpty();
+        assertThat(adapter.tags).as("Tags should be empty").isNotNull().isEmpty();
         assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         verify(state).setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
         verify(startOutput).startedSuccessfully();
         adapter.poll(pollingInput, pollingOutput);
-        verify(pollingOutput).fail(anyString());
+        verify(pollingOutput).fail(any(ProtocolAdapterException.class), anyString());
         adapter.stop(stopInput, stopOutput);
         verify(stopOutput).stoppedSuccessfully();
         assertThat(adapter.httpClient).as("HttpClient is set to null in stop()").isNull();
@@ -132,7 +128,7 @@ public class MtConnectProtocolAdapterTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void whenTagIsFound_thenPollXmlShouldBeCalled() throws IOException {
+    public void whenTagsAreNotEmptyAndResponsesAreValid_thenPollShouldBeCalledSuccessfully() throws IOException {
         when(config.isAllowUntrustedCertificates()).thenReturn(false);
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
         when(adapterInput.getAdapterId()).thenReturn("streams");
@@ -146,8 +142,6 @@ public class MtConnectProtocolAdapterTest {
                         true,
                         5,
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
-        when(pollingInput.getPollingContext()).thenReturn(pollingContext);
-        when(pollingContext.getTagName()).thenReturn("tagName");
         final ArgumentCaptor<DataPoint> argumentCaptorDataPoint = ArgumentCaptor.forClass(DataPoint.class);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
@@ -163,7 +157,8 @@ public class MtConnectProtocolAdapterTest {
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         adapter.httpClient = httpClient;
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
-        assertThat(adapter.tagMap).as("TagMap should not be empty").isNotEmpty().containsKey("tagName");
+        assertThat(adapter.tags).as("Tags should not be empty").isNotEmpty();
+        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.getName()))).isTrue();
         assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
@@ -172,7 +167,7 @@ public class MtConnectProtocolAdapterTest {
         final HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
         assertThat(httpHeaders.firstValue("name").orElse("")).isEqualTo("value");
         assertThat(httpHeaders.firstValue("User-Agent").orElse("")).startsWith("HiveMQ-Edge");
-        assertThat(argumentCaptorDataPoint.getValue().getTagName()).isEqualTo("data");
+        assertThat(argumentCaptorDataPoint.getValue().getTagName()).isEqualTo("tagName");
         final String jsonString = (String) argumentCaptorDataPoint.getValue().getTagValue();
         final JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
         assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION).asText()).isEqualTo(
@@ -182,7 +177,45 @@ public class MtConnectProtocolAdapterTest {
         assertThat(jsonNodeDeviceStreams).isNotNull();
         assertThat(jsonNodeDeviceStreams.isArray()).isTrue();
         assertThat(jsonNodeDeviceStreams.size()).isEqualTo(8);
+    }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void whenTagsAreNotEmptyAndResponsesAreInvalid_thenPollShouldFail() throws IOException {
+        when(config.isAllowUntrustedCertificates()).thenReturn(false);
+        when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
+        when(adapterInput.getAdapterId()).thenReturn("streams");
+        when(adapterInput.getProtocolAdapterState()).thenReturn(state);
+        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
+        when(adapterInput.getConfig()).thenReturn(config);
+        when(adapterInput.getTags()).thenReturn(List.of(new MtConnectAdapterTag("tagName",
+                "tagDescription",
+                new MtConnectAdapterTagDefinition("http://localhost/vds",
+                        false,
+                        true,
+                        5,
+                        List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
+        final ArgumentCaptor<Throwable> argumentCaptorThrowable = ArgumentCaptor.forClass(Throwable.class);
+        final ArgumentCaptor<String> argumentCaptorString = ArgumentCaptor.forClass(String.class);
+        final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn("I'm not a valid XML.");
+        when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Content-Type", List.of("application/xml")),
+                (name, value) -> true));
+        final CompletableFuture<HttpResponse<String>> completableFuture =
+                CompletableFuture.completedFuture(httpResponse);
+        final ArgumentCaptor<HttpRequest> argumentCaptorHttpRequest = ArgumentCaptor.forClass(HttpRequest.class);
+        when(httpClient.sendAsync(argumentCaptorHttpRequest.capture(), any(HttpResponse.BodyHandler.class))).thenReturn(
+                completableFuture);
+        final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+        adapter.httpClient = httpClient;
+        assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
+        assertThat(adapter.tags).as("Tags should not be empty").isNotEmpty();
+        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.getName()))).isTrue();
+        assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+        verify(pollingOutput).fail(argumentCaptorThrowable.capture(), argumentCaptorString.capture());
     }
 
     @Test
@@ -190,12 +223,11 @@ public class MtConnectProtocolAdapterTest {
             throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
-        final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString(
+        final String jsonString = adapter.processXml(IOUtils.resourceToString(
                 "/streams/streams-1-3-smstestbed-time-series.xml",
                 StandardCharsets.UTF_8), new MtConnectAdapterTagDefinition("", false, true, 10, List.of()));
-        assertThat(dataPoint).isNotNull();
-        assertThat(dataPoint.getTagName()).isEqualTo("data");
-        final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
+        assertThat(jsonString).isNotNull();
+        final JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
         assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION).asText()).isEqualTo(
                 "urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
     }
@@ -208,12 +240,11 @@ public class MtConnectProtocolAdapterTest {
             throws IOException, XMLParseException, JAXBException {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
-        final DataPoint dataPoint = adapter.processXml(IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml",
+        final String jsonString = adapter.processXml(IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml",
                         StandardCharsets.UTF_8),
                 new MtConnectAdapterTagDefinition("", enableSchemaValidation, includeNull, 10, List.of()));
-        assertThat(dataPoint).isNotNull();
-        assertThat(dataPoint.getTagName()).isEqualTo("data");
-        final JsonNode jsonNode = OBJECT_MAPPER.readTree((String) dataPoint.getTagValue());
+        assertThat(jsonString).isNotNull();
+        final JsonNode jsonNode = OBJECT_MAPPER.readTree(jsonString);
         if (!enableSchemaValidation) {
             assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION)
                     .asText()).isEqualTo(MtConnectSchema.Devices_1_3.getLocation());
