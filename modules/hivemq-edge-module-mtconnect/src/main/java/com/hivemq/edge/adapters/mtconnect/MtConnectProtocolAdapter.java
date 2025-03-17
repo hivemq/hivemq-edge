@@ -21,22 +21,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
+import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import com.hivemq.edge.adapters.mtconnect.models.MtConnectData;
 import com.hivemq.edge.adapters.mtconnect.schemas.MtConnectSchema;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
@@ -62,21 +63,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 
-public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
+public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     public static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
-    private static final @NotNull String DATA = "data";
     // https://www.ietf.org/rfc/rfc2376.txt
     private static final @NotNull String CONTENT_TYPE_APPLICATION_XML = "application/xml";
     // https://www.ietf.org/rfc/rfc2376.txt
@@ -92,7 +88,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         OBJECT_MAPPER_EXCLUDE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    protected final @NotNull Map<String, Tag> tagMap;
+    protected final @NotNull List<MtConnectAdapterTag> tags;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -109,91 +105,13 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.adapterFactories = input.adapterFactories();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tagMap = input.getTags().stream().collect(Collectors.toMap(Tag::getName, Function.identity()));
+        this.tags = input.getTags().stream().map(tag -> (MtConnectAdapterTag) tag).toList();
         this.version = input.getVersion();
     }
 
-    private static boolean isSuccessfulResponse(final @NotNull HttpResponse<?> httpResponse) {
+    private static boolean isStatusCodeSuccessful(final int statusCode) {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-        return httpResponse.statusCode() >= 200 && httpResponse.statusCode() < 300;
-    }
-
-    protected @NotNull BiConsumer<HttpResponse<String>, Throwable> processHttpResponse(
-            final @NotNull PollingOutput pollingOutput,
-            final @NotNull MtConnectAdapterTagDefinition definition) {
-        return (httpResponse, throwable) -> {
-            if (throwable == null) {
-                if (isSuccessfulResponse(httpResponse)) {
-                    // Let's make sure the response body is XML.
-                    if (httpResponse.headers()
-                            .firstValue(HEADER_CONTENT_TYPE)
-                            .map(value -> CONTENT_TYPE_TEXT_XML.equals(value) ||
-                                    CONTENT_TYPE_APPLICATION_XML.equals(value))
-                            .orElse(false)) {
-                        try {
-                            pollingOutput.addDataPoint(processXml(httpResponse.body(), definition));
-                        } catch (final Exception e) {
-                            throwable = e;
-                        }
-                    } else {
-                        throwable = new RuntimeException("Response is not XML");
-                    }
-                    protocolAdapterState.setConnectionStatus(STATELESS);
-                } else {
-                    protocolAdapterState.setConnectionStatus(ERROR);
-                }
-            }
-            if (throwable == null) {
-                pollingOutput.finish();
-            } else {
-                pollingOutput.fail(throwable, null);
-            }
-        };
-    }
-
-    protected @NotNull DataPoint processXml(
-            final @NotNull String body,
-            final @NotNull MtConnectAdapterTagDefinition definition)
-            throws JsonProcessingException, XMLParseException, JAXBException {
-        final ObjectMapper objectMapper =
-                definition.isIncludeNull() ? OBJECT_MAPPER_INCLUDE_NULL : OBJECT_MAPPER_EXCLUDE_NULL;
-        @Nullable String jsonString = null;
-        // There are some custom schemas not supported by this module.
-        // Enable the schema validation will cause those messages fail the validation.
-        if (definition.isEnableSchemaValidation()) {
-            final @Nullable String schemaLocation = MtConnectSchema.extractSchemaLocation(body);
-            final @Nullable MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
-            if (schema == null) {
-                throw new XMLParseException("Schema " + schemaLocation + " is not support");
-            }
-            // The unmarshal call brings additional performance overhead.
-            final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
-            if (unmarshaller == null) {
-                throw new XMLParseException("Schema " + schemaLocation + " is to be supported");
-            } else {
-                try (StringReader stringReader = new StringReader(body)) {
-                    final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
-                    jsonString = objectMapper.writeValueAsString(element.getValue());
-                } catch (final Exception e) {
-                    throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
-                }
-            }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Publishing data {} version {}.{}",
-                        schema.getType().getRootNodeName(),
-                        schema.getMajorVersion(),
-                        schema.getMinorVersion());
-            }
-        }
-        if (jsonString == null) {
-            final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
-            final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
-            if (jsonNodeSchemaLocation == null) {
-                throw new XMLParseException("Attribute schemaLocation is not found");
-            }
-            jsonString = objectMapper.writeValueAsString(rootNode);
-        }
-        return adapterFactories.dataPointFactory().create(DATA, jsonString);
+        return statusCode >= 200 && statusCode < 300;
     }
 
     @Override
@@ -206,7 +124,7 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
+            protocolAdapterState.setConnectionStatus(STATELESS);
             if (httpClient == null) {
                 final HttpClient.Builder builder = HttpClient.newBuilder();
                 builder.version(HttpClient.Version.HTTP_1_1)
@@ -232,24 +150,62 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(),
                     "No response was created, because the HTTP client is null.");
-            return;
+        } else if (tags.isEmpty()) {
+            pollingOutput.fail(new ProtocolAdapterException(), "No response was created, tags are empty.");
+        } else {
+            final List<CompletableFuture<MtConnectData>> pollingFutures = tags.stream().map(this::pollXml).toList();
+            CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+                    .whenComplete((result, throwable) -> {
+                        if (throwable != null) {
+                            pollingOutput.fail(throwable, "Error while polling tags.");
+                        } else {
+                            final List<MtConnectData> dataList = pollingFutures.stream().map(future -> {
+                                try {
+                                    return future.get();
+                                } catch (Exception e) {
+                                    return null;
+                                }
+                            }).toList();
+                            if (dataList.isEmpty()) {
+                                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                                pollingOutput.fail("Polled empty list of tags.");
+                            } else if (dataList.stream().anyMatch(Objects::isNull)) {
+                                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                                pollingOutput.fail("At least one completed future failed while polling tags.");
+                            } else {
+                                final Optional<MtConnectData> optionalFirstFailedData =
+                                        dataList.stream().filter(data -> !data.isSuccessful()).findFirst();
+                                if (optionalFirstFailedData.isPresent()) {
+                                    final MtConnectData data = optionalFirstFailedData.get();
+                                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                                    if (data.getErrorMessage() == null) {
+                                        data.setErrorMessage("Error while polling tag [" + data.getTagName() + "]");
+                                    }
+                                    if (data.getCause() == null) {
+                                        pollingOutput.fail(data.getErrorMessage());
+                                    } else {
+                                        pollingOutput.fail(data.getCause(), data.getErrorMessage());
+                                    }
+                                } else {
+                                    final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
+                                    dataList.stream()
+                                            .map(data -> dataPointFactory.createJsonDataPoint(data.getTagName(),
+                                                    Objects.requireNonNull(data.getJsonString())))
+                                            .forEach(pollingOutput::addDataPoint);
+                                    pollingOutput.finish();
+                                }
+                            }
+                        }
+                    });
         }
-        final PollingContext pollingContext = pollingInput.getPollingContext();
-        final String tagName = pollingContext.getTagName();
-        Optional.ofNullable(tagMap.get(tagName))
-                .ifPresentOrElse(tag -> pollXml(pollingOutput, tag, pollingContext),
-                        () -> pollFail(pollingOutput, tagName));
     }
 
-    protected void pollXml(
-            final @NotNull PollingOutput pollingOutput,
-            final @NotNull Tag tag,
-            final @NotNull PollingContext pollingContext) {
-        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
+    protected @NotNull CompletableFuture<MtConnectData> pollXml(final @NotNull MtConnectAdapterTag tag) {
+        final MtConnectAdapterTagDefinition definition = tag.getDefinition();
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = definition.getUrl();
         builder.uri(URI.create(url));
@@ -260,15 +216,76 @@ public class MtConnectProtocolAdapter implements PollingProtocolAdapter {
                         adapterHttpHeader.getValue()));
         builder.GET();
         final HttpRequest httpRequest = builder.build();
-        final CompletableFuture<HttpResponse<String>> responseFuture =
-                Objects.requireNonNull(httpClient).sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString());
-        responseFuture.whenComplete(processHttpResponse(pollingOutput, definition));
+        return Objects.requireNonNull(httpClient)
+                .sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+                .thenApply(httpResponse -> processHttpResponse(httpResponse, tag));
     }
 
-    protected void pollFail(final @NotNull PollingOutput pollingOutput, final @NotNull String tagName) {
-        pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                tagName +
-                "' was not found. For the polling to work the tag must be created via REST API or the UI.");
+    protected @NotNull MtConnectData processHttpResponse(
+            final @NotNull HttpResponse<String> httpResponse,
+            final @NotNull Tag tag) {
+        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
+        final MtConnectData mtConnectData = new MtConnectData(definition.getUrl(),
+                isStatusCodeSuccessful(httpResponse.statusCode()),
+                tag.getName());
+        if (mtConnectData.isSuccessful()) {
+            // Let's make sure the response body is XML.
+            final Optional<String> optionalContentType = httpResponse.headers().firstValue(HEADER_CONTENT_TYPE);
+            if (optionalContentType.map(value -> CONTENT_TYPE_TEXT_XML.equals(value) ||
+                    CONTENT_TYPE_APPLICATION_XML.equals(value)).orElse(false)) {
+                try {
+                    mtConnectData.setJsonString(processXml(httpResponse.body(), definition));
+                } catch (final Exception e) {
+                    mtConnectData.setSuccessful(false);
+                    mtConnectData.setCause(e);
+                    mtConnectData.setErrorMessage(e.getMessage());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(e.getMessage(), e);
+                    }
+                }
+            } else {
+                mtConnectData.setSuccessful(false);
+                mtConnectData.setErrorMessage("Content type [" +
+                        optionalContentType.orElse("") +
+                        "] is not supported.");
+            }
+        }
+        return mtConnectData;
+    }
+
+    protected @NotNull String processXml(
+            final @NotNull String body,
+            final @NotNull MtConnectAdapterTagDefinition definition)
+            throws JsonProcessingException, XMLParseException, JAXBException {
+        final ObjectMapper objectMapper =
+                definition.isIncludeNull() ? OBJECT_MAPPER_INCLUDE_NULL : OBJECT_MAPPER_EXCLUDE_NULL;
+        // There are some custom schemas not supported by this module.
+        // Enable the schema validation will cause those messages fail the validation.
+        if (definition.isEnableSchemaValidation()) {
+            final @Nullable String schemaLocation = MtConnectSchema.extractSchemaLocation(body);
+            final @Nullable MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
+            if (schema == null) {
+                throw new XMLParseException("Schema " + schemaLocation + " is not support");
+            }
+            // The unmarshal call brings additional performance overhead.
+            final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
+            if (unmarshaller == null) {
+                throw new XMLParseException("Schema " + schemaLocation + " is to be supported");
+            } else {
+                try (StringReader stringReader = new StringReader(body)) {
+                    final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+                    return objectMapper.writeValueAsString(element.getValue());
+                } catch (final Exception e) {
+                    throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
+                }
+            }
+        }
+        final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
+        final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
+        if (jsonNodeSchemaLocation == null) {
+            throw new XMLParseException("Attribute schemaLocation is not found");
+        }
+        return objectMapper.writeValueAsString(rootNode);
     }
 
     @Override
