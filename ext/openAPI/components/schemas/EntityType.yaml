@@ -1,0 +1,7 @@
+type: string
+description: These are the prime entities owning tags and topic filters
+enum:
+  - ADAPTER
+  - DEVICE
+  - BRIDGE
+  - EDGE_BROKER

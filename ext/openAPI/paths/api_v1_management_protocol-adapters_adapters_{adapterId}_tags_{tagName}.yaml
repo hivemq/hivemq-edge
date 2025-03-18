@@ -1,0 +1,81 @@
+delete:
+  description: Delete the specified domain tag on the given adapter.
+  operationId: delete-adapter-domainTags
+  parameters:
+    - description: The adapter Id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: The domain tag Id.
+      in: path
+      name: tagName
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Tag not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Delete an domain tag
+  tags:
+    - Protocol Adapters
+put:
+  description: Update the domain tag of an adapter.
+  operationId: update-adapter-domainTag
+  parameters:
+    - description: The id of the adapter whose domain tag will be updated.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: The name (urlencoded) of the domain tag that will be changed.
+      in: path
+      name: tagName
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DomainTag.yaml
+  responses:
+    '200':
+      description: Success
+    '403':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Tag not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update the domain tag of an adapter.
+  tags:
+    - Protocol Adapters

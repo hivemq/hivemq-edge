@@ -1,0 +1,281 @@
+openapi: 3.0.1
+info:
+  contact:
+    url: https://www.hivemq.com
+  description: >
+    # Introduction
+
+    HiveMQ Edge's REST API provides endpoints for the following use cases:
+
+    - Authentication
+
+    - Health Checking
+
+    - Exploring Configuration
+
+    ## Errors
+
+    Conventional HTTP response codes are used to indicate the success or failure
+    of an API request. Codes in the 2xx range generally indicate success. Codes
+    in the 4xx range indicate an error that failed given the information
+    provided (e.g., a required parameter was omitted). Codes in the 5xx range
+    indicate an error on the server side.
+
+    For all errors a JSON response with additional details is returned in the
+    format [Problem JSON](https://tools.ietf.org/html/rfc7807).
+
+    ## OpenAPI
+
+    HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can
+    imported into popular API tooling (e.g. Postman) or can be used to generate
+    client-code for multiple programming languages.
+  title: HiveMQ Edge REST API
+  version: 2025.4-SNAPSHOT
+  x-logo:
+    url: https://www.hivemq.com/img/svg/hivemq-bee.svg
+tags:
+  - description: Services to obtain and validate security tokens with the HiveMQ Edge API.
+    name: Authentication Endpoint
+  - description: Explore and interact with the Bridges configured on your Gateway.
+    name: Bridges
+  - description: Interact with the system event sub-system.
+    name: Events
+  - description: Services relating to the use of the portal.
+    name: Frontend
+  - description: Services to interact with the gateway configuration.
+    name: Gateway Endpoint
+  - description: Gain insight and system metrics.
+    name: Metrics Endpoint
+  - description: Interact with protocol adapters.
+    name: Protocol Adapters
+  - description: Manage samples of payloads.
+    name: Payload Sampling
+  - description: Interact with topic filters.
+    name: Topic Filters
+  - description: Configure Unified Namespace.
+    name: UNS
+  - description: >-
+      This resource bundles endpoints for the available Finite State Machines
+      (FSMs) for Behavior Policies for the HiveMQ Data Hub. Currently this is
+      limited to getting the available FSMs.
+    name: Data Hub - FSM
+  - description: >-
+      This resource bundles endpoints for the available Functions for the HiveMQ
+      Data Hub. Currently this is limited to getting the available Functions.
+    name: Data Hub - Functions
+  - description: >-
+      Policies describe how you want the HiveMQ broker to validate the behavior
+      of MQTT clients.
+
+      Each policy has four sections:
+
+
+      - Matching: Specifies which clients the policy engine validates.
+
+      - Deserialization: Specifies deserializers for different message payloads.
+
+      - Behavior: Specifies the behavior that is considered valid for matched
+      clients.
+
+      - onTransitions: Specifies custom actions that are executed when a client
+      transitions to a different state within the specified behavior model that
+      is valid for that client.
+
+      These endpoints can be used to create, update, delete, and list behavior
+      policies.
+
+
+      For more information on all capabilities the HiveMQ Data Hub offers, see
+      the [HiveMQ
+      documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
+    name: Data Hub - Behavior Policies
+  - description: >-
+      Data Policies describe how you want the HiveMQ broker to apply schemas to
+      incoming MQTT message payload data and act on the validation results.
+
+      Each policy has four sections:
+
+
+      - Matching: Specifies which packets the policy engine validates.
+
+      - Validation: Specifies how the packets are validated. For example, based
+      on a JSON Schema.
+
+      - OnSuccess: Defines which actions are executed when the outcome of a
+      validation is successful.
+
+      - OnFailure: Defines which actions are executed when the validation fails.
+
+
+      These endpoints can be used to create, update, delete, and list data
+      policies.
+
+
+      For more information on all capabilities the HiveMQ Data Hub offers, see
+      the [HiveMQ
+      documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
+    name: Data Hub - Data Policies
+  - description: >-
+      A schema defines the expected structure and format of incoming MQTT
+      message payload data.
+
+
+      This endpoint can be used to create, get, and delete schemas.
+
+
+      Schemas can be enforced with the use of a policy.
+
+
+      Currently, the following schema definitions are supported:
+
+
+      - [JSON Schema](https://json-schema.org/)
+
+      - [Protocol Buffers (Protobuf)](https://protobuf.dev/)
+
+
+      For more information on how to define and use a schema in HiveMQ, see
+      [Schemas](https://docs.hivemq.com/hivemq/latest/data-hub/schemas.html).
+    name: Data Hub - Schemas
+  - description: >-
+      A script represents custom logic that can be executed in response to MQTT
+      messages.
+
+
+      This endpoint can be used to create, get, and delete scripts.
+
+
+      For more information on how to define and use a script in HiveMQ, see
+      [Scripts](https://docs.hivemq.com/hivemq/latest/data-hub/scripts.html).
+    name: Data Hub - Scripts
+  - description: >+
+      These endpoints can be used to retrieve states of clients for the Data
+      Hub.
+
+    name: Data Hub - State
+paths:
+  /:
+    $ref: paths.yaml
+  /api/v1/auth/authenticate:
+    $ref: paths/api_v1_auth_authenticate.yaml
+  /api/v1/auth/refresh-token:
+    $ref: paths/api_v1_auth_refresh-token.yaml
+  /api/v1/auth/validate-token:
+    $ref: paths/api_v1_auth_validate-token.yaml
+  /api/v1/data-hub/behavior-validation/policies:
+    $ref: paths/api_v1_data-hub_behavior-validation_policies.yaml
+  /api/v1/data-hub/behavior-validation/policies/{policyId}:
+    $ref: paths/api_v1_data-hub_behavior-validation_policies_{policyId}.yaml
+  /api/v1/data-hub/behavior-validation/states/{clientId}:
+    $ref: paths/api_v1_data-hub_behavior-validation_states_{clientId}.yaml
+  /api/v1/data-hub/data-validation/policies:
+    $ref: paths/api_v1_data-hub_data-validation_policies.yaml
+  /api/v1/data-hub/data-validation/policies/{policyId}:
+    $ref: paths/api_v1_data-hub_data-validation_policies_{policyId}.yaml
+  /api/v1/data-hub/fsm:
+    $ref: paths/api_v1_data-hub_fsm.yaml
+  /api/v1/data-hub/functions:
+    $ref: paths/api_v1_data-hub_functions.yaml
+  /api/v1/data-hub/schemas:
+    $ref: paths/api_v1_data-hub_schemas.yaml
+  /api/v1/data-hub/schemas/{schemaId}:
+    $ref: paths/api_v1_data-hub_schemas_{schemaId}.yaml
+  /api/v1/data-hub/scripts:
+    $ref: paths/api_v1_data-hub_scripts.yaml
+  /api/v1/data-hub/scripts/{scriptId}:
+    $ref: paths/api_v1_data-hub_scripts_{scriptId}.yaml
+  /api/v1/frontend/capabilities:
+    $ref: paths/api_v1_frontend_capabilities.yaml
+  /api/v1/frontend/configuration:
+    $ref: paths/api_v1_frontend_configuration.yaml
+  /api/v1/frontend/notifications:
+    $ref: paths/api_v1_frontend_notifications.yaml
+  /api/v1/gateway/configuration:
+    $ref: paths/api_v1_gateway_configuration.yaml
+  /api/v1/gateway/listeners:
+    $ref: paths/api_v1_gateway_listeners.yaml
+  /api/v1/health/liveness:
+    $ref: paths/api_v1_health_liveness.yaml
+  /api/v1/health/readiness:
+    $ref: paths/api_v1_health_readiness.yaml
+  /api/v1/management/bridges:
+    $ref: paths/api_v1_management_bridges.yaml
+  /api/v1/management/bridges/status:
+    $ref: paths/api_v1_management_bridges_status.yaml
+  /api/v1/management/bridges/{bridgeId}:
+    $ref: paths/api_v1_management_bridges_{bridgeId}.yaml
+  /api/v1/management/bridges/{bridgeId}/connection-status:
+    $ref: paths/api_v1_management_bridges_{bridgeId}_connection-status.yaml
+  /api/v1/management/bridges/{bridgeId}/status:
+    $ref: paths/api_v1_management_bridges_{bridgeId}_status.yaml
+  /api/v1/management/events:
+    $ref: paths/api_v1_management_events.yaml
+  /api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_adapterconfigs_{adaptertype}_{adaptername}.yaml
+  /api/v1/management/protocol-adapters/adapters:
+    $ref: paths/api_v1_management_protocol-adapters_adapters.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/discover:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_discover.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_northboundMappings.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_southboundMappings.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_status.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterType}:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
+  /api/v1/management/protocol-adapters/northboundMappings:
+    $ref: paths/api_v1_management_protocol-adapters_northboundMappings.yaml
+  /api/v1/management/protocol-adapters/southboundMappings:
+    $ref: paths/api_v1_management_protocol-adapters_southboundMappings.yaml
+  /api/v1/management/protocol-adapters/status:
+    $ref: paths/api_v1_management_protocol-adapters_status.yaml
+  /api/v1/management/protocol-adapters/tag-schemas/{protocolId}:
+    $ref: paths/api_v1_management_protocol-adapters_tag-schemas_{protocolId}.yaml
+  /api/v1/management/protocol-adapters/tags:
+    $ref: paths/api_v1_management_protocol-adapters_tags.yaml
+  /api/v1/management/protocol-adapters/tags/{tagName}:
+    $ref: paths/api_v1_management_protocol-adapters_tags_{tagName}.yaml
+  /api/v1/management/protocol-adapters/types:
+    $ref: paths/api_v1_management_protocol-adapters_types.yaml
+  /api/v1/management/protocol-adapters/types/{adapterType}:
+    $ref: paths/api_v1_management_protocol-adapters_types_{adapterType}.yaml
+  /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
+    $ref: >-
+      paths/api_v1_management_protocol-adapters_writing-schema_{adapterId}_{tagName}.yaml
+  /api/v1/management/sampling/schema/{topic}:
+    $ref: paths/api_v1_management_sampling_schema_{topic}.yaml
+  /api/v1/management/sampling/topic/{topic}:
+    $ref: paths/api_v1_management_sampling_topic_{topic}.yaml
+  /api/v1/management/topic-filters:
+    $ref: paths/api_v1_management_topic-filters.yaml
+  /api/v1/management/topic-filters/{filter}:
+    $ref: paths/api_v1_management_topic-filters_{filter}.yaml
+  /api/v1/management/topic-filters/{filter}/schema:
+    $ref: paths/api_v1_management_topic-filters_{filter}_schema.yaml
+  /api/v1/management/uns/isa95:
+    $ref: paths/api_v1_management_uns_isa95.yaml
+  /api/v1/metrics:
+    $ref: paths/api_v1_metrics.yaml
+  /api/v1/metrics/{metricName}/latest:
+    $ref: paths/api_v1_metrics_{metricName}_latest.yaml
+  /api/v1/management/combiners:
+    $ref: paths/api_v1_management_combiners.yaml
+  /api/v1/management/combiners/{combinerId}:
+    $ref: paths/api_v1_management_combiners_{combinerId}.yaml
+  /api/v1/management/combiners/{combinerId}/mappings:
+    $ref: paths/api_v1_management_combiners_{combinerId}_mappings.yaml
+  /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
+    $ref: >-
+      paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml

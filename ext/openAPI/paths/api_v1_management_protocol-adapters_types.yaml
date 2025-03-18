@@ -1,0 +1,13 @@
+get:
+  description: Obtain a list of available protocol adapter types.
+  operationId: getAdapterTypes
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProtocolAdaptersList.yaml
+      description: Success
+  summary: Obtain a list of available protocol adapter types
+  tags:
+    - Protocol Adapters

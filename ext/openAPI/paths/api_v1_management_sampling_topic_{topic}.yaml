@@ -1,0 +1,38 @@
+get:
+  description: Obtain a list of samples that their gathered for the given topic.
+  operationId: getSamplesForTopic
+  parameters:
+    - description: The topic.
+      in: path
+      name: topic
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PayloadSampleList.yaml
+      description: Success
+  summary: Obtain a list of samples that their gathered for the given topic.
+  tags:
+    - Payload Sampling
+post:
+  description: Start sampling for the given topic.
+  operationId: startSamplingForTopic
+  parameters:
+    - description: The topic.
+      in: path
+      name: topic
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  responses:
+    '200':
+      description: Success
+  summary: Start sampling for the given topic.
+  tags:
+    - Payload Sampling

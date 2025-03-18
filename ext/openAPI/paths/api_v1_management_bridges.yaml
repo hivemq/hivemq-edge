@@ -1,0 +1,79 @@
+get:
+  description: Get all bridges configured in the system.
+  operationId: getBridges
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            bridge-list-result:
+              description: Example response with several bridges.
+              summary: Bridge List result
+              value:
+                items:
+                  - id: cloud
+                    host: REDACTED.cloud
+                    port: 8883
+                    clientId: cloud
+                    keepAlive: 60
+                    sessionExpiry: 3600
+                    cleanStart: false
+                    username: username
+                    password: '*****'
+                    loopPreventionEnabled: true
+                    loopPreventionHopCount: 1
+                    remoteSubscriptions: []
+                    localSubscriptions:
+                      - filters:
+                          - '#'
+                        destination: prefix/{#}/bridge/${bridge.name}
+                        excludes: []
+                        customUserProperties:
+                          - key: test1
+                            value: test2
+                        preserveRetain: true
+                        maxQoS: 0
+                    tlsConfiguration:
+                      enabled: true
+                      keystorePassword: ''
+                      privateKeyPassword: ''
+                      truststorePassword: ''
+                      protocols: []
+                      cipherSuites: []
+                      keystoreType: JKS
+                      truststoreType: JKS
+                      verifyHostname: true
+                      handshakeTimeout: 10
+                    bridgeRuntimeInformation:
+                      connectionStatus:
+                        status: CONNECTED
+                        id: cloud
+                        type: bridge
+          schema:
+            $ref: ../components/schemas/BridgeList.yaml
+      description: Success
+  summary: List all bridges in the system
+  tags:
+    - Bridges
+post:
+  description: Add bridge configured in the system.
+  operationId: addBridge
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/Bridge.yaml
+    description: The new bridge.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bridge is invalid
+  summary: Add a new Bridge
+  tags:
+    - Bridges
