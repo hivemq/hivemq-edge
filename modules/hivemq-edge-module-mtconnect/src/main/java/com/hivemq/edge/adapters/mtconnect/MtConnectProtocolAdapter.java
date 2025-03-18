@@ -68,8 +68,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-
 
 public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     public static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
@@ -124,7 +122,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            protocolAdapterState.setConnectionStatus(STATELESS);
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
             if (httpClient == null) {
                 final HttpClient.Builder builder = HttpClient.newBuilder();
                 builder.version(HttpClient.Version.HTTP_1_1)
@@ -179,8 +177,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                             } else {
                                 final Optional<MtConnectData> optionalFirstFailedData =
                                         dataList.stream().filter(data -> !data.isSuccessful()).findFirst();
-                                if (optionalFirstFailedData.isPresent()) {
-                                    final MtConnectData data = optionalFirstFailedData.get();
+                                optionalFirstFailedData.ifPresentOrElse(data -> {
                                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                                     if (data.getErrorMessage() == null) {
                                         data.setErrorMessage("Error while polling tag [" + data.getTagName() + "]");
@@ -190,14 +187,15 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                     } else {
                                         pollingOutput.fail(data.getCause(), data.getErrorMessage());
                                     }
-                                } else {
+                                }, () -> {
                                     final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
                                     dataList.stream()
                                             .map(data -> dataPointFactory.createJsonDataPoint(data.getTagName(),
                                                     Objects.requireNonNull(data.getJsonString())))
                                             .forEach(pollingOutput::addDataPoint);
+                                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
                                     pollingOutput.finish();
-                                }
+                                });
                             }
                         }
                     });

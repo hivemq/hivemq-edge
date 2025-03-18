@@ -62,6 +62,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -142,6 +143,8 @@ public class MtConnectProtocolAdapterTest {
                         true,
                         5,
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
+        final ArgumentCaptor<ProtocolAdapterState.ConnectionStatus> argumentCaptorConnectionStatus =
+                ArgumentCaptor.forClass(ProtocolAdapterState.ConnectionStatus.class);
         final ArgumentCaptor<DataPoint> argumentCaptorDataPoint = ArgumentCaptor.forClass(DataPoint.class);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
@@ -163,6 +166,9 @@ public class MtConnectProtocolAdapterTest {
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
         verify(pollingOutput).finish();
+        verify(state, times(2)).setConnectionStatus(argumentCaptorConnectionStatus.capture());
+        assertThat(argumentCaptorConnectionStatus.getAllValues()).isEqualTo(List.of(ProtocolAdapterState.ConnectionStatus.STATELESS,
+                ProtocolAdapterState.ConnectionStatus.STATELESS));
         verify(pollingOutput).addDataPoint(argumentCaptorDataPoint.capture());
         final HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
         assertThat(httpHeaders.firstValue("name").orElse("")).isEqualTo("value");
@@ -195,6 +201,8 @@ public class MtConnectProtocolAdapterTest {
                         true,
                         5,
                         List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
+        final ArgumentCaptor<ProtocolAdapterState.ConnectionStatus> argumentCaptorConnectionStatus =
+                ArgumentCaptor.forClass(ProtocolAdapterState.ConnectionStatus.class);
         final ArgumentCaptor<Throwable> argumentCaptorThrowable = ArgumentCaptor.forClass(Throwable.class);
         final ArgumentCaptor<String> argumentCaptorString = ArgumentCaptor.forClass(String.class);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
@@ -216,6 +224,9 @@ public class MtConnectProtocolAdapterTest {
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
         verify(pollingOutput).fail(argumentCaptorThrowable.capture(), argumentCaptorString.capture());
+        verify(state, times(2)).setConnectionStatus(argumentCaptorConnectionStatus.capture());
+        assertThat(argumentCaptorConnectionStatus.getAllValues()).isEqualTo(List.of(ProtocolAdapterState.ConnectionStatus.STATELESS,
+                ProtocolAdapterState.ConnectionStatus.ERROR));
     }
 
     @Test
