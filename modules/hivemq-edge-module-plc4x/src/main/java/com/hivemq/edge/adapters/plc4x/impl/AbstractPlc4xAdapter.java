@@ -145,13 +145,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         final Plc4xConnection<T> connection = createConnection();
                         if(connection.isConnected()) {
                             protocolAdapterState.setConnectionStatus(CONNECTED);
+                            this.connection = connection;
                             output.startedSuccessfully();
                         } else {
                             protocolAdapterState.setConnectionStatus(ERROR);
                             output.failStart(new Plc4xException("Unable to connect to device"), "Unable to connect to device");
                         }
 
-                        this.connection = connection;
                     }
                 }
             } else {
