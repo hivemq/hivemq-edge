@@ -279,7 +279,6 @@ describe('useValidateCombiner', () => {
         expect(result.current[0].isSuccess).toBeTruthy()
         expect(result.current[1].isSuccess).toBeTruthy()
       })
-      console.log('XXXX', result.current[1].data)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -287,7 +286,7 @@ describe('useValidateCombiner', () => {
             id: uuidv4(),
             sources: {
               tags: ['opcua-1/log/event'],
-              topicFilters: [],
+              topicFilters: ['a/topic/+/filter'],
               // @ts-ignore TODO[NVL] Needs to be nullable
               primary: {},
             },
