@@ -155,7 +155,7 @@ tags:
     name: Data Hub - State
 paths:
   /:
-    $ref: paths.yaml
+    $ref: paths/root.yaml
   /api/v1/auth/authenticate:
     $ref: paths/api_v1_auth_authenticate.yaml
   /api/v1/auth/refresh-token:
