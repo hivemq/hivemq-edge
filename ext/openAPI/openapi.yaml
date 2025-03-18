@@ -211,28 +211,23 @@ paths:
   /api/v1/management/events:
     $ref: paths/api_v1_management_events.yaml
   /api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_adapterconfigs_{adaptertype}_{adaptername}.yaml
+    $ref: paths/api_v1_management_protocol-adapters_adapterconfigs_{adaptertype}_{adaptername}.yaml
   /api/v1/management/protocol-adapters/adapters:
     $ref: paths/api_v1_management_protocol-adapters_adapters.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/discover:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_discover.yaml
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_discover.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_northboundMappings.yaml
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_northboundMappings.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_southboundMappings.yaml
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_southboundMappings.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_status.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/tags:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
   /api/v1/management/protocol-adapters/northboundMappings:
@@ -252,8 +247,7 @@ paths:
   /api/v1/management/protocol-adapters/types/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_types_{adapterType}.yaml
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
-    $ref: >-
-      paths/api_v1_management_protocol-adapters_writing-schema_{adapterId}_{tagName}.yaml
+    $ref: paths/api_v1_management_protocol-adapters_writing-schema_{adapterId}_{tagName}.yaml
   /api/v1/management/sampling/schema/{topic}:
     $ref: paths/api_v1_management_sampling_schema_{topic}.yaml
   /api/v1/management/sampling/topic/{topic}:
@@ -277,5 +271,4 @@ paths:
   /api/v1/management/combiners/{combinerId}/mappings:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings.yaml
   /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
-    $ref: >-
-      paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml
+    $ref: paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml
