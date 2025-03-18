@@ -143,22 +143,24 @@ export const useValidateCombiner = (
   const validateDataSources = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
       formData?.sources?.tags?.map((tag) => {
-        if (!allDataSourcesFromEntities.tags.includes(tag))
+        if (!allDataSourcesFromEntities.tags.includes(tag)) {
           errors.sources?.tags?.addError(
             t('combiner.error.validation.notDataSourceOwner', {
               context: DataIdentifierReference.type.TAG,
               tag,
             })
           )
+        }
       })
       formData?.sources?.topicFilters?.map((topicFilter) => {
-        if (!allDataSourcesFromEntities.topicFilters.includes(topicFilter))
+        if (!allDataSourcesFromEntities.topicFilters.includes(topicFilter)) {
           errors.sources?.tags?.addError(
             t('combiner.error.validation.notDataSourceOwner', {
               context: DataIdentifierReference.type.TOPIC_FILTER,
               topicFilter,
             })
           )
+        }
       })
 
       return errors
