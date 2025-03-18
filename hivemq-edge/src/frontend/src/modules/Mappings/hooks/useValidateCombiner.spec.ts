@@ -1,20 +1,34 @@
 import { beforeEach, expect } from 'vitest'
+import { v4 as uuidv4 } from 'uuid'
+import { http, HttpResponse } from 'msw'
 import { renderHook, waitFor } from '@testing-library/react'
 import { createErrorHandler, toErrorList } from '@rjsf/utils'
+import type { UseQueryResult } from '@tanstack/react-query'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import type { AdaptersList, Combiner, DataCombining, ProtocolAdaptersList } from '@/api/__generated__'
+import type {
+  AdaptersList,
+  Combiner,
+  DataCombining,
+  DomainTagList,
+  EntityReference,
+  ProtocolAdaptersList,
+  TopicFilterList,
+} from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import {
+  deviceHandlers,
   handlers as failCapabilityHandlers,
   mockAdapter_OPCUA,
   mockProtocolAdapter_OPCUA,
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockCombinerId, mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
+import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__handlers__'
+import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks'
+import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 
 import { useValidateCombiner } from './useValidateCombiner'
-import { http, HttpResponse } from 'msw'
 
 const capabilityHandlers = [
   http.get('*/protocol-adapters/types', () => {
@@ -192,6 +206,98 @@ describe('useValidateCombiner', () => {
 
     it('should validate an empty list of mappings', async () => {
       const errors = await renderValidateHook(getFormData([]))
+      expect(errors).toStrictEqual([])
+    })
+
+    it('should not validate an empty list of mappings', async () => {
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: [],
+              topicFilters: [],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {},
+            instructions: [],
+          },
+        ])
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'At least one schema should be available',
+        }),
+      ])
+    })
+
+    it('should not validate a tag not belonging to a source', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers)
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['test/tag1'],
+              topicFilters: [],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {},
+            instructions: [],
+          },
+        ]),
+        [],
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'At least one schema should be available',
+        }),
+        expect.objectContaining({
+          message: "The tag test/tag1 is not defined in any of the combiner's sources",
+        }),
+      ])
+    })
+
+    it('should validate a tag belonging to a source', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+      console.log('XXXX', result.current[1].data)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              topicFilters: [],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {},
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
       expect(errors).toStrictEqual([])
     })
   })
