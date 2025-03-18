@@ -269,7 +269,44 @@ describe('useValidateCombiner', () => {
       ])
     })
 
-    it('should validate a tag belonging to a source', async () => {
+    it('should not validate a topic filter not belonging to a source', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers)
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: [],
+              topicFilters: ['test/topic/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {},
+            instructions: [],
+          },
+        ]),
+        [],
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'At least one schema should be available',
+        }),
+        expect.objectContaining({
+          message: "The topic filter test/topic/filter is not defined in any of the combiner's sources",
+        }),
+      ])
+    })
+
+    it('should validate tag and topic filter belonging to a source', async () => {
       server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
 
       const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
