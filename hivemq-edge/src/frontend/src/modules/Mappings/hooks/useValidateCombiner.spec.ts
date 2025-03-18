@@ -35,10 +35,14 @@ describe('useValidateCombiner', () => {
     server.resetHandlers()
   })
 
-  const renderValidateHook = async (formData: Combiner | undefined) => {
+  const renderValidateHook = async (
+    formData: Combiner | undefined,
+    queries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[],
+    entities?: EntityReference[]
+  ) => {
     const errors = createErrorHandler<Combiner>(formData || mockEmptyCombiner)
 
-    const { result } = renderHook(() => useValidateCombiner([], []), { wrapper })
+    const { result } = renderHook(() => useValidateCombiner(queries || [], entities || []), { wrapper })
     await waitFor(() => {
       expect(result.current).not.toBeUndefined()
     })
@@ -165,20 +169,21 @@ describe('useValidateCombiner', () => {
   })
 
   describe('validateDataSources', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
     const getFormData = (mappings: DataCombining[]): Combiner => ({
       id: mockCombinerId,
       name: 'my-combiner',
       sources: {
-        items: [
-          {
-            id: 'the edge name',
-            type: EntityType.EDGE_BROKER,
-          },
-          {
-            id: 'opcua-1',
-            type: EntityType.ADAPTER,
-          },
-        ],
+        items: sources,
       },
       mappings: {
         items: mappings,
