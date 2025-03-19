@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
+import { ButtonGroup, HStack, type TagProps, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
@@ -55,9 +55,6 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
     }
 
     return [
-      // {
-      //   accessorKey: 'id',
-      // },
       {
         accessorKey: 'destination',
         cell: (info) => {
@@ -72,10 +69,31 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
           if (nbItems === 0) return <Text>{t('combiner.unset')}</Text>
 
+          const primary = info.row.original.sources.primary
+
+          const getPrimaryStyle = (type: DataIdentifierReference.type, id: string): TagProps | undefined => {
+            if (primary.type === type && primary.id === id)
+              return {
+                borderColor: 'currentcolor',
+                borderLeftWidth: '.75em',
+                borderRightWidth: '.75em',
+                'aria-label': t('combiner.schema.mapping.primary.aria-label'),
+              }
+            return undefined
+          }
+
           return (
             <HStack flexWrap={'wrap'}>
-              {info.row.original.sources?.tags?.map((tag) => <PLCTag tagTitle={tag} key={tag} />)}
-              {info.row.original.sources?.topicFilters?.map((tag) => <TopicFilter tagTitle={tag} key={tag} />)}
+              {info.row.original.sources?.tags?.map((tag) => (
+                <PLCTag tagTitle={tag} key={tag} {...getPrimaryStyle(DataIdentifierReference.type.TAG, tag)} />
+              ))}
+              {info.row.original.sources?.topicFilters?.map((tag) => (
+                <TopicFilter
+                  tagTitle={tag}
+                  key={tag}
+                  {...getPrimaryStyle(DataIdentifierReference.type.TOPIC_FILTER, tag)}
+                />
+              ))}
             </HStack>
           )
         },
