@@ -92,7 +92,6 @@ jakarta-xml-bind-api-v4 = { module = "jakarta.xml.bind:jakarta.xml.bind-api", ve
 javacrumbs-futureConverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation-api" }
-jaxb-core-v4 = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-v4" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb" }
 jaxb-impl-v4 = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-v4" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
