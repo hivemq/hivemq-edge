@@ -1,6 +1,6 @@
 import { beforeEach, expect } from 'vitest'
 import { v4 as uuidv4 } from 'uuid'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type HttpHandler } from 'msw'
 import { renderHook, waitFor } from '@testing-library/react'
 import { createErrorHandler, toErrorList } from '@rjsf/utils'
 import type { UseQueryResult } from '@tanstack/react-query'
@@ -14,6 +14,7 @@ import type {
   DataCombining,
   DomainTagList,
   EntityReference,
+  JsonNode,
   ProtocolAdaptersList,
   TopicFilterList,
 } from '@/api/__generated__'
@@ -26,7 +27,11 @@ import {
   mockProtocolAdapter_OPCUA,
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockCombinerId, mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
-import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__handlers__'
+import {
+  handlers as topicFilterHandlers,
+  MOCK_TOPIC_FILTER,
+  MOCK_TOPIC_FILTER_SCHEMA_INVALID,
+} from '@/api/hooks/useTopicFilters/__handlers__'
 import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/mapping.mocks'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 
@@ -51,8 +56,12 @@ describe('useValidateCombiner', () => {
     server.resetHandlers()
   })
 
-  const loadingEntities = async (sources: EntityReference[]) => {
-    server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+  const loadingEntities = async (
+    sources: EntityReference[],
+    topicHandlers?: HttpHandler[],
+    tagHandlers?: HttpHandler[]
+  ) => {
+    server.use(...(tagHandlers || mappingHandlers), ...deviceHandlers, ...(topicHandlers || topicFilterHandlers))
     const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
 
     expect(result.current).toHaveLength(2)
@@ -327,6 +336,126 @@ describe('useValidateCombiner', () => {
         sources
       )
       expect(errors).toStrictEqual([])
+    })
+  })
+
+  describe('validateDataSourceSchemas', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+    const getFormData = (mappings: DataCombining[]): Combiner => ({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: sources,
+      },
+      mappings: {
+        items: mappings,
+      },
+    })
+
+    it('should not validate if there is not at least one schema displayed', async () => {
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        [],
+        sources
+      )
+      expect(errors).toStrictEqual([expect.objectContaining({ message: 'At least one schema should be available' })])
+    })
+
+    // TODO[NVL] These validation are wrong; need to refactor the data structure for clarity
+    it.skip('should not validate when a topic filter schema is invalid', async () => {
+      const result = await loadingEntities(sources, [
+        http.get('**/management/topic-filters', () => {
+          console.log('XXXXXXX 11')
+          return HttpResponse.json<TopicFilterList>(
+            { items: [{ ...MOCK_TOPIC_FILTER, schema: MOCK_TOPIC_FILTER_SCHEMA_INVALID }] },
+            { status: 200 }
+          )
+        }),
+      ])
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({ message: 'Not a valid JSONSchema: `properties` is missing' }),
+      ])
+    })
+
+    // TODO[NVL] These validation are wrong; need to refactor the data structure for clarity
+    it.skip('should not validate when a tag schema is invalid', async () => {
+      const result = await loadingEntities(sources, undefined, [
+        http.get<{ adapterId: string; tagName: string }>(
+          '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+          ({ params }) => {
+            const { tagName } = params
+
+            return HttpResponse.json<JsonNode>({ description: 'fake schema', title: tagName }, { status: 200 })
+          }
+        ),
+      ])
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({ message: 'Not a valid JSONSchema: `properties` is missing' }),
+      ])
     })
   })
 
