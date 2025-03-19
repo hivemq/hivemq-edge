@@ -188,43 +188,41 @@ export const useValidateCombiner = (
 
   /**
    * Verify that every schema of the data sources is valid or that there is at least one valid schema
-   * TODO[NVL] Should that first validation even be made?
    */
   const validateDataSourceSchemas = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
-    (formData, errors) => {
+    (_, errors) => {
       const hasAtLeastOneSchema = allSchemaReferences.some((e) => e.data !== undefined && e.isSuccess)
       if (!hasAtLeastOneSchema) {
         errors.sources?.addError(t('combiner.error.validation.notMinimumRequiredSchema'))
       }
 
-      const nbTag = formData?.sources.tags?.length || 0
-      allSchemaReferences.forEach((query, index) => {
-        if (typeof query.data === 'string') {
-          const handleSchema = validateSchemaFromDataURI(query.data)
-          if (handleSchema.status !== 'success' || !handleSchema.schema) {
-            // TODO[NVL] Need to know if tag or topic filter; this hack might not work
-            if (index > nbTag) errors.sources?.topicFilters?.addError(handleSchema.error || handleSchema.message)
-            else errors.sources?.tags?.addError(handleSchema.error || handleSchema.message)
-          } else {
-            const properties = getPropertyListFrom(handleSchema.schema)
-            if (!properties.length) {
-              // TODO[NVL] Need to know if tag or topic filter; this hack might not work
-              if (index > nbTag)
-                errors.sources?.topicFilters?.addError(
-                  t('combiner.error.validation.notDataSourceProperties', {
-                    context: DataIdentifierReference.type.TOPIC_FILTER,
-                  })
-                )
-              else
-                errors.sources?.tags?.addError(
-                  t('combiner.error.validation.notDataSourceProperties', {
-                    context: DataIdentifierReference.type.TAG,
-                  })
-                )
-            }
-          }
-        }
-      })
+      // TODO[NVL] These validation are wrong; need to refactor the data structure for clarity
+      // const nbTag = formData?.sources.tags?.length || 0
+      // allSchemaReferences.forEach((query, index) => {
+      //   if (typeof query.data === 'string') {
+      //     const handleSchema = validateSchemaFromDataURI(query.data)
+      //     if (handleSchema.status !== 'success' || !handleSchema.schema) {
+      //       if (index > nbTag) errors.sources?.topicFilters?.addError(handleSchema.error || handleSchema.message)
+      //       else errors.sources?.tags?.addError(handleSchema.error || handleSchema.message)
+      //     } else {
+      //       const properties = getPropertyListFrom(handleSchema.schema)
+      //       if (!properties.length) {
+      //         if (index > nbTag)
+      //           errors.sources?.topicFilters?.addError(
+      //             t('combiner.error.validation.notDataSourceProperties', {
+      //               context: DataIdentifierReference.type.TOPIC_FILTER,
+      //             })
+      //           )
+      //         else
+      //           errors.sources?.tags?.addError(
+      //             t('combiner.error.validation.notDataSourceProperties', {
+      //               context: DataIdentifierReference.type.TAG,
+      //             })
+      //           )
+      //       }
+      //     }
+      //   }
+      // })
 
       return errors
     },
@@ -238,6 +236,7 @@ export const useValidateCombiner = (
 
       const knownPaths = properties?.map((e) => [...e.path, e.key].join('.')) || []
 
+      // TODO[NVL] validation is required; need to refactor the data structure for clarity
       // if (!formData?.instructions || formData?.instructions.length === 0)
       //   errors.addError(t('combiner.error.validation.notInstruction'))
 
