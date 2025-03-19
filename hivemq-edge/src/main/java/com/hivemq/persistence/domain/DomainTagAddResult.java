@@ -20,46 +20,23 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class DomainTagAddResult {
-
-    private final @NotNull DomainTagPutStatus dataPolicyPutStatus;
-    private final @Nullable Optional<String> errorMessage;
-    private final @NotNull Optional<String> adapterIdOfOwningAdapter;
-
-    public DomainTagAddResult(
-            final @NotNull DomainTagPutStatus dataPolicyPutStatus, final @Nullable String adapterIdOfOwningAdapter, final @Nullable String errorMessage) {
-        this.dataPolicyPutStatus = dataPolicyPutStatus;
-        this.errorMessage = Optional.ofNullable(errorMessage);
-        this.adapterIdOfOwningAdapter = Optional.ofNullable(adapterIdOfOwningAdapter);
-    }
+public record DomainTagAddResult(@NotNull DomainTagPutStatus domainTagPutStatus, @NotNull Optional<String> errorMessage, @NotNull Optional<String> adapterIdOfOwningAdapter) {
 
     public static @NotNull DomainTagAddResult success() {
-        return new DomainTagAddResult(DomainTagPutStatus.SUCCESS, null,null);
+        return new DomainTagAddResult(DomainTagPutStatus.SUCCESS, Optional.empty(),Optional.empty());
     }
 
     public static @NotNull DomainTagAddResult failed(
             final @NotNull DomainTagPutStatus putStatus,
             final @NotNull String adapterIdOfOwningAdapter) {
-        return new DomainTagAddResult(putStatus, adapterIdOfOwningAdapter, null);
+        return new DomainTagAddResult(putStatus, Optional.empty(), Optional.of(adapterIdOfOwningAdapter));
     }
 
     public static @NotNull DomainTagAddResult failed(
             final @NotNull DomainTagPutStatus putStatus,
             final @Nullable String adapterIdOfOwningAdapter,
             final @Nullable String errorMessage) {
-        return new DomainTagAddResult(putStatus, adapterIdOfOwningAdapter, errorMessage);
-    }
-
-    public @NotNull DomainTagPutStatus getDomainTagPutStatus() {
-        return dataPolicyPutStatus;
-    }
-
-    public @Nullable Optional<String> getErrorMessage() {
-        return errorMessage;
-    }
-
-    public @NotNull Optional<String> getAdapterIdOfOwningAdapter() {
-        return adapterIdOfOwningAdapter;
+        return new DomainTagAddResult(putStatus, Optional.of(errorMessage), Optional.of(adapterIdOfOwningAdapter));
     }
 
     public enum DomainTagPutStatus {

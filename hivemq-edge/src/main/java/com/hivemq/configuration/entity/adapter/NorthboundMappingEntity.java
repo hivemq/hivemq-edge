@@ -148,7 +148,7 @@ public class NorthboundMappingEntity {
                 northboundMapping.getMessageExpiryInterval());
     }
 
-    public @NotNull NorthboundMapping to(ObjectMapper mapper) {
+    public @NotNull NorthboundMapping to() {
         final List<MqttUserProperty> mqttUserProperties = this.getUserProperties()
                 .stream()
                 .map(mqttUserPropertyEntity -> new MqttUserProperty(mqttUserPropertyEntity.getName(),

@@ -89,7 +89,7 @@ class ProtocolAdaptersResourceImplTest {
                     objectMapper.valueToTree(Map.of("address", "addressy"))));
         }
 
-        when(protocolAdapterManager.getTagsForAdapter("adapter")).thenReturn(Optional.of(domainTags));
+        when(protocolAdapterManager.getDomainTagsForAdapter("adapter")).thenReturn(Optional.of(domainTags));
 
         final Response response = protocolAdaptersResource.getAdapterDomainTags("adapter");
 

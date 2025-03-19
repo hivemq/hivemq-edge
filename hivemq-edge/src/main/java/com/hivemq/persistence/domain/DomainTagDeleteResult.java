@@ -18,16 +18,7 @@ package com.hivemq.persistence.domain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DomainTagDeleteResult {
-
-    private final @NotNull DomainTagDeleteStatus dataPolicyUpdateStatus;
-    private final @Nullable String errorMessage;
-
-    public DomainTagDeleteResult(
-            final @NotNull DomainTagDeleteStatus dataPolicyUpdateStatus, final @Nullable String errorMessage) {
-        this.dataPolicyUpdateStatus = dataPolicyUpdateStatus;
-        this.errorMessage = errorMessage;
-    }
+public record DomainTagDeleteResult(@NotNull DomainTagDeleteStatus domainTagDeleteStatus, @Nullable String errorMessage) {
 
     public static @NotNull DomainTagDeleteResult success() {
         return new DomainTagDeleteResult(DomainTagDeleteStatus.SUCCESS, null);
@@ -40,15 +31,6 @@ public class DomainTagDeleteResult {
     public static @NotNull DomainTagDeleteResult failed(
             final @NotNull DomainTagDeleteStatus deleteResult, final @Nullable String errorMessage) {
         return new DomainTagDeleteResult(deleteResult, errorMessage);
-    }
-
-    public @NotNull DomainTagDeleteStatus getDomainTagDeleteStatus() {
-        return dataPolicyUpdateStatus;
-    }
-
-
-    public @Nullable String getErrorMessage() {
-        return errorMessage;
     }
 
 

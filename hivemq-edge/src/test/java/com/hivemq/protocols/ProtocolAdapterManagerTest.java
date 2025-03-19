@@ -96,7 +96,6 @@ class ProtocolAdapterManagerTest {
     void setUp() {
         protocolAdapterManager = new ProtocolAdapterManager(metricRegistry,
                 moduleServices,
-                objectMapper,
                 remoteService,
                 eventService,
                 configPersistence,
@@ -104,7 +103,6 @@ class ProtocolAdapterManagerTest {
                 versionProvider,
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
-                jsonPayloadDefaultCreator,
                 protocolAdapterWritingService,
                 protocolAdapterFactoryManager,
                 executorService,

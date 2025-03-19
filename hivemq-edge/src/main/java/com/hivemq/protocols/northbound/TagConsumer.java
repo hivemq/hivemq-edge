@@ -24,4 +24,6 @@ import java.util.function.Consumer;
 public interface TagConsumer extends Consumer<List<DataPoint>> {
 
    @NotNull String getTagName();
+
+   @NotNull String consumerName();
 }

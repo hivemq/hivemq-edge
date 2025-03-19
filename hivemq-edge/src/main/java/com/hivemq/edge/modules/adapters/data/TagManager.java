@@ -20,85 +20,68 @@ import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Singleton
 public class TagManager implements ProtocolAdapterTagStreamingService {
 
+    private static final Logger log = LoggerFactory.getLogger(TagManager.class);
 
     private final @NotNull MetricsHolder metricsHolder;
+
     // TODO this is basically a memory leak. The problem is when shall we remove the last value?
     // We would need to add a callback/logic to the lifecycle of tags
     // is it intended that we might send very old data?
     // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted on config change anyway
-    private final Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final @NotNull Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<String, Set<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
     @Inject
     public TagManager(final @NotNull MetricsHolder metricsHolder) {
         this.metricsHolder = metricsHolder;
     }
 
-    private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
+    public List<String> consumersForTag(String tagName) {
+        return getTagConsumers(tagName).stream().map(TagConsumer::consumerName).toList();
+    }
 
     @Override
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
+        //TODO: this should run in a separate executor
         lastValueForTag.put(tagName, dataPoints);
-        try {
-            readWriteLock.readLock().lock();
-            final List<TagConsumer> tagConsumers = consumers.get(tagName);
-            if (tagConsumers != null) {
-                consumers.get(tagName).forEach(c -> c.accept(dataPoints));
-            }
-        } finally {
-            readWriteLock.readLock().unlock();
+        getTagConsumers(tagName)
+            .forEach(c -> c.accept(dataPoints));
+    }
+
+    public void addConsumer(final @NotNull TagConsumer consumer) {
+        final String tagName = consumer.getTagName();
+        log.info("Adding consumer {} for tag {}", tagName, consumer.getTagName());
+        getTagConsumers(tagName)
+            .add(consumer);
+
+        // if there is a value present in the cache, we send it to the consumer
+        final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
+        if (dataPoints != null) {
+            consumer.accept(dataPoints);
         }
     }
 
-
-    public void addConsumer(final @NotNull TagConsumer consumer) {
-        try {
-            readWriteLock.writeLock().lock();
-            final String tagName = consumer.getTagName();
-            consumers.compute(tagName, (tag, current) -> {
-                if (current != null) {
-                    current.add(consumer);
-                    return current;
-                } else {
-                    final List<TagConsumer> consumers = new ArrayList<>();
-                    consumers.add(consumer);
-                    return consumers;
-                }
-            });
-
-            // if there is a value present in the cache, we sent it to the consumer
-            final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
-            if (dataPoints != null) {
-                consumer.accept(dataPoints);
-            }
-        } finally {
-            readWriteLock.writeLock().unlock();
-        }
+    private @NotNull Set<TagConsumer> getTagConsumers(String tagName) {
+        return consumers.computeIfAbsent(tagName, name -> ConcurrentHashMap.newKeySet());
     }
 
 
     public void removeConsumer(final @NotNull TagConsumer consumer) {
-        try {
-            readWriteLock.writeLock().lock();
-            consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
-                current.remove(consumer);
-                return current;
-            });
-        } finally {
-            readWriteLock.writeLock().unlock();
-        }
+        log.info("Removing consumer {} for tag {}", consumer.getTagName(), consumer.getTagName());
+        getTagConsumers(consumer.getTagName())
+            .remove(consumer);
     }
 }

@@ -44,6 +44,8 @@ public class NorthboundTagConsumer implements TagConsumer{
 
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
 
+    public static final String CONSUMER_NAME_PREFIX_NORTHBOUND = "NORTHBOUND";
+
     private final @NotNull PollingContext pollingContext;
     private final @NotNull ProtocolAdapterWrapper protocolAdapter;
     private final @NotNull ObjectMapper objectMapper;
@@ -138,5 +140,10 @@ public class NorthboundTagConsumer implements TagConsumer{
     @Override
     public @NotNull String getTagName() {
         return pollingContext.getTagName();
+    }
+
+    @Override
+    public @NotNull String consumerName() {
+        return CONSUMER_NAME_PREFIX_NORTHBOUND + ":" + protocolAdapter.getId();
     }
 }
