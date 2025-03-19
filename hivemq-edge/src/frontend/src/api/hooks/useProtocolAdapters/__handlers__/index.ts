@@ -793,7 +793,12 @@ export const handlers = [
 export const deviceHandlers = [
   http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
     const { adapterId } = params
-    const type = enumFromStringValue(MockAdapterType, adapterId as string)
+
+    if (!adapterId || typeof adapterId !== 'string') return HttpResponse.json({}, { status: 400 })
+
+    // Handle mocks where adapter type is embedded in the name, e.g. opcua-1
+    const [root] = adapterId.split('-')
+    const type = enumFromStringValue(MockAdapterType, root)
 
     if (!type) return HttpResponse.json({}, { status: 400 })
     return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string, type) }, { status: 200 })
