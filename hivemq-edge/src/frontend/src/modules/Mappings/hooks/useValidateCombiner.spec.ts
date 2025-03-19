@@ -338,5 +338,133 @@ describe('useValidateCombiner', () => {
     })
   })
 
-  // TODO[TEST] Complete the test suite
+  describe('validateDestinationSchema', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+    const getFormData = (mappings: DataCombining[]): Combiner => ({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: sources,
+      },
+      mappings: {
+        items: mappings,
+      },
+    })
+
+    it('should not validate when there is no schema', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: { topic: undefined, schema: undefined },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'Your topic filter is currently not assigned a schema',
+        }),
+      ])
+    })
+
+    it('should not validate when there is no properties in the schema', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_EMPTY_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: "The destination schema doesn't have any property to be mapped into",
+        }),
+      ])
+    })
+
+    it('should  validate when there is a valid schema', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([])
+    })
+  })
 })
