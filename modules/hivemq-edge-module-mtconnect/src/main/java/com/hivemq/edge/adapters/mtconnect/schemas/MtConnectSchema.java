@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.mtconnect.schemas;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
+import org.glassfish.jaxb.runtime.v2.JAXBContextFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +28,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -96,6 +98,8 @@ public enum MtConnectSchema {
 
     private static final @NotNull Map<String, MtConnectSchema> LOCATION_TO_SCHEMA_MAP =
             Stream.of(values()).collect(Collectors.toMap(MtConnectSchema::getLocation, Function.identity()));
+    private static final @NotNull JAXBContextFactory JAXB_CONTEXT_FACTORY = new JAXBContextFactory();
+    private static final @NotNull Map<String, ?> JAXB_CONTEXT_FACTORY_PROPERTIES = new HashMap<>();
     private static final @NotNull String SCHEMA_LOCATION = "schemaLocation";
     private static final @NotNull String XMLSCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final @NotNull String MT_CONNECT = "MTConnect";
@@ -305,10 +309,12 @@ public enum MtConnectSchema {
             return null;
         }
         if (jaxbContext == null) {
-            // There is no additional synchronization.
+            // 1. There is no additional synchronization.
             // So there might be contention, but that's a one-time cost.
             // The overall performance is better than a synchronized block.
-            jaxbContext = JAXBContext.newInstance(mtConnectType);
+            // 2. The factory has to be explicitly specified to avoid ClassNotFoundException.
+            jaxbContext = JAXB_CONTEXT_FACTORY.createContext(
+                    new Class[]{mtConnectType}, JAXB_CONTEXT_FACTORY_PROPERTIES);
         }
         final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         unmarshaller.setEventHandler(new MtConnectSchemaValidationEventHandler());
