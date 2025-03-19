@@ -140,7 +140,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
   return (
     <>
       <PaginatedTable<DataCombining>
-        aria-label={t('combiner.schema.sources.description')}
+        aria-label={t('combiner.schema.mappings.description')}
         data={props.formData || []}
         columns={displayColumns}
         enablePaginationGoTo={false}
