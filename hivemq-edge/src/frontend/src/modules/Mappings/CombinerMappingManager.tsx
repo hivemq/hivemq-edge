@@ -34,6 +34,7 @@ import { useUpdateCombiner, useDeleteCombiner } from '@/api/hooks/useCombiners/'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import ErrorMessage from '@/components/ErrorMessage'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 import { IdStubs } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
@@ -47,7 +48,7 @@ const CombinerMappingManager: FC = () => {
   const navigate = useNavigate()
   const { combinerId } = useParams()
   const { nodes, onUpdateNode, onNodesChange } = useWorkspaceStore()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
