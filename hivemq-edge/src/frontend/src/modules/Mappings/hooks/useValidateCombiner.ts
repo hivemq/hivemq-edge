@@ -238,6 +238,9 @@ export const useValidateCombiner = (
 
       const knownPaths = properties?.map((e) => [...e.path, e.key].join('.')) || []
 
+      // if (!formData?.instructions || formData?.instructions.length === 0)
+      //   errors.addError(t('combiner.error.validation.notInstruction'))
+
       formData?.instructions?.forEach((instruction, index) => {
         if (!knownPaths.includes(instruction.destination))
           errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionDestinationPath'))
