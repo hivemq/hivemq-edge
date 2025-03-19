@@ -6,6 +6,7 @@ import { createErrorHandler, toErrorList } from '@rjsf/utils'
 import type { UseQueryResult } from '@tanstack/react-query'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { MOCK_EMPTY_SCHEMA_URI, MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 import type {
   AdaptersList,
@@ -16,6 +17,7 @@ import type {
   ProtocolAdaptersList,
   TopicFilterList,
 } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import {
   deviceHandlers,
@@ -55,7 +57,6 @@ describe('useValidateCombiner', () => {
     entities?: EntityReference[]
   ) => {
     const errors = createErrorHandler<Combiner>(formData || mockEmptyCombiner)
-
     const { result } = renderHook(() => useValidateCombiner(queries || [], entities || []), { wrapper })
     await waitFor(() => {
       expect(result.current).not.toBeUndefined()
@@ -459,6 +460,200 @@ describe('useValidateCombiner', () => {
               schema: MOCK_SIMPLE_SCHEMA_URI,
             },
             instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([])
+    })
+  })
+
+  describe('validateInstructions', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+    const getFormData = (mappings: DataCombining[]): Combiner => ({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: sources,
+      },
+      mappings: {
+        items: mappings,
+      },
+    })
+
+    it.skip('should not validate when there is no instruction', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'At least one mapping instruction must be defined',
+        }),
+      ])
+    })
+
+    it('should not validate when the destination path is incorrect', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'wrong.destination',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'The instruction is not a recognised source property',
+        }),
+      ])
+    })
+
+    it('should not validate when the source path is incorrect', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'wrong.source',
+                destination: 'value',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'The instruction is not a recognised destination property',
+        }),
+      ])
+    })
+
+    it('should validate when the instructions are correct', async () => {
+      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+
+      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+      expect(result.current).toHaveLength(2)
+      await waitFor(() => {
+        expect(result.current[0].isSuccess).toBeTruthy()
+        expect(result.current[1].isSuccess).toBeTruthy()
+      })
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              // @ts-ignore TODO[NVL] Needs to be nullable
+              primary: {},
+            },
+            destination: {
+              topic: 'test/ss',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                },
+              },
+            ],
           },
         ]),
         result.current,
