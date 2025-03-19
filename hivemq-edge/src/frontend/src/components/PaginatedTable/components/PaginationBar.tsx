@@ -40,7 +40,7 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
 
   return (
     <HStack as="nav" aria-label={t('components:pagination.ariaLabel')} gap={8} mt={4}>
-      <ButtonGroup isAttached variant="ghost">
+      <ButtonGroup isAttached variant="ghost" data-testid={'table-pagination-navigation'}>
         <PaginationButton
           icon={<LuSkipBack />}
           onClick={() => table.setPageIndex(0)}
@@ -100,8 +100,13 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
 
       {options?.enablePaginationSizes && (
         <Flex flex={1}>
-          <FormControl display="flex" alignItems="baseline" justifyContent="flex-end">
-            <FormLabel> {t('components:pagination.perPage')}</FormLabel>
+          <FormControl
+            display="flex"
+            alignItems="baseline"
+            justifyContent="flex-end"
+            data-testid={'table-pagination-perPages'}
+          >
+            <FormLabel>{t('components:pagination.perPage')}</FormLabel>
             <Select
               maxWidth="80px"
               size="sm"
