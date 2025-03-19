@@ -51,6 +51,19 @@ describe('useValidateCombiner', () => {
     server.resetHandlers()
   })
 
+  const loadingEntities = async (sources: EntityReference[]) => {
+    server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
+    const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
+
+    expect(result.current).toHaveLength(2)
+    await waitFor(() => {
+      expect(result.current[0].isSuccess).toBeTruthy()
+      expect(result.current[1].isSuccess).toBeTruthy()
+    })
+
+    return result
+  }
+
   const renderValidateHook = async (
     formData: Combiner | undefined,
     queries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[],
@@ -234,14 +247,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate a tag not belonging to a source', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers)
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -271,14 +277,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate a topic filter not belonging to a source', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers)
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -308,15 +307,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should validate tag and topic filter belonging to a source', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -362,15 +353,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate when there is no schema', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -397,15 +380,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate when there is no properties in the schema', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -435,15 +410,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should  validate when there is a valid schema', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -492,15 +459,7 @@ describe('useValidateCombiner', () => {
     })
 
     it.skip('should not validate when there is no instruction', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -529,15 +488,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate when the destination path is incorrect', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -575,15 +526,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should not validate when the source path is incorrect', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
@@ -621,15 +564,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should validate when the instructions are correct', async () => {
-      server.use(...topicFilterHandlers, ...deviceHandlers, ...mappingHandlers)
-
-      const { result } = renderHook(() => useGetCombinedEntities(sources), { wrapper })
-
-      expect(result.current).toHaveLength(2)
-      await waitFor(() => {
-        expect(result.current[0].isSuccess).toBeTruthy()
-        expect(result.current[1].isSuccess).toBeTruthy()
-      })
+      const result = await loadingEntities(sources)
 
       const errors = await renderValidateHook(
         getFormData([
