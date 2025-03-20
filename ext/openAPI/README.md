@@ -33,6 +33,10 @@ There is no reason to maintain such naming convention as we manually add or edit
 ## Usage
 The [redocly library](https://redocly.com/) is used to manage the OpenAPI specs, stored as a split document. 
 
+Also, the source of truth for all our projects is **ext/hivemq-edge-openapi-<VERSION>-SNAPSHOT.yaml**.
+
+That file will be used for generating all Java and React types.
+
 ### Bundle
 Some of the tools handling OpenAPi will be working fine with a split document.
 If not, consider bundling it into a single `YAML` file, using the following command:
