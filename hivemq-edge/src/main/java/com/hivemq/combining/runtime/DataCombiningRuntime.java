@@ -30,6 +30,7 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
@@ -124,7 +126,9 @@ public class DataCombiningRuntime {
     }
 
     public @NotNull InternalSubscription subscribeTopicFilter(
-            final @NotNull DataCombining dataCombining, final @NotNull String topicFilter, final boolean isPrimary) {
+            final @NotNull DataCombining dataCombining,
+            final @NotNull String topicFilter,
+            final boolean isPrimary) {
         final String clientId = dataCombining.id() + "#";
         final QoS qos = QoS.EXACTLY_ONCE;
 
@@ -176,8 +180,17 @@ public class DataCombiningRuntime {
             }
         }));
 
+        final List<Instruction> filteredInstructions = dataCombining.instructions().stream().filter(instruction -> {
+            final DataIdentifierReference reference = Objects.requireNonNull(instruction.dataIdentifierReference());
+            return switch (reference.type()) {
+                case TAG -> tagsToDataPoints.containsKey(reference.id());
+                case TOPIC_FILTER -> topicFilterResults.containsKey(reference.id());
+            };
+        }).toList();
+        final DataCombining filteredDataCombining = dataCombining.withInstructions(filteredInstructions);
+
         final byte[] payload = rootNode.toString().getBytes(StandardCharsets.UTF_8);
-        dataCombiningPublishService.publish(combining.destination(), payload, dataCombining);
+        dataCombiningPublishService.publish(combining.destination(), payload, filteredDataCombining);
     }
 
     public final class InternalTagConsumer implements TagConsumer {
@@ -186,7 +199,9 @@ public class DataCombiningRuntime {
         private final @NotNull DataCombining dataCombining;
 
         public InternalTagConsumer(
-                final @NotNull String tagName, final @NotNull DataCombining dataCombining, final boolean isPrimary) {
+                final @NotNull String tagName,
+                final @NotNull DataCombining dataCombining,
+                final boolean isPrimary) {
             this.tagName = tagName;
             this.dataCombining = dataCombining;
             this.isPrimary = isPrimary;
@@ -207,7 +222,7 @@ public class DataCombiningRuntime {
     }
 
     public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
-                                       @NotNull QueueConsumer                queueConsumer) {
+                                       @NotNull QueueConsumer queueConsumer) {
         public String getQueueId() {
             return sharedName() + "/" + topic();
         }

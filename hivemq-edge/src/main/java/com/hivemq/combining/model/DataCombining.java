@@ -54,6 +54,13 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
 
     public @NotNull DataCombiningEntity toPersistence() {
         final List<InstructionEntity> instructions = this.instructions().stream().map(InstructionEntity::from).toList();
-        return new DataCombiningEntity(this.id(), this.sources.toPersistence(), this.destination().toPersistence(), instructions);
+        return new DataCombiningEntity(this.id(),
+                this.sources.toPersistence(),
+                this.destination().toPersistence(),
+                instructions);
+    }
+
+    public @NotNull DataCombining withInstructions(final @NotNull List<Instruction> instructions) {
+        return new DataCombining(id, sources, destination, instructions);
     }
 }

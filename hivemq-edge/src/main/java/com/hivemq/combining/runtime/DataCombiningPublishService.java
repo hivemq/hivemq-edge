@@ -57,7 +57,7 @@ public class DataCombiningPublishService {
 
     public void publish(
             final @NotNull DataCombiningDestination dataCombiningDestination,
-            final @NotNull byte[] payload,
+            final byte @NotNull [] payload,
             final @NotNull DataCombining dataCombining) {
 
         final var publish = new PUBLISHFactory.Mqtt5Builder().withHivemqId(hiveMQId.get())

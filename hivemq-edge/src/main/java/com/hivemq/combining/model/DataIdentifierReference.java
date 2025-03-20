@@ -19,6 +19,7 @@ import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/// Used exclusively within the combiner.
 public record DataIdentifierReference(String id, Type type) {
 
 
