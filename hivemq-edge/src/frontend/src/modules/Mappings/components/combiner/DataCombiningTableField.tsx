@@ -1,20 +1,41 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import { useState } from 'react'
 import { useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, type TagProps, Text } from '@chakra-ui/react'
+import { ButtonGroup, HStack, Tag, TagLeftIcon, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
+import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
+import { ConditionalWrapper } from '@/components/ConditonalWrapper'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
 import type { CombinerContext } from '../../types'
+
+interface PrimaryWrapperProps {
+  isPrimary: boolean
+  children: ReactElement
+}
+
+export const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => (
+  <ConditionalWrapper
+    condition={isPrimary}
+    wrapper={(children) => (
+      <Tag data-testid="wrapper" p={1} variant="outline">
+        <TagLeftIcon boxSize="12px" as={FaKey} ml={1} />
+        {children}
+      </Tag>
+    )}
+  >
+    {children}
+  </ConditionalWrapper>
+)
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -71,28 +92,24 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
 
           const primary = info.row.original.sources.primary
 
-          const getPrimaryStyle = (type: DataIdentifierReference.type, id: string): TagProps | undefined => {
-            if (primary.type === type && primary.id === id)
-              return {
-                borderColor: 'currentcolor',
-                borderLeftWidth: '.75em',
-                borderRightWidth: '.75em',
-                'aria-label': t('combiner.schema.mapping.primary.aria-label'),
-              }
-            return undefined
+          const isPrimary = (type: DataIdentifierReference.type, id: string): boolean => {
+            return primary.type === type && primary.id === id
           }
 
           return (
             <HStack flexWrap={'wrap'}>
               {info.row.original.sources?.tags?.map((tag) => (
-                <PLCTag tagTitle={tag} key={tag} {...getPrimaryStyle(DataIdentifierReference.type.TAG, tag)} />
+                <PrimaryWrapper key={tag} isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TAG, tag))}>
+                  <PLCTag tagTitle={tag} />
+                </PrimaryWrapper>
               ))}
               {info.row.original.sources?.topicFilters?.map((tag) => (
-                <TopicFilter
-                  tagTitle={tag}
+                <PrimaryWrapper
                   key={tag}
-                  {...getPrimaryStyle(DataIdentifierReference.type.TOPIC_FILTER, tag)}
-                />
+                  isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TOPIC_FILTER, tag))}
+                >
+                  <TopicFilter tagTitle={tag} />
+                </PrimaryWrapper>
               ))}
             </HStack>
           )
