@@ -143,7 +143,7 @@ public class NorthboundTagConsumer implements TagConsumer{
     }
 
     @Override
-    public @NotNull String consumerName() {
+    public @NotNull String getConsumerName() {
         return CONSUMER_NAME_PREFIX_NORTHBOUND + ":" + protocolAdapter.getId();
     }
 }

@@ -25,5 +25,5 @@ public interface TagConsumer extends Consumer<List<DataPoint>> {
 
    @NotNull String getTagName();
 
-   @NotNull String consumerName();
+   @NotNull String getConsumerName();
 }

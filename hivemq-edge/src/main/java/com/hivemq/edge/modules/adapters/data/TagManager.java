@@ -50,7 +50,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     public List<String> consumersForTag(String tagName) {
-        return getTagConsumers(tagName).stream().map(TagConsumer::consumerName).toList();
+        return getTagConsumers(tagName).stream().map(TagConsumer::getConsumerName).toList();
     }
 
     @Override

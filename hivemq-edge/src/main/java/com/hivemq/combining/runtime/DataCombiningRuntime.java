@@ -200,7 +200,7 @@ public class DataCombiningRuntime {
         }
 
         @Override
-        public @NotNull String consumerName() {
+        public @NotNull String getConsumerName() {
             return CONSUMER_NAME_PREFIX_COMBINER + ":" + dataCombining.id().toString();
         }
 

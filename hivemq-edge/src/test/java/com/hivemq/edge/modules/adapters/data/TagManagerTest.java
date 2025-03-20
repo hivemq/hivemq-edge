@@ -46,7 +46,7 @@ class TagManagerTest {
             }
 
             @Override
-            public @NotNull String consumerName() {
+            public @NotNull String getConsumerName() {
                 return CONSUMER_NAME_PREFIX_NORTHBOUND + ":adapter1";
             }
 
@@ -74,7 +74,7 @@ class TagManagerTest {
 
         final var consumer = mock(TagConsumer.class);
         when(consumer.getTagName()).thenReturn(TAG_NAME);
-        when(consumer.consumerName()).thenReturn(CONSUMER_NAME_PREFIX_NORTHBOUND + ":adapter1");
+        when(consumer.getConsumerName()).thenReturn(CONSUMER_NAME_PREFIX_NORTHBOUND + ":adapter1");
 
         tagManager.addConsumer(consumer);
 
@@ -106,7 +106,7 @@ class TagManagerTest {
             }
 
             @Override
-            public @NotNull String consumerName() {
+            public @NotNull String getConsumerName() {
                 return CONSUMER_NAME_PREFIX_NORTHBOUND + ":adapter1";
             }
 
