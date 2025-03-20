@@ -32,7 +32,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
@@ -76,23 +81,30 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     }
 
     protected void initConnection() throws Plc4xException {
-        try {
-            if (plcConnection == null) {
-                synchronized (lock) {
-                    if (plcConnection == null) {
-                        final String connectionString = createConnectionString(config);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Connecting via PLC4X to {}.", connectionString);
-                        }
-                        plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
+        if (plcConnection == null) {
+            synchronized (lock) {
+                if (plcConnection == null) {
+                    final String connectionString = createConnectionString(config);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Connecting via PLC4X to {}.", connectionString);
+                    }
+                    try {
+                        plcConnection = CompletableFuture.supplyAsync(() -> {
+                                try {
+                                    return Optional.of(plcDriverManager.getConnectionManager().getConnection(connectionString));
+                                } catch (Throwable e) {
+                                    log.info("Error encountered connecting to external device", e);
+                                }
+                                return Optional.<PlcConnection>empty();
+                        })
+                        .get(2_000, TimeUnit.MILLISECONDS)
+                        .orElseThrow(() -> new Plc4xException("Unable to connect to device."));
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        log.error("Error encountered connecting to external device", e);
+                        throw new Plc4xException(e);
                     }
                 }
             }
-        } catch (PlcConnectionException e) {
-            if (log.isInfoEnabled()) {
-                log.info("Error encountered connecting to external device.", e);
-            }
-            throw new Plc4xException("Error connecting", e);
         }
     }
 
