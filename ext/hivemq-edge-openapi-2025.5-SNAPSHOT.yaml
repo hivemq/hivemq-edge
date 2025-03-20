@@ -4425,123 +4425,62 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Combiner not found
 components:
-  headers:
-    ETag:
-      description: Identifier for a specific version of a resource
-      schema:
-        type: string
-  parameters:
-    TopicFilterId:
-      name: filter
-      description: The URL-encoded filter of the topic filter that should be deleted.
-      in: path
-      required: true
-      schema:
-        type: string
-        format: urlencoded
-    CombinerId:
-      name: combinerId
-      description: The unique id of the combiner to retrieve.
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-    MappingId:
-      name: mappingId
-      description: The unique id of the mapping to retrieve.
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
   schemas:
-    Adapter:
+    UsernamePasswordCredentials:
       type: object
       properties:
-        config:
-          $ref: '#/components/schemas/JsonNode'
-        id:
+        password:
           type: string
-          format: string
-          description: The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.
-          maxLength: 500
-          minLength: 1
-          pattern: ^([a-zA-Z_0-9-_])*$
-        status:
-          $ref: '#/components/schemas/Status'
-        type:
+          description: The password associated with the user
+        userName:
           type: string
-          description: The adapter type associated with this instance
-      required:
-        - id
-    AdapterConfig:
-      type: object
-      properties:
-        config:
-          $ref: '#/components/schemas/Adapter'
-        northboundMappings:
-          type: array
-          description: The northbound mappings for this adapter
-          items:
-            $ref: '#/components/schemas/NorthboundMapping'
-        southboundMappings:
-          type: array
-          description: The southbound mappings for this adapter
-          items:
-            $ref: '#/components/schemas/SouthboundMapping'
-        tags:
-          type: array
-          description: The tags defined for this adapter
-          items:
-            $ref: '#/components/schemas/DomainTag'
-    AdaptersList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Adapter'
-      required:
-        - items
+          description: The userName associated with the user
     ApiBearerToken:
       type: object
       properties:
         token:
           type: string
           description: The token associated a set of authenticated credentials
-    BehaviorPolicy:
+    Error:
       type: object
-      description: A policy which is used to validate and execute certain actions based on the validation result.
       properties:
-        behavior:
-          $ref: '#/components/schemas/BehaviorPolicyBehavior'
-        createdAt:
+        detail:
           type: string
-          format: date-time
-          description: The formatted UTC timestamp indicating when the policy was created.
-          readOnly: true
-        deserialization:
-          $ref: '#/components/schemas/BehaviorPolicyDeserialization'
-        id:
+          description: Detailed contextual description of this error
+        parameter:
           type: string
-          description: The unique identifier of the policy.
-        lastUpdatedAt:
+          description: The parameter causing the issue
+      required:
+        - detail
+    ProblemDetails:
+      type: object
+      properties:
+        code:
           type: string
-          format: date-time
-          description: The formatted UTC timestamp indicating when the policy was updated the last time.
-          readOnly: true
-        matching:
-          $ref: '#/components/schemas/BehaviorPolicyMatching'
-        onTransitions:
+          description: Correlation id
+        detail:
+          type: string
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/BehaviorPolicyOnTransition'
+            $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
       required:
-        - behavior
-        - id
-        - matching
+        - title
+    PaginationCursor:
+      type: object
+      description: Links for pagination
+      nullable: true
+      properties:
+        next:
+          type: string
     BehaviorPolicyBehavior:
       type: object
       description: The behavior referenced by the policy, that is validated by the policy.
@@ -4554,14 +4493,19 @@ components:
           description: The unique identifier of a pre-defined behavior.
       required:
         - id
-    BehaviorPolicyDeserialization:
+    SchemaReference:
       type: object
-      description: The deserializers used by the policy for particular message and/or payload types.
+      description: A schema reference is a unique identifier for a schema.
       properties:
-        publish:
-          $ref: '#/components/schemas/BehaviorPolicyDeserializer'
-        will:
-          $ref: '#/components/schemas/BehaviorPolicyDeserializer'
+        schemaId:
+          type: string
+          description: The identifier of the schema.
+        version:
+          type: string
+          description: The version of the schema. The value "latest" may be used to always refer to the latest schema.
+      required:
+        - schemaId
+        - version
     BehaviorPolicyDeserializer:
       type: object
       description: The deserializer applied to a particular message or payload type.
@@ -4570,17 +4514,14 @@ components:
           $ref: '#/components/schemas/SchemaReference'
       required:
         - schema
-    BehaviorPolicyList:
+    BehaviorPolicyDeserialization:
       type: object
-      description: A listing of behavior policies.
+      description: The deserializers used by the policy for particular message and/or payload types.
       properties:
-        _links:
-          $ref: '#/components/schemas/PaginationCursor'
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/BehaviorPolicy'
+        publish:
+          $ref: '#/components/schemas/BehaviorPolicyDeserializer'
+        will:
+          $ref: '#/components/schemas/BehaviorPolicyDeserializer'
     BehaviorPolicyMatching:
       type: object
       description: The matching rules the policy applies.
@@ -4590,6 +4531,23 @@ components:
           description: The regex pattern to match the client id against.
       required:
         - clientIdRegex
+    PolicyOperation:
+      type: object
+      description: The pipeline to execute when this action is triggered. The operations in the pipeline are executed in order.
+      properties:
+        arguments:
+          type: object
+          description: The required arguments of the referenced function.
+        functionId:
+          type: string
+          description: The unique id of the referenced function to execute in this operation.
+        id:
+          type: string
+          description: The unique id of the operation in the pipeline.
+      required:
+        - arguments
+        - functionId
+        - id
     BehaviorPolicyOnEvent:
       type: object
       description: One or more operations that are triggered on the event. When this field is empty, the transition does not trigger any operations.
@@ -4625,6 +4583,768 @@ components:
       required:
         - fromState
         - toState
+    BehaviorPolicy:
+      type: object
+      description: A policy which is used to validate and execute certain actions based on the validation result.
+      properties:
+        behavior:
+          $ref: '#/components/schemas/BehaviorPolicyBehavior'
+        createdAt:
+          type: string
+          format: date-time
+          description: The formatted UTC timestamp indicating when the policy was created.
+          readOnly: true
+        deserialization:
+          $ref: '#/components/schemas/BehaviorPolicyDeserialization'
+        id:
+          type: string
+          description: The unique identifier of the policy.
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          description: The formatted UTC timestamp indicating when the policy was updated the last time.
+          readOnly: true
+        matching:
+          $ref: '#/components/schemas/BehaviorPolicyMatching'
+        onTransitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/BehaviorPolicyOnTransition'
+      required:
+        - behavior
+        - id
+        - matching
+    BehaviorPolicyList:
+      type: object
+      description: A listing of behavior policies.
+      properties:
+        _links:
+          $ref: '#/components/schemas/PaginationCursor'
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/BehaviorPolicy'
+    JsonNode:
+      type: object
+      description: The arguments of the fsm derived from the behavior policy.
+    FsmStateInformationItem:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        arguments:
+          $ref: '#/components/schemas/JsonNode'
+        behaviorId:
+          type: string
+          description: The unique identifier of the policy.
+        firstSetAt:
+          type: string
+          description: The timestamp when this state was set the first time.
+        policyId:
+          type: string
+          description: The unique identifier of the policy.
+        stateName:
+          type: string
+          description: The name of the fsm state.
+        stateType:
+          type: string
+          description: The type of the fsm state.
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+            description: The variables for this fsm.
+          description: The variables for this fsm.
+    FsmStatesInformationListItem:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/FsmStateInformationItem'
+      required:
+        - items
+    DataPolicyMatching:
+      type: object
+      description: The matching rules the policy applies.
+      properties:
+        topicFilter:
+          type: string
+          description: The topic filter for which the policy is matched.
+      required:
+        - topicFilter
+    DataPolicyAction:
+      type: object
+      description: One or more operations the outcome of the validation triggers.  When this field is empty, the outcome of the policy validation does not trigger any operations.
+      properties:
+        pipeline:
+          type: array
+          description: The pipeline to execute, when this action is triggered. The operations in the pipeline are executed in-order.
+          items:
+            $ref: '#/components/schemas/PolicyOperation'
+    DataPolicyValidator:
+      type: object
+      description: A policy validator which executes the defined validation.
+      properties:
+        arguments:
+          type: object
+          description: The required arguments of the referenced validator type.
+        type:
+          type: string
+          description: The type of the validator.
+          enum:
+            - SCHEMA
+      required:
+        - arguments
+        - type
+    DataPolicyValidation:
+      type: object
+      description: The section of the policy that defines how incoming MQTT messages are validated. If this section is empty, the result of the policy validation is always successful.
+      properties:
+        validators:
+          type: array
+          description: The validators of the policy.
+          items:
+            $ref: '#/components/schemas/DataPolicyValidator'
+    DataPolicy:
+      type: object
+      description: A data policy which is used to validate and execute certain actions based on the validation result.
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          description: The formatted UTC timestamp indicating when the policy was created.
+          readOnly: true
+        id:
+          type: string
+          description: The unique identifier of the policy.
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          description: The formatted UTC timestamp indicating when the policy was updated the last time.
+          readOnly: true
+        matching:
+          $ref: '#/components/schemas/DataPolicyMatching'
+        onFailure:
+          $ref: '#/components/schemas/DataPolicyAction'
+        onSuccess:
+          $ref: '#/components/schemas/DataPolicyAction'
+        validation:
+          $ref: '#/components/schemas/DataPolicyValidation'
+      required:
+        - id
+        - matching
+    DataPolicyList:
+      type: object
+      description: A listing of data policies.
+      properties:
+        _links:
+          $ref: '#/components/schemas/PaginationCursor'
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DataPolicy'
+    Errors:
+      type: object
+    PolicySchema:
+      type: object
+      properties:
+        arguments:
+          type: object
+          additionalProperties:
+            type: string
+            description: The schema type dependent arguments.
+          description: The schema type dependent arguments.
+        createdAt:
+          type: string
+          description: The formatted UTC timestamp when the schema was created.
+          readOnly: true
+        id:
+          type: string
+          description: The unique identifier of the schema.
+        schemaDefinition:
+          type: string
+          description: The base64 encoded schema definition.
+        type:
+          type: string
+          description: The type of the schema.
+        version:
+          type: integer
+          format: int32
+          description: The version of the schema.
+          readOnly: true
+      required:
+        - id
+        - schemaDefinition
+        - type
+    SchemaList:
+      type: object
+      description: A listing of schemas.
+      properties:
+        _links:
+          $ref: '#/components/schemas/PaginationCursor'
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/PolicySchema'
+    Script:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: The formatted UTC timestamp when the script was created.
+          readOnly: true
+        description:
+          type: string
+          description: A string of free-form text describing the function.
+        functionType:
+          type: string
+          description: The type of the function.
+          enum:
+            - TRANSFORMATION
+        id:
+          type: string
+          description: The unique identifier of the script.
+        source:
+          type: string
+          description: The base64 encoded function source code.
+        version:
+          type: integer
+          format: int32
+          description: The version of the script.
+          readOnly: true
+      required:
+        - functionType
+        - id
+        - source
+    ScriptList:
+      type: object
+      description: A listing of scripts.
+      properties:
+        _links:
+          $ref: '#/components/schemas/PaginationCursor'
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Script'
+    Capability:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: A description for the capability
+        displayName:
+          type: string
+          description: A human readable name, intended to be used to display at front end.
+        id:
+          type: string
+          enum:
+            - config-writeable
+            - bi-directional protocol adapters
+            - control-plane-connectivity
+            - data-hub
+            - mqtt-persistence
+          description: The identifier of this capability
+    CapabilityList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Capability'
+      required:
+        - items
+    Link:
+      type: object
+      description: An associated link
+      nullable: true
+      properties:
+        description:
+          type: string
+          description: The optional link display description
+          nullable: true
+        displayText:
+          type: string
+          description: The link display text
+          nullable: true
+        external:
+          type: boolean
+          description: A mandatory Boolean indicating if the link is internal to the context or an external webLink
+        imageUrl:
+          type: string
+          description: An optional imageUrl associated with the Link
+          nullable: true
+        target:
+          type: string
+          description: An optional target associated with the Link
+          nullable: true
+        url:
+          type: string
+          description: A mandatory URL associated with the Link
+      required:
+        - url
+    LinkList:
+      type: object
+      description: A list of resources to render
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Link'
+      required:
+        - items
+    EnvironmentProperties:
+      type: object
+      description: A map of properties relating to the installation
+      nullable: true
+      properties:
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+            description: Map of properties that are returned by this endpoint
+          description: Map of properties that are returned by this endpoint
+    Extension:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        author:
+          type: string
+          description: The extension author
+        description:
+          type: string
+          description: The extension description
+          nullable: true
+        id:
+          type: string
+          description: A mandatory ID associated with the Extension
+        installed:
+          type: boolean
+          description: Is the extension installed
+          nullable: true
+        link:
+          $ref: '#/components/schemas/Link'
+        name:
+          type: string
+          description: The extension name
+        priority:
+          type: integer
+          format: int32
+          description: The extension priority
+        version:
+          type: string
+          description: The extension version
+    ExtensionList:
+      type: object
+      description: The extensions available for installation
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Extension'
+      required:
+        - items
+    FirstUseInformation:
+      type: object
+      description: Information relating to the firstuse experience
+      properties:
+        firstUse:
+          type: boolean
+          description: A mandatory Boolean indicating if the gateway is in firstUse mode
+        firstUseDescription:
+          type: string
+          description: A description string to use when firstUse = true.
+          nullable: true
+        firstUseTitle:
+          type: string
+          description: A header string to use when firstUse = true.
+          nullable: true
+        prefillPassword:
+          type: string
+          description: A String indicating if the prefill data for the username/password page.
+          nullable: true
+        prefillUsername:
+          type: string
+          description: A String indicating if the prefill data for the username/password page.
+          nullable: true
+      required:
+        - firstUse
+    Module:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        author:
+          type: string
+          description: The module author
+        description:
+          type: string
+          description: The module description
+          nullable: true
+        documentationLink:
+          $ref: '#/components/schemas/Link'
+        id:
+          type: string
+          description: A mandatory ID associated with the Module
+        installed:
+          type: boolean
+          description: Is the module installed
+          nullable: true
+        logoUrl:
+          $ref: '#/components/schemas/Link'
+        moduleType:
+          type: string
+          description: The type of the module
+          nullable: true
+        name:
+          type: string
+          description: The module name
+        priority:
+          type: integer
+          format: int32
+          description: The module priority
+        provisioningLink:
+          $ref: '#/components/schemas/Link'
+        version:
+          type: string
+          description: The module version
+    ModuleList:
+      type: object
+      description: The modules available for installation
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Module'
+      required:
+        - items
+    GatewayConfiguration:
+      type: object
+      properties:
+        cloudLink:
+          $ref: '#/components/schemas/Link'
+        ctas:
+          $ref: '#/components/schemas/LinkList'
+        documentationLink:
+          $ref: '#/components/schemas/Link'
+        environment:
+          $ref: '#/components/schemas/EnvironmentProperties'
+        extensions:
+          $ref: '#/components/schemas/ExtensionList'
+        firstUseInformation:
+          $ref: '#/components/schemas/FirstUseInformation'
+        gitHubLink:
+          $ref: '#/components/schemas/Link'
+        hivemqId:
+          type: string
+          description: The current id of hivemq edge. Changes at restart.
+        modules:
+          $ref: '#/components/schemas/ModuleList'
+        resources:
+          $ref: '#/components/schemas/LinkList'
+        trackingAllowed:
+          type: boolean
+          description: Is the tracking of user actions allowed.
+    Notification:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: The notification description
+          nullable: true
+        level:
+          type: string
+          description: The notification level
+          enum:
+            - NOTICE
+            - WARNING
+            - ERROR
+        link:
+          $ref: '#/components/schemas/Link'
+        title:
+          type: string
+          description: The notification title
+    NotificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Notification'
+      required:
+        - items
+    Listener:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: The extension description
+          nullable: true
+        externalHostname:
+          type: string
+          description: The external hostname
+          nullable: true
+        hostName:
+          type: string
+          description: A mandatory ID hostName with the Listener
+        name:
+          type: string
+          description: The listener name
+        port:
+          type: integer
+          format: int32
+          description: The listener port
+        protocol:
+          type: string
+          description: A protocol that this listener services
+          nullable: true
+        transport:
+          type: string
+          description: The underlying transport that this listener uses
+          enum:
+            - TCP
+            - UDP
+            - DCCP
+            - SCTP
+            - RSVP
+            - QUIC
+          nullable: true
+    ListenerList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Listener'
+      required:
+        - items
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+    BridgeCustomUserProperty:
+      type: object
+      description: The customUserProperties for this subscription
+      properties:
+        key:
+          type: string
+          format: string
+          description: The key the from the property
+        value:
+          type: string
+          format: string
+          description: The value the from the property
+      required:
+        - key
+        - value
+    LocalBridgeSubscription:
+      type: object
+      description: localSubscriptions associated with the bridge
+      properties:
+        customUserProperties:
+          type: array
+          description: The customUserProperties for this subscription
+          items:
+            $ref: '#/components/schemas/BridgeCustomUserProperty'
+        destination:
+          type: string
+          description: The destination topic for this filter set.
+          example: some/topic/value
+        excludes:
+          type: array
+          description: The exclusion patterns
+          items:
+            type: string
+            description: The exclusion patterns
+            nullable: true
+          nullable: true
+        filters:
+          type: array
+          description: The filters for this subscription.
+          example: some/topic/value
+          items:
+            type: string
+            description: The filters for this subscription.
+            example: some/topic/value
+        maxQoS:
+          type: integer
+          format: int32
+          default: 0
+          description: The maxQoS for this subscription.
+          enum:
+            - 0
+            - 1
+            - 2
+          maximum: 2
+          minimum: 0
+        preserveRetain:
+          type: boolean
+          description: The preserveRetain for this subscription
+        queueLimit:
+          type: integer
+          format: int64
+          description: The limit of this bridge for QoS-1 and QoS-2 messages.
+          nullable: true
+      required:
+        - destination
+        - filters
+        - maxQoS
+    BridgeSubscription:
+      type: object
+      description: remoteSubscriptions associated with the bridge
+      properties:
+        customUserProperties:
+          type: array
+          description: The customUserProperties for this subscription
+          items:
+            $ref: '#/components/schemas/BridgeCustomUserProperty'
+        destination:
+          type: string
+          description: The destination topic for this filter set.
+          example: some/topic/value
+        filters:
+          type: array
+          description: The filters for this subscription.
+          example: some/topic/value
+          items:
+            type: string
+            description: The filters for this subscription.
+            example: some/topic/value
+        maxQoS:
+          type: integer
+          format: int32
+          default: 0
+          description: The maxQoS for this subscription.
+          enum:
+            - 0
+            - 1
+            - 2
+          maximum: 2
+          minimum: 0
+        preserveRetain:
+          type: boolean
+          description: The preserveRetain for this subscription
+      required:
+        - destination
+        - filters
+        - maxQoS
+    Status:
+      type: object
+      description: Information associated with the runtime of this adapter
+      properties:
+        connection:
+          type: string
+          description: A mandatory connection status field.
+          enum:
+            - CONNECTED
+            - DISCONNECTED
+            - STATELESS
+            - UNKNOWN
+            - ERROR
+        id:
+          type: string
+          description: The identifier of the object
+        lastActivity:
+          type: string
+          format: date-time
+          description: The datetime of the last activity through this connection
+        message:
+          type: string
+          description: A message associated with the state of a connection
+        runtime:
+          type: string
+          description: A object status field.
+          enum:
+            - STARTED
+            - STOPPED
+        startedAt:
+          type: string
+          format: date-time
+          description: The datetime the object was 'started' in the system.
+        type:
+          type: string
+          description: The type of the object
+    TlsConfiguration:
+      type: object
+      description: tlsConfiguration associated with the bridge
+      nullable: true
+      properties:
+        cipherSuites:
+          type: array
+          description: The cipherSuites from the config
+          items:
+            type: string
+            description: The cipherSuites from the config
+        enabled:
+          type: boolean
+          description: If TLS is used
+        handshakeTimeout:
+          type: integer
+          format: int32
+          description: The handshakeTimeout from the config
+        keystorePassword:
+          type: string
+          description: The keystorePassword from the config
+        keystorePath:
+          type: string
+          description: The keystorePath from the config
+          nullable: true
+        keystoreType:
+          type: string
+          description: The keystoreType from the config
+        privateKeyPassword:
+          type: string
+          description: The privateKeyPassword from the config
+        protocols:
+          type: array
+          description: The protocols from the config
+          items:
+            type: string
+            description: The protocols from the config
+        truststorePassword:
+          type: string
+          description: The truststorePassword from the config
+        truststorePath:
+          type: string
+          description: The truststorePath from the config
+          nullable: true
+        truststoreType:
+          type: string
+          description: The truststoreType from the config
+        verifyHostname:
+          type: boolean
+          default: false
+          description: The verifyHostname from the config
+    WebsocketConfiguration:
+      type: object
+      description: websocketConfiguration associated with the bridge
+      nullable: true
+      properties:
+        enabled:
+          type: boolean
+          default: false
+          description: If Websockets are used
+        serverPath:
+          type: string
+          default: /mqtt
+          description: The server path used by the bridge client. This must be setup as path at the remote broker
+        subProtocol:
+          type: string
+          default: mqtt
+          description: The sub-protocol used by the bridge client. This must be supported by the remote broker
     Bridge:
       type: object
       properties:
@@ -4721,21 +5441,6 @@ components:
         - keepAlive
         - port
         - sessionExpiry
-    BridgeCustomUserProperty:
-      type: object
-      description: The customUserProperties for this subscription
-      properties:
-        key:
-          type: string
-          format: string
-          description: The key the from the property
-        value:
-          type: string
-          format: string
-          description: The value the from the property
-      required:
-        - key
-        - value
     BridgeList:
       type: object
       properties:
@@ -4746,217 +5451,82 @@ components:
             $ref: '#/components/schemas/Bridge'
       required:
         - items
-    BridgeSubscription:
+    StatusList:
       type: object
-      description: remoteSubscriptions associated with the bridge
       properties:
-        customUserProperties:
+        items:
           type: array
-          description: The customUserProperties for this subscription
+          description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/BridgeCustomUserProperty'
-        destination:
+            $ref: '#/components/schemas/Status'
+      required:
+        - items
+    StatusTransitionCommand:
+      type: object
+      properties:
+        command:
           type: string
-          description: The destination topic for this filter set.
-          example: some/topic/value
-        filters:
-          type: array
-          description: The filters for this subscription.
-          example: some/topic/value
-          items:
-            type: string
-            description: The filters for this subscription.
-            example: some/topic/value
-        maxQoS:
+          description: The command to perform on the target connection.
+          enum:
+            - START
+            - STOP
+            - RESTART
+    StatusTransitionResult:
+      type: object
+      properties:
+        callbackTimeoutMillis:
           type: integer
           format: int32
-          default: 0
-          description: The maxQoS for this subscription.
+          description: The callback timeout specifies the minimum amount of time (in milliseconds) that the API advises the client to backoff before rechecking the (runtime or connection) status of this object. This is only applicable when the status is 'PENDING'.
+        identifier:
+          type: string
+          description: The identifier of the object in transition
+        status:
+          type: string
+          description: The status to perform on the target connection.
           enum:
-            - 0
-            - 1
-            - 2
-          maximum: 2
-          minimum: 0
-        preserveRetain:
-          type: boolean
-          description: The preserveRetain for this subscription
-      required:
-        - destination
-        - filters
-        - maxQoS
-    Capability:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        description:
-          type: string
-          description: A description for the capability
-        displayName:
-          type: string
-          description: A human readable name, intended to be used to display at front end.
-        id:
-          type: string
-          enum:
-            - config-writeable
-            - bi-directional protocol adapters
-            - control-plane-connectivity
-            - data-hub
-            - mqtt-persistence
-          description: The identifier of this capability
-    CapabilityList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Capability'
-      required:
-        - items
-    DataPoint:
-      type: object
-      properties:
-        sampleTime:
-          type: string
-          format: date-time
-          description: Time the data-point was generated
-          nullable: true
-        value:
-          type: integer
-          format: int64
-          description: The value of the data point
-    DataPolicy:
-      type: object
-      description: A data policy which is used to validate and execute certain actions based on the validation result.
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-          description: The formatted UTC timestamp indicating when the policy was created.
-          readOnly: true
-        id:
-          type: string
-          description: The unique identifier of the policy.
-        lastUpdatedAt:
-          type: string
-          format: date-time
-          description: The formatted UTC timestamp indicating when the policy was updated the last time.
-          readOnly: true
-        matching:
-          $ref: '#/components/schemas/DataPolicyMatching'
-        onFailure:
-          $ref: '#/components/schemas/DataPolicyAction'
-        onSuccess:
-          $ref: '#/components/schemas/DataPolicyAction'
-        validation:
-          $ref: '#/components/schemas/DataPolicyValidation'
-      required:
-        - id
-        - matching
-    DataPolicyAction:
-      type: object
-      description: One or more operations the outcome of the validation triggers.  When this field is empty, the outcome of the policy validation does not trigger any operations.
-      properties:
-        pipeline:
-          type: array
-          description: The pipeline to execute, when this action is triggered. The operations in the pipeline are executed in-order.
-          items:
-            $ref: '#/components/schemas/PolicyOperation'
-    DataPolicyList:
-      type: object
-      description: A listing of data policies.
-      properties:
-        _links:
-          $ref: '#/components/schemas/PaginationCursor'
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/DataPolicy'
-    DataPolicyMatching:
-      type: object
-      description: The matching rules the policy applies.
-      properties:
-        topicFilter:
-          type: string
-          description: The topic filter for which the policy is matched.
-      required:
-        - topicFilter
-    DataPolicyValidation:
-      type: object
-      description: The section of the policy that defines how incoming MQTT messages are validated. If this section is empty, the result of the policy validation is always successful.
-      properties:
-        validators:
-          type: array
-          description: The validators of the policy.
-          items:
-            $ref: '#/components/schemas/DataPolicyValidator'
-    DataPolicyValidator:
-      type: object
-      description: A policy validator which executes the defined validation.
-      properties:
-        arguments:
-          type: object
-          description: The required arguments of the referenced validator type.
+            - PENDING
+            - COMPLETE
         type:
           type: string
-          description: The type of the validator.
+          description: The type of the object in transition
+    TypeIdentifier:
+      type: object
+      description: The unique id of the event object
+      properties:
+        fullQualifiedIdentifier:
+          type: string
+        identifier:
+          type: string
+          description: The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system
+        type:
+          type: string
+          description: The type of the associated object/entity
           enum:
-            - SCHEMA
+            - BRIDGE
+            - ADAPTER
+            - ADAPTER_TYPE
+            - EVENT
+            - USER
       required:
-        - arguments
         - type
-    DomainTag:
+    Payload:
       type: object
-      description: List of result items that are returned by this endpoint
+      description: Object to denote the payload of the event
       properties:
-        definition:
-          $ref: '#/components/schemas/JsonNode'
-        description:
+        content:
           type: string
-          description: A user created description for this tag.
-        name:
+          description: The content of the payload encoded as a string
+        contentType:
           type: string
-          format: mqtt-tag
-          description: The name of the tag that identifies it within this edge instance.
+          description: The content type of the payload that the event contains
+          enum:
+            - JSON
+            - PLAIN_TEXT
+            - XML
+            - CSV
       required:
-        - definition
-        - name
-    DomainTagList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/DomainTag'
-      required:
-        - items
-    EnvironmentProperties:
-      type: object
-      description: A map of properties relating to the installation
-      nullable: true
-      properties:
-        properties:
-          type: object
-          additionalProperties:
-            type: string
-            description: Map of properties that are returned by this endpoint
-          description: Map of properties that are returned by this endpoint
-    Error:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Detailed contextual description of this error
-        parameter:
-          type: string
-          description: The parameter causing the issue
-      required:
-        - detail
-    Errors:
-      type: object
+        - contentType
     Event:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5004,409 +5574,33 @@ components:
             $ref: '#/components/schemas/Event'
       required:
         - items
-    Extension:
+    Adapter:
       type: object
-      description: List of result items that are returned by this endpoint
       properties:
-        author:
-          type: string
-          description: The extension author
-        description:
-          type: string
-          description: The extension description
-          nullable: true
-        id:
-          type: string
-          description: A mandatory ID associated with the Extension
-        installed:
-          type: boolean
-          description: Is the extension installed
-          nullable: true
-        link:
-          $ref: '#/components/schemas/Link'
-        name:
-          type: string
-          description: The extension name
-        priority:
-          type: integer
-          format: int32
-          description: The extension priority
-        version:
-          type: string
-          description: The extension version
-    ExtensionList:
-      type: object
-      description: The extensions available for installation
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Extension'
-      required:
-        - items
-    FieldMapping:
-      type: object
-      description: Defines how incoming data should be transformed before being sent out.
-      properties:
-        instructions:
-          type: array
-          description: List of instructions to be applied to incoming data
-          items:
-            $ref: '#/components/schemas/Instruction'
-      required:
-        - instructions
-    FirstUseInformation:
-      type: object
-      description: Information relating to the firstuse experience
-      properties:
-        firstUse:
-          type: boolean
-          description: A mandatory Boolean indicating if the gateway is in firstUse mode
-        firstUseDescription:
-          type: string
-          description: A description string to use when firstUse = true.
-          nullable: true
-        firstUseTitle:
-          type: string
-          description: A header string to use when firstUse = true.
-          nullable: true
-        prefillPassword:
-          type: string
-          description: A String indicating if the prefill data for the username/password page.
-          nullable: true
-        prefillUsername:
-          type: string
-          description: A String indicating if the prefill data for the username/password page.
-          nullable: true
-      required:
-        - firstUse
-    FsmStateInformationItem:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        arguments:
+        config:
           $ref: '#/components/schemas/JsonNode'
-        behaviorId:
-          type: string
-          description: The unique identifier of the policy.
-        firstSetAt:
-          type: string
-          description: The timestamp when this state was set the first time.
-        policyId:
-          type: string
-          description: The unique identifier of the policy.
-        stateName:
-          type: string
-          description: The name of the fsm state.
-        stateType:
-          type: string
-          description: The type of the fsm state.
-        variables:
-          type: object
-          additionalProperties:
-            type: string
-            description: The variables for this fsm.
-          description: The variables for this fsm.
-    FsmStatesInformationListItem:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/FsmStateInformationItem'
-      required:
-        - items
-    GatewayConfiguration:
-      type: object
-      properties:
-        cloudLink:
-          $ref: '#/components/schemas/Link'
-        ctas:
-          $ref: '#/components/schemas/LinkList'
-        documentationLink:
-          $ref: '#/components/schemas/Link'
-        environment:
-          $ref: '#/components/schemas/EnvironmentProperties'
-        extensions:
-          $ref: '#/components/schemas/ExtensionList'
-        firstUseInformation:
-          $ref: '#/components/schemas/FirstUseInformation'
-        gitHubLink:
-          $ref: '#/components/schemas/Link'
-        hivemqId:
-          type: string
-          description: The current id of hivemq edge. Changes at restart.
-        modules:
-          $ref: '#/components/schemas/ModuleList'
-        resources:
-          $ref: '#/components/schemas/LinkList'
-        trackingAllowed:
-          type: boolean
-          description: Is the tracking of user actions allowed.
-    HealthStatus:
-      type: object
-      properties:
-        status:
-          type: string
-    ISA95ApiBean:
-      type: object
-      properties:
-        area:
-          type: string
-          description: The area
-          nullable: true
-          pattern: ^[a-zA-Z0-9 -_]*$
-        enabled:
-          type: boolean
-          description: Should UNS be available
-        enterprise:
-          type: string
-          description: The enterprise
-          nullable: true
-          pattern: ^[a-zA-Z0-9 -_]*
-        prefixAllTopics:
-          type: boolean
-          description: Should all topics be prefixed with UNS placeholders
-        productionLine:
-          type: string
-          description: The productionLine
-          nullable: true
-          pattern: ^[a-zA-Z0-9 -_]*$
-        site:
-          type: string
-          description: The site
-          nullable: true
-          pattern: ^[a-zA-Z0-9 -_]*$
-        workCell:
-          type: string
-          description: The workCell
-          nullable: true
-          pattern: ^[a-zA-Z0-9 -_]*$
-    Instruction:
-      type: object
-      description: List of instructions to be applied to incoming data
-      properties:
-        sourceRef:
-          $ref: '#/components/schemas/DataIdentifierReference'
-        destination:
-          type: string
-          description: The field in the output object where the data will be written to
-        source:
-          type: string
-          description: The field in the input object where the data will be read from
-      required:
-        - destination
-        - source
-    JsonNode:
-      type: object
-      description: The arguments of the fsm derived from the behavior policy.
-    Link:
-      type: object
-      description: An associated link
-      nullable: true
-      properties:
-        description:
-          type: string
-          description: The optional link display description
-          nullable: true
-        displayText:
-          type: string
-          description: The link display text
-          nullable: true
-        external:
-          type: boolean
-          description: A mandatory Boolean indicating if the link is internal to the context or an external webLink
-        imageUrl:
-          type: string
-          description: An optional imageUrl associated with the Link
-          nullable: true
-        target:
-          type: string
-          description: An optional target associated with the Link
-          nullable: true
-        url:
-          type: string
-          description: A mandatory URL associated with the Link
-      required:
-        - url
-    LinkList:
-      type: object
-      description: A list of resources to render
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Link'
-      required:
-        - items
-    Listener:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        description:
-          type: string
-          description: The extension description
-          nullable: true
-        externalHostname:
-          type: string
-          description: The external hostname
-          nullable: true
-        hostName:
-          type: string
-          description: A mandatory ID hostName with the Listener
-        name:
-          type: string
-          description: The listener name
-        port:
-          type: integer
-          format: int32
-          description: The listener port
-        protocol:
-          type: string
-          description: A protocol that this listener services
-          nullable: true
-        transport:
-          type: string
-          description: The underlying transport that this listener uses
-          enum:
-            - TCP
-            - UDP
-            - DCCP
-            - SCTP
-            - RSVP
-            - QUIC
-          nullable: true
-    ListenerList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Listener'
-      required:
-        - items
-    LocalBridgeSubscription:
-      type: object
-      description: localSubscriptions associated with the bridge
-      properties:
-        customUserProperties:
-          type: array
-          description: The customUserProperties for this subscription
-          items:
-            $ref: '#/components/schemas/BridgeCustomUserProperty'
-        destination:
-          type: string
-          description: The destination topic for this filter set.
-          example: some/topic/value
-        excludes:
-          type: array
-          description: The exclusion patterns
-          items:
-            type: string
-            description: The exclusion patterns
-            nullable: true
-          nullable: true
-        filters:
-          type: array
-          description: The filters for this subscription.
-          example: some/topic/value
-          items:
-            type: string
-            description: The filters for this subscription.
-            example: some/topic/value
-        maxQoS:
-          type: integer
-          format: int32
-          default: 0
-          description: The maxQoS for this subscription.
-          enum:
-            - 0
-            - 1
-            - 2
-          maximum: 2
-          minimum: 0
-        preserveRetain:
-          type: boolean
-          description: The preserveRetain for this subscription
-        queueLimit:
-          type: integer
-          format: int64
-          description: The limit of this bridge for QoS-1 and QoS-2 messages.
-          nullable: true
-      required:
-        - destination
-        - filters
-        - maxQoS
-    Metric:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        name:
-          type: string
-          description: The name of the metric
-    MetricList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Metric'
-      required:
-        - items
-    Module:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        author:
-          type: string
-          description: The module author
-        description:
-          type: string
-          description: The module description
-          nullable: true
-        documentationLink:
-          $ref: '#/components/schemas/Link'
         id:
           type: string
-          description: A mandatory ID associated with the Module
-        installed:
-          type: boolean
-          description: Is the module installed
-          nullable: true
-        logoUrl:
-          $ref: '#/components/schemas/Link'
-        moduleType:
+          format: string
+          description: The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.
+          maxLength: 500
+          minLength: 1
+          pattern: ^([a-zA-Z_0-9-_])*$
+        status:
+          $ref: '#/components/schemas/Status'
+        type:
           type: string
-          description: The type of the module
-          nullable: true
-        name:
-          type: string
-          description: The module name
-        priority:
-          type: integer
-          format: int32
-          description: The module priority
-        provisioningLink:
-          $ref: '#/components/schemas/Link'
-        version:
-          type: string
-          description: The module version
-    ModuleList:
-      type: object
-      description: The modules available for installation
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Module'
+          description: The adapter type associated with this instance
       required:
-        - items
+        - id
+    QoS:
+      type: string
+      description: The maximum MQTT-QoS for the outgoing messages.
+      enum:
+        - AT_MOST_ONCE
+        - AT_LEAST_ONCE
+        - EXACTLY_ONCE
+      default: EXACTLY_ONCE
     MqttUserProperty:
       type: object
       description: User properties to be added to each outgoing mqtt message.
@@ -5452,44 +5646,107 @@ components:
       required:
         - tagName
         - topic
-    NorthboundMappingList:
+    DataIdentifierReference:
       type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/NorthboundMapping'
+      description: A reference to one of the data identifiers (topic filter or tag) in Edge
       required:
-        - items
-    Notification:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: The name (segmented) of the tag or topic filter
+        type:
+          type: string
+          enum:
+            - TAG
+            - TOPIC_FILTER
+    Instruction:
+      type: object
+      description: List of instructions to be applied to incoming data
+      properties:
+        sourceRef:
+          $ref: '#/components/schemas/DataIdentifierReference'
+        destination:
+          type: string
+          description: The field in the output object where the data will be written to
+        source:
+          type: string
+          description: The field in the input object where the data will be read from
+      required:
+        - destination
+        - source
+    FieldMapping:
+      type: object
+      description: Defines how incoming data should be transformed before being sent out.
+      properties:
+        instructions:
+          type: array
+          description: List of instructions to be applied to incoming data
+          items:
+            $ref: '#/components/schemas/Instruction'
+      required:
+        - instructions
+    SouthboundMapping:
       type: object
       description: List of result items that are returned by this endpoint
       properties:
+        fieldMapping:
+          $ref: '#/components/schemas/FieldMapping'
+        tagName:
+          type: string
+          format: mqtt-tag
+          description: The tag for which values hould be collected and sent out.
+        topicFilter:
+          type: string
+          description: The filter defining what topics we will receive messages from.
+      required:
+        - tagName
+        - topicFilter
+    DomainTag:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        definition:
+          $ref: '#/components/schemas/JsonNode'
         description:
           type: string
-          description: The notification description
-          nullable: true
-        level:
+          description: A user created description for this tag.
+        name:
           type: string
-          description: The notification level
-          enum:
-            - NOTICE
-            - WARNING
-            - ERROR
-        link:
-          $ref: '#/components/schemas/Link'
-        title:
-          type: string
-          description: The notification title
-    NotificationList:
+          format: mqtt-tag
+          description: The name of the tag that identifies it within this edge instance.
+      required:
+        - definition
+        - name
+    AdapterConfig:
+      type: object
+      properties:
+        config:
+          $ref: '#/components/schemas/Adapter'
+        northboundMappings:
+          type: array
+          description: The northbound mappings for this adapter
+          items:
+            $ref: '#/components/schemas/NorthboundMapping'
+        southboundMappings:
+          type: array
+          description: The southbound mappings for this adapter
+          items:
+            $ref: '#/components/schemas/SouthboundMapping'
+        tags:
+          type: array
+          description: The tags defined for this adapter
+          items:
+            $ref: '#/components/schemas/DomainTag'
+    AdaptersList:
       type: object
       properties:
         items:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/Notification'
+            $ref: '#/components/schemas/Adapter'
       required:
         - items
     ObjectNode:
@@ -5516,88 +5773,81 @@ components:
           type: boolean
         value:
           type: string
-    PaginationCursor:
-      type: object
-      description: Links for pagination
-      nullable: true
-      properties:
-        next:
-          type: string
-    Payload:
-      type: object
-      description: Object to denote the payload of the event
-      properties:
-        content:
-          type: string
-          description: The content of the payload encoded as a string
-        contentType:
-          type: string
-          description: The content type of the payload that the event contains
-          enum:
-            - JSON
-            - PLAIN_TEXT
-            - XML
-            - CSV
-      required:
-        - contentType
-    PayloadSample:
-      type: object
-      description: List of result items that are returned by this endpoint
-      properties:
-        payload:
-          type: string
-          description: The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.
-      required:
-        - payload
-    PayloadSampleList:
+    ValuesTree:
       type: object
       properties:
         items:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/PayloadSample'
+            $ref: '#/components/schemas/ObjectNode'
       required:
         - items
-    PolicyOperation:
-      type: object
-      description: The pipeline to execute when this action is triggered. The operations in the pipeline are executed in order.
-      properties:
-        arguments:
-          type: object
-          description: The required arguments of the referenced function.
-        functionId:
-          type: string
-          description: The unique id of the referenced function to execute in this operation.
-        id:
-          type: string
-          description: The unique id of the operation in the pipeline.
-      required:
-        - arguments
-        - functionId
-        - id
-    ProblemDetails:
+    NorthboundMappingList:
       type: object
       properties:
-        code:
-          type: string
-          description: Correlation id
-        detail:
-          type: string
-        errors:
+        items:
           type: array
+          description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/Error'
-        status:
-          type: integer
-          format: int32
-        title:
-          type: string
-        type:
-          type: string
-          format: uri
+            $ref: '#/components/schemas/NorthboundMapping'
       required:
-        - title
+        - items
+    SouthboundMappingList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/SouthboundMapping'
+      required:
+        - items
+    DomainTagList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DomainTag'
+      required:
+        - items
+    TagSchema:
+      type: object
+      properties:
+        configSchema:
+          $ref: '#/components/schemas/JsonNode'
+        protocolId:
+          type: string
+          description: The id assigned to the protocol adapter type
+    ProtocolAdapterCategory:
+      type: object
+      description: The category of the adapter
+      properties:
+        description:
+          type: string
+          format: string
+          description: The description associated with the category.
+        displayName:
+          type: string
+          format: string
+          description: The display name of the category to be used in HCIs.
+          minLength: 1
+        image:
+          type: string
+          format: string
+          description: The image associated with the category.
+        name:
+          type: string
+          format: string
+          description: The unique name of the category to be used in API communication.
+          maxLength: 256
+          minLength: 1
+          pattern: ^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$
+      required:
+        - displayName
+        - name
     ProtocolAdapter:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5656,33 +5906,6 @@ components:
         version:
           type: string
           description: The installed version of the adapter
-    ProtocolAdapterCategory:
-      type: object
-      description: The category of the adapter
-      properties:
-        description:
-          type: string
-          format: string
-          description: The description associated with the category.
-        displayName:
-          type: string
-          format: string
-          description: The display name of the category to be used in HCIs.
-          minLength: 1
-        image:
-          type: string
-          format: string
-          description: The image associated with the category.
-        name:
-          type: string
-          format: string
-          description: The unique name of the category to be used in API communication.
-          maxLength: 256
-          minLength: 1
-          pattern: ^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$
-      required:
-        - displayName
-        - name
     ProtocolAdaptersList:
       type: object
       properties:
@@ -5693,270 +5916,25 @@ components:
             $ref: '#/components/schemas/ProtocolAdapter'
       required:
         - items
-    QoS:
-      type: string
-      description: The maximum MQTT-QoS for the outgoing messages.
-      enum:
-        - AT_MOST_ONCE
-        - AT_LEAST_ONCE
-        - EXACTLY_ONCE
-      default: EXACTLY_ONCE
-    PolicySchema:
-      type: object
-      properties:
-        arguments:
-          type: object
-          additionalProperties:
-            type: string
-            description: The schema type dependent arguments.
-          description: The schema type dependent arguments.
-        createdAt:
-          type: string
-          description: The formatted UTC timestamp when the schema was created.
-          readOnly: true
-        id:
-          type: string
-          description: The unique identifier of the schema.
-        schemaDefinition:
-          type: string
-          description: The base64 encoded schema definition.
-        type:
-          type: string
-          description: The type of the schema.
-        version:
-          type: integer
-          format: int32
-          description: The version of the schema.
-          readOnly: true
-      required:
-        - id
-        - schemaDefinition
-        - type
-    SchemaList:
-      type: object
-      description: A listing of schemas.
-      properties:
-        _links:
-          $ref: '#/components/schemas/PaginationCursor'
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/PolicySchema'
-    SchemaReference:
-      type: object
-      description: A schema reference is a unique identifier for a schema.
-      properties:
-        schemaId:
-          type: string
-          description: The identifier of the schema.
-        version:
-          type: string
-          description: The version of the schema. The value "latest" may be used to always refer to the latest schema.
-      required:
-        - schemaId
-        - version
-    Script:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          description: The formatted UTC timestamp when the script was created.
-          readOnly: true
-        description:
-          type: string
-          description: A string of free-form text describing the function.
-        functionType:
-          type: string
-          description: The type of the function.
-          enum:
-            - TRANSFORMATION
-        id:
-          type: string
-          description: The unique identifier of the script.
-        source:
-          type: string
-          description: The base64 encoded function source code.
-        version:
-          type: integer
-          format: int32
-          description: The version of the script.
-          readOnly: true
-      required:
-        - functionType
-        - id
-        - source
-    ScriptList:
-      type: object
-      description: A listing of scripts.
-      properties:
-        _links:
-          $ref: '#/components/schemas/PaginationCursor'
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Script'
-    SouthboundMapping:
+    PayloadSample:
       type: object
       description: List of result items that are returned by this endpoint
       properties:
-        fieldMapping:
-          $ref: '#/components/schemas/FieldMapping'
-        tagName:
+        payload:
           type: string
-          format: mqtt-tag
-          description: The tag for which values hould be collected and sent out.
-        topicFilter:
-          type: string
-          description: The filter defining what topics we will receive messages from.
+          description: The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.
       required:
-        - tagName
-        - topicFilter
-    SouthboundMappingList:
+        - payload
+    PayloadSampleList:
       type: object
       properties:
         items:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/SouthboundMapping'
+            $ref: '#/components/schemas/PayloadSample'
       required:
         - items
-    Status:
-      type: object
-      description: Information associated with the runtime of this adapter
-      properties:
-        connection:
-          type: string
-          description: A mandatory connection status field.
-          enum:
-            - CONNECTED
-            - DISCONNECTED
-            - STATELESS
-            - UNKNOWN
-            - ERROR
-        id:
-          type: string
-          description: The identifier of the object
-        lastActivity:
-          type: string
-          format: date-time
-          description: The datetime of the last activity through this connection
-        message:
-          type: string
-          description: A message associated with the state of a connection
-        runtime:
-          type: string
-          description: A object status field.
-          enum:
-            - STARTED
-            - STOPPED
-        startedAt:
-          type: string
-          format: date-time
-          description: The datetime the object was 'started' in the system.
-        type:
-          type: string
-          description: The type of the object
-    StatusList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Status'
-      required:
-        - items
-    StatusTransitionCommand:
-      type: object
-      properties:
-        command:
-          type: string
-          description: The command to perform on the target connection.
-          enum:
-            - START
-            - STOP
-            - RESTART
-    StatusTransitionResult:
-      type: object
-      properties:
-        callbackTimeoutMillis:
-          type: integer
-          format: int32
-          description: The callback timeout specifies the minimum amount of time (in milliseconds) that the API advises the client to backoff before rechecking the (runtime or connection) status of this object. This is only applicable when the status is 'PENDING'.
-        identifier:
-          type: string
-          description: The identifier of the object in transition
-        status:
-          type: string
-          description: The status to perform on the target connection.
-          enum:
-            - PENDING
-            - COMPLETE
-        type:
-          type: string
-          description: The type of the object in transition
-    TagSchema:
-      type: object
-      properties:
-        configSchema:
-          $ref: '#/components/schemas/JsonNode'
-        protocolId:
-          type: string
-          description: The id assigned to the protocol adapter type
-    TlsConfiguration:
-      type: object
-      description: tlsConfiguration associated with the bridge
-      nullable: true
-      properties:
-        cipherSuites:
-          type: array
-          description: The cipherSuites from the config
-          items:
-            type: string
-            description: The cipherSuites from the config
-        enabled:
-          type: boolean
-          description: If TLS is used
-        handshakeTimeout:
-          type: integer
-          format: int32
-          description: The handshakeTimeout from the config
-        keystorePassword:
-          type: string
-          description: The keystorePassword from the config
-        keystorePath:
-          type: string
-          description: The keystorePath from the config
-          nullable: true
-        keystoreType:
-          type: string
-          description: The keystoreType from the config
-        privateKeyPassword:
-          type: string
-          description: The privateKeyPassword from the config
-        protocols:
-          type: array
-          description: The protocols from the config
-          items:
-            type: string
-            description: The protocols from the config
-        truststorePassword:
-          type: string
-          description: The truststorePassword from the config
-        truststorePath:
-          type: string
-          description: The truststorePath from the config
-          nullable: true
-        truststoreType:
-          type: string
-          description: The truststoreType from the config
-        verifyHostname:
-          type: boolean
-          default: false
-          description: The verifyHostname from the config
     TopicFilter:
       type: object
       description: List of result items that are returned by this endpoint
@@ -5984,102 +5962,96 @@ components:
             $ref: '#/components/schemas/TopicFilter'
       required:
         - items
-    TypeIdentifier:
-      type: object
-      description: The unique id of the event object
-      properties:
-        fullQualifiedIdentifier:
-          type: string
-        identifier:
-          type: string
-          description: The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system
-        type:
-          type: string
-          description: The type of the associated object/entity
-          enum:
-            - BRIDGE
-            - ADAPTER
-            - ADAPTER_TYPE
-            - EVENT
-            - USER
-      required:
-        - type
-    UsernamePasswordCredentials:
+    ISA95ApiBean:
       type: object
       properties:
-        password:
+        area:
           type: string
-          description: The password associated with the user
-        userName:
+          description: The area
+          nullable: true
+          pattern: ^[a-zA-Z0-9 -_]*$
+        enabled:
+          type: boolean
+          description: Should UNS be available
+        enterprise:
           type: string
-          description: The userName associated with the user
-    ValuesTree:
+          description: The enterprise
+          nullable: true
+          pattern: ^[a-zA-Z0-9 -_]*
+        prefixAllTopics:
+          type: boolean
+          description: Should all topics be prefixed with UNS placeholders
+        productionLine:
+          type: string
+          description: The productionLine
+          nullable: true
+          pattern: ^[a-zA-Z0-9 -_]*$
+        site:
+          type: string
+          description: The site
+          nullable: true
+          pattern: ^[a-zA-Z0-9 -_]*$
+        workCell:
+          type: string
+          description: The workCell
+          nullable: true
+          pattern: ^[a-zA-Z0-9 -_]*$
+    Metric:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        name:
+          type: string
+          description: The name of the metric
+    MetricList:
       type: object
       properties:
         items:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            $ref: '#/components/schemas/ObjectNode'
+            $ref: '#/components/schemas/Metric'
       required:
         - items
-    WebsocketConfiguration:
+    DataPoint:
       type: object
-      description: websocketConfiguration associated with the bridge
-      nullable: true
       properties:
-        enabled:
-          type: boolean
-          default: false
-          description: If Websockets are used
-        serverPath:
+        sampleTime:
           type: string
-          default: /mqtt
-          description: The server path used by the bridge client. This must be setup as path at the remote broker
-        subProtocol:
-          type: string
-          default: mqtt
-          description: The sub-protocol used by the bridge client. This must be supported by the remote broker
-    CombinerList:
+          format: date-time
+          description: Time the data-point was generated
+          nullable: true
+        value:
+          type: integer
+          format: int64
+          description: The value of the data point
+    EntityType:
+      type: string
+      description: These are the prime entities owning tags and topic filters
+      enum:
+        - ADAPTER
+        - DEVICE
+        - BRIDGE
+        - EDGE_BROKER
+    EntityReference:
       type: object
-      description: The list of Combiner defined in this Edge instance
+      description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Combiner'
-      required:
-        - items
-    Combiner:
-      type: object
-      description: A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping
-      properties:
+        type:
+          $ref: '#/components/schemas/EntityType'
         id:
+          description: The id of the entity being references in the combiner
           type: string
-          format: uuid
-          description: The unique id of the data combiner
-        name:
-          type: string
-          description: The user-facing name of the combiner
-        description:
-          type: string
-          description: The user-facing description of the combiner
-        sources:
-          $ref: '#/components/schemas/EntityReferenceList'
-        mappings:
-          $ref: '#/components/schemas/DataCombiningList'
       required:
         - id
-        - name
-        - sources
-        - mappings
-    DataCombiningList:
+        - type
+    EntityReferenceList:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/DataCombining'
+            $ref: '#/components/schemas/EntityReference'
       required:
         - items
     DataCombining:
@@ -6127,47 +6099,70 @@ components:
         - instructions
         - destination
         - sources
-    EntityReferenceList:
+    DataCombiningList:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/EntityReference'
+            $ref: '#/components/schemas/DataCombining'
       required:
         - items
-    EntityType:
-      type: string
-      description: These are the prime entities owning tags and topic filters
-      enum:
-        - ADAPTER
-        - DEVICE
-        - BRIDGE
-        - EDGE_BROKER
-    EntityReference:
+    Combiner:
       type: object
-      description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
-      properties:
-        type:
-          $ref: '#/components/schemas/EntityType'
-        id:
-          description: The id of the entity being references in the combiner
-          type: string
-      required:
-        - id
-        - type
-    DataIdentifierReference:
-      type: object
-      description: A reference to one of the data identifiers (topic filter or tag) in Edge
-      required:
-        - id
-        - type
+      description: A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping
       properties:
         id:
           type: string
-          description: The name (segmented) of the tag or topic filter
-        type:
+          format: uuid
+          description: The unique id of the data combiner
+        name:
           type: string
-          enum:
-            - TAG
-            - TOPIC_FILTER
+          description: The user-facing name of the combiner
+        description:
+          type: string
+          description: The user-facing description of the combiner
+        sources:
+          $ref: '#/components/schemas/EntityReferenceList'
+        mappings:
+          $ref: '#/components/schemas/DataCombiningList'
+      required:
+        - id
+        - name
+        - sources
+        - mappings
+    CombinerList:
+      type: object
+      description: The list of Combiner defined in this Edge instance
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Combiner'
+      required:
+        - items
+  parameters:
+    TopicFilterId:
+      name: filter
+      description: The URL-encoded filter of the topic filter that should be deleted.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+    CombinerId:
+      name: combinerId
+      description: The unique id of the combiner to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MappingId:
+      name: mappingId
+      description: The unique id of the mapping to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid

@@ -1,0 +1,35 @@
+post:
+  description: Add adapter to the system.
+  operationId: addAdapter
+  parameters:
+    - description: The adapter type.
+      in: path
+      name: adapterType
+      required: true
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/Adapter.yaml
+    description: The new adapter.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter is invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter type not found
+  summary: Add a new Adapter
+  tags:
+    - Protocol Adapters
