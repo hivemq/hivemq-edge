@@ -141,7 +141,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 .withRemoteSubscriptions(remoteSubscriptionBuilder.build())
                 .build();
 
-        configurationService.bridgeConfiguration().addBridge(newBridge);
+        configurationService.bridgeExtractor().addBridge(newBridge);
 
         //-- Check the writes have been proxied onto the configuration model
         Assert.assertEquals("New bridge should be in config model",

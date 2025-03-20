@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.service;
+package com.hivemq.configuration.reader;
 
-import com.hivemq.bridge.config.MqttBridge;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
- * A Configuration service which allows to get information about the current MQTT-bridges configuration
- * and allows to change the global MQTT-bridge configuration at runtime.
+ * Configurators are initialized before the actual dagger bootstrap.
+ *
+ * @param <T>
  */
-public interface BridgeConfigurationService {
-
-    void addBridge(final @NotNull MqttBridge mqttBridge);
-
-    @NotNull List<MqttBridge> getBridges();
+public interface Extractor<T,V> {
+    Logger log = LoggerFactory.getLogger(Extractor.class);
 
     /**
-     * @param id identifier of the bridge to remove
-     * @return {@code true} if any bridges were removed
+     * Indicate if the given config will require an edge restart to be applied
+     * @param config
+     * @return
      */
-    boolean removeBridge(@NotNull String id);
+    boolean needsRestartWithConfig(HiveMQConfigEntity config);
+
+    void registerConsumer(Consumer<V> consumer);
+
 }

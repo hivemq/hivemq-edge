@@ -39,7 +39,7 @@ public class DataCombiningConfigurator implements Syncable<List<DataCombinerEnti
     }
 
     @Override
-    public @NotNull ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public @NotNull ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getDataCombinerEntities();
         this.initialized = true;
 
