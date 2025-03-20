@@ -1263,6 +1263,7 @@
         }
       },
       "mappings": {
+        "description": "The list of mappings created for this combiner",
         "table": {
           "action": "Actions",
           "delete": "Delete the mapping",
@@ -1288,6 +1289,7 @@
           "type_TOPIC_FILTER": "Topic Filter"
         },
         "primary": {
+          "aria-label": "Primary key",
           "label": "The primary data key of the mapping",
           "placeholder": "Select a primary data key ..."
         }

@@ -1,20 +1,41 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import { useState } from 'react'
 import { useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
+import { ButtonGroup, HStack, Tag, TagLeftIcon, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
+import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
+import { ConditionalWrapper } from '@/components/ConditonalWrapper'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
 import type { CombinerContext } from '../../types'
+
+interface PrimaryWrapperProps {
+  isPrimary: boolean
+  children: ReactElement
+}
+
+export const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => (
+  <ConditionalWrapper
+    condition={isPrimary}
+    wrapper={(children) => (
+      <Tag data-testid="wrapper" p={1} variant="outline">
+        <TagLeftIcon boxSize="12px" as={FaKey} ml={1} />
+        {children}
+      </Tag>
+    )}
+  >
+    {children}
+  </ConditionalWrapper>
+)
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -55,9 +76,6 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
     }
 
     return [
-      // {
-      //   accessorKey: 'id',
-      // },
       {
         accessorKey: 'destination',
         cell: (info) => {
@@ -72,10 +90,27 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
           if (nbItems === 0) return <Text>{t('combiner.unset')}</Text>
 
+          const primary = info.row.original.sources.primary
+
+          const isPrimary = (type: DataIdentifierReference.type, id: string): boolean => {
+            return primary.type === type && primary.id === id
+          }
+
           return (
             <HStack flexWrap={'wrap'}>
-              {info.row.original.sources?.tags?.map((tag) => <PLCTag tagTitle={tag} key={tag} />)}
-              {info.row.original.sources?.topicFilters?.map((tag) => <TopicFilter tagTitle={tag} key={tag} />)}
+              {info.row.original.sources?.tags?.map((tag) => (
+                <PrimaryWrapper key={tag} isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TAG, tag))}>
+                  <PLCTag tagTitle={tag} />
+                </PrimaryWrapper>
+              ))}
+              {info.row.original.sources?.topicFilters?.map((tag) => (
+                <PrimaryWrapper
+                  key={tag}
+                  isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TOPIC_FILTER, tag))}
+                >
+                  <TopicFilter tagTitle={tag} />
+                </PrimaryWrapper>
+              ))}
             </HStack>
           )
         },
@@ -122,7 +157,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
   return (
     <>
       <PaginatedTable<DataCombining>
-        aria-label={t('combiner.schema.sources.description')}
+        aria-label={t('combiner.schema.mappings.description')}
         data={props.formData || []}
         columns={displayColumns}
         enablePaginationGoTo={false}
