@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Singleton
 public class TagManager implements ProtocolAdapterTagStreamingService {
@@ -75,7 +76,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     private @NotNull Set<TagConsumer> getTagConsumers(String tagName) {
-        return consumers.computeIfAbsent(tagName, name -> ConcurrentHashMap.newKeySet());
+        return consumers.computeIfAbsent(tagName, name -> new CopyOnWriteArraySet<>());
     }
 
 
