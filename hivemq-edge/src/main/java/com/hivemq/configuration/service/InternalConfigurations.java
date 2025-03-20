@@ -41,6 +41,8 @@ public class InternalConfigurations {
         defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(FILE_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS));
+        defaultValuesMap.put(DATA_HUB_SCRIPT_STATES_LIMIT_PER_STATE_BYTES, String.valueOf(10 * 1024));
+        defaultValuesMap.put(DATA_HUB_SCRIPT_STATES_GLOBAL_LIMIT_BYTES, String.valueOf(50 * 1024 * 1024));
         return defaultValuesMap;
     }
 
@@ -71,12 +73,18 @@ public class InternalConfigurations {
     public static final @NotNull AtomicInteger PERSISTENCE_SHUTDOWN_TIMEOUT_SEC = new AtomicInteger(300);
 
 
-    public static final String PERSISTENCE_BUCKET_COUNT = "persistence.bucket.count";
-    public static final String FILE_SINGLE_WRITER_THREAD_POOL_SIZE = "file_single_writer.thread_pool_size";
-    public static final String MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE = "memory_single_writer.thread_pool_size";
+    public static final @NotNull String PERSISTENCE_BUCKET_COUNT = "persistence.bucket.count";
+    public static final @NotNull String FILE_SINGLE_WRITER_THREAD_POOL_SIZE = "file_single_writer.thread_pool_size";
+    public static final @NotNull String MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE = "memory_single_writer.thread_pool_size";
+
+    public static final @NotNull String DATA_HUB_SCRIPT_STATES_LIMIT_PER_STATE_BYTES =
+            "data-hub.script-states.limit-per-state.bytes";
+    public static final @NotNull String DATA_HUB_SCRIPT_STATES_GLOBAL_LIMIT_BYTES =
+            "data-hub.script-states.global-limit.bytes";
 
     public static final @NotNull AtomicInteger SINGLE_WRITER_CREDITS_PER_EXECUTION = new AtomicInteger(65);
-    public static final @NotNull AtomicInteger SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC = new AtomicInteger(500);
+    public static final @NotNull AtomicInteger SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC =
+            new AtomicInteger(500);
 
     public static final @NotNull AtomicInteger PERSISTENCE_CLOSE_RETRIES = new AtomicInteger(500);
     public static final @NotNull AtomicInteger PERSISTENCE_CLOSE_RETRY_INTERVAL_MSEC = new AtomicInteger(100);
@@ -163,8 +171,10 @@ public class InternalConfigurations {
      *      MQTT 5     *
      *******************/
 
-    public static final @NotNull AtomicInteger TOPIC_ALIAS_GLOBAL_MEMORY_HARD_LIMIT_BYTES = new AtomicInteger(1024 * 1024 * 200); //200Mb
-    public static final @NotNull AtomicInteger TOPIC_ALIAS_GLOBAL_MEMORY_SOFT_LIMIT_BYTES = new AtomicInteger(1024 * 1024 * 50); //50Mb
+    public static final @NotNull AtomicInteger TOPIC_ALIAS_GLOBAL_MEMORY_HARD_LIMIT_BYTES =
+            new AtomicInteger(1024 * 1024 * 200); //200Mb
+    public static final @NotNull AtomicInteger TOPIC_ALIAS_GLOBAL_MEMORY_SOFT_LIMIT_BYTES =
+            new AtomicInteger(1024 * 1024 * 50); //50Mb
 
     public static final @NotNull AtomicBoolean DISCONNECT_WITH_REASON_CODE_ENABLED = new AtomicBoolean(true);
     public static final @NotNull AtomicBoolean DISCONNECT_WITH_REASON_STRING_ENABLED = new AtomicBoolean(true);
@@ -180,17 +190,21 @@ public class InternalConfigurations {
      *    Extension System   *
      *************************/
 
-    public static final @NotNull AtomicInteger EXTENSION_TASK_QUEUE_EXECUTOR_THREADS_COUNT = new AtomicInteger(AVAILABLE_PROCESSORS);
+    public static final @NotNull AtomicInteger EXTENSION_TASK_QUEUE_EXECUTOR_THREADS_COUNT =
+            new AtomicInteger(AVAILABLE_PROCESSORS);
     public static final @NotNull AtomicInteger MANAGED_EXTENSION_THREAD_POOL_KEEP_ALIVE_SEC = new AtomicInteger(30);
-    public static final @NotNull AtomicInteger MANAGED_EXTENSION_THREAD_POOL_THREADS_COUNT = new AtomicInteger(AVAILABLE_PROCESSORS);
-    public static final @NotNull AtomicInteger BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT = new AtomicInteger(Math.max(2, AVAILABLE_PROCESSORS/2));
+    public static final @NotNull AtomicInteger MANAGED_EXTENSION_THREAD_POOL_THREADS_COUNT =
+            new AtomicInteger(AVAILABLE_PROCESSORS);
+    public static final @NotNull AtomicInteger BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT =
+            new AtomicInteger(Math.max(2, AVAILABLE_PROCESSORS / 2));
 
     /**
      * The amount of time the extension executor shutdown awaits task termination until shutdownNow() is called.
      */
     public static final @NotNull AtomicInteger MANAGED_EXTENSION_EXECUTOR_SHUTDOWN_TIMEOUT_SEC = new AtomicInteger(180);
 
-    public static final @NotNull AtomicInteger EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC = new AtomicInteger(0); //unlimited
+    public static final @NotNull AtomicInteger EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC = new AtomicInteger(0);
+    //unlimited
 
     /* ********************
      *        Auth        *
@@ -209,29 +223,34 @@ public class InternalConfigurations {
     /**
      * The concurrency level of the shared subscription cache
      */
-    public static final @NotNull AtomicInteger SHARED_SUBSCRIPTION_CACHE_CONCURRENCY_LEVEL = new AtomicInteger(AVAILABLE_PROCESSORS);
+    public static final @NotNull AtomicInteger SHARED_SUBSCRIPTION_CACHE_CONCURRENCY_LEVEL =
+            new AtomicInteger(AVAILABLE_PROCESSORS);
 
     /**
      * The concurrency level of the shared subscriber service cache
      */
-    public static final @NotNull AtomicInteger SHARED_SUBSCRIBER_CACHE_CONCURRENCY_LEVEL = new AtomicInteger(AVAILABLE_PROCESSORS);
+    public static final @NotNull AtomicInteger SHARED_SUBSCRIBER_CACHE_CONCURRENCY_LEVEL =
+            new AtomicInteger(AVAILABLE_PROCESSORS);
 
     public static final @NotNull AtomicInteger INTERVAL_BETWEEN_CLEANUP_JOBS_SEC = new AtomicInteger(4);
 
     public static final @NotNull AtomicBoolean MQTT_ALLOW_DOLLAR_TOPICS = new AtomicBoolean(false);
 
-    public static final @NotNull AtomicInteger MQTT_EVENT_EXECUTOR_THREAD_COUNT = new AtomicInteger(AVAILABLE_PROCESSORS_TIMES_TWO);
+    public static final @NotNull AtomicInteger MQTT_EVENT_EXECUTOR_THREAD_COUNT =
+            new AtomicInteger(AVAILABLE_PROCESSORS_TIMES_TWO);
 
     /**
      * The amount of cleanup job tasks that are processed at the same time, in each schedule interval
      */
-    public static final @NotNull AtomicBoolean ACKNOWLEDGE_INCOMING_PUBLISH_AFTER_PERSISTING_ENABLED = new AtomicBoolean(true);
+    public static final @NotNull AtomicBoolean ACKNOWLEDGE_INCOMING_PUBLISH_AFTER_PERSISTING_ENABLED =
+            new AtomicBoolean(true);
 
     public static final long SHARED_SUBSCRIPTION_CACHE_TIME_TO_LIVE_MSEC = 1000;
 
     public static final int SHARED_SUBSCRIPTION_CACHE_MAX_SIZE_SUBSCRIPTIONS = 10000;
 
-    public static final @NotNull AtomicInteger COUNT_OF_PUBLISHES_WRITTEN_TO_CHANNEL_TO_TRIGGER_FLUSH = new AtomicInteger(128);
+    public static final @NotNull AtomicInteger COUNT_OF_PUBLISHES_WRITTEN_TO_CHANNEL_TO_TRIGGER_FLUSH =
+            new AtomicInteger(128);
 
     public static final long SHARED_SUBSCRIBER_CACHE_TIME_TO_LIVE_MSEC = 1000;
 
@@ -274,7 +293,8 @@ public class InternalConfigurations {
 
     /**
      * When this amount of in-flight messages is reached, the forwarder stops message polling.
-     * 32 is the default as the client will block the publish() call when more than 64 messages are outgoing (broken connection f.e.)
+     * 32 is the default as the client will block the publish() call when more than 64 messages are outgoing (broken
+     * connection f.e.)
      * This means that we might poll when 31 are outgoing and will poll 32 messages then => 31 + 32 = 63 < 64.
      * This way the publish call should never block.
      */
@@ -292,8 +312,11 @@ public class InternalConfigurations {
      *       EDGE RUNTIME     *
      **********************/
 
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF = new AtomicInteger(60 * 10 * 1000); //-- 10 minutes
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS = new AtomicInteger(60 * 1000);  //-- 60 Seconds
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT = new AtomicInteger(10);
+    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF =
+            new AtomicInteger(60 * 10 * 1000); //-- 10 minutes
+    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS =
+            new AtomicInteger(60 * 1000);  //-- 60 Seconds
+    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT =
+            new AtomicInteger(10);
     public static final @NotNull AtomicInteger EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST = new AtomicInteger(250);
 }
