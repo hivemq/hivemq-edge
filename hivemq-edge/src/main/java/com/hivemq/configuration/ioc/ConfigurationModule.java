@@ -15,8 +15,8 @@
  */
 package com.hivemq.configuration.ioc;
 
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
@@ -67,8 +67,8 @@ public class ConfigurationModule {
 
     @Provides
     @Singleton
-    static @NotNull BridgeConfigurationService bridgeConfigurationService(final @NotNull ConfigurationService configurationService) {
-        return configurationService.bridgeConfiguration();
+    static @NotNull BridgeExtractor bridgeConfiguration(final @NotNull ConfigurationService configurationService) {
+        return configurationService.bridgeExtractor();
     }
 
     @Provides

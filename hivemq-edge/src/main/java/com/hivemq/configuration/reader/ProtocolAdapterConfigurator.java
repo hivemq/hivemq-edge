@@ -44,7 +44,7 @@ public class ProtocolAdapterConfigurator implements Syncable<List<ProtocolAdapte
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getProtocolAdapterConfig();
         this.initialized = true;
 

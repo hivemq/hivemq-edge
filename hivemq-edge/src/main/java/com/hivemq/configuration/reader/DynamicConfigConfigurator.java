@@ -45,7 +45,7 @@ public class DynamicConfigConfigurator implements Configurator<DynamicConfigEnti
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getGatewayConfig();
         this.initialized = true;
 

@@ -16,7 +16,11 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.io.Files;
-import com.hivemq.bridge.config.*;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -24,7 +28,11 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
@@ -53,7 +61,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(1, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);
@@ -99,7 +107,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(1, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);
@@ -150,7 +158,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(1, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);
@@ -201,7 +209,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(1, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);
@@ -245,7 +253,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(1, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);
@@ -391,7 +399,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
 
         reader.applyConfig();
 
-        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+        final List<MqttBridge> bridges = bridgeConfiguration.getBridges();
 
         assertEquals(2, bridges.size());
         final MqttBridge mqttBridge = bridges.get(0);

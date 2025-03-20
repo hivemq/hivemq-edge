@@ -59,7 +59,7 @@ public class MqttConfigurator implements Configurator<MqttConfigEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getMqttConfig();
         this.initialized = true;
 

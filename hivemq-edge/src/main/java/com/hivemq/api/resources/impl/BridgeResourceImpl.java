@@ -34,7 +34,7 @@ import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.reader.BridgeConfigurator;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.api.BridgesApi;
@@ -60,7 +60,6 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -70,25 +69,22 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
-    private final @NotNull ExecutorService executorService;
     private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public BridgeResourceImpl(
             final @NotNull ConfigurationService configurationService,
             final @NotNull BridgeService bridgeService,
-            final @NotNull ExecutorService executorService,
             final @NotNull SystemInformation systemInformation) {
         this.configurationService = configurationService;
         this.bridgeService = bridgeService;
-        this.executorService = executorService;
         this.systemInformation = systemInformation;
     }
 
     @Override
     public @NotNull Response getBridges() {
         logger.trace("Bridge API listing events at {}", System.currentTimeMillis());
-        final List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
+        final List<MqttBridge> bridges = configurationService.bridgeExtractor().getBridges();
         final BridgeList list = new BridgeList().items(bridges.stream()
                 .map(m -> BridgeUtils.convert(m, getStatusInternal(m.getId())))
                 .collect(Collectors.toList()));
@@ -111,13 +107,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(errorMessages.toErrorList()));
         } else {
-            try {
-                final MqttBridge mqttBridge = unconvert(bridge);
-                configurationService.bridgeConfiguration().addBridge(mqttBridge);
-                return Response.ok().build();
-            } finally {
-                executorService.submit(bridgeService::updateBridges);
-            }
+            final MqttBridge mqttBridge = unconvert(bridge);
+            configurationService.bridgeExtractor().addBridge(mqttBridge);
+            return Response.ok().build();
         }
     }
 
@@ -134,7 +126,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
         } else {
-            final Optional<MqttBridge> bridge = configurationService.bridgeConfiguration()
+            final Optional<MqttBridge> bridge = configurationService.bridgeExtractor()
                     .getBridges()
                     .stream()
                     .filter(b -> b.getId().equals(bridgeId))
@@ -165,12 +157,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
         } else {
-            try {
-                configurationService.bridgeConfiguration().removeBridge(bridgeId);
-                return Response.ok().build();
-            } finally {
-                bridgeService.updateBridges();
-            }
+            configurationService.bridgeExtractor().removeBridge(bridgeId);
+            return Response.ok().build();
         }
     }
 
@@ -235,9 +223,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
             return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
         } else {
             //-- Modify the configuration
-            configurationService.bridgeConfiguration().removeBridge(bridgeId);
+            configurationService.bridgeExtractor().removeBridge(bridgeId);
             final MqttBridge newBridgeConfig = unconvert(bridge);
-            configurationService.bridgeConfiguration().addBridge(newBridgeConfig);
+            configurationService.bridgeExtractor().addBridge(newBridgeConfig);
             //-- Restart the new configuration on a new connection
             bridgeService.restartBridge(bridgeId, newBridgeConfig);
             return Response.ok().build();
@@ -265,7 +253,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     public @NotNull Response getBridgesStatus() {
         //-- Bridges
         final ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
-        final List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
+        final List<MqttBridge> bridges = configurationService.bridgeExtractor().getBridges();
         for (final MqttBridge bridge : bridges) {
             builder.add(getStatusInternal(bridge.getId()));
         }
@@ -303,7 +291,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     }
 
     protected boolean checkBridgeExists(final @NotNull String bridgeName) {
-        final Optional<MqttBridge> bridge = configurationService.bridgeConfiguration()
+        final Optional<MqttBridge> bridge = configurationService.bridgeExtractor()
                 .getBridges()
                 .stream()
                 .filter(b -> b.getId().equals(bridgeName))
@@ -312,7 +300,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     }
 
     private @Nullable MqttBridge getBridge(final @NotNull String bridgeName) {
-        return configurationService.bridgeConfiguration()
+        return configurationService.bridgeExtractor()
                 .getBridges()
                 .stream()
                 .filter(b -> b.getId().equals(bridgeName))
@@ -363,7 +351,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
             final @NotNull String fieldName,
             final @NotNull List<String> topicFilters) {
         try {
-            BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
+            BridgeExtractor.validateTopicFilters(fieldName, topicFilters);
         } catch (final UnrecoverableException e) {
             ApiErrorUtils.addValidationError(apiErrorMessages,
                     fieldName,

@@ -46,7 +46,7 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getPersistenceConfig();
         this.initialized = true;
 

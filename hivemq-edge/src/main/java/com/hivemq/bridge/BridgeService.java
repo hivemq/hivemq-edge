@@ -23,7 +23,7 @@ import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,6 @@ public class BridgeService {
 
     private static final Logger log = LoggerFactory.getLogger(BridgeService.class);
 
-    private final @NotNull BridgeConfigurationService bridgeConfig;
     private final @NotNull MessageForwarder messageForwarder;
     private final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory;
     private final @NotNull ExecutorService executorService;
@@ -59,9 +59,13 @@ public class BridgeService {
     private final Map<String, BridgeMqttClient> bridgeToClientMap = new ConcurrentHashMap<>(0);
     private final Map<String, Throwable> lastErrors = new ConcurrentHashMap<>(0);
 
+    private volatile @Nullable List<MqttBridge> bridges;
+
+    private final @NotNull BridgeExtractor bridgeConfig;
+
     @Inject
     public BridgeService(
-            final @NotNull BridgeConfigurationService bridgeConfig,
+            final @NotNull BridgeExtractor bridgeConfig,
             final @NotNull MessageForwarder messageForwarder,
             final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory,
             final @NotNull ExecutorService executorService,
@@ -76,22 +80,25 @@ public class BridgeService {
         this.metricRegistry = metricRegistry;
         metricRegistry.registerGauge(HiveMQMetrics.BRIDGES_CURRENT.name(), () -> bridgeToClientMap.keySet().size());
         shutdownHooks.add(new BridgeShutdownHook(this));
+        bridgeConfig.registerConsumer(this::updateBridges);
     }
 
 
     /**
      * Synchronizes ALL bridges from the config into runtime instances
      */
-    public synchronized void updateBridges() {
-        //add any new bridges
+    public synchronized void updateBridges(final @NotNull List<MqttBridge> bridges) {
+        this.bridges = new CopyOnWriteArrayList<>(bridges);
+
         final long start = System.currentTimeMillis();
         if (log.isTraceEnabled()) {
             log.trace("Updating bridges {} active connections from {} configured connections",
                     activeBridges().size(),
-                    bridgeConfig.getBridges().size());
+                    bridges.size());
         }
 
-        for (MqttBridge bridge : bridgeConfig.getBridges()) {
+        //add any new bridges
+        for (MqttBridge bridge : bridges) {
             if (bridgeToClientMap.containsKey(bridge.getId())) {
                 continue;
             }
@@ -206,10 +213,12 @@ public class BridgeService {
     }
 
     protected @NotNull Optional<MqttBridge> getBridgeByName(final @NotNull String bridgeName) {
-        List<MqttBridge> bridges = bridgeConfig.getBridges();
-        for (MqttBridge bridge : bridges) {
-            if (bridge.getId().equals(bridgeName)) {
-                return Optional.of(bridge);
+        final var tmpBridges = bridges;
+        if (tmpBridges != null) {
+            for (final MqttBridge bridge : tmpBridges) {
+                if (bridge.getId().equals(bridgeName)) {
+                    return Optional.of(bridge);
+                }
             }
         }
         return Optional.empty();
@@ -246,6 +255,14 @@ public class BridgeService {
             return true;
         }
         return false;
+    }
+
+    public @NotNull List<MqttBridge> getBridges() {
+        final var tmpBridges = bridges;
+        if(tmpBridges != null) {
+            return tmpBridges;
+        }
+        return List.of();
     }
 
     private @NotNull List<String> newForwarderIds(final @Nullable MqttBridge newBridgeConfig) {

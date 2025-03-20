@@ -63,7 +63,6 @@ public class HiveMQEdgeGateway {
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
-            bridgeService.updateBridges();
             protocolAdapterManager.start();
             dataCombinerManager.start();
 

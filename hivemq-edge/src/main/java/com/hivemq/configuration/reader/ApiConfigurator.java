@@ -66,7 +66,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
     //-- Converts XML entity types to bean types
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getApiConfig();
         this.initialized = true;
 

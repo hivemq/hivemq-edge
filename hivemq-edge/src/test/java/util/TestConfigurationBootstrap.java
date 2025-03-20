@@ -16,7 +16,6 @@
 package util;
 
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
@@ -27,7 +26,6 @@ import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
@@ -56,7 +54,6 @@ public class TestConfigurationBootstrap {
     private final @NotNull SecurityConfigurationServiceImpl securityConfigurationService;
     private @NotNull ConfigurationServiceImpl configurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
@@ -73,7 +70,6 @@ public class TestConfigurationBootstrap {
         restrictionsConfigurationService = new RestrictionsConfigurationServiceImpl();
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
-        bridgeConfigurationService = new BridgeConfigurationServiceImpl();
         apiConfigurationService = new ApiConfigurationServiceImpl();
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
@@ -94,7 +90,6 @@ public class TestConfigurationBootstrap {
                 securityConfigurationService,
                 persistenceConfigurationService,
                 mqttsnConfigurationService,
-                bridgeConfigurationService,
                 apiConfigurationService,
                 unsConfigurationService,
                 dynamicConfigurationService,
@@ -151,10 +146,6 @@ public class TestConfigurationBootstrap {
 
     public void setMqttsnConfigurationService(final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
         this.mqttsnConfigurationService = mqttsnConfigurationService;
-    }
-
-    public @NotNull BridgeConfigurationService getBridgeConfigurationService() {
-        return bridgeConfigurationService;
     }
 
     public @NotNull ApiConfigurationService getApiConfigurationService() {
