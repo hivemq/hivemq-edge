@@ -46,7 +46,7 @@ public class UnsConfigurator implements Syncable<UnsConfigEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getUns();
         this.initialized = true;
 

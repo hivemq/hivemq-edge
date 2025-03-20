@@ -41,7 +41,7 @@ public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getSecurityConfig();
         this.initialized = true;
 

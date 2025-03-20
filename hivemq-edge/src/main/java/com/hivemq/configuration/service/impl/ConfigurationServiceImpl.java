@@ -16,9 +16,9 @@
 package com.hivemq.configuration.service.impl;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DataCombiningConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
@@ -64,7 +64,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull SecurityConfigurationService securityConfigurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
     private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
@@ -75,7 +74,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
 
     public ConfigurationServiceImpl(
@@ -85,7 +83,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull SecurityConfigurationService securityConfigurationService,
             final @NotNull PersistenceConfigurationService persistenceConfigurationService,
             final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
-            final @NotNull BridgeConfigurationService bridgeConfigurationService,
             final @NotNull ApiConfigurationService apiConfigurationService,
             final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
@@ -100,7 +97,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.securityConfigurationService = securityConfigurationService;
         this.persistenceConfigurationService = persistenceConfigurationService;
         this.mqttsnConfigurationService = mqttsnConfigurationService;
-        this.bridgeConfigurationService = bridgeConfigurationService;
         this.apiConfigurationService = apiConfigurationService;
         this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
@@ -174,11 +170,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return internalConfigurationService;
     }
 
-    @Override
-    public @NotNull BridgeConfigurationService bridgeConfiguration() {
-        return proxy(BridgeConfigurationService.class, bridgeConfigurationService);
-    }
-
     public @NotNull UnsConfigurationService unsConfiguration() {
         return proxy(UnsConfigurationService.class, unsConfigurationService);
     }
@@ -187,6 +178,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public void setConfigFileReaderWriter(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
         Preconditions.checkNotNull(configFileReaderWriter);
         this.configFileReaderWriter = configFileReaderWriter;
+    }
+
+    @Override
+    public @NotNull BridgeExtractor bridgeExtractor() {
+        return configFileReaderWriter.getBridgeExtractor();
     }
 
     public <T> @NotNull T proxy(
@@ -220,19 +216,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     private void flush(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        if (log.isTraceEnabled()) {
-            log.trace("flushing configuration changes to entity layer");
-        }
-        try {
-            configFileReaderWriter.syncConfiguration();
-            if (gatewayConfiguration().isMutableConfigurationEnabled()) {
-                configFileReaderWriter.writeConfig();
-            }
-        } catch (final Exception e){
-            log.error("Configuration file sync failed: ", e);
-        } finally {
-            lastWrite.set(System.currentTimeMillis());
-        }
+        configFileReaderWriter.writeConfigWithSync();
     }
 
     @Override
@@ -245,7 +229,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     public @NotNull Optional<Long> getLastUpdateTime() {
-        final long l = lastWrite.get();
+        final long l = configFileReaderWriter.getLastWrite();
         return l == 0 ? Optional.empty() : Optional.of(l);
     }
 }

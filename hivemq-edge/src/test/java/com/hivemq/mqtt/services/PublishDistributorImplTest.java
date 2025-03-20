@@ -19,7 +19,7 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
@@ -64,7 +64,7 @@ public class PublishDistributorImplTest {
     private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
     private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
     private final @NotNull ConfigurationService configurationService = mock();
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService = mock();
+    private final @NotNull BridgeExtractor bridgeConfiguration = mock();
     private final @NotNull MqttBridge bridge = mock();
     private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
 
@@ -77,11 +77,11 @@ public class PublishDistributorImplTest {
     @Before
     public void setUp() throws Exception {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
-        when(configurationService.bridgeConfiguration()).thenReturn(bridgeConfigurationService);
+        when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         publishDistributor = new PublishDistributorImpl(payloadPersistence, clientQueuePersistence, ()->clientSessionPersistence,
                 singleWriterService, configurationService);
-        when(bridgeConfigurationService.getBridges()).thenReturn(List.of(bridge));
+        when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
 
     @After

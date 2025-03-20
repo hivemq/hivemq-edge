@@ -18,7 +18,6 @@ package com.hivemq.configuration;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ApiConfigurator;
-import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.DataCombiningConfigurator;
@@ -36,7 +35,6 @@ import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
@@ -63,13 +61,13 @@ public class ConfigurationBootstrap {
     public static @NotNull ConfigurationService bootstrapConfig(final @NotNull SystemInformation systemInformation) {
 
         final ConfigurationServiceImpl configurationService =
-                new ConfigurationServiceImpl(new ListenerConfigurationServiceImpl(),
+                new ConfigurationServiceImpl(
+                        new ListenerConfigurationServiceImpl(),
                         new MqttConfigurationServiceImpl(),
                         new RestrictionsConfigurationServiceImpl(),
                         new SecurityConfigurationServiceImpl(),
                         new PersistenceConfigurationServiceImpl(),
                         new MqttsnConfigurationServiceImpl(),
-                        new BridgeConfigurationServiceImpl(),
                         new ApiConfigurationServiceImpl(),
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
@@ -89,7 +87,6 @@ public class ConfigurationBootstrap {
                         new ListenerConfigurator(configurationService.listenerConfiguration(), systemInformation),
                         new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
                         new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
-                        new BridgeConfigurator(configurationService.bridgeConfiguration()),
                         new ApiConfigurator(configurationService.apiConfiguration()),
                         new UnsConfigurator(configurationService.unsConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),

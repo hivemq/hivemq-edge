@@ -80,7 +80,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
         if(listeners.equals(configEntity)) {
             return ConfigResult.NO_OP;
