@@ -49,7 +49,7 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getRestrictionsConfig();
         this.initialized = true;
 

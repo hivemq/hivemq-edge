@@ -44,7 +44,7 @@ public class UsageTrackingConfigurator implements Configurator<UsageTrackingConf
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getUsageTracking();
         this.initialized = true;
 

@@ -45,7 +45,7 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getModuleConfigs();
         this.initialized = true;
         //Follow the pattern of other configurations, and hand off a clone of the map to the config layer

@@ -24,7 +24,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +73,7 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     private final MqttConfigurationService mqttConfigurationService;
     @NotNull
-    private final BridgeConfigurationService bridgeConfigurationService;
+    private final BridgeExtractor bridgeConfiguration;
 
     @Inject
     public PublishDistributorImpl(
@@ -87,7 +87,7 @@ public class PublishDistributorImpl implements PublishDistributor {
         this.clientSessionPersistence = clientSessionPersistence;
         this.singleWriterService = singleWriterService;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
-        this.bridgeConfigurationService = configurationService.bridgeConfiguration();
+        this.bridgeConfiguration = configurationService.bridgeExtractor();
     }
 
     @NotNull
@@ -287,7 +287,7 @@ public class PublishDistributorImpl implements PublishDistributor {
     }
 
     private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
-        for (final MqttBridge bridge : bridgeConfigurationService.getBridges()) {
+        for (final MqttBridge bridge : bridgeConfiguration.getBridges()) {
             final String bridgeClientId = MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId();
             if (clientId.contains(bridgeClientId)) {
                 for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
