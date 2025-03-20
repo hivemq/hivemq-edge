@@ -77,8 +77,8 @@ import com.hivemq.persistence.domain.DomainTagDeleteResult;
 import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
-import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -380,7 +380,23 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (logger.isDebugEnabled()) {
             logger.debug("Deleting adapter \"{}\".", adapterId);
         }
-        protocolAdapterManager.deleteAdapter(adapterId);
+
+        //Not good but since we use the JDK-webserver we don't have direct support for returng Results from a future :(
+        try {
+            protocolAdapterManager
+                    .deleteAdapter(adapterId)
+                    .whenComplete((deleted, t) -> {
+                        if(!deleted) {
+                            log.error("Unable to delete adapter {}", adapterId);
+                        } else if (t != null){
+                            log.error("Exception while deleting adapter {}", adapterId, t);
+                        } else {
+                            log.debug("Successfully deleted adapter {}", adapterId);
+                        }
+                    }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Exception while deleting adapter {}", adapterId, e);
+        }
 
         return Response.ok().build();
     }
@@ -495,7 +511,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapterDomainTags(final @NotNull String adapterId) {
-        return protocolAdapterManager.getTagsForAdapter(adapterId)
+        return protocolAdapterManager.getDomainTagsForAdapter(adapterId)
                 .map(tags -> {
                     if (tags.isEmpty()) {
                         return Response.ok(new DomainTagList().items(List.of())).build();
@@ -518,7 +534,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final DomainTagAddResult domainTagAddResult = protocolAdapterManager.addDomainTag(adapterId,
                 com.hivemq.persistence.domain.DomainTag.fromDomainTagEntity(domainTag, adapterId, objectMapper));
-        switch (domainTagAddResult.getDomainTagPutStatus()) {
+        switch (domainTagAddResult.domainTagPutStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case ALREADY_EXISTS:
@@ -531,7 +547,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
                         adapterId)));
             default:
-                log.error("Unhandled PUT-status: {}", domainTagAddResult.getDomainTagPutStatus());
+                log.error("Unhandled PUT-status: {}", domainTagAddResult.domainTagPutStatus());
                 return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
@@ -546,13 +562,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final DomainTagDeleteResult domainTagDeleteResult =
                 protocolAdapterManager.deleteDomainTag(adapterId, decodedTagName);
-        switch (domainTagDeleteResult.getDomainTagDeleteStatus()) {
+        switch (domainTagDeleteResult.domainTagDeleteStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
                 return ErrorResponseUtil.errorResponse(new DomainTagNotFoundError(decodedTagName));
             default:
-                log.error("Unhandled DELETE-status: {}", domainTagDeleteResult.getDomainTagDeleteStatus());
+                log.error("Unhandled DELETE-status: {}", domainTagDeleteResult.domainTagDeleteStatus());
                 return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
@@ -570,14 +586,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         domainTag,
                         adapterId,
                         objectMapper));
-        switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
+        switch (domainTagUpdateResult.domainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case ADAPTER_NOT_FOUND:
                 return ErrorResponseUtil.errorResponse(new AdapterNotFound403Error("Adapter not found"));
             case INTERNAL_ERROR:
             default:
-                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
+                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.domainTagUpdateStatus());
                 return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
@@ -594,20 +610,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .collect(Collectors.toSet());
         final DomainTagUpdateResult domainTagUpdateResult =
                 protocolAdapterManager.updateDomainTags(adapterId, domainTags);
-        switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
+        switch (domainTagUpdateResult.domainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case ADAPTER_NOT_FOUND:
                 return ErrorResponseUtil.errorResponse(new AdapterNotFoundError("Adapter not found"));
             case ALREADY_USED_BY_ANOTHER_ADAPTER:
                 //noinspection DataFlowIssue cant be null here.
-                final @NotNull String tagName = domainTagUpdateResult.getErrorMessage();
+                final @NotNull String tagName = domainTagUpdateResult.errorMessage();
                 return ErrorResponseUtil.errorResponse(new AlreadyExistsError("The tag '" +
                         tagName +
                         "' cannot be created since another item already exists with the same id."));
             case INTERNAL_ERROR:
             default:
-                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.getDomainTagUpdateStatus());
+                log.error("Unhandled UPDATE-status: {}", domainTagUpdateResult.domainTagUpdateStatus());
                 return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
     }
@@ -837,7 +853,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
                     if (requiredTags.isEmpty()) {
-                        if (protocolAdapterManager.updateAdapterFromMappings(adapterId, converted)) {
+                        if (protocolAdapterManager.updateNorthboundMappings(adapterId, converted)) {
                             log.info("Successfully updated northbound mappings for adapter '{}'.", adapterId);
                             return Response.ok(northboundMappingList).build();
                         } else {
@@ -889,7 +905,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
                     if (requiredTags.isEmpty()) {
-                        if (protocolAdapterManager.updateAdapterToMappings(adapterId, converted)) {
+                        if (protocolAdapterManager.updateSouthboundMappings(adapterId, converted)) {
                             log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
                             return Response.ok(southboundMappingListModel).build();
                         } else {
