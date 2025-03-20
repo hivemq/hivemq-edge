@@ -118,8 +118,6 @@ public class ConfigFileReaderWriter {
         this.configEntity = hiveMQConfigEntity;
         setConfiguration(hiveMQConfigEntity);
 
-        bridgeExtractor.updateConfig(hiveMQConfigEntity);
-
         return hiveMQConfigEntity;
     }
 
@@ -491,6 +489,7 @@ public class ConfigFileReaderWriter {
         if (requiresRestart.isEmpty()) {
             log.debug("Config can be applied");
             configurators.forEach(c -> c.applyConfig(config));
+            bridgeExtractor.updateConfig(config);
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
