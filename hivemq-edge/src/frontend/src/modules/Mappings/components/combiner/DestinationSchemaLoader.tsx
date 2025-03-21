@@ -61,7 +61,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   return (
     <>
-      <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2}>
+      <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2} mb={2}>
         <Popover>
           <PopoverTrigger>
             <Button data-testid={'combiner-destination-infer'} isDisabled>
