@@ -34,7 +34,7 @@ import type { ExportFormatDisplay } from '@/modules/ProtocolAdapters/types.ts'
 import { AdapterExportError, ExportFormat, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import { adapterExportFormats } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 interface SelectedExportFormat {
   content: ExportFormat.Type
@@ -50,7 +50,7 @@ interface MIMETypeOptions {
 const ExportDrawer: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
   const { adapterId } = useParams()
   const navigate = useNavigate()
   const { protocol, adapter } = useGetAdapterInfo(adapterId)

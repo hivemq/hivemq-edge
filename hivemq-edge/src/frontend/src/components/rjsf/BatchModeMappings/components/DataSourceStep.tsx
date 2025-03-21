@@ -9,12 +9,12 @@ import { Button, Text, useToast, VStack } from '@chakra-ui/react'
 import { acceptMimeTypes } from '@/components/rjsf/BatchModeMappings/utils/config.utils.ts'
 import { readFileAsync } from '@/components/rjsf/BatchModeMappings/utils/dropzone.utils.ts'
 import type { StepRendererProps, WorksheetData } from '@/components/rjsf/BatchModeMappings/types.ts'
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 const DataSourceStep: FC<StepRendererProps> = ({ onContinue, store }) => {
   const { t } = useTranslation('components')
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
   const [loading, setLoading] = useState(false)
   const { fileName } = store
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
