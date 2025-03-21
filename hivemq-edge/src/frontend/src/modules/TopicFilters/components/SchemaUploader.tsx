@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone'
 import type { AlertStatus } from '@chakra-ui/react'
 import { Button, Card, CardBody, Text, useToast } from '@chakra-ui/react'
 
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 import { ACCEPT_JSON_SCHEMA } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 
@@ -16,7 +16,7 @@ interface SchemaUploaderProps {
 const SchemaUploader: FC<SchemaUploaderProps> = ({ onUpload }) => {
   const [loading, setLoading] = useState(false)
   const { t } = useTranslation()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     noClick: true,

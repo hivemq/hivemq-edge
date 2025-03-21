@@ -22,6 +22,7 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
 type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
@@ -47,7 +48,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const theme = useTheme()
   const createCombiner = useCreateCombiner()
   // TODO[30429] Need a workspace-wide feedback mechanism
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedGroupCandidates = useMemo(() => {

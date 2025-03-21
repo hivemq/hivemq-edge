@@ -12,10 +12,11 @@ import { useUpdateDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateDo
 import { useGetDomainTagSchema } from '@/api/hooks/useDomainModel/useGetDomainTagSchema.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const { protocol, isLoading: protocolLoad } = useGetAdapterInfo(adapterId)
   const { data: tagSchema, isError: isSchemaError, error: errorSchema } = useGetDomainTagSchema(protocol?.id)
