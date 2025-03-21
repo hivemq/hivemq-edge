@@ -86,10 +86,9 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
     })
   }, [allSchemas, queries, t])
 
-  if (!displayedSchemas.length) return <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
-
   return (
-    <>
+    <Box borderWidth={1} p={3}>
+      {!displayedSchemas.length && <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />}
       {displayedSchemas.map((dataReference) => {
         const hasSchema = dataReference.schema?.status === 'success' && dataReference.schema.schema
 
@@ -114,6 +113,6 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
           />
         )
       })}
-    </>
+    </Box>
   )
 }
