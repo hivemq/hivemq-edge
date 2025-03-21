@@ -105,7 +105,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
       </ButtonGroup>
 
       {!formData?.destination?.schema && (
-        <VStack flex={1} justifyContent={'center'} alignItems={'center'}>
+        <VStack flex={1}>
           <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
         </VStack>
       )}
