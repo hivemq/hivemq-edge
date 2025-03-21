@@ -47,11 +47,30 @@ export const combinerMappingUiSchema: UiSchema = {
   mappings: {
     items: {
       'ui:field': DataCombiningTableField,
-      // TODO[NVL] Add `ui:options to pass table configuration and the whole RJSF construct is fully generic!
       items: {
         'ui:field': DataCombiningEditorField,
         'ui:submitButtonOptions': {
           norender: true,
+        },
+        sources: {
+          'ui:title': i18nConfig.t('combiner.schema.mappings.sources.title'),
+          'ui:description': i18nConfig.t('combiner.schema.mappings.sources.description'),
+          primary: {
+            'ui:title': i18nConfig.t('combiner.schema.mappings.sources.primary.title'),
+            'ui:description': i18nConfig.t('combiner.schema.mappings.sources.primary.description'),
+          },
+        },
+        destination: {
+          'ui:title': i18nConfig.t('combiner.schema.mappings.destination.title'),
+          'ui:description': i18nConfig.t('combiner.schema.mappings.destination.description'),
+          topic: {
+            'ui:title': i18nConfig.t('combiner.schema.mappings.destination.topic.title'),
+            'ui:description': i18nConfig.t('combiner.schema.mappings.destination.topic.description'),
+          },
+          schema: {
+            'ui:title': i18nConfig.t('combiner.schema.mappings.destination.schema.title'),
+            'ui:description': i18nConfig.t('combiner.schema.mappings.destination.schema.description'),
+          },
         },
       },
     },

@@ -28,7 +28,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
   return (
     <>
       {schema.title && (
-        <Heading as="h4" size="sm">
+        <Heading as="h3" size="sm">
           {schema.title}
         </Heading>
       )}

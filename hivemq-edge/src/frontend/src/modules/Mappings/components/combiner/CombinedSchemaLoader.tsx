@@ -86,10 +86,9 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
     })
   }, [allSchemas, queries, t])
 
-  if (!displayedSchemas.length) return <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
-
   return (
-    <>
+    <Box borderWidth={1} p={3}>
+      {!displayedSchemas.length && <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />}
       {displayedSchemas.map((dataReference) => {
         const hasSchema = dataReference.schema?.status === 'success' && dataReference.schema.schema
 
@@ -97,7 +96,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
           // TODO[NVL] Duplication; integrate error message into the schema browser
           return (
             <Box key={dataReference.id}>
-              <Heading as="h4" size="sm">
+              <Heading as="h3" size="sm">
                 {dataReference.id}
               </Heading>
               <ErrorMessage message={dataReference.schema?.message} status={dataReference.schema?.status} />
@@ -114,6 +113,6 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
           />
         )
       })}
-    </>
+    </Box>
   )
 }
