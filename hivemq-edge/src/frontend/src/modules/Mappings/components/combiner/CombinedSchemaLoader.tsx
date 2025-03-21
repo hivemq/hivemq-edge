@@ -96,7 +96,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
           // TODO[NVL] Duplication; integrate error message into the schema browser
           return (
             <Box key={dataReference.id}>
-              <Heading as="h4" size="sm">
+              <Heading as="h3" size="sm">
                 {dataReference.id}
               </Heading>
               <ErrorMessage message={dataReference.schema?.message} status={dataReference.schema?.status} />
