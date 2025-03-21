@@ -181,6 +181,7 @@ export const ToolbarPublish: FC = () => {
 
     const { resources } = payload
 
+    toast.closeAll()
     const promises = publishResources(resources)
 
     Promise.all(promises)
