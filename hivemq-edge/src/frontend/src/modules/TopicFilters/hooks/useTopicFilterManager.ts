@@ -11,6 +11,7 @@ import { useDeleteTopicFilter } from '@/api/hooks/useTopicFilters/useDeleteTopic
 import { useUpdateTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateTopicFilter.ts'
 import { useUpdateAllTopicFilter } from '@/api/hooks/useTopicFilters/useUpdateAllTopicFilters.ts'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 interface TopicFilterSchemas {
   schema: RJSFSchema
@@ -18,7 +19,7 @@ interface TopicFilterSchemas {
 
 export const useTopicFilterManager = () => {
   const { t } = useTranslation()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const { data: topicFilterList, isLoading, isError, error } = useListTopicFilters()
 
