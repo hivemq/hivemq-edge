@@ -1272,7 +1272,32 @@
           "source": "Source"
         },
         "sources": {
-          "description": "Select the tags and topic filters to combine"
+          "title": "Sources",
+          "description": "Define the elements to combine",
+          "primary": {
+            "title": "Primary key",
+            "description": "Select the tag or topic filters that will act as the trigger for the combining"
+          },
+          "combinedData": {
+            "title": "Source tags and topic filters",
+            "description": "Select the tags and topic filters you want to us as a source for the combining"
+          },
+          "combinedSchema": {
+            "title": "Source schemas",
+            "description": "Drag the required properties into the destination schema"
+          }
+        },
+        "destination": {
+          "title": "Destination",
+          "description": "Define the topic to subscribe the combination to",
+          "topic": {
+            "title": "Destination topic",
+            "description": "Select or create a new topic"
+          },
+          "schema": {
+            "title": "Destination schema",
+            "description": "Upload or create a schema then drop source properties on every required destination properties"
+          }
         }
       },
       "mapping": {
