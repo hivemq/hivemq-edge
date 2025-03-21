@@ -1,7 +1,6 @@
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 import SchemaSampler from '@/modules/TopicFilters/components/SchemaSampler.tsx'
-import Login from '../../Login/components/Login'
 
 describe('SchemaSampler', () => {
   beforeEach(() => {
