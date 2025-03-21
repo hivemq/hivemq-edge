@@ -76,6 +76,23 @@ if (file("../../hivemq-edge-adapter-sdk").exists()) {
     )
 }
 
+if (file("../../hivemq-mtconnect-protocol").exists()) {
+    includeBuild("../../hivemq-mtconnect-protocol")
+} else {
+    logger.warn(
+        """
+        ######################################################################################################
+        You can not use the latest changes of or modify the hivemq-mtconnect-protocol.
+        Please checkout the hivemq-mtconnect-protocol repository next to the hivemq-edge repository.
+        Execute the following command from your project directory:
+        git clone https://github.com/hivemq/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
+        You can also clone your fork:
+        git clone https://github.com/<replace-with-your-fork>/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
+        ######################################################################################################
+        """.trimIndent()
+    )
+}
+
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
