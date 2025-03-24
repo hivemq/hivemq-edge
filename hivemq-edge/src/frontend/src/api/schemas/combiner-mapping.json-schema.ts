@@ -46,7 +46,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
       },
     },
     DataCombining: {
-      description: 'Define individual rules for data combining, based on the entities selected in the Orchestrator',
+      description: 'Define individual rules for data combining, based on the entities selected in the Combiner',
       required: ['id', 'sources'],
       properties: {
         id: {
