@@ -8,3 +8,7 @@ export const getDropZoneBorder = (color: string) => {
     borderRadius: '4px',
   }
 }
+
+export const ANIMATION = {
+  FIT_VIEW_DURATION_MS: 500,
+}

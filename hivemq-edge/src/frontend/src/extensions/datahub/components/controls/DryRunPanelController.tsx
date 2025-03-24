@@ -22,9 +22,7 @@ import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 
-import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
-import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish.tsx'
-import { useTranslation } from 'react-i18next'
+import { ANIMATION } from '@/modules/Theme/utils.ts'
 
 const DryRunPanelController = () => {
   const { t } = useTranslation('datahub')
