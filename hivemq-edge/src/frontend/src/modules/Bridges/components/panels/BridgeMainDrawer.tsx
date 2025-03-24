@@ -30,7 +30,7 @@ import OptionsPanel from '../panels/OptionsPanel.tsx'
 import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 import SecurityPanel from '../panels/SecurityPanel.tsx'
 import PersistencePanel from '../panels/PersistencePanel.tsx'
-import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
+import { useBridgeConfig } from '../../hooks/useBridgeConfig'
 import WebSocketPanel from '@/modules/Bridges/components/panels/WebSocketPanel.tsx'
 
 interface BridgeMainDrawerProps {
@@ -52,7 +52,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
   onDelete,
 }) => {
   const { t } = useTranslation()
-  const { bridge } = useBridgeSetup()
+  const { bridge } = useBridgeConfig()
   const hasPersistence = useGetCapability(Capability.id.MQTT_PERSISTENCE)
   const form = useForm<Bridge>({
     mode: 'all',
