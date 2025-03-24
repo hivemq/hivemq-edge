@@ -71,12 +71,16 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [edges, nodes, selectedNodes])
 
   const selectedCombinerCandidates = useMemo(() => {
-    // TODO[29097] Decide which entities are eligible for combining. Hidden is EDGE, default are ADAPTER and BRIDGE;
-    const result = selectedNodes.filter(
-      (node) => node.type === NodeTypes.ADAPTER_NODE || node.type === NodeTypes.BRIDGE_NODE
-    ) as CombinerEligibleNode[]
+    const result = selectedNodes.filter((node) => {
+      if (node.type === NodeTypes.ADAPTER_NODE) {
+        const protocol = data?.items.find((e) => e.id === node.data.type)
+        return protocol?.capabilities?.includes('COMBINE')
+      }
+
+      return node.type === NodeTypes.BRIDGE_NODE
+    }) as CombinerEligibleNode[]
     return result.length ? result : undefined
-  }, [selectedNodes])
+  }, [data?.items, selectedNodes])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
