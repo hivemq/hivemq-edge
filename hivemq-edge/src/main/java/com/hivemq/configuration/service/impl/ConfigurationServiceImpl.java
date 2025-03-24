@@ -20,6 +20,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.configuration.service.DataCombiningConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
@@ -69,6 +70,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
+    private final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
@@ -89,6 +91,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
             final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService,
+            final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService,
             final @NotNull ModuleConfigurationService moduleConfigurationService,
             final @NotNull InternalConfigurationService internalConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
@@ -103,6 +106,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
         this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
+        this.dataCombiningConfigurationService = dataCombiningConfigurationService;
         this.moduleConfigurationService = moduleConfigurationService;
         this.internalConfigurationService = internalConfigurationService;
     }
@@ -154,6 +158,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     public @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService() {
         return proxy(ProtocolAdapterConfigurationService.class, protocolAdapterConfigurationService);
+    }
+
+    @Override
+    public @NotNull DataCombiningConfigurationService dataCombiningConfigurationService() {
+        return proxy(DataCombiningConfigurationService.class, dataCombiningConfigurationService);
     }
 
     public @NotNull ModuleConfigurationService commercialModuleConfigurationService() {

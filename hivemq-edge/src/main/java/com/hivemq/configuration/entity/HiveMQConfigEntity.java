@@ -18,6 +18,7 @@ package com.hivemq.configuration.entity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
+import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
@@ -93,6 +94,10 @@ public class HiveMQConfigEntity {
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
+    @XmlElementWrapper(name = "data-combiners")
+    @XmlElement(name = "data-combiner")
+    private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
+
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
@@ -120,7 +125,8 @@ public class HiveMQConfigEntity {
             final @NotNull RestrictionsEntity restrictions,
             final @NotNull SecurityConfigEntity security,
             final @NotNull UnsConfigEntity uns,
-            final @NotNull UsageTrackingConfigEntity usageTracking) {
+            final @NotNull UsageTrackingConfigEntity usageTracking,
+            final @NotNull List<DataCombinerEntity> dataCombinerEntities) {
         this.version = Objects.requireNonNullElse(version, CURRENT_CONFIG_VERSION);
         this.api = api;
         this.gateway = gateway;
@@ -136,6 +142,7 @@ public class HiveMQConfigEntity {
         this.security = security;
         this.uns = uns;
         this.usageTracking = usageTracking;
+        this.dataCombinerEntities = dataCombinerEntities;
     }
 
     public @NotNull List<ListenerEntity> getMqttListenerConfig() {
@@ -198,6 +205,10 @@ public class HiveMQConfigEntity {
         return internal;
     }
 
+    public @NotNull List<DataCombinerEntity> getDataCombinerEntities() {
+        return dataCombinerEntities;
+    }
+
     public int getVersion() {
         return version;
     }
@@ -221,6 +232,7 @@ public class HiveMQConfigEntity {
                 Objects.equals(gateway, that.gateway) &&
                 Objects.equals(getUsageTracking(), that.getUsageTracking()) &&
                 Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig()) &&
+                Objects.equals(getDataCombinerEntities(), that.getDataCombinerEntities()) &&
                 Objects.equals(getModuleConfigs(), that.getModuleConfigs()) &&
                 Objects.equals(getInternal(), that.getInternal());
     }
@@ -241,6 +253,7 @@ public class HiveMQConfigEntity {
                 gateway,
                 getUsageTracking(),
                 getProtocolAdapterConfig(),
+                getDataCombinerEntities(),
                 getModuleConfigs(),
                 getInternal());
     }

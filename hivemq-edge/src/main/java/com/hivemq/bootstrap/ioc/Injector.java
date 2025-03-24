@@ -81,7 +81,8 @@ import java.util.Set;
         DataGovernanceModule.class,
         RemoteServiceModule.class,
         BootstrapServicesModule.class,
-        AdapterModule.class})
+        AdapterModule.class,
+        CombiningModule.class})
 @Singleton
 public interface Injector {
 

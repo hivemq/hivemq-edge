@@ -53,44 +53,27 @@ public class CommercialModuleLoaderDiscovery {
     }
 
     public void generalBootstrap(final @NotNull GeneralBootstrapService generalBootstrapService) {
-        try {
-            if (instance != null) {
-                instance.generalBootstrap(generalBootstrapService);
-            }
-        } catch (final Exception e) {
-            log.error("Error when bootstrapping general information", e);
+        if (instance != null) {
+            instance.generalBootstrap(generalBootstrapService);
         }
     }
 
     public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
-        try {
-            if (instance != null) {
-                instance.persistenceBootstrap(persistenceBootstrapService);
-            }
-        } catch (final Exception e) {
-            log.error("Error when bootstrapping persistences ", e);
+        if (instance != null) {
+            instance.persistenceBootstrap(persistenceBootstrapService);
         }
     }
 
     public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
-        try {
-            if (instance != null) {
-
-                instance.afterPersistenceBootstrap(completeBootstrapService);
-            }
-        } catch (final Exception e) {
-            log.error("Error when completing bootstrap ", e);
+        if (instance != null) {
+            instance.afterPersistenceBootstrap(completeBootstrapService);
         }
     }
 
 
     public void afterHiveMQStart(final @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService) {
-        try {
-            if (instance != null) {
-                instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
-            }
-        } catch (final Exception e) {
-            log.error("Error when completing bootstrap ", e);
+        if (instance != null) {
+            instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
         }
     }
 

@@ -16,52 +16,47 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
-import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
+import com.hivemq.edge.adapters.etherip.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
-import com.hivemq.edge.adapters.modbus.model.ModBusData;
-import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter {
+public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     private final @NotNull ModbusClient modbusClient;
-    private final @NotNull Map<PollingContext, List<DataPoint>> lastSamples = new ConcurrentHashMap<>();
-    private final @NotNull List<Tag> tags;
+    private final @NotNull PublishChangedDataOnlyHandler publishChangedDataOnlyHandler = new PublishChangedDataOnlyHandler();
+    private final @NotNull List<ModbusTag> tags;
     private final @NotNull String adapterId;
+    private final @NotNull DataPointFactory dataPointFactory;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -70,9 +65,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tags = input.getTags();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
+        this.tags = input.getTags().stream().map(t -> (ModbusTag)t).toList();
         this.modbusClient =
-                new ModbusClient(input.getAdapterId(), adapterConfig, input.adapterFactories().dataPointFactory());
+                new ModbusClient(input.getAdapterId(), adapterConfig);
+
     }
 
     @Override
@@ -90,7 +87,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        lastSamples.clear();
+        publishChangedDataOnlyHandler.clear();
         modbusClient.disconnect().whenComplete((unused, t) -> {
             if (t == null) {
                 output.stoppedSuccessfully();
@@ -101,29 +98,47 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         });
     }
 
+    public record ResulTuple(String tagName, Object value) {}
+
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        tags.stream()
-                .filter(tag -> tag.getName().equals(pollingInput.getPollingContext().getTagName()))
-                .findFirst()
-                .ifPresentOrElse(def -> pollModbus(pollingInput, pollingOutput, (ModbusTag) def),
-                        () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
-    }
+            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
-    private void pollModbus(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput, final @NotNull ModbusTag modbusTag) {
-        readRegisters(pollingInput.getPollingContext(),
-                modbusClient,
-                modbusTag).whenComplete((modbusdata, throwable) -> {
-            if (throwable != null) {
-                pollingOutput.fail(throwable, null);
-            } else {
-                this.captureDataSample(modbusdata, pollingOutput);
-            }
-        });
+        final var readRegisterFutures = tags.stream()
+                .map(tag -> readRegisters(modbusClient, tag)
+                        .thenApply(result -> new ResulTuple(tag.getName(), result)))
+                .toList();
+
+        CompletableFuture
+                .allOf(readRegisterFutures.toArray(new CompletableFuture[]{}))
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Unable to read tags from modbus", throwable);
+                        pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                    }
+
+
+                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                        try {
+                            final var entry = readRegisterFuture.get();
+                            final var tagName = entry.tagName();
+                            final var tags = List.of(dataPointFactory.create(tagName, entry.value()));
+                            if (adapterConfig.getModbusToMQTTConfig().getPublishChangedDataOnly()) {
+                                if (publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, tags)) {
+                                    tags.forEach(pollingOutput::addDataPoint);
+                                }
+                            } else {
+                                tags.forEach(pollingOutput::addDataPoint);
+                            }
+
+                        } catch (final InterruptedException | ExecutionException e) {
+                            log.error("Problem while accessing data in a completed future", e);
+                            pollingOutput.fail(e,"Problem while accessing data in a completed future");
+                            return;
+                        }
+                    }
+                    pollingOutput.finish();
+                });
     }
 
     @Override
@@ -167,77 +182,23 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         return adapterInformation;
     }
 
-    protected void captureDataSample(final @NotNull ModBusData modBusData, final @NotNull PollingOutput pollingOutput) {
-        if (log.isTraceEnabled()) {
-            log.trace("Captured ModBus data with {} data points.", modBusData.getDataPoints().size());
-        }
-        if (!adapterConfig.getModbusToMQTTConfig().getPublishChangedDataOnly()) {
-            modBusData.getDataPoints().forEach(pollingOutput::addDataPoint);
-            if (log.isTraceEnabled()) {
-                log.trace("Publishing data with {} samples", modBusData.getDataPoints().size());
-            }
-        } else {
-            calculateDelta(modBusData, pollingOutput);
-        }
-        pollingOutput.finish();
-    }
-
-    private void calculateDelta(final @NotNull ModBusData modBusData, final @NotNull PollingOutput pollingOutput) {
-        final PollingContext pollingContext = modBusData.getPollingContext();
-
-        final List<DataPoint> previousSampleDataPoints = lastSamples.put(pollingContext, modBusData.getDataPoints());
-        final List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
-        final List<DataPoint> delta =
-                AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
-        if (log.isTraceEnabled()) {
-            log.trace("Calculating change data old {} samples, new {} sample, delta {}",
-                    previousSampleDataPoints != null ? previousSampleDataPoints.size() : 0,
-                    currentSamplePoints.size(),
-                    delta.size());
-        }
-        delta.forEach(pollingOutput::addDataPoint);
-        if (log.isTraceEnabled() && !delta.isEmpty()) {
-            log.trace("Publishing data with {} samples", delta.size());
-        }
-    }
-
-    protected @NotNull CompletableFuture<ModBusData> readRegisters(
-            final @NotNull PollingContext pollingContext,
+    protected @NotNull CompletableFuture<Object> readRegisters(
             final @NotNull ModbusClient modbusClient,
             final @NotNull ModbusTag modbusTag) {
         final ModbusTagDefinition modbusTagDefinition = modbusTag.getDefinition();
 
-        return doRead(modbusTagDefinition.startIdx,
-                modbusTagDefinition.unitId,
-                modbusTagDefinition.flipRegisters,
-                modbusTag.getDefinition().getDataType(),
-                modbusTagDefinition.readType,
-                modbusClient).thenApply(dataPoint -> {
-            final ModBusData data = new ModBusData(pollingContext);
-            data.addDataPoint(dataPoint);
-            return data;
-        });
-    }
+        final var startIdx = modbusTagDefinition.startIdx;
+        final var unitId = modbusTagDefinition.unitId;
+        final var flipRegisters= modbusTagDefinition.flipRegisters;
+        final var dataType = modbusTagDefinition.getDataType();
+        final var readType = modbusTagDefinition.readType;
 
-    protected static @NotNull CompletableFuture<DataPoint> doRead(
-            final int startIdx,
-            final int unitId,
-            final boolean flipRegisters,
-            final @NotNull ModbusDataType dataType,
-            final @NotNull ModbusAdu readType,
-            final @NotNull ModbusClient modbusClient) {
-        switch (readType) {
-            case HOLDING_REGISTERS:
-                return modbusClient.readHoldingRegisters(startIdx, dataType, unitId, flipRegisters);
-            case INPUT_REGISTERS:
-                return modbusClient.readInputRegisters(startIdx, dataType, unitId, flipRegisters);
-            case COILS:
-                return modbusClient.readCoils(startIdx, unitId);
-            case DISCRETE_INPUTS:
-                return modbusClient.readDiscreteInput(startIdx, unitId);
-            default:
-                return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
-        }
+        return switch (readType) {
+            case HOLDING_REGISTERS -> modbusClient.readHoldingRegisters(startIdx, dataType, unitId, flipRegisters);
+            case INPUT_REGISTERS -> modbusClient.readInputRegisters(startIdx, dataType, unitId, flipRegisters);
+            case COILS -> modbusClient.readCoils(startIdx, unitId);
+            case DISCRETE_INPUTS -> modbusClient.readDiscreteInput(startIdx, unitId);
+        };
     }
 
     private static void addAddresses(

@@ -8,14 +8,11 @@ import { useUpdateSouthboundMappings } from '@/api/hooks/useProtocolAdapters/use
 import type { ManagerContextType, MappingManagerType } from '@/modules/Mappings/types.ts'
 import { southboundMappingListSchema } from '@/api/schemas/southbound.json-schema.ts'
 import { southboundMappingListUISchema } from '@/api/schemas/southbound.ui-schema.ts'
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useSouthboundMappingManager = (adapterId: string): MappingManagerType<SouthboundMappingList> => {
   const { t } = useTranslation()
-  const toast = useToast({
-    duration: DEFAULT_TOAST_OPTION.duration,
-    isClosable: DEFAULT_TOAST_OPTION.isClosable,
-  })
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const { data, isError, isLoading, error } = useListSouthboundMappings(adapterId)
 

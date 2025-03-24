@@ -15,6 +15,7 @@
  */
 package com.hivemq.bootstrap.services;
 
+import com.hivemq.bootstrap.factories.DataCombiningTransformationServiceFactory;
 import com.hivemq.bootstrap.factories.WritingServiceFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,12 +23,22 @@ import org.jetbrains.annotations.Nullable;
 public class EdgeCoreFactoryService {
 
     private @Nullable WritingServiceFactory writingServiceFactory;
+    private @Nullable DataCombiningTransformationServiceFactory dataCombiningTransformationServiceFactory;
 
     public void provideWritingServiceFactory(final @NotNull WritingServiceFactory writingServiceFactory) {
         this.writingServiceFactory = writingServiceFactory;
     }
 
+    public void provideDataCombiningTransformationServiceFactory(
+            final @NotNull DataCombiningTransformationServiceFactory dataCombiningTransformationServiceFactory) {
+        this.dataCombiningTransformationServiceFactory = dataCombiningTransformationServiceFactory;
+    }
+
     public @Nullable WritingServiceFactory getWritingServiceFactory() {
         return writingServiceFactory;
+    }
+
+    public @Nullable DataCombiningTransformationServiceFactory getDataCombiningTransformationServiceFactory() {
+        return dataCombiningTransformationServiceFactory;
     }
 }

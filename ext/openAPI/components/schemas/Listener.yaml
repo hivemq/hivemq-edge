@@ -1,0 +1,36 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  description:
+    type: string
+    description: The extension description
+    nullable: true
+  externalHostname:
+    type: string
+    description: The external hostname
+    nullable: true
+  hostName:
+    type: string
+    description: A mandatory ID hostName with the Listener
+  name:
+    type: string
+    description: The listener name
+  port:
+    type: integer
+    format: int32
+    description: The listener port
+  protocol:
+    type: string
+    description: A protocol that this listener services
+    nullable: true
+  transport:
+    type: string
+    description: The underlying transport that this listener uses
+    enum:
+      - TCP
+      - UDP
+      - DCCP
+      - SCTP
+      - RSVP
+      - QUIC
+    nullable: true

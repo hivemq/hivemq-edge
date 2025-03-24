@@ -1,0 +1,22 @@
+type: object
+properties:
+  callbackTimeoutMillis:
+    type: integer
+    format: int32
+    description: >-
+      The callback timeout specifies the minimum amount of time (in
+      milliseconds) that the API advises the client to backoff before rechecking
+      the (runtime or connection) status of this object. This is only applicable
+      when the status is 'PENDING'.
+  identifier:
+    type: string
+    description: The identifier of the object in transition
+  status:
+    type: string
+    description: The status to perform on the target connection.
+    enum:
+      - PENDING
+      - COMPLETE
+  type:
+    type: string
+    description: The type of the object in transition

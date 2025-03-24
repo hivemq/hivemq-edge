@@ -30,25 +30,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author HiveMQ Adapter Generator
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HttpData implements ProtocolAdapterDataSample {
+public class HttpData {
 
     private final @NotNull String requestUrl;
     private final @NotNull String contentType;
     private final int httpStatusCode;
     private final @NotNull DataPointFactory dataPointFactory;
-    private final @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
-    private @NotNull Long timestamp = System.currentTimeMillis();
+    private final @NotNull Long timestamp = System.currentTimeMillis();
 
     public HttpData(
-            final @NotNull PollingContext pollingContext,
             final @NotNull String requestUrl,
             final int httpStatusCode,
             final @NotNull String contentType,
             final @NotNull DataPointFactory dataPointFactory) {
-        this.pollingContext = pollingContext;
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
@@ -68,34 +65,15 @@ public class HttpData implements ProtocolAdapterDataSample {
         return httpStatusCode >= 200 && httpStatusCode <= 299;
     }
 
-    @Override
-    @JsonIgnore
-    public @NotNull PollingContext getPollingContext() {
-        return pollingContext;
-    }
-
-    @Override
     @JsonIgnore
     public @NotNull Long getTimestamp() {
         return timestamp;
     }
 
-    @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         dataPoints.add(dataPointFactory.create(tagName, tagValue));
     }
 
-    @Override
-    public void addDataPoint(final @NotNull DataPoint dataPoint) {
-        dataPoints.add(dataPoint);
-    }
-
-    @Override
-    public void setDataPoints(final @NotNull List<DataPoint> list) {
-        this.dataPoints = list;
-    }
-
-    @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;

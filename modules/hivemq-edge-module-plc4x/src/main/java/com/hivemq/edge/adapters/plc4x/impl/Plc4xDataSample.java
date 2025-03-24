@@ -33,10 +33,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class Plc4xDataSample<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterDataSample {
+public class Plc4xDataSample {
 
-    protected @NotNull Long timestamp = System.currentTimeMillis();
-    protected @NotNull PollingContext pollingContext;
     private final @NotNull DataPointFactory dataPointFactory;
 
     //-- Handle multiple tags in the same sample
@@ -46,34 +44,10 @@ public class Plc4xDataSample<T extends ProtocolSpecificAdapterConfig> implements
         this.dataPointFactory = dataPointFactory;
     }
 
-    @Override
-    @JsonIgnore
-    public @NotNull PollingContext getPollingContext() {
-        return pollingContext;
-    }
-
-    @Override
-    @JsonIgnore
-    public @NotNull Long getTimestamp() {
-        return timestamp;
-    }
-
-    @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         dataPoints.add(dataPointFactory.create(tagName, tagValue));
     }
 
-    @Override
-    public void addDataPoint(final @NotNull DataPoint dataPoint) {
-        dataPoints.add(dataPoint);
-    }
-
-    @Override
-    public void setDataPoints(@NotNull List<DataPoint> list) {
-        this.dataPoints = list;
-    }
-
-    @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;

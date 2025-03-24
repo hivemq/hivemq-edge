@@ -1,0 +1,99 @@
+get:
+  description: >-
+    This endpoints provides the means to get information on the available Finite
+    State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub. The
+    information is provided in form of a Json Schema.
+  operationId: getFsms
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            get-response:
+              description: Get FSMs
+              summary: Get schema
+              value:
+                type: object
+                required:
+                  - model
+                properties:
+                  model:
+                    title: Behavior Model
+                    default: Mqtt.events
+                    enum:
+                      - Publish.quota
+                      - Mqtt.events
+                      - Publish.duplicate
+                allOf:
+                  - if:
+                      type: object
+                      properties:
+                        model:
+                          const: Publish.quota
+                    then:
+                      type: object
+                      properties:
+                        arguments:
+                          title: Publish.quota options
+                          description: >-
+                            When you configure a publish-quota model, at least
+                            one of the available arguments must be present. Data
+                            Hub uses the default value for the missing
+                            parameter.\nThe default value for minimum is 0. The
+                            default value for maxPublishes is UNLIMITED.
+                          type: object
+                          required:
+                            - minPublishes
+                          properties:
+                            minPublishes:
+                              type: number
+                              title: minPublishes
+                              description: >-
+                                Defines the minimal number of published messages
+                                that must be reached
+                            maxPublishes:
+                              type: number
+                              title: maxPublishes
+                              description: >-
+                                Defines the maximum number of published messages
+                                that must be reached
+                  - if:
+                      type: object
+                      properties:
+                        model:
+                          const: Mqtt.events
+                    then:
+                      type: object
+                      properties:
+                        arguments:
+                          title: Mqtt.events
+                          description: This FSM does not require any arguments.
+                          type: object
+                          required: []
+                          properties: {}
+                  - if:
+                      type: object
+                      properties:
+                        model:
+                          const: Publish.duplicate
+                    then:
+                      type: object
+                      properties:
+                        arguments:
+                          title: Publish.duplicate options
+                          description: This FSM does not require any arguments.
+                          type: object
+                          required: []
+                          properties: {}
+          schema:
+            $ref: ../components/schemas/JsonNode.yaml
+      description: Success
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Errors.yaml
+      description: Internal server error
+  summary: Get all FSMs as a JSON Schema
+  tags:
+    - Data Hub - FSM

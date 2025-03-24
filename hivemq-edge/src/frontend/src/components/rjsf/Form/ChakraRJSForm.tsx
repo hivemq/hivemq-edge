@@ -35,7 +35,8 @@ interface CustomFormProps<T>
 
 const FLAG_POST_VALIDATE = false
 
-const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   id,
   schema,
   uiSchema,
@@ -102,7 +103,7 @@ const ChakraRJSForm: FC<CustomFormProps<unknown>> = ({
       id={id}
       readonly={readonly}
       schema={unspecifiedSchema}
-      uiSchema={uiSchema}
+      uiSchema={showNativeWidgets ? undefined : uiSchema}
       formData={defaultValues}
       formContext={context}
       templates={{

@@ -1,0 +1,136 @@
+delete:
+  description: Remove bridge configured in the system.
+  operationId: removeBridge
+  parameters:
+    - description: The id of the bridge to delete.
+      in: path
+      name: bridgeId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Query parameters invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bridge not found
+  summary: Remove a Bridge
+  tags:
+    - Bridges
+get:
+  description: Get a bridge by ID.
+  operationId: getBridgeByName
+  parameters:
+    - description: The id of the bridge to query.
+      in: path
+      name: bridgeId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            bridge-get-result:
+              description: Example Bridge.
+              summary: Get Bridge Result
+              value:
+                id: cloud
+                host: REDACTED.cloud
+                port: 8883
+                clientId: cloud
+                keepAlive: 60
+                sessionExpiry: 3600
+                cleanStart: false
+                username: username
+                password: password
+                loopPreventionEnabled: true
+                loopPreventionHopCount: 1
+                remoteSubscriptions: []
+                localSubscriptions:
+                  - filters:
+                      - '#'
+                    destination: prefix/{#}/bridge/${bridge.name}
+                    excludes: []
+                    customUserProperties:
+                      - key: test1
+                        value: test2
+                    preserveRetain: true
+                    maxQoS: 0
+                tlsConfiguration:
+                  enabled: true
+                  keystorePassword: ''
+                  privateKeyPassword: ''
+                  truststorePassword: ''
+                  protocols: []
+                  cipherSuites: []
+                  keystoreType: JKS
+                  truststoreType: JKS
+                  verifyHostname: true
+                  handshakeTimeout: 10
+                bridgeRuntimeInformation:
+                  connectionStatus:
+                    status: CONNECTED
+                    id: simons-cloud
+                    type: bridge
+          schema:
+            $ref: ../components/schemas/Bridge.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Query parameters invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bridge not found
+  summary: Get a bridge by ID
+  tags:
+    - Bridges
+put:
+  description: Update bridge configured in the system.
+  operationId: updateBridge
+  parameters:
+    - description: The bridge to update.
+      in: path
+      name: bridgeId
+      required: true
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/Bridge.yaml
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Query parameters invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bridge not found
+  summary: Update a Bridge
+  tags:
+    - Bridges

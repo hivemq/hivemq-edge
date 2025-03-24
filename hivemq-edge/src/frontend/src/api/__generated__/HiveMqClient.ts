@@ -9,6 +9,7 @@ import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 import { AuthenticationService } from './services/AuthenticationService';
 import { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
 import { BridgesService } from './services/BridgesService';
+import { CombinersService } from './services/CombinersService';
 import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPoliciesService';
 import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
 import { DataHubFsmService } from './services/DataHubFsmService';
@@ -35,6 +36,7 @@ export class HiveMqClient {
     public readonly authentication: AuthenticationService;
     public readonly authenticationEndpoint: AuthenticationEndpointService;
     public readonly bridges: BridgesService;
+    public readonly combiners: CombinersService;
     public readonly dataHubBehaviorPolicies: DataHubBehaviorPoliciesService;
     public readonly dataHubDataPolicies: DataHubDataPoliciesService;
     public readonly dataHubFsm: DataHubFsmService;
@@ -59,7 +61,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2025.2-SNAPSHOT',
+            VERSION: config?.VERSION ?? '2025.4-SNAPSHOT',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -72,6 +74,7 @@ export class HiveMqClient {
         this.authentication = new AuthenticationService(this.request);
         this.authenticationEndpoint = new AuthenticationEndpointService(this.request);
         this.bridges = new BridgesService(this.request);
+        this.combiners = new CombinersService(this.request);
         this.dataHubBehaviorPolicies = new DataHubBehaviorPoliciesService(this.request);
         this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
         this.dataHubFsm = new DataHubFsmService(this.request);

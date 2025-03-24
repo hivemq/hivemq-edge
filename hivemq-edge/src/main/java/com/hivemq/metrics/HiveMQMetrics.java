@@ -199,5 +199,18 @@ public class HiveMQMetrics {
     public static final HiveMQMetric<Gauge<Number>> BRIDGES_CURRENT =
             HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "bridges.current");
 
+
+
+
+    /**
+     * represents a {@link Gauge}, which holds the current total number of data combiners
+     *
+     * @since 2025.4
+     */
+    public static final HiveMQMetric<Gauge<Number>> DATA_COMBINERS_COUNT_CURRENT =
+            HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "data-combining.data-combiners.current");
+
+
+
 }
 

@@ -1,0 +1,27 @@
+get:
+  description: Obtain gateway capabilities.
+  operationId: get-capabilities
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            capabilities:
+              description: An example capability list.
+              summary: Example capabilities
+              value: |-
+                {
+                    "items": [
+                        {
+                            "id": "test-capability"
+                            "displayName": "Super useful Capability"
+                            "description": "This capability is really useful for so many reasons."
+                        }
+                    ]
+                }
+          schema:
+            $ref: ../components/schemas/CapabilityList.yaml
+      description: Success
+  summary: Obtain Capabilities of the HiveMQ Edge Installation
+  tags:
+    - Frontend

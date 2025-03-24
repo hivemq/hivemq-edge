@@ -36,9 +36,11 @@ const PaginationButton: FC<IconButtonProps> = (props) => (
 
 const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) => {
   const { t } = useTranslation()
+  const showPageControls = table.getPageCount() !== 0
+
   return (
     <HStack as="nav" aria-label={t('components:pagination.ariaLabel')} gap={8} mt={4}>
-      <ButtonGroup isAttached variant="ghost">
+      <ButtonGroup isAttached variant="ghost" data-testid={'table-pagination-navigation'}>
         <PaginationButton
           icon={<LuSkipBack />}
           onClick={() => table.setPageIndex(0)}
@@ -65,17 +67,19 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
         />
       </ButtonGroup>
 
-      <Box role="group">
-        <Text fontSize="md" whiteSpace="nowrap">
-          {t('components:pagination.pageOf', {
-            page: table.getState().pagination.pageIndex + 1,
-            max: table.getPageCount(),
-          })}
-        </Text>
-      </Box>
+      {showPageControls && (
+        <Box role="group" data-testid={'table-pagination-currentPage'}>
+          <Text fontSize="md" whiteSpace="nowrap">
+            {t('components:pagination.pageOf', {
+              page: table.getState().pagination.pageIndex + 1,
+              max: table.getPageCount(),
+            })}
+          </Text>
+        </Box>
+      )}
 
-      {options?.enablePaginationGoTo && (
-        <FormControl display="flex" alignItems="center" w="inherit">
+      {showPageControls && options?.enablePaginationGoTo && (
+        <FormControl display="flex" alignItems="center" w="inherit" data-testid={'table-pagination-goto'}>
           <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
           <NumberInput
             size="sm"
@@ -96,8 +100,13 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
 
       {options?.enablePaginationSizes && (
         <Flex flex={1}>
-          <FormControl display="flex" alignItems="baseline" justifyContent="flex-end">
-            <FormLabel> {t('components:pagination.perPage')}</FormLabel>
+          <FormControl
+            display="flex"
+            alignItems="baseline"
+            justifyContent="flex-end"
+            data-testid={'table-pagination-perPages'}
+          >
+            <FormLabel>{t('components:pagination.perPage')}</FormLabel>
             <Select
               maxWidth="80px"
               size="sm"

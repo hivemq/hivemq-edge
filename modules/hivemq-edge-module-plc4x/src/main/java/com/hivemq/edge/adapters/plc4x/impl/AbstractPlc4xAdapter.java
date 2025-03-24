@@ -16,21 +16,20 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
+import com.hivemq.edge.adapters.plc4x.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -50,7 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
@@ -62,7 +62,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  * @author Simon L Johnson
  */
 public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<?>, C extends Plc4xToMqttMapping>
-        implements PollingProtocolAdapter {
+        implements BatchPollingProtocolAdapter {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -70,12 +70,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
-    protected final @NotNull List<Tag> tags;
+    protected final @NotNull List<Plc4xTag> tags;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     protected volatile @Nullable Plc4xConnection<T> connection;
-    private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
+    private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
+    private final @NotNull DataPointFactory dataPointFactory;
 
     public enum ReadType {
         Read,
@@ -89,43 +90,39 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
-        this.tags = input.getTags();
+        this.tags = input.getTags().stream().map(tag -> (Plc4xTag)tag).toList();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
     }
 
     @Override
-    public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
-            final PollingContext plc4xToMqttMapping = pollingInput.getPollingContext();
-            final String tagName = plc4xToMqttMapping.getTagName();
+                tempConnection.read(tags)
+                    .thenApply(response -> processReadResponse(tags, response))
+                    .whenComplete((sample, t) -> {
+                        if (t != null) {
+                            pollingOutput.fail(t, null);
+                        } else {
+                            if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
+                                final var tagsToValueList = sample.getDataPoints()
+                                        .stream()
+                                        .collect(Collectors.groupingBy(DataPoint::getTagName,
+                                                Collectors.mapping(Function.identity(), Collectors.toList())));
+                                tagsToValueList.forEach((tagName,tagValues) -> {
+                                    if (lastSamples.replaceIfValueIsNew(tagName, tagValues)) {
+                                        tagValues.forEach(pollingOutput::addDataPoint);
+                                    }
+                                });
+                            } else {
+                                sample.getDataPoints().forEach(pollingOutput::addDataPoint);
+                            }
 
-            findTag(tagName).ifPresentOrElse(def -> tempConnection.read(plc4xToMqttMapping)
-                            .thenApply(response -> processReadResponse(pollingInput.getPollingContext(), response))
-                            .thenApply(data -> captureDataSample(data, (Plc4xTag) def))
-                            .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput)),
-                    () -> pollingOutput.fail("Polling for protocol adapter failed because the used tag '" +
-                            tagName +
-                            "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+                            pollingOutput.finish();
+                        }
+                    });
         } else {
             pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
-        }
-    }
-
-    private @NotNull Optional<? extends Tag> findTag(final String tagName) {
-        return tags.stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
-    }
-
-    protected void handleDataAndExceptions(
-            final @NotNull ProtocolAdapterDataSample dataSample,
-            final @Nullable Throwable throwable,
-            final @NotNull PollingOutput pollingOutput) {
-        if (throwable != null) {
-            pollingOutput.fail(throwable, null);
-        } else {
-            for (final DataPoint dataPoint : dataSample.getDataPoints()) {
-                pollingOutput.addDataPoint(dataPoint);
-            }
-            pollingOutput.finish();
         }
     }
 
@@ -203,30 +200,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final PollingContext context) {
-                return findTag(context.getTagName()).map(tag -> createTagAddressForSubscription(context,
-                        (Plc4xTag) tag)).orElseThrow(); //TODO this sucks
+            protected @NotNull String getTagAddressForSubscription(final Plc4xTag tag) {
+                return createTagAddressForSubscription(tag);
             }
         };
-    }
-
-    protected @Nullable ProtocolAdapterDataSample captureDataSample(
-            final @NotNull ProtocolAdapterDataSample data, final @NotNull Plc4xTag plc4xTag) {
-        boolean publishData = true;
-        final String tagAddress = plc4xTag.getDefinition().getTagAddress();
-
-        if (adapterConfig.getPlc4xToMqttConfig() != null &&
-                adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
-            final ProtocolAdapterDataSample previousSample = lastSamples.put(tagAddress, data);
-            if (previousSample != null) {
-                final List<DataPoint> dataPoints = previousSample.getDataPoints();
-                publishData = !dataPoints.equals(data.getDataPoints());
-            }
-        }
-        if (publishData) {
-            return data;
-        }
-        return null;
     }
 
     /**
@@ -249,8 +226,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(
-            final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
+    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.getDefinition().getDataType());
     }
@@ -278,26 +254,24 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         return Objects.toString(o, null);
     }
 
-    protected @NotNull ProtocolAdapterDataSample processReadResponse(
-            final @NotNull PollingContext subscription, final @NotNull PlcReadResponse readEvent) {
-        //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
-        if (!(readEvent instanceof DefaultPlcReadResponse) ||
-                ((DefaultPlcReadResponse) readEvent).getValues().containsKey(subscription.getTagName())) {
-            final PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
-            if (responseCode == PlcResponseCode.OK) {
+    protected @NotNull Plc4xDataSample processReadResponse(
+            final @NotNull List<Plc4xTag> tags, final @NotNull PlcReadResponse readEvent) {
+        //it is possible that the read response does not contain any values at all, leading to unexpected error states
+        if (readEvent instanceof DefaultPlcReadResponse event) {
+            if (tags.stream().allMatch(tag -> event.getResponseCode(tag.getName()) == PlcResponseCode.OK)) {
                 if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.ERROR) {
                     //Error was transient
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 }
-                return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(readEvent));
+                return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(event));
             }
         }
-        return new Plc4xDataSample<>(adapterFactories.dataPointFactory());
+        return new Plc4xDataSample(adapterFactories.dataPointFactory());
     }
 
-    protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
+    protected @NotNull Plc4xDataSample processPlcFieldData(
             final @NotNull List<Pair<String, PlcValue>> l) {
-        final ProtocolAdapterDataSample data = new Plc4xDataSample<>(adapterFactories.dataPointFactory());
+        final Plc4xDataSample data = new Plc4xDataSample(adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

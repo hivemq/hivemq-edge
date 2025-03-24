@@ -18,15 +18,15 @@ interface EntityTagProps extends CustomTagProps {
 export const EntityTag: FC<EntityTagProps> = ({ tagTitle, tagIcon: TagIcon, colorScheme, ...rest }) => {
   const expandedTagTitle = typeof tagTitle === 'string' ? formatTopicString(tagTitle) : tagTitle
   return (
-    <Tag data-testid="topic-wrapper" {...rest} letterSpacing="-0.05rem" colorScheme={colorScheme}>
+    <Tag data-testid="topic-wrapper" {...rest} letterSpacing="-0.05rem" colorScheme={colorScheme} role={'group'}>
       <TagIcon boxSize="12px" mr={2} />
       {typeof tagTitle === 'string' ? <TagLabel>{expandedTagTitle}</TagLabel> : tagTitle}
     </Tag>
   )
 }
 
-export const PLCTag: FC<CustomTagProps> = ({ tagTitle }) => (
-  <EntityTag tagIcon={PLCTagIcon} tagTitle={tagTitle} colorScheme="blue" />
+export const PLCTag: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
+  <EntityTag tagIcon={PLCTagIcon} tagTitle={tagTitle} {...rest} colorScheme="blue" />
 )
 
 export const ClientTag: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (

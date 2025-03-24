@@ -1,0 +1,26 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  arguments:
+    $ref: ./JsonNode.yaml
+  behaviorId:
+    type: string
+    description: The unique identifier of the policy.
+  firstSetAt:
+    type: string
+    description: The timestamp when this state was set the first time.
+  policyId:
+    type: string
+    description: The unique identifier of the policy.
+  stateName:
+    type: string
+    description: The name of the fsm state.
+  stateType:
+    type: string
+    description: The type of the fsm state.
+  variables:
+    type: object
+    additionalProperties:
+      type: string
+      description: The variables for this fsm.
+    description: The variables for this fsm.

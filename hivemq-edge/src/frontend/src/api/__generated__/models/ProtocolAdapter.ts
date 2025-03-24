@@ -17,7 +17,7 @@ export type ProtocolAdapter = {
     /**
      * The capabilities of this adapter
      */
-    capabilities?: Array<'READ' | 'DISCOVER' | 'WRITE'>;
+    capabilities?: Array<'READ' | 'DISCOVER' | 'WRITE' | 'COMBINE'>;
     category?: ProtocolAdapterCategory;
     configSchema?: JsonNode;
     /**
