@@ -17,8 +17,8 @@ describe('MetadataExplorer', () => {
 
     // cy.get('button').should('have.attr', 'aria-label', 'Load samples').should('have.attr', 'disabled', 'disabled')
 
-    cy.get('h4').should('have.length', 1)
-    cy.get('h4').eq(0).should('contain.text', 'test')
+    cy.get('h3').should('have.length', 1)
+    cy.get('h3').eq(0).should('contain.text', 'test')
   })
 
   it('should render error properly', () => {
