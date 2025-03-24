@@ -1,28 +1,33 @@
 import type { MouseEventHandler } from 'react'
 import { type FC, useMemo } from 'react'
 import type { Edge, Node } from 'reactflow'
+import { useReactFlow } from 'reactflow'
 import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
-import { MdScheduleSend } from 'react-icons/md'
 import { v4 as uuidv4 } from 'uuid'
+import { useNavigate } from 'react-router-dom'
 
 import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
 import { EntityType, Status } from '@/api/__generated__'
-import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
+import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 
+import { HqCombiner } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { ANIMATION } from '@/modules/Theme/utils.ts'
 import type { Group } from '@/modules/Workspace/types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
 type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
@@ -47,8 +52,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
   const createCombiner = useCreateCombiner()
-  // TODO[30429] Need a workspace-wide feedback mechanism
   const toast = useToast(BASE_TOAST_OPTION)
+  const { data } = useGetAdapterTypes()
+  const { data: combiners } = useListCombiners()
+  const navigate = useNavigate()
+  const { fitView } = useReactFlow()
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedGroupCandidates = useMemo(() => {
@@ -71,12 +79,16 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [edges, nodes, selectedNodes])
 
   const selectedCombinerCandidates = useMemo(() => {
-    // TODO[29097] Decide which entities are eligible for combining. Hidden is EDGE, default are ADAPTER and BRIDGE;
-    const result = selectedNodes.filter(
-      (node) => node.type === NodeTypes.ADAPTER_NODE || node.type === NodeTypes.BRIDGE_NODE
-    ) as CombinerEligibleNode[]
+    const result = selectedNodes.filter((node) => {
+      if (node.type === NodeTypes.ADAPTER_NODE) {
+        const protocol = data?.items.find((e) => e.id === node.data.type)
+        return protocol?.capabilities?.includes('COMBINE')
+      }
+
+      return node.type === NodeTypes.BRIDGE_NODE
+    }) as CombinerEligibleNode[]
     return result.length ? result : undefined
-  }, [selectedNodes])
+  }, [data?.items, selectedNodes])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
@@ -137,7 +149,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     onInsertGroupNode(newGroupNode, newAEdge, rect)
   }
 
-  const onManageOrchestrators = () => {
+  const onManageCombiners = () => {
     if (!selectedCombinerCandidates) return
     const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
     if (!edgeNode) return
@@ -152,6 +164,28 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       return entity
     })
 
+    const isCombinerAlreadyDefined = combiners?.items?.find((e) =>
+      arrayWithSameObjects<EntityReference>(links)(e.sources.items)
+    )
+
+    const isCombinerSourcesAllValid = selectedNodes.length - selectedCombinerCandidates.length === 0
+
+    if (isCombinerAlreadyDefined) {
+      toast({
+        ...DEFAULT_TOAST_OPTION,
+        status: 'info',
+        title: t('combiner.toast.create.title'),
+        description: t('A combiner already exists. Please add your mappings to it'),
+      })
+      const node = nodes.find((e) => e.id === isCombinerAlreadyDefined.id)
+      if (node) {
+        fitView({ nodes: [{ id: isCombinerAlreadyDefined.id }], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
+        navigate(`combiner/${isCombinerAlreadyDefined.id}`)
+      }
+
+      return
+    }
+
     const newCombiner: Combiner = {
       id: newOrchestratorNodeId,
       name: t('combiner.unnamed'),
@@ -160,7 +194,12 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     }
 
     toast.promise(createCombiner.mutateAsync({ requestBody: newCombiner }), {
-      success: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.success') },
+      success: {
+        title: t('combiner.toast.create.title'),
+        description: isCombinerSourcesAllValid
+          ? t('combiner.toast.create.success')
+          : t('combiner.toast.create.partialSuccess'),
+      },
       error: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.error') },
       loading: { title: t('combiner.toast.create.title'), description: t('combiner.toast.loading') },
     })
@@ -198,9 +237,9 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         <IconButton
           isDisabled={!selectedCombinerCandidates}
           data-testid="node-group-toolbar-combiner"
-          icon={<MdScheduleSend />}
+          icon={<HqCombiner />}
           aria-label={t('workspace.toolbar.command.combiner.create')}
-          onClick={onManageOrchestrators}
+          onClick={onManageCombiners}
         />
       </ToolbarButtonGroup>
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { Node } from 'reactflow'
 import { useReactFlow } from 'reactflow'
 import {
@@ -19,12 +20,11 @@ import {
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import PolicySummaryReport from '@datahub/components/helpers/PolicySummaryReport.tsx'
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
+import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 
-import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
-import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish.tsx'
-import { useTranslation } from 'react-i18next'
+import { ANIMATION } from '@/modules/Theme/utils.ts'
 
 const DryRunPanelController = () => {
   const { t } = useTranslation('datahub')

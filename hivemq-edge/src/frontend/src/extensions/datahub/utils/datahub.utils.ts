@@ -4,11 +4,6 @@ export const SCRIPT_FUNCTION_SEPARATOR = ':'
 export const SCRIPT_FUNCTION_PREFIX = 'fn'
 export const SCRIPT_FUNCTION_LATEST = 'latest'
 
-// TODO[THEME] Import from the ChakraUI Theme
-export const ANIMATION = {
-  FIT_VIEW_DURATION_MS: 500,
-}
-
 export const DRYRUN_VALIDATION_DELAY = 250
 
 export const DATAHUB_HOTKEY = {
