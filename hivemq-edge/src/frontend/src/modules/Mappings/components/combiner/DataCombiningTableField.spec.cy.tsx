@@ -15,6 +15,17 @@ const mockDataCombiningTableUISchema = {
   },
 }
 
+const mockPrimary: DataCombining = {
+  ...mockCombinerMapping,
+  sources: {
+    ...mockCombinerMapping.sources,
+    primary: {
+      id: 'my/tag/t3',
+      type: DataIdentifierReference.type.TAG,
+    },
+  },
+}
+
 describe('DataCombiningTableField', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
@@ -74,17 +85,6 @@ describe('DataCombiningTableField', () => {
     const onChange = cy.stub().as('onChange')
     const onSubmit = cy.stub().as('onSubmit')
     const onError = cy.stub().as('onError')
-
-    const mockPrimary: DataCombining = {
-      ...mockCombinerMapping,
-      sources: {
-        ...mockCombinerMapping.sources,
-        primary: {
-          id: 'my/tag/t3',
-          type: DataIdentifierReference.type.TAG,
-        },
-      },
-    }
 
     cy.mountWithProviders(
       <CustomFormTesting
@@ -175,7 +175,7 @@ describe('DataCombiningTableField', () => {
       <CustomFormTesting
         schema={mockDataCombiningTableSchema}
         uiSchema={mockDataCombiningTableUISchema}
-        formData={{ items: [] }}
+        formData={{ items: [mockPrimary] }}
       />
     )
     cy.checkAccessibility()
