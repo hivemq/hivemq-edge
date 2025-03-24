@@ -3,10 +3,10 @@ import { Text, useToast } from '@chakra-ui/react'
 
 import type { ApiError } from '@/api/__generated__'
 import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useEdgeToast = () => {
-  const createToast = useToast()
+  const createToast = useToast(BASE_TOAST_OPTION)
 
   const successToast = (options: UseToastOptions) =>
     createToast({

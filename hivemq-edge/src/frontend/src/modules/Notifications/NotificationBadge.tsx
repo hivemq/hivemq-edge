@@ -8,10 +8,11 @@ import ButtonBadge from '@/components/Chakra/ButtonBadge.tsx'
 
 import { useGetManagedNotifications } from './hooks/useGetManagedNotifications.tsx'
 import { SkipNotification } from './components/SkipNotification.tsx'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 const NotificationBadge: FC = () => {
   const { t } = useTranslation()
-  const toast = useToast()
+  const toast = useToast(BASE_TOAST_OPTION)
   const { notifications } = useGetManagedNotifications()
   const containerStyle = useColorModeValue(undefined, {
     bg: 'chakra-body-bg',
