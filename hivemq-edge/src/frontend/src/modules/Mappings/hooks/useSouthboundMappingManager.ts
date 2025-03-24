@@ -34,7 +34,6 @@ export const useSouthboundMappingManager = (adapterId: string): MappingManagerTy
   })
 
   const onUpdateCollection = (tags: SouthboundMappingList) => {
-    if (!adapterId) return
     const promise = updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags })
     toast.promise(promise, formatToast('updateCollection'))
     return promise
