@@ -141,7 +141,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     onInsertGroupNode(newGroupNode, newAEdge, rect)
   }
 
-  const onManageOrchestrators = () => {
+  const onManageCombiners = () => {
     if (!selectedCombinerCandidates) return
     const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
     if (!edgeNode) return
@@ -204,7 +204,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           data-testid="node-group-toolbar-combiner"
           icon={<MdScheduleSend />}
           aria-label={t('workspace.toolbar.command.combiner.create')}
-          onClick={onManageOrchestrators}
+          onClick={onManageCombiners}
         />
       </ToolbarButtonGroup>
 
