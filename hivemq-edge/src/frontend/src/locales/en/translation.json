@@ -1207,6 +1207,7 @@
       "create": {
         "title": "Create the combiner",
         "success": "We've successfully created the combiner for you.",
+        "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
         "error": "There was a problem trying to create the combiner"
       },
       "update": {

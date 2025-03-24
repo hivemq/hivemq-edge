@@ -195,7 +195,12 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     }
 
     toast.promise(createCombiner.mutateAsync({ requestBody: newCombiner }), {
-      success: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.success') },
+      success: {
+        title: t('combiner.toast.create.title'),
+        description: isCombinerSourcesAllValid
+          ? t('combiner.toast.create.success')
+          : t('combiner.toast.create.partialSuccess'),
+      },
       error: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.error') },
       loading: { title: t('combiner.toast.create.title'), description: t('combiner.toast.loading') },
     })
