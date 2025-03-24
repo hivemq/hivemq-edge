@@ -1,21 +1,23 @@
 import { beforeEach, expect } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import '@/config/i18n.config.ts'
-import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import type { Adapter, AdaptersList, DomainTagList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import {
+  MOCK_DEVICE_TAGS,
   mockAdapter,
   mockAdapter_OPCUA,
   mockProtocolAdapter,
   mockProtocolAdapter_OPCUA,
 } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import type { Adapter, AdaptersList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
-import { type DomainTagList } from '@/api/__generated__'
-import { useTagManager } from '@/modules/Device/hooks/useTagManager.ts'
-import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { handlers } from '@/api/hooks/useDomainModel/__handlers__'
+
+import { useTagManager } from '@/modules/Device/hooks/useTagManager.ts'
+import { MockAdapterType } from '../../../__test-utils__/adapters/types'
 
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,
@@ -171,5 +173,32 @@ describe('useTagManager', () => {
         isPending: false,
       })
     )
+  })
+
+  it('should do it properly', async () => {
+    server.use(...customHandlers([mockProtocolAdapter_OPCUA], [mockAdapter_OPCUA], { items: [] }))
+    const { result } = renderHook(() => useTagManager('opcua-1'), { wrapper })
+    expect(result.current.isLoading).toBeTruthy()
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    // TODO[TEST] Needs to test the effect of calling the functions
+    act(() => {
+      result.current.onDelete('test-id')
+    })
+
+    act(() => {
+      result.current.onCreate(MOCK_DEVICE_TAGS('test-id', MockAdapterType.OPC_UA)[0])
+    })
+
+    act(() => {
+      result.current.onUpdate('test-id', MOCK_DEVICE_TAGS('test-id', MockAdapterType.OPC_UA)[0])
+    })
+
+    act(() => {
+      result.current.onupdateCollection({ items: MOCK_DEVICE_TAGS('test-id', MockAdapterType.OPC_UA) })
+    })
   })
 })
