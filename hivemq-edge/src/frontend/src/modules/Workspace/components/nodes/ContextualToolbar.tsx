@@ -13,6 +13,7 @@ import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generat
 import { EntityType, Status } from '@/api/__generated__'
 import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
 
+import { HqCombiner } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -202,7 +203,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         <IconButton
           isDisabled={!selectedCombinerCandidates}
           data-testid="node-group-toolbar-combiner"
-          icon={<MdScheduleSend />}
+          icon={<HqCombiner />}
           aria-label={t('workspace.toolbar.command.combiner.create')}
           onClick={onManageCombiners}
         />
