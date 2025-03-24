@@ -28,7 +28,6 @@ import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
-import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
 type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
