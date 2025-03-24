@@ -6,12 +6,6 @@ export const arrayContains = <T extends object>(container: T[], o: T) => {
   return container.some((c) => objectsEqual<T>(c, o))
 }
 
-// export const combinerWithSameEntities = (entities: EntityReference[]) => (combiner: Combiner) => {
-//   return entities.every((entity) => arrayContains<EntityReference>(combiner.sources.items, entity))
-//     ? combiner
-//     : undefined
-// }
-
 export const arrayWithSameObjects =
   <T extends object>(entities: T[]) =>
   (container: T[]) => {
