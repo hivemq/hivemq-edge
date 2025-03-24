@@ -23,19 +23,23 @@ interface PrimaryWrapperProps {
   children: ReactElement
 }
 
-export const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => (
-  <ConditionalWrapper
-    condition={isPrimary}
-    wrapper={(children) => (
-      <Tag data-testid="wrapper" p={1} variant="outline">
-        <TagLeftIcon boxSize="12px" as={FaKey} ml={1} />
-        {children}
-      </Tag>
-    )}
-  >
-    {children}
-  </ConditionalWrapper>
-)
+const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => {
+  const { t } = useTranslation()
+
+  return (
+    <ConditionalWrapper
+      condition={isPrimary}
+      wrapper={(children) => (
+        <Tag data-testid="primary-wrapper" role={'group'} p={1} variant="outline">
+          <TagLeftIcon boxSize="12px" as={FaKey} ml={1} aria-label={t('combiner.schema.mapping.primary.aria-label')} />
+          {children}
+        </Tag>
+      )}
+    >
+      {children}
+    </ConditionalWrapper>
+  )
+}
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
