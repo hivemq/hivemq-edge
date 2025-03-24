@@ -1,16 +1,29 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
-import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
+import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
+import { SelectEntityType } from '@/components/MQTT/types'
 
 const MAX_MAPPINGS = 2
 
 interface MappingBadgeProps {
   destinations: string[]
-  isTag?: boolean
+  type: SelectEntityType
 }
 
-const MappingBadge: FC<MappingBadgeProps> = ({ destinations, isTag = false }) => {
-  const Component = isTag ? PLCTag : Topic
+const MappingBadge: FC<MappingBadgeProps> = ({ destinations, type }) => {
+  const Component = useMemo(() => {
+    switch (type) {
+      case SelectEntityType.TOPIC:
+        return Topic
+      case SelectEntityType.TAG:
+        return PLCTag
+      case SelectEntityType.TOPIC_FILTER:
+      default:
+        return TopicFilter
+    }
+  }, [type])
+
   return (
     <HStack spacing="4" data-testid="topics-container">
       <VStack alignItems="flex-start">
