@@ -37,12 +37,21 @@ describe('SchemaSampler', () => {
     const onUpload = cy.stub().as('onUpload')
     cy.mountWithProviders(<SchemaSampler topicFilter={MOCK_TOPIC_FILTER} onUpload={onUpload} />)
 
-    cy.getByTestId('loading-spinner')
-    cy.get('h4').should('contain.text', 'a/topic/+/filter')
+    cy.get('h3').should('contain.text', 'a/topic/+/filter')
     cy.get('[role="list"]').should('be.visible')
 
     cy.get('@onUpload').should('not.have.been.called')
     cy.getByTestId('schema-sampler-upload').should('have.text', 'Assign schema').click()
     cy.get('@onUpload').should('have.been.calledWithMatch', 'data:application/json;base64,')
+  })
+
+  it('should be accessible', () => {
+    cy.intercept('/api/v1/management/sampling/topic/**', { items: [] })
+    cy.intercept('/api/v1/management/sampling/schema/**', GENERATE_DATA_MODELS(true, MOCK_TOPIC_FILTER.topicFilter)).as(
+      'getSchema'
+    )
+    cy.injectAxe()
+    cy.mountWithProviders(<SchemaSampler topicFilter={MOCK_TOPIC_FILTER} onUpload={cy.stub} />)
+    cy.checkAccessibility()
   })
 })

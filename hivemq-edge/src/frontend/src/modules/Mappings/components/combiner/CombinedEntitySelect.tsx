@@ -92,7 +92,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
   }, [tags, topicFilters])
 
   return (
-    <Box maxW={'25vw'} {...boxProps}>
+    <Box {...boxProps}>
       <Select<EntityOption, true, GroupBase<EntityOption>>
         inputId={id}
         id={'combiner-entity-select'}
