@@ -1,28 +1,33 @@
 import type { MouseEventHandler } from 'react'
 import { type FC, useMemo } from 'react'
 import type { Edge, Node } from 'reactflow'
+import { useReactFlow } from 'reactflow'
 import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
-import { MdScheduleSend } from 'react-icons/md'
 import { v4 as uuidv4 } from 'uuid'
+import { useNavigate } from 'react-router-dom'
 
 import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
 import { EntityType, Status } from '@/api/__generated__'
-import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
+import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 
 import { HqCombiner } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { ANIMATION } from '@/modules/Theme/utils.ts'
 import type { Group } from '@/modules/Workspace/types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
@@ -48,8 +53,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
   const createCombiner = useCreateCombiner()
-  // TODO[30429] Need a workspace-wide feedback mechanism
   const toast = useToast(BASE_TOAST_OPTION)
+  const { data } = useGetAdapterTypes()
+  const { data: combiners } = useListCombiners()
+  const navigate = useNavigate()
+  const { fitView } = useReactFlow()
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedGroupCandidates = useMemo(() => {
@@ -156,6 +164,28 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
       return entity
     })
+
+    const isCombinerAlreadyDefined = combiners?.items?.find((e) =>
+      arrayWithSameObjects<EntityReference>(links)(e.sources.items)
+    )
+
+    const isCombinerSourcesAllValid = selectedNodes.length - selectedCombinerCandidates.length === 0
+
+    if (isCombinerAlreadyDefined) {
+      toast({
+        ...DEFAULT_TOAST_OPTION,
+        status: 'info',
+        title: t('combiner.toast.create.title'),
+        description: t('A combiner already exists. Please add your mappings to it'),
+      })
+      const node = nodes.find((e) => e.id === isCombinerAlreadyDefined.id)
+      if (node) {
+        fitView({ nodes: [{ id: isCombinerAlreadyDefined.id }], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
+        navigate(`combiner/${isCombinerAlreadyDefined.id}`)
+      }
+
+      return
+    }
 
     const newCombiner: Combiner = {
       id: newOrchestratorNodeId,
