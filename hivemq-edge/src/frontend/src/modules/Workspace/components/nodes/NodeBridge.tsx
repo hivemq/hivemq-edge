@@ -5,17 +5,19 @@ import { Box, HStack, Image, SkeletonText, Text, VStack } from '@chakra-ui/react
 import { useTranslation } from 'react-i18next'
 
 import type { Bridge } from '@/api/__generated__'
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 
-import NodeWrapper from '../parts/NodeWrapper.tsx'
-import MappingBadge from '../parts/MappingBadge.tsx'
-import { getBridgeTopics } from '../../utils/topics-utils.ts'
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
-import { useContextMenu } from '../../hooks/useContextMenu.ts'
+import { SelectEntityType } from '@/components/MQTT/types'
+import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import { getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
+import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
+import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
+
+import NodeWrapper from '../parts/NodeWrapper.tsx'
+import MappingBadge from '../parts/MappingBadge.tsx'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, dragging }) => {
   const { t } = useTranslation()
@@ -36,7 +38,9 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
       >
         {!showSkeleton && (
           <VStack>
-            {options.showTopics && <MappingBadge destinations={topics.remote.map((filter) => filter.topic)} />}
+            {options.showTopics && (
+              <MappingBadge destinations={topics.remote.map((filter) => filter.topic)} type={SelectEntityType.TOPIC} />
+            )}
             <HStack>
               <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge')} />
               <Text flex={1} data-testid="bridge-node-name">
@@ -48,7 +52,9 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
                 <ConnectionStatusBadge status={bridge.status} />
               </Box>
             )}
-            {options.showTopics && <MappingBadge destinations={topics.local.map((filter) => filter.topic)} />}
+            {options.showTopics && (
+              <MappingBadge destinations={topics.local.map((filter) => filter.topic)} type={SelectEntityType.TOPIC} />
+            )}
           </VStack>
         )}
         {showSkeleton && (

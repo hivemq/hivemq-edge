@@ -21,6 +21,7 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
+import { SelectEntityType } from '@/components/MQTT/types'
 
 const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
@@ -68,7 +69,7 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, draggin
                 />
                 <Text>{data.protocol}</Text>
               </HStack>
-              <MappingBadge destinations={tagNames} isTag />
+              <MappingBadge destinations={tagNames} type={SelectEntityType.TAG} />
             </>
           )}
           {showSkeleton && (

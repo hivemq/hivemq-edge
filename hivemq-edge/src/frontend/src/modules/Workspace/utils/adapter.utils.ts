@@ -4,6 +4,7 @@ import { FaIndustry } from 'react-icons/fa6'
 import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
 import { RiCompassDiscoverLine } from 'react-icons/ri'
+import { HqCombiner } from '@/components/Icons'
 
 import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
@@ -42,6 +43,7 @@ export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['READ']: HmOutput,
   ['DISCOVER']: RiCompassDiscoverLine,
   ['WRITE']: HmInput,
+  ['COMBINE']: HqCombiner,
 }
 
 export const statusMapping = {

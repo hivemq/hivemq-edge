@@ -11,6 +11,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useListNorthboundMappings.ts'
 import { useListSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useListSouthboundMappings.ts'
 
+import { SelectEntityType } from '@/components/MQTT/types'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -76,7 +77,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {bidirectional && <MappingBadge destinations={southFlags} />}
+            {bidirectional && <MappingBadge destinations={southFlags} type={SelectEntityType.TOPIC} />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
@@ -89,7 +90,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
                 <ConnectionStatusBadge status={adapter.status} />
               </Box>
             )}
-            {options.showTopics && <MappingBadge destinations={northFlags} />}
+            {options.showTopics && <MappingBadge destinations={northFlags} type={SelectEntityType.TOPIC} />}
           </VStack>
         )}
         {showSkeleton && (

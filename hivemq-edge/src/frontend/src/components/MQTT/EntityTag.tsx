@@ -38,5 +38,5 @@ export const Topic: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
 )
 
 export const TopicFilter: FC<CustomTagProps> = ({ tagTitle, ...rest }) => (
-  <EntityTag tagIcon={TopicFilterIcon} tagTitle={tagTitle} {...rest} colorScheme="cyan" />
+  <EntityTag tagIcon={TopicFilterIcon} tagTitle={tagTitle} {...rest} colorScheme="orange" />
 )

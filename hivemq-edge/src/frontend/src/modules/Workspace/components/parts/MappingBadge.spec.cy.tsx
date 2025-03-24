@@ -3,6 +3,7 @@
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 
 import MappingBadge from './MappingBadge.tsx'
+import { SelectEntityType } from '../../../../components/MQTT/types'
 
 describe('TopicsContainer', () => {
   beforeEach(() => {
@@ -10,7 +11,9 @@ describe('TopicsContainer', () => {
   })
 
   it('should render properly all topics', () => {
-    cy.mountWithProviders(<MappingBadge destinations={['my/first/topic', 'my/second/topic']} />)
+    cy.mountWithProviders(
+      <MappingBadge destinations={['my/first/topic', 'my/second/topic']} type={SelectEntityType.TOPIC} />
+    )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)
     cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/topic'))
@@ -21,7 +24,7 @@ describe('TopicsContainer', () => {
   })
 
   it('should render properly all tags', () => {
-    cy.mountWithProviders(<MappingBadge destinations={['my/first/tag']} isTag />)
+    cy.mountWithProviders(<MappingBadge destinations={['my/first/tag']} type={SelectEntityType.TAG} />)
 
     cy.getByTestId('topic-wrapper').should('have.length', 1)
     cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/tag'))
@@ -31,7 +34,12 @@ describe('TopicsContainer', () => {
   })
 
   it('should render properly a show more if too many topics', () => {
-    cy.mountWithProviders(<MappingBadge destinations={['my/first/topic', 'my/second/topic', 'my/second/topic']} />)
+    cy.mountWithProviders(
+      <MappingBadge
+        destinations={['my/first/topic', 'my/second/topic', 'my/second/topic']}
+        type={SelectEntityType.TOPIC}
+      />
+    )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)
     cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/topic'))
