@@ -168,7 +168,7 @@ public class NorthboundMappingEntity {
                 northboundMapping.getIncludeTagNames(),
                 northboundMapping.getIncludeTimestamp(),
                 mqttUserPropertyEntities,
-                northboundMapping.getMessageExpiryInterval());
+                northboundMapping.getMessageExpiryInterval() != null ? northboundMapping.getMessageExpiryInterval() : Long.MAX_VALUE);
     }
 
     public @NotNull NorthboundMapping toPersistence() {
