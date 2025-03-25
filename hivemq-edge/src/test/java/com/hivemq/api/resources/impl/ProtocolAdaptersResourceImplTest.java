@@ -16,15 +16,16 @@
 package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
-import com.hivemq.persistence.domain.DomainTagDeleteResult;
-import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -38,6 +39,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -59,18 +61,20 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull ProtocolAdapterConfigConverter configConverter = mock();
     private final @NotNull TopicFilterPersistence topicFilterPersistence = mock();
     private final @NotNull SystemInformation systemInformation = mock();
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();
 
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource =
-            new ProtocolAdaptersResourceImpl(remoteService,
+            new ProtocolAdaptersResourceImpl(
+                    remoteService,
                     configurationService,
                     protocolAdapterManager,
                     protocolAdapterWritingService,
                     objectMapper,
                     versionProvider,
-                    configConverter,
                     topicFilterPersistence,
-                    systemInformation);
+                    systemInformation,
+                    protocolAdapterExtractor);
 
     @BeforeEach
     public void setUp() {
@@ -107,6 +111,14 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void addAdapterDomainTag_whenAddingSucceeds_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tagExists","description", Map.of("address", "addressy1"))));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(protocolAdapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
         when(protocolAdapterManager.addDomainTag(eq("adapter"), any())).thenReturn(DomainTagAddResult.success());
 
         final Response response = protocolAdaptersResource.addAdapterDomainTags("adapter",
@@ -121,9 +133,13 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void addAdapterDomainTag_whenAlreadyExists_thenReturn403() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.addDomainTag(eq("adapter"), any())).thenReturn(DomainTagAddResult.failed(
-                DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
-                "it exists"));
+
+        var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tag","description", Map.of("address", "addressy1"))));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(protocolAdapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(false);
 
         final Response response = protocolAdaptersResource.addAdapterDomainTags("adapter",
                 new DomainTag("tag",
@@ -131,14 +147,19 @@ class ProtocolAdaptersResourceImplTest {
                         "description",
                         objectMapper.valueToTree(Map.of("address", "addressy"))).toModel());
 
-        assertEquals(409, response.getStatus());
+        assertEquals(403, response.getStatus());
     }
 
     @Test
     void deleteDomainTag_whenTagExists_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.deleteDomainTag(eq("adapter"),
-                eq("tag"))).thenReturn(DomainTagDeleteResult.success());
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tag","description", Map.of("address", "addressy1"))));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(protocolAdapterEntity));
 
         final Response response =
                 protocolAdaptersResource.deleteAdapterDomainTags("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
@@ -150,8 +171,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void deleteDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.deleteDomainTag("adapter", "tag")).thenReturn(DomainTagDeleteResult.failed(
-                DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(false);
 
         final Response response =
                 protocolAdaptersResource.deleteAdapterDomainTags("adapter", URLEncoder.encode("tag", StandardCharsets.UTF_8));
@@ -163,7 +183,13 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagExists_thenReturn200() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.success());
+
+        var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tag","description", Map.of("address", "addressy1"))));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(protocolAdapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
         final Response response = protocolAdaptersResource.updateAdapterDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
@@ -178,8 +204,7 @@ class ProtocolAdaptersResourceImplTest {
     @Test
     void updateDomainTag_whenTagDoesNotExists_thenReturn400() {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
-        when(protocolAdapterManager.updateDomainTag(any())).thenReturn(DomainTagUpdateResult.failed(
-                DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(false);
 
         final Response response = protocolAdaptersResource.updateAdapterDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),

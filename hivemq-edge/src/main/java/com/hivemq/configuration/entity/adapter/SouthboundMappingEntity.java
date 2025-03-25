@@ -17,6 +17,8 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.edge.api.model.FieldMapping;
+import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,19 +82,46 @@ public class SouthboundMappingEntity {
         }
     }
 
-
-    public @NotNull SouthboundMapping to(final @NotNull ObjectMapper mapper) {
-        return new SouthboundMapping(this.getTagName(),
+    public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
+        return new SouthboundMapping(
+                this.getTagName(),
                 this.getTopicFilter(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
                 this.fromNorthSchema);
     }
 
-    public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {
-        return new SouthboundMappingEntity(southboundMapping.getTagName(),
+    public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
+        return com.hivemq.edge.api.model.SouthboundMapping
+                .builder()
+                .tagName(this.getTagName())
+                .topicFilter(this.getTopicFilter())
+                .fieldMapping(this.fieldMapping != null ?
+                        FieldMapping
+                                .builder()
+                                .instructions(
+                                        this.fieldMapping.getInstructions().stream()
+                                            .map(instruction ->
+                                                    (Instruction)Instruction
+                                                        .builder()
+                                                            .destination(instruction.getDestinationFieldName())
+                                                            .source(instruction.getSourceFieldName())
+                                                        .build()).toList()).build() : null).build();
+    }
+
+    public static @NotNull SouthboundMappingEntity fromPersistence(final @NotNull SouthboundMapping southboundMapping) {
+        return new SouthboundMappingEntity(
+                southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
                 FieldMappingEntity.from(southboundMapping.getFieldMapping()),
                 southboundMapping.getSchema());
+    }
+
+    public static @NotNull SouthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping, final @NotNull String schema) {
+        return new SouthboundMappingEntity(
+                southboundMapping.getTagName(),
+                southboundMapping.getTopicFilter(),
+                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                schema);
     }
 
     @Override

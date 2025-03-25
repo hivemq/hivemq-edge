@@ -27,7 +27,6 @@ import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
-import com.hivemq.configuration.reader.ProtocolAdapterConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
@@ -92,7 +91,6 @@ public abstract class AbstractConfigWriterTest {
                     new UnsConfigurator(configurationService.unsConfiguration()),
                     new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                     new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                    new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
                     new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                     new InternalConfigurator(configurationService.internalConfigurationService())));
         configFileReader.setDefaultBackupConfig(false);

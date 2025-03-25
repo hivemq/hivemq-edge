@@ -110,4 +110,23 @@ public class SimulationSpecificAdapterConfig
     public int getMinDelay() {
         return minDelay;
     }
+
+    @Override
+    public String toString() {
+        return "SimulationSpecificAdapterConfig{" +
+                "id='" +
+                id +
+                '\'' +
+                ", simulationToMqttConfig=" +
+                simulationToMqttConfig +
+                ", minValue=" +
+                minValue +
+                ", maxValue=" +
+                maxValue +
+                ", minDelay=" +
+                minDelay +
+                ", maxDelay=" +
+                maxDelay +
+                '}';
+    }
 }

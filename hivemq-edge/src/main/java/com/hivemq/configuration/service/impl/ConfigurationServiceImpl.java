@@ -18,6 +18,7 @@ package com.hivemq.configuration.service.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DataCombiningConfigurationService;
@@ -27,7 +28,6 @@ import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
@@ -68,7 +68,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     private final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
@@ -87,7 +86,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
-            final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService,
             final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService,
             final @NotNull ModuleConfigurationService moduleConfigurationService,
             final @NotNull InternalConfigurationService internalConfigurationService) {
@@ -101,7 +99,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
-        this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
         this.dataCombiningConfigurationService = dataCombiningConfigurationService;
         this.moduleConfigurationService = moduleConfigurationService;
         this.internalConfigurationService = internalConfigurationService;
@@ -152,10 +149,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return usageTrackingConfigurationService;
     }
 
-    public @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService() {
-        return proxy(ProtocolAdapterConfigurationService.class, protocolAdapterConfigurationService);
-    }
-
     @Override
     public @NotNull DataCombiningConfigurationService dataCombiningConfigurationService() {
         return proxy(DataCombiningConfigurationService.class, dataCombiningConfigurationService);
@@ -178,6 +171,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public void setConfigFileReaderWriter(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
         Preconditions.checkNotNull(configFileReaderWriter);
         this.configFileReaderWriter = configFileReaderWriter;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterExtractor protocolAdapterExtractor() {
+        return configFileReaderWriter.getProtocolAdapterExtractor();
     }
 
     @Override

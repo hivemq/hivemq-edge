@@ -24,7 +24,6 @@ import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
@@ -36,7 +35,6 @@ import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
@@ -69,7 +67,6 @@ public class AbstractConfigurationTest {
     UnsConfigurationService unsConfigurationService;
     DynamicConfigurationService dynamicConfigurationService;
     UsageTrackingConfigurationService usageTrackingConfigurationService;
-    ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     ModuleConfigurationService moduleConfigurationService;
     InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
@@ -92,7 +89,6 @@ public class AbstractConfigurationTest {
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
         moduleConfigurationService = new ModuleConfigurationServiceImpl();
-        protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         final ConfigurationFile configurationFile = new ConfigurationFile(xmlFile);
         reader = new ConfigFileReaderWriter(
@@ -108,7 +104,6 @@ public class AbstractConfigurationTest {
                         new UnsConfigurator(unsConfigurationService),
                         new DynamicConfigConfigurator(dynamicConfigurationService),
                         new UsageTrackingConfigurator(usageTrackingConfigurationService),
-                        new ProtocolAdapterConfigurator(protocolAdapterConfigurationService),
                         new ModuleConfigurator(moduleConfigurationService),
                         new InternalConfigurator(internalConfigurationService)));
         bridgeConfiguration = reader.getBridgeExtractor();
