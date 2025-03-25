@@ -174,10 +174,7 @@ public class ConfigFileReaderTest {
 
         final UsageTrackingConfigurator usageTrackingConfigurator = mock(UsageTrackingConfigurator.class);
         when(usageTrackingConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final ProtocolAdapterConfigurator protocolAdapterConfigurator = mock(ProtocolAdapterConfigurator.class);
-        when(protocolAdapterConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
+        
         final ModuleConfigurator moduleConfigurator = mock(ModuleConfigurator.class);
         when(moduleConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 

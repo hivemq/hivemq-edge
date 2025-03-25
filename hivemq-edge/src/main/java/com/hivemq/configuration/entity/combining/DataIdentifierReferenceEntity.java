@@ -49,4 +49,8 @@ public class DataIdentifierReferenceEntity {
     public @NotNull DataIdentifierReference.Type getType() {
         return type;
     }
+
+    public static DataIdentifierReferenceEntity from(com.hivemq.edge.api.model.DataIdentifierReference ref) {
+        return new DataIdentifierReferenceEntity(ref.getId(), DataIdentifierReference.Type.from(ref.getType()));
+    }
 }

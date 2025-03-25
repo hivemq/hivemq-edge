@@ -97,6 +97,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull Map<Path, Long> fragmentToModificationTime = new ConcurrentHashMap<>();
 
     private final @NotNull BridgeExtractor bridgeExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
     public ConfigFileReaderWriter(
@@ -105,6 +106,7 @@ public class ConfigFileReaderWriter {
         this.configurationFile = configurationFile;
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
+        this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
     }
 
     public HiveMQConfigEntity applyConfig() {
@@ -123,6 +125,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull BridgeExtractor getBridgeExtractor() {
         return bridgeExtractor;
+    }
+
+    public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
+        return protocolAdapterExtractor;
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
@@ -490,6 +496,7 @@ public class ConfigFileReaderWriter {
             log.debug("Config can be applied");
             configurators.forEach(c -> c.applyConfig(config));
             bridgeExtractor.updateConfig(config);
+            protocolAdapterExtractor.updateConfig(config);
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
@@ -505,6 +512,7 @@ public class ConfigFileReaderWriter {
                 .forEach(c -> ((Syncable)c).sync(configEntity));
 
         bridgeExtractor.sync(configEntity);
+        protocolAdapterExtractor.sync(configEntity);
     }
 
     protected Schema loadSchema() throws IOException, SAXException {

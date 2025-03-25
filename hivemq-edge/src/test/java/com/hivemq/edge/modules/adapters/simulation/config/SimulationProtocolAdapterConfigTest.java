@@ -33,7 +33,6 @@ import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
-import com.hivemq.configuration.reader.ProtocolAdapterConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
@@ -261,9 +260,6 @@ class SimulationProtocolAdapterConfigTest {
         final UsageTrackingConfigurator usageTrackingConfigurator = mock(UsageTrackingConfigurator.class);
         when(usageTrackingConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
-        final ProtocolAdapterConfigurator protocolAdapterConfigurator = mock(ProtocolAdapterConfigurator.class);
-        when(protocolAdapterConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
         final ModuleConfigurator moduleConfigurator = mock(ModuleConfigurator.class);
         when(moduleConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
@@ -282,7 +278,6 @@ class SimulationProtocolAdapterConfigTest {
                     unsConfigurator,
                     dynamicConfigConfigurator,
                     usageTrackingConfigurator,
-                    protocolAdapterConfigurator,
                     moduleConfigurator,
                     internalConfigurator));
         return readerWriter.applyConfig();

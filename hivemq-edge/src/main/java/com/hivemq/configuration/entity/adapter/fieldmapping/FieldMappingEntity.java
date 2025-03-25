@@ -57,6 +57,15 @@ public class FieldMappingEntity {
         return new FieldMappingEntity(fieldMappingEntityList);
     }
 
+    public static @NotNull FieldMappingEntity from(final @NotNull com.hivemq.edge.api.model.FieldMapping model) {
+        if (model == null) {
+            return null;
+        }
+        final List<InstructionEntity> fieldMappingEntityList =
+                model.getInstructions().stream().map(InstructionEntity::from).collect(Collectors.toList());
+        return new FieldMappingEntity(fieldMappingEntityList);
+    }
+
     public @NotNull FieldMapping to(final @NotNull ObjectMapper mapper) {
         final List<Instruction> instructions =
                 getInstructions().stream().map(InstructionEntity::to).collect(Collectors.toList());

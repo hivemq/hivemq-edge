@@ -41,57 +41,11 @@ public class ConfigPersistence {
     private static final Logger log = LoggerFactory.getLogger(ConfigPersistence.class);
 
     private final @NotNull ConfigurationService configurationService;
-    private final @NotNull ProtocolAdapterConfigConverter configConverter;
 
     @Inject
     public ConfigPersistence(
-            final @NotNull ConfigurationService configurationService,
-            final @NotNull ProtocolAdapterConfigConverter configConverter) {
+            final @NotNull ConfigurationService configurationService) {
         this.configurationService = configurationService;
-        this.configConverter = configConverter;
-    }
-
-    public @NotNull List<ProtocolAdapterConfig> allAdapters() {
-        return configurationService.protocolAdapterConfigurationService()
-                .getAllConfigs()
-                .stream()
-                .map(configConverter::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    public synchronized void updateAllAdapters(final @NotNull List<ProtocolAdapterConfig> adapterConfigs) {
-        final List<ProtocolAdapterEntity> adapterEntities =
-                adapterConfigs.stream().map(configConverter::toEntity).collect(Collectors.toList());
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(adapterEntities);
-    }
-
-    public synchronized void addAdapter(final @NotNull ProtocolAdapterConfig protocolAdapterConfig) {
-        final @NotNull List<ProtocolAdapterConfig> protocolAdapterConfigs = allAdapters();
-        protocolAdapterConfigs.add(protocolAdapterConfig);
-        updateAllAdapters(protocolAdapterConfigs);
-    }
-
-    public synchronized void updateAdapter(
-            final @NotNull ProtocolAdapterConfig protocolAdapterConfig) {
-        final @NotNull List<ProtocolAdapterConfig> allAdapterConfigs = allAdapters();
-        if (allAdapterConfigs.removeIf(instance -> protocolAdapterConfig.getAdapterId()
-                .equals(instance.getAdapterId()))) {
-            allAdapterConfigs.add(protocolAdapterConfig);
-        } else {
-            log.error("Tried updating non existing adapter {} of type {}",
-                    protocolAdapterConfig.getAdapterId(),
-                    protocolAdapterConfig.getProtocolId());
-        }
-        updateAllAdapters(allAdapterConfigs);
-    }
-
-    public synchronized void deleteAdapter(final @NotNull String adapterId, final @NotNull String protocolId) {
-        final @NotNull List<ProtocolAdapterConfig> allAdapterConfigs = allAdapters();
-        if (allAdapterConfigs.removeIf(instance -> adapterId.equals(instance.getAdapterId()))) {
-            updateAllAdapters(allAdapterConfigs);
-        } else {
-            log.error("Tried deleting non existing adapter {} of type {}", adapterId, protocolId);
-        }
     }
 
 
@@ -125,16 +79,5 @@ public class ConfigPersistence {
         allDataCombiners.add(dataCombiner);
         updateAllDataCombiners(allDataCombiners);
     }
-
-
-    public synchronized void deleteDataCombiner(final @NotNull String dataCombinerId) {
-        final @NotNull List<ProtocolAdapterConfig> allAdapterConfigs = allAdapters();
-        if (allAdapterConfigs.removeIf(instance -> dataCombinerId.equals(instance.getAdapterId()))) {
-            updateAllAdapters(allAdapterConfigs);
-        } else {
-            log.error("Tried deleting non existing daa combiner '{}'.", dataCombinerId);
-        }
-    }
-
 
 }

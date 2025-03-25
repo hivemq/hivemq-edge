@@ -21,7 +21,6 @@ import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
@@ -34,7 +33,6 @@ import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
@@ -58,7 +56,6 @@ public class TestConfigurationBootstrap {
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService =
             new InternalConfigurationServiceImpl();
@@ -82,7 +79,6 @@ public class TestConfigurationBootstrap {
                 return false;
             }
         };
-        protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         configurationService = new ConfigurationServiceImpl(listenerConfigurationService,
                 mqttConfigurationService,
@@ -94,7 +90,6 @@ public class TestConfigurationBootstrap {
                 unsConfigurationService,
                 dynamicConfigurationService,
                 usageTrackingConfigurationService,
-                protocolAdapterConfigurationService,
                 new DataCombiningConfigurationServiceImpl(),
                 moduleConfigurationService,
                 internalConfigurationService);

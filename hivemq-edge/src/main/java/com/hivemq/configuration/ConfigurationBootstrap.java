@@ -28,7 +28,6 @@ import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
-import com.hivemq.configuration.reader.ProtocolAdapterConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
@@ -43,7 +42,6 @@ import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
@@ -72,7 +70,6 @@ public class ConfigurationBootstrap {
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
-                        new ProtocolAdapterConfigurationServiceImpl(),
                         new DataCombiningConfigurationServiceImpl(),
                         new ModuleConfigurationServiceImpl(),
                         new InternalConfigurationServiceImpl());
@@ -91,7 +88,6 @@ public class ConfigurationBootstrap {
                         new UnsConfigurator(configurationService.unsConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                        new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
                         new DataCombiningConfigurator(configurationService.dataCombiningConfigurationService()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                         new InternalConfigurator(configurationService.internalConfigurationService())));

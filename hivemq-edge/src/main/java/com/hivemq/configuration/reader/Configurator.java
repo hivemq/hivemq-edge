@@ -29,7 +29,7 @@ import java.util.Objects;
 public interface Configurator <T> {
     Logger log = LoggerFactory.getLogger(Configurator.class);
 
-    enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART}
+    enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART, ERROR}
 
     /**
      * Called for initial setup.

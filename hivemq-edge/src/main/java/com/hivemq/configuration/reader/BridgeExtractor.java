@@ -65,7 +65,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public void addBridge(final @NotNull MqttBridge mqttBridge) {
+    public synchronized void addBridge(final @NotNull MqttBridge mqttBridge) {
         if (!mqttBridge.isPersist()) {
             log.info(
                     "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
@@ -87,7 +87,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
                 .build();
     }
 
-    public void removeBridge(final @NotNull String id) {
+    public synchronized void removeBridge(final @NotNull String id) {
         bridgeEntities = bridgeEntities.stream().filter(entry -> !entry.getId().equals(id)).toList();
 
         notifyConsumer();
@@ -108,7 +108,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     }
 
     @Override
-    public Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
+    public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
         bridgeEntities = convertBridgeConfigs(config);
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
@@ -117,7 +117,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     @Override
     public void registerConsumer(final Consumer<List<@NotNull MqttBridge>> consumer) {
         this.bridgeEntitiesConsumer = consumer;
-        consumer.accept(bridgeEntities);
+        notifyConsumer();
     }
 
     private @NotNull List<@NotNull MqttBridge> convertBridgeConfigs(final @NotNull HiveMQConfigEntity config) {
