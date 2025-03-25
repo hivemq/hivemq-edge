@@ -37,8 +37,6 @@ public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNu
         return allConfigs.stream().filter(adapter -> adapter.getAdapterId().equals(adapterId)).findFirst();
     }
 
-    public record Tuple(Set<String> newTagSet, Set<String> duplicates) {}
-
     @Override
     public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
         final var newConfigs = List.copyOf(config.getProtocolAdapterConfig());
@@ -51,18 +49,116 @@ public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNu
                 });
     }
 
+    public synchronized Configurator.ConfigResult updateAllAdapters(final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {
+        final var newConfigs = List.copyOf(adapterConfigs);
+        return updateTagNames(newConfigs)
+            .map(duplicates -> Configurator.ConfigResult.ERROR)
+            .orElseGet(() -> {
+                replaceConfigsAndTriggerWrite(newConfigs);
+                return Configurator.ConfigResult.SUCCESS;
+            });
+    }
+
+    private void replaceConfigsAndTriggerWrite(List<@NotNull ProtocolAdapterEntity> newConfigs) {
+        allConfigs = newConfigs;
+        notifyConsumer();
+        configFileReaderWriter.writeConfigWithSync();
+    }
+
+    public synchronized boolean addAdapter(final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
+        final var allConfigsTemp = List.copyOf(allConfigs);
+        if (allConfigsTemp.stream().anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
+            throw new IllegalArgumentException("adapter already exists by id '" +
+                    protocolAdapterConfig.getProtocolId() +
+                    "'");
+        }
+        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getTags())
+                .map(dupes -> {
+                    log.error("Found duplicated tag names: {}", dupes);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    final var newConfigs = new ImmutableList.Builder<ProtocolAdapterEntity>()
+                            .addAll(allConfigsTemp)
+                            .add(protocolAdapterConfig)
+                            .build();
+                    replaceConfigsAndTriggerWrite(newConfigs);
+                    return true;
+                });
+    }
+
+    public synchronized boolean updateAdapter(
+            final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
+        final var duplicateTags = new HashSet<String>();
+        final var updated = new AtomicBoolean(false);
+        final var newConfigs = allConfigs
+                        .stream()
+                        .map(oldInstance -> {
+                            if(oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
+                                return replaceTagNamesIfNoDuplicates(oldInstance.getTags(), protocolAdapterConfig.getTags())
+                                        .map(dupes -> {
+                                            duplicateTags.addAll(dupes);
+                                            return oldInstance;
+                                        })
+                                        .orElseGet(() -> {
+                                            updated.set(true);
+                                            return protocolAdapterConfig;
+                                        });
+                            } else {
+                                return oldInstance;
+                            }
+                        }).toList();
+        if(updated.get()) {
+            if(!duplicateTags.isEmpty()) {
+                log.error("Found duplicated tag names: {}", duplicateTags);
+                return false;
+            } else {
+                replaceConfigsAndTriggerWrite(newConfigs);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public synchronized boolean deleteAdapter(final @NotNull String adapterId) {
+        final var newConfigs = new ArrayList<>(allConfigs);
+        final var deleted = allConfigs
+                .stream()
+                .filter(config -> config.getAdapterId().equals(adapterId))
+                .findFirst()
+                .map(found -> {
+                    newConfigs.remove(found);
+                    tagNames.removeAll(found.getTags().stream().map(TagEntity::getName).toList());
+                    return true;
+                })
+                .orElse(false);
+
+        if(deleted) {
+            replaceConfigsAndTriggerWrite(List.copyOf(newConfigs));
+            return true;
+        }
+        return false;
+    }
+
+    private void notifyConsumer() {
+        final var consumer = this.consumer;
+        if(consumer != null) {
+            consumer.accept(allConfigs);
+        }
+    }
+
     private Optional<Set<String>> updateTagNames(List<ProtocolAdapterEntity> entities) {
         final var newTagNames = new HashSet<String>();
         final var duplicates = new HashSet<String>();
         entities.stream()
                 .flatMap(cfg ->
                         cfg.getTags().stream()).forEach(tag -> {
-                            if (newTagNames.contains(tag.getName())) {
-                                duplicates.add(tag.getName());
-                            } else {
-                                newTagNames.add(tag.getName());
-                            }
-                        });
+                    if (newTagNames.contains(tag.getName())) {
+                        duplicates.add(tag.getName());
+                    } else {
+                        newTagNames.add(tag.getName());
+                    }
+                });
 
         if(!duplicates.isEmpty()) {
             log.error("Duplicate tags detected while updating: {}", duplicates);
@@ -131,110 +227,5 @@ public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNu
     public synchronized void sync(final @NotNull HiveMQConfigEntity config) {
         config.getProtocolAdapterConfig().clear();
         config.getProtocolAdapterConfig().addAll(allConfigs);
-    }
-
-    public synchronized Configurator.ConfigResult updateAllAdapters(final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {
-        final var newConfigs = List.copyOf(adapterConfigs);
-        return updateTagNames(newConfigs)
-            .map(duplicates -> Configurator.ConfigResult.ERROR)
-            .orElseGet(() -> {
-                allConfigs = newConfigs;
-                notifyConsumer();
-                configFileReaderWriter.writeConfigWithSync();
-                return Configurator.ConfigResult.SUCCESS;
-            });
-    }
-
-    public synchronized boolean addAdapter(final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
-        final var allConfigsTemp = allConfigs;
-        //TODO
-//        if (!protocolAdapterFactoryManager.getAllAvailableAdapterTypes().containsKey(protocolAdapterConfig.getProtocolId())) {
-//            throw new IllegalArgumentException("invalid adapter type '" + protocolAdapterConfig.getProtocolId() + "'");
-//        }
-        if (allConfigsTemp.stream().anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
-            throw new IllegalArgumentException("adapter already exists by id '" +
-                    protocolAdapterConfig.getProtocolId() +
-                    "'");
-        }
-        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getTags())
-                .map(dupes -> {
-                    log.error("Found duplicated tag names: {}", dupes);
-                    return false;
-                })
-                .orElseGet(() -> {
-                    this.allConfigs = new ImmutableList.Builder<ProtocolAdapterEntity>()
-                            .addAll(allConfigs)
-                            .add(protocolAdapterConfig)
-                            .build();
-                    notifyConsumer();
-                    configFileReaderWriter.writeConfigWithSync();
-                    return true;
-                });
-    }
-
-    public synchronized boolean updateAdapter(
-            final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
-
-        final var duplicateTags = new HashSet<String>();
-        final var updated = new AtomicBoolean(false);
-        final var newConfigs = allConfigs
-                        .stream()
-                        .map(oldInstance -> {
-                            if(oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
-                                return replaceTagNamesIfNoDuplicates(oldInstance.getTags(), protocolAdapterConfig.getTags())
-                                        .map(dupes -> {
-                                            duplicateTags.addAll(dupes);
-                                            return oldInstance;
-                                        })
-                                        .orElseGet(() -> {
-                                            updated.set(true);
-                                            return protocolAdapterConfig;
-                                        });
-                            } else {
-                                return oldInstance;
-                            }
-                        }).toList();
-        if(updated.get()) {
-            if(!duplicateTags.isEmpty()) {
-                log.error("Found duplicated tag names: {}", duplicateTags);
-                return false;
-            } else {
-                allConfigs = newConfigs;
-                notifyConsumer();
-                configFileReaderWriter.writeConfigWithSync();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public synchronized boolean deleteAdapter(final @NotNull String adapterId) {
-
-        final var newConfigs = new ArrayList<>(allConfigs);
-        final var deleted = allConfigs
-                .stream()
-                .filter(config -> config.getAdapterId().equals(adapterId))
-                .findFirst()
-                .map(found -> {
-                    newConfigs.remove(found);
-                    tagNames.removeAll(found.getTags().stream().map(TagEntity::getName).toList());
-                    return true;
-                })
-                .orElse(false);
-
-        if(deleted) {
-            allConfigs = List.copyOf(newConfigs);
-            notifyConsumer();
-            configFileReaderWriter.writeConfigWithSync();
-            return true;
-        }
-        return false;
-    }
-
-    private void notifyConsumer() {
-        final var consumer = this.consumer;
-        if(consumer != null) {
-            consumer.accept(allConfigs);
-        }
     }
 }
