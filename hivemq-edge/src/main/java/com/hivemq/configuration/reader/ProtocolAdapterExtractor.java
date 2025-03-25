@@ -44,6 +44,7 @@ public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNu
                 .map(duplicates -> Configurator.ConfigResult.ERROR)
                 .orElseGet(() -> {
                     allConfigs = newConfigs;
+                    //We don'T write here because this method is triggered as the result of a write
                     notifyConsumer();
                     return Configurator.ConfigResult.SUCCESS;
                 });
