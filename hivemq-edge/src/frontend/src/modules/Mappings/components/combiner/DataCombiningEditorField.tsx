@@ -2,7 +2,6 @@ import type { FC } from 'react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 import {
-  Box,
   FormControl,
   FormErrorMessage,
   FormHelperText,
