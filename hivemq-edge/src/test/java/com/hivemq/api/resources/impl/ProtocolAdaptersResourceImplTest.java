@@ -192,7 +192,7 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
         final Response response = protocolAdaptersResource.updateAdapterDomainTag("adapter",
-                Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
+                URLEncoder.encode("tag", StandardCharsets.UTF_8),
                 new DomainTag("tag",
                         "1",
                         "description",

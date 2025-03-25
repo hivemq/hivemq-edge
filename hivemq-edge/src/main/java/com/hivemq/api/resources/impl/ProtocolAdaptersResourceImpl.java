@@ -586,7 +586,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-        final String decodedTagName = new String(Base64.getDecoder().decode(tagName.getBytes(StandardCharsets.UTF_8)));
+        final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         return protocolAdapterConfig
                 .getAdapterByAdapterId(adapterId)
