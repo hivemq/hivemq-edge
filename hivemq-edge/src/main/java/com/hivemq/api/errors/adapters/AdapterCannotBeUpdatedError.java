@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.service;
+package com.hivemq.api.errors.adapters;
 
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
-import java.util.Map;
 
-public interface ProtocolAdapterConfigurationService {
-
-    @NotNull List<ProtocolAdapterEntity> getAllConfigs();
-
-    void setAllConfigs(@NotNull List<ProtocolAdapterEntity> allConfigs);
+public class AdapterCannotBeUpdatedError extends ProblemDetails {
+    public AdapterCannotBeUpdatedError(String error) {
+        super(
+                "AdapterCannotBeUpdated",
+                "Adapter can't be updated",
+                "Adapter can't be updated",
+                HttpStatus.FORBIDDEN_403,
+                List.of(new Error(error)));
+    }
 }

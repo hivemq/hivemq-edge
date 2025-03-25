@@ -133,12 +133,12 @@ public class ProtocolAdapterEntity {
 
         final List<NorthboundMappingEntity> northboundMappings = protocolAdapterConfig.getNorthboundMappings()
                 .stream()
-                .map(NorthboundMappingEntity::from)
+                .map(NorthboundMappingEntity::fromPersistence)
                 .collect(Collectors.toList());
 
         final List<SouthboundMappingEntity> southboundMappings = protocolAdapterConfig.getSouthboundMappings()
                 .stream()
-                .map(SouthboundMappingEntity::from)
+                .map(SouthboundMappingEntity::fromPersistence)
                 .collect(Collectors.toList());
 
         final List<TagEntity> tagEntities = protocolAdapterConfig.getTags()
