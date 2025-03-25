@@ -2,8 +2,8 @@
 
 import { EntityRenderer } from './EntityRenderer'
 import { mockEntityReference } from '@/api/hooks/useCombiners/__handlers__'
-import { mockAdapter, mockProtocolAdapter } from '../../../../api/hooks/useProtocolAdapters/__handlers__'
-import { NodeTypes } from '../../../Workspace/types'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { NodeTypes } from '@/modules/Workspace/types'
 
 describe('EntityRenderer', () => {
   beforeEach(() => {

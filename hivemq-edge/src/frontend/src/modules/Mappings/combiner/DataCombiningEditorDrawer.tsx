@@ -18,7 +18,7 @@ import {
 import type { DataCombining } from '@/api/__generated__'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
-import type { CombinerContext } from '../../types'
+import type { CombinerContext } from '../types'
 
 interface MappingDrawerProps<T> {
   schema: RJSFSchema

@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 import {
@@ -21,7 +22,6 @@ import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 import { DestinationSchemaLoader } from './DestinationSchemaLoader'
 import { PrimarySelect } from './PrimarySelect'
-import { useTranslation } from 'react-i18next'
 
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
