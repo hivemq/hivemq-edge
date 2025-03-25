@@ -76,7 +76,7 @@ export const mockEmptyCombiner: Combiner = {
 export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
-    primary: { id: '', type: DataIdentifierReference.type.TAG },
+    primary: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG },
     tags: ['my/tag/t1', 'my/tag/t3'],
     topicFilters: ['my/topic/+/temp'],
   },

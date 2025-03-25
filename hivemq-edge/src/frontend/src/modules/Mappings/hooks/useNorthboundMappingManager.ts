@@ -33,7 +33,6 @@ export const useNorthboundMappingManager = (adapterId: string): MappingManagerTy
   })
 
   const onUpdateCollection = (tags: NorthboundMappingList) => {
-    if (!adapterId) return undefined
     const promise = updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags })
     toast.promise(promise, formatToast('updateCollection'))
     return promise

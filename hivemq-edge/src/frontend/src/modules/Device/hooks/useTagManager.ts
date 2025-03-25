@@ -80,7 +80,6 @@ export const useTagManager = (adapterId: string) => {
   })
 
   const onDelete = (tagId: string) => {
-    if (!adapterId) return
     toast.promise(
       deleteMutator.mutateAsync({ adapterId: adapterId, tagId: encodeURIComponent(tagId) }),
       formatToast('delete')
@@ -88,12 +87,10 @@ export const useTagManager = (adapterId: string) => {
   }
 
   const onCreate = (tag: DomainTag) => {
-    if (!adapterId) return
     toast.promise(createMutator.mutateAsync({ adapterId: adapterId, requestBody: tag }), formatToast('create'))
   }
 
   const onUpdate = (tagId: string, tag: DomainTag) => {
-    if (!adapterId) return
     toast.promise(
       updateMutator.mutateAsync({ adapterId: adapterId, tagId: encodeURIComponent(tagId), requestBody: tag }),
       formatToast('update')
@@ -101,7 +98,6 @@ export const useTagManager = (adapterId: string) => {
   }
 
   const onupdateCollection = (tags: DomainTagList) => {
-    if (!adapterId) return
     toast.promise(
       updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }),
       formatToast('updateCollection')

@@ -24,6 +24,7 @@ import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 
 import { ANIMATION } from '@/modules/Theme/utils.ts'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore'
 
 const DryRunPanelController = () => {
   const { t } = useTranslation('datahub')
