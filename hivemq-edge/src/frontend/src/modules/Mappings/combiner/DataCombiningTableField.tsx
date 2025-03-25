@@ -16,7 +16,7 @@ import IconButton from '@/components/Chakra/IconButton'
 import { ConditionalWrapper } from '@/components/ConditonalWrapper'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
-import type { CombinerContext } from '../../types'
+import type { CombinerContext } from '../types'
 
 interface PrimaryWrapperProps {
   isPrimary: boolean
