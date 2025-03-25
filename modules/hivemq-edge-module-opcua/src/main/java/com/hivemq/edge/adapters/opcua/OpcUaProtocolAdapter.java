@@ -140,7 +140,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 }
             }
         } else {
-            log.error("Tried to stop OPC UA client for server {} which wasn't started", adapterConfig.getUri());
+            log.info("Tried to stop OPC UA client for server {} which wasn't started", adapterConfig.getUri());
         }
     }
 
