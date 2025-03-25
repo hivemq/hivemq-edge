@@ -40,9 +40,9 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   // TODO[RJSF] Would prefer to reuse the templates; need investigation
   const sourceOptions = getUiOptions(uiSchema?.sources)
   const destOptions = getUiOptions(uiSchema?.destination)
-  const primaryOptions = getUiOptions(uiSchema?.sources.primary)
-  const destTopicOptions = getUiOptions(uiSchema?.destination.topic)
-  const destSchemaOptions = getUiOptions(uiSchema?.destination.schema)
+  const primaryOptions = getUiOptions(uiSchema?.sources?.primary)
+  const destTopicOptions = getUiOptions(uiSchema?.destination?.topic)
+  const destSchemaOptions = getUiOptions(uiSchema?.destination?.schema)
 
   const sourceError = props.errorSchema?.sources?.__errors
   const primaryError = props.errorSchema?.sources?.primary?.__errors
