@@ -51,37 +51,43 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
   return (
     <Grid templateColumns="1fr repeat(2, 1px) 1fr" gap={6}>
-      <GridItem colSpan={2}>
-        <Box>
-          {sourceOptions.title && (
-            <TitleFieldTemplate id={'FIXME'} title={sourceOptions.title} schema={props.schema} registry={registry} />
-          )}
-          {sourceOptions.description && (
-            <DescriptionFieldTemplate
-              id={'FIXME'}
-              description={sourceOptions.description}
-              schema={props.schema}
-              registry={registry}
-            />
-          )}
-        </Box>
+      <GridItem colSpan={2} data-testid={'combining-editor-source-header'}>
+        {sourceOptions.title && (
+          <TitleFieldTemplate
+            id="root_sources__title"
+            title={sourceOptions.title}
+            schema={props.schema}
+            registry={registry}
+          />
+        )}
+        {sourceOptions.description && (
+          <DescriptionFieldTemplate
+            id="root_sources__description"
+            description={sourceOptions.description}
+            schema={props.schema}
+            registry={registry}
+          />
+        )}
       </GridItem>
-      <GridItem colSpan={2}>
-        <Box>
-          {destOptions.title && (
-            <TitleFieldTemplate id={'FIXME'} title={destOptions.title} schema={props.schema} registry={registry} />
-          )}
-          {destOptions.description && (
-            <DescriptionFieldTemplate
-              id={'FIXME'}
-              description={destOptions.description}
-              schema={props.schema}
-              registry={registry}
-            />
-          )}
-        </Box>
+      <GridItem colSpan={2} data-testid={'combining-editor-destination-header'}>
+        {destOptions.title && (
+          <TitleFieldTemplate
+            id="root_destination__title"
+            title={destOptions.title}
+            schema={props.schema}
+            registry={registry}
+          />
+        )}
+        {destOptions.description && (
+          <DescriptionFieldTemplate
+            id="root_destination__description"
+            description={destOptions.description}
+            schema={props.schema}
+            registry={registry}
+          />
+        )}
       </GridItem>
-      <GridItem colSpan={2}>
+      <GridItem colSpan={2} data-testid={'combining-editor-sources-attributes'}>
         <FormControl isInvalid={Boolean(sourceError)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
@@ -119,7 +125,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormErrorMessage>{sourceError?.join(' ')}</FormErrorMessage>
         </FormControl>
       </GridItem>
-      <GridItem colSpan={2}>
+      <GridItem colSpan={2} data-testid={'combining-editor-destination-topic'}>
         <FormControl isInvalid={Boolean(destinationError)}>
           <FormLabel>{destTopicOptions.title}</FormLabel>
           <SelectTopic
@@ -139,7 +145,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormErrorMessage>{destinationError}</FormErrorMessage>
         </FormControl>
       </GridItem>
-      <GridItem>
+      <GridItem data-testid={'combining-editor-sources-schemas'}>
         <FormControl>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
           <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
@@ -153,7 +159,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <Icon as={FaRightFromBracket} />
         </HStack>
       </GridItem>
-      <GridItem colSpan={2}>
+      <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
         <FormControl isInvalid={Boolean(destinationError)}>
           <FormLabel>{destSchemaOptions.title}</FormLabel>
           <DestinationSchemaLoader
@@ -179,7 +185,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormHelperText>{destSchemaOptions.description}</FormHelperText>
         </FormControl>
       </GridItem>
-      <GridItem colSpan={2}>
+      <GridItem colSpan={2} data-testid={'combining-editor-sources-primary'}>
         <FormControl isInvalid={Boolean(primaryError)}>
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
