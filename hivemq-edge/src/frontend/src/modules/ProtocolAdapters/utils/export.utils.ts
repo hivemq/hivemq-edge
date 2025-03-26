@@ -9,7 +9,7 @@ import {
 } from '@/modules/Workspace/utils/topics-utils.ts'
 import { AdapterExportError, ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
 import { acceptMimeTypes } from '@/components/rjsf/BatchModeMappings/utils/config.utils.ts'
-import { downloadJSON, downloadTimeStamp } from '@datahub/utils/download.utils.ts'
+import { downloadJSON, downloadTimeStamp } from '@/utils/download.utils.ts'
 import validator from '@rjsf/validator-ajv8'
 
 // XLSX has a limit in sheet name length

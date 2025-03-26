@@ -16,7 +16,7 @@ import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDel
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { downloadJSON } from '@datahub/utils/download.utils.ts'
+import { downloadJSON } from '@/utils/download.utils.ts'
 
 const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
