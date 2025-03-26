@@ -15,7 +15,6 @@
  */
 package com.hivemq.combining.runtime;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -30,7 +29,6 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -39,14 +37,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
 public class DataCombiningRuntime {
 
@@ -59,14 +56,11 @@ public class DataCombiningRuntime {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
-
     private final @NotNull ObjectMapper mapper;
-
-    private final List<InternalTagConsumer> consumers = new ArrayList<>();
-    private final List<InternalSubscription> internalSubscriptions = new ArrayList<>();
-
-    private final ConcurrentHashMap<String, List<DataPoint>> tagResults = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PUBLISH> topicFilterToPublish = new ConcurrentHashMap<>();
+    private final @NotNull List<InternalTagConsumer> consumers;
+    private final @NotNull List<InternalSubscription> internalSubscriptions;
+    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagResults;
+    private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
             final @NotNull DataCombining combining,
@@ -84,6 +78,10 @@ public class DataCombiningRuntime {
         this.dataCombiningPublishService = dataCombiningPublishService;
         this.dataCombiningTransformationService = dataCombiningTransformationService;
         this.mapper = new ObjectMapper();
+        this.consumers = new ArrayList<>();
+        this.internalSubscriptions = new ArrayList<>();
+        this.tagResults = new ConcurrentHashMap<>();
+        this.topicFilterToPublish = new ConcurrentHashMap<>();
     }
 
     public void start() {
@@ -157,12 +155,11 @@ public class DataCombiningRuntime {
         final var tagsToDataPoints = Map.copyOf(tagResults);
         final var topicFilterResults = Map.copyOf(topicFilterToPublish);
         final ObjectNode rootNode = mapper.createObjectNode();
+
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
-                final JsonNode jsonNode = mapper.readTree(publish.getPayload());
-                final String fieldName =
-                        SourceSanitizer.sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
-                rootNode.set(fieldName, jsonNode);
+                rootNode.set(sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),
+                        mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
                 throw new RuntimeException(e);
@@ -171,26 +168,24 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                final JsonNode jsonNode = mapper.readTree(dataPoint.getTagValue().toString());
-                final String fieldName =
-                        SourceSanitizer.sanitize(new DataIdentifierReference(dataPoint.getTagName(), TAG));
-                rootNode.set(fieldName, jsonNode);
+                rootNode.set(sanitize(new DataIdentifierReference(tagName, TAG)),
+                        mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
+                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
         }));
 
-        final List<Instruction> filteredInstructions = dataCombining.instructions().stream().filter(instruction -> {
-            final DataIdentifierReference reference = Objects.requireNonNull(instruction.dataIdentifierReference());
-            return switch (reference.type()) {
-                case TAG -> tagsToDataPoints.containsKey(reference.id());
-                case TOPIC_FILTER -> topicFilterResults.containsKey(reference.id());
-            };
-        }).toList();
-        final DataCombining filteredDataCombining = dataCombining.withInstructions(filteredInstructions);
+        dataCombiningPublishService.publish(combining.destination(),
+                rootNode.toString().getBytes(StandardCharsets.UTF_8),
+                dataCombining);
+    }
 
-        final byte[] payload = rootNode.toString().getBytes(StandardCharsets.UTF_8);
-        dataCombiningPublishService.publish(combining.destination(), payload, filteredDataCombining);
+    public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
+                                       @NotNull QueueConsumer queueConsumer) {
+        public @NotNull String getQueueId() {
+            return sharedName() + '/' + topic();
+        }
     }
 
     public final class InternalTagConsumer implements TagConsumer {
@@ -220,13 +215,4 @@ public class DataCombiningRuntime {
             }
         }
     }
-
-    public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
-                                       @NotNull QueueConsumer queueConsumer) {
-        public String getQueueId() {
-            return sharedName() + "/" + topic();
-        }
-    }
-
-
 }
