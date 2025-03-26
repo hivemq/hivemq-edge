@@ -1,33 +1,38 @@
-import { type FC, useMemo } from 'react'
+import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7 } from 'json-schema'
 
 import {
   Button,
   ButtonGroup,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverFooter,
-  PopoverHeader,
-  PopoverTrigger,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
   Text,
   VStack,
+  useDisclosure,
 } from '@chakra-ui/react'
 
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
+import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
-import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
-import { downloadJSON } from '@/extensions/datahub/utils/download.utils'
+import { downloadJSON } from '@/utils/download.utils'
 
 interface DestinationSchemaLoaderProps {
   formData?: DataCombining
   onChange: (schema: string) => void
   onChangeInstructions: (v: Instruction[]) => void
+}
+
+enum EDITOR_MODE {
+  UPLOADER = 'UPLOADER',
+  INFERRER = 'INFERRER',
 }
 
 export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
@@ -36,8 +41,19 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   onChangeInstructions,
 }) => {
   const { t } = useTranslation()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isSchemaEditor, setSchemaEditor] = useState<EDITOR_MODE | undefined>(undefined)
+
   const isTopicDefined = Boolean(formData?.destination?.topic && formData?.destination?.topic !== '')
-  const isSchemaDefined = Boolean(formData?.destination?.schema && formData?.destination?.schema !== '')
+  const isDestSchemaDefined = Boolean(formData?.destination?.schema && formData?.destination?.schema !== '')
+  const isSourceSchemaDefined = useMemo(() => {
+    return true
+  }, [])
+
+  const handleSchemaEditor = (mode: EDITOR_MODE | undefined) => {
+    setSchemaEditor(mode)
+    onOpen()
+  }
 
   const handleSchemaUpload = (schema: string) => {
     onChange(schema)
@@ -62,43 +78,25 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   return (
     <>
       <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2} mb={2}>
-        <Popover>
-          <PopoverTrigger>
-            <Button data-testid={'combiner-destination-infer'} isDisabled>
-              {t('combiner.schema.schemaManager.action.infer')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent>
-            <PopoverArrow />
-            <PopoverCloseButton />
-            <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
-            <PopoverBody>
-              <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>
-            </PopoverBody>
-            <PopoverFooter gap={2} display={'flex'}>
-              <Button isDisabled>{t('combiner.schema.schemaManager.infer.action')}</Button>
-            </PopoverFooter>
-          </PopoverContent>
-        </Popover>
-        <Popover>
-          <PopoverTrigger>
-            <Button data-testid={'combiner-destination-upload'} isDisabled={!isTopicDefined}>
-              {t('combiner.schema.schemaManager.action.upload')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent data-testid={'combiner-destination-upload-content'}>
-            <PopoverArrow />
-            <PopoverCloseButton />
-            <PopoverHeader>{t('combiner.schema.schemaManager.header')}</PopoverHeader>
-            <PopoverBody>
-              <SchemaUploader onUpload={handleSchemaUpload} />
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
+        <Button
+          data-testid={'combiner-destination-infer'}
+          isDisabled={!isSourceSchemaDefined}
+          onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
+        >
+          {t('combiner.schema.schemaManager.action.infer')}
+        </Button>
+        <Button
+          data-testid={'combiner-destination-upload'}
+          isDisabled={!isTopicDefined}
+          onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
+        >
+          {t('combiner.schema.schemaManager.action.upload')}
+        </Button>
+
         <Button
           data-testid={'combiner-destination-download'}
           onClick={handleSchemaDownload}
-          isDisabled={!isSchemaDefined}
+          isDisabled={!isDestSchemaDefined}
         >
           {t('combiner.schema.schemaManager.action.download')}
         </Button>
@@ -122,6 +120,27 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
           />
         </VStack>
       )}
+
+      <Modal isOpen={isOpen && Boolean(isSchemaEditor)} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {isSchemaEditor === EDITOR_MODE.INFERRER && t('combiner.schema.schemaManager.action.infer')}
+            {isSchemaEditor === EDITOR_MODE.UPLOADER && t('combiner.schema.schemaManager.action.upload')}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {isSchemaEditor === EDITOR_MODE.INFERRER && <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>}
+            {isSchemaEditor === EDITOR_MODE.UPLOADER && <SchemaUploader onUpload={handleSchemaUpload} />}
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   )
 }
