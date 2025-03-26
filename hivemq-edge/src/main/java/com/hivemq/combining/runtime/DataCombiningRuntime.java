@@ -155,7 +155,6 @@ public class DataCombiningRuntime {
         final var tagsToDataPoints = Map.copyOf(tagResults);
         final var topicFilterResults = Map.copyOf(topicFilterToPublish);
         final ObjectNode rootNode = mapper.createObjectNode();
-
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
                 rootNode.set(sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),

@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 /// Used exclusively within the combiner.
 public record DataIdentifierReference(String id, Type type) {
 
-
     public static @Nullable DataIdentifierReference from(final @Nullable com.hivemq.edge.api.model.DataIdentifierReference model) {
         if (model == null) {
             return null;
@@ -31,12 +30,12 @@ public record DataIdentifierReference(String id, Type type) {
         return new DataIdentifierReference(model.getId(), Type.from(model.getType()));
     }
 
-    public @NotNull com.hivemq.edge.api.model.DataIdentifierReference to() {
-        return new com.hivemq.edge.api.model.DataIdentifierReference(this.id(), this.type().to());
-    }
-
     public static DataIdentifierReference fromPersistence(final @NotNull DataIdentifierReferenceEntity entity) {
         return new DataIdentifierReference(entity.getId(), entity.getType());
+    }
+
+    public @NotNull com.hivemq.edge.api.model.DataIdentifierReference to() {
+        return new com.hivemq.edge.api.model.DataIdentifierReference(id(), type().to());
     }
 
     public DataIdentifierReferenceEntity toPersistence() {
@@ -48,28 +47,17 @@ public record DataIdentifierReference(String id, Type type) {
         TOPIC_FILTER;
 
         public static @NotNull Type from(final com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum type) {
-            switch (type) {
-                case TAG -> {
-                    return TAG;
-                }
-                case TOPIC_FILTER -> {
-                    return TOPIC_FILTER;
-                }
-            }
-            throw new IllegalArgumentException();
+            return switch (type) {
+                case TAG -> TAG;
+                case TOPIC_FILTER -> TOPIC_FILTER;
+            };
         }
 
         public com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum to() {
-            switch (this) {
-                case TAG -> {
-                    return com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG;
-                }
-                case TOPIC_FILTER -> {
-                    return com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TOPIC_FILTER;
-                }
-            }
-            throw new IllegalArgumentException();
+            return switch (this) {
+                case TAG -> com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG;
+                case TOPIC_FILTER -> com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TOPIC_FILTER;
+            };
         }
     }
-
 }
