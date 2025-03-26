@@ -18,10 +18,10 @@ package com.hivemq.configuration.service.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.configuration.service.DataCombiningConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
@@ -42,7 +42,6 @@ import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -68,7 +67,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
@@ -86,7 +84,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
-            final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService,
             final @NotNull ModuleConfigurationService moduleConfigurationService,
             final @NotNull InternalConfigurationService internalConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
@@ -99,7 +96,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
-        this.dataCombiningConfigurationService = dataCombiningConfigurationService;
         this.moduleConfigurationService = moduleConfigurationService;
         this.internalConfigurationService = internalConfigurationService;
     }
@@ -149,11 +145,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return usageTrackingConfigurationService;
     }
 
-    @Override
-    public @NotNull DataCombiningConfigurationService dataCombiningConfigurationService() {
-        return proxy(DataCombiningConfigurationService.class, dataCombiningConfigurationService);
-    }
-
     public @NotNull ModuleConfigurationService commercialModuleConfigurationService() {
         return proxy(ModuleConfigurationService.class, moduleConfigurationService);
     }
@@ -181,6 +172,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public @NotNull BridgeExtractor bridgeExtractor() {
         return configFileReaderWriter.getBridgeExtractor();
+    }
+
+    @Override
+    public @NotNull DataCombiningExtractor dataCombiningExtractor() {
+        return configFileReaderWriter.getDataCombiningExtractor();
     }
 
     public <T> @NotNull T proxy(

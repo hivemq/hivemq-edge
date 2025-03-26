@@ -20,7 +20,6 @@ import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
-import com.hivemq.configuration.reader.DataCombiningConfigurator;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
 import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
@@ -35,7 +34,6 @@ import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
@@ -70,7 +68,6 @@ public class ConfigurationBootstrap {
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
-                        new DataCombiningConfigurationServiceImpl(),
                         new ModuleConfigurationServiceImpl(),
                         new InternalConfigurationServiceImpl());
 
@@ -88,7 +85,6 @@ public class ConfigurationBootstrap {
                         new UnsConfigurator(configurationService.unsConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                        new DataCombiningConfigurator(configurationService.dataCombiningConfigurationService()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                         new InternalConfigurator(configurationService.internalConfigurationService())));
 

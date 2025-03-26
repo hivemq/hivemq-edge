@@ -26,7 +26,6 @@ import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
@@ -90,7 +89,6 @@ public class TestConfigurationBootstrap {
                 unsConfigurationService,
                 dynamicConfigurationService,
                 usageTrackingConfigurationService,
-                new DataCombiningConfigurationServiceImpl(),
                 moduleConfigurationService,
                 internalConfigurationService);
     }
