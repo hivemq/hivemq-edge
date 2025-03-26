@@ -22,7 +22,6 @@ import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
@@ -34,7 +33,6 @@ import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +50,6 @@ public class TestConfigurationBootstrap {
     private @NotNull ConfigurationServiceImpl configurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
-    private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
@@ -67,7 +64,6 @@ public class TestConfigurationBootstrap {
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
         apiConfigurationService = new ApiConfigurationServiceImpl();
-        unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         moduleConfigurationService = new ModuleConfigurationServiceImpl();
 
@@ -86,7 +82,6 @@ public class TestConfigurationBootstrap {
                 persistenceConfigurationService,
                 mqttsnConfigurationService,
                 apiConfigurationService,
-                unsConfigurationService,
                 dynamicConfigurationService,
                 usageTrackingConfigurationService,
                 moduleConfigurationService,

@@ -19,6 +19,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,8 +70,6 @@ public interface ConfigurationService {
      */
     @NotNull ApiConfigurationService apiConfiguration();
 
-    @NotNull UnsConfigurationService unsConfiguration();
-
     @NotNull SecurityConfigurationService securityConfiguration();
 
     @NotNull PersistenceConfigurationService persistenceConfigurationService();
@@ -88,6 +87,8 @@ public interface ConfigurationService {
     @NotNull ProtocolAdapterExtractor protocolAdapterExtractor();
 
     @NotNull DataCombiningExtractor dataCombiningExtractor();
+
+    @NotNull UnsExtractor unsExtractor();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 

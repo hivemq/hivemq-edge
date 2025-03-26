@@ -29,7 +29,6 @@ import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
-import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -88,7 +87,6 @@ public abstract class AbstractConfigWriterTest {
                     persistenceConfigurator,
                     mqttsnConfigurator,
                     apiConfigurator,
-                    new UnsConfigurator(configurationService.unsConfiguration()),
                     new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                     new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                     new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),

@@ -26,7 +26,6 @@ import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
@@ -37,7 +36,6 @@ import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
@@ -64,7 +62,6 @@ public class AbstractConfigurationTest {
     SystemInformation systemInformation;
     PersistenceConfigurationService persistenceConfigurationService;
     ApiConfigurationService apiConfigurationService;
-    UnsConfigurationService unsConfigurationService;
     DynamicConfigurationService dynamicConfigurationService;
     UsageTrackingConfigurationService usageTrackingConfigurationService;
     ModuleConfigurationService moduleConfigurationService;
@@ -85,7 +82,6 @@ public class AbstractConfigurationTest {
         systemInformation = new SystemInformationImpl(false);
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
         apiConfigurationService = new ApiConfigurationServiceImpl();
-        unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
         moduleConfigurationService = new ModuleConfigurationServiceImpl();
@@ -101,7 +97,6 @@ public class AbstractConfigurationTest {
                         new PersistenceConfigurator(persistenceConfigurationService),
                         new MqttsnConfigurator(mqttsnConfigurationService),
                         new ApiConfigurator(apiConfigurationService),
-                        new UnsConfigurator(unsConfigurationService),
                         new DynamicConfigConfigurator(dynamicConfigurationService),
                         new UsageTrackingConfigurator(usageTrackingConfigurationService),
                         new ModuleConfigurator(moduleConfigurationService),
