@@ -20,13 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SourceSanitizer {
 
-    public static @NotNull String sanitize(final @NotNull DataIdentifierReference dataIdentifierReference) {
-        return dataIdentifierReference.type() + ":" + sanitizeId(dataIdentifierReference.id());
+    public static @NotNull String sanitize(final @NotNull DataIdentifierReference dataIdRef) {
+        return dataIdRef.type() + ":" + dataIdRef.id().replaceAll("\\.", "/");
     }
-
-    private static @NotNull String sanitizeId(final @NotNull String id){
-        final String escaped = id.replaceAll("\\.", "/");
-        return escaped;
-    }
-
 }

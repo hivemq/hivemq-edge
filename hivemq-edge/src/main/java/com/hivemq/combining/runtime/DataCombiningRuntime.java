@@ -15,7 +15,6 @@
  */
 package com.hivemq.combining.runtime;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -38,13 +37,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
 public class DataCombiningRuntime {
 
@@ -57,14 +56,11 @@ public class DataCombiningRuntime {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
-
     private final @NotNull ObjectMapper mapper;
-
-    private final List<InternalTagConsumer> consumers = new ArrayList<>();
-    private final List<InternalSubscription> internalSubscriptions = new ArrayList<>();
-
-    private final ConcurrentHashMap<String, List<DataPoint>> tagResults = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PUBLISH> topicFilterToPublish = new ConcurrentHashMap<>();
+    private final @NotNull List<InternalTagConsumer> consumers;
+    private final @NotNull List<InternalSubscription> internalSubscriptions;
+    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagResults;
+    private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
             final @NotNull DataCombining combining,
@@ -82,6 +78,10 @@ public class DataCombiningRuntime {
         this.dataCombiningPublishService = dataCombiningPublishService;
         this.dataCombiningTransformationService = dataCombiningTransformationService;
         this.mapper = new ObjectMapper();
+        this.consumers = new ArrayList<>();
+        this.internalSubscriptions = new ArrayList<>();
+        this.tagResults = new ConcurrentHashMap<>();
+        this.topicFilterToPublish = new ConcurrentHashMap<>();
     }
 
     public void start() {
@@ -124,7 +124,9 @@ public class DataCombiningRuntime {
     }
 
     public @NotNull InternalSubscription subscribeTopicFilter(
-            final @NotNull DataCombining dataCombining, final @NotNull String topicFilter, final boolean isPrimary) {
+            final @NotNull DataCombining dataCombining,
+            final @NotNull String topicFilter,
+            final boolean isPrimary) {
         final String clientId = dataCombining.id() + "#";
         final QoS qos = QoS.EXACTLY_ONCE;
 
@@ -155,10 +157,8 @@ public class DataCombiningRuntime {
         final ObjectNode rootNode = mapper.createObjectNode();
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
-                final JsonNode jsonNode = mapper.readTree(publish.getPayload());
-                final String fieldName =
-                        SourceSanitizer.sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
-                rootNode.set(fieldName, jsonNode);
+                rootNode.set(sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),
+                        mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
                 throw new RuntimeException(e);
@@ -167,17 +167,24 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                final JsonNode jsonNode = mapper.readTree(dataPoint.getTagValue().toString());
-                final String fieldName =
-                        SourceSanitizer.sanitize(new DataIdentifierReference(dataPoint.getTagName(), TAG));
-                rootNode.set(fieldName, jsonNode);
+                rootNode.set(sanitize(new DataIdentifierReference(tagName, TAG)),
+                        mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
+                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
         }));
 
-        final byte[] payload = rootNode.toString().getBytes(StandardCharsets.UTF_8);
-        dataCombiningPublishService.publish(combining.destination(), payload, dataCombining);
+        dataCombiningPublishService.publish(combining.destination(),
+                rootNode.toString().getBytes(StandardCharsets.UTF_8),
+                dataCombining);
+    }
+
+    public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
+                                       @NotNull QueueConsumer queueConsumer) {
+        public @NotNull String getQueueId() {
+            return sharedName() + '/' + topic();
+        }
     }
 
     public final class InternalTagConsumer implements TagConsumer {
@@ -186,7 +193,9 @@ public class DataCombiningRuntime {
         private final @NotNull DataCombining dataCombining;
 
         public InternalTagConsumer(
-                final @NotNull String tagName, final @NotNull DataCombining dataCombining, final boolean isPrimary) {
+                final @NotNull String tagName,
+                final @NotNull DataCombining dataCombining,
+                final boolean isPrimary) {
             this.tagName = tagName;
             this.dataCombining = dataCombining;
             this.isPrimary = isPrimary;
@@ -205,13 +214,4 @@ public class DataCombiningRuntime {
             }
         }
     }
-
-    public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
-                                       @NotNull QueueConsumer                queueConsumer) {
-        public String getQueueId() {
-            return sharedName() + "/" + topic();
-        }
-    }
-
-
 }

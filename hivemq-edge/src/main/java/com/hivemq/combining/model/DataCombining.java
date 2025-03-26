@@ -27,33 +27,30 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
                             List<com.hivemq.persistence.mappings.fieldmapping.Instruction> instructions) {
 
     public static @NotNull DataCombining fromModel(final @NotNull com.hivemq.edge.api.model.DataCombining model) {
-        final List<Instruction> instructions = model.getInstructions().stream().map(Instruction::from).toList();
         return new DataCombining(model.getId(),
                 DataCombiningSources.fromModel(model.getSources()),
                 DataCombiningDestination.from(model.getDestination()),
-                instructions);
+                model.getInstructions().stream().map(Instruction::from).toList());
     }
-
-    public @NotNull com.hivemq.edge.api.model.DataCombining toModel() {
-        final List<com.hivemq.edge.api.model.Instruction> instructionsAsModelClass =
-                instructions.stream().map(Instruction::toModel).toList();
-        return new com.hivemq.edge.api.model.DataCombining().id(id)
-                .sources(sources.toModel())
-                .destination(destination.toModel())
-                .instructions(instructionsAsModelClass);
-    }
-
 
     public static @NotNull DataCombining fromPersistence(final @NotNull DataCombiningEntity model) {
-        final List<Instruction> instructions = model.getInstructions().stream().map(InstructionEntity::to).toList();
         return new DataCombining(model.getId(),
                 DataCombiningSources.fromPersistence(model.getSources()),
                 DataCombiningDestination.fromPersistence(model.getDestination()),
-                instructions);
+                model.getInstructions().stream().map(InstructionEntity::to).toList());
+    }
+
+    public @NotNull com.hivemq.edge.api.model.DataCombining toModel() {
+        return new com.hivemq.edge.api.model.DataCombining().id(id())
+                .sources(sources().toModel())
+                .destination(destination().toModel())
+                .instructions(instructions().stream().map(Instruction::toModel).toList());
     }
 
     public @NotNull DataCombiningEntity toPersistence() {
-        final List<InstructionEntity> instructions = this.instructions().stream().map(InstructionEntity::from).toList();
-        return new DataCombiningEntity(this.id(), this.sources.toPersistence(), this.destination().toPersistence(), instructions);
+        return new DataCombiningEntity(id(),
+                sources().toPersistence(),
+                destination().toPersistence(),
+                instructions().stream().map(InstructionEntity::from).toList());
     }
 }
