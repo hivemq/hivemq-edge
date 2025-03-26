@@ -3,7 +3,7 @@ package com.hivemq.api.resources.impl;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.adapters.AdapterNotFoundError;
+import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
@@ -80,8 +80,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combiner.getId())));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
 
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
@@ -90,8 +89,7 @@ public class CombinersResourceImpl implements CombinersApi {
         if (updated) {
             return Response.ok().build();
         } else {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combiner.getId())));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
     }
 
@@ -102,8 +100,7 @@ public class CombinersResourceImpl implements CombinersApi {
         }
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combinerId)));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
 
         try {
@@ -129,8 +126,7 @@ public class CombinersResourceImpl implements CombinersApi {
     public @NotNull Response getCombinersById(final @NotNull UUID combinerId) {
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combinerId)));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
         return Response.ok().entity(instance.get().toModel()).build();
     }
@@ -139,8 +135,7 @@ public class CombinersResourceImpl implements CombinersApi {
     public @NotNull Response getCombinerMappings(final @NotNull UUID combinerId) {
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combinerId)));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
         final List<com.hivemq.edge.api.model.DataCombining> dataCombinings =
                 instance.get().dataCombinings().stream().map(DataCombining::toModel).toList();
@@ -151,8 +146,7 @@ public class CombinersResourceImpl implements CombinersApi {
     public @NotNull Response getMappingInstructions(final @NotNull UUID combinerId, final @NotNull UUID mappingId) {
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("DataCombiner not found '%s'",
-                    combinerId)));
+            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
 
         final List<com.hivemq.edge.api.model.Instruction> instructions = instance.get()

@@ -45,7 +45,8 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
 
     @Override
     public Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
-        replaceConfigsAndTriggerWrite(config.getDataCombinerEntities());
+        this.config = config.getDataCombinerEntities();
+        notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
 
@@ -63,6 +64,7 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
                 }).toList();
         if(updated.get()) {
             replaceConfigsAndTriggerWrite(newConfigs);
+            return true;
         }
         return false;
     }

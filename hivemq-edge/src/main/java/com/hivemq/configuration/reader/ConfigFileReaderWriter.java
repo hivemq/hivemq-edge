@@ -505,6 +505,7 @@ public class ConfigFileReaderWriter {
             configurators.forEach(c -> c.applyConfig(config));
             bridgeExtractor.updateConfig(config);
             protocolAdapterExtractor.updateConfig(config);
+            dataCombiningExtractor.updateConfig(config);
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
@@ -521,6 +522,7 @@ public class ConfigFileReaderWriter {
 
         bridgeExtractor.sync(configEntity);
         protocolAdapterExtractor.sync(configEntity);
+        dataCombiningExtractor.sync(configEntity);
     }
 
     protected Schema loadSchema() throws IOException, SAXException {

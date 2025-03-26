@@ -92,25 +92,27 @@ public class DataCombinerManager {
     private void refresh(List<DataCombiner> configs) {
         log.info("Refreshing data combiners");
 
-        final Map<UUID, DataCombiner> uuidToDataCombiner = configs
+        log.info("DataCombiners: {}", idToDataCombiningInformation.keySet());
+
+        final Map<UUID, DataCombiner> mapOfNewCombinersByUUID = configs
                 .stream()
                 .collect(Collectors.toMap(DataCombiner::id, Function.identity()));
 
-        final List<UUID> listOfCombinerUUIDs = new ArrayList<>(idToDataCombiningInformation.keySet());
+        final List<UUID> listOfExisitingCombiners = new ArrayList<>(idToDataCombiningInformation.keySet());
 
-        final List<UUID> combinersToBeDelted = new ArrayList<>(uuidToDataCombiner.keySet());
-        combinersToBeDelted.removeAll(listOfCombinerUUIDs);
+        final List<UUID> combinersToBeDeleted = new ArrayList<>(listOfExisitingCombiners);
+        combinersToBeDeleted.removeAll(mapOfNewCombinersByUUID.keySet());
 
-        final List<UUID> combinersToBeCreated = new ArrayList<>(listOfCombinerUUIDs);
-        combinersToBeCreated.removeAll(idToDataCombiningInformation.keySet());
+        final List<UUID> combinersToBeCreated = new ArrayList<>(mapOfNewCombinersByUUID.keySet());
+        combinersToBeCreated.removeAll(listOfExisitingCombiners);
 
         final List<UUID> combinersToBeUpdated = new ArrayList<>(idToDataCombiningInformation.keySet());
         combinersToBeUpdated.removeAll(combinersToBeCreated);
-        combinersToBeUpdated.removeAll(combinersToBeDelted);
+        combinersToBeUpdated.removeAll(combinersToBeDeleted);
 
         final List<UUID> failedDataCombiners = new ArrayList<>();
 
-        combinersToBeDelted.forEach(uuid -> {
+        combinersToBeDeleted.forEach(uuid -> {
             try {
                 log.debug("Deleting data combiner '{}'", uuid);
                 deleteDataCombinerInternal(uuid);
@@ -123,7 +125,7 @@ public class DataCombinerManager {
         combinersToBeCreated.forEach(uuid -> {
             try {
                 log.debug("Creating data combiner '{}'", uuid);
-                createDataCombinerInternal(uuidToDataCombiner.get(uuid));
+                createDataCombinerInternal(mapOfNewCombinersByUUID.get(uuid));
             } catch (final Exception e) {
                 failedDataCombiners.add(uuid);
                 log.error("Failed adding data combiner {}", uuid, e);
@@ -133,7 +135,7 @@ public class DataCombinerManager {
         combinersToBeUpdated.forEach(uuid -> {
             try {
                 log.debug("Updating data combiner '{}'", uuid);
-                internalUpdateDataCombiner(uuidToDataCombiner.get(uuid));
+                internalUpdateDataCombiner(mapOfNewCombinersByUUID.get(uuid));
             } catch (final Exception e) {
                 failedDataCombiners.add(uuid);
                 log.error("Failed updating data combiner {}", uuid, e);
@@ -166,15 +168,16 @@ public class DataCombinerManager {
 
 
     private void internalUpdateDataCombiner(final DataCombiner dataCombiner) {
+        log.debug("Updating data combiner '{}'", dataCombiner.id());
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
-        dataCombiningConfig.updateDataCombiner(dataCombiner);
     }
 
 
     private synchronized void createDataCombinerInternal(final @NotNull DataCombiner dataCombiner) {
+        log.debug("Creating data combiner '{}'", dataCombiner.id());
         if (idToDataCombiningInformation.get(dataCombiner.id()) != null) {
-            throw new IllegalArgumentException("adapter already exists by id '" + dataCombiner.id() + "'");
+            throw new IllegalArgumentException("Data combiner already exists by id '" + dataCombiner.id() + "'");
         }
 
         final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
@@ -182,11 +185,11 @@ public class DataCombinerManager {
                 new DataCombiningInformation(dataCombiner, dataCombiningRuntimes));
 
         dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
-        dataCombiningConfig.addDataCombiner(dataCombiner);
     }
 
 
     private synchronized boolean deleteDataCombinerInternal(final @NotNull UUID id) {
+        log.debug("Deleting data combiner '{}'", id);
         final DataCombiningInformation dataCombiningInformation = idToDataCombiningInformation.remove(id);
         if (dataCombiningInformation != null) {
             try {
@@ -199,10 +202,10 @@ public class DataCombinerManager {
 
             eventService.createDataCombiningEvent(id)
                     .withSeverity(Event.SEVERITY.WARN)
-                    .withMessage(String.format("Data Combininh '%s' was deleted from the system permanently.", id))
+                    .withMessage(String.format("Data Combining '%s' was deleted from the system permanently.", id))
                     .fire();
         } else {
-            log.error("Tried removing non existing adapter '{}'", id);
+            log.error("Tried removing non existing data combining '{}'", id);
         }
         return false;
     }
