@@ -278,7 +278,6 @@ public class ProtocolAdapterManager {
         adaptersToBeUpdated.forEach(name -> {
             try {
                 log.debug("Updating adapter '{}'", name);
-                log.debug("Updating adapter '{}'", protocolAdapterConfigs.get(name).getAdapterConfig());
                 stop(name)
                         .thenApply(r -> deleteAdapterInternal(name))
                         .thenCompose(r -> start(createAdapterInternal(protocolAdapterConfigs.get(name),
