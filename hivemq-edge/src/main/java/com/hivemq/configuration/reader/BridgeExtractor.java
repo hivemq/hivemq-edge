@@ -194,7 +194,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     private @NotNull List<LocalSubscription> convertLocalSubscriptions(
             final @NotNull String name, @NotNull List<ForwardedTopicEntity> forwardedTopics) {
         final ImmutableList.Builder<LocalSubscription> builder = ImmutableList.builder();
-        for (ForwardedTopicEntity forwardedTopic : forwardedTopics) {
+        for (final ForwardedTopicEntity forwardedTopic : forwardedTopics) {
             validateTopicFilters(name, forwardedTopic.getFilters());
             final String exampleTopicFilter = forwardedTopic.getFilters().get(0);
             validateDestinationTopic(name, forwardedTopic.getDestination(), exampleTopicFilter);
@@ -214,7 +214,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
             log.error("Topic filters are missing for bridge '{}'.", name);
             throw new UnrecoverableException(false);
         }
-        for (String filter : filters) {
+        for (final String filter : filters) {
             if (!Topics.isValidToSubscribe(filter)) {
                 log.error("Topic filter '{}' for bridge '{}' is not valid", filter, name);
                 throw new UnrecoverableException(false);
@@ -225,7 +225,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     private @NotNull List<RemoteSubscription> convertRemoteSubscriptions(
             final @NotNull String name, final @NotNull List<RemoteSubscriptionEntity> remoteSubscriptions) {
         final ImmutableList.Builder<RemoteSubscription> builder = ImmutableList.builder();
-        for (RemoteSubscriptionEntity remoteSubscription : remoteSubscriptions) {
+        for (final RemoteSubscriptionEntity remoteSubscription : remoteSubscriptions) {
             final String exampleTopicFilter =
                     remoteSubscription.getFilters().isEmpty() ? "#" : remoteSubscription.getFilters().get(0);
             validateDestinationTopic(name, remoteSubscription.getDestination(), exampleTopicFilter);
@@ -327,26 +327,24 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     }
 
     @Override
-    public void sync(final @NotNull HiveMQConfigEntity entity) {
-        var tmpBridges = bridgeEntities;
-        if(tmpBridges != null) {
-            List<MqttBridgeEntity> newList = tmpBridges.stream().map(this::uncovert).collect(Collectors.toList());
-            entity.getBridgeConfig().clear();
-            entity.getBridgeConfig().addAll(newList);
-        }
+    public synchronized void sync(final @NotNull HiveMQConfigEntity entity) {
+        final var tmpBridges = bridgeEntities;
+        final List<MqttBridgeEntity> newList = tmpBridges.stream().map(this::uncovert).toList();
+        entity.getBridgeConfig().clear();
+        entity.getBridgeConfig().addAll(newList);
     }
 
-    protected MqttBridgeEntity uncovert(MqttBridge from) {
+    protected MqttBridgeEntity uncovert(final MqttBridge from) {
 
-        MqttBridgeEntity entity = new MqttBridgeEntity();
+        final MqttBridgeEntity entity = new MqttBridgeEntity();
         entity.setId(from.getId());
 
         //-- RemoteBrokerEntity
-        RemoteBrokerEntity remoteBrokerEntity = unconvertBrokerEntity(from);
+        final RemoteBrokerEntity remoteBrokerEntity = unconvertBrokerEntity(from);
         entity.setRemoteBroker(remoteBrokerEntity);
 
         //-- LoopPreventionEntity
-        LoopPreventionEntity loopPreventionEntity = new LoopPreventionEntity();
+        final LoopPreventionEntity loopPreventionEntity = new LoopPreventionEntity();
         loopPreventionEntity.setEnabled(from.isLoopPreventionEnabled());
         loopPreventionEntity.setHopCountLimit(from.getLoopPreventionHopCount());
         entity.setLoopPrevention(loopPreventionEntity);
@@ -365,11 +363,11 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         return entity;
     }
 
-    protected List<RemoteSubscriptionEntity> unconvertRemoteSubscriptions(List<RemoteSubscription> remoteSubscriptionList) {
+    protected List<RemoteSubscriptionEntity> unconvertRemoteSubscriptions(final List<RemoteSubscription> remoteSubscriptionList) {
 
-        ImmutableList.Builder<RemoteSubscriptionEntity> builder = ImmutableList.builder();
-        for (RemoteSubscription subscription : remoteSubscriptionList) {
-            RemoteSubscriptionEntity subscriptionEntity = new RemoteSubscriptionEntity();
+        final ImmutableList.Builder<RemoteSubscriptionEntity> builder = ImmutableList.builder();
+        for (final RemoteSubscription subscription : remoteSubscriptionList) {
+            final RemoteSubscriptionEntity subscriptionEntity = new RemoteSubscriptionEntity();
             subscriptionEntity.setDestination(subscription.getDestination());
             if (subscription.getFilters() != null) {
                 subscriptionEntity.setFilters(new ArrayList<>(subscription.getFilters()));
@@ -387,11 +385,11 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         return builder.build();
     }
 
-    protected List<ForwardedTopicEntity> unconvertLocalSubscriptions(List<LocalSubscription> localSubscriptionList) {
+    protected List<ForwardedTopicEntity> unconvertLocalSubscriptions(final List<LocalSubscription> localSubscriptionList) {
 
-        ImmutableList.Builder<ForwardedTopicEntity> builder = ImmutableList.builder();
-        for (LocalSubscription subscription : localSubscriptionList) {
-            ForwardedTopicEntity forwardedTopicEntity = new ForwardedTopicEntity();
+        final ImmutableList.Builder<ForwardedTopicEntity> builder = ImmutableList.builder();
+        for (final LocalSubscription subscription : localSubscriptionList) {
+            final ForwardedTopicEntity forwardedTopicEntity = new ForwardedTopicEntity();
             forwardedTopicEntity.setDestination(subscription.getDestination());
             if (subscription.getExcludes() != null) {
                 forwardedTopicEntity.setExcludes(new ArrayList<>(subscription.getExcludes()));
@@ -412,21 +410,21 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         return builder.build();
     }
 
-    protected CustomUserPropertyEntity unconvertCustomUserProperty(CustomUserProperty property) {
-        CustomUserPropertyEntity entity = new CustomUserPropertyEntity();
+    protected CustomUserPropertyEntity unconvertCustomUserProperty(final CustomUserProperty property) {
+        final CustomUserPropertyEntity entity = new CustomUserPropertyEntity();
         entity.setKey(property.getKey());
         entity.setValue(property.getValue());
         return entity;
     }
 
-    protected RemoteBrokerEntity unconvertBrokerEntity(MqttBridge from) {
+    protected RemoteBrokerEntity unconvertBrokerEntity(final MqttBridge from) {
 
-        RemoteBrokerEntity remoteBrokerEntity = new RemoteBrokerEntity();
+        final RemoteBrokerEntity remoteBrokerEntity = new RemoteBrokerEntity();
         remoteBrokerEntity.setPort(from.getPort());
         remoteBrokerEntity.setHost(from.getHost());
 
         //Bridge MqttEntity
-        BridgeMqttEntity bridgeMqttEntity = new BridgeMqttEntity();
+        final BridgeMqttEntity bridgeMqttEntity = new BridgeMqttEntity();
         bridgeMqttEntity.setCleanStart(from.isCleanStart());
         bridgeMqttEntity.setClientId(from.getClientId());
         bridgeMqttEntity.setKeepAlive(from.getKeepAlive());
@@ -435,8 +433,8 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
 
         //Authentication
         if (from.getUsername() != null && from.getPassword() != null) {
-            BridgeAuthenticationEntity authentication = new BridgeAuthenticationEntity();
-            MqttSimpleAuthenticationEntity simpleAuthenticationEntity = new MqttSimpleAuthenticationEntity();
+            final BridgeAuthenticationEntity authentication = new BridgeAuthenticationEntity();
+            final MqttSimpleAuthenticationEntity simpleAuthenticationEntity = new MqttSimpleAuthenticationEntity();
             simpleAuthenticationEntity.setPassword(from.getPassword());
             simpleAuthenticationEntity.setUser(from.getUsername());
             authentication.setMqttSimpleAuthenticationEntity(simpleAuthenticationEntity);
@@ -454,9 +452,9 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         }
 
         //TLS
-        BridgeTls bridgeTls = from.getBridgeTls();
+        final BridgeTls bridgeTls = from.getBridgeTls();
         if (bridgeTls != null) {
-            BridgeTlsEntity bridgeTlsEntity = new BridgeTlsEntity();
+            final BridgeTlsEntity bridgeTlsEntity = new BridgeTlsEntity();
             bridgeTlsEntity.setEnabled(true);
             bridgeTlsEntity.setHandshakeTimeout(bridgeTls.getHandshakeTimeout());
             bridgeTlsEntity.setVerifyHostname(bridgeTls.isVerifyHostname());
@@ -470,7 +468,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
             }
 
             if (bridgeTls.getKeystorePath() != null) {
-                KeystoreEntity keystoreEntity = new KeystoreEntity();
+                final KeystoreEntity keystoreEntity = new KeystoreEntity();
                 keystoreEntity.setPath(bridgeTls.getKeystorePath());
                 keystoreEntity.setPassword(bridgeTls.getKeystorePassword());
                 keystoreEntity.setPrivateKeyPassword(bridgeTls.getPrivateKeyPassword());
@@ -478,7 +476,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
             }
 
             if (bridgeTls.getTruststorePath() != null) {
-                TruststoreEntity truststoreEntity = new TruststoreEntity();
+                final TruststoreEntity truststoreEntity = new TruststoreEntity();
                 truststoreEntity.setPath(bridgeTls.getTruststorePath());
                 truststoreEntity.setPassword(bridgeTls.getTruststorePassword());
                 bridgeTlsEntity.setTrustStore(truststoreEntity);
