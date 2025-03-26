@@ -35,7 +35,6 @@ import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
-import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import org.jetbrains.annotations.NotNull;
@@ -251,9 +250,6 @@ class SimulationProtocolAdapterConfigTest {
         final ApiConfigurator apiConfigurator = mock(ApiConfigurator.class);
         when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
-        final UnsConfigurator unsConfigurator = mock(UnsConfigurator.class);
-        when(unsConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
         final DynamicConfigConfigurator dynamicConfigConfigurator = mock(DynamicConfigConfigurator.class);
         when(dynamicConfigConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
@@ -275,7 +271,6 @@ class SimulationProtocolAdapterConfigTest {
                     persistenceConfigurator,
                     mqttsnConfigurator,
                     apiConfigurator,
-                    unsConfigurator,
                     dynamicConfigConfigurator,
                     usageTrackingConfigurator,
                     moduleConfigurator,

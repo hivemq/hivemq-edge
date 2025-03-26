@@ -20,11 +20,12 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
-import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.entity.uns.UnsConfigEntity;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -41,22 +42,29 @@ import java.util.Map;
  */
 public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
 
-    private final @NotNull UnsConfigurationService configurationService;
+    private final @NotNull UnsExtractor unsExtractor;
+
+    private volatile @Nullable ISA95 config = null;
 
     @Inject
-    public UnifiedNamespaceServiceImpl(final @NotNull ConfigurationService configurationService) {
-        this.configurationService = configurationService.unsConfiguration();
+    public UnifiedNamespaceServiceImpl(final @NotNull UnsExtractor unsExtractor) {
+        this.unsExtractor = unsExtractor;
+        unsExtractor.registerConsumer(this::refresh);
+    }
+
+    private void refresh(final ISA95 config) {
+        this.config = config;
     }
 
     @Override
     public ISA95 getISA95() {
-        return configurationService.getISA95();
+        return config;
     }
 
     @Override
     public void setISA95(final ISA95 isa95) {
         Preconditions.checkNotNull(isa95, "isa-95 must be set");
-        configurationService.setISA95(isa95);
+        unsExtractor.setISA95(isa95);
     }
 
     public Map<String, String> getTopicReplacements(final @NotNull ISA95 isa95){

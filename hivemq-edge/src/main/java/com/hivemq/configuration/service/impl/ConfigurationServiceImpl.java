@@ -20,6 +20,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
@@ -30,7 +31,6 @@ import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +64,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
     private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
-    private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
@@ -81,7 +80,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull PersistenceConfigurationService persistenceConfigurationService,
             final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
             final @NotNull ApiConfigurationService apiConfigurationService,
-            final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
             final @NotNull ModuleConfigurationService moduleConfigurationService,
@@ -93,7 +91,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.persistenceConfigurationService = persistenceConfigurationService;
         this.mqttsnConfigurationService = mqttsnConfigurationService;
         this.apiConfigurationService = apiConfigurationService;
-        this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
         this.moduleConfigurationService = moduleConfigurationService;
@@ -154,8 +151,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return internalConfigurationService;
     }
 
-    public @NotNull UnsConfigurationService unsConfiguration() {
-        return proxy(UnsConfigurationService.class, unsConfigurationService);
+    public @NotNull UnsExtractor unsExtractor() {
+        return configFileReaderWriter.getUnsExtractor();
     }
 
     @Override

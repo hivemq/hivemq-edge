@@ -53,7 +53,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 .withEnabled(false)
                 .build();
 
-        configurationService.unsConfiguration().setISA95(isa95);
+        configurationService.unsExtractor().setISA95(isa95);
 
         //-- Check the writes have been proxied onto the configuration model
         assertISA95Equals(isa95, hiveMQConfigEntity.getUns().getIsa95());
