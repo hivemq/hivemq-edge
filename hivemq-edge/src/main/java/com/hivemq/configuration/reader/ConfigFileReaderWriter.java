@@ -98,6 +98,8 @@ public class ConfigFileReaderWriter {
 
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
+    private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+
     private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
     public ConfigFileReaderWriter(
@@ -107,6 +109,8 @@ public class ConfigFileReaderWriter {
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+
+        this.dataCombiningExtractor = new DataCombiningExtractor(this);
     }
 
     public HiveMQConfigEntity applyConfig() {
@@ -121,6 +125,10 @@ public class ConfigFileReaderWriter {
         setConfiguration(hiveMQConfigEntity);
 
         return hiveMQConfigEntity;
+    }
+
+    public @NotNull DataCombiningExtractor getDataCombiningExtractor() {
+        return dataCombiningExtractor;
     }
 
     public @NotNull BridgeExtractor getBridgeExtractor() {
