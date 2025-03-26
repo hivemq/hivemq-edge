@@ -29,7 +29,6 @@ import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
-import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
@@ -42,7 +41,6 @@ import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +63,6 @@ public class ConfigurationBootstrap {
                         new PersistenceConfigurationServiceImpl(),
                         new MqttsnConfigurationServiceImpl(),
                         new ApiConfigurationServiceImpl(),
-                        new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
                         new ModuleConfigurationServiceImpl(),
@@ -82,7 +79,6 @@ public class ConfigurationBootstrap {
                         new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
                         new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
                         new ApiConfigurator(configurationService.apiConfiguration()),
-                        new UnsConfigurator(configurationService.unsConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),

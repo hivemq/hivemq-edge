@@ -18,6 +18,7 @@ package com.hivemq.configuration.ioc;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
@@ -71,6 +72,12 @@ public class ConfigurationModule {
     @Singleton
     static @NotNull BridgeExtractor bridgeConfiguration(final @NotNull ConfigurationService configurationService) {
         return configurationService.bridgeExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull UnsExtractor unsExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.unsExtractor();
     }
 
     @Provides

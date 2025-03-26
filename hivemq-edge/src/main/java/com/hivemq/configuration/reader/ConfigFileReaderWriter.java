@@ -99,6 +99,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull UnsExtractor unsExtractor;
 
     private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
@@ -109,8 +110,8 @@ public class ConfigFileReaderWriter {
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
-
         this.dataCombiningExtractor = new DataCombiningExtractor(this);
+        this.unsExtractor = new UnsExtractor(this);
     }
 
     public HiveMQConfigEntity applyConfig() {
@@ -137,6 +138,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
         return protocolAdapterExtractor;
+    }
+
+    public @NotNull UnsExtractor getUnsExtractor() {
+        return unsExtractor;
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
@@ -506,6 +511,7 @@ public class ConfigFileReaderWriter {
             bridgeExtractor.updateConfig(config);
             protocolAdapterExtractor.updateConfig(config);
             dataCombiningExtractor.updateConfig(config);
+            unsExtractor.updateConfig(config);
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
@@ -523,6 +529,7 @@ public class ConfigFileReaderWriter {
         bridgeExtractor.sync(configEntity);
         protocolAdapterExtractor.sync(configEntity);
         dataCombiningExtractor.sync(configEntity);
+        unsExtractor.sync(configEntity);
     }
 
     protected Schema loadSchema() throws IOException, SAXException {
