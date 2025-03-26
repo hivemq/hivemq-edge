@@ -26,10 +26,10 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.util.Checkpoints;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +61,6 @@ public class BridgeService {
 
     private volatile @Nullable List<MqttBridge> bridges;
 
-    private final @NotNull BridgeExtractor bridgeConfig;
-
     @Inject
     public BridgeService(
             final @NotNull BridgeExtractor bridgeConfig,
@@ -72,7 +70,6 @@ public class BridgeService {
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull MetricRegistry metricRegistry) {
-        this.bridgeConfig = bridgeConfig;
         this.messageForwarder = messageForwarder;
         this.bridgeMqttClientFactory = bridgeMqttClientFactory;
         this.executorService = executorService;
@@ -98,7 +95,7 @@ public class BridgeService {
         }
 
         //add any new bridges
-        for (MqttBridge bridge : bridges) {
+        for (final MqttBridge bridge : bridges) {
             if (bridgeToClientMap.containsKey(bridge.getId())) {
                 continue;
             }
@@ -106,8 +103,8 @@ public class BridgeService {
         }
 
         //remove any orphaned connections
-        for (String currentBridge : activeBridges()) {
-            Optional<MqttBridge> optional = getBridgeByName(currentBridge);
+        for (final String currentBridge : activeBridges()) {
+            final Optional<MqttBridge> optional = getBridgeByName(currentBridge);
             if (optional.isEmpty()) {
                 stopBridgeAndRemoveQueues(currentBridge);
             }
