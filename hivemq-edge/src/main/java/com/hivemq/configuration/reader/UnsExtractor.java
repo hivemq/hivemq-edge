@@ -16,6 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.uns.config.ISA95;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,7 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
 
     @Override
     public Configurator.ConfigResult updateConfig(final HiveMQConfigEntity hmqConfig) {
-        var config = hmqConfig.getUns().getIsa95();
+        final var config = hmqConfig.getUns().getIsa95();
 
         final ISA95.Builder builderIsa95 = new ISA95.Builder();
         builderIsa95.withArea(config.getArea()).
@@ -56,15 +57,16 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
     }
 
     @Override
-    public void sync(final @NotNull HiveMQConfigEntity entity){
+    public synchronized void sync(final @NotNull HiveMQConfigEntity entity){
         final ISA95 isa95 = config;
-        entity.getUns().getIsa95().setEnabled(isa95.isEnabled());
-        entity.getUns().getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
-        entity.getUns().getIsa95().setArea(isa95.getArea());
-        entity.getUns().getIsa95().setEnterprise(isa95.getEnterprise());
-        entity.getUns().getIsa95().setSite(isa95.getSite());
-        entity.getUns().getIsa95().setWorkCell(isa95.getWorkCell());
-        entity.getUns().getIsa95().setProductionLine(isa95.getProductionLine());
+        final ISA95Entity isa95Entity = entity.getUns().getIsa95();
+        isa95Entity.setEnabled(isa95.isEnabled());
+        isa95Entity.setPrefixAllTopics(isa95.isPrefixAllTopics());
+        isa95Entity.setArea(isa95.getArea());
+        isa95Entity.setEnterprise(isa95.getEnterprise());
+        isa95Entity.setSite(isa95.getSite());
+        isa95Entity.setWorkCell(isa95.getWorkCell());
+        isa95Entity.setProductionLine(isa95.getProductionLine());
     }
 
 
