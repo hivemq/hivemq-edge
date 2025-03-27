@@ -163,6 +163,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormLabel>{destSchemaOptions.title}</FormLabel>
           <DestinationSchemaLoader
             formData={props.formData}
+            formContext={formContext}
             onChange={(schema) => {
               if (!props.formData) return
 
