@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +52,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 
 /**
  * Abstract PLC4X implementation. Exposes core abstractions of the underlying framework so instances can be exposes
@@ -98,6 +98,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
+            if(!tags.isEmpty()) {
                 tempConnection.read(tags)
                     .thenApply(response -> processReadResponse(tags, response))
                     .whenComplete((sample, t) -> {
@@ -121,6 +122,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             pollingOutput.finish();
                         }
                     });
+            } else {
+                //When no tags are present we keep the connection and just check it
+                tempConnection.lazyConnectionCheck();
+                pollingOutput.finish();
+            }
         } else {
             pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
         }
@@ -135,9 +141,28 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            // we do not subscribe anymore as no current adapter type supports it anyway
-            initConnection();
-            output.startedSuccessfully();
+            if (connection == null) {
+                synchronized (lock) {
+                    if (connection == null) {
+                        // we do not subscribe anymore as no current adapter type supports it anyway
+                        if (log.isTraceEnabled()) {
+                            log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
+                        }
+                        final Plc4xConnection<T> connection = createConnection();
+                        if(connection.isConnected()) {
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
+                            this.connection = connection;
+                            output.startedSuccessfully();
+                        } else {
+                            protocolAdapterState.setConnectionStatus(ERROR);
+                            output.failStart(new Plc4xException("Unable to connect to device"), "Unable to connect to device");
+                        }
+
+                    }
+                }
+            } else {
+                output.startedSuccessfully();
+            }
         } catch (final Exception e) {
             output.failStart(e, null);
         }
@@ -162,26 +187,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
-    }
-
-    private Plc4xConnection<T> initConnection() {
-        if (connection == null) {
-            synchronized (lock) {
-                if (connection == null) {
-                    try {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
-                        }
-                        connection = createConnection();
-                        protocolAdapterState.setConnectionStatus(CONNECTED);
-                        return connection;
-                    } catch (final Plc4xException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        return connection;
     }
 
     protected @NotNull Plc4xConnection<T> createConnection() throws Plc4xException {
