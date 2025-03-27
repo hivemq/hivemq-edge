@@ -49,6 +49,8 @@ public class DataCombiningRuntime {
 
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
 
+    public static final String CONSUMER_NAME_PREFIX_COMBINER = "COMBINER";
+
     private final @NotNull DataCombining combining;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull TagManager tagManager;
@@ -204,6 +206,11 @@ public class DataCombiningRuntime {
         @Override
         public @NotNull String getTagName() {
             return tagName;
+        }
+
+        @Override
+        public @NotNull String getConsumerName() {
+            return CONSUMER_NAME_PREFIX_COMBINER + ":" + dataCombining.id().toString();
         }
 
         @Override

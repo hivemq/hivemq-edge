@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.persistence.domain.DomainTag;
@@ -65,7 +66,7 @@ public class ProtocolAdapterConfigConverter {
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
         final List<NorthboundMapping> northboundMappingList = protocolAdapterEntity.getNorthboundMappingEntities()
                 .stream()
-                .map(northbound -> northbound.to(mapper))
+                .map(NorthboundMappingEntity::to)
                 .collect(Collectors.toList());
         final List<SouthboundMapping> southboundMappingList = protocolAdapterEntity.getSouthboundMappingEntities()
                 .stream()
