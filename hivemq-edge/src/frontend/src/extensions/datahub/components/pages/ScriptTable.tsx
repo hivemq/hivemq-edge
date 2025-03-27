@@ -15,7 +15,7 @@ import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers_
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { downloadJSON } from '@datahub/utils/download.utils.ts'
+import { downloadJSON } from '@/utils/download.utils.ts'
 
 const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
