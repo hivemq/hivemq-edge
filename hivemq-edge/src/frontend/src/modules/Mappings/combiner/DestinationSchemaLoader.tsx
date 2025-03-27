@@ -12,7 +12,6 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
-  Text,
   VStack,
   useDisclosure,
 } from '@chakra-ui/react'
@@ -20,12 +19,17 @@ import {
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 import { downloadJSON } from '@/utils/download.utils'
 
+import type { CombinerContext } from '../types'
+import SchemaMerger from './SchemaMerger'
+
 interface DestinationSchemaLoaderProps {
   formData?: DataCombining
+  formContext?: CombinerContext
   onChange: (schema: string) => void
   onChangeInstructions: (v: Instruction[]) => void
 }
@@ -37,6 +41,7 @@ enum EDITOR_MODE {
 
 export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   formData,
+  formContext,
   onChange,
   onChangeInstructions,
 }) => {
@@ -46,9 +51,6 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   const isTopicDefined = Boolean(formData?.destination?.topic && formData?.destination?.topic !== '')
   const isDestSchemaDefined = Boolean(formData?.destination?.schema && formData?.destination?.schema !== '')
-  const isSourceSchemaDefined = useMemo(() => {
-    return true
-  }, [])
 
   const handleSchemaEditor = (mode: EDITOR_MODE | undefined) => {
     setSchemaEditor(mode)
@@ -57,6 +59,10 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   const handleSchemaUpload = (schema: string) => {
     onChange(schema)
+  }
+
+  const handleSchemaMerger = (properties: FlatJSONSchema7[]) => {
+    console.log('XXXXX properties', properties)
   }
 
   const handleSchemaDownload = () => {
@@ -80,7 +86,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
       <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2} mb={2}>
         <Button
           data-testid={'combiner-destination-infer'}
-          isDisabled={!isSourceSchemaDefined}
+          isDisabled={!isTopicDefined}
           onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
         >
           {t('combiner.schema.schemaManager.action.infer')}
@@ -130,7 +136,9 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            {isSchemaEditor === EDITOR_MODE.INFERRER && <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>}
+            {isSchemaEditor === EDITOR_MODE.INFERRER && (
+              <SchemaMerger formData={formData} formContext={formContext} onUpload={handleSchemaMerger} />
+            )}
             {isSchemaEditor === EDITOR_MODE.UPLOADER && <SchemaUploader onUpload={handleSchemaUpload} />}
           </ModalBody>
 
