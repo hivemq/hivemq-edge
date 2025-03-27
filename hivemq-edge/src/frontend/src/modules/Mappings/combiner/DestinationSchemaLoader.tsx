@@ -20,8 +20,9 @@ import type { DataCombining, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { getSchemaFromPropertyList } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
-import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
+import { encodeDataUriJsonSchema, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 import { downloadJSON } from '@/utils/download.utils'
 
 import type { CombinerContext } from '../types'
@@ -62,7 +63,11 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   }
 
   const handleSchemaMerger = (properties: FlatJSONSchema7[]) => {
-    console.log('XXXXX properties', properties)
+    const schema = getSchemaFromPropertyList(properties)
+    // downloadJSON<JSONSchema7>('topic-untitled', schema)
+    const destinationScehma = encodeDataUriJsonSchema(schema)
+    onChange(destinationScehma)
+    onClose()
   }
 
   const handleSchemaDownload = () => {
