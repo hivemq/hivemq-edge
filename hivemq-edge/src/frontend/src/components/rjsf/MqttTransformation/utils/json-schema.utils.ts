@@ -1,9 +1,12 @@
 import type { RJSFSchema } from '@rjsf/utils'
-import type { JSONSchema7, JSONSchema7Definition } from 'json-schema'
-import type { JsonNode } from '@/api/__generated__'
 import { match, P } from 'ts-pattern'
 import { inferSchema } from '@jsonhero/schema-infer'
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema'
+
+import type { JsonNode } from '@/api/__generated__'
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
+
+import i18n from '@/config/i18n.config.ts'
 
 export const ARRAY_ITEM_INDEX = '___index'
 
@@ -11,6 +14,7 @@ export interface FlatJSONSchema7 extends JSONSchema7 {
   path: string[]
   key: string
   arrayType?: string
+  origin?: string
 }
 
 export const getProperty = (
@@ -56,6 +60,36 @@ export const getProperty = (
   }
 
   return [mainProps, ...subProperties]
+}
+
+export const getSchemaFromPropertyList = (properties: FlatJSONSchema7[]): RJSFSchema => {
+  const root: RJSFSchema = {
+    title: 'OPCUA/MQTT combined schema',
+    type: 'object',
+    description: i18n.t('combiner.schema.schemaManager.infer.output.description'),
+    properties: {},
+  }
+
+  properties.forEach((property) => {
+    if (property.path.length === 0) {
+      const { path, key, arrayType, origin, ...rest } = property
+      ;(root.properties as RJSFSchema)[property.key] = {
+        type: property.type,
+        ...rest,
+        ...(property.type === 'object' && { properties: {} }),
+      }
+    } else {
+      const newRoot = root.properties as RJSFSchema
+      const { path, key, arrayType, origin, ...rest } = property
+
+      newRoot[property.path[0]].properties[property.key] = {
+        type: property.type,
+        ...rest,
+      }
+    }
+  })
+
+  return root
 }
 
 export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
