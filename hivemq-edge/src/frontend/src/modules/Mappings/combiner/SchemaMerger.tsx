@@ -54,7 +54,9 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
     return displayedSchemas.reduce<FlatJSONSchema7[]>((acc, reference) => {
       if (!reference.schema?.schema) return acc
       const properties = getPropertyListFrom(reference.schema.schema)
-      properties.forEach((property) => {
+
+      const conflictName: [number, string][] = []
+      properties.forEach((property, pathIndex) => {
         if (reference.type === DataIdentifierReference.type.TAG) {
           const index = formData?.sources?.tags?.findIndex((tag) => tag === reference.id)
           property.origin = `${STUB_TAG_PROPERTY}${index}`
@@ -65,6 +67,13 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
         if (property.path.length === 0) {
           property.key = `${property.origin}_${property.title}`
           property.title = property.key
+          conflictName.push([pathIndex, property.key])
+        } else {
+          conflictName.forEach(([index, newTitle]) => {
+            if (property.path[index]) {
+              property.path[index] = newTitle
+            }
+          })
         }
       })
       acc.push(...properties)
