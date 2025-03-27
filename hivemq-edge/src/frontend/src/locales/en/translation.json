@@ -1335,7 +1335,10 @@
           "message": "We can create a new schema based on the current state of the sources",
           "title": "Suggested merged schema",
           "helper": "This schema will be a valid destination to combine your sources into",
-          "action": "Generate"
+          "action": "Generate",
+          "output": {
+            "description": "This is generated from the Edge data combiner"
+          }
         }
       }
     }
