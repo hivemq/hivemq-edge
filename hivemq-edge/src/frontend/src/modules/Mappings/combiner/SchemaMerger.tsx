@@ -38,7 +38,7 @@ interface SchemaMergerProps {
   onClose: () => void
 }
 
-const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose }) => {
+const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, onUpload }) => {
   const { t } = useTranslation()
 
   const references = useMemo(() => {
@@ -103,7 +103,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose })
       <ModalFooter>
         <ButtonGroup variant="outline">
           <Button onClick={onClose}>{t('action.cancel')}</Button>
-          <Button isDisabled={isError} onClick={onClose} variant="primary">
+          <Button isDisabled={isError} onClick={() => onUpload(properties)} variant="primary">
             {t('combiner.schema.schemaManager.infer.action')}
           </Button>
         </ButtonGroup>
