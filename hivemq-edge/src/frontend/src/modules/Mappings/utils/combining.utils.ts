@@ -8,6 +8,9 @@ import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-fi
 
 import i18n from '@/config/i18n.config.ts'
 
+export const STUB_TAG_PROPERTY = 'tg'
+export const STUB_TOPIC_FILTER_PROPERTY = 'tf'
+
 export const getDataReference = (formContext?: CombinerContext): DataReference[] => {
   return (
     formContext?.queries?.reduce<DataReference[]>((acc, cur, currentIndex) => {
