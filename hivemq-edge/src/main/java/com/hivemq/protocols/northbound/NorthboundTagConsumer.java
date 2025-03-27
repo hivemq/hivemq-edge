@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols.northbound;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -25,7 +27,9 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
@@ -36,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NorthboundTagConsumer implements TagConsumer{
 
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
+
+    private static final @NotNull TypeReference<Map<String,Object>> typeRef = new TypeReference<>() {};
 
     private final @NotNull PollingContext pollingContext;
     private final @NotNull ProtocolAdapterWrapper protocolAdapter;
@@ -52,6 +59,7 @@ public class NorthboundTagConsumer implements TagConsumer{
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
+    private final @NotNull DataPointFactory dataPointFactory;
 
     public NorthboundTagConsumer(
             final @NotNull PollingContext pollingContext,
@@ -68,6 +76,19 @@ public class NorthboundTagConsumer implements TagConsumer{
         this.protocolAdapterPublishService = protocolAdapterPublishService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
+        this.dataPointFactory = new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+
+            @Override
+            public @NotNull DataPoint createJsonDataPoint(
+                    final @NotNull String tagName,
+                    final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue, true);
+            }
+        };
     }
 
     public void accept(final @NotNull List<DataPoint> dataPoints) {
@@ -81,27 +102,32 @@ public class NorthboundTagConsumer implements TagConsumer{
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
 
             final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
+
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
             final List<DataPoint> jsonDataPoints =
                     dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
 
-            jsonDataPoints.forEach(jsonDataPoint -> jsonPayloadsAsBytes.add(((String)jsonDataPoint.getTagValue()).getBytes(
-                    StandardCharsets.UTF_8)));
+            final var preparedJsonDataPoints = jsonDataPoints.stream().map(jsonDataPoint -> {
+                try {
+                    final var jsonMap=objectMapper.readValue((String)jsonDataPoint.getTagValue(), typeRef);
+                    final var value = jsonMap.get("value");
+                    if(value!=null) {
+                        return dataPointFactory.create(jsonDataPoint.getTagName(), value);
+                    } else {
+                        throw new RuntimeException("No value entry in JSON message");
+                    }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }).toList();
 
-            if (jsonDataPoints.isEmpty()) {
-                //No JSON data included, use the whole list.
-                jsonPayloadsAsBytes
-                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                                .convertToJson(dataPoints, pollingContext, objectMapper));
-            } else if(jsonDataPoints.size() < dataPoints.size()) {
-                //At least some JSON data included, remove the JSON entries.
-                final var dataPointsCopied = new ArrayList<>(dataPoints);
-                dataPointsCopied.removeAll(jsonDataPoints);
-                jsonPayloadsAsBytes
-                        .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                        .convertToJson(dataPointsCopied, pollingContext, objectMapper));
-            }
+            final var dataPointsCopied = new ArrayList<>(dataPoints);
+            dataPointsCopied.removeAll(jsonDataPoints);
+            dataPointsCopied.addAll(preparedJsonDataPoints);
+            jsonPayloadsAsBytes
+                    .addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                    .convertToJson(dataPointsCopied, pollingContext, objectMapper));
 
             for (final byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService.createPublish()
