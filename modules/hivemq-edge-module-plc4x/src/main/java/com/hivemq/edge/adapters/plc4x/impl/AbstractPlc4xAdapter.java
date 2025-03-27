@@ -98,6 +98,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
+            if(!tags.isEmpty()) {
                 tempConnection.read(tags)
                     .thenApply(response -> processReadResponse(tags, response))
                     .whenComplete((sample, t) -> {
@@ -121,6 +122,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             pollingOutput.finish();
                         }
                     });
+            } else {
+                //When no tags are present we keep the connection and just check it
+                tempConnection.lazyConnectionCheck();
+                pollingOutput.finish();
+            }
         } else {
             pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
         }
