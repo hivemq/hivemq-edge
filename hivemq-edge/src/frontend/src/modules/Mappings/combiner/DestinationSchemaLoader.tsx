@@ -47,7 +47,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const [isSchemaEditor, setSchemaEditor] = useState<EDITOR_MODE | undefined>(undefined)
+  const [schemaEditor, setSchemaEditor] = useState<EDITOR_MODE | undefined>(undefined)
 
   const isTopicDefined = Boolean(formData?.destination?.topic && formData?.destination?.topic !== '')
   const isDestSchemaDefined = Boolean(formData?.destination?.schema && formData?.destination?.schema !== '')
@@ -127,15 +127,15 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
         </VStack>
       )}
 
-      <Modal isOpen={isOpen && Boolean(isSchemaEditor)} onClose={onClose}>
+      <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />
           <ModalHeader>
-            {isSchemaEditor === EDITOR_MODE.INFERRER && t('combiner.schema.schemaManager.action.infer')}
-            {isSchemaEditor === EDITOR_MODE.UPLOADER && t('combiner.schema.schemaManager.action.upload')}
+            {schemaEditor === EDITOR_MODE.INFERRER && t('combiner.schema.schemaManager.action.infer')}
+            {schemaEditor === EDITOR_MODE.UPLOADER && t('combiner.schema.schemaManager.action.upload')}
           </ModalHeader>
-          {isSchemaEditor === EDITOR_MODE.INFERRER && (
+          {schemaEditor === EDITOR_MODE.INFERRER && (
             <SchemaMerger
               formData={formData}
               formContext={formContext}
@@ -143,7 +143,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
               onClose={onClose}
             />
           )}
-          {isSchemaEditor === EDITOR_MODE.UPLOADER && (
+          {schemaEditor === EDITOR_MODE.UPLOADER && (
             <>
               <ModalBody>
                 <SchemaUploader onUpload={handleSchemaUpload} />
