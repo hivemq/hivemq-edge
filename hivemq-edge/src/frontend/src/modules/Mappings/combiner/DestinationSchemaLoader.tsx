@@ -154,7 +154,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
                 <SchemaUploader onUpload={handleSchemaUpload} />
               </ModalBody>
               <ModalFooter>
-                <Button onClick={onClose}> {t('combiner.schema.schemaManager.infer.action')}</Button>
+                <Button onClick={onClose}> {t('action.cancel')}</Button>
               </ModalFooter>
             </>
           )}
