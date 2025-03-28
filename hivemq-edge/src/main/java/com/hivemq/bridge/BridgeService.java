@@ -254,14 +254,6 @@ public class BridgeService {
         return false;
     }
 
-    public @NotNull List<MqttBridge> getBridges() {
-        final var tmpBridges = bridges;
-        if(tmpBridges != null) {
-            return tmpBridges;
-        }
-        return List.of();
-    }
-
     private @NotNull List<String> newForwarderIds(final @Nullable MqttBridge newBridgeConfig) {
         if (newBridgeConfig == null) {
             return List.of();
