@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.service;
+package com.hivemq.api.errors.adapters;
 
-import com.hivemq.configuration.entity.combining.DataCombinerEntity;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public interface DataCombiningConfigurationService {
-
-    @NotNull List<DataCombinerEntity> getAllConfigs();
-
-    void setAllConfigs(@NotNull List<DataCombinerEntity> allConfigs);
+public class DataCombinerNotFoundError extends ProblemDetails {
+    public DataCombinerNotFoundError(String error) {
+        super(
+                "DataCombinerNotFound",
+                "No data combiner found with the provided id",
+                "No data combiner found with the provided id",
+                HttpStatus.NOT_FOUND_404,
+                List.of(new Error(error)));
+    }
 }

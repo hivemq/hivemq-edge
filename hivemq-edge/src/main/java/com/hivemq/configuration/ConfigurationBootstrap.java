@@ -18,10 +18,8 @@ package com.hivemq.configuration;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ApiConfigurator;
-import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
-import com.hivemq.configuration.reader.DataCombiningConfigurator;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
 import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
@@ -29,26 +27,20 @@ import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
-import com.hivemq.configuration.reader.ProtocolAdapterConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
-import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.DataCombiningConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
@@ -63,19 +55,16 @@ public class ConfigurationBootstrap {
     public static @NotNull ConfigurationService bootstrapConfig(final @NotNull SystemInformation systemInformation) {
 
         final ConfigurationServiceImpl configurationService =
-                new ConfigurationServiceImpl(new ListenerConfigurationServiceImpl(),
+                new ConfigurationServiceImpl(
+                        new ListenerConfigurationServiceImpl(),
                         new MqttConfigurationServiceImpl(),
                         new RestrictionsConfigurationServiceImpl(),
                         new SecurityConfigurationServiceImpl(),
                         new PersistenceConfigurationServiceImpl(),
                         new MqttsnConfigurationServiceImpl(),
-                        new BridgeConfigurationServiceImpl(),
                         new ApiConfigurationServiceImpl(),
-                        new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
-                        new ProtocolAdapterConfigurationServiceImpl(),
-                        new DataCombiningConfigurationServiceImpl(),
                         new ModuleConfigurationServiceImpl(),
                         new InternalConfigurationServiceImpl());
 
@@ -89,13 +78,9 @@ public class ConfigurationBootstrap {
                         new ListenerConfigurator(configurationService.listenerConfiguration(), systemInformation),
                         new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
                         new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
-                        new BridgeConfigurator(configurationService.bridgeConfiguration()),
                         new ApiConfigurator(configurationService.apiConfiguration()),
-                        new UnsConfigurator(configurationService.unsConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                        new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
-                        new DataCombiningConfigurator(configurationService.dataCombiningConfigurationService()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                         new InternalConfigurator(configurationService.internalConfigurationService())));
 

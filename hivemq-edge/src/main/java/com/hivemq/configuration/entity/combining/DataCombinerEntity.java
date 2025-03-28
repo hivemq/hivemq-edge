@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,6 +52,8 @@ public class DataCombinerEntity {
 
     // no-arg for jaxb
     public DataCombinerEntity() {
+        this.entityReferenceEntities = new ArrayList<>();
+        this.dataCombiningEntities = new ArrayList<>();
     }
 
     public DataCombinerEntity(

@@ -22,7 +22,6 @@ import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.Null;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 
@@ -69,6 +68,12 @@ public class InstructionEntity {
         return new InstructionEntity(model.sourceFieldName(),
                 model.destinationFieldName(),
                 model.dataIdentifierReference() != null ? model.dataIdentifierReference().toPersistence() : null);
+    }
+
+    public static @NotNull InstructionEntity from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
+        return new InstructionEntity(model.getSource(),
+                model.getDestination(),
+                model.getSourceRef() != null ? DataIdentifierReferenceEntity.from(model.getSourceRef()) : null);
     }
 
     public @NotNull Instruction to() {

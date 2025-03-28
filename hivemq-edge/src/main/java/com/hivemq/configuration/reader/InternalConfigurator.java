@@ -44,7 +44,7 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
     }
 
     @Override
-    public ConfigResult setConfig(final @NotNull HiveMQConfigEntity config) {
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getInternal();
         this.initialized = true;
 

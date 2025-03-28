@@ -21,15 +21,40 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
-public interface Configurator <T>{
+/**
+ * Configurators are initialized before the actual dagger bootstrap.
+ *
+ * @param <T>
+ */
+public interface Configurator <T> {
     Logger log = LoggerFactory.getLogger(Configurator.class);
 
-    enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART}
+    enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART, ERROR}
 
-    ConfigResult setConfig(HiveMQConfigEntity config);
+    /**
+     * Called for initial setup.
+     * Not to be invoked more than once.
+     *
+     * @param config
+     * @return indicator on whether the config was correctly applied
+     */
+    ConfigResult applyConfig(HiveMQConfigEntity config);
 
+
+    /**
+     * Indicate if the given config will require an edge restart to be applied
+     * @param config
+     * @return
+     */
     boolean needsRestartWithConfig(HiveMQConfigEntity config);
 
+    /**
+     * Check whether the config has changed.
+     *
+     * @param originalConfig
+     * @param newConfig
+     * @return
+     */
     default boolean hasChanged(final T originalConfig, final T newConfig) {
         return !Objects.equals(originalConfig, newConfig);
     }

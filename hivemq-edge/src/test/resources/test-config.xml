@@ -259,7 +259,7 @@
             </config>
             <tags>
                 <tag>
-                    <name>tag1</name>
+                    <name>tag2</name>
                     <description></description>
                     <definition>
                         <node>ns=1;i=1004</node>
@@ -270,7 +270,7 @@
             <northboundMappings>
                 <northboundMapping>
                     <topic>test</topic>
-                    <tagName>tag1</tagName>
+                    <tagName>tag2</tagName>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>

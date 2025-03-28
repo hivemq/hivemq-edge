@@ -15,8 +15,11 @@
  */
 package com.hivemq.configuration.ioc;
 
+import com.hivemq.configuration.reader.BridgeExtractor;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
@@ -67,8 +70,26 @@ public class ConfigurationModule {
 
     @Provides
     @Singleton
-    static @NotNull BridgeConfigurationService bridgeConfigurationService(final @NotNull ConfigurationService configurationService) {
-        return configurationService.bridgeConfiguration();
+    static @NotNull BridgeExtractor bridgeConfiguration(final @NotNull ConfigurationService configurationService) {
+        return configurationService.bridgeExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull UnsExtractor unsExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.unsExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull ProtocolAdapterExtractor protocolAdapterExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.protocolAdapterExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull DataCombiningExtractor dataCombiningExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.dataCombiningExtractor();
     }
 
     @Provides

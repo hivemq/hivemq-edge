@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.service;
+package com.hivemq.api.errors.adapters;
 
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.uns.config.ISA88;
-import com.hivemq.uns.config.ISA95;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.Error;
+import com.hivemq.http.error.ProblemDetails;
 
-/**
- * A Configuration service which allows access to API Configuration properties
- */
-public interface UnsConfigurationService {
+import java.util.List;
 
-    @NotNull ISA95 getISA95();
-
-    @NotNull ISA88 getISA88();
-
-    void setISA95(@NotNull ISA95 isa95);
-
-    void setISA88(@NotNull ISA88 isa88);
-
+public class AdapterCannotBeUpdatedError extends ProblemDetails {
+    public AdapterCannotBeUpdatedError(String error) {
+        super(
+                "AdapterCannotBeUpdated",
+                "Adapter can't be updated",
+                "Adapter can't be updated",
+                HttpStatus.FORBIDDEN_403,
+                List.of(new Error(error)));
+    }
 }

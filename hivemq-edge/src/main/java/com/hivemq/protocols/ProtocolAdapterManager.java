@@ -16,11 +16,9 @@
 package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
@@ -28,6 +26,8 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
@@ -39,11 +39,6 @@ import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImp
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
-import com.hivemq.persistence.domain.DomainTagDeleteResult;
-import com.hivemq.persistence.domain.DomainTagUpdateResult;
-import com.hivemq.persistence.mappings.NorthboundMapping;
-import com.hivemq.persistence.mappings.SouthboundMapping;
-import com.hivemq.protocols.northbound.JsonPayloadDefaultCreator;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -56,7 +51,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -67,9 +61,6 @@ import java.util.stream.Collectors;
 
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
-import static com.hivemq.persistence.domain.DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND;
-import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND;
-import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.TAG_NOT_FOUND;
 
 @SuppressWarnings("unchecked")
 @Singleton
@@ -79,55 +70,49 @@ public class ProtocolAdapterManager {
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
-    private final @NotNull ObjectMapper objectMapper;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterConfigConverter configConverter;
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
-    private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
-    private final @NotNull ConfigPersistence configPersistence;
     private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager;
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
 
     @Inject
     public ProtocolAdapterManager(
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ModuleServicesImpl moduleServices,
-            final @NotNull ObjectMapper objectMapper,
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull EventService eventService,
-            final @NotNull ConfigPersistence configPersistence,
             final @NotNull ProtocolAdapterConfigConverter configConverter,
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager,
             final @NotNull ExecutorService executorService,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
-        this.configPersistence = configPersistence;
-        this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.remoteService = remoteService;
         this.eventService = eventService;
         this.configConverter = configConverter;
         this.versionProvider = versionProvider;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
-        this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
         this.protocolAdapterFactoryManager = protocolAdapterFactoryManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
+        this.protocolAdapterConfig = protocolAdapterConfig;
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
                 protocolAdapterWritingService.writingEnabled()));
     }
@@ -245,20 +230,15 @@ public class ProtocolAdapterManager {
 
     public synchronized void start() {
         log.debug("Starting adapters");
-        for (final ProtocolAdapterConfig adapterConfig : configPersistence.allAdapters()) {
-            try {
-                start(createAdapterInternal(adapterConfig, versionProvider.getVersion())).get();
-            } catch (final InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        protocolAdapterConfig.registerConsumer(this::refresh);
     }
 
-    public synchronized void refresh() {
+    public synchronized void refresh(List<ProtocolAdapterEntity> configs) {
         log.info("Refreshing adapters");
 
-        final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configPersistence.allAdapters()
+        final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs
                 .stream()
+                .map(configConverter::fromEntity)
                 .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
 
         final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
@@ -277,6 +257,7 @@ public class ProtocolAdapterManager {
 
         adaptersToBeDeleted.forEach(name -> {
             try {
+                log.debug("Deleting adapter '{}'", name);
                 stop(name).thenApply(r -> deleteAdapterInternal(name)).get();
             } catch (final InterruptedException | ExecutionException e) {
                 failedAdapters.add(name);
@@ -286,6 +267,7 @@ public class ProtocolAdapterManager {
 
         adaptersToBeCreated.forEach(name -> {
             try {
+                log.debug("Creating adapter '{}'", name);
                 start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())).get();
             } catch (final InterruptedException | ExecutionException e) {
                 failedAdapters.add(name);
@@ -295,7 +277,9 @@ public class ProtocolAdapterManager {
 
         adaptersToBeUpdated.forEach(name -> {
             try {
-                stop(name).thenApply(r -> deleteAdapterInternal(name))
+                log.debug("Updating adapter '{}'", name);
+                stop(name)
+                        .thenApply(r -> deleteAdapterInternal(name))
                         .thenCompose(r -> start(createAdapterInternal(protocolAdapterConfigs.get(name),
                                 versionProvider.getVersion())))
                         .get();
@@ -341,7 +325,7 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getAdapterById(protocolAdapterId).map(this::start)
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(this::start)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
@@ -397,13 +381,14 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getAdapterById(protocolAdapterId).map(this::stop)
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(this::stop)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
     }
 
-    public @NotNull CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+    @VisibleForTesting
+    @NotNull CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         log.info("Stopping protocol-adapter '{}'.", protocolAdapterWrapper.getId());
 
@@ -427,57 +412,14 @@ public class ProtocolAdapterManager {
         });
     }
 
-    public synchronized @NotNull CompletableFuture<Void> addAdapter(final @NotNull ProtocolAdapterConfig protocolAdapterConfig) {
-        if (getAdapterTypeById(protocolAdapterConfig.getProtocolId()).isEmpty()) {
-            throw new IllegalArgumentException("invalid adapter type '" + protocolAdapterConfig.getProtocolId() + "'");
-        }
-        if (getAdapterById(protocolAdapterConfig.getAdapterId()).isPresent()) {
-            throw new IllegalArgumentException("adapter already exists by id '" +
-                    protocolAdapterConfig.getProtocolId() +
-                    "'");
-        }
-        final CompletableFuture<Void> ret =
-                start(createAdapterInternal(protocolAdapterConfig, versionProvider.getVersion()));
-
-        configPersistence.addAdapter(protocolAdapterConfig);
-        return ret;
-    }
-
-    public boolean deleteAdapter(final @NotNull String id) {
-        Preconditions.checkNotNull(id);
-        final String protocolId = protocolAdapters.get(id).getProtocolAdapterInformation().getProtocolId();
-        final boolean result = deleteAdapterInternal(id);
-        configPersistence.deleteAdapter(id, protocolId);
-        return result;
-    }
-
     private void updateAdapter(final ProtocolAdapterConfig protocolAdapterConfig) {
         deleteAdapterInternal(protocolAdapterConfig.getAdapterId());
         syncFuture(start(createAdapterInternal(protocolAdapterConfig, versionProvider.getVersion())));
-        configPersistence.updateAdapter(protocolAdapterConfig);
     }
 
-    public boolean updateAdapterConfig(
-            final @NotNull String adapterType,
-            final @NotNull String adapterId,
-            final @NotNull ProtocolSpecificAdapterConfig protocolSpecificAdapterConfig) {
+    private boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<? extends Tag> tags) {
         Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId).map(oldInstance -> {
-            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(adapterId,
-                    adapterType,
-                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
-                    protocolSpecificAdapterConfig,
-                    oldInstance.getSouthboundMappings(),
-                    oldInstance.getNorthboundMappings(),
-                    oldInstance.getTags());
-            updateAdapter(protocolAdapterConfig);
-            return true;
-        }).orElse(false);
-    }
-
-    public boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<? extends Tag> tags) {
-        Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId).map(oldInstance -> {
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(oldInstance -> {
             final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
             final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
                     protocolId,
@@ -491,41 +433,7 @@ public class ProtocolAdapterManager {
         }).orElse(false);
     }
 
-    public boolean updateAdapterFromMappings(
-            final @NotNull String adapterId, final @NotNull List<NorthboundMapping> northboundMappings) {
-        Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId).map(oldInstance -> {
-            final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
-            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
-                    protocolId,
-                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
-                    oldInstance.getConfigObject(),
-                    oldInstance.getSouthboundMappings(),
-                    northboundMappings,
-                    oldInstance.getTags());
-            updateAdapter(protocolAdapterConfig);
-            return true;
-        }).orElse(false);
-    }
-
-    public boolean updateAdapterToMappings(
-            final @NotNull String adapterId, final @NotNull List<SouthboundMapping> southboundMappings) {
-        Preconditions.checkNotNull(adapterId);
-        return getAdapterById(adapterId).map(oldInstance -> {
-            final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
-            final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
-                    protocolId,
-                    oldInstance.getAdapterInformation().getCurrentConfigVersion(),
-                    oldInstance.getConfigObject(),
-                    southboundMappings,
-                    oldInstance.getNorthboundMappings(),
-                    oldInstance.getTags());
-            updateAdapter(protocolAdapterConfig);
-            return true;
-        }).orElse(false);
-    }
-
-    public @NotNull Optional<ProtocolAdapterWrapper> getAdapterById(final @NotNull String id) {
+    public @NotNull Optional<ProtocolAdapterWrapper> getProtocolAdapterWrapperByAdapterId(final @NotNull String id) {
         Preconditions.checkNotNull(id);
         return Optional.ofNullable(protocolAdapters.get(id));
     }
@@ -551,9 +459,13 @@ public class ProtocolAdapterManager {
     }
 
 
+    public @NotNull Tag convertDomainTagToTag(String protocolId, DomainTag domainTag) {
+        return configConverter.domaintTagToTag(protocolId, domainTag);
+    }
+
     public @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
-        return getAdapterById(adapterId).map(adapter -> {
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapter -> {
             final List<? extends Tag> tags = new ArrayList<>(adapter.getTags());
             final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
             if (!alreadyExists) {
@@ -566,47 +478,6 @@ public class ProtocolAdapterManager {
                 return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
             }
         }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
-    }
-
-    public @NotNull DomainTagUpdateResult updateDomainTag(final @NotNull DomainTag domainTag) {
-        final String adapterId = domainTag.getAdapterId();
-        return getAdapterById(adapterId).map(adapter -> {
-            final List<? extends Tag> tags = adapter.getTags();
-            final boolean alreadyExists = tags.removeIf(t -> t.getName().equals(domainTag.getTagName()));
-            if (alreadyExists) {
-                tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(),
-                        domainTag));
-                updateAdapterTags(adapterId, tags);
-                return DomainTagUpdateResult.success();
-            } else {
-                return DomainTagUpdateResult.failed(TAG_NOT_FOUND, adapterId);
-            }
-        }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
-    }
-
-    public @NotNull DomainTagUpdateResult updateDomainTags(
-            final @NotNull String adapterId, final @NotNull Set<DomainTag> domainTags) {
-        return getAdapterById(adapterId).map(adapter -> {
-            final List<Tag> protocolTags = new ArrayList<>();
-            domainTags.forEach(domainTag -> protocolTags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation()
-                    .getProtocolId(), domainTag)));
-            updateAdapterTags(adapterId, protocolTags);
-            return DomainTagUpdateResult.success();
-        }).orElse(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND, adapterId));
-    }
-
-    public @NotNull DomainTagDeleteResult deleteDomainTag(
-            final @NotNull String adapterId, final @NotNull String tagName) {
-        return getAdapterById(adapterId).map(adapter -> {
-            final List<? extends Tag> tags = adapter.getTags();
-            final boolean exists = tags.removeIf(t -> t.getName().equals(tagName));
-            if (exists) {
-                updateAdapterTags(adapterId, tags);
-                return DomainTagDeleteResult.success();
-            } else {
-                return DomainTagDeleteResult.failed(NOT_FOUND, adapterId);
-            }
-        }).orElse(DomainTagDeleteResult.failed(NOT_FOUND, adapterId));
     }
 
     public @NotNull List<DomainTag> getDomainTags() {
@@ -635,7 +506,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull Optional<List<DomainTag>> getTagsForAdapter(final @NotNull String adapterId) {
-        return getAdapterById(adapterId).map(adapter -> adapter.getTags()
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapter -> adapter.getTags()
                 .stream()
                 .map(tag -> new DomainTag(tag.getName(),
                         adapter.getId(),

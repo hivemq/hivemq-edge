@@ -15,12 +15,11 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.NorthboundMapping;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -130,7 +129,7 @@ public class NorthboundMappingEntity {
         }
     }
 
-    public static @NotNull NorthboundMappingEntity from(final @NotNull NorthboundMapping northboundMapping) {
+    public static @NotNull NorthboundMappingEntity fromPersistence(final @NotNull NorthboundMapping northboundMapping) {
         final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
                 .stream()
                 .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
@@ -148,7 +147,31 @@ public class NorthboundMappingEntity {
                 northboundMapping.getMessageExpiryInterval());
     }
 
-    public @NotNull NorthboundMapping to(ObjectMapper mapper) {
+    public static @NotNull NorthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.NorthboundMapping northboundMapping) {
+        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
+        final var qos = switch (northboundMapping.getMaxQoS()) {
+            case AT_MOST_ONCE -> 0;
+            case AT_LEAST_ONCE -> 1;
+            case EXACTLY_ONCE -> 2;
+        };
+
+        return new NorthboundMappingEntity(
+                northboundMapping.getTagName(),
+                northboundMapping.getTopic(),
+                qos,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                northboundMapping.getIncludeTagNames(),
+                northboundMapping.getIncludeTimestamp(),
+                mqttUserPropertyEntities,
+                northboundMapping.getMessageExpiryInterval() != null ? northboundMapping.getMessageExpiryInterval() : Long.MAX_VALUE);
+    }
+
+    public @NotNull NorthboundMapping toPersistence() {
         final List<MqttUserProperty> mqttUserProperties = this.getUserProperties()
                 .stream()
                 .map(mqttUserPropertyEntity -> new MqttUserProperty(mqttUserPropertyEntity.getName(),
@@ -163,6 +186,36 @@ public class NorthboundMappingEntity {
                 this.isIncludeTagNames(),
                 this.isIncludeTimestamp(),
                 mqttUserProperties);
+    }
+
+    public @NotNull com.hivemq.edge.api.model.NorthboundMapping toApi() {
+        final List<com.hivemq.edge.api.model.MqttUserProperty> mqttUserProperties = this.getUserProperties()
+                .stream()
+                .map(mqttUserPropertyEntity ->
+                        (com.hivemq.edge.api.model.MqttUserProperty) com.hivemq.edge.api.model.MqttUserProperty.builder()
+                            .name(mqttUserPropertyEntity.getName())
+                            .value(mqttUserPropertyEntity.getValue())
+                        .build())
+                .toList();
+
+        ;
+        com.hivemq.edge.api.model.QoS maxQos = switch (this.getMaxQoS()) {
+            case 0 -> com.hivemq.edge.api.model.QoS.AT_MOST_ONCE;
+            case 1 -> com.hivemq.edge.api.model.QoS.AT_LEAST_ONCE;
+            case 2 -> com.hivemq.edge.api.model.QoS.EXACTLY_ONCE;
+            default -> com.hivemq.edge.api.model.QoS.AT_MOST_ONCE;
+        };
+
+        return com.hivemq.edge.api.model.NorthboundMapping
+                .builder()
+                .tagName(this.getTagName())
+                .topic(this.getTopic())
+                .maxQoS(maxQos)
+                .messageExpiryInterval(this.getMessageExpiryInterval())
+                .includeTagNames(this.isIncludeTagNames())
+                .includeTimestamp(this.isIncludeTimestamp())
+                .userProperties(mqttUserProperties)
+                .build();
     }
 
     @Override

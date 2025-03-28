@@ -16,21 +16,21 @@
 package com.hivemq.configuration.service.impl;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.configuration.service.DataCombiningConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +42,6 @@ import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -64,18 +63,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull SecurityConfigurationService securityConfigurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
     private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
-    private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
-    private final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
 
     public ConfigurationServiceImpl(
@@ -85,13 +79,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull SecurityConfigurationService securityConfigurationService,
             final @NotNull PersistenceConfigurationService persistenceConfigurationService,
             final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
-            final @NotNull BridgeConfigurationService bridgeConfigurationService,
             final @NotNull ApiConfigurationService apiConfigurationService,
-            final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
-            final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService,
-            final @NotNull DataCombiningConfigurationServiceImpl dataCombiningConfigurationService,
             final @NotNull ModuleConfigurationService moduleConfigurationService,
             final @NotNull InternalConfigurationService internalConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
@@ -100,13 +90,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.securityConfigurationService = securityConfigurationService;
         this.persistenceConfigurationService = persistenceConfigurationService;
         this.mqttsnConfigurationService = mqttsnConfigurationService;
-        this.bridgeConfigurationService = bridgeConfigurationService;
         this.apiConfigurationService = apiConfigurationService;
-        this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
-        this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
-        this.dataCombiningConfigurationService = dataCombiningConfigurationService;
         this.moduleConfigurationService = moduleConfigurationService;
         this.internalConfigurationService = internalConfigurationService;
     }
@@ -156,15 +142,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return usageTrackingConfigurationService;
     }
 
-    public @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService() {
-        return proxy(ProtocolAdapterConfigurationService.class, protocolAdapterConfigurationService);
-    }
-
-    @Override
-    public @NotNull DataCombiningConfigurationService dataCombiningConfigurationService() {
-        return proxy(DataCombiningConfigurationService.class, dataCombiningConfigurationService);
-    }
-
     public @NotNull ModuleConfigurationService commercialModuleConfigurationService() {
         return proxy(ModuleConfigurationService.class, moduleConfigurationService);
     }
@@ -174,19 +151,29 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return internalConfigurationService;
     }
 
-    @Override
-    public @NotNull BridgeConfigurationService bridgeConfiguration() {
-        return proxy(BridgeConfigurationService.class, bridgeConfigurationService);
-    }
-
-    public @NotNull UnsConfigurationService unsConfiguration() {
-        return proxy(UnsConfigurationService.class, unsConfigurationService);
+    public @NotNull UnsExtractor unsExtractor() {
+        return configFileReaderWriter.getUnsExtractor();
     }
 
     @Override
     public void setConfigFileReaderWriter(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
         Preconditions.checkNotNull(configFileReaderWriter);
         this.configFileReaderWriter = configFileReaderWriter;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterExtractor protocolAdapterExtractor() {
+        return configFileReaderWriter.getProtocolAdapterExtractor();
+    }
+
+    @Override
+    public @NotNull BridgeExtractor bridgeExtractor() {
+        return configFileReaderWriter.getBridgeExtractor();
+    }
+
+    @Override
+    public @NotNull DataCombiningExtractor dataCombiningExtractor() {
+        return configFileReaderWriter.getDataCombiningExtractor();
     }
 
     public <T> @NotNull T proxy(
@@ -220,19 +207,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     private void flush(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        if (log.isTraceEnabled()) {
-            log.trace("flushing configuration changes to entity layer");
-        }
-        try {
-            configFileReaderWriter.syncConfiguration();
-            if (gatewayConfiguration().isMutableConfigurationEnabled()) {
-                configFileReaderWriter.writeConfig();
-            }
-        } catch (final Exception e){
-            log.error("Configuration file sync failed: ", e);
-        } finally {
-            lastWrite.set(System.currentTimeMillis());
-        }
+        configFileReaderWriter.writeConfigWithSync();
     }
 
     @Override
@@ -245,7 +220,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     public @NotNull Optional<Long> getLastUpdateTime() {
-        final long l = lastWrite.get();
+        final long l = configFileReaderWriter.getLastWrite();
         return l == 0 ? Optional.empty() : Optional.of(l);
     }
 }

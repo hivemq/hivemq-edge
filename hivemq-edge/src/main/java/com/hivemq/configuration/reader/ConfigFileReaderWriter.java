@@ -31,9 +31,9 @@ import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.util.ThreadFactoryUtil;
 import com.hivemq.util.render.EnvVarUtil;
 import com.hivemq.util.render.FileFragmentUtil;
-import com.hivemq.util.ThreadFactoryUtil;
 import com.hivemq.util.render.IfUtil;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -96,11 +96,22 @@ public class ConfigFileReaderWriter {
     private final @NotNull List<Configurator<?>> configurators;
     private final @NotNull Map<Path, Long> fragmentToModificationTime = new ConcurrentHashMap<>();
 
+    private final @NotNull BridgeExtractor bridgeExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
+    private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull UnsExtractor unsExtractor;
+
+    private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
+
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
         this.configurationFile = configurationFile;
         this.configurators = configurators;
+        this.bridgeExtractor = new BridgeExtractor(this);
+        this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+        this.dataCombiningExtractor = new DataCombiningExtractor(this);
+        this.unsExtractor = new UnsExtractor(this);
     }
 
     public HiveMQConfigEntity applyConfig() {
@@ -113,7 +124,24 @@ public class ConfigFileReaderWriter {
         final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
         this.configEntity = hiveMQConfigEntity;
         setConfiguration(hiveMQConfigEntity);
+
         return hiveMQConfigEntity;
+    }
+
+    public @NotNull DataCombiningExtractor getDataCombiningExtractor() {
+        return dataCombiningExtractor;
+    }
+
+    public @NotNull BridgeExtractor getBridgeExtractor() {
+        return bridgeExtractor;
+    }
+
+    public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
+        return protocolAdapterExtractor;
+    }
+
+    public @NotNull UnsExtractor getUnsExtractor() {
+        return unsExtractor;
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
@@ -240,6 +268,26 @@ public class ConfigFileReaderWriter {
 
     public void writeConfig() {
         writeConfigToXML(configurationFile, defaultBackupConfig);
+    }
+
+    public void writeConfigWithSync() {
+        if (log.isTraceEnabled()) {
+            log.trace("flushing configuration changes to entity layer");
+        }
+        try {
+            syncConfiguration();
+            if (configEntity.getGatewayConfig().isMutableConfigurationEnabled()) {
+                writeConfig();
+            }
+        } catch (final Exception e){
+            log.error("Configuration file sync failed: ", e);
+        } finally {
+            lastWrite.set(System.currentTimeMillis());
+        }
+    }
+
+    public @NotNull Long getLastWrite() {
+        return lastWrite.get();
     }
 
     public void setDefaultBackupConfig(final boolean defaultBackupConfig) {
@@ -459,7 +507,11 @@ public class ConfigFileReaderWriter {
 
         if (requiresRestart.isEmpty()) {
             log.debug("Config can be applied");
-            configurators.forEach(c -> c.setConfig(config));
+            configurators.forEach(c -> c.applyConfig(config));
+            bridgeExtractor.updateConfig(config);
+            protocolAdapterExtractor.updateConfig(config);
+            dataCombiningExtractor.updateConfig(config);
+            unsExtractor.updateConfig(config);
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
@@ -473,6 +525,11 @@ public class ConfigFileReaderWriter {
         configurators.stream()
                 .filter(c -> c instanceof Syncable)
                 .forEach(c -> ((Syncable)c).sync(configEntity));
+
+        bridgeExtractor.sync(configEntity);
+        protocolAdapterExtractor.sync(configEntity);
+        dataCombiningExtractor.sync(configEntity);
+        unsExtractor.sync(configEntity);
     }
 
     protected Schema loadSchema() throws IOException, SAXException {

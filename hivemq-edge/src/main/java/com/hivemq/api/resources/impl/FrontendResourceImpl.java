@@ -147,7 +147,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     protected @NotNull FirstUseInformation getFirstUse() {
         //-- First use is determined by zero configuration
-        final boolean firstUse = configurationService.bridgeConfiguration().getBridges().isEmpty() &&
+        final boolean firstUse = configurationService.bridgeExtractor().getBridges().isEmpty() &&
                 protocolAdapterManager.getProtocolAdapters().isEmpty();
         //-- Populate login prefill
         String prefillUsername = null;

@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.api.model.QoSModel;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
@@ -116,7 +117,7 @@ public class NorthboundMappingModel {
         return messageExpiryInterval;
     }
 
-    public @NotNull NorthboundMapping to() {
+    public @NotNull NorthboundMapping toPersitence() {
         // re-translate the max safe js value to the max java value.
         final long messageExpiry = messageExpiryInterval == JavaScriptConstants.JS_MAX_SAFE_INTEGER ?
                 Long.MAX_VALUE :
@@ -134,7 +135,7 @@ public class NorthboundMappingModel {
                         .collect(Collectors.toList()));
     }
 
-    public static NorthboundMappingModel from(final @NotNull NorthboundMapping northboundMapping) {
+    public static NorthboundMappingModel fromPersistence(final @NotNull NorthboundMapping northboundMapping) {
         return new NorthboundMappingModel(northboundMapping.getMqttTopic(),
                 northboundMapping.getTagName(),
                 northboundMapping.getMessageHandlingOptions(),
@@ -145,6 +146,20 @@ public class NorthboundMappingModel {
                         .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
                         .collect(Collectors.toList()),
                 QoSModel.fromNumber(northboundMapping.getMqttQos()),
+                northboundMapping.getMessageExpiryInterval());
+    }
+
+    public static NorthboundMappingModel fromEntity(final @NotNull NorthboundMappingEntity northboundMapping) {
+        return new NorthboundMappingModel(northboundMapping.getTopic(),
+                northboundMapping.getTagName(),
+                northboundMapping.getMessageHandlingOptions(),
+                northboundMapping.isIncludeTagNames(),
+                northboundMapping.isIncludeTimestamp(),
+                northboundMapping.getUserProperties()
+                        .stream()
+                        .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
+                        .collect(Collectors.toList()),
+                QoSModel.fromNumber(northboundMapping.getMaxQoS()),
                 northboundMapping.getMessageExpiryInterval());
     }
 }

@@ -40,7 +40,6 @@ public class HiveMQEdgeGateway {
     private final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap;
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull AdminService adminService;
-    private final @NotNull BridgeService bridgeService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
 
@@ -49,13 +48,11 @@ public class HiveMQEdgeGateway {
             final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap,
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
-            final @NotNull BridgeService bridgeService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
-        this.bridgeService = bridgeService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.dataCombinerManager = dataCombinerManager;
     }
@@ -63,7 +60,6 @@ public class HiveMQEdgeGateway {
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
-            bridgeService.updateBridges();
             protocolAdapterManager.start();
             dataCombinerManager.start();
 

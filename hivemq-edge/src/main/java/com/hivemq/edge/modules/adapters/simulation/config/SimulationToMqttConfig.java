@@ -57,4 +57,14 @@ public class SimulationToMqttConfig {
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
     }
+
+    @Override
+    public String toString() {
+        return "SimulationToMqttConfig{" +
+                "pollingIntervalMillis=" +
+                pollingIntervalMillis +
+                ", maxPollingErrorsBeforeRemoval=" +
+                maxPollingErrorsBeforeRemoval +
+                '}';
+    }
 }
