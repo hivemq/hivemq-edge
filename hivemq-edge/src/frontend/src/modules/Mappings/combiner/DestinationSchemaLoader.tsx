@@ -62,11 +62,10 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
     onChange(schema)
   }
 
-  const handleSchemaMerger = (properties: FlatJSONSchema7[]) => {
+  const handleSchemaMerge = (properties: FlatJSONSchema7[]) => {
     const schema = getSchemaFromPropertyList(properties)
-    // downloadJSON<JSONSchema7>('topic-untitled', schema)
-    const destinationScehma = encodeDataUriJsonSchema(schema)
-    onChange(destinationScehma)
+    const destinationSchema = encodeDataUriJsonSchema(schema)
+    onChange(destinationSchema)
     onClose()
   }
 
@@ -144,7 +143,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
             <SchemaMerger
               formData={formData}
               formContext={formContext}
-              onUpload={handleSchemaMerger}
+              onUpload={handleSchemaMerge}
               onClose={onClose}
             />
           )}
