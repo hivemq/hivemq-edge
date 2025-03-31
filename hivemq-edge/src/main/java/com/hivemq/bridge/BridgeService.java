@@ -86,6 +86,7 @@ public class BridgeService {
      */
     public synchronized void updateBridges(final @NotNull List<MqttBridge> bridges) {
         this.bridges = new CopyOnWriteArrayList<>(bridges);
+        log.info("Refreshing bridges " +bridges);
 
         final long start = System.currentTimeMillis();
         if (log.isTraceEnabled()) {
@@ -99,6 +100,7 @@ public class BridgeService {
         for (final String currentBridge : activeBridges()) {
             final Optional<MqttBridge> optional = getBridgeByName(currentBridge);
             if (optional.isEmpty()) {
+                log.info("Removing bridge {}", currentBridge);
                 stopBridgeAndRemoveQueues(currentBridge);
             }
         }
@@ -108,6 +110,7 @@ public class BridgeService {
             if (bridgeToClientMap.containsKey(bridge.getId())) {
                 continue;
             }
+            log.info("Adding bridge {}", bridge.getId());
             startBridge(bridge.getId());
         }
 

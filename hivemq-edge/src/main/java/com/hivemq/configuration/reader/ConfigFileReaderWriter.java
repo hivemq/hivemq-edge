@@ -202,7 +202,14 @@ public class ConfigFileReaderWriter {
                     }
                 });
             }
-            final long modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath()).toMillis();
+            final long modified;
+
+            if(new File(CONFIG_FRAGMENT_PATH).exists()) {
+                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath()).toMillis();
+            } else {
+                log.warn("No fragment found, checking the full config, only used for testing");
+                modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+            }
             if (modified > fileModified.get()) {
                 fileModified.set(modified);
                 final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
