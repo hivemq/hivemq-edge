@@ -106,8 +106,20 @@
     ${IF:HIVEMQ_DATAHUB_ENABLED}
     <internal>
         <option>
+            <key>data-hub.scripts.min-wait-time-before-delete.millis</key>
+            <value>${ENV:HIVEMQ_DATAHUB_WAIT_BEFORE_DELETE}</value>
+        </option>
+        <option>
             <key>data-hub.preset.root-folder</key>
             <value>/datahubinit</value>
+        </option>
+        <option>
+            <key>data-hub.preset.watcher-initial-delay-millis</key>
+            <value>${ENV:HIVEMQ_DATAHUB_WATCHER_INITIAL_DELAY}</value>
+        </option>
+        <option>
+            <key>data-hub.preset.watcher-interval-millis</key>
+            <value>${ENV:HIVEMQ_DATAHUB_WATCHER_INTERVAL}</value>
         </option>
     </internal>
     ${IF:HIVEMQ_DATAHUB_ENABLED}
