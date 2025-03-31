@@ -146,4 +146,19 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
             return mimeType;
         }
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final HttpSpecificAdapterConfig that = (HttpSpecificAdapterConfig) o;
+        return getHttpConnectTimeoutSeconds() == that.getHttpConnectTimeoutSeconds() &&
+                isAllowUntrustedCertificates() == that.isAllowUntrustedCertificates() &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(getHttpToMqttConfig(), that.getHttpToMqttConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, getHttpConnectTimeoutSeconds(), isAllowUntrustedCertificates(), getHttpToMqttConfig());
+    }
 }

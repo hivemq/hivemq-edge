@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -96,5 +97,51 @@ public class ProtocolAdapterConfig {
 
     public int getConfigVersion() {
         return configVersion;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
+        return getConfigVersion() == that.getConfigVersion() &&
+                Objects.equals(getAdapterConfig(), that.getAdapterConfig()) &&
+                Objects.equals(getTags(), that.getTags()) &&
+                Objects.equals(getAdapterId(), that.getAdapterId()) &&
+                Objects.equals(getProtocolId(), that.getProtocolId()) &&
+                Objects.equals(getSouthboundMappings(), that.getSouthboundMappings()) &&
+                Objects.equals(getNorthboundMappings(), that.getNorthboundMappings());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getAdapterConfig(),
+                getTags(),
+                getAdapterId(),
+                getProtocolId(),
+                getConfigVersion(),
+                getSouthboundMappings(),
+                getNorthboundMappings());
+    }
+
+    @Override
+    public String toString() {
+        return "ProtocolAdapterConfig{" +
+                "adapterConfig=" +
+                adapterConfig +
+                ", tags=" +
+                tags +
+                ", adapterId='" +
+                adapterId +
+                '\'' +
+                ", protocolId='" +
+                protocolId +
+                '\'' +
+                ", configVersion=" +
+                configVersion +
+                ", southboundMappings=" +
+                southboundMappings +
+                ", northboundMappings=" +
+                northboundMappings +
+                '}';
     }
 }

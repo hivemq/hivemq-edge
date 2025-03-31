@@ -19,6 +19,8 @@ import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public class SouthboundMapping implements InternalWritingContext {
 
     private final @NotNull String topicFilter;
@@ -84,5 +86,20 @@ public class SouthboundMapping implements InternalWritingContext {
                 tagName +
                 '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final SouthboundMapping that = (SouthboundMapping) o;
+        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                Objects.equals(getFieldMapping(), that.getFieldMapping()) &&
+                Objects.equals(getSchema(), that.getSchema());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopicFilter(), getTagName(), getFieldMapping(), getSchema());
     }
 }

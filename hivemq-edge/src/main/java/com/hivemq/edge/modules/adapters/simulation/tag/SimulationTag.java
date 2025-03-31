@@ -70,7 +70,7 @@ public class SimulationTag implements Tag {
 
     @Override
     public String toString() {
-        return "OpcuaTag{" +
+        return "SimulationTag{" +
                 "name='" +
                 name +
                 '\'' +

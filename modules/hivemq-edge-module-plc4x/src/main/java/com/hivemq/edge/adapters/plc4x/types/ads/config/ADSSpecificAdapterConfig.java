@@ -22,6 +22,8 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 
 public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMqttConfig> {
 
@@ -122,5 +124,27 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     @Override
     public @Nullable ADSToMqttConfig getPlc4xToMqttConfig() {
         return adsToMqttConfig;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ADSSpecificAdapterConfig that = (ADSSpecificAdapterConfig) o;
+        return getPort() == that.getPort() &&
+                getTargetAmsPort() == that.getTargetAmsPort() &&
+                getSourceAmsPort() == that.getSourceAmsPort() &&
+                Objects.equals(getSourceAmsNetId(), that.getSourceAmsNetId()) &&
+                Objects.equals(getTargetAmsNetId(), that.getTargetAmsNetId()) &&
+                Objects.equals(adsToMqttConfig, that.adsToMqttConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPort(),
+                getTargetAmsPort(),
+                getSourceAmsPort(),
+                getSourceAmsNetId(),
+                getTargetAmsNetId(),
+                adsToMqttConfig);
     }
 }

@@ -150,4 +150,30 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
     public @Nullable Plc4xToMqttConfig getPlc4xToMqttConfig() {
         return s7ToMqttConfig;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final S7SpecificAdapterConfig that = (S7SpecificAdapterConfig) o;
+        return getPort() == that.getPort() &&
+                getRemoteRack() == that.getRemoteRack() &&
+                getRemoteRack2() == that.getRemoteRack2() &&
+                getRemoteSlot() == that.getRemoteSlot() &&
+                getRemoteSlot2() == that.getRemoteSlot2() &&
+                getRemoteTsap() == that.getRemoteTsap() &&
+                getControllerType() == that.getControllerType() &&
+                Objects.equals(s7ToMqttConfig, that.s7ToMqttConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPort(),
+                getControllerType(),
+                getRemoteRack(),
+                getRemoteRack2(),
+                getRemoteSlot(),
+                getRemoteSlot2(),
+                getRemoteTsap(),
+                s7ToMqttConfig);
+    }
 }
