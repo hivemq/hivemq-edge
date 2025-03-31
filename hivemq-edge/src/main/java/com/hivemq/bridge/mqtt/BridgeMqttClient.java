@@ -153,8 +153,7 @@ public class BridgeMqttClient {
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
             String message = cause.getMessage();
-            if (cause instanceof Mqtt5DisconnectException) {
-                final Mqtt5DisconnectException disconnectException = (Mqtt5DisconnectException) cause;
+            if (cause instanceof final Mqtt5DisconnectException disconnectException) {
                 message += " Code: " + disconnectException.getMqttMessage().getReasonCode();
                 final Optional<MqttUtf8String> reasonString = disconnectException.getMqttMessage().getReasonString();
                 if (reasonString.isPresent()) {
@@ -261,12 +260,12 @@ public class BridgeMqttClient {
                         mqtt5ConnAck.getReasonString().map(Objects::toString).orElse(""));
             }
 
-            for (MqttForwarder forwarder : forwarders) {
+            for (final MqttForwarder forwarder : forwarders) {
                 forwarder.drainQueue();
             }
 
-            ImmutableList.Builder<CompletableFuture<Mqtt5SubAck>> subscribeFutures = new ImmutableList.Builder<>();
-            for (RemoteSubscription remoteSubscription : bridge.getRemoteSubscriptions()) {
+            final ImmutableList.Builder<CompletableFuture<Mqtt5SubAck>> subscribeFutures = new ImmutableList.Builder<>();
+            for (final RemoteSubscription remoteSubscription : bridge.getRemoteSubscriptions()) {
                 final List<Mqtt5Subscription> subscriptions = convertSubscriptions(remoteSubscription);
                 final Consumer<Mqtt5Publish> mqtt5PublishConsumer = new RemotePublishConsumer(remoteSubscription,
                         bridgeInterceptorHandler,
@@ -298,7 +297,7 @@ public class BridgeMqttClient {
     private static List<Mqtt5Subscription> convertSubscriptions(
             final @NotNull RemoteSubscription remoteSubscription) {
         return remoteSubscription.getFilters().stream().map(originalFilter -> {
-            MqttTopicFilter topicFilter = MqttTopicFilter.of(originalFilter);
+            final MqttTopicFilter topicFilter = MqttTopicFilter.of(originalFilter);
             return Mqtt5Subscription.builder()
                     .topicFilter(topicFilter)
                     .qos(Objects.requireNonNullElse(MqttQos.fromCode(remoteSubscription.getMaxQoS()),
@@ -312,7 +311,7 @@ public class BridgeMqttClient {
     public void stop() {
         try {
             stopped.set(true);
-            mqtt5Client.toAsync().disconnect();
+            mqtt5Client.disconnect();
         } finally {
             perBridgeMetrics.clearAll(metricRegistry);
         }
@@ -320,7 +319,7 @@ public class BridgeMqttClient {
 
     public @NotNull List<MqttForwarder> createForwarders() {
         final ImmutableList.Builder<MqttForwarder> builder = ImmutableList.builder();
-        for (LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
+        for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
             builder.add(new RemoteMqttForwarder(createForwarderId(bridge.getId(), localSubscription),
                     bridge,
                     localSubscription,
@@ -333,7 +332,7 @@ public class BridgeMqttClient {
     }
 
     @NotNull
-    public static String createForwarderId(final @NotNull String bridgeId, LocalSubscription localSubscription) {
+    public static String createForwarderId(final @NotNull String bridgeId, final LocalSubscription localSubscription) {
         return bridgeId + "-" + localSubscription.calculateUniqueId();
     }
 
@@ -351,7 +350,7 @@ public class BridgeMqttClient {
 
     protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
 
-        EventBuilder builder = eventService.bridgeEvent();
+        final EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);
@@ -363,7 +362,7 @@ public class BridgeMqttClient {
      *
      * @return The generated ID
      */
-    static TypeIdentifier generate(@NotNull TypeIdentifier.Type type) {
+    static TypeIdentifier generate(@NotNull final TypeIdentifier.Type type) {
         Preconditions.checkNotNull(type);
         return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
     }
