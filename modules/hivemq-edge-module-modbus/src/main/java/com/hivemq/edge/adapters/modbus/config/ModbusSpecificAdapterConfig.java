@@ -92,4 +92,18 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         return modbusToMQTTConfig;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ModbusSpecificAdapterConfig that = (ModbusSpecificAdapterConfig) o;
+        return getPort() == that.getPort() &&
+                getTimeoutMillis() == that.getTimeoutMillis() &&
+                Objects.equals(getHost(), that.getHost()) &&
+                Objects.equals(getModbusToMQTTConfig(), that.getModbusToMQTTConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHost(), getPort(), getTimeoutMillis(), getModbusToMQTTConfig());
+    }
 }

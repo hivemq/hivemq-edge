@@ -24,4 +24,14 @@ public class SimulationTagDefinition implements TagDefinition {
     public SimulationTagDefinition() {
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        return true;
+    }
 }

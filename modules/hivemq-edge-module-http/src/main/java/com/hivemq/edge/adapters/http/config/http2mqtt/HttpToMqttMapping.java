@@ -123,4 +123,20 @@ public class HttpToMqttMapping implements PollingContext {
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final HttpToMqttMapping that = (HttpToMqttMapping) o;
+        return getMqttQos() == that.getMqttQos() &&
+                getIncludeTimestamp() == that.getIncludeTimestamp() &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                Objects.equals(getMqttTopic(), that.getMqttTopic()) &&
+                Objects.equals(getUserProperties(), that.getUserProperties());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTagName(), getMqttTopic(), getMqttQos(), getUserProperties(), getIncludeTimestamp());
+    }
 }
