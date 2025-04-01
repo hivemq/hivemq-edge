@@ -89,9 +89,9 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
     <>
       <ModalBody>
         <VStack spacing={2} alignItems={'flex-start'}>
-          <Text>{t('combiner.schema.schemaManager.infer.message')}</Text>
+          <Text data-testid={'schema-infer-prompt'}>{t('combiner.schema.schemaManager.infer.message')}</Text>
 
-          <FormControl isInvalid={isError}>
+          <FormControl isInvalid={isError} data-testid={'schema-infer-merged'} id={'schema-infer-properties'}>
             <FormLabel>{t('combiner.schema.schemaManager.infer.title')}</FormLabel>
             <Box borderWidth={1} p={2} borderColor={isError ? 'red.500' : 'inherit'}>
               <List minH={50}>
@@ -111,8 +111,15 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       </ModalBody>
       <ModalFooter>
         <ButtonGroup variant="outline">
-          <Button onClick={onClose}>{t('action.cancel')}</Button>
-          <Button isDisabled={isError} onClick={() => onUpload(properties)} variant="primary">
+          <Button data-testid={'schema-infer-cancel'} onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
+          <Button
+            data-testid={'schema-infer-generate'}
+            isDisabled={isError}
+            onClick={() => onUpload(properties)}
+            variant="primary"
+          >
             {t('combiner.schema.schemaManager.infer.action')}
           </Button>
         </ButtonGroup>
