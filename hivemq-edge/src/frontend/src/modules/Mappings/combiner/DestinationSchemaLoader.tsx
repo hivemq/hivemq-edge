@@ -131,7 +131,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
         </VStack>
       )}
 
-      <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose}>
+      <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose} id={'destination-schema'}>
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />
