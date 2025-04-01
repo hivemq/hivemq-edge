@@ -1,6 +1,6 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 
-import type { DataCombining, DomainTag, JsonNode } from '@/api/__generated__'
+import type { DataCombining, DomainTag, EntityReference, JsonNode } from '@/api/__generated__'
 import { DataIdentifierReference, type TopicFilter } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import type { CombinerContext } from '@/modules/Mappings/types'
@@ -11,32 +11,47 @@ import i18n from '@/config/i18n.config.ts'
 export const STUB_TAG_PROPERTY = 'tg'
 export const STUB_TOPIC_FILTER_PROPERTY = 'tf'
 
+// TODO[NVL] wrong data structure; simplify
+/* istanbul ignore next -- @preserve */
 export const getDataReference = (formContext?: CombinerContext): DataReference[] => {
-  return (
-    formContext?.queries?.reduce<DataReference[]>((acc, cur, currentIndex) => {
+  const tagsAndTopicFilters =
+    formContext?.queries?.reduce<(DomainTag[] | TopicFilter[])[]>((acc, cur) => {
       const firstItem = cur.data?.items?.[0]
       if (!firstItem) return acc
-      if ((firstItem as DomainTag).name) {
-        const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => {
-          return {
-            id: tag.name,
-            type: DataIdentifierReference.type.TAG,
-            adapterId: formContext.entities?.[currentIndex]?.id,
-          }
-        })
-        acc.push(...tagDataReferences)
-      } else if ((firstItem as TopicFilter).topicFilter) {
-        const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
-          id: topicFilter.topicFilter,
-          type: DataIdentifierReference.type.TOPIC_FILTER,
-          adapterId: undefined,
-        }))
-        acc.push(...topicFilterDataReferences)
-      }
 
+      acc.push(cur.data?.items || [])
       return acc
     }, []) || []
-  )
+  return getCombinedDataEntityReference(tagsAndTopicFilters, formContext?.entities || [])
+}
+
+export const getCombinedDataEntityReference = (
+  content: (DomainTag[] | TopicFilter[])[],
+  entities: EntityReference[]
+): DataReference[] => {
+  return content.reduce<DataReference[]>((acc, cur, currentIndex) => {
+    const firstItem = cur[0]
+    if (!firstItem) return acc
+    if ((firstItem as DomainTag).name) {
+      const tagDataReferences = (cur as DomainTag[]).map<DataReference>((tag) => {
+        return {
+          id: tag.name,
+          type: DataIdentifierReference.type.TAG,
+          adapterId: entities?.[currentIndex]?.id,
+        }
+      })
+      acc.push(...tagDataReferences)
+    } else if ((firstItem as TopicFilter).topicFilter) {
+      const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
+        id: topicFilter.topicFilter,
+        type: DataIdentifierReference.type.TOPIC_FILTER,
+        adapterId: undefined,
+      }))
+      acc.push(...topicFilterDataReferences)
+    }
+
+    return acc
+  }, [])
 }
 
 export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
