@@ -77,6 +77,7 @@ export const getSchemaFromPropertyList = (properties: FlatJSONSchema7[]): RJSFSc
         type: property.type,
         ...rest,
         ...(property.type === 'object' && { properties: {} }),
+        ...(property.type === 'array' && { items: { type: arrayType } }),
       }
     } else {
       const newRoot = root.properties as RJSFSchema
@@ -85,6 +86,7 @@ export const getSchemaFromPropertyList = (properties: FlatJSONSchema7[]): RJSFSc
       newRoot[property.path[0]].properties[property.key] = {
         type: property.type,
         ...rest,
+        ...(property.type === 'array' && { items: { type: arrayType } }),
       }
     }
   })
