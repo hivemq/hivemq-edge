@@ -127,6 +127,12 @@ describe('DataCombiningEditorField', () => {
         formData={mockCombinerMapping}
       />
     )
+
+    // TODO[NVL] add the tests
+  })
+
+  it.skip('should render the schema handlers', () => {
+    // TODO[NVL] add the tests
   })
 
   it('should be accessible', () => {

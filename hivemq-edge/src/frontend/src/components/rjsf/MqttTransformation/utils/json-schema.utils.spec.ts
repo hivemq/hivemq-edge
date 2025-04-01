@@ -166,3 +166,7 @@ describe('payloadToSchema', () => {
     })
   })
 })
+
+describe('getSchemaFromPropertyList', () => {
+  it.skip('should return an empty list of properties', async () => {})
+})
