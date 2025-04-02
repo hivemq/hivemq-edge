@@ -20,8 +20,7 @@ import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem'
-import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
-import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { type FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 
 import type { CombinerContext } from '../types'
 import {
@@ -51,6 +50,9 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
   const properties = useMemo(() => {
     const displayedSchemas = getSchemasFromReferences(references, schemaQueries)
 
+    const tagIndexMap = new Map(formData?.sources?.tags?.map((tag, index) => [tag, index]))
+    const topicFilterIndexMap = new Map(formData?.sources?.topicFilters?.map((filter, index) => [filter, index]))
+
     return displayedSchemas.reduce<FlatJSONSchema7[]>((acc, reference) => {
       if (!reference.schema?.schema) return acc
       const properties = getPropertyListFrom(reference.schema.schema)
@@ -58,10 +60,10 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       const conflictName: [number, string][] = []
       properties.forEach((property, pathIndex) => {
         if (reference.type === DataIdentifierReference.type.TAG) {
-          const index = formData?.sources?.tags?.findIndex((tag) => tag === reference.id)
+          const index = tagIndexMap.get(reference.id)
           property.origin = `${STUB_TAG_PROPERTY}${index}`
         } else if (reference.type === DataIdentifierReference.type.TOPIC_FILTER) {
-          const index = formData?.sources?.topicFilters?.findIndex((tag) => tag === reference.id)
+          const index = topicFilterIndexMap.get(reference.id)
           property.origin = `${STUB_TOPIC_FILTER_PROPERTY}${index}`
         }
         if (property.path.length === 0) {
