@@ -1,7 +1,13 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 
-import type { DataCombining, DomainTag, EntityReference, JsonNode } from '@/api/__generated__'
-import { DataIdentifierReference, type TopicFilter } from '@/api/__generated__'
+import {
+  DataIdentifierReference,
+  type DataCombining,
+  type DomainTag,
+  type EntityReference,
+  type JsonNode,
+  type TopicFilter,
+} from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'

@@ -19,8 +19,10 @@ import {
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
-import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
-import { getSchemaFromPropertyList } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import {
+  type FlatJSONSchema7,
+  getSchemaFromPropertyList,
+} from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import { encodeDataUriJsonSchema, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 import { downloadJSON } from '@/utils/download.utils'
