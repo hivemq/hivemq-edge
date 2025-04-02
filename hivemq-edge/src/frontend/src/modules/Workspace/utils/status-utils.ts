@@ -109,9 +109,11 @@ export const updateEdgesStatus = (
       const group = getNode(edge.source)
       if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge
 
-      const groupEdges = newEdges.filter((e) => (group as Node<Group>).data.childrenNodeIds.includes(e.source))
-      const isConnected = groupEdges.every((e) => e.data.isConnected)
-      const hasTopics = groupEdges.every((e) => e.data.hasTopics)
+      const groupEdges = newEdges.filter((e) =>
+        (group as Node<Group>).data.childrenNodeIds.includes(e.source)
+      ) as Edge<EdgeStatus>[]
+      const isConnected = groupEdges.every((e) => e.data?.isConnected)
+      const hasTopics = groupEdges.every((e) => e.data?.hasTopics)
       // status is mocked from the metadata
       const status: Status = {
         runtime: isConnected ? Status.runtime.STARTED : Status.runtime.STOPPED,
