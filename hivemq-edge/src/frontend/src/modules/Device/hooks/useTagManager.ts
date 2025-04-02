@@ -13,6 +13,7 @@ import { useGetDomainTagSchema } from '@/api/hooks/useDomainModel/useGetDomainTa
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { TagTableField } from '../components/TagTableField'
 
 export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()
@@ -112,15 +113,7 @@ export const useTagManager = (adapterId: string) => {
       },
 
       items: {
-        items: {
-          'ui:order': ['name', 'description', '*'],
-          'ui:collapsable': {
-            titleKey: 'name',
-          },
-          protocolId: {
-            'ui:widget': 'hidden',
-          },
-        },
+        'ui:field': TagTableField,
       },
     },
     formData: tagList || { items: [] },
