@@ -5,11 +5,11 @@ import type { Dict } from '@chakra-ui/utils'
 
 import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
-
-import type { Group } from '../types.ts'
-import { NodeTypes } from '../types.ts'
-import { getBridgeTopics } from './topics-utils.ts'
+import type { EdgeStatus, Group } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+
+import { getBridgeTopics } from './topics-utils.ts'
 
 /**
  * @param theme
@@ -62,15 +62,15 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
   })
 }
 
-export type EdgeStyle = Pick<Edge, 'style' | 'animated' | 'markerEnd' | 'data'>
+export type EdgeStyle<T> = Pick<Edge<T>, 'style' | 'animated' | 'markerEnd' | 'data'>
 
 export const getEdgeStatus = (
   isConnected: boolean,
   hasTopics: boolean,
   hasMarker: boolean,
   themeForStatus: string
-): EdgeStyle => {
-  const edge: EdgeStyle = {}
+): EdgeStyle<EdgeStatus> => {
+  const edge: EdgeStyle<EdgeStatus> = {}
   edge.style = {
     strokeWidth: 1.5,
     stroke: themeForStatus,
@@ -109,9 +109,11 @@ export const updateEdgesStatus = (
       const group = getNode(edge.source)
       if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge
 
-      const groupEdges = newEdges.filter((e) => (group as Node<Group>).data.childrenNodeIds.includes(e.source))
-      const isConnected = groupEdges.every((e) => e.data.isConnected)
-      const hasTopics = groupEdges.every((e) => e.data.hasTopics)
+      const groupEdges = newEdges.filter((e) =>
+        (group as Node<Group>).data.childrenNodeIds.includes(e.source)
+      ) as Edge<EdgeStatus>[]
+      const isConnected = groupEdges.every((e) => e.data?.isConnected)
+      const hasTopics = groupEdges.every((e) => e.data?.hasTopics)
       // status is mocked from the metadata
       const status: Status = {
         runtime: isConnected ? Status.runtime.STARTED : Status.runtime.STOPPED,
