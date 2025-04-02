@@ -1,9 +1,9 @@
 import type { ReactNode, JSXElementConstructor } from 'react'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
+import { type DataCombining, DataIdentifierReference } from '@/api/__generated__'
 import { mockCombiner, mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import { PrimarySelect } from './PrimarySelect'
-import { type DataCombining, DataIdentifierReference } from '../../../../api/__generated__'
 
 // TODO[30982] Should not be needed; integrate label inside the component
 const wrapper: JSXElementConstructor<{ children: ReactNode }> = ({ children }) => {

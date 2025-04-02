@@ -18,8 +18,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 
-import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
-import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { type FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 

@@ -42,7 +42,7 @@ Some of the tools handling OpenAPi will be working fine with a split document.
 If not, consider bundling it into a single `YAML` file, using the following command:
 
 ```shell
-redocly split  <source to file>/openAPI.yaml --outDir <destination folter>/
+ redocly bundle <path to source>/openapi.yml -o <path to dest>/hivemq-edge-openapi-SNAPSHOT.yaml
 ```
 
 Make sure NOT to commit your bundled document along the split origin; we need to ensure a single source of truth. 
@@ -50,8 +50,9 @@ Make sure NOT to commit your bundled document along the split origin; we need to
 ### Split 
 To reverse the merge operation and create a split document, the following command will deliver: 
 
+
 ```shell
- redocly bundle <path to source>/openapi.yml -o <path to dest>/hivemq-edge-openapi-SNAPSHOT.yaml
+redocly split  <source to file>/openAPI.yaml --outDir <destination folter>/
 ```
 
 ## GitHub guidelines

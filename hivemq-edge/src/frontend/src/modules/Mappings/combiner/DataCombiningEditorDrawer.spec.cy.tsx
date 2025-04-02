@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
-import { mockCombinerMapping } from '../../../../api/hooks/useCombiners/__handlers__'
 
 const mockCombinerMappingSchema: RJSFSchema = {
   title: 'The title',

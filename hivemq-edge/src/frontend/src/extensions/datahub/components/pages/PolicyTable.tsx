@@ -21,7 +21,7 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.ts'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
-import { downloadJSON } from '@datahub/utils/download.utils.ts'
+import { downloadJSON } from '@/utils/download.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {

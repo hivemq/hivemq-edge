@@ -221,6 +221,15 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           {children}
         </>
       )}
+      <ToolbarButtonGroup>
+        <IconButton
+          isDisabled={!selectedCombinerCandidates}
+          data-testid="node-group-toolbar-combiner"
+          icon={<HqCombiner />}
+          aria-label={t('workspace.toolbar.command.combiner.create')}
+          onClick={onManageCombiners}
+        />
+      </ToolbarButtonGroup>
 
       <Divider orientation="vertical" />
       <ToolbarButtonGroup>
@@ -230,16 +239,6 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           icon={<ImMakeGroup />}
           aria-label={t('workspace.toolbar.command.group')}
           onClick={onCreateGroup}
-        />
-      </ToolbarButtonGroup>
-
-      <ToolbarButtonGroup>
-        <IconButton
-          isDisabled={!selectedCombinerCandidates}
-          data-testid="node-group-toolbar-combiner"
-          icon={<HqCombiner />}
-          aria-label={t('workspace.toolbar.command.combiner.create')}
-          onClick={onManageCombiners}
         />
       </ToolbarButtonGroup>
 

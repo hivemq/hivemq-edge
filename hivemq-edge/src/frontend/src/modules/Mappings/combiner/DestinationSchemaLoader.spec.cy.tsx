@@ -20,22 +20,31 @@ describe('DestinationSchemaLoader', () => {
 
   it('should render properly', () => {
     const onChange = cy.stub().as('onChange')
-    cy.mountWithProviders(<DestinationSchemaLoader formData={mockDataCombining} onChange={onChange} />)
+    const onChangeInstructions = cy.stub().as('onChangeInstructions')
+    cy.mountWithProviders(
+      <DestinationSchemaLoader
+        formData={mockDataCombining}
+        onChange={onChange}
+        onChangeInstructions={onChangeInstructions}
+      />
+    )
 
     cy.get('@onChange').should('have.not.been.called')
 
-    cy.getByTestId('combiner-destination-infer').should('have.text', 'Infer a schema').should('be.disabled', true)
+    cy.getByTestId('combiner-destination-infer').should('have.text', 'Infer a schema')
     cy.getByTestId('combiner-destination-upload').should('have.text', 'Upload a new schema')
     cy.getByTestId('combiner-destination-download').should('have.text', 'Download the schema')
 
-    cy.get('[role="dialog"][data-testid="combiner-destination-upload-content"]').should('not.be.visible')
+    cy.get('[role="dialog"]#chakra-modal-destination-schema').should('not.exist')
     cy.getByTestId('combiner-destination-upload').click()
-    cy.get('[role="dialog"][data-testid="combiner-destination-upload-content"]').should('be.visible')
+    cy.get('[role="dialog"]#chakra-modal-destination-schema').should('be.visible')
   })
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<DestinationSchemaLoader formData={mockDataCombining} onChange={cy.stub} />)
+    cy.mountWithProviders(
+      <DestinationSchemaLoader formData={mockDataCombining} onChange={cy.stub} onChangeInstructions={cy.stub} />
+    )
     cy.checkAccessibility()
   })
 })

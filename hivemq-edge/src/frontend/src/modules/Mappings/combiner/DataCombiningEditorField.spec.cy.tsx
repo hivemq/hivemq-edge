@@ -4,9 +4,9 @@ import type { UiSchema } from '@rjsf/utils'
 import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
-import type { DataCombining } from '../../../../api/__generated__'
-import { DataIdentifierReference } from '../../../../api/__generated__'
-import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '../../../../api/hooks/useProtocolAdapters/__handlers__'
+import type { DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
+import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { DataCombiningEditorField } from './DataCombiningEditorField'
 
@@ -127,6 +127,12 @@ describe('DataCombiningEditorField', () => {
         formData={mockCombinerMapping}
       />
     )
+
+    // TODO[NVL] add the tests
+  })
+
+  it.skip('should render the schema handlers', () => {
+    // TODO[NVL] add the tests
   })
 
   it('should be accessible', () => {
