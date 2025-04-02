@@ -621,6 +621,17 @@
           "load": "Load Metadata"
         }
       },
+      "table": {
+        "column": {
+          "name": "Name",
+          "description": "Description",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Edit the tag",
+          "delete": "Delete the tag"
+        }
+      },
       "tagList": {
         "title": "List of Device Tags",
         "cta": {
@@ -656,6 +667,19 @@
       "noMetadataLoaded": "Uploading device metadata is not yet supported",
       "noTagLoaded": "Cannot load the tags",
       "noTagCreated": "There is no tag created yet"
+    },
+    "capability": {
+      "title_DISCOVER": "DISCOVER",
+      "description_DISCOVER": "The device supports data point discoverability",
+
+      "title_WRITE": "SOUTHBOUND",
+      "description_WRITE": "The device supports Southbound mapping (WRITE)",
+
+      "title_READ": "NORTHBOUND",
+      "description_READ": "The device supports Northbound mapping (READ)",
+
+      "title_COMBINE": "COMBINE",
+      "description_COMBINE": "The device supports Data combining (COMBINE)"
     }
   },
 
