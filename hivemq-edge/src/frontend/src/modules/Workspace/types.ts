@@ -32,6 +32,11 @@ export enum EdgeTypes {
   REPORT_EDGE = 'REPORT_EDGE',
 }
 
+export interface EdgeStatus {
+  isConnected: boolean
+  hasTopics: boolean
+}
+
 export enum IdStubs {
   EDGE_NODE = 'edge',
   BRIDGE_NODE = 'bridge',
