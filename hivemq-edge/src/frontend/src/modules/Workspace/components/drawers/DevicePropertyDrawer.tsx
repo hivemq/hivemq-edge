@@ -43,7 +43,7 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
   if (isError || !adapter || !protocol) return <ErrorMessage message={t('device.errors.noAdapter')} />
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
+    <Drawer isOpen={isOpen} placement="right" size="lg" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type })}>
         <DrawerCloseButton />
