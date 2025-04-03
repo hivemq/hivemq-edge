@@ -125,6 +125,20 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
     ]
   }, [adapterId, props, t])
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
+
+  const handleTagSubmit = (data: DomainTag | undefined) => {
+    if (selectedItem === undefined) return
+    if (data) {
+      if (!props.formData?.[selectedItem]) throw new Error(t('device.errors.invalidData'))
+
+      const newValues = [...props.formData]
+      newValues[selectedItem] = data
+      props.onChange(newValues)
+    }
+
+    setSelectedItem(undefined)
+  }
+
   return (
     <>
       <TitleFieldTemplate
@@ -154,7 +168,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
       {selectedItem != null && props.formData?.[selectedItem] && (
         <TagEditorDrawer
           onClose={() => setSelectedItem(undefined)}
-          onSubmit={() => console.log('XX')}
+          onSubmit={handleTagSubmit}
           schema={props.schema.items as RJSFSchema}
           uiSchema={props.uiSchema?.items}
           formData={props.formData?.[selectedItem]}
