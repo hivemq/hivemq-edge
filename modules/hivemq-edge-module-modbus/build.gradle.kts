@@ -13,15 +13,10 @@ plugins {
     id("jacoco")
 }
 
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
-
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
         xml.required.set(true)
-        html.required.set(true)
     }
 }
 
