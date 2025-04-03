@@ -313,6 +313,10 @@ tasks.named("sourcesJar") {
     dependsOn(tasks.named("genJaxRs"))
 }
 
+tasks.named("licenseMain") {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
 tasks.shadowJar {
     mergeServiceFiles()
     from(frontendBinary) {
