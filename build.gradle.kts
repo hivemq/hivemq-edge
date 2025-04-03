@@ -26,6 +26,12 @@ tasks.register("build") {
     dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
+tasks.register("license") {
+    group = "license"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "edge-plugins" }.map { it.task(":$name") })
+}
+
 tasks.register("check") {
     group = "verification"
 
