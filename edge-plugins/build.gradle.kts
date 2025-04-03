@@ -32,6 +32,10 @@ gradlePlugin {
             id = "$group.$name"
             implementationClass = "$group.repository.RepositoryConventionPlugin"
         }
+        create("jacoco-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.jacoco.JacocoConventionPlugin"
+        }
     }
 }
 

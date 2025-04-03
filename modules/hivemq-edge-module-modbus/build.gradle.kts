@@ -10,14 +10,7 @@ plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
-    id("jacoco")
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-    }
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
