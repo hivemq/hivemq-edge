@@ -32,7 +32,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
       {!context.schema && <ErrorMessage message={t('device.errors.noFormSchema')} status="error" />}
       {context.schema && (
         <ChakraRJSForm
-          id="tag-main-form"
+          id="tag-listing-form"
           schema={context.schema}
           uiSchema={context.uiSchema}
           formData={context.formData}
