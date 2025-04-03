@@ -1,3 +1,4 @@
+import type { IChangeEvent } from '@rjsf/core'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,14 +11,17 @@ import type { DeviceTagListContext } from '../types'
 
 interface DeviceTagListProps {
   adapter: Adapter
+  onClose: () => void
 }
 
-const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
+const DeviceTagList: FC<DeviceTagListProps> = ({ adapter, onClose }) => {
   const { t } = useTranslation()
   const { isLoading, isError, context, onupdateCollection } = useTagManager(adapter.id)
 
-  const onHandleSubmit = (data: unknown) => {
-    if (data) onupdateCollection(data as DomainTagList)
+  const onHandleSubmit = (data: IChangeEvent) => {
+    if (!data.formData) return
+    onupdateCollection(data.formData as DomainTagList)
+    onClose()
   }
 
   const formContext: DeviceTagListContext = {

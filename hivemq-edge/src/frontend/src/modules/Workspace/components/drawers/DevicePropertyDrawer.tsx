@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next'
 import type { Node } from 'reactflow'
 import { getIncomers } from 'reactflow'
 import {
+  Button,
+  ButtonGroup,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
   Text,
@@ -56,8 +59,17 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          <DeviceTagList adapter={adapter} />
+          <DeviceTagList adapter={adapter} onClose={onClose} />
         </DrawerBody>
+        <DrawerFooter justifyContent={'flex-end'}>
+          <ButtonGroup>
+            {selectedNode && (
+              <Button variant="primary" type="submit" form="tag-listing-form">
+                {t('device.drawer.table.actions.submit')}
+              </Button>
+            )}
+          </ButtonGroup>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
