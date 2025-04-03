@@ -9,8 +9,9 @@ import type { DomainTag } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import { PLCTag } from '@/components/MQTT/EntityTag'
+import type { DeviceTagListContext } from '../types'
 
-export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema>> = (props) => {
+export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagListContext>> = (props) => {
   const { t } = useTranslation()
   const { schema, registry, uiSchema } = props
 
