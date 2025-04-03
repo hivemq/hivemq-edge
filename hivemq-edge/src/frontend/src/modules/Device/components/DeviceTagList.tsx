@@ -6,6 +6,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { useTagManager } from '@/modules/Device/hooks/useTagManager.ts'
+import type { DeviceTagListContext } from '../types'
 
 interface DeviceTagListProps {
   adapter: Adapter
@@ -17,6 +18,10 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
 
   const onHandleSubmit = (data: unknown) => {
     if (data) onupdateCollection(data as DomainTagList)
+  }
+
+  const formContext: DeviceTagListContext = {
+    adapterId: adapter.id,
   }
 
   return (
@@ -32,6 +37,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
           uiSchema={context.uiSchema}
           formData={context.formData}
           onSubmit={onHandleSubmit}
+          formContext={formContext}
         />
       )}
     </>
