@@ -34,7 +34,14 @@ const TagSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ tag, adapterId, trigger }
   return (
     <>
       {trigger(props)}
-      <Drawer isOpen={props.isOpen} placement="right" size="lg" onClose={props.onClose} closeOnOverlayClick={false}>
+      <Drawer
+        isOpen={props.isOpen}
+        placement="right"
+        size="lg"
+        onClose={props.onClose}
+        closeOnOverlayClick={false}
+        id={'tag-schema'}
+      >
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
