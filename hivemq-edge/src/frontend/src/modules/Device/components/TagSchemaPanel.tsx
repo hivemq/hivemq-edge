@@ -1,3 +1,4 @@
+import type { JSONSchema7 } from 'json-schema'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -20,6 +21,7 @@ import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner'
 import ErrorMessage from '@/components/ErrorMessage'
+import { downloadJSON } from '@/utils/download.utils'
 
 interface TagSchemaPanelProps {
   tag: DomainTag
@@ -30,10 +32,20 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   const { data, isLoading, isError } = useGetWritingSchema(adapterId, tag.name)
   const { t } = useTranslation()
 
+  const handleSchemaDownload = () => {
+    if (!data) return
+
+    // TODO[NVL] This should be transformed into an async method (react-query type) with error management and testing
+    downloadJSON<JSONSchema7>(data.title || 'topic-untitled', data)
+  }
+
   return (
     <Card size="sm">
       <CardHeader>
-        <Text as="span">{t('device.drawer.table.column.name')}</Text> <PLCTag tagTitle={tag.name} mr={3} />
+        <Text as="span" data-testid={'tag-schema-header'}>
+          {t('device.drawer.table.column.name')}
+        </Text>{' '}
+        <PLCTag tagTitle={tag.name} mr={3} />
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
@@ -49,11 +61,15 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
           </FormControl>
         )}
       </CardBody>
-      <CardFooter>
-        <ButtonGroup>
-          <Button>{t('device.drawer.schema.action.download')}</Button>
-        </ButtonGroup>
-      </CardFooter>
+      {data && (
+        <CardFooter>
+          <ButtonGroup>
+            <Button data-testid={'tag-schema-download'} onClick={handleSchemaDownload}>
+              {t('device.drawer.schema.action.download')}
+            </Button>
+          </ButtonGroup>
+        </CardFooter>
+      )}
     </Card>
   )
 }
