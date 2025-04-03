@@ -9,6 +9,19 @@ plugins {
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
+    id("jacoco")
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 group = "com.hivemq"
