@@ -735,7 +735,7 @@ export const MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA: TagSchema = {
         description: 'name of the tag to be used in mappings',
       },
     },
-    required: ['definition', 'description', 'name'],
+    required: ['definition', 'name'],
   },
 }
 
