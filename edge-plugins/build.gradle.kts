@@ -28,6 +28,10 @@ gradlePlugin {
             id = "$group.$name"
             implementationClass = "$group.licensethirdparty.ThirdPartyLicenseGeneratorPlugin"
         }
+        create("repository-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.repository.RepositoryConventionPlugin"
+        }
     }
 }
 

@@ -42,8 +42,7 @@ plugins {
     id("pmd")
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
-
-
+    id("com.hivemq.repository-convention")
 }
 
 group = "com.hivemq"
@@ -104,20 +103,7 @@ java {
 
 /* ******************** dependencies ******************** */
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-        }
-    }
-}
+// Repository settings are now applied by the repository-convention plugin
 
 
 // Runtime stuffs
@@ -320,6 +306,10 @@ tasks.jar {
 }
 
 tasks.compileJava {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
+tasks.named("sourcesJar") {
     dependsOn(tasks.named("genJaxRs"))
 }
 
@@ -594,5 +584,3 @@ artifacts {
     add(releaseJar.name, tasks.shadowJar)
     add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
-
-

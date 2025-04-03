@@ -2,6 +2,7 @@ group = "com.hivemq"
 
 plugins {
     id("com.hivemq.edge-version-updater")
+    id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
     id("jacoco")
 }
@@ -10,21 +11,7 @@ jacoco {
     toolVersion = libs.versions.jacoco.get()
 }
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
-}
+// Repository settings are now applied by the repository-convention plugin
 
 tasks.register("clean") {
     group = "build"
@@ -281,6 +268,3 @@ oci {
         specificPlatform(platform("linux", "arm", "v7"))
     }
 }
-
-
-
