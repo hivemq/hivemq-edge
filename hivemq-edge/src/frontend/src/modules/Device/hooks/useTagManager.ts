@@ -4,6 +4,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
 
 import type { DomainTag, DomainTagList } from '@/api/__generated__'
+import { tagListJsonSchema, tagListUISchema } from '@/api/schemas/'
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
 import { useDeleteDomainTags } from '@/api/hooks/useProtocolAdapters/useDeleteDomainTags.ts'
@@ -13,7 +14,6 @@ import { useGetDomainTagSchema } from '@/api/hooks/useDomainModel/useGetDomainTa
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
-import { TagTableField } from '../components/TagTableField'
 
 export const useTagManager = (adapterId: string) => {
   const { t } = useTranslation()
@@ -47,21 +47,9 @@ export const useTagManager = (adapterId: string) => {
     }
 
     return {
-      // $schema: 'https://json-schema.org/draft/2020-12/schema',
+      ...tagListJsonSchema,
       definitions: {
         TagSchema: safeSchema,
-      },
-      properties: {
-        items: {
-          type: 'array',
-          title: 'List of tags',
-          description: 'The list of all tags defined in the device',
-          items: {
-            description: 'The specification of a device data point',
-            title: 'Tag',
-            $ref: '#/definitions/TagSchema',
-          },
-        },
       },
     }
   }, [protocol?.id, tagSchema])
@@ -109,27 +97,7 @@ export const useTagManager = (adapterId: string) => {
 
   const context: ManagerContextType<DomainTagList> = {
     schema: tagListSchema,
-    uiSchema: {
-      'ui:submitButtonOptions': {
-        norender: true,
-      },
-
-      items: {
-        'ui:field': TagTableField,
-        items: {
-          'ui:order': ['name', 'description', '*'],
-          'ui:collapsable': {
-            titleKey: 'name',
-          },
-          protocolId: {
-            'ui:widget': 'hidden',
-          },
-          'ui:submitButtonOptions': {
-            norender: true,
-          },
-        },
-      },
-    },
+    uiSchema: tagListUISchema,
     formData: tagList || { items: [] },
   }
 
