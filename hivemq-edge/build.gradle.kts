@@ -38,11 +38,11 @@ plugins {
 
     alias(libs.plugins.openapi.generator)
 
-    id("jacoco")
     id("pmd")
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
@@ -365,28 +365,6 @@ tasks.javadoc {
 
 
 /* ******************** checks ******************** */
-
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
-
-tasks.withType<JacocoReport>().configureEach {
-    classDirectories.setFrom(
-        files(classDirectories.files.map {
-            fileTree(it).apply {
-                exclude("com/hivemq/edge/api/**")
-            }
-        })
-    )
-}
 
 pmd {
     toolVersion = libs.versions.pmd.get()
