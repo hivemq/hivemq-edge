@@ -3,6 +3,27 @@ group = "com.hivemq"
 plugins {
     id("com.hivemq.edge-version-updater")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
+    id("jacoco")
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+repositories {
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = uri("https://jitpack.io")
+            }
+        }
+        filter {
+            includeGroup("com.github.simon622.mqtt-sn")
+            includeGroup("com.github.simon622")
+        }
+    }
 }
 
 tasks.register("clean") {
@@ -36,6 +57,54 @@ tasks.register("test") {
         dependsOn(it.task(":$name"))
     }
 }
+
+tasks.register<JacocoReport>("jacocoMergedReport") {
+    dependsOn(gradle.includedBuilds.map { it.task(":test") }) // Run tests in included builds
+
+    val executionDataFiles: FileCollection = files(
+        fileTree("hivemq-edge/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-etherip/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-plc4x/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-http/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-modbus/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-opcua/build/jacoco/") { include("*.exec") },
+        fileTree("modules/hivemq-edge-module-file/build/jacoco/") { include("*.exec") }
+    )
+
+    val classFiles = files(
+        fileTree("hivemq-edge/build/classes/java/main") {
+            include("**/*.class")
+            exclude("com/hivemq/edge/api/model/**") // Exclude generated classes
+        },
+        fileTree("modules/hivemq-edge-module-etherip/build/classes/java/main") { include("**/*.class") },
+        fileTree("modules/hivemq-edge-module-plc4x/build/classes/java/main") { include("**/*.class") },
+        fileTree("modules/hivemq-edge-module-http/build/classes/java/main") { include("**/*.class") },
+        fileTree("modules/hivemq-edge-module-modbus/build/classes/java/main") { include("**/*.class") },
+        fileTree("modules/hivemq-edge-module-opcua/build/classes/java/main") { include("**/*.class") },
+        fileTree("modules/hivemq-edge-module-file/build/classes/java/main") { include("**/*.class") }
+    )
+
+    executionData.setFrom(executionDataFiles)
+    classDirectories.setFrom(classFiles)
+
+    sourceDirectories.setFrom(
+        files(
+            "hivemq-edge/src/main/java",
+            "modules/hivemq-edge-module-etherip/src/main/java",
+            "modules/hivemq-edge-module-plc4x/src/main/java",
+            "modules/hivemq-edge-module-http/src/main/java",
+            "modules/hivemq-edge-module-modbus/src/main/java",
+            "modules/hivemq-edge-module-opcua/src/main/java",
+            "modules/hivemq-edge-module-file/src/main/java"
+        )
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
 
 tasks.register("classes") {
     gradle.includedBuilds.forEach {

@@ -376,6 +376,24 @@ jacoco {
     toolVersion = libs.versions.jacoco.get()
 }
 
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.withType<JacocoReport>().configureEach {
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it).apply {
+                exclude("com/hivemq/edge/api/**")
+            }
+        })
+    )
+}
+
 pmd {
     toolVersion = libs.versions.pmd.get()
     sourceSets = listOf(project.sourceSets.main.get())
