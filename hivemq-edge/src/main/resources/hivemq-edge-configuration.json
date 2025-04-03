@@ -190,7 +190,7 @@
     },
     {
       "id" : "mtconnect",
-      "version" : "2025.3",
+      "version" : "2025.5",
       "name" : "MTConnect Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing MTConnect devices.",
       "author" : "HiveMQ",
