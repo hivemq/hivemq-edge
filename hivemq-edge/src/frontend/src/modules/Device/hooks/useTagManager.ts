@@ -57,6 +57,8 @@ export const useTagManager = (adapterId: string) => {
           title: 'List of tags',
           description: 'The list of all tags defined in the device',
           items: {
+            description: 'The specification of a device data point',
+            title: 'Tag',
             $ref: '#/definitions/TagSchema',
           },
         },
@@ -114,6 +116,18 @@ export const useTagManager = (adapterId: string) => {
 
       items: {
         'ui:field': TagTableField,
+        items: {
+          'ui:order': ['name', 'description', '*'],
+          'ui:collapsable': {
+            titleKey: 'name',
+          },
+          protocolId: {
+            'ui:widget': 'hidden',
+          },
+          'ui:submitButtonOptions': {
+            norender: true,
+          },
+        },
       },
     },
     formData: tagList || { items: [] },

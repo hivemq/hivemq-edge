@@ -9,6 +9,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "delete": "Delete",
+    "save": "Save",
     "previous": "Previous",
     "next": "Next",
     "start": "Start",
@@ -622,14 +623,17 @@
         }
       },
       "table": {
+        "unset": "< unset >",
         "column": {
-          "name": "Name",
+          "name": "Tag",
           "description": "Description",
           "actions": "Actions"
         },
         "actions": {
           "edit": "Edit the tag",
-          "delete": "Delete the tag"
+          "delete": "Delete the tag",
+          "add": "Add a new tag",
+          "schema": "View the schema"
         }
       },
       "tagList": {
@@ -655,10 +659,16 @@
         }
       },
       "tagEditor": {
-        "title": "Edit the tags",
-        "cta": {
-          "edit": "Edit tags"
-        }
+        "header": "Edit the tag"
+      },
+      "schema": {
+        "header": "Manage the schema for the tag",
+        "action": {
+          "download": "Download the schema",
+          "close": "Close"
+        },
+        "label": "Current schema",
+        "helper": "This schema will be a valid source for data transformation"
       }
     },
     "errors": {
@@ -666,6 +676,7 @@
       "noAdapter": "The protocol adapter for this device cannot be found",
       "noMetadataLoaded": "Uploading device metadata is not yet supported",
       "noTagLoaded": "Cannot load the tags",
+      "noSchemaLoaded": "Cannot load the schema",
       "noTagCreated": "There is no tag created yet"
     },
     "capability": {
