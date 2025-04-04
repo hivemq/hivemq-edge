@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Original file from the Apache 2.0 licensed project https://github.com/mtconnect/cppagent/tree/main/test_package. -->
 <?xml-stylesheet type="text/xsl" href="/styles/Streams.xsl"?>
 <MTConnectStreams xmlns:m="urn:mtconnect.org:MTConnectStreams:1.3" xmlns="urn:mtconnect.org:MTConnectStreams:1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:x="urn:nist.gov:NistStreams:1.3" xsi:schemaLocation="urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd">
   <Header creationTime="2025-02-28T11:38:37Z" sender="99c7468029e8" instanceId="1683217207" version="1.4.0.10" bufferSize="1048576" nextSequence="571341146" firstSequence="571341046" lastSequence="572389621"/>

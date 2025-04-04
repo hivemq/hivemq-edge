@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Original file from the Apache 2.0 licensed project https://github.com/mtconnect/cppagent/tree/main/test_package. -->
 <MTConnectStreams xmlns:m="urn:mtconnect.org:MTConnectStreams:2.0" xmlns="urn:mtconnect.org:MTConnectStreams:2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:mtconnect.org:MTConnectStreams:2.0 http://schemas.mtconnect.org/schemas/MTConnectStreams_2.0.xsd">
 	<Header creationTime="2022-10-22T15:38:08Z" sender="DMZ-MTCNCT" instanceId="1665746507" version="2.0.0.11" deviceModelChangeTime="2022-10-20T22:10:03.142383Z" bufferSize="131072" nextSequence="2703542" firstSequence="2572470" lastSequence="2703541"/>
 	<Streams>
