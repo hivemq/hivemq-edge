@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Original file from the Apache 2.0 licensed project https://github.com/mtconnect/cppagent/tree/main/test_package. -->
 <MTConnectDevices xmlns="urn:mtconnect.org:MTConnectDevices:1.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:mtconnect.org:MTConnectDevices:1.4 schema/MTConnectDevices_1.4.xsd">
   <Header version="1.4.0" creationTime="2018-10-28T12:33:12Z" instanceId="12345" sender="localhost" bufferSize="1024" assetBufferSize="1024" assetCount="0"/>
   <Devices>
