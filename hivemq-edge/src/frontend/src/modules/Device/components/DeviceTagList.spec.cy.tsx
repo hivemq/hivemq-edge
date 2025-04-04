@@ -24,7 +24,6 @@ describe('DeviceTagList', () => {
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.get('[role="alert"').should('have.attr', 'data-status', 'error').should('contain.text', 'Cannot load the tags')
-    cy.getByAriaLabel('Edit tags').should('be.visible').should('be.disabled')
   })
 
   it('should render an empty list', () => {
@@ -34,11 +33,11 @@ describe('DeviceTagList', () => {
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')
 
-    cy.get('[role="alert"')
-      .should('have.attr', 'data-status', 'info')
-      .should('contain.text', 'There is no tag created yet')
-
-    cy.getByAriaLabel('Edit tags').should('be.visible').should('not.be.disabled')
+    cy.get('table[aria-label="List of tags"]').within(() => {
+      cy.get('[role="alert"')
+        .should('have.attr', 'data-status', 'info')
+        .should('contain.text', 'There is no tag created yet')
+    })
   })
 
   it('should render properly', () => {
@@ -50,11 +49,11 @@ describe('DeviceTagList', () => {
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')
 
-    cy.get('h2').should('have.text', 'List of Device Tags')
-    cy.getByAriaLabel('Edit tags').should('be.visible').should('not.be.disabled')
+    cy.get('h2').should('have.text', 'List of tags')
 
-    cy.getByTestId('device-tags-list').should('be.visible')
-    cy.getByTestId('device-tags-list').find('li').should('have.length', 2)
+    cy.get('table[aria-label="List of tags"]').within(() => {
+      cy.get('tbody tr').should('have.length', 2)
+    })
   })
 
   it('should be accessible', () => {

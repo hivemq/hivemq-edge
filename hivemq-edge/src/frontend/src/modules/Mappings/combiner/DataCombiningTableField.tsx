@@ -138,7 +138,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
                 data-testid={'combiner-mapping-list-delete'}
                 icon={<LuTrash />}
                 onClick={() => handleDelete(info.row.index)}
-              />{' '}
+              />
             </ButtonGroup>
           )
         },

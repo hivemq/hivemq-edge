@@ -18,6 +18,7 @@ import { handlers } from '@/api/hooks/useDomainModel/__handlers__'
 
 import { useTagManager } from '@/modules/Device/hooks/useTagManager.ts'
 import { MockAdapterType } from '../../../__test-utils__/adapters/types'
+import type { RJSFSchema } from '@rjsf/utils'
 
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,
@@ -117,62 +118,61 @@ describe('useTagManager', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
     })
-    expect(result.current).toStrictEqual(
-      expect.objectContaining({
-        context: {
-          formData: {
-            items: [],
-          },
-          schema: expect.objectContaining({
-            definitions: expect.objectContaining({
-              TagSchema: expect.objectContaining({
-                properties: expect.objectContaining({
-                  definition: expect.objectContaining({
-                    description: 'The actual definition of the tag on the device',
-                    properties: expect.objectContaining({
-                      node: expect.objectContaining({ title: 'Destination Node ID', type: 'string' }),
-                    }),
-                  }),
-                  description: expect.objectContaining({
-                    description: 'A human readable description of the tag',
-                    title: 'description',
-                    type: 'string',
-                  }),
-                  name: expect.objectContaining({
-                    description: 'name of the tag to be used in mappings',
-                    title: 'name',
-                    type: 'string',
-                  }),
-                }),
-              }),
-            }),
+
+    expect(result.current.context.formData).toStrictEqual({
+      items: [],
+    })
+
+    expect(result.current.context.schema).not.toBeUndefined()
+
+    const { definitions, properties } = result.current.context.schema as RJSFSchema
+    expect(definitions).toStrictEqual({
+      TagSchema: expect.objectContaining({
+        properties: expect.objectContaining({
+          definition: expect.objectContaining({
+            description: 'The actual definition of the tag on the device',
           }),
-          uiSchema: {
-            items: {
-              items: {
-                protocolId: {
-                  'ui:widget': 'hidden',
-                },
-                'ui:collapsable': {
-                  titleKey: 'name',
-                },
-                'ui:order': ['name', 'description', '*'],
-              },
+          description: expect.objectContaining({
+            description: 'A human readable description of the tag',
+          }),
+          name: expect.objectContaining({
+            description: 'name of the tag to be used in mappings',
+          }),
+          protocolId: expect.objectContaining({
+            const: 'opcua',
+          }),
+        }),
+      }),
+    })
+    expect(properties).toStrictEqual({
+      items: expect.objectContaining({
+        description: 'The list of all tags defined in the device',
+      }),
+    })
+
+    expect(result.current.context.uiSchema).toStrictEqual(
+      expect.objectContaining({
+        items: expect.objectContaining({
+          'ui:field': expect.anything(),
+          items: expect.objectContaining({
+            protocolId: {
+              'ui:widget': 'hidden',
             },
-            'ui:submitButtonOptions': {
-              norender: true,
-            },
-          },
-        },
-        data: {
-          items: [],
-        },
-        error: undefined,
-        isError: false,
-        isLoading: false,
-        isPending: false,
+          }),
+        }),
+        'ui:submitButtonOptions': expect.anything(),
       })
     )
+
+    expect(result.current.data).toStrictEqual({ items: [] })
+    expect(result.current.isError).toStrictEqual(false)
+    expect(result.current.isLoading).toStrictEqual(false)
+    expect(result.current.isPending).toStrictEqual(false)
+    expect(result.current.error).toBeUndefined()
+    expect(result.current.onCreate).toBeTypeOf('function')
+    expect(result.current.onDelete).toBeTypeOf('function')
+    expect(result.current.onUpdate).toBeTypeOf('function')
+    expect(result.current.onupdateCollection).toBeTypeOf('function')
   })
 
   it('should do it properly', async () => {

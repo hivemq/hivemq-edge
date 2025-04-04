@@ -75,6 +75,6 @@ describe('DevicePropertyDrawer', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     cy.get('header').should('contain.text', 'Device Overview')
-    cy.get('h2').eq(0).should('contain.text', 'List of Device Tags')
+    cy.get('[role="alert"]').should('contain.text', 'Cannot load the tags').should('have.attr', 'data-status', 'error')
   })
 })

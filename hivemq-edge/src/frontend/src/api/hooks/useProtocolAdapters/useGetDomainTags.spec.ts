@@ -30,6 +30,7 @@ describe('useGetDomainTags', () => {
           definition: {
             node: 'ns=3;i=1002',
           },
+          description: 'This is a very long description for the OPCUA tag, just to test the content',
           name: `${MockAdapterType.OPC_UA}/power/off`,
         },
         {
