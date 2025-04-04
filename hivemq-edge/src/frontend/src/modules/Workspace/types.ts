@@ -41,7 +41,7 @@ export enum EdgeTypes {
   REPORT_EDGE = 'REPORT_EDGE',
 }
 
-export interface EdgeStatus {
+export type EdgeStatus = {
   isConnected: boolean
   hasTopics: boolean
 }
