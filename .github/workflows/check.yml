@@ -39,10 +39,14 @@ jobs:
         uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 #v1.7.1
         with:
           paths: |
-            build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml
+            ${{ github.workspace }}/**/build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
+          title: Coverage Report
+          update-comment: true
+          pass-emoji: ✅
+          fail-emoji: ❌
       - name: Upload coverage report
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
         with:
