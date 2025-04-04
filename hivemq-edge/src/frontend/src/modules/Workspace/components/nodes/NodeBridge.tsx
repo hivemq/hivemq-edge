@@ -19,7 +19,7 @@ import type { NodeBridgeType } from '@/modules/Workspace/types'
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import MappingBadge from '../parts/MappingBadge.tsx'
 
-const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, dragging }) => {
+const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge, dragging }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()

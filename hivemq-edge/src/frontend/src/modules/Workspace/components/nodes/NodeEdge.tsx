@@ -16,10 +16,11 @@ import { TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
 
-const NodeEdge: FC<NodeProps> = (props) => {
+const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(props.id, props.selected, '/workspace/edge')
   const navigate = useNavigate()

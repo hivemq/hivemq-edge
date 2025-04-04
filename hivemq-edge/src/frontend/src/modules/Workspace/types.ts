@@ -1,11 +1,14 @@
 import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from '@xyflow/react'
-import type { Adapter, Bridge, Combiner, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 
 export type NodeAdapterType = Node<Adapter, NodeTypes.ADAPTER_NODE>
+export type NodeDeviceType = Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
 export type NodeBridgeType = Node<Bridge, NodeTypes.BRIDGE_NODE>
 export type NodeGroupType = Node<Group, NodeTypes.CLUSTER_NODE>
-export type NodeDeviceType = Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
 export type NodeCombinerType = Node<Combiner, NodeTypes.COMBINER_NODE>
+export type NodeListenerType = Node<Listener, NodeTypes.LISTENER_NODE>
+export type NodeEdgeType = Node<{ label: string }, NodeTypes.EDGE_NODE>
+export type NodeHostType = Node<{ label: string }, NodeTypes.HOST_NODE>
 
 export interface EdgeFlowOptions {
   showTopics: boolean
@@ -59,7 +62,7 @@ export interface TopicFilter {
   frequency?: number
 }
 
-export interface Group {
+export type Group = {
   childrenNodeIds: string[]
   title: string
   isOpen: boolean
@@ -89,6 +92,6 @@ export interface TopicTreeMetadata {
   count: number
 }
 
-export interface DeviceMetadata extends ProtocolAdapter {
+export type DeviceMetadata = ProtocolAdapter & {
   sourceAdapterId: string
 }

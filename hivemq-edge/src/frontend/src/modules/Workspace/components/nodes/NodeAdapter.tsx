@@ -24,7 +24,7 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 import type { NodeAdapterType } from '@/modules/Workspace/types'
 
-const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, dragging }) => {
+const NodeAdapter: FC<NodeProps<NodeAdapterType>> = ({ id, data: adapter, selected, dragging }) => {
   const { t } = useTranslation()
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
