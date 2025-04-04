@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useCallback, useLayoutEffect, useMemo } from 'react'
-import type { Connection, Edge, Node } from 'reactflow'
-import ReactFlow, { addEdge, MarkerType, useEdgesState, useNodesState, useReactFlow } from 'reactflow'
+import type { Connection, Edge, Node } from '@xyflow/react'
+import { ReactFlow, addEdge, MarkerType, useEdgesState, useNodesState, useReactFlow } from '@xyflow/react'
 import ELK from 'elkjs/lib/elk.bundled'
 import type { ElkNode, LayoutOptions } from 'elkjs/lib/elk-api'
 
@@ -9,7 +9,7 @@ import { StateNode } from '@datahub/components/fsm/StateNode.tsx'
 import { TransitionNode } from '@datahub/components/fsm/TransitionNode.tsx'
 import type { FiniteStateMachine, FsmState } from '@datahub/types.ts'
 
-import 'reactflow/dist/style.css'
+import '@xyflow/react/dist/style.css'
 
 const elk = new ELK()
 

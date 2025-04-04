@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import type { CardBodyProps } from '@chakra-ui/react'
 import { Card, CardBody, Text } from '@chakra-ui/react'
 

@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { NodeProps } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
 import type { BoxProps, CardBodyProps } from '@chakra-ui/react'
 import { Avatar, Card, CardBody, CardHeader, HStack, Text, useColorModeValue } from '@chakra-ui/react'
 

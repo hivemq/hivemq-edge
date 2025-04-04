@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import type { EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
+import type { EdgeAddChange, Node, Edge, NodeProps } from '@xyflow/react'
 
 import type { DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
 import { DataHubNodeType } from '../types.ts'

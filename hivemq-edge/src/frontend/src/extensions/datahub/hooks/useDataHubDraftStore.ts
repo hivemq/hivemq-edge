@@ -1,5 +1,5 @@
-import type { Connection, EdgeAddChange, EdgeChange, NodeAddChange, NodeChange, Node } from 'reactflow'
-import { addEdge, applyEdgeChanges, applyNodeChanges } from 'reactflow'
+import type { Connection, EdgeAddChange, EdgeChange, NodeAddChange, NodeChange, Node } from '@xyflow/react'
+import { addEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 

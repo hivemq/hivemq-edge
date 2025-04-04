@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
-import type { Edge, Node } from 'reactflow'
-import { Position } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'

@@ -1,5 +1,5 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getConnectedEdges, getIncomers } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getConnectedEdges, getIncomers } from '@xyflow/react'
 
 import i18n from '@/config/i18n.config.ts'
 

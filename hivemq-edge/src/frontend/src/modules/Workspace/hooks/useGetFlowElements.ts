@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Edge, Node } from 'reactflow'
-import { useEdgesState, useNodesState } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
+import { useEdgesState, useNodesState } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
 import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'

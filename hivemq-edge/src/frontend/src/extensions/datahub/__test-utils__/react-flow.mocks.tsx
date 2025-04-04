@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react'
-import type { Edge, Node } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
 import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 

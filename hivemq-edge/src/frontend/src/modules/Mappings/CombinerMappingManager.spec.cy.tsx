@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { MOCK_DEFAULT_NODE, MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes.ts'

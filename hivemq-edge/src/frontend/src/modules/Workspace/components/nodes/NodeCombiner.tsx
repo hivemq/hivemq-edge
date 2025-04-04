@@ -1,10 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
-
-import type { Combiner } from '@/api/__generated__'
 
 import { HqCombiner } from '@/components/Icons'
 import { SelectEntityType } from '@/components/MQTT/types'
@@ -12,6 +10,7 @@ import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils'
+import type { NodeCombinerType } from '@/modules/Workspace/types'
 import MappingBadge from '../parts/MappingBadge'
 
 const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging }) => {

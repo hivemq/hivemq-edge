@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'

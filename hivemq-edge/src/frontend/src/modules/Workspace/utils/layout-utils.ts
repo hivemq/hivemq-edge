@@ -1,4 +1,4 @@
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 
 import type { Adapter, Bridge } from '@/api/__generated__'
 import type { EdgeFlowGrouping } from '@/modules/Workspace/types.ts'

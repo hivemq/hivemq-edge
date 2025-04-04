@@ -1,10 +1,9 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position, useStore } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position, useStore } from '@xyflow/react'
 import { Box, HStack, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import type { Bridge } from '@/api/__generated__'
 import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 
 import { SelectEntityType } from '@/components/MQTT/types'
@@ -15,6 +14,7 @@ import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.uti
 import { getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
+import type { NodeBridgeType } from '@/modules/Workspace/types'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import MappingBadge from '../parts/MappingBadge.tsx'

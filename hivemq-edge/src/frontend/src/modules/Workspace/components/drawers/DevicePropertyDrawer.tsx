@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Node } from 'reactflow'
-import { getIncomers } from 'reactflow'
+import type { Node } from '@xyflow/react'
+import { getIncomers } from '@xyflow/react'
 import {
   Button,
   ButtonGroup,

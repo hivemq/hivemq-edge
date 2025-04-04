@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { useEffect } from 'react'
-import { useKeyPress } from 'reactflow'
+import { useKeyPress } from '@xyflow/react'
 import { useNavigate } from 'react-router-dom'
 
 export const useContextMenu = (id: string, selected: boolean, route: string) => {

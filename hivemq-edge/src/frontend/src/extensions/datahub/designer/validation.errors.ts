@@ -1,5 +1,5 @@
 import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import type { DataHubNodeType } from '@datahub/types.ts'
 import i18n from '@/config/i18n.config.ts'
 

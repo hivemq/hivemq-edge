@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { getGroupLayout } from './group.utils.ts'
-import type { Rect } from 'reactflow'
+import type { Rect } from '@xyflow/react'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('getGroupLayout', () => {

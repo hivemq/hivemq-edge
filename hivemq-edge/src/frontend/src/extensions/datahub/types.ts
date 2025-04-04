@@ -1,4 +1,4 @@
-import type { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChange, OnNodesChange } from 'reactflow'
+import type { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChange, OnNodesChange } from '@xyflow/react'
 import type {
   BehaviorPolicy,
   BehaviorPolicyOnTransition,

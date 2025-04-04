@@ -1,4 +1,4 @@
-import type { NodeProps } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'

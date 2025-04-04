@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import { Route, Routes } from 'react-router-dom'
 import { Box } from '@chakra-ui/react'
 
