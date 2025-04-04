@@ -1,4 +1,4 @@
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import type { Bridge, DataPolicy } from '@/api/__generated__'
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'

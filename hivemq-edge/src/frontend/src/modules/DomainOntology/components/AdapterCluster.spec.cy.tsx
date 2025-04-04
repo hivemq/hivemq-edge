@@ -11,6 +11,8 @@ describe('AdapterCluster', () => {
   }
 
   it('should render errors', () => {
+    cy.intercept('/api/v1/management/bridges', { statusCode: 404 })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 404 })
     cy.mountWithProviders(<AdapterCluster />)
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.get('[role="alert"]')

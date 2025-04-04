@@ -1,13 +1,14 @@
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import type { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
-import ReactFlow from 'reactflow'
+import type { Edge, EdgeTypes, Node, NodeTypes } from '@xyflow/react'
+import { ReactFlow } from '@xyflow/react'
 import { Code, VStack } from '@chakra-ui/react'
 
-import 'reactflow/dist/style.css'
+import '@xyflow/react/dist/style.css'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
+import { proOptions } from '../../components/react-flow/react-flow.utils'
 
 interface MockReactFlowProps {
   nodeTypes?: NodeTypes
@@ -54,6 +55,7 @@ export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, ed
           panOnDrag={false}
           autoPanOnConnect={false}
           nodesConnectable={false}
+          proOptions={proOptions}
         />
       </VStack>
     </EdgeFlowProvider>

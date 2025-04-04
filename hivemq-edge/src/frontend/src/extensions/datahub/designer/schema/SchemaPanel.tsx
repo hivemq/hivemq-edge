@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useCallback, useState } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { parse } from 'protobufjs'
 import type { CustomValidator, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'

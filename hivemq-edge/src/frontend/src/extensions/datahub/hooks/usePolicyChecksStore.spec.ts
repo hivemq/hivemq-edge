@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react'
 import type { DataPolicyData, DryRunResults, PolicyCheckAction, PolicyCheckState } from '../types.ts'
 import { DataHubNodeType, PolicyDryRunStatus } from '../types.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {

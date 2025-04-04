@@ -1,5 +1,5 @@
-import type { Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getIncomers, getOutgoers } from 'reactflow'
+import type { Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getIncomers, getOutgoers } from '@xyflow/react'
 
 import type { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
 import type { DataPolicyData, DryRunResults, WorkspaceState } from '@datahub/types.ts'

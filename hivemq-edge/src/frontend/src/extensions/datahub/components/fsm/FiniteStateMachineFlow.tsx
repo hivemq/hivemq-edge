@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { Box } from '@chakra-ui/react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 
 import config from '@/config'
 

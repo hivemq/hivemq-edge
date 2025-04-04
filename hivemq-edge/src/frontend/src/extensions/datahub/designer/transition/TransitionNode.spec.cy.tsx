@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { NodeProps } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -9,7 +9,7 @@ import type { TransitionData } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { TransitionNode } from './TransitionNode.tsx'
 
-const MOCK_NODE_TRANSITION: NodeProps<TransitionData> = {
+const MOCK_NODE_TRANSITION: NodeProps<Node<TransitionData>> = {
   id: 'node-id',
   type: DataHubNodeType.TRANSITION,
   data: {},

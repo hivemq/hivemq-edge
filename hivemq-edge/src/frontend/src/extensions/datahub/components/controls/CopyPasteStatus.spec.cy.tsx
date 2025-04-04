@@ -1,4 +1,4 @@
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'

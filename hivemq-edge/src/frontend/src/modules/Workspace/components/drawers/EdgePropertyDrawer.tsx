@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'

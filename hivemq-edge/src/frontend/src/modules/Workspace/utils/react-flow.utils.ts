@@ -1,5 +1,5 @@
 /* istanbul ignore file -- @preserve */
-import type { ReactFlowState } from 'reactflow'
+import type { ReactFlowState } from '@xyflow/react'
 
 export const CONFIG_ZOOM_SKELETON = 0.5
 export const CONFIG_ZOOM_MIN = 0.2

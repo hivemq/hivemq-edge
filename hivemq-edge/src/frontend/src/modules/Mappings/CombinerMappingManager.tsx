@@ -1,5 +1,5 @@
 import { type FC, useEffect, useMemo } from 'react'
-import type { Node, NodeRemoveChange } from 'reactflow'
+import type { Node, NodeRemoveChange } from '@xyflow/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'

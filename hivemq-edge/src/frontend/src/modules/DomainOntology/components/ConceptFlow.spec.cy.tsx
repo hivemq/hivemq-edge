@@ -14,6 +14,11 @@ describe('ConceptFlow', () => {
   }
 
   it('should render errors', () => {
+    cy.intercept('/api/v1/management/bridges', { statusCode: 404 })
+    cy.intercept('/api/v1/management/protocol-adapters/northboundMappings', { statusCode: 404 })
+    cy.intercept('/api/v1/management/protocol-adapters/southboundMappings', { statusCode: 404 })
+    cy.intercept('api/v1/management/protocol-adapters/tags', { statusCode: 404 })
+    cy.intercept('api/v1/management/topic-filters', { statusCode: 404 })
     cy.mountWithProviders(<ConceptFlow />)
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.get('[role="alert"]')

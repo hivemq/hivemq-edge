@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { ReactFlowState, Node } from 'reactflow'
-import { useStore, useReactFlow } from 'reactflow'
+import type { ReactFlowState, Node } from '@xyflow/react'
+import { useStore, useReactFlow } from '@xyflow/react'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { DeviceMetadata } from '@/modules/Workspace/types.ts'

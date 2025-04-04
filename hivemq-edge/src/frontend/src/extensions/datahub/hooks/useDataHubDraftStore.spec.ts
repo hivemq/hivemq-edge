@@ -1,13 +1,13 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import type { EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
+import type { EdgeAddChange, Node, Edge, NodeProps } from '@xyflow/react'
 
 import type { DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
 import { DataHubNodeType } from '../types.ts'
 import useDataHubDraftStore from '@/extensions/datahub/hooks/useDataHubDraftStore.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-const MOCK_NODE: NodeProps<{ label: string }> = {
+const MOCK_NODE: NodeProps<Node<{ label: string }>> = {
   id: 'idAdapter',
   type: DataHubNodeType.TOPIC_FILTER,
   data: { label: 'Hello1' },

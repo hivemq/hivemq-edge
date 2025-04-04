@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
 import type { Adapter, Bridge } from '@/api/__generated__'

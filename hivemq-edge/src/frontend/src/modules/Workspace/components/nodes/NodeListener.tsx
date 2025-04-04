@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { Image } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,10 +8,11 @@ import logoTCP from '@/assets/app/gateway-tcp.svg'
 import logoUDP from '@/assets/app/gateway-udp.svg'
 import logoGateway from '@/assets/app/gateway.svg'
 import { Listener } from '@/api/__generated__'
+import type { NodeListenerType } from '../../types'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 
-const NodeListener: FC<NodeProps<Listener>> = ({ selected, data }) => {
+const NodeListener: FC<NodeProps<NodeListenerType>> = ({ selected, data }) => {
   const { t } = useTranslation()
 
   const getLogo = () => {

@@ -2,7 +2,7 @@
 
 import NodePropertyDrawer from '@/modules/Workspace/components/drawers/NodePropertyDrawer.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import type { Adapter, Bridge } from '@/api/__generated__'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 

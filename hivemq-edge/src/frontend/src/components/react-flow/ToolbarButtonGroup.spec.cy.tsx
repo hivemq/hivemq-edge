@@ -1,4 +1,4 @@
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import { Icon } from '@chakra-ui/react'
 import { LuAlbum, LuBaby } from 'react-icons/lu'
 

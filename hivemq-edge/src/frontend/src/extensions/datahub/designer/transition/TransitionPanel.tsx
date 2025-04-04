@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useCallback, useMemo } from 'react'
-import type { Node } from 'reactflow'
-import { getIncomers } from 'reactflow'
+import type { Node } from '@xyflow/react'
+import { getIncomers } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { IChangeEvent } from '@rjsf/core'
 

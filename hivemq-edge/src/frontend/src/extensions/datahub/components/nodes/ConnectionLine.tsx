@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { ConnectionLineComponentProps } from 'reactflow'
-import { getSmoothStepPath } from 'reactflow'
+import type { ConnectionLineComponentProps } from '@xyflow/react'
+import { getSmoothStepPath } from '@xyflow/react'
 import { Tag } from '@chakra-ui/react'
 
 import { getConnectedNodeFrom } from '@datahub/utils/node.utils.ts'

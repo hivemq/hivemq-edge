@@ -1,5 +1,5 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getOutgoers } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getOutgoers } from '@xyflow/react'
 
 import type {
   BehaviorPolicy,

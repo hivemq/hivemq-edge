@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import type { Group } from '../../types.ts'
 import { NodeTypes } from '../../types.ts'
 import GroupPropertyDrawer from './GroupPropertyDrawer.tsx'

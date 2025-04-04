@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from 'reactflow'
-import { addEdge, applyNodeChanges, applyEdgeChanges } from 'reactflow'
+import type { EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from '@xyflow/react'
+import { addEdge, applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
 import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
@@ -40,7 +40,7 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
                 return {
                   ...node,
                   position: { x: node.position.x - rect.x, y: node.position.y - rect.y },
-                  parentNode: parentNode.id,
+                  parentId: parentNode.id,
                   expandParent: true,
                   selected: false,
                 }

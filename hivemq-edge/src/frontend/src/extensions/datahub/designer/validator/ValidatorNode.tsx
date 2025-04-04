@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { HStack, VStack } from '@chakra-ui/react'
-import type { NodeProps } from 'reactflow'
-import { Position } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 
 import type { ValidatorData } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
@@ -9,7 +9,7 @@ import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
+export const ValidatorNode: FC<NodeProps<Node<ValidatorData>>> = (props) => {
   const { id, data } = props
   return (
     <>

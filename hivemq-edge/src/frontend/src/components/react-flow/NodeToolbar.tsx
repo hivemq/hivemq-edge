@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { NodeToolbarProps } from 'reactflow'
-import { NodeToolbar as ReactFlowNodeToolbar } from 'reactflow'
+import type { NodeToolbarProps } from '@xyflow/react'
+import { NodeToolbar as ReactFlowNodeToolbar } from '@xyflow/react'
 import type { As } from '@chakra-ui/react'
 import { chakra, Icon } from '@chakra-ui/react'
 import { BsGripVertical } from 'react-icons/bs'

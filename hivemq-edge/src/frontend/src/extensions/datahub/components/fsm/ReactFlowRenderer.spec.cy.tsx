@@ -1,7 +1,7 @@
 import type { FiniteStateMachineSchema } from '@datahub/types.ts'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { ReactFlowRenderer } from '@datahub/components/fsm/ReactFlowRenderer.tsx'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import type { FC, PropsWithChildren } from 'react'
 import { Box } from '@chakra-ui/react'
 
