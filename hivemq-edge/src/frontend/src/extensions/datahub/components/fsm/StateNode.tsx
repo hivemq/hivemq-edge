@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import { Handle, Position } from '@xyflow/react'
 import type { CardBodyProps } from '@chakra-ui/react'
 import { Card, CardBody, Text } from '@chakra-ui/react'
@@ -13,7 +13,7 @@ const stateStyle: Record<string, CardBodyProps> = {
   FAILED: { borderStyle: 'dashed', borderWidth: 4 },
 }
 
-export const StateNode: FC<NodeProps<FsmState>> = (props) => {
+export const StateNode: FC<NodeProps<Node<FsmState>>> = (props) => {
   return (
     <>
       {props.data.type !== 'INITIAL' && (

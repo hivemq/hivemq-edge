@@ -179,7 +179,7 @@ export const processOperations =
         error: PolicyCheckErrors.notConfigured(node, 'functionId'),
       })
     } else if (node.data.functionId === 'DataHub.transform') {
-      const transformResults = checkValidityTransformFunction(node, store)
+      const transformResults = checkValidityTransformFunction(node as Node<OperationData>, store)
       acc.push(...transformResults)
     } else {
       const operation: PolicyOperation = {

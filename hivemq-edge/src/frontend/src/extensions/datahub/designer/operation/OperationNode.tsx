@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 import { Text, VStack } from '@chakra-ui/react'
 
@@ -10,7 +10,7 @@ import NodeParams from '@datahub/components/helpers/NodeParams.tsx'
 import { CustomHandle } from '@datahub/components/nodes/CustomHandle.tsx'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
+export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
   const { t } = useTranslation('datahub')
   const { data, id } = props
   const { functionId, metadata } = data

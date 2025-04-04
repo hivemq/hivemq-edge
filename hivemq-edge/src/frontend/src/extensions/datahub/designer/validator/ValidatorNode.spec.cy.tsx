@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -10,7 +10,7 @@ import type { ValidatorData } from '@datahub/types.ts'
 import { DataHubNodeType, StrategyType } from '@datahub/types.ts'
 import { ValidatorNode } from './ValidatorNode.tsx'
 
-const MOCK_NODE_VALIDATOR: NodeProps<ValidatorData> = {
+const MOCK_NODE_VALIDATOR: NodeProps<Node<ValidatorData>> = {
   id: 'node-id',
   type: DataHubNodeType.VALIDATOR,
   data: { type: DataPolicyValidator.type.SCHEMA, strategy: StrategyType.ALL_OF, schemas: [] },

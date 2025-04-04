@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useMemo } from 'react'
 import { VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 
 import { DataHubNodeType, FsmState, TransitionData } from '@datahub/types.ts'
@@ -10,7 +10,7 @@ import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeParams } from '@datahub/components/helpers'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
+export const TransitionNode: FC<NodeProps<Node<TransitionData>>> = (props) => {
   const { t } = useTranslation('datahub')
   const { data, id } = props
 

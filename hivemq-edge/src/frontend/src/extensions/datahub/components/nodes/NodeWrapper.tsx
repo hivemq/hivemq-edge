@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import type { BoxProps, CardBodyProps } from '@chakra-ui/react'
 import { Avatar, Card, CardBody, CardHeader, HStack, Text, useColorModeValue } from '@chakra-ui/react'
 
@@ -17,7 +17,7 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { NodeIcon } from '@datahub/components/helpers'
 import { useTranslation } from 'react-i18next'
 
-interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
+interface NodeWrapperProps extends NodeProps<Node<DataHubNodeData>> {
   children: ReactNode
   route: string
   wrapperProps?: CardBodyProps
