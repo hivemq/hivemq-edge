@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -9,7 +9,7 @@ import type { BehaviorPolicyData } from '@datahub/types.ts'
 import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.tsx'
 
-const MOCK_NODE_BEHAVIOR_POLICY: NodeProps<BehaviorPolicyData> = {
+const MOCK_NODE_BEHAVIOR_POLICY: NodeProps<Node<BehaviorPolicyData>> = {
   id: 'node-id',
   type: DataHubNodeType.BEHAVIOR_POLICY,
   data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },

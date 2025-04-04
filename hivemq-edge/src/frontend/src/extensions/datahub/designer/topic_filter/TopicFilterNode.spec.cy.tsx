@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -9,7 +9,7 @@ import type { TopicFilterData } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { TopicFilterNode } from './TopicFilterNode.tsx'
 
-export const MOCK_NODE_TOPIC_FILTER: NodeProps<TopicFilterData> = {
+export const MOCK_NODE_TOPIC_FILTER: NodeProps<Node<TopicFilterData>> = {
   id: 'topic-filter-id',
   type: DataHubNodeType.TOPIC_FILTER,
   data: { topics: ['topic 1', 'topic 2', 'topic 3'] },

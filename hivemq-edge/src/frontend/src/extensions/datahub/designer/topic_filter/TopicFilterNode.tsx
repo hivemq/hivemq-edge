@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 import { VStack } from '@chakra-ui/react'
 
@@ -9,7 +9,7 @@ import type { TopicFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
+export const TopicFilterNode: FC<NodeProps<Node<TopicFilterData>>> = (props) => {
   const { id, data, type } = props
 
   return (

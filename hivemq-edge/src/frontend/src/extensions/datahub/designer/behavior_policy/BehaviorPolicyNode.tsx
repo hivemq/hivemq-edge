@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { VStack } from '@chakra-ui/react'
@@ -10,7 +10,7 @@ import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import PolicyToolbar from '@datahub/components/toolbar/PolicyToolbar.tsx'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => {
+export const BehaviorPolicyNode: FC<NodeProps<Node<BehaviorPolicyData>>> = (props) => {
   const { t } = useTranslation('datahub')
   const { id, data } = props
 

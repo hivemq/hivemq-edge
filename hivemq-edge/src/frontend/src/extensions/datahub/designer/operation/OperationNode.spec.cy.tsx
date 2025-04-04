@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import type { NodeProps } from '@xyflow/react'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -9,7 +9,7 @@ import type { OperationData } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { OperationNode } from './OperationNode.tsx'
 
-const MOCK_NODE_OPERATION: NodeProps<OperationData> = {
+const MOCK_NODE_OPERATION: NodeProps<Node<OperationData>> = {
   id: 'node-id',
   type: DataHubNodeType.OPERATION,
   data: { id: 'my-operation-id' },
@@ -48,7 +48,7 @@ describe('OperationNode', () => {
   })
 
   it('should render properly with arguments', () => {
-    const data: NodeProps<OperationData> = {
+    const data: NodeProps<Node<OperationData>> = {
       ...MOCK_NODE_OPERATION,
       data: { id: 'my-operation-id', functionId: 'DataHub.transform', metadata: { hasArguments: true } },
     }
@@ -69,7 +69,7 @@ describe('OperationNode', () => {
   })
 
   it('should render properly with terminal', () => {
-    const data: NodeProps<OperationData> = {
+    const data: NodeProps<Node<OperationData>> = {
       ...MOCK_NODE_OPERATION,
       data: { id: 'my-operation-id', functionId: 'test', metadata: { isTerminal: true } },
     }
