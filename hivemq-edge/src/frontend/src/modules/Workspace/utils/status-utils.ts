@@ -1,5 +1,5 @@
-import type { Edge, Instance, Node } from 'reactflow'
-import { MarkerType } from 'reactflow'
+import type { Edge, Instance, Node } from '@xyflow/react'
+import { MarkerType } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 

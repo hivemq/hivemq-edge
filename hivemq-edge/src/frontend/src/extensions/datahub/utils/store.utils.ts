@@ -1,4 +1,4 @@
-import type { Edge, Node } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
 import type { RJSFSchema } from '@rjsf/utils'
 
 import type { FunctionSpecs, WorkspaceState, WorkspaceStatus } from '@datahub/types.ts'

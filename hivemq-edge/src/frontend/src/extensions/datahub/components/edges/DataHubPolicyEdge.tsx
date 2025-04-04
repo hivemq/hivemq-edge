@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { EdgeProps } from 'reactflow'
-import { BaseEdge, getSmoothStepPath } from 'reactflow'
+import type { EdgeProps } from '@xyflow/react'
+import { BaseEdge, getSmoothStepPath } from '@xyflow/react'
 
 import { styleDefaultEdge } from '@datahub/utils/edge.utils.ts'
 

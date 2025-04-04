@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image, Text, VStack } from '@chakra-ui/react'
 

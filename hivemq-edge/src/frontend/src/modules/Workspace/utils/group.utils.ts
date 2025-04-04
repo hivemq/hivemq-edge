@@ -1,5 +1,5 @@
-import type { Node, Rect } from 'reactflow'
-import { getRectOfNodes } from 'reactflow'
+import type { Node, Rect } from '@xyflow/react'
+import { getNodesBounds } from '@xyflow/react'
 
 const GROUP_MARGIN = 20
 const GROUP_TITLE_MARGIN = 24

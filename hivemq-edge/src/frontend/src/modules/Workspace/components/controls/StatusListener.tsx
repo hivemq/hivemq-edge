@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useReactFlow } from 'reactflow'
+import { useReactFlow } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.ts'

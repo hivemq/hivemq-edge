@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import { Route, Routes } from 'react-router-dom'
 import DryRunPanelController from '@datahub/components/controls/DryRunPanelController.tsx'
 

@@ -1,5 +1,5 @@
-import type { Connection, Edge, HandleProps, Node } from 'reactflow'
-import { getConnectedEdges, getIncomers, getOutgoers } from 'reactflow'
+import type { Connection, Edge, HandleProps, Node } from '@xyflow/react'
+import { getConnectedEdges, getIncomers, getOutgoers } from '@xyflow/react'
 import { v4 as uuidv4 } from 'uuid'
 import type { TFunction } from 'i18next'
 import validator from '@rjsf/validator-ajv8'

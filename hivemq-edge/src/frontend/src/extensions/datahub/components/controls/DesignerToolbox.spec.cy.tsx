@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 
 const wrapper: FC<PropsWithChildren> = ({ children }) => <ReactFlowProvider>{children}</ReactFlowProvider>

@@ -1,5 +1,5 @@
-import type { Edge, Node, XYPosition } from 'reactflow'
-import { MarkerType, Position } from 'reactflow'
+import type { Edge, Node, XYPosition } from '@xyflow/react'
+import { MarkerType, Position } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 import type { GenericObjectType } from '@rjsf/utils'

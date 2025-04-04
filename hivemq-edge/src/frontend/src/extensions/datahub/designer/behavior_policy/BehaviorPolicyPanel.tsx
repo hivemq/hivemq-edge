@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { CustomValidator } from '@rjsf/utils'

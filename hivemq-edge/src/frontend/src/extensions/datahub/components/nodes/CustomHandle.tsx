@@ -1,7 +1,7 @@
 import type { CSSProperties, FC, HTMLAttributes } from 'react'
 import { useMemo } from 'react'
-import type { HandleProps } from 'reactflow'
-import { Handle, useNodeId } from 'reactflow'
+import type { HandleProps } from '@xyflow/react'
+import { Handle, useNodeId } from '@xyflow/react'
 
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { isNodeHandleConnectable } from '@datahub/utils/node.utils.ts'

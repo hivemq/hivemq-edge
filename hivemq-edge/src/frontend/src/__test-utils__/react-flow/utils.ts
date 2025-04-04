@@ -1,6 +1,6 @@
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
-import type { XYPosition } from 'reactflow'
+import type { XYPosition } from '@xyflow/react'
 import { IdStubs } from '@/modules/Workspace/types.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 

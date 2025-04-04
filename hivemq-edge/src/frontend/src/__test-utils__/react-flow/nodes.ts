@@ -1,5 +1,5 @@
-import type { NodeProps } from 'reactflow'
-import { Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 import type { Combiner, Listener } from '@/api/__generated__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'

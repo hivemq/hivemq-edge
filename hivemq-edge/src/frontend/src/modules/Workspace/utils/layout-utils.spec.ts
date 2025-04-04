@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 
 import type { EdgeFlowGrouping } from '../types.ts'
 import { EdgeFlowLayout } from '../types.ts'

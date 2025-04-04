@@ -1,5 +1,5 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getIncomers } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getIncomers } from '@xyflow/react'
 
 import type { DataPolicy, PolicySchema, SchemaReference } from '@/api/__generated__'
 import { DataPolicyValidator } from '@/api/__generated__'

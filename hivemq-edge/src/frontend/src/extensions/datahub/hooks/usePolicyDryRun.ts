@@ -1,5 +1,5 @@
-import type { Node } from 'reactflow'
-import { getIncomers } from 'reactflow'
+import type { Node } from '@xyflow/react'
+import { getIncomers } from '@xyflow/react'
 
 import type { PolicySchema, Script } from '@/api/__generated__'
 

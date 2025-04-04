@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useMemo } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { TopicFilterData } from '@datahub/types.ts'
 import { DesignerStatus } from '@datahub/types.ts'

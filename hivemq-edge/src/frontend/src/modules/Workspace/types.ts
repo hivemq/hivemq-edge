@@ -1,5 +1,11 @@
-import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from 'reactflow'
-import type { ProtocolAdapter } from '@/api/__generated__'
+import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from '@xyflow/react'
+import type { Adapter, Bridge, Combiner, ProtocolAdapter } from '@/api/__generated__'
+
+export type NodeAdapterType = Node<Adapter, NodeTypes.ADAPTER_NODE>
+export type NodeBridgeType = Node<Bridge, NodeTypes.BRIDGE_NODE>
+export type NodeGroupType = Node<Group, NodeTypes.CLUSTER_NODE>
+export type NodeDeviceType = Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
+export type NodeCombinerType = Node<Combiner, NodeTypes.COMBINER_NODE>
 
 export interface EdgeFlowOptions {
   showTopics: boolean

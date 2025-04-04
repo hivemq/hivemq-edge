@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import type { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import type { BehaviorPolicyData, OperationData, TransitionData, WorkspaceState } from '@datahub/types.ts'

@@ -1,8 +1,8 @@
 import { HStack, VStack } from '@chakra-ui/react'
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 
 import type { SchemaData } from '@datahub/types.ts'

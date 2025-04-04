@@ -1,4 +1,4 @@
-import type { Connection, Node, NodeAddChange } from 'reactflow'
+import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { parse, util as protobufUtils } from 'protobufjs'
 import descriptor from 'protobufjs/ext/descriptor'
 

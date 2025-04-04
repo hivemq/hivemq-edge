@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup, Card, CardBody, CardFooter, CardHeader, Icon } from '@chakra-ui/react'

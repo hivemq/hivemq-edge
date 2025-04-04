@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import type { Edge, Node } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
 
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataPolicyValidator } from '@/api/__generated__'

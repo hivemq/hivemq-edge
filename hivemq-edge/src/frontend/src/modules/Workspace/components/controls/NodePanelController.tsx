@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { Node } from 'reactflow'
-import { useEdges, useNodes } from 'reactflow'
+import type { Node } from '@xyflow/react'
+import { useEdges, useNodes } from '@xyflow/react'
 import { useDisclosure } from '@chakra-ui/react'
 
 import type { Adapter, Bridge } from '@/api/__generated__'

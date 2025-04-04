@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { Node } from 'reactflow'
-import { useReactFlow } from 'reactflow'
+import type { Node } from '@xyflow/react'
+import { useReactFlow } from '@xyflow/react'
 import {
   Button,
   Card,

@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { Button } from '@chakra-ui/react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import type { TopicFilterData } from '@datahub/types.ts'

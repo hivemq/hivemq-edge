@@ -1,12 +1,11 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position, useStore } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position, useStore } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 
-import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListNorthboundMappings } from '@/api/hooks/useProtocolAdapters/useListNorthboundMappings.ts'
 import { useListSouthboundMappings } from '@/api/hooks/useProtocolAdapters/useListSouthboundMappings.ts'
@@ -23,6 +22,7 @@ import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import type { NodeAdapterType } from '@/modules/Workspace/types'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, dragging }) => {
   const { t } = useTranslation()

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 
 import type { ClientFilterData, PanelProps } from '@datahub/types.ts'

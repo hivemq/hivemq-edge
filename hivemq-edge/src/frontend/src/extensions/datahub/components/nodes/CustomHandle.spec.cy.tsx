@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { Position } from 'reactflow'
+import { Position } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 

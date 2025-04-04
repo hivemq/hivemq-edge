@@ -1,5 +1,5 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getIncomers } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getIncomers } from '@xyflow/react'
 
 import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
 import type { BehaviorPolicy } from '@/api/__generated__'

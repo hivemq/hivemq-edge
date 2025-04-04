@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
-import type { Edge, Node, NodeProps } from 'reactflow'
-import { MarkerType } from 'reactflow'
+import type { Edge, Node, NodeProps } from '@xyflow/react'
+import { MarkerType } from '@xyflow/react'
 import type * as CSS from 'csstype'
 import type { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
 

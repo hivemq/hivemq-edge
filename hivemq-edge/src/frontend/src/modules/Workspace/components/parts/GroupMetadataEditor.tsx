@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Controller, useForm } from 'react-hook-form'
 import { Button, Card, CardBody, CardFooter, CardHeader, FormControl, FormLabel, Input } from '@chakra-ui/react'
