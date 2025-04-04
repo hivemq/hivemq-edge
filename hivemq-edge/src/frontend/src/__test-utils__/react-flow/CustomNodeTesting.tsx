@@ -8,6 +8,7 @@ import { Code, VStack } from '@chakra-ui/react'
 import '@xyflow/react/dist/style.css'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
+import { proOptions } from '../../components/react-flow/react-flow.utils'
 
 interface MockReactFlowProps {
   nodeTypes?: NodeTypes
@@ -54,6 +55,7 @@ export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, ed
           panOnDrag={false}
           autoPanOnConnect={false}
           nodesConnectable={false}
+          proOptions={proOptions}
         />
       </VStack>
     </EdgeFlowProvider>
