@@ -116,16 +116,16 @@ export enum NodeCategory {
   RESOURCE = 'RESOURCE',
 }
 
-export interface DataHubNodeData {
+export type DataHubNodeData = {
   dryRunStatus?: PolicyDryRunStatus
 }
 
-export interface TopicFilterData extends DataHubNodeData {
+export type TopicFilterData = DataHubNodeData & {
   adapter?: string
   topics: string[]
 }
 
-export interface ClientFilterData extends DataHubNodeData {
+export type ClientFilterData = DataHubNodeData & {
   clients: string[]
 }
 
@@ -155,7 +155,7 @@ export interface SchemaArguments {
   strategy: StrategyType
 }
 
-export interface ValidatorData extends DataHubNodeData {
+export type ValidatorData = DataHubNodeData & {
   type: DataPolicyValidator.type
   strategy: StrategyType
   schemas: SchemaReference[]
@@ -175,7 +175,7 @@ export enum ResourceWorkingVersion {
   MODIFIED,
 }
 
-export interface ResourceState extends DataHubNodeData {
+export type ResourceState = DataHubNodeData & {
   version: number
   internalStatus?: ResourceStatus
   internalVersions?: number[]
@@ -200,7 +200,7 @@ export interface SchemaProtobufArguments {
   messageType: string
 }
 
-export interface SchemaData extends ResourceState {
+export type SchemaData = ResourceState & {
   name: string
   type: SchemaType
   schemaSource?: string
@@ -341,7 +341,7 @@ export namespace TransitionData {
   }
 }
 
-export interface FsmState {
+export type FsmState = {
   name: string
   description: string
   type: FsmState.Type
@@ -373,7 +373,7 @@ export interface FiniteStateMachineSchema {
 }
 
 export interface DryRunResults<T, R = never> {
-  node: Node<DataHubNodeData>
+  node: Node
   data?: T
   error?: ProblemDetailsExtended
   resources?: DryRunResults<R>[]
