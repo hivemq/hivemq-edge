@@ -113,14 +113,16 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     }
 
     const groupStatus: Status = {
-      runtime: selectedGroupCandidates.every(
-        (node: Node<Adapter>) => node.data.status?.runtime === Status.runtime.STARTED
-      )
+      runtime: selectedGroupCandidates.every((node) => {
+        if ('status' in node.data) return node.data.status?.runtime === Status.runtime.STARTED
+        return false
+      })
         ? Status.runtime.STARTED
         : Status.runtime.STOPPED,
-      connection: selectedGroupCandidates.every(
-        (node: Node<Adapter>) => node.data.status?.connection === Status.connection.CONNECTED
-      )
+      connection: selectedGroupCandidates.every((node) => {
+        if ('status' in node.data) return node.data.status?.connection === Status.connection.CONNECTED
+        return false
+      })
         ? Status.connection.CONNECTED
         : Status.connection.DISCONNECTED,
     }
