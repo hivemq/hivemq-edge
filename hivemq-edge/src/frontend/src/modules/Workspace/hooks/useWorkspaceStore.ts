@@ -40,7 +40,7 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
                 return {
                   ...node,
                   position: { x: node.position.x - rect.x, y: node.position.y - rect.y },
-                  parentNode: parentNode.id,
+                  parentId: parentNode.id,
                   expandParent: true,
                   selected: false,
                 }
