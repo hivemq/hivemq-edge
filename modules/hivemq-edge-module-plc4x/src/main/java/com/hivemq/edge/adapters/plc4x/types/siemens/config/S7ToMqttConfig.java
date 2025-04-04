@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,4 +37,20 @@ public class S7ToMqttConfig extends Plc4xToMqttConfig {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
     }
 
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final S7ToMqttConfig that = (S7ToMqttConfig) o;
+        return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
+                getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
+                getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPollingIntervalMillis(),
+                getMaxPollingErrorsBeforeRemoval(),
+                getPublishChangedDataOnly());
+    }
 }

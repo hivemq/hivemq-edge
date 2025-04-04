@@ -87,6 +87,7 @@ public class ConfigFileReaderWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigFileReaderWriter.class);
     static final String XSD_SCHEMA = "config.xsd";
+    public static final String CONFIG_FRAGMENT_PATH = "/fragment/config";
 
     private final @NotNull ConfigurationFile configurationFile;
     protected volatile @NotNull HiveMQConfigEntity configEntity;
@@ -192,7 +193,7 @@ public class ConfigFileReaderWriter {
 
                 pathsToCheck.entrySet().forEach(pathToTs -> {
                     try {
-                        if (Files.getFileAttributeView(pathToTs.getKey().toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
+                        if (!pathToTs.getKey().toString().equals(CONFIG_FRAGMENT_PATH) && Files.getFileAttributeView(pathToTs.getKey().toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
                             log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
                             System.exit(0);
                         }
@@ -201,7 +202,14 @@ public class ConfigFileReaderWriter {
                     }
                 });
             }
-            final long modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+            final long modified;
+
+            if(new File(CONFIG_FRAGMENT_PATH).exists()) {
+                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath()).toMillis();
+            } else {
+                log.warn("No fragment found, checking the full config, only used for testing");
+                modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+            }
             if (modified > fileModified.get()) {
                 fileModified.set(modified);
                 final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);

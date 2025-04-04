@@ -129,4 +129,26 @@ public class SimulationSpecificAdapterConfig
                 maxDelay +
                 '}';
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final SimulationSpecificAdapterConfig that = (SimulationSpecificAdapterConfig) o;
+        return getMinValue() == that.getMinValue() &&
+                getMaxValue() == that.getMaxValue() &&
+                getMinDelay() == that.getMinDelay() &&
+                getMaxDelay() == that.getMaxDelay() &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(getSimulationToMqttConfig(), that.getSimulationToMqttConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id,
+                getSimulationToMqttConfig(),
+                getMinValue(),
+                getMaxValue(),
+                getMinDelay(),
+                getMaxDelay());
+    }
 }

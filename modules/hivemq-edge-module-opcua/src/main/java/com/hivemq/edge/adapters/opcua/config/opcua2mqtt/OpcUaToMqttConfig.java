@@ -58,4 +58,17 @@ public class OpcUaToMqttConfig {
     public int getServerQueueSize() {
         return serverQueueSize;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final OpcUaToMqttConfig that = (OpcUaToMqttConfig) o;
+        return getServerQueueSize() == that.getServerQueueSize() &&
+                getPublishingInterval() == that.getPublishingInterval();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getServerQueueSize(), getPublishingInterval());
+    }
 }

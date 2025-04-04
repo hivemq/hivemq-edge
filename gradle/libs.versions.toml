@@ -21,10 +21,12 @@ kotlin = "1.9.25"
 jackson = "2.18.3"
 jacoco = "0.8.11"
 jakarta-xml-bind = "2.3.3"
+jakarta-xml-bind-v4 = "4.0.2"
 jsonSchemaInferrer = "0.2.1"
 javassist = "3.30.2-GA"
 javax-annotation-api = "1.3.2"
 jaxb = "2.3.9"
+jaxb-v4 = "4.0.5"
 jctools = "4.0.5"
 jersey = "2.46"
 jose4j = "0.9.6"
@@ -86,10 +88,12 @@ jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-da
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref = "jackson" }
 jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml-bind" }
+jakarta-xml-bind-api-v4 = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml-bind-v4" }
 javacrumbs-futureConverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb" }
+jaxb-impl-v4 = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-v4" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }

@@ -2,50 +2,76 @@ group = "com.hivemq"
 
 plugins {
     id("com.hivemq.edge-version-updater")
+    id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
+    id("jacoco")
 }
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+// Repository settings are now applied by the repository-convention plugin
 
 tasks.register("clean") {
     group = "build"
-
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
-    }
+    //required since we don't apply the base plugin and otherwise the reports can't be cleaned out
+    project.delete(files("${project.layout.buildDirectory.get()}"))
+    dependsOn(gradle.includedBuilds.map { it.task(":clean") })
 }
 
 tasks.register("build") {
     group = "build"
 
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
-    }
+    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+}
+
+tasks.register("license") {
+    group = "license"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "edge-plugins" }.map { it.task(":$name") })
 }
 
 tasks.register("check") {
     group = "verification"
 
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
-    }
+    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
 tasks.register("test") {
     group = "verification"
 
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
-    }
+    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
 tasks.register("classes") {
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
-    }
+    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
 tasks.register("testClasses") {
-    gradle.includedBuilds.forEach {
-        dependsOn(it.task(":$name"))
+    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+}
+
+
+tasks.register<JacocoReport>("jacocoMergedReport") {
+    dependsOn(gradle.includedBuilds.map { it.task(":test") }) // Run tests in included builds
+
+    val executionDataFiles: FileCollection = files(gradle.includedBuilds.map { file(it.projectDir.absolutePath  + "/build/jacoco/test.exec") })
+    val classFiles = files(gradle.includedBuilds.map { fileTree(it.projectDir.absolutePath  + "/build/classes/java/main") {
+        include("**/*.class")
+        exclude("com/hivemq/edge/api/model/**") // Exclude generated classes
+    } })
+
+    executionData.setFrom(executionDataFiles)
+    classDirectories.setFrom(classFiles)
+
+    sourceDirectories.setFrom(
+        files(gradle.includedBuilds.map { file(it.projectDir.absolutePath  + "/src/main/java")})
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
     }
 }
 
@@ -84,6 +110,7 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
+    edgeModule("com.hivemq:hivemq-edge-module-mtconnect")
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
@@ -108,6 +135,7 @@ val edgeProjectsToUpdate = setOf(
     "hivemq-edge-module-file",
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
+    "hivemq-edge-module-mtconnect",
     "hivemq-edge-module-opcua",
     "hivemq-edge-module-plc4x"
 )
@@ -210,6 +238,3 @@ oci {
         specificPlatform(platform("linux", "arm", "v7"))
     }
 }
-
-
-

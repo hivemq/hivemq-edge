@@ -68,6 +68,7 @@ public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterConfig> knownConfigs = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
@@ -153,7 +154,8 @@ public class ProtocolAdapterManager {
                     metricRegistry);
 
             final ProtocolAdapterStateImpl protocolAdapterState =
-                    new ProtocolAdapterStateImpl(moduleServices.eventService(),
+                    new ProtocolAdapterStateImpl(
+                            moduleServices.eventService(),
                             config.getAdapterId(),
                             protocolAdapterFactory.getInformation().getProtocolId());
 
@@ -165,7 +167,8 @@ public class ProtocolAdapterManager {
                             tagManager);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(config.getAdapterId(),
+                            new ProtocolAdapterInputImpl(
+                                    config.getAdapterId(),
                                     config.getAdapterConfig(),
                                     config.getTags(),
                                     config.getNorthboundMappings(),
@@ -176,7 +179,8 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapterMetricsService,
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                    protocolAdapterMetricsService,
                     protocolAdapterWritingService,
                     protocolAdapterPollingService,
                     config,
@@ -187,6 +191,7 @@ public class ProtocolAdapterManager {
                     northboundConsumerFactory,
                     tagManager);
             protocolAdapters.put(wrapper.getId(), wrapper);
+            knownConfigs.put(wrapper.getId(), config);
             return wrapper;
 
         } finally {
@@ -277,12 +282,16 @@ public class ProtocolAdapterManager {
 
         adaptersToBeUpdated.forEach(name -> {
             try {
-                log.debug("Updating adapter '{}'", name);
-                stop(name)
-                        .thenApply(r -> deleteAdapterInternal(name))
-                        .thenCompose(r -> start(createAdapterInternal(protocolAdapterConfigs.get(name),
-                                versionProvider.getVersion())))
-                        .get();
+                if(!protocolAdapterConfigs.get(name).equals(knownConfigs.get(name))) {
+                    log.debug("Updating adapter '{}'", name);
+                    stop(name)
+                            .thenApply(r -> deleteAdapterInternal(name))
+                            .thenCompose(r -> start(createAdapterInternal(protocolAdapterConfigs.get(name),
+                                    versionProvider.getVersion())))
+                            .get();
+                } else {
+                    log.debug("Not-updating adapter '{}' since the config is unchanged", name);
+                }
             } catch (final InterruptedException | ExecutionException e) {
                 failedAdapters.add(name);
                 log.error("Failed updating adapter {}", name, e);

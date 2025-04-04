@@ -14,7 +14,7 @@ import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
 import type { EdgeStyle } from './status-utils.ts'
 import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
-import { NodeTypes } from '../types.ts'
+import { type EdgeStatus, NodeTypes } from '../types.ts'
 
 const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
@@ -164,12 +164,12 @@ describe('updateEdgesStatus', () => {
 interface StatusStyleSuite {
   isConnected: boolean
   hasTopics: boolean
-  expected: EdgeStyle
+  expected: EdgeStyle<EdgeStatus>
 }
 
 describe('getEdgeStatus', () => {
   const color = MOCK_THEME.colors.status.connected[500]
-  const edge: EdgeStyle = {}
+  const edge: EdgeStyle<EdgeStatus> = {}
 
   edge.data = {
     hasTopics: true,

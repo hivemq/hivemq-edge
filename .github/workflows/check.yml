@@ -23,6 +23,9 @@ jobs:
           git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
           cd ../hivemq-edge-adapter-sdk
           git checkout ${GITHUB_REF#refs/heads/} || true
+          git clone https://github.com/hivemq/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
+          cd ../hivemq-mtconnect-protocol
+          git checkout ${GITHUB_REF#refs/heads/} || true
           cd ../hivemq-edge
       - name: Setup Java
         uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4
@@ -30,4 +33,24 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
       - name: Check
-        run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip
+        run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
+      - name: Add coverage to PR
+        id: jacoco
+        uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 #v1.7.1
+        with:
+          paths: |
+            ${{ github.workspace }}/**/build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 40
+          min-coverage-changed-files: 60
+          title: Coverage Report
+          update-comment: true
+          pass-emoji: ✅
+          fail-emoji: ❌
+          debug-mode: true
+      - name: Upload coverage report
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+        with:
+          name: coverage-java
+          path: build/reports/jacoco/jacocoMergedReport/html
+          retention-days: 1

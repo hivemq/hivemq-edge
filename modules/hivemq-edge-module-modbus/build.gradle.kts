@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
+    id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
@@ -19,21 +21,7 @@ java {
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
-}
+// Repository settings are now applied by the repository-convention plugin
 
 dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
@@ -213,4 +201,3 @@ val javaComponent = components["java"] as AdhocComponentWithVariants
 javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
     skip()
 }
-
