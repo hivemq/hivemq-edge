@@ -345,11 +345,11 @@ export const getAllParents = (node: Node, nodes: Node[], edges: Edge[], visited 
 }
 
 export const reduceIdsFrom =
-  <T>(type: DataHubNodeType, exclude?: string) =>
+  <T extends Record<string, unknown>>(type: DataHubNodeType, exclude?: string) =>
   (acc: string[], node: Node) => {
     if (node.type === type) {
-      const { id, data } = node satisfies Node<T>
-      if (data.id && id !== exclude) {
+      const { id, data } = node as Node<T>
+      if (data.id && typeof data.id === 'string' && id !== exclude) {
         acc.push(data.id)
       }
     }

@@ -1,4 +1,4 @@
-import type { Edge, Instance, Node } from '@xyflow/react'
+import type { Edge, Node } from '@xyflow/react'
 import { MarkerType } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
@@ -31,12 +31,12 @@ export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Stat
 }
 
 export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
-  return currentNodes.map((n): Node<Bridge> => {
+  return currentNodes.map((n): Node<Bridge | Adapter> => {
     if (n.type === NodeTypes.BRIDGE_NODE) {
       const newData = { ...n.data } as Bridge
       const newStatus = updates.find((s) => s.id === newData.id)
-      if (!newStatus) return n
-      if (newStatus.connection === newData.status?.connection) return n
+      if (!newStatus) return n as Node<Bridge>
+      if (newStatus.connection === newData.status?.connection) return n as Node<Bridge>
 
       n.data = {
         ...newData,
@@ -44,25 +44,25 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
           connection: newStatus.connection,
         },
       }
-      return n
+      return n as Node<Bridge>
     }
     if (n.type === NodeTypes.ADAPTER_NODE) {
       const newData = { ...n.data } as Adapter
       const newStatus = updates.find((s) => s.id === newData.id)
-      if (!newStatus) return n
+      if (!newStatus) return n as Node<Adapter>
       // if (newStatus.connection === newData.status?.connection) return n
 
       n.data = {
         ...newData,
         status: { ...newStatus },
       }
-      return n
+      return n as Node<Adapter>
     }
-    return n
+    return n as Node<Adapter>
   })
 }
 
-export type EdgeStyle<T> = Pick<Edge<T>, 'style' | 'animated' | 'markerEnd' | 'data'>
+export type EdgeStyle<T extends Record<string, unknown>> = Pick<Edge<T>, 'style' | 'animated' | 'markerEnd' | 'data'>
 
 export const getEdgeStatus = (
   isConnected: boolean,
