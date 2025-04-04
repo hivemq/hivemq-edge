@@ -7,7 +7,7 @@ import type { GenericObjectType } from '@rjsf/utils'
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
-import type { DeviceMetadata } from '../types.ts'
+import type { DeviceMetadata, NodeEdgeType } from '../types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from './topics-utils'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
@@ -27,7 +27,7 @@ export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 
 }
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
-  const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
+  const nodeEdge: NodeEdgeType = {
     id: IdStubs.EDGE_NODE,
     type: NodeTypes.EDGE_NODE,
     data: { label: label },

@@ -62,8 +62,8 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
     const adapters = selectedNodes.filter(
-      (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentNode
-    )
+      (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentId
+    ) as NodeAdapterType[]
 
     // Add devices to the group
     const devices = adapters.reduce<Node[]>((acc, curr) => {
@@ -73,7 +73,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       const gluedNode = outgoers.find((node) => node.type === type)
       if (gluedNode) acc.push(gluedNode)
       return acc
-    }, [])
+    }, []) as NodeDeviceType[]
 
     return adapters.length >= 2 ? [...adapters, ...devices] : undefined
   }, [edges, nodes, selectedNodes])

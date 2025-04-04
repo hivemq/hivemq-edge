@@ -23,7 +23,7 @@ import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.uti
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import { SelectEntityType } from '@/components/MQTT/types'
 
-const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, dragging }) => {
+const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
   const { category, capabilities } = data

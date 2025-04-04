@@ -13,7 +13,7 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils'
 import type { NodeCombinerType } from '@/modules/Workspace/types'
 import MappingBadge from '../parts/MappingBadge'
 
-const NodeCombiner: FC<NodeProps<Combiner>> = ({ id, selected, data, dragging }) => {
+const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dragging }) => {
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/combiner')
   const bgColour = useColorModeValue('gray.300', 'gray.900')
 

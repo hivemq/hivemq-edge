@@ -8,14 +8,14 @@ import { ImUngroup } from 'react-icons/im'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
-import type { Group } from '../../types.ts'
+import type { NodeGroupType } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
-const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
+const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
