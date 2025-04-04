@@ -97,7 +97,7 @@ export const updateEdgesStatus = (
   adapterTypes: ProtocolAdapter[],
   currentEdges: Edge[],
   updates: Status[],
-  getNode: Instance.GetNode<Partial<Bridge | Adapter>>,
+  getNode: (id: string) => Node | undefined,
   theme: Partial<WithCSSVar<Dict>>
 ): Edge[] => {
   const newEdges: Edge[] = []
