@@ -99,10 +99,10 @@ describe('useWorkspaceStore', () => {
     expect(result.current.nodes).toHaveLength(4)
     expect(result.current.edges).toHaveLength(2)
     expect(result.current.nodes.find((e) => e.id === 'idAdapter')).toStrictEqual(
-      expect.objectContaining({ parentNode: 'group1', selected: false, expandParent: true })
+      expect.objectContaining({ parentId: 'group1', selected: false, expandParent: true })
     )
     expect(result.current.nodes.find((e) => e.id === 'idBridge')).toStrictEqual(
-      expect.objectContaining({ parentNode: 'group1', selected: false, expandParent: true })
+      expect.objectContaining({ parentId: 'group1', selected: false, expandParent: true })
     )
   })
 

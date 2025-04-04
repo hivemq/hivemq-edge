@@ -5,7 +5,7 @@ const GROUP_MARGIN = 20
 const GROUP_TITLE_MARGIN = 24
 
 export const getGroupLayout = (nodes: Node[]): Rect => {
-  const rect = getRectOfNodes(nodes.filter((e) => e !== undefined))
+  const rect = getNodesBounds(nodes.filter((e) => e !== undefined))
 
   return {
     x: rect.x - GROUP_MARGIN,

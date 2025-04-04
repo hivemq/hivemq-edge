@@ -13,8 +13,8 @@ export const MOCK_DEFAULT_NODE = {
   selected: false,
   zIndex: 1000,
   isConnectable: true,
-  xPos: 0,
-  yPos: 0,
+  positionAbsoluteX: 0,
+  positionAbsoluteY: 0,
   dragging: false,
 }
 

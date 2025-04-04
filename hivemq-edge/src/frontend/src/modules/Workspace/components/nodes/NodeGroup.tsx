@@ -42,12 +42,12 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
           return {
             item: {
               ...node,
-              parentNode: undefined,
-              position: { x: node.position.x + props.xPos, y: node.position.y + props.yPos },
+              parentId: undefined,
+              position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
             },
-            type: 'reset',
-          } as NodeResetChange
-        } else return { item: node, type: 'reset' } as NodeResetChange
+            type: 'replace',
+          } as NodeReplaceChange
+        } else return { item: node, type: 'replace' } as NodeReplaceChange
       })
     )
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
