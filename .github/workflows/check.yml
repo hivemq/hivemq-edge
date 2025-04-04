@@ -34,3 +34,9 @@ jobs:
           java-version: '17'
       - name: Check
         run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip
+      - name: Upload artifact
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+        with:
+          name: coverage-java
+          path: build/reports/jacoco/jacocoMergedReport/html
+          retention-days: 1
