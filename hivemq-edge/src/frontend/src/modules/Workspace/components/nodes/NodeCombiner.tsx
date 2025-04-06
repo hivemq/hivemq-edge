@@ -55,8 +55,8 @@ const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dra
           <MappingBadge destinations={topics} type={SelectEntityType.TOPIC} />
         </VStack>
       </NodeWrapper>
-      <Handle type="source" position={Position.Bottom} />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="source" id="Bottom" position={Position.Bottom} />
+      <Handle type="target" id="Top" position={Position.Top} />
     </>
   )
 }
