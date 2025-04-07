@@ -58,7 +58,20 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const navigate = useNavigate()
   const { fitView } = useReactFlow()
 
-  const selectedNodes = nodes.filter((node) => node.selected)
+  const selectedNodes = useMemo(() => {
+    return nodes.filter((node) => node.selected)
+  }, [nodes])
+
+  const topSelectedNode = useMemo(() => {
+    const [firstNode] = nodes
+      .filter((node) => node.selected)
+      .sort((a, b) => {
+        return a.position.y - b.position.y < 0 ? -1 : 1
+      })
+
+    return firstNode
+  }, [nodes])
+
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
     const adapters = selectedNodes.filter(
@@ -212,7 +225,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   return (
     <NodeToolbar
-      isVisible={Boolean(mainNodes?.id === id && !dragging)}
+      isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
       position={Position.Top}
       aria-label={t('workspace.toolbar.container.label')}
     >
