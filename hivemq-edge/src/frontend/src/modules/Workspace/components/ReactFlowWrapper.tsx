@@ -29,6 +29,7 @@ import {
 } from '@/modules/Workspace/components/nodes'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
+import { DynamicEdge } from './edges/DynamicEdge'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -56,6 +57,7 @@ const ReactFlowWrapper = () => {
   const edgeTypes = useMemo(
     () => ({
       [EdgeTypes.REPORT_EDGE]: MonitoringEdge,
+      [EdgeTypes.DYNAMIC_EDGE]: DynamicEdge,
     }),
     []
   )
