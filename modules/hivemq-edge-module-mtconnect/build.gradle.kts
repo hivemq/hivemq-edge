@@ -41,6 +41,7 @@ dependencies {
     testImplementation(libs.jackson.dataformat.xml)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.mockito.junitJupiter)
     // V4 supports XSD 1.1
