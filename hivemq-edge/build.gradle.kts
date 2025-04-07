@@ -213,9 +213,8 @@ dependencies {
     testAnnotationProcessor(libs.dagger.compiler)
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.vintageEngine)
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.vintage:junit-vintage-engine")
 
     testImplementation(libs.mockito.junitJupiter)
 

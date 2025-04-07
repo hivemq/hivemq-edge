@@ -39,7 +39,8 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.jackson.databind)
     testImplementation(libs.jackson.dataformat.xml)
-    testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.mockito.junitJupiter)
     // V4 supports XSD 1.1

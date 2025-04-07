@@ -51,8 +51,10 @@ dependencies {
     testImplementation(libs.plc4j.api)
 
     testImplementation(libs.apache.commonsIO)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.mockito.junitJupiter)
-    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj)
 }
 

@@ -34,7 +34,8 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.jackson.databind)
-    testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.mockito.junitJupiter)
 }
 

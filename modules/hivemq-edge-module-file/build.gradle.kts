@@ -28,7 +28,9 @@ dependencies {
     compileOnly(libs.slf4j.api)
 
     testImplementation(libs.jackson.databind)
-    testImplementation(libs.junit.jupiter)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation("com.hivemq:hivemq-edge")
