@@ -63,14 +63,12 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [nodes])
 
   const topSelectedNode = useMemo(() => {
-    const [firstNode] = nodes
-      .filter((node) => node.selected)
-      .sort((a, b) => {
-        return a.position.y - b.position.y < 0 ? -1 : 1
-      })
+    const [firstNode] = selectedNodes.sort((a, b) => {
+      return a.position.y - b.position.y < 0 ? -1 : 1
+    })
 
     return firstNode
-  }, [nodes])
+  }, [selectedNodes])
 
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
