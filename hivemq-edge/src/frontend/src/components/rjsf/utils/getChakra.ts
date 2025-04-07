@@ -1,5 +1,5 @@
 /* extracted from RJSF -- do no edit */
-/* istanbul ignore file */
+/* istanbul ignore file -- @preserve */
 
 import type { ChakraProps } from '@chakra-ui/react'
 import { shouldForwardProp } from '@chakra-ui/react'
