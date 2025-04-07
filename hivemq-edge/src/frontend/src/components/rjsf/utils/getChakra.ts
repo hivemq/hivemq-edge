@@ -1,3 +1,6 @@
+/* extracted from RJSF -- do no edit */
+/* istanbul ignore file */
+
 import type { ChakraProps } from '@chakra-ui/react'
 import { shouldForwardProp } from '@chakra-ui/react'
 import type { UiSchema } from '@rjsf/utils'
