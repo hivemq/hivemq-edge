@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@datahub': path.resolve(__dirname, './src/extensions/datahub'),
+      '@cypr': path.resolve(__dirname, './cypress'),
     },
   },
   test: {
