@@ -220,8 +220,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     })
   }
 
-  // TODO[NVL] Weird side effect if first node has no toolbar; get the first suitable node instead?
-  const [mainNodes] = selectedNodes
+  const isMultiple = selectedNodes.length >= 2
 
   return (
     <NodeToolbar
@@ -229,8 +228,10 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       position={Position.Top}
       aria-label={t('workspace.toolbar.container.label')}
     >
-      <Text data-testid="toolbar-title">{title || id}</Text>
-      {children && (
+      <Text data-testid="toolbar-title">
+        {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
+      </Text>
+      {children && !isMultiple && (
         <>
           <Divider orientation="vertical" />
           {children}
@@ -257,7 +258,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         />
       </ToolbarButtonGroup>
 
-      {!hasNoOverview && (
+      {!hasNoOverview && !isMultiple && (
         <>
           <Divider orientation="vertical" />
           <ToolbarButtonGroup>
