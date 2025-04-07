@@ -34,6 +34,12 @@ jobs:
           java-version: '17'
       - name: Check
         run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@30eadd5010312f995f0d3b3cff7fe2984f69409e
+        if: always()
+        with:
+          files: |
+            ${{ github.workspace }}/**/build/test-results/**/*.xml
       - name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 #v1.7.1
