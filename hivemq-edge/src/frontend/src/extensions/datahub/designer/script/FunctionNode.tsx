@@ -1,8 +1,8 @@
 import { HStack, VStack } from '@chakra-ui/react'
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Position } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 
 import type { FunctionData } from '@datahub/types.ts'
@@ -12,7 +12,7 @@ import { NodeParams } from '@datahub/components/helpers'
 import { renderResourceName } from '@datahub/utils/node.utils.ts'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
+export const FunctionNode: FC<NodeProps<Node<FunctionData>>> = (props) => {
   const { t } = useTranslation('datahub')
   const { id, data } = props
 

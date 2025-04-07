@@ -1,5 +1,5 @@
 import type { ChangeEvent, FC, FocusEvent } from 'react'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 import type { BaseInputTemplateProps } from '@rjsf/utils'
 import { ariaDescribedByIds, examplesId, getInputProps, labelValue } from '@rjsf/utils'
 import { FormControl, FormLabel, Input } from '@chakra-ui/react'

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Position } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 import { VStack } from '@chakra-ui/react'
 
 import { ClientTag } from '@/components/MQTT/EntityTag.tsx'
@@ -9,7 +9,7 @@ import type { ClientFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
-export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
+export const ClientFilterNode: FC<NodeProps<Node<ClientFilterData>>> = (props) => {
   const { id, data, type } = props
 
   return (

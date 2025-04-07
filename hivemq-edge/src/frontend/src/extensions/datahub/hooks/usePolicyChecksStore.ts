@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import type { DryRunResults, PolicyCheckAction, PolicyCheckState } from '@datahub/types.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'

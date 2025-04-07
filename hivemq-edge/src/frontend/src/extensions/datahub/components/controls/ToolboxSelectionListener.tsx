@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useOnSelectionChange } from 'reactflow'
+import { useOnSelectionChange } from '@xyflow/react'
 
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { isBehaviorPolicyNodeType, isDataPolicyNodeType } from '@datahub/utils/node.utils.ts'

@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import type { JSONSchema7 } from 'json-schema'
 import { useTranslation } from 'react-i18next'
 import type { CardProps } from '@chakra-ui/react'
 import { Card, CardBody, CardHeader, Heading, HStack } from '@chakra-ui/react'
@@ -33,7 +32,7 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, adapterId,
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isLoading && data && <JsonSchemaBrowser schema={data.configSchema as JSONSchema7} />}
+        {!isLoading && data && <JsonSchemaBrowser schema={data} />}
       </CardBody>
     </Card>
   )

@@ -1,4 +1,4 @@
-import type { Edge, Node } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_DEVICE } from '@/__test-utils__/react-flow/nodes.ts'
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -75,6 +75,6 @@ describe('DevicePropertyDrawer', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     cy.get('header').should('contain.text', 'Device Overview')
-    cy.get('h2').eq(0).should('contain.text', 'List of Device Tags')
+    cy.get('[role="alert"]').should('contain.text', 'Cannot load the tags').should('have.attr', 'data-status', 'error')
   })
 })

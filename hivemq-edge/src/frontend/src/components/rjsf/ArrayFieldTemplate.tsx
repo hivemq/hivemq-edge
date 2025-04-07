@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import type { ArrayFieldTemplateProps, ArrayFieldTemplateItemType } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 import { Box, Grid, GridItem, HStack } from '@chakra-ui/react'
 
 import AddButton from '@/components/rjsf/__internals/AddButton.tsx'

@@ -1,4 +1,4 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
 
 import type { PolicyOperation } from '@/api/__generated__'
 import { Script } from '@/api/__generated__'

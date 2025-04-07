@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import useDataHubDraftStore from '../hooks/useDataHubDraftStore.ts'
 import type { PolicyCheckState, WorkspaceState, WorkspaceStatus } from '../types.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface MockStoreWrapperConfig {

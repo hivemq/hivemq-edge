@@ -1,8 +1,8 @@
 import type { MouseEventHandler } from 'react'
 import { type FC, useMemo } from 'react'
-import type { Edge, Node } from 'reactflow'
-import { useReactFlow } from 'reactflow'
-import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
+import { useReactFlow } from '@xyflow/react'
+import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
@@ -21,7 +21,7 @@ import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { Group } from '@/modules/Workspace/types.ts'
+import type { Group, NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
@@ -62,8 +62,8 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
     const adapters = selectedNodes.filter(
-      (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentNode
-    )
+      (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentId
+    ) as NodeAdapterType[]
 
     // Add devices to the group
     const devices = adapters.reduce<Node[]>((acc, curr) => {
@@ -73,7 +73,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       const gluedNode = outgoers.find((node) => node.type === type)
       if (gluedNode) acc.push(gluedNode)
       return acc
-    }, [])
+    }, []) as NodeDeviceType[]
 
     return adapters.length >= 2 ? [...adapters, ...devices] : undefined
   }, [edges, nodes, selectedNodes])
@@ -113,14 +113,16 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     }
 
     const groupStatus: Status = {
-      runtime: selectedGroupCandidates.every(
-        (node: Node<Adapter>) => node.data.status?.runtime === Status.runtime.STARTED
-      )
+      runtime: selectedGroupCandidates.every((node) => {
+        if ('status' in node.data) return node.data.status?.runtime === Status.runtime.STARTED
+        return false
+      })
         ? Status.runtime.STARTED
         : Status.runtime.STOPPED,
-      connection: selectedGroupCandidates.every(
-        (node: Node<Adapter>) => node.data.status?.connection === Status.connection.CONNECTED
-      )
+      connection: selectedGroupCandidates.every((node) => {
+        if ('status' in node.data) return node.data.status?.connection === Status.connection.CONNECTED
+        return false
+      })
         ? Status.connection.CONNECTED
         : Status.connection.DISCONNECTED,
     }

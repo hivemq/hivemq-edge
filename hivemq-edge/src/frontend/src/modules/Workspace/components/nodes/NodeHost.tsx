@@ -1,12 +1,13 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { Text } from '@chakra-ui/react'
 
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import type { NodeHostType } from '../../types'
 
-const NodeHost: FC<NodeProps> = ({ selected, data }) => {
+const NodeHost: FC<NodeProps<NodeHostType>> = ({ selected, data }) => {
   const { label } = data
   return (
     <>

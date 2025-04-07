@@ -1,4 +1,4 @@
-import type { XYPosition } from 'reactflow'
+import type { XYPosition } from '@xyflow/react'
 import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 
 export const CANVAS_DROP_DELTA: XYPosition = {

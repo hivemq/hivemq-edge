@@ -1,4 +1,4 @@
-import type { NodeProps } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -7,7 +7,7 @@ import type { DataPolicyData } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { DataPolicyNode } from './DataPolicyNode.tsx'
 
-const MOCK_NODE_DATA_POLICY: NodeProps<DataPolicyData> = {
+const MOCK_NODE_DATA_POLICY: NodeProps<Node<DataPolicyData>> = {
   id: 'node-id',
   type: DataHubNodeType.DATA_POLICY,
   data: { id: 'my-policy-id' },

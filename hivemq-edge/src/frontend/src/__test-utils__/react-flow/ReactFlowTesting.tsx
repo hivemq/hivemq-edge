@@ -1,5 +1,5 @@
 import { type FC, type ReactNode, useEffect } from 'react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'

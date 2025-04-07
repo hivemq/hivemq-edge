@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import Minimap from './Minimap.tsx'
 
 describe('Minimap', () => {

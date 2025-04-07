@@ -1,9 +1,9 @@
 import type { FC } from 'react'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps, Node } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { Checkbox, HStack, Tag } from '@chakra-ui/react'
 
-export const TransitionNode: FC<NodeProps> = (props) => {
+export const TransitionNode: FC<NodeProps<Node<{ label: string }>>> = (props) => {
   return (
     <>
       <Handle
