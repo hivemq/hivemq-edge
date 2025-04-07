@@ -19,11 +19,12 @@ export const DescriptionFieldTemplate = <
     return null
   }
 
-  // Override to fix bug with nested p
   if (typeof description === 'string') {
     return (
-      <Text id={id} mt={2} mb={4}>
-        {description}
+      <Text>
+        <Text as="sup" fontSize="sm" id={id} mt={2} mb={4}>
+          {description}
+        </Text>
       </Text>
     )
   }
