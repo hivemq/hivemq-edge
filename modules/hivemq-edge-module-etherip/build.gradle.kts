@@ -36,6 +36,7 @@ dependencies {
     testImplementation(libs.apache.commonsIO)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.assertj)
 }
