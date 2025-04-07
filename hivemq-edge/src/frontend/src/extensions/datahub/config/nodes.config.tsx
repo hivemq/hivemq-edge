@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { EdgeProps, NodeProps } from 'reactflow'
+import type { EdgeProps, NodeProps } from '@xyflow/react'
 import { DataHubNodeType, EdgeTypes } from '@datahub/types.ts'
 import { TopicFilterNode } from '@datahub/designer/topic_filter/TopicFilterNode.tsx'
 import { ClientFilterNode } from '@datahub/designer/client_filter/ClientFilterNode.tsx'

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
-import type { MiniMapProps } from 'reactflow'
-import { MiniMap as ReactFlowMiniMap } from 'reactflow'
+import type { MiniMapProps } from '@xyflow/react'
+import { MiniMap as ReactFlowMiniMap } from '@xyflow/react'
 import type { As } from '@chakra-ui/react'
 import { chakra } from '@chakra-ui/react'
 

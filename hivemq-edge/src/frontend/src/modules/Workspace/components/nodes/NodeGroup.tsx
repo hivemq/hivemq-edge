@@ -1,21 +1,21 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NodeProps, NodeRemoveChange, NodeResetChange, EdgeRemoveChange } from 'reactflow'
-import { Handle, NodeResizer, Position } from 'reactflow'
+import type { NodeProps, NodeRemoveChange, NodeReplaceChange, EdgeRemoveChange } from '@xyflow/react'
+import { Handle, NodeResizer, Position } from '@xyflow/react'
 import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
-import type { Group } from '../../types.ts'
+import type { NodeGroupType } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
-const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
+const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
@@ -42,12 +42,12 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
           return {
             item: {
               ...node,
-              parentNode: undefined,
-              position: { x: node.position.x + props.xPos, y: node.position.y + props.yPos },
+              parentId: undefined,
+              position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
             },
-            type: 'reset',
-          } as NodeResetChange
-        } else return { item: node, type: 'reset' } as NodeResetChange
+            type: 'replace',
+          } as NodeReplaceChange
+        } else return { item: node, type: 'replace' } as NodeReplaceChange
       })
     )
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])

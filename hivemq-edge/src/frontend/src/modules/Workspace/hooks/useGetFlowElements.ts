@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Edge, Node } from 'reactflow'
-import { useEdgesState, useNodesState } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
+import { useEdgesState, useNodesState } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
-import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
+import type { ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'
@@ -30,8 +30,8 @@ const useGetFlowElements = () => {
   const { data: adapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
   const { data: listenerList, isLoading: isListenerLoading } = useGetListeners()
   const { data: combinerList, isLoading: isCombinerLoading } = useListCombiners()
-  const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
 
   const { items: listeners } = listenerList || {}
 

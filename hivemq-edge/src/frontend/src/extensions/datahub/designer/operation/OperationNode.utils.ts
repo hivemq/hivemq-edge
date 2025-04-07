@@ -1,5 +1,5 @@
-import type { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
-import { getConnectedEdges, getIncomers } from 'reactflow'
+import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
+import { getConnectedEdges, getIncomers } from '@xyflow/react'
 
 import i18n from '@/config/i18n.config.ts'
 
@@ -179,14 +179,14 @@ export const processOperations =
         error: PolicyCheckErrors.notConfigured(node, 'functionId'),
       })
     } else if (node.data.functionId === 'DataHub.transform') {
-      const transformResults = checkValidityTransformFunction(node, store)
+      const transformResults = checkValidityTransformFunction(node as Node<OperationData>, store)
       acc.push(...transformResults)
     } else {
       const operation: PolicyOperation = {
-        functionId: node.data.functionId,
+        functionId: node.data.functionId as string,
         arguments: node.data.formData || {},
         // TODO[19466] Id should be user-facing; Need to fix before merging!
-        id: node.data.id,
+        id: node.data.id as string,
       }
       acc.push({ node: node, data: operation })
     }
@@ -302,7 +302,7 @@ export const loadPipeline = (
 
   let connect: Connection = {
     source: parentNode.id,
-    target: null,
+    target: '',
     sourceHandle: handle,
     targetHandle: null,
   }
@@ -380,7 +380,7 @@ export const loadPipeline = (
       newNodes.push({ item: operationNode, type: 'add' }, { ...connect, target: operationNode.id })
       connect = {
         source: operationNode.id,
-        target: null,
+        target: '',
         sourceHandle: null,
         targetHandle: null,
       }

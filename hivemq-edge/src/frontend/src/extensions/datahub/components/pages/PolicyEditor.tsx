@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import type React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { Connection, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from 'reactflow'
-import ReactFlow, { ReactFlowProvider } from 'reactflow'
+import type { Connection, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from '@xyflow/react'
+import { ReactFlow, ReactFlowProvider } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
@@ -173,7 +173,7 @@ const PolicyEditor: FC = () => {
           edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          // onEdgeUpdate={onEdgeUpdate}
+          // onReconnect={onEdgeUpdate}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onConnect={onConnectNodes}

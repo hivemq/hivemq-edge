@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import type { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
 
-import 'reactflow/dist/style.css'
+import '@xyflow/react/dist/style.css'
 
 export const mockReactFlow = (children: ReactNode, defaults?: Partial<EdgeFlowOptions>) => (
   <EdgeFlowProvider defaults={defaults}>

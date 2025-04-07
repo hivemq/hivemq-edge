@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { NodeProps } from 'reactflow'
-import { Handle, Position } from 'reactflow'
+import type { NodeProps } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image, Text, VStack } from '@chakra-ui/react'
 
@@ -16,10 +16,11 @@ import { TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
 
-const NodeEdge: FC<NodeProps> = (props) => {
+const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(props.id, props.selected, '/workspace/edge')
   const navigate = useNavigate()

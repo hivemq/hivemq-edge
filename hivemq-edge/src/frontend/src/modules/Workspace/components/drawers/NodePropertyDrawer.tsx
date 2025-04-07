@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { Node } from 'reactflow'
+import type { Node } from '@xyflow/react'
 import {
   Button,
   Card,

@@ -1,4 +1,4 @@
-import type { Node, NodeAddChange, XYPosition } from 'reactflow'
+import type { Node, NodeAddChange, XYPosition } from '@xyflow/react'
 
 import type { BehaviorPolicy, BehaviorPolicyBehavior, BehaviorPolicyOnTransition } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
