@@ -122,8 +122,7 @@ const ReactFlowWrapper = () => {
           nodeComponent={(miniMapNode) => {
             if (miniMapNode.className === NodeTypes.EDGE_NODE)
               return <circle cx={miniMapNode.x} cy={miniMapNode.y} r="50" fill="#ffc000" />
-            if (miniMapNode.className === NodeTypes.DEVICE_NODE || miniMapNode.className === NodeTypes.HOST_NODE)
-              return null
+            if (miniMapNode.className === NodeTypes.HOST_NODE) return null
             return (
               <rect
                 x={miniMapNode.x}
