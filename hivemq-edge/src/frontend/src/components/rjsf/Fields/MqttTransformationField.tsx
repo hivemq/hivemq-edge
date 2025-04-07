@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import type { FieldProps } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 
 import { MOCK_MAX_QOS } from '@/__test-utils__/adapters/mqtt.ts'
 import type { SouthboundMapping } from '@/api/__generated__'

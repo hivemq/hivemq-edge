@@ -1,6 +1,5 @@
-import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
-import type { ErrorListProps, RJSFSchema } from '@rjsf/utils'
+import { type FC, useCallback, useMemo } from 'react'
+import type { ErrorListProps, RJSFSchema, RJSFValidationError } from '@rjsf/utils'
 import { TranslatableString } from '@rjsf/utils'
 import {
   Alert,
@@ -17,7 +16,6 @@ import {
 } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
 import { IoLink } from 'react-icons/io5'
-import type { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 
 import type { ChakraRJSFormContext, UITabIndexed } from '@/components/rjsf/Form/types.ts'
 import { useTranslation } from 'react-i18next'

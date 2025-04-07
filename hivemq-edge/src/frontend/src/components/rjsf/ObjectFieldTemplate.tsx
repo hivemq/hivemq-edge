@@ -1,4 +1,11 @@
-import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
+import type {
+  FormContextType,
+  ObjectFieldTemplateProps,
+  RJSFSchema,
+  StrictRJSFSchema,
+  UIOptionsType,
+} from '@rjsf/utils'
+import { descriptionId } from '@rjsf/utils'
 import { getTemplate, getUiOptions, titleId } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import type { UITab } from '@/components/rjsf/Form/types.ts'
@@ -12,32 +19,46 @@ export const ObjectFieldTemplate = <
   props: ObjectFieldTemplateProps<T, S, F>
 ) => {
   const { registry, properties, title, description, uiSchema, required, schema, idSchema } = props
-  const options = getUiOptions<T, S, F>(uiSchema)
-  const TitleFieldTemplate = getTemplate<'TitleFieldTemplate', T, S, F>('TitleFieldTemplate', registry, options)
+  const uiOptions = getUiOptions(uiSchema, {})
+  const TitleFieldTemplate = getTemplate<'TitleFieldTemplate', T, S, F>('TitleFieldTemplate', registry, uiOptions)
+  const DescriptionFieldTemplate = getTemplate<'DescriptionFieldTemplate', T, S, F>(
+    'DescriptionFieldTemplate',
+    registry,
+    uiOptions
+  )
   const { tabIndex, setTabIndex } = useFormControlStore()
 
-  // @ts-ignore Type will need to be corrected
-  const { tabs }: { tabs: UITab[] } = options
+  const { tabs } = uiOptions as UIOptionsType & { tabs?: UITab[] }
   if (!tabs) {
     return (
-      <Box>
-        {title && (
-          <TitleFieldTemplate
-            id={titleId<T>(idSchema)}
-            title={title}
-            required={required}
-            schema={schema}
-            uiSchema={uiSchema}
-            registry={registry}
-          />
-        )}
-        {description}
+      <>
+        <Box mb={4}>
+          {title && (
+            <TitleFieldTemplate
+              id={titleId<T>(idSchema)}
+              title={title}
+              required={required}
+              schema={schema}
+              uiSchema={uiSchema}
+              registry={registry}
+            />
+          )}
+          {description && (
+            <DescriptionFieldTemplate
+              id={descriptionId<T>(idSchema)}
+              description={description}
+              schema={schema}
+              uiSchema={uiSchema}
+              registry={registry}
+            />
+          )}
+        </Box>
         {properties.map((prop) => (
           <Box _notLast={{ marginBottom: '24px' }} className="x0" key={prop.content.key}>
             {prop.content}
           </Box>
         ))}
-      </Box>
+      </>
     )
   }
 

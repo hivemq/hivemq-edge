@@ -1,7 +1,7 @@
 import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useCallback, useState } from 'react'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 import type { IdSchema } from '@rjsf/utils'
 
 import type { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'

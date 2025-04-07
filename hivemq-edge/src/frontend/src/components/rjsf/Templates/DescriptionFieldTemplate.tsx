@@ -1,5 +1,10 @@
-import type { DescriptionFieldProps, FormContextType, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
-import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import type {
+  DescriptionFieldProps,
+  FormContextType,
+  GenericObjectType,
+  RJSFSchema,
+  StrictRJSFSchema,
+} from '@rjsf/utils'
 import { Text } from '@chakra-ui/react'
 
 export const DescriptionFieldTemplate = <
@@ -14,11 +19,12 @@ export const DescriptionFieldTemplate = <
     return null
   }
 
-  // Override to fix bug with nested p
   if (typeof description === 'string') {
     return (
-      <Text id={id} mt={2} mb={4}>
-        {description}
+      <Text>
+        <Text as="sup" fontSize="sm" id={id} mt={2} mb={4}>
+          {description}
+        </Text>
       </Text>
     )
   }

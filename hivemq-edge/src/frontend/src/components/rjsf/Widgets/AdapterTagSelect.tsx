@@ -1,16 +1,16 @@
 import type { ComponentType, FC } from 'react'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
 import { getTemplate, labelValue } from '@rjsf/utils'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { Breadcrumb, BreadcrumbItem, Code, FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import type { GroupBase, OnChangeValue, OptionProps, SingleValueProps } from 'chakra-react-select'
 import { chakraComponents, createFilter, Select } from 'chakra-react-select'
 
 import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.ts'
 import type { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
+
 import { getAdapterTreeView } from '@/components/rjsf/Widgets/utils/treeview.utils.ts'
 import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 

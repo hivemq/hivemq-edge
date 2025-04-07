@@ -11,7 +11,7 @@ import type {
   TitleFieldProps,
 } from '@rjsf/utils'
 import { getTemplate, getUiOptions, TranslatableString } from '@rjsf/utils'
-import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import type { GenericObjectType } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'

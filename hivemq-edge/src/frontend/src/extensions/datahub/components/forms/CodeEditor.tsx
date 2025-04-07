@@ -3,7 +3,7 @@ import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import { FormControl, FormLabel, Text, VStack } from '@chakra-ui/react'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 import { generateWidgets } from '@rjsf/chakra-ui'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
