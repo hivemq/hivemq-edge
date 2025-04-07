@@ -837,6 +837,10 @@
       "container": {
         "label": "Node toolbar"
       },
+      "selection": {
+        "title_one": "1 entity selected",
+        "title_other": "{{ count}} entities selected"
+      },
       "command": {
         "overview": "Open the overview panel",
         "group": "Group the selected adapters",
