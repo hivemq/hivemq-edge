@@ -536,7 +536,8 @@
       "view": {
         "title": "Viewing Protocol Adapter",
         "error": "There was a problem trying to view the protocol adapter",
-        "noLongerExist": "The Protocol Adapter {{id}} doesn't exist"
+        "noLongerExist": "The adapter {{id}} doesn't exist",
+        "noValidProtocol": "The Protocol Adapter {{id}} doesn't exist"
       }
     },
     "type": {
