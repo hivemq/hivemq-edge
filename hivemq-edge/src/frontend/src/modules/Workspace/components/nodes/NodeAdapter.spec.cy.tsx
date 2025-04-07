@@ -90,14 +90,14 @@ describe('NodeAdapter', () => {
           {
             ...MOCK_NODE_ADAPTER,
             id: 'idAdapter2',
-            position: { x: 0, y: 0 },
+            position: { x: 50, y: 100 },
             selected: true,
             hidden: true,
           },
           {
             ...MOCK_NODE_ADAPTER,
             id: 'idAdapter3',
-            position: { x: 0, y: 0 },
+            position: { x: 50, y: 100 },
             selected: true,
             hidden: true,
           },
@@ -106,9 +106,15 @@ describe('NodeAdapter', () => {
       />
     )
     cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
-    cy.getByTestId('node-adapter-toolbar-northbound').should('have.attr', 'aria-label', 'Edit Northbound mappings')
+    cy.get('[role="toolbar"][aria-label="Node toolbar"]').should('be.visible')
+    cy.getByTestId('toolbar-title').should('have.text', '3 entities selected')
+    // cy.getByTestId('node-adapter-toolbar-northbound').should('have.attr', 'aria-label', 'Edit Northbound mappings')
     cy.getByTestId('node-group-toolbar-group').should('have.attr', 'aria-label', 'Group the selected adapters')
-    cy.getByTestId('node-group-toolbar-panel').should('have.attr', 'aria-label', 'Open the overview panel')
+    cy.getByTestId('node-group-toolbar-combiner').should(
+      'have.attr',
+      'aria-label',
+      'Create a data combiner from selection'
+    )
   })
 
   it('should render the toolbar properly', () => {

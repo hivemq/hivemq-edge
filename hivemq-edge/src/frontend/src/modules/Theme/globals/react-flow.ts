@@ -7,11 +7,11 @@ export const reactFlow: SystemStyleObject = {
     },
   },
 
-  '.react-flow__handle-connecting': {
-    '&.react-flow__handle-valid': {
+  '.connectingto': {
+    '&.valid': {
       boxShadow: '0 0 10px 2px rgb(88 144 255 / 75%), 0 1px 1px rgb(0 0 0 / 15%);',
     },
-    '&:not(.react-flow__handle-valid)': {
+    '&:not(.valid)': {
       cursor: 'no-drop',
       boxShadow: '0 0 10px 2px rgba(226, 85, 85, 0.75), 0 1px 1px rgb(0 0 0 / 15%);',
     },

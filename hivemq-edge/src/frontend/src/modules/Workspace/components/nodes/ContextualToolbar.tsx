@@ -58,7 +58,18 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const navigate = useNavigate()
   const { fitView } = useReactFlow()
 
-  const selectedNodes = nodes.filter((node) => node.selected)
+  const selectedNodes = useMemo(() => {
+    return nodes.filter((node) => node.selected)
+  }, [nodes])
+
+  const topSelectedNode = useMemo(() => {
+    const [firstNode] = selectedNodes.sort((a, b) => {
+      return a.position.y - b.position.y < 0 ? -1 : 1
+    })
+
+    return firstNode
+  }, [selectedNodes])
+
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
     const adapters = selectedNodes.filter(
@@ -207,17 +218,18 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     })
   }
 
-  // TODO[NVL] Weird side effect if first node has no toolbar; get the first suitable node instead?
-  const [mainNodes] = selectedNodes
+  const isMultiple = selectedNodes.length >= 2
 
   return (
     <NodeToolbar
-      isVisible={Boolean(mainNodes?.id === id && !dragging)}
+      isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
       position={Position.Top}
       aria-label={t('workspace.toolbar.container.label')}
     >
-      <Text data-testid="toolbar-title">{title || id}</Text>
-      {children && (
+      <Text data-testid="toolbar-title">
+        {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
+      </Text>
+      {children && !isMultiple && (
         <>
           <Divider orientation="vertical" />
           {children}
@@ -244,7 +256,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         />
       </ToolbarButtonGroup>
 
-      {!hasNoOverview && (
+      {!hasNoOverview && !isMultiple && (
         <>
           <Divider orientation="vertical" />
           <ToolbarButtonGroup>
