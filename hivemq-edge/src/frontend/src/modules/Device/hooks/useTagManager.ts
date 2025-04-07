@@ -4,6 +4,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 import { useToast } from '@chakra-ui/react'
 
 import type { DomainTag, DomainTagList } from '@/api/__generated__'
+import { tagListJsonSchema, tagListUISchema } from '@/api/schemas/'
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import { useCreateDomainTags } from '@/api/hooks/useProtocolAdapters/useCreateDomainTags.ts'
 import { useDeleteDomainTags } from '@/api/hooks/useProtocolAdapters/useDeleteDomainTags.ts'
@@ -46,19 +47,9 @@ export const useTagManager = (adapterId: string) => {
     }
 
     return {
-      // $schema: 'https://json-schema.org/draft/2020-12/schema',
+      ...tagListJsonSchema,
       definitions: {
         TagSchema: safeSchema,
-      },
-      properties: {
-        items: {
-          type: 'array',
-          title: 'List of tags',
-          description: 'The list of all tags defined in the device',
-          items: {
-            $ref: '#/definitions/TagSchema',
-          },
-        },
       },
     }
   }, [protocol?.id, tagSchema])
@@ -106,23 +97,7 @@ export const useTagManager = (adapterId: string) => {
 
   const context: ManagerContextType<DomainTagList> = {
     schema: tagListSchema,
-    uiSchema: {
-      'ui:submitButtonOptions': {
-        norender: true,
-      },
-
-      items: {
-        items: {
-          'ui:order': ['name', 'description', '*'],
-          'ui:collapsable': {
-            titleKey: 'name',
-          },
-          protocolId: {
-            'ui:widget': 'hidden',
-          },
-        },
-      },
-    },
+    uiSchema: tagListUISchema,
     formData: tagList || { items: [] },
   }
 

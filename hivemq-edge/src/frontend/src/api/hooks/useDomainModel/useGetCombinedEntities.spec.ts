@@ -45,6 +45,7 @@ describe('useGetCombinedEntities', () => {
           definition: {
             node: 'ns=3;i=1002',
           },
+          description: 'This is a very long description for the OPCUA tag, just to test the content',
           name: 'opcua/power/off',
         },
         {

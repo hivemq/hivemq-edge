@@ -9,6 +9,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "delete": "Delete",
+    "save": "Save",
     "previous": "Previous",
     "next": "Next",
     "start": "Start",
@@ -621,6 +622,21 @@
           "load": "Load Metadata"
         }
       },
+      "table": {
+        "unset": "< unset >",
+        "column": {
+          "name": "Tag",
+          "description": "Description",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Edit the tag",
+          "delete": "Delete the tag",
+          "add": "Add a new tag",
+          "schema": "View the schema",
+          "submit": "Submit"
+        }
+      },
       "tagList": {
         "title": "List of Device Tags",
         "cta": {
@@ -644,10 +660,16 @@
         }
       },
       "tagEditor": {
-        "title": "Edit the tags",
-        "cta": {
-          "edit": "Edit tags"
-        }
+        "header": "Edit the tag"
+      },
+      "schema": {
+        "header": "Manage the schema for the tag",
+        "action": {
+          "download": "Download the schema",
+          "close": "Close"
+        },
+        "label": "Current schema",
+        "helper": "This schema will be a valid source for data transformation"
       }
     },
     "errors": {
@@ -655,7 +677,22 @@
       "noAdapter": "The protocol adapter for this device cannot be found",
       "noMetadataLoaded": "Uploading device metadata is not yet supported",
       "noTagLoaded": "Cannot load the tags",
-      "noTagCreated": "There is no tag created yet"
+      "noSchemaLoaded": "Cannot load the schema",
+      "noTagCreated": "There is no tag created yet",
+      "invalidData": "Invalid data"
+    },
+    "capability": {
+      "title_DISCOVER": "DISCOVER",
+      "description_DISCOVER": "The device supports data point discoverability",
+
+      "title_WRITE": "SOUTHBOUND",
+      "description_WRITE": "The device supports Southbound mapping (WRITE)",
+
+      "title_READ": "NORTHBOUND",
+      "description_READ": "The device supports Northbound mapping (READ)",
+
+      "title_COMBINE": "COMBINE",
+      "description_COMBINE": "The device supports Data combining (COMBINE)"
     }
   },
 
