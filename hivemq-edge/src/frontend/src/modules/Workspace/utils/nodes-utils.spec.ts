@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import type { Edge, Node } from '@xyflow/react'
+import type { Edge, Node, XYPosition } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
@@ -255,7 +255,6 @@ describe('createCombinerNode', () => {
         id: `connect-edge-${mockId}`,
         source: mockId,
         target: 'edge',
-        type: 'default',
       }),
       sourceConnectors: [],
     })
@@ -279,9 +278,12 @@ describe('createCombinerNode', () => {
           id: `connect-idEdge-${mockId}`,
           source: 'idEdge',
           target: '6991ff43-9105-445f-bce3-976720df40a3',
-          type: 'default',
         }),
       ],
     })
   })
 })
+
+export const getGluedPosition = (s: Node, t: Node, c: Node): XYPosition => {
+  return { x: 0, y: 0 }
+}
