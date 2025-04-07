@@ -2,8 +2,7 @@ import type { FC } from 'react'
 import type { NodeToolbarProps } from '@xyflow/react'
 import { NodeToolbar as ReactFlowNodeToolbar } from '@xyflow/react'
 import type { As } from '@chakra-ui/react'
-import { chakra, Icon } from '@chakra-ui/react'
-import { BsGripVertical } from 'react-icons/bs'
+import { chakra } from '@chakra-ui/react'
 
 const NodeToolbarChakra = chakra<As, NodeToolbarProps>(ReactFlowNodeToolbar)
 
@@ -24,13 +23,12 @@ const NodeToolbar: FC<NodeToolbarProps> = ({ children, ...props }) => {
         _dark: {
           backgroundColor: 'var(--chakra-colors-gray-700)',
         },
-        paddingRight: 2,
+        padding: 2,
         borderRadius: 'var(--chakra-radii-md)',
         backgroundColor: 'var(--chakra-colors-chakra-body-bg)',
         boxShadow: 'var(--chakra-shadows-dark-lg)',
       }}
     >
-      <Icon as={BsGripVertical} boxSize={7} aria-hidden={true} />
       {children}
     </NodeToolbarChakra>
   )
