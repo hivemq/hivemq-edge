@@ -2,8 +2,8 @@ import type { ChangeEvent, FocusEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, Input, InputGroup, InputLeftAddon } from '@chakra-ui/react'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 
 const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')

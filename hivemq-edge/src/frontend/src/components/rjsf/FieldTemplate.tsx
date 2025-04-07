@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import type { FieldTemplateProps } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 
-import { RenderFieldTemplate } from './__internals/RenderFieldTemplate.tsx'
+import { FormControl, FormHelperText } from '@chakra-ui/react'
 
 /**
  * This is a redesign of the original ChakraUI template for fields.

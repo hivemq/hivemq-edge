@@ -1,5 +1,10 @@
-import type { DescriptionFieldProps, FormContextType, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
-import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import type {
+  DescriptionFieldProps,
+  FormContextType,
+  GenericObjectType,
+  RJSFSchema,
+  StrictRJSFSchema,
+} from '@rjsf/utils'
 import { Text } from '@chakra-ui/react'
 
 export const DescriptionFieldTemplate = <

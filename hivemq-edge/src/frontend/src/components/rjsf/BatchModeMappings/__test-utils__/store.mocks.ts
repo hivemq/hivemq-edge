@@ -1,5 +1,5 @@
 import type { IdSchema } from '@rjsf/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 import type { ColumnMappingData, WorksheetData } from '@/components/rjsf/BatchModeMappings/types.ts'
 
 export const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }

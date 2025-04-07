@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ActionMeta, OnChangeValue, OptionProps, Options, SingleValueProps } from 'chakra-react-select'
 import { chakraComponents, CreatableSelect, createFilter } from 'chakra-react-select'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'

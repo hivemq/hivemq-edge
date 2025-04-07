@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 import type { IdSchema } from '@rjsf/utils'
 import {
   Button,

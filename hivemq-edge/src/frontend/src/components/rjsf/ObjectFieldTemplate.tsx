@@ -1,4 +1,11 @@
-import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
+import type {
+  FormContextType,
+  ObjectFieldTemplateProps,
+  RJSFSchema,
+  StrictRJSFSchema,
+  UIOptionsType,
+} from '@rjsf/utils'
+import { descriptionId } from '@rjsf/utils'
 import { getTemplate, getUiOptions, titleId } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import type { UITab } from '@/components/rjsf/Form/types.ts'

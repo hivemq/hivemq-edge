@@ -3,7 +3,7 @@ import { getFunctions, initialStore } from './store.utils.ts'
 import type { WorkspaceState, WorkspaceStatus } from '@/extensions/datahub/types.ts'
 import { DesignerStatus } from '@/extensions/datahub/types.ts'
 import type { RJSFSchema } from '@rjsf/utils'
-import type { GenericObjectType } from '@rjsf/utils/src/types.ts'
+import type { GenericObjectType } from '@rjsf/utils'
 
 describe('initialStore', () => {
   it('should return the initial state of the store', async () => {

@@ -2,7 +2,6 @@ import type { FocusEvent } from 'react'
 import { useCallback, useMemo } from 'react'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import type { OnChangeValue, SingleValueProps, OptionProps } from 'chakra-react-select'
 import { Select, chakraComponents, createFilter } from 'chakra-react-select'
@@ -10,6 +9,7 @@ import { Select, chakraComponents, createFilter } from 'chakra-react-select'
 import type { FiniteStateMachine, FsmTransition } from '@datahub/types.ts'
 import { FsmState } from '@datahub/types.ts'
 import { useTranslation } from 'react-i18next'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 
 interface FsmTransitionWithId extends FsmTransition {
   id: string

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import type { FieldProps } from '@rjsf/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import type { RJSFSchema } from '@rjsf/utils'
 
 import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { CompactArrayFieldTemplate } from '@/components/rjsf/Templates/CompactArrayFieldTemplate.tsx'

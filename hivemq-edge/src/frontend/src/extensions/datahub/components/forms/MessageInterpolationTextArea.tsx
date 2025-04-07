@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 import { Editor } from '@datahub/components/interpolation/Editor.tsx'
 
 export const MessageInterpolationTextArea = (props: WidgetProps) => {
