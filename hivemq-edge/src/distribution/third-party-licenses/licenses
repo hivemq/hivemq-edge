@@ -60,9 +60,9 @@ Library                                                            | License    
  net.openhft:zero-allocation-hashing                               | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        | 
  org.apache.commons:commons-lang3                                  | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        | 
  org.bitbucket.b_c:jose4j                                          | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        | 
- org.bouncycastle:bcpkix-jdk15on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         | 
- org.bouncycastle:bcprov-jdk15on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         | 
- org.bouncycastle:bcutil-jdk15on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         | 
+ org.bouncycastle:bcpkix-jdk18on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         |
+ org.bouncycastle:bcprov-jdk18on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         |
+ org.bouncycastle:bcutil-jdk18on                                   | Bouncy Castle License                      | https://www.bouncycastle.org/licence.html                         |
  org.checkerframework:checker-qual                                 | MIT License                                | https://opensource.org/licenses/MIT                               | 
  org.glassfish.hk2.external:aopalliance-repackaged                 | EPL, Version 2.0                           | https://opensource.org/licenses/EPL-2.0                           | 
  org.glassfish.hk2.external:jakarta.inject                         | EPL, Version 2.0                           | https://opensource.org/licenses/EPL-2.0                           | 
