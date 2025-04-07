@@ -196,6 +196,15 @@ dependencies {
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
     implementation(libs.jsonSchemaInferrer)
+
+    // Edge modules
+    compileOnly("com.hivemq:hivemq-edge-module-etherip")
+    compileOnly("com.hivemq:hivemq-edge-module-plc4x")
+    compileOnly("com.hivemq:hivemq-edge-module-http")
+    compileOnly("com.hivemq:hivemq-edge-module-modbus")
+    compileOnly("com.hivemq:hivemq-edge-module-mtconnect")
+    compileOnly("com.hivemq:hivemq-edge-module-opcua")
+    compileOnly("com.hivemq:hivemq-edge-module-file")
 }
 
 /* ******************** test ******************** */

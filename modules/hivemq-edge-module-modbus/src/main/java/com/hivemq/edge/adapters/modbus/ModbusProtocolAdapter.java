@@ -69,7 +69,6 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         this.tags = input.getTags().stream().map(t -> (ModbusTag)t).toList();
         this.modbusClient =
                 new ModbusClient(input.getAdapterId(), adapterConfig);
-
     }
 
     @Override
