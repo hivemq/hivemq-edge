@@ -1,17 +1,18 @@
-import type { GenericObjectType } from '@rjsf/utils'
-import type { ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, ProtocolAdapter, TagSchema } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 
 export const MOCK_PROTOCOL_SIMULATION: ProtocolAdapter = {
   id: 'simulation',
   protocol: 'Simulation',
   name: 'Simulated Edge Device',
-  description: 'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
-  url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation',
-  version: 'Development Snapshot',
-  logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
+  description:
+    'Simulates device message traffic to enable observation of adapter behavior without the need to configure actual devices.',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter',
+  version: 'Development Version',
+  logoUrl: '/module/images/hivemq-icon.png',
   author: 'HiveMQ',
   installed: true,
-  // capabilities: ['READ'],
+  capabilities: ['READ'],
   category: {
     name: 'SIMULATION',
     displayName: 'Simulation',
@@ -22,75 +23,157 @@ export const MOCK_PROTOCOL_SIMULATION: ProtocolAdapter = {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',
     properties: {
+      minValue: {
+        type: 'integer',
+        title: 'Min. Generated Value',
+        description: 'Minimum value of the generated decimal number',
+        default: 0,
+        minimum: 0,
+      },
+      maxValue: {
+        type: 'integer',
+        title: 'Max. Generated Value (Excl.)',
+        description: 'Maximum value of the generated decimal number (excluded)',
+        default: 1000,
+        maximum: 1000,
+      },
       id: {
         type: 'string',
         title: 'Identifier',
         description: 'Unique identifier for this protocol adapter',
+        writeOnly: true,
         minLength: 1,
         maxLength: 1024,
         format: 'identifier',
-        pattern: '([a-zA-Z_0-9\\-])*',
+        pattern: '^([a-zA-Z_0-9-_])*$',
       },
-      pollingIntervalMillis: {
-        type: 'integer',
-        title: 'Polling interval [ms]',
-        description: 'Interval in milliseconds to poll for changes',
-        default: 10000,
-        minimum: 100,
-        maximum: 86400000,
-      },
-      subscriptions: {
-        title: 'Subscriptions',
-        description: 'List of subscriptions for the simulation',
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            destination: {
-              type: 'string',
-              title: 'Destination Topic',
-              description: 'The topic to publish data on',
-              format: 'mqtt-topic',
-            },
-            qos: {
-              type: 'integer',
-              title: 'QoS',
-              description: 'MQTT Quality of Service level',
-              default: 0,
-              minimum: 0,
-              maximum: 2,
-            },
+      simulationToMqtt: {
+        type: 'object',
+        properties: {
+          maxPollingErrorsBeforeRemoval: {
+            type: 'integer',
+            title: 'Max. Polling Errors',
+            description:
+              'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
+            default: 10,
+            minimum: -1,
           },
-          required: ['destination', 'qos'],
-          title: 'Subscriptions',
-          description: 'List of subscriptions for the simulation',
+          pollingIntervalMillis: {
+            type: 'integer',
+            title: 'Polling Interval [ms]',
+            description: 'Time in millisecond that this endpoint will be polled',
+            default: 1000,
+            minimum: 1,
+          },
+        },
+        title: 'simulationToMqtt',
+        description: 'Define Simulations to create MQTT messages.',
+      },
+      minDelay: {
+        type: 'integer',
+        title: 'Minimum of delay',
+        description: 'Minimum of artificial delay before the polling method generates a value',
+        default: 0,
+        minimum: 0,
+      },
+      maxDelay: {
+        type: 'integer',
+        title: 'Maximum of delay',
+        description: 'Maximum of artificial delay before the polling method generates a value',
+        default: 0,
+        minimum: 0,
+      },
+    },
+    required: ['id', 'simulationToMqtt'],
+  },
+  uiSchema: {
+    'ui:tabs': [
+      {
+        id: 'coreFields',
+        title: 'Settings',
+        properties: ['id', 'minValue', 'maxValue', 'minDelay', 'maxDelay'],
+      },
+      {
+        id: 'subFields',
+        title: 'Simulation to MQTT',
+        properties: ['simulationToMqtt'],
+      },
+    ],
+    id: {
+      'ui:disabled': false,
+    },
+    'ui:order': ['id', 'minValue', 'maxValue', 'minDelay', 'maxDelay', '*'],
+    simulationToMqtt: {
+      'ui:batchMode': true,
+      'ui:order': ['simulationToMqttMappings', 'pollingIntervalMillis', 'maxPollingErrorsBeforeRemoval', '*'],
+      simulationToMqttMappings: {
+        'ui:batchMode': true,
+        items: {
+          'ui:order': [
+            'mqttTopic',
+            'mqttQos',
+            'mqttUserProperties',
+            'messageHandlingOptions',
+            'includeTimestamp',
+            'includeTagNames',
+            '*',
+          ],
+          'ui:collapsable': {
+            titleKey: 'mqttTopic',
+          },
         },
       },
     },
-    required: ['id', 'subscriptions'],
   },
 }
 
-export const MOCK_ADAPTER_SIMULATION: GenericObjectType = {
-  id: '345',
-  type: 'simulation',
+export const MOCK_ADAPTER_SIMULATION: Adapter = {
+  id: 'sim-current',
   config: {
-    id: '345',
-    pollingIntervalMillis: 10000,
-    subscriptions: [
-      {
-        destination: 'a/valid/topic/simulation/1',
-        qos: 0,
-      },
-    ],
-  },
-  adapterRuntimeInformation: {
-    lastStartedAttemptTime: '2023-09-13T09:45:02.202+01',
-    numberOfDaemonProcesses: 1,
-    connectionStatus: {
-      status: 'CONNECTED',
-      id: '345',
-      type: 'adapter',
+    minValue: 0,
+    maxValue: 1000,
+    simulationToMqtt: {
+      pollingIntervalMillis: 1000,
+      maxPollingErrorsBeforeRemoval: 10,
     },
+    minDelay: 0,
+    maxDelay: 0,
+    id: 'sim-current',
   },
+  status: {
+    connection: Status.connection.STATELESS,
+    id: 'sim-current',
+    runtime: Status.runtime.STARTED,
+    startedAt: '2025-04-01T10:18:34.267Z',
+    type: 'adapter',
+  },
+  type: 'simulation',
+}
+
+export const MOCK_SCHEMA_SIMULATION: TagSchema = {
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      definition: {
+        type: 'object',
+        title: 'definition',
+        description: "The simulation adapter doesn't currently support any custom definition",
+        readOnly: true,
+      },
+      description: {
+        type: 'string',
+        title: 'description',
+        description: 'A human readable description of the tag',
+      },
+      name: {
+        type: 'string',
+        title: 'name',
+        description: 'name of the tag to be used in mappings',
+        format: 'mqtt-tag',
+      },
+    },
+    required: ['definition', 'name'],
+  },
+  protocolId: 'simulation',
 }
