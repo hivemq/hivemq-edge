@@ -67,7 +67,7 @@ export const createBridgeNode = (
     targetHandle: 'Bottom',
     focusable: false,
     source: idBridge,
-    type: EdgeTypes.REPORT_EDGE,
+    type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -98,7 +98,7 @@ export const createBridgeNode = (
     target: idBridgeHost,
     sourceHandle: 'Bottom',
     source: idBridge,
-    // type: EdgeTypes.REPORT_EDGE,
+    type: EdgeTypes.DYNAMIC_EDGE,
     focusable: false,
     markerEnd: {
       type: MarkerType.ArrowClosed,
@@ -140,7 +140,7 @@ export const createListenerNode = (
     targetHandle: 'Listeners',
     target: idListener,
     focusable: false,
-    // type: EdgeTypes.REPORT_EDGE,
+    type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -186,7 +186,7 @@ export const createAdapterNode = (
     targetHandle: 'Top',
     source: idAdapter,
     focusable: false,
-    type: EdgeTypes.REPORT_EDGE,
+    type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -221,6 +221,7 @@ export const createAdapterNode = (
     sourceHandle: 'Top',
     source: idAdapter,
     focusable: false,
+    type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -261,7 +262,7 @@ export const createCombinerNode = (
       targetHandle: 'Top',
       source: source.id,
       focusable: false,
-      type: 'default',
+      type: EdgeTypes.DYNAMIC_EDGE,
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 20,
@@ -283,7 +284,7 @@ export const createCombinerNode = (
     targetHandle: 'Top',
     source: combiner.id,
     focusable: false,
-    type: 'default',
+    type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
