@@ -1,24 +1,23 @@
-import type { GenericObjectType } from '@rjsf/utils'
-import type { ProtocolAdapter } from '@/api/__generated__'
+/* generated from Edge version 2025.5 -- do no edit */
+import type { Adapter, ProtocolAdapter, TagSchema } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 
 export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
-  id: 'opc-ua-client',
-  protocol: 'OPC-UA Client',
-  name: 'OPC-UA to MQTT Protocol Adapter',
-  description:
-    'Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.',
-  url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#opc-ua-adapter',
-  version: 'Development Snapshot',
-  logoUrl: 'http://localhost:8080/images/opc-ua-icon.jpg',
+  id: 'opcua',
+  protocol: 'OPC UA',
+  name: 'OPC UA Protocol Adapter',
+  description: 'Supports Northbound and Southbound communicates from and to OPC UA.',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#opc-ua-adapter',
+  version: 'Development Version',
+  logoUrl: '/module/images/opc-ua-icon.jpg',
   author: 'HiveMQ',
   installed: true,
-  // capabilities: ['READ', 'DISCOVER'],
+  capabilities: ['DISCOVER', 'WRITE', 'READ', 'COMBINE'],
   category: {
     name: 'INDUSTRIAL',
     displayName: 'Industrial',
     description: 'Industrial, typically field bus protocols.',
   },
-  tags: [],
   configSchema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',
@@ -48,6 +47,8 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
             properties: {
               enabled: {
                 type: 'boolean',
+                title: 'Enable X509',
+                description: 'Enables X509 auth',
               },
             },
             title: 'X509 Authentication',
@@ -59,10 +60,40 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
         type: 'string',
         title: 'Identifier',
         description: 'Unique identifier for this protocol adapter',
+        writeOnly: true,
         minLength: 1,
         maxLength: 1024,
         format: 'identifier',
-        pattern: '([a-zA-Z_0-9\\-])*',
+        pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      opcuaToMqtt: {
+        type: 'object',
+        properties: {
+          publishingInterval: {
+            type: 'integer',
+            title: 'OPC UA publishing interval [ms]',
+            description: 'OPC UA publishing interval in milliseconds for this subscription on the server',
+            default: 1000,
+            minimum: 1,
+          },
+          serverQueueSize: {
+            type: 'integer',
+            title: 'OPC UA server queue size',
+            description: 'OPC UA queue size for this subscription on the server',
+            default: 1,
+            minimum: 1,
+          },
+        },
+        title: 'OPC UA To MQTT Config',
+        description: 'The configuration for a data stream from OPC UA to MQTT',
+      },
+      overrideUri: {
+        type: 'boolean',
+        title: 'Override server returned endpoint URI',
+        description:
+          'Overrides the endpoint URI returned from the OPC UA server with the hostname and port from the specified URI.',
+        default: false,
+        format: 'boolean',
       },
       security: {
         type: 'object',
@@ -79,56 +110,8 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
             ],
             title: 'OPC UA security policy',
             description: 'Security policy to use for communication with the server.',
+            default: 'NONE',
           },
-        },
-      },
-      subscriptions: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            'message-expiry-interval': {
-              type: 'integer',
-              title: 'MQTT message expiry interval [s]',
-              description: 'Time in seconds until a MQTT message expires',
-              minimum: 1,
-              maximum: 4294967295,
-            },
-            'mqtt-topic': {
-              type: 'string',
-              title: 'Destination MQTT topic',
-              description: 'The MQTT topic to publish to',
-              format: 'mqtt-topic',
-            },
-            node: {
-              type: 'string',
-              title: 'Source Node ID',
-              description: 'identifier of the node on the OPC-UA server. Example: "ns=3;s=85/0:Temperature"',
-            },
-            'publishing-interval': {
-              type: 'integer',
-              title: 'OPC UA publishing interval [ms]',
-              description: 'OPC UA publishing interval in milliseconds for this subscription on the server',
-              default: 1000,
-              minimum: 1,
-            },
-            qos: {
-              type: 'integer',
-              title: 'MQTT QoS',
-              description: 'MQTT quality of service level',
-              default: 0,
-              minimum: 0,
-              maximum: 2,
-            },
-            'server-queue-size': {
-              type: 'integer',
-              title: 'OPC UA server queue size',
-              description: 'OPC UA queue size for this subscription on the server',
-              default: 1,
-              minimum: 1,
-            },
-          },
-          required: ['mqtt-topic', 'node'],
         },
       },
       tls: {
@@ -138,6 +121,7 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
             type: 'boolean',
             title: 'Enable TLS',
             description: 'Enables TLS encrypted connection',
+            default: false,
           },
           keystore: {
             type: 'object',
@@ -152,7 +136,7 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
                 title: 'Keystore path',
                 description: 'Path on the local file system to the keystore.',
               },
-              'private-key-password': {
+              privateKeyPassword: {
                 type: 'string',
                 title: 'Private key password',
                 description: 'Password to access the private key.',
@@ -183,52 +167,129 @@ export const MOCK_PROTOCOL_OPC_UA: ProtocolAdapter = {
       },
       uri: {
         type: 'string',
-        title: 'OPC-UA Server URI',
-        description: 'URI of the OPC-UA server to connect to',
+        title: 'OPC UA Server URI',
+        description: 'URI of the OPC UA server to connect to',
         format: 'uri',
       },
     },
     required: ['id', 'uri'],
   },
-}
-
-export const MOCK_ADAPTER_OPC_UA: GenericObjectType = {
-  id: 'dd',
-  type: 'opc-ua-client',
-  config: {
-    id: 'dd',
-    uri: 'h:/ffgf',
-    subscriptions: [
+  uiSchema: {
+    'ui:tabs': [
       {
-        node: 'dd1',
-        'mqtt-topic': 'a/valid/topic/opc-ua-client/1',
-        'publishing-interval': 1000,
-        'server-queue-size': 1,
-        qos: 0,
+        id: 'coreFields',
+        title: 'Connection',
+        properties: ['id', 'uri', 'overrideUri', 'security', 'tls', 'auth'],
       },
       {
-        node: 'dd2',
-        'mqtt-topic': 'a/valid/topic/opc-ua-client/2',
-        'publishing-interval': 1000,
-        'server-queue-size': 1,
-        qos: 0,
+        id: 'opcuaToMqtt',
+        title: 'OPC UA to MQTT',
+        properties: ['opcuaToMqtt'],
+      },
+      {
+        id: 'mqttToOpcua',
+        title: 'MQTT to OPC UA',
+        properties: ['mqttToOpcua'],
       },
     ],
-    auth: {},
+    id: {
+      'ui:disabled': true,
+    },
+    'ui:order': ['id', 'uri', 'overrideUri', 'security', 'tls', 'auth', '*'],
+    opcuaToMqtt: {
+      'ui:batchMode': true,
+      opcuaToMqttMappings: {
+        items: {
+          'ui:order': ['node', 'mqttTopic', 'mqttQos', '*'],
+          'ui:collapsable': {
+            titleKey: 'mqttTopic',
+          },
+          node: {
+            'ui:widget': 'discovery:tagBrowser',
+          },
+        },
+      },
+    },
+    mqttToOpcua: {
+      'ui:batchMode': true,
+      mqttToOpcuaMappings: {
+        items: {
+          'ui:order': ['node', 'mqttTopicFilter', 'mqttMaxQos', '*'],
+          'ui:collapsable': {
+            titleKey: 'mqttTopicFilter',
+          },
+          node: {
+            'ui:widget': 'discovery:tagBrowser',
+          },
+        },
+      },
+    },
+    auth: {
+      basic: {
+        'ui:order': ['username', 'password', '*'],
+      },
+    },
+  },
+}
+
+export const MOCK_ADAPTER_OPC_UA: Adapter = {
+  id: 'opcua-pump',
+  config: {
+    uri: 'opc.tcp://Nicolass-MacBook-Pro.local:53530/OPCUA/SimulationServer',
+    overrideUri: false,
     tls: {
       enabled: false,
+    },
+    opcuaToMqtt: {
+      publishingInterval: 1000,
+      serverQueueSize: 1,
     },
     security: {
       policy: 'NONE',
     },
+    id: 'opcua-pump',
   },
-  adapterRuntimeInformation: {
-    lastStartedAttemptTime: '2023-09-12T11:42:31.411+01',
-    numberOfDaemonProcesses: 0,
-    connectionStatus: {
-      status: 'DISCONNECTED',
-      id: 'dd',
-      type: 'adapter',
+  status: {
+    connection: Status.connection.CONNECTED,
+    id: 'opcua-pump',
+    runtime: Status.runtime.STARTED,
+    startedAt: '2025-04-05T20:41:00.293Z',
+    type: 'adapter',
+  },
+  type: 'opcua',
+}
+
+export const MOCK_SCHEMA_OPC_UA: TagSchema = {
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      definition: {
+        type: 'object',
+        properties: {
+          node: {
+            type: 'string',
+            title: 'Destination Node ID',
+            description: 'identifier of the node on the OPC UA server. Example: "ns=3;s=85/0:Temperature"',
+          },
+        },
+        required: ['node'],
+        title: 'definition',
+        description: 'The actual definition of the tag on the device',
+      },
+      description: {
+        type: 'string',
+        title: 'description',
+        description: 'A human readable description of the tag',
+      },
+      name: {
+        type: 'string',
+        title: 'name',
+        description: 'name of the tag to be used in mappings',
+        format: 'mqtt-tag',
+      },
     },
+    required: ['definition', 'name'],
   },
+  protocolId: 'opcua',
 }
