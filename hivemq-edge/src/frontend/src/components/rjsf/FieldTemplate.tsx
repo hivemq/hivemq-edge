@@ -18,7 +18,9 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
     children,
     classNames,
     style,
+    description,
     disabled,
+    displayLabel,
     hidden,
     label,
     onDropPropertyClick,
@@ -26,8 +28,12 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
     readonly,
     registry,
     required,
+    rawDescription,
+    rawErrors,
     schema,
     uiSchema,
+    errors,
+    help,
   } = props
 
   const uiOptions = getUiOptions(uiSchema)
@@ -56,7 +62,23 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
       uiSchema={uiSchema}
       registry={registry}
     >
-      <RenderFieldTemplate {...props}>{children}</RenderFieldTemplate>
+      <FormControl
+        data-testid={id}
+        id={id}
+        variant="hivemq"
+        isRequired={required}
+        isInvalid={rawErrors && rawErrors.length > 0}
+      >
+        {children}
+        {rawErrors && rawErrors.length > 0 ? (
+          errors
+        ) : (
+          <FormHelperText mt={4} mb={0}>
+            {displayLabel && rawDescription ? description : null}
+          </FormHelperText>
+        )}
+        {help}
+      </FormControl>
     </WrapIfAdditionalTemplate>
   )
 }
