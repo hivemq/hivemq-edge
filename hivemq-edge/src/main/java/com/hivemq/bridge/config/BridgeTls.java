@@ -148,6 +148,37 @@ public class BridgeTls {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "BridgeTls{" +
+                "keystorePath='" +
+                keystorePath +
+                '\'' +
+                ", keystorePassword='" +
+                keystorePassword +
+                '\'' +
+                ", privateKeyPassword=HIDDEN" +
+                ", truststorePath='" +
+                truststorePath +
+                '\'' +
+                ", truststorePassword=HIDDEN" +
+                ", protocols=" +
+                protocols +
+                ", cipherSuites=" +
+                cipherSuites +
+                ", keystoreType='" +
+                keystoreType +
+                '\'' +
+                ", truststoreType='" +
+                truststoreType +
+                '\'' +
+                ", verifyHostname=" +
+                verifyHostname +
+                ", handshakeTimeout=" +
+                handshakeTimeout +
+                '}';
+    }
+
     public static class Builder {
         private @Nullable String keystorePath;
         private @NotNull String keystorePassword = "";
