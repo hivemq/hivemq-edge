@@ -13,9 +13,9 @@ const FINAL_OUTPUT_FOLDER = 'combined-coverage'
 const { program } = require('commander')
 
 program
-  .option('-e --e2e-cov-dir <dir>', 'Directory for e2e coverage', '../coverage-cypress-e2e')
-  .option('-c --ct-cov-dir <dir>', 'Directory for cypress-ct coverage', '../coverage-cypress')
-  .option('-u --unit-cov-dir <dir>', 'Directory for unit test coverage', '../coverage-vitest-unit')
+  .option('-e --e2e-cov-dir <directory>', 'Directory for e2e coverage', '../coverage-cypress-e2e')
+  .option('-c --ct-cov-dir <directory>', 'Directory for cypress-ct coverage', '../coverage-cypress')
+  .option('-u --unit-cov-dir <directory>', 'Directory for unit test coverage', '../coverage-vitest-unit')
 
 program.parse()
 const options = program.opts()
