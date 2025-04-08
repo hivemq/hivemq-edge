@@ -27,7 +27,7 @@ import {
   NodeDevice,
   NodeCombiner,
 } from '@/modules/Workspace/components/nodes'
-import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { getGluedPosition, gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 import { DynamicEdge } from './edges/DynamicEdge'
 
@@ -71,8 +71,10 @@ const ReactFlowWrapper = () => {
       const gluedDraggedNodes = draggedNodes.filter((node) =>
         Object.keys(gluedNodeDefinition).includes(node.type as NodeTypes)
       )
+
+      const edge = nodes.find((e) => e.type === NodeTypes.EDGE_NODE)
       for (const movedNode of gluedDraggedNodes) {
-        const [type, spacing, handle] = gluedNodeDefinition[movedNode.type as NodeTypes]
+        const [type, , handle] = gluedNodeDefinition[movedNode.type as NodeTypes]
         if (!type) continue
 
         const outgoers =
@@ -83,7 +85,7 @@ const ReactFlowWrapper = () => {
         const positionChange: NodePositionChange = {
           id: gluedNode.id,
           type: 'position',
-          position: { x: movedNode.position.x, y: movedNode.position.y + spacing },
+          position: getGluedPosition(movedNode, edge),
         }
 
         onNodesChange([positionChange])

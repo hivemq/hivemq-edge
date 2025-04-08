@@ -209,10 +209,7 @@ export const createAdapterNode = (
     type: NodeTypes.DEVICE_NODE,
     targetPosition: Position.Top,
     data: { ...type, sourceAdapterId: adapter.id },
-    position: positionStorage?.[idBAdapterDevice] ?? {
-      x: nodeAdapter.position.x,
-      y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
-    },
+    position: positionStorage?.[idBAdapterDevice] ?? getGluedPosition(nodeAdapter),
   }
 
   const deviceConnector: Edge = {
@@ -315,4 +312,50 @@ export const getDefaultMetricsFor = (node: Node): string[] => {
     return [`${suffix}.${data.id}.${prefix}`]
   }
   return [] as string[]
+}
+
+export enum LAYOUT_GLUE_TYPE {
+  FIXED = 'FIXED',
+  HALF_SPACE = 'HALF_SPACE',
+  RADIAL = 'RADIAL',
+}
+
+export const getGluedPosition = (
+  source: Node,
+  centroid?: Node,
+  type: LAYOUT_GLUE_TYPE = LAYOUT_GLUE_TYPE.HALF_SPACE
+): XYPosition => {
+  const [, spacing] = gluedNodeDefinition[source.type as NodeTypes]
+
+  // Half-space position (the glued node is located up/down based on relative location to centroid)
+  if (centroid && type === LAYOUT_GLUE_TYPE.HALF_SPACE) {
+    const delta = source.position.y - centroid.position.y < 0 ? 1 : -1
+    return {
+      x: source.position.x,
+      y: source.position.y + delta * spacing,
+    }
+  }
+
+  // Radial position (the glued node is located outward from the direction centroid-to-source)
+  if (centroid && type === LAYOUT_GLUE_TYPE.RADIAL) {
+    const vec: XYPosition = {
+      x: source.position.x - centroid.position.x,
+      y: source.position.y - centroid.position.y,
+    }
+    const norm = Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.y, 2))
+    if (Math.abs(norm) < 0.01) return source.position
+
+    vec.x = -(vec.x * spacing) / norm
+    vec.y = -(vec.y * spacing) / norm
+    return {
+      x: source.position.x + 2 * vec.x,
+      y: source.position.y + 2 * vec.y,
+    }
+  }
+
+  // fixed position (default)
+  return {
+    x: source.position.x,
+    y: source.position.y + spacing,
+  }
 }
