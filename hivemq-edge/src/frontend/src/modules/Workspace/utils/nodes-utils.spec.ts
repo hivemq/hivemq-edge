@@ -283,7 +283,3 @@ describe('createCombinerNode', () => {
     })
   })
 })
-
-export const getGluedPosition = (s: Node, t: Node, c: Node): XYPosition => {
-  return { x: 0, y: 0 }
-}
