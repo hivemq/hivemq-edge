@@ -146,6 +146,15 @@ tasks.register("updateDependantVersions") {
     edgeProjectsToUpdate.forEach {
         dependsOn(gradle.includedBuild(it).task(":updateVersion"))
     }
+    doLast {
+        val prevVersion = project.findProperty("prevVersion") as String?
+        val version = project.findProperty("version") as String?
+        if(prevVersion != null && prevVersion.endsWith("-SNAPSHOT")) {
+            file("ext/hivemq-edge-openapi-$prevVersion.yaml").renameTo(file("ext/hivemq-edge-openapi-$version.yaml"))
+        } else {
+            file("ext/hivemq-edge-openapi-$prevVersion.yaml").copyTo(file("ext/hivemq-edge-openapi-$version.yaml"))
+        }
+    }
 }
 
 
