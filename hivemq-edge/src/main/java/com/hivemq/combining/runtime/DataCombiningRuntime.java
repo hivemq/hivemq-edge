@@ -210,7 +210,11 @@ public class DataCombiningRuntime {
         public void accept(final @NotNull List<DataPoint> dataPoints) {
             tagResults.put(tagName, dataPoints);
             if (isPrimary) {
-                triggerPublish(dataCombining);
+                try {
+                    triggerPublish(dataCombining);
+                } catch (final Exception e) {
+                    log.warn("Unable to process data points '{}'", dataPoints, e);
+                }
             }
         }
     }
