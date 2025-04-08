@@ -50,4 +50,9 @@ public class BridgeWebsocketConfig {
     public int hashCode() {
         return Objects.hash(path, subProtocol);
     }
+
+    @Override
+    public String toString() {
+        return "BridgeWebsocketConfig{" + "path='" + path + '\'' + ", subProtocol='" + subProtocol + '\'' + '}';
+    }
 }

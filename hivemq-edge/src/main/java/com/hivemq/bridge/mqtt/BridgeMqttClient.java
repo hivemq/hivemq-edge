@@ -349,7 +349,6 @@ public class BridgeMqttClient {
     }
 
     protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
-
         final EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
