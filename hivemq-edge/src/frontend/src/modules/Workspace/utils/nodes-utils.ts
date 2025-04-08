@@ -20,9 +20,9 @@ const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 4
 const MAX_ADAPTERS = 10
 
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
-  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, 200, 'target'],
+  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -200, 'target'],
   [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -175, 'target'],
-  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, -200, 'source'],
+  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, 200, 'source'],
   [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 175, 'source'],
 }
 
