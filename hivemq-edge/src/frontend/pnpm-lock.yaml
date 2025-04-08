@@ -306,6 +306,9 @@ devDependencies:
   axe-core:
     specifier: ^4.10.2
     version: 4.10.2
+  commander:
+    specifier: ^13.1.0
+    version: 13.1.0
   cypress:
     specifier: ^14.0.2
     version: 14.0.2
@@ -336,6 +339,9 @@ devDependencies:
   eslint-plugin-react-refresh:
     specifier: ^0.4.18
     version: 0.4.18(eslint@9.19.0)
+  fs-extra:
+    specifier: ^11.3.0
+    version: 11.3.0
   globals:
     specifier: ^15.14.0
     version: 15.14.0
@@ -6873,6 +6879,11 @@ packages:
     engines: {node: '>=16'}
     dev: true
 
+  /commander@13.1.0:
+    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
+    engines: {node: '>=18'}
+    dev: true
+
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
     dev: true
@@ -8381,8 +8392,8 @@ packages:
       universalify: 2.0.1
     dev: true
 
-  /fs-extra@11.2.0:
-    resolution: {integrity: sha512-PmDi3uwK5nFuXh7XDTlVnS17xJS7vW36is2+w3xcv8SVxiB4NyATf4ctkVY5bkSjX0Y4nbvZCq1/EjtEyr9ktw==}
+  /fs-extra@11.3.0:
+    resolution: {integrity: sha512-Z4XaCL6dUDHfP/jT25jJKMmtxvuwbkrD1vNSMFlo9lNLY2c5FHYSQgHPRZUjAB26TpDEoW9HCOgplrdbaPV/ew==}
     engines: {node: '>=14.14'}
     dependencies:
       graceful-fs: 4.2.11
@@ -10033,7 +10044,7 @@ packages:
     dependencies:
       camelcase: 6.3.0
       commander: 11.1.0
-      fs-extra: 11.2.0
+      fs-extra: 11.3.0
       handlebars: 4.7.8
       json-schema-ref-parser: 9.0.9
     dev: true
