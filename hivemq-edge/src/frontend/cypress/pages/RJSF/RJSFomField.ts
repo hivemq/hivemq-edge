@@ -35,6 +35,11 @@ export class RJSFomField {
         return cy.get(`${rootSelector} input#${safeId}`)
       },
 
+      get inputUpDown() {
+        // TODO checking for [value] on div might not always work; spinbutton is more definitive
+        return cy.get(`${rootSelector} label + div[value] > input[role="spinbutton"]`)
+      },
+
       get checkBox() {
         return cy.get(`${rootSelector} input#${safeId} + span`)
       },
