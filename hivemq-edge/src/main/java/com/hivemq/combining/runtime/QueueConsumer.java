@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.SingleWriterService;
@@ -66,7 +67,10 @@ public abstract class QueueConsumer {
     }
 
     void submitPoll() {
-        singleWriterService.callbackExecutor(queueId).execute(this::pollAndForward);
+        singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
+            pollAndForward();
+            return null;
+        });
     }
 
     private void pollAndForward() {
@@ -74,29 +78,19 @@ public abstract class QueueConsumer {
             final ListenableFuture<ImmutableList<PUBLISH>> publishesFuture =
                     clientQueuePersistence.readShared(queueId, READ_LIMIT, PUBLISH_POLL_BATCH_SIZE_BYTES);
 
-            Futures.addCallback(publishesFuture, new FutureCallback<>() {
-                @Override
-                public void onSuccess(final @NotNull ImmutableList<PUBLISH> publishes) {
-                    if (publishes.isEmpty()) {
-                        return;
-                    }
-                    //we know it's 1 message as READ_LIMIT = 1
-                    final PUBLISH publish = publishes.get(0);
-                    processPublish(publish);
+            Futures.transform(publishesFuture, publishes -> {
+                if (publishes.isEmpty()) {
+                    return null;
                 }
-
-                @Override
-                public void onFailure(final @NotNull Throwable t) {
-                    handleExceptionDuringPolling(t);
-                }
-            }, singleWriterService.callbackExecutor(queueId));
-
-
+                //we know it's 1 message as READ_LIMIT = 1
+                final PUBLISH publish = publishes.get(0);
+                processPublish(publish);
+                return null;
+            }, MoreExecutors.directExecutor());
         } catch (final Throwable t) {
             // the writer shouldn't throw an exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
             handleExceptionDuringPolling(t);
         }
-
     }
 
     private void processPublish(final @NotNull PUBLISH publish) {
@@ -122,7 +116,7 @@ public abstract class QueueConsumer {
     }
 
     private void handleExceptionDuringHandling(final @NotNull Throwable throwable, final @NotNull String message) {
-        log.error("Failed to handle message. Message will be dropped because: {}",  message);
+        log.error("Failed to handle message. Message will be dropped because: {}", message);
         if (log.isDebugEnabled()) {
             log.debug("Original Exception: ", throwable);
         }
@@ -130,12 +124,8 @@ public abstract class QueueConsumer {
 
     private void removeMessage(final @NotNull String queueId, final @NotNull String uniqueId, final @NotNull QoS qos) {
         if (qos != QoS.AT_MOST_ONCE) {
-            singleWriterService.callbackExecutor(queueId).execute(() -> {
-                //-- 15665 - > QoS 0 causes republishing
-                FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, uniqueId));
-            });
+            //-- 15665 - > QoS 0 causes republishing
+            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, uniqueId));
         }
     }
-
-
 }

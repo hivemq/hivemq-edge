@@ -227,7 +227,7 @@ public class PublishPollServiceImpl implements PublishPollService {
                 Exceptions.rethrowError("Exception in new messages handling", t);
                 channel.disconnect();
             }
-        }, singleWriterService.callbackExecutor(client));
+        }, MoreExecutors.directExecutor());
     }
 
     @Override
@@ -305,7 +305,7 @@ public class PublishPollServiceImpl implements PublishPollService {
             public void onFailure(final Throwable t) {
                 Exceptions.rethrowError("Exception in inflight messages handling", t);
             }
-        }, singleWriterService.callbackExecutor(client));
+        }, MoreExecutors.directExecutor());
     }
 
     @Override
@@ -435,7 +435,7 @@ public class PublishPollServiceImpl implements PublishPollService {
                         "for shared subscription " +
                         sharedSubscription, t);
             }
-        }, singleWriterService.callbackExecutor(client));
+        }, MoreExecutors.directExecutor());
     }
 
     @NotNull

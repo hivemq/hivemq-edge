@@ -26,23 +26,15 @@ import java.util.List;
  */
 public interface ProducerQueues {
 
+    <R> @NotNull ListenableFuture<R> submit(@NotNull String key, @NotNull SingleWriterService.Task<R> task);
 
-    <R> @NotNull ListenableFuture<R> submit(final @NotNull String key, final @NotNull SingleWriterService.Task<R> task);
+    <R> @NotNull ListenableFuture<R> submit(int bucketIndex, @NotNull SingleWriterService.Task<R> task);
 
-    <R> @NotNull ListenableFuture<R> submit(final int bucketIndex, final @NotNull SingleWriterService.Task<R> task);
+    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsParallel(@NotNull SingleWriterService.Task<R> task);
 
+    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsSequential(@NotNull SingleWriterService.Task<R> task);
 
-    <R> @Nullable ListenableFuture<R> submit(final int bucketIndex,
-                                             final @NotNull SingleWriterService.Task<R> task,
-                                             final @Nullable SingleWriterService.SuccessCallback<R> successCallback,
-                                             final @Nullable SingleWriterService.FailedCallback failedCallback);
-
-    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsParallel(final @NotNull SingleWriterService.Task<R> task);
-
-    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsSequential(final @NotNull SingleWriterService.Task<R> task);
-
-    int getBucket(final @NotNull String key);
+    int getBucket(@NotNull String key);
 
     @NotNull ListenableFuture<Void> shutdown(final @Nullable SingleWriterService.Task<Void> finalTask);
-
 }
