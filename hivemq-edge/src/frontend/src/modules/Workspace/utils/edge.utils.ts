@@ -1,5 +1,6 @@
 import type { InternalNode, Node, XYPosition } from '@xyflow/react'
 import { Position, MarkerType } from '@xyflow/react'
+import { CONFIG_ADAPTER_WIDTH } from './nodes-utils'
 
 // this helper function returns the intersection point
 // of the line between the center of the intersectionNode and the target node
@@ -83,11 +84,13 @@ export function initialElements() {
 
   nodes.push({ id: 'target', data: { label: 'Target' }, position: center })
 
-  for (let i = 0; i < 8; i++) {
-    const degrees = i * (360 / 8)
+  const OCTAGON_DISTRIBUTION = 8
+
+  for (let i = 0; i < OCTAGON_DISTRIBUTION; i++) {
+    const degrees = i * (360 / OCTAGON_DISTRIBUTION)
     const radians = degrees * (Math.PI / 180)
-    const x = 250 * Math.cos(radians) + center.x
-    const y = 250 * Math.sin(radians) + center.y
+    const x = CONFIG_ADAPTER_WIDTH * Math.cos(radians) + center.x
+    const y = CONFIG_ADAPTER_WIDTH * Math.sin(radians) + center.y
 
     nodes.push({ id: `${i}`, data: { label: 'Source' }, position: { x, y } })
 

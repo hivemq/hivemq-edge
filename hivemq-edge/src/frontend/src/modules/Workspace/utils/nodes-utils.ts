@@ -15,15 +15,16 @@ import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 export const CONFIG_ADAPTER_WIDTH = 245
 
 const POS_SEPARATOR = 80
+const GLUE_SEPARATOR = 200
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
 const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 400 }
 const MAX_ADAPTERS = 10
 
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
-  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -200, 'target'],
-  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -175, 'target'],
-  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, 200, 'source'],
-  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 175, 'source'],
+  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -GLUE_SEPARATOR, 'target'],
+  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -GLUE_SEPARATOR, 'target'],
+  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, GLUE_SEPARATOR, 'source'],
+  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, GLUE_SEPARATOR, 'source'],
 }
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
