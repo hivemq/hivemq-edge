@@ -83,7 +83,7 @@ describe('ADS adapter', () => {
         .checkBoxLabel.should('have.text', 'Only publish data items that have changed since last poll')
     })
 
-    it.only('should render the ADS Device tab', () => {
+    it('should render the ADS Device tab', () => {
       // Force initial validation
       adapterPage.config.formTab(2).click()
       adapterPage.config.submitButton.click()
