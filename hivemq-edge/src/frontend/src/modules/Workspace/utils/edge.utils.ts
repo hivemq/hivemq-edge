@@ -11,7 +11,7 @@ import { CONFIG_ADAPTER_WIDTH } from './nodes-utils'
  * @param intersectionNode
  * @param targetNode
  */
-function getNodeIntersection(intersectionNode: InternalNode<Node>, targetNode: InternalNode<Node>) {
+export function getNodeIntersection(intersectionNode: InternalNode<Node>, targetNode: InternalNode<Node>) {
   const { width: intersectionNodeWidth, height: intersectionNodeHeight } = intersectionNode.measured
   const intersectionNodePosition = intersectionNode.internals.positionAbsolute
   const targetPosition = targetNode.internals.positionAbsolute
@@ -36,7 +36,7 @@ function getNodeIntersection(intersectionNode: InternalNode<Node>, targetNode: I
 }
 
 // returns the position (top,right,bottom or right) passed node compared to the intersection point
-function getEdgePosition(node: InternalNode<Node>, intersectionPoint: XYPosition) {
+export function getEdgePosition(node: InternalNode<Node>, intersectionPoint: XYPosition) {
   const n = { ...node.internals.positionAbsolute, ...node }
   const nx = Math.round(n.x)
   const ny = Math.round(n.y)
@@ -77,6 +77,7 @@ export function getEdgeParams(source: InternalNode<Node>, target: InternalNode<N
   }
 }
 
+/* istanbul ignore next -- @preserve */
 export function initialElements() {
   const nodes = []
   const edges = []

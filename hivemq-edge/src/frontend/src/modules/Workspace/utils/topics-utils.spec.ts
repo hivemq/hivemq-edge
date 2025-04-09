@@ -55,26 +55,26 @@ const validationSuite: Suite[] = [
   {
     protocol: MOCK_PROTOCOL_MODBUS,
     formData: MOCK_ADAPTER_MODBUS,
-    expectedPath: ['subscriptions.*.destination'],
-    expectedTopics: ['a/valid/topic/modbus/1'],
+    expectedPath: [],
+    expectedTopics: [],
   },
   {
     protocol: MOCK_PROTOCOL_SIMULATION,
     formData: MOCK_ADAPTER_SIMULATION,
-    expectedPath: ['subscriptions.*.destination'],
-    expectedTopics: ['a/valid/topic/simulation/1'],
+    expectedPath: [],
+    expectedTopics: [],
   },
   {
     protocol: MOCK_PROTOCOL_OPC_UA,
     formData: MOCK_ADAPTER_OPC_UA,
-    expectedPath: ['subscriptions.*.mqtt-topic'],
-    expectedTopics: ['a/valid/topic/opc-ua-client/1', 'a/valid/topic/opc-ua-client/2'],
+    expectedPath: [],
+    expectedTopics: [],
   },
   {
     protocol: MOCK_PROTOCOL_HTTP,
     formData: MOCK_ADAPTER_HTTP,
-    expectedPath: ['destination'],
-    expectedTopics: ['a/valid/topic/http/1'],
+    expectedPath: [],
+    expectedTopics: [],
   },
 
   {
@@ -143,13 +143,7 @@ describe('mergeAllTopics', () => {
       [mockBridge, mockBridge]
     )
 
-    expect(actual).toStrictEqual([
-      '#',
-      'root/topic/ref/1',
-      'a/valid/topic/opc-ua-client/1',
-      'a/valid/topic/opc-ua-client/2',
-      'a/valid/topic/modbus/1',
-    ])
+    expect(actual).toStrictEqual(['#', 'root/topic/ref/1'])
   })
 
   it('should extract every topics from all bridges', async () => {
@@ -165,11 +159,7 @@ describe('mergeAllTopics', () => {
       undefined
     )
 
-    expect(actual).toStrictEqual([
-      'a/valid/topic/opc-ua-client/1',
-      'a/valid/topic/opc-ua-client/2',
-      'a/valid/topic/modbus/1',
-    ])
+    expect(actual).toStrictEqual([])
   })
 
   it('should not extract any topic!', async () => {

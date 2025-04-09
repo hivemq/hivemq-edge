@@ -2,15 +2,14 @@
 import type { Adapter, ProtocolAdapter, TagSchema } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
-export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
-  id: 'http',
-  protocol: 'HTTP(s) over TCP',
-  name: 'HTTP(s) to MQTT Protocol Adapter',
-  description:
-    'Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.',
-  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter',
+export const MOCK_PROTOCOL_FILE: ProtocolAdapter = {
+  id: 'file',
+  protocol: 'File Protocol',
+  name: 'File Adapter',
+  description: 'This adapter polls and publishes the content of files on regular basis.',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html',
   version: 'Development Version',
-  logoUrl: '/module/images/http-icon.png',
+  logoUrl: '/module/images/file.png',
   author: 'HiveMQ',
   installed: true,
   capabilities: ['READ'],
@@ -19,50 +18,21 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
     displayName: 'Connectivity',
     description: 'A standard connectivity based protocol, typically web standard.',
   },
-  tags: ['INTERNET', 'TCP', 'WEB'],
+  tags: ['IOT', 'IIOT'],
   configSchema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',
     properties: {
-      allowUntrustedCertificates: {
-        type: 'boolean',
-        title: 'Allow Untrusted Certificates',
-        description: 'Allow the adapter to connect to untrusted SSL sources (for example expired certificates).',
-        default: false,
-        format: 'boolean',
-      },
-      httpConnectTimeoutSeconds: {
-        type: 'integer',
-        title: 'HTTP Connection Timeout',
-        description: 'Timeout (in seconds) to allow the underlying HTTP connection to be established',
-        default: 5,
-        minimum: 1,
-        maximum: 60,
-      },
-      httpToMqtt: {
+      fileToMqtt: {
         type: 'object',
         properties: {
-          assertResponseIsJson: {
-            type: 'boolean',
-            title: 'Assert JSON Response?',
-            description:
-              'Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.',
-            default: false,
-            format: 'boolean',
-          },
-          httpPublishSuccessStatusCodeOnly: {
-            type: 'boolean',
-            title: 'Publish Only On Success Codes',
-            description: 'Only publish data when HTTP response code is successful ( 200 - 299 )',
-            default: true,
-            format: 'boolean',
-          },
           maxPollingErrorsBeforeRemoval: {
             type: 'integer',
             title: 'Max. Polling Errors',
-            description: 'Max. errors polling the endpoint before the polling daemon is stopped',
+            description:
+              'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
             default: 10,
-            minimum: 3,
+            minimum: -1,
           },
           pollingIntervalMillis: {
             type: 'integer',
@@ -72,8 +42,8 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
             minimum: 1,
           },
         },
-        title: 'HTTP To MQTT Config',
-        description: 'The configuration for a data stream from HTTP to MQTT',
+        title: 'File To MQTT Config',
+        description: 'The configuration for a data stream from File to MQTT',
       },
       id: {
         type: 'string',
@@ -86,114 +56,61 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
         pattern: '^([a-zA-Z_0-9-_])*$',
       },
     },
-    required: ['id'],
+    required: ['fileToMqtt', 'id'],
   },
   uiSchema: {
     'ui:tabs': [
       {
         id: 'coreFields',
         title: 'Connection',
-        properties: ['id', 'httpConnectTimeoutSeconds', 'allowUntrustedCertificates'],
+        properties: ['id', '*'],
       },
       {
-        id: 'httpToMqtt',
-        title: 'HTTP to MQTT',
-        properties: ['httpToMqtt'],
-      },
-      {
-        id: 'mqttToHttp',
-        title: 'MQTT to HTTP',
-        properties: ['mqttToHttp'],
+        id: 'subFields',
+        title: 'File to MQTT',
+        properties: ['fileToMqtt'],
       },
     ],
     id: {
-      'ui:disabled': true,
+      'ui:disabled': false,
     },
-    'ui:order': ['id', 'url', '*'],
-    httpToMqtt: {
+    'ui:order': ['id', '*'],
+    fileToMqtt: {
       'ui:batchMode': true,
-      'ui:order': [
-        'httpToMqttMappings',
-        'pollingIntervalMillis',
-        'maxPollingErrorsBeforeRemoval',
-        'assertResponseIsJson',
-        'httpPublishSuccessStatusCodeOnly',
-        '*',
-      ],
-      httpToMqttMappings: {
+      'ui:order': ['fileToMqttMappings', 'maxPollingErrorsBeforeRemoval', 'pollingIntervalMillis', '*'],
+      fileToMqttMappings: {
         'ui:batchMode': true,
         items: {
-          'ui:order': [
-            'url',
-            'mqttTopic',
-            'mqttQos',
-            'mqttUserProperties',
-            'httpRequestMethod',
-            'httpRequestTimeoutSeconds',
-            'httpRequestBodyContentType',
-            'httpRequestBody',
-            'httpHeaders',
-            'includeTimestamp',
-            '*',
-          ],
+          'ui:order': ['mqttTopic', 'filePath', 'contentType', 'mqttQos', '*', 'mqttUserProperties'],
           'ui:collapsable': {
             titleKey: 'mqttTopic',
           },
-          httpRequestBody: {
-            'ui:widget': 'textarea',
-          },
-        },
-      },
-    },
-    mqttToHttp: {
-      'ui:batchMode': true,
-      'ui:order': ['mqttToHttpMappings', '*'],
-      mqttToHttpMappings: {
-        'ui:batchMode': true,
-        items: {
-          'ui:order': [
-            'url',
-            'mqttTopicFilter',
-            'mqttMaxQos',
-            'mqttUserProperties',
-            'httpRequestMethod',
-            'httpRequestTimeoutSeconds',
-            'httpHeaders',
-            '*',
-          ],
-          'ui:collapsable': {
-            titleKey: 'mqttTopicFilter',
-          },
         },
       },
     },
   },
 }
 
-export const MOCK_ADAPTER_HTTP: Adapter = {
-  id: 'test-http',
+export const MOCK_ADAPTER_FILE: Adapter = {
+  id: 'test-file',
   config: {
-    httpConnectTimeoutSeconds: 5,
-    httpToMqtt: {
-      pollingIntervalMillis: 5000,
+    fileToMqtt: {
+      pollingIntervalMillis: 1000,
       maxPollingErrorsBeforeRemoval: 10,
-      assertResponseIsJson: false,
-      httpPublishSuccessStatusCodeOnly: true,
     },
-    allowUntrustedCertificates: false,
-    id: 'test-http',
+    id: 'test-file',
   },
   status: {
     connection: Status.connection.STATELESS,
-    id: 'test-http',
+    id: 'test-file',
     runtime: Status.runtime.STARTED,
-    startedAt: '2025-04-05T20:40:59.871Z',
+    startedAt: '2025-04-07T21:39:49.82Z',
     type: 'adapter',
   },
-  type: 'http',
+  type: 'file',
 }
 
-export const MOCK_SCHEMA_HTTP: TagSchema = {
+export const MOCK_SCHEMA_FILE: TagSchema = {
   configSchema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',

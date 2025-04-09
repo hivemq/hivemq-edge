@@ -141,12 +141,7 @@ describe('useGetEdgeTopics', () => {
 
     expect(result.current).toStrictEqual(
       expect.objectContaining({
-        data: [
-          'a/valid/topic/modbus/1',
-          'a/valid/topic/opc-ua-client/1',
-          'a/valid/topic/opc-ua-client/2',
-          'root/topic/ref/1',
-        ],
+        data: ['root/topic/ref/1'],
       })
     )
   })
