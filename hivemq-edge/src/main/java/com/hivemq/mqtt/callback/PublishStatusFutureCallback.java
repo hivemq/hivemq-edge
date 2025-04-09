@@ -102,13 +102,13 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
             log.error("Exceptions in publish status callback handling, queue ID = " + queueId, e);
         }
 
-        if (status != PublishStatus.NOT_CONNECTED) {
-            checkForNewMessages();
-        }
         if (packetIdentifier != 0) {
             messageIDPool.returnId(packetIdentifier);
         }
 
+        if (status != PublishStatus.NOT_CONNECTED) {
+            checkForNewMessages();
+        }
     }
 
     private void checkForNewMessages() {

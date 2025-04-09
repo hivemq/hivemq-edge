@@ -44,7 +44,6 @@ public class ProducerQueuesImplTest {
         MockitoAnnotations.initMocks(this);
 
         when(singleWriterServiceImpl.getPersistenceBucketCount()).thenReturn(64);
-        when(singleWriterServiceImpl.getThreadPoolSize()).thenReturn(4);
         when(singleWriterServiceImpl.getGlobalTaskCount()).thenReturn(new AtomicLong());
 
         producerQueues = new ProducerQueuesImpl(singleWriterServiceImpl, 4);

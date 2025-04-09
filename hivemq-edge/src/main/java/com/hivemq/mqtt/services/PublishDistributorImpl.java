@@ -20,6 +20,7 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.config.LocalSubscription;
@@ -272,7 +273,7 @@ public class PublishDistributorImpl implements PublishDistributor {
 
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
 
-        Futures.addCallback(future, new FutureCallback<Void>() {
+        Futures.addCallback(future, new FutureCallback<>() {
             @Override
             public void onSuccess(final @Nullable Void result) {
                 statusFuture.set(DELIVERED);
@@ -282,7 +283,7 @@ public class PublishDistributorImpl implements PublishDistributor {
             public void onFailure(final @NotNull Throwable t) {
                 statusFuture.set(FAILED);
             }
-        }, singleWriterService.callbackExecutor(client));
+        }, MoreExecutors.directExecutor());
         return statusFuture;
     }
 
