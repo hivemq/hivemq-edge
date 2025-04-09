@@ -27,8 +27,9 @@ import {
   NodeDevice,
   NodeCombiner,
 } from '@/modules/Workspace/components/nodes'
-import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { getGluedPosition, gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
+import { DynamicEdge } from './edges/DynamicEdge'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -56,6 +57,7 @@ const ReactFlowWrapper = () => {
   const edgeTypes = useMemo(
     () => ({
       [EdgeTypes.REPORT_EDGE]: MonitoringEdge,
+      [EdgeTypes.DYNAMIC_EDGE]: DynamicEdge,
     }),
     []
   )
@@ -69,8 +71,10 @@ const ReactFlowWrapper = () => {
       const gluedDraggedNodes = draggedNodes.filter((node) =>
         Object.keys(gluedNodeDefinition).includes(node.type as NodeTypes)
       )
+
+      const edge = nodes.find((e) => e.type === NodeTypes.EDGE_NODE)
       for (const movedNode of gluedDraggedNodes) {
-        const [type, spacing, handle] = gluedNodeDefinition[movedNode.type as NodeTypes]
+        const [type, , handle] = gluedNodeDefinition[movedNode.type as NodeTypes]
         if (!type) continue
 
         const outgoers =
@@ -81,7 +85,7 @@ const ReactFlowWrapper = () => {
         const positionChange: NodePositionChange = {
           id: gluedNode.id,
           type: 'position',
-          position: { x: movedNode.position.x, y: movedNode.position.y + spacing },
+          position: getGluedPosition(movedNode, edge),
         }
 
         onNodesChange([positionChange])
@@ -120,8 +124,7 @@ const ReactFlowWrapper = () => {
           nodeComponent={(miniMapNode) => {
             if (miniMapNode.className === NodeTypes.EDGE_NODE)
               return <circle cx={miniMapNode.x} cy={miniMapNode.y} r="50" fill="#ffc000" />
-            if (miniMapNode.className === NodeTypes.DEVICE_NODE || miniMapNode.className === NodeTypes.HOST_NODE)
-              return null
+            if (miniMapNode.className === NodeTypes.HOST_NODE) return null
             return (
               <rect
                 x={miniMapNode.x}

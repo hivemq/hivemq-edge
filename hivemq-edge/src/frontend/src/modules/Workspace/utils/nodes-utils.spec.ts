@@ -255,7 +255,6 @@ describe('createCombinerNode', () => {
         id: `connect-edge-${mockId}`,
         source: mockId,
         target: 'edge',
-        type: 'default',
       }),
       sourceConnectors: [],
     })
@@ -279,7 +278,6 @@ describe('createCombinerNode', () => {
           id: `connect-idEdge-${mockId}`,
           source: 'idEdge',
           target: '6991ff43-9105-445f-bce3-976720df40a3',
-          type: 'default',
         }),
       ],
     })

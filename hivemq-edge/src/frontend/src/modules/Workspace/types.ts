@@ -39,6 +39,7 @@ export enum NodeTypes {
 
 export enum EdgeTypes {
   REPORT_EDGE = 'REPORT_EDGE',
+  DYNAMIC_EDGE = 'DYNAMIC_EDGE',
 }
 
 export type EdgeStatus = {
