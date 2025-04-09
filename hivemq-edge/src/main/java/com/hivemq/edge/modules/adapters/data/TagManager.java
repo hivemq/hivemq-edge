@@ -64,7 +64,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
                     try {
                         consumer.accept(dataPoints);
                     } catch (final Exception e) {
-                        log.warn("An error was thrown while processing tag {} with consumer {}", tagName, consumer, e);
+                        log.error("An error was thrown while processing tag {} with consumer {}", tagName, consumer, e);
                     }
                 });
             }
