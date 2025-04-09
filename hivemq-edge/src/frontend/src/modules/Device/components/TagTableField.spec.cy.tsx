@@ -143,7 +143,7 @@ describe('TagTableField', () => {
     })
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <CustomFormTesting
