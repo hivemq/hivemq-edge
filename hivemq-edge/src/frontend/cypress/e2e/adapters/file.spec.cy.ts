@@ -2,7 +2,7 @@ import { loginPage, adapterPage, rjsf } from 'cypress/pages'
 
 import { MOCK_PROTOCOL_FILE } from '@/__test-utils__/adapters/file.ts'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
-import { cy_identifierShouldBeValid } from 'cypress/utils/common_fields.utils.ts'
+import { cy_identifierShouldBeValid, cy_identifierShouldBeVisible } from 'cypress/utils/common_fields.utils.ts'
 
 describe('File adapter', () => {
   beforeEach(() => {
@@ -40,12 +40,7 @@ describe('File adapter', () => {
       adapterPage.config.submitButton.click()
       adapterPage.config.formTab(0).click()
 
-      rjsf.field('id').requiredLabel.should('contain.text', 'Identifier')
-      rjsf.field('id').input.should('have.attr', 'name', 'root_id')
-      rjsf.field('id').errors.should('have.text', "must have required property 'Identifier'")
-
-      rjsf.field('id').input.type('123')
-      rjsf.field('id').helperText.should('have.text', 'Unique identifier for this protocol adapter')
+      cy_identifierShouldBeVisible()
     })
 
     it('should render the File To MQTT tab', () => {
@@ -90,7 +85,7 @@ describe('File adapter', () => {
       cy.getByTestId('protocol-create-adapter').click()
     })
 
-    it.only('should handle error', () => {
+    it('should handle error', () => {
       adapterPage.config.submitButton.click()
       cy_identifierShouldBeValid()
     })

@@ -18,4 +18,9 @@ export const cy_identifierShouldBeValid = () => {
 
   rjsf.field('id').input.type('opcua-1')
   rjsf.field('id').errors.should('have.text', 'This identifier is already in use for another adapter')
+
+  rjsf.field('id').input.clear()
+
+  rjsf.field('id').input.type('123')
+  rjsf.field('id').helperText.should('have.text', 'Unique identifier for this protocol adapter')
 }
