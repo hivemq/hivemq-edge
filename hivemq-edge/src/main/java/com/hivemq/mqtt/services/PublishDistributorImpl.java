@@ -279,7 +279,7 @@ public class PublishDistributorImpl implements PublishDistributor {
             }
 
             @Override
-            public void onFailure(final Throwable t) {
+            public void onFailure(final @NotNull Throwable t) {
                 statusFuture.set(FAILED);
             }
         }, singleWriterService.callbackExecutor(client));

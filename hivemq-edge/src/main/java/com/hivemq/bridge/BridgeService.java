@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +56,7 @@ public class BridgeService {
     private final @NotNull ExecutorService executorService;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
 
-    private final Map<MqttBridge, BridgeMqttClient> activeBridgeNamesToClient = new ConcurrentHashMap<>(0);
+    private final Map<MqttBridge, BridgeMqttClient> activeBridgeNamesToClient = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Throwable> bridgeNameToLastError = new ConcurrentHashMap<>(0);
 
     private volatile @Nullable List<MqttBridge> allKnownBridgeConfigs;
@@ -189,6 +191,7 @@ public class BridgeService {
             .ifPresent(bridge -> {
                 log.debug("Starting bridge {}", bridge.getId());
                 final var bridgeMqttClient = activeBridgeNamesToClient.computeIfAbsent(bridge, newBridge -> {
+                    System.out.println("New one created " + newBridge.getId());
                     final BridgeMqttClient bClient = bridgeMqttClientFactory.createRemoteClient(newBridge);
                     bClient.createForwarders().forEach(messageForwarder::addForwarder);
                     Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
