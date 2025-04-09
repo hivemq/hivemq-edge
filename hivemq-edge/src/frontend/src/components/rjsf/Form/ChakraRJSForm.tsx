@@ -23,6 +23,7 @@ import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.
 import { MqttTransformationField } from '@/components/rjsf/Fields'
 import { adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
+import UpDownWidget from '@/components/rjsf/Widgets/UpDownWidget'
 
 interface CustomFormProps<T>
   extends Pick<
@@ -118,6 +119,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       }}
       widgets={{
         ...(!showNativeWidgets && adapterJSFWidgets),
+        updown: UpDownWidget,
       }}
       fields={{
         ...(!showNativeWidgets && {
