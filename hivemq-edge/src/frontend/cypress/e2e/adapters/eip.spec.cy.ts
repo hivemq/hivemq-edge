@@ -4,7 +4,7 @@ import { MOCK_PROTOCOL_EIP } from '@/__test-utils__/adapters/eip.ts'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { cy_identifierShouldBeValid, cy_identifierShouldBeVisible } from 'cypress/utils/common_fields.utils.ts'
 
-describe('Simulation adapter', () => {
+describe('EIP adapter', () => {
   beforeEach(() => {
     cy_interceptCoreE2E()
 
