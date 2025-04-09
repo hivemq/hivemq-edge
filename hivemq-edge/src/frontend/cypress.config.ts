@@ -12,7 +12,7 @@ export default defineConfig({
   retries: { runMode: 2, openMode: 0 },
   e2e: {
     video: true,
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:8080',
     setupNodeEvents(on, config) {
       codeCoverage(on, config)
       installLogsPrinter(on, {
