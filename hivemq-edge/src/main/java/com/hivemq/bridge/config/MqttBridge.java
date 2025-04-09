@@ -238,7 +238,8 @@ public class MqttBridge {
         }
 
         public @NotNull MqttBridge build() {
-            return new MqttBridge(Objects.requireNonNull(id),
+            return new MqttBridge(
+                    Objects.requireNonNull(id),
                     Objects.requireNonNull(host),
                     port,
                     Objects.requireNonNull(clientId),
@@ -262,11 +263,9 @@ public class MqttBridge {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MqttBridge)) {
+        if (!(o instanceof final MqttBridge that)) {
             return false;
         }
-
-        final MqttBridge that = (MqttBridge) o;
 
         if (port != that.port) {
             return false;
@@ -331,12 +330,13 @@ public class MqttBridge {
         result = 31 * result + Boolean.hashCode(loopPreventionEnabled);
         result = 31 * result + loopPreventionHopCount;
         result = 31 * result + Boolean.hashCode(persist);
+
         return result;
     }
 
     @Override
     public @NotNull String toString() {
-        final String sb = "MqttBridge{" +
+        return "MqttBridge{" +
                 "id='" +
                 id +
                 '\'' +
@@ -371,6 +371,5 @@ public class MqttBridge {
                 ", loopPreventionHopCount=" +
                 loopPreventionHopCount +
                 '}';
-        return sb;
     }
 }

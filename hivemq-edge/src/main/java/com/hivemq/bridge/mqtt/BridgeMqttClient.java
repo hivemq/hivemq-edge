@@ -233,10 +233,11 @@ public class BridgeMqttClient {
         final SettableFuture<Void> resultFuture = SettableFuture.create();
         stopped.set(false);
 
-        final Mqtt5UserPropertiesBuilder mqtt5UserPropertiesBuilder = Mqtt5UserProperties.builder();
+        final var mqtt5UserPropertiesBuilder = Mqtt5UserProperties.builder();
+        //noinspection ResultOfMethodCallIgnored
         mqtt5UserPropertiesBuilder.add(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY,
                 String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()));
-        final CompletableFuture<Mqtt5ConnAck> connectFuture = mqtt5Client.connectWith()
+        final var connectFuture = mqtt5Client.connectWith()
                 .cleanStart(bridge.isCleanStart())
                 .keepAlive(bridge.getKeepAlive())
                 .userProperties(mqtt5UserPropertiesBuilder.build())
@@ -305,7 +306,7 @@ public class BridgeMqttClient {
                     .retainAsPublished(remoteSubscription.isPreserveRetain())
                     .retainHandling(Mqtt5RetainHandling.DO_NOT_SEND)
                     .build();
-        }).collect(Collectors.toUnmodifiableList());
+        }).toList();
     }
 
     public void stop() {
@@ -319,13 +320,15 @@ public class BridgeMqttClient {
 
     public @NotNull List<MqttForwarder> createForwarders() {
         final ImmutableList.Builder<MqttForwarder> builder = ImmutableList.builder();
-        for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-            builder.add(new RemoteMqttForwarder(createForwarderId(bridge.getId(), localSubscription),
-                    bridge,
-                    localSubscription,
-                    this,
-                    perBridgeMetrics,
-                    bridgeInterceptorHandler));
+        for (final var localSubscription : bridge.getLocalSubscriptions()) {
+            builder.add(
+                    new RemoteMqttForwarder(
+                        createForwarderId(bridge.getId(), localSubscription),
+                        bridge,
+                        localSubscription,
+                        this,
+                        perBridgeMetrics,
+                        bridgeInterceptorHandler));
         }
         forwarders.addAll(builder.build());
         return Collections.unmodifiableList(forwarders);
@@ -354,16 +357,6 @@ public class BridgeMqttClient {
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);
         return builder;
-    }
-
-    /**
-     * Generate a globally unique type identifier in the namespace supplied
-     *
-     * @return The generated ID
-     */
-    static TypeIdentifier generate(@NotNull final TypeIdentifier.Type type) {
-        Preconditions.checkNotNull(type);
-        return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
     }
 
 }
