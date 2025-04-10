@@ -40,9 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -56,10 +54,10 @@ public class BridgeService {
     private final @NotNull ExecutorService executorService;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
 
-    private final Map<MqttBridge, BridgeMqttClient> activeBridgeNamesToClient = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, Throwable> bridgeNameToLastError = new ConcurrentHashMap<>(0);
+    private final @NotNull Map<String, Throwable> bridgeNameToLastError = new ConcurrentHashMap<>(0);
 
-    private volatile @Nullable List<MqttBridge> allKnownBridgeConfigs;
+    private volatile @NotNull Map<String, MqttBridgeAndClient> activeBridgeNamesToClient = Collections.synchronizedMap(new HashMap<>());
+    private volatile @NotNull Map<String, MqttBridge> allKnownBridgeConfigs = Collections.synchronizedMap(new HashMap<>());
 
     @Inject
     public BridgeService(
@@ -74,211 +72,214 @@ public class BridgeService {
         this.bridgeMqttClientFactory = bridgeMqttClientFactory;
         this.executorService = executorService;
         this.remoteService = remoteService;
-        metricRegistry.registerGauge(HiveMQMetrics.BRIDGES_CURRENT.name(), () -> {
-            final var tmp = allKnownBridgeConfigs;
-            if (tmp != null) {
-                return tmp.size();
-            } else {
-                return 0;
-            }
-        });
+        metricRegistry.registerGauge(HiveMQMetrics.BRIDGES_CURRENT.name(), () -> allKnownBridgeConfigs.size());
         shutdownHooks.add(new BridgeShutdownHook(this));
         bridgeConfig.registerConsumer(this::updateBridges);
     }
-
 
     /**
      * Synchronizes ALL bridges from the config into runtime instances
      */
     public synchronized void updateBridges(final @NotNull List<MqttBridge> bridges) {
-        this.allKnownBridgeConfigs = new CopyOnWriteArrayList<>(bridges);
-        log.info("Refreshing bridges {}", bridges);
+        final Map<String, MqttBridge> newMapOfKnownBridges = Collections.synchronizedMap(new HashMap<>());
+        final Map<String, MqttBridgeAndClient> newMapOfKActiveBridges = Collections.synchronizedMap(new HashMap<>());
+        bridges.forEach(config -> newMapOfKnownBridges.put(config.getId(), config));
+
+        log.info("Refreshing bridges {}", newMapOfKnownBridges.keySet());
 
         final long start = System.currentTimeMillis();
         if (log.isTraceEnabled()) {
-            log.trace("Updating bridges {} active connections from {} configured connections",
+            log.trace("Updating {} active bridges connections from {} configured connections",
                     activeBridgeNamesToClient.size(),
-                    bridges.size());
+                    newMapOfKnownBridges.size());
         }
 
         // first stop bridges as they might use the same clientId in case the id of a bridge was changed
         //remove any orphaned connections
         log.info("Stopping missing bridges");
-        Set.copyOf(activeBridgeNamesToClient.keySet())
-                .forEach(activeBridge -> {
-                    final var bridgeId = activeBridge.getId();
-                    getBridgeByName(bridgeId, bridges)
-                            .ifPresentOrElse(
-                                    bridge -> {
-                                        log.info("Removing bridge {}", bridgeId);
-                                        stopBridgeAndRemoveQueues(bridgeId);},
-                                    () -> log.debug("Bridge {} not active", bridgeId)
-                            );
-                });
+        newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
+            final var active = activeBridgeNamesToClient.remove(bridgeId);
+            if(active != null) {
+                log.info("Removing bridge {}", bridgeId);
+                internalStopBridge(active, true, List.of());
+            } else {
+                log.debug("Bridge {} not active", bridgeId);
+            }
+        });
 
         log.info("Restarting bridges with changed config");
-        Set.copyOf(activeBridgeNamesToClient.keySet())
-                .forEach(activeBridge -> {
-                    final var bridgeId = activeBridge.getId();
-                    getBridgeByName(bridgeId, bridges)
-                            .ifPresentOrElse(
-                                    bridge -> {
-                                        if(activeBridge.equals(bridge)) {
-                                            log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
-                                        } else {
-                                            log.info("Restarting bridge {} because config has changed", bridgeId);
-                                            stopBridgeAndRemoveQueues(bridgeId);
-                                            startBridge(bridgeId);
-                                        }},
-                                    () -> log.debug("Bridge {} doesn't exist yet", bridgeId)
-                            );
-                });
+        newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
+            final var active = activeBridgeNamesToClient.get(bridgeId);
+            if(active != null) {
+                if(active.bridge().equals(bridge)) {
+                    log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
+                } else {
+                    log.info("Restarting bridge {} because config has changed", bridgeId);
+                    internalStopBridge(active, true, List.of());
+                    newMapOfKActiveBridges.put(
+                            bridge.getId(),
+                            new MqttBridgeAndClient(bridge, internalStartBridge(bridge)));
+                };
+            };
+        });
 
         log.info("Adding new bridges");
-        bridges.forEach(bridge -> {
-            if (!activeBridgeNamesToClient.containsKey(bridge)) {
-                log.info("Adding bridge {}", bridge.getId());
-                startBridge(bridge.getId());
+        newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
+            if (!activeBridgeNamesToClient.containsKey(bridgeId)) {
+                log.info("Adding bridge {}", bridgeId);
+                newMapOfKActiveBridges.put(
+                        bridge.getId(),
+                        new MqttBridgeAndClient(bridge, internalStartBridge(bridge)));
             }
         });
 
         if (log.isTraceEnabled()) {
             log.trace("Updating bridges complete in {}ms", (System.currentTimeMillis() - start));
         }
+
+        this.activeBridgeNamesToClient = newMapOfKActiveBridges;
+        this.allKnownBridgeConfigs = newMapOfKnownBridges;
     }
 
-    private void stopAllBridges() {
-        Set.copyOf(activeBridgeNamesToClient.keySet()).forEach(bridge -> stopBridge(bridge.getId(), false, List.of()));
-    }
-
-
-    public synchronized void stopBridgeAndRemoveQueues(final @NotNull String bridgeName) {
-        stopBridge(bridgeName, true, List.of());
-    }
-
-
-    public synchronized void stopBridge(
-            final @NotNull String bridgeName,
-            final boolean clearQueue,
-            final @NotNull List<String> retainQueueForForwarders) {
-        final long start = System.currentTimeMillis();
-        log.info("Stopping MQTT bridge '{}'", bridgeName);
-        getBridgeByName(bridgeName, allKnownBridgeConfigs)
-                .ifPresent(activeBridge -> {
-                    final BridgeMqttClient client = activeBridgeNamesToClient.remove(activeBridge);
-                    if (client != null) {
-                        try {
-                            client.stop();
-                        } finally {
-                            log.info("Stopped MQTT bridge '{}' in {}ms", bridgeName, (System.currentTimeMillis() - start));
-                            try {
-                                for (final MqttForwarder forwarder : client.getActiveForwarders()) {
-                                    final boolean clearQueueForThisForwarder =
-                                            clearQueue && !retainQueueForForwarders.contains(forwarder.getId());
-                                    messageForwarder.removeForwarder(forwarder, clearQueueForThisForwarder);
-                                }
-                            } catch (final Exception e) {
-                                log.error("Error Removing MQTT bridge forwarders for '{}'", bridgeName, e);
-                            }
-                        }
-                    }
-                });
-    }
-
-    public void startBridge(final @NotNull String bridgeName) {
-        final long start = System.currentTimeMillis();
-        getBridgeByName(bridgeName, allKnownBridgeConfigs)
-            .ifPresent(bridge -> {
-                log.debug("Starting bridge {}", bridge.getId());
-                final var bridgeMqttClient = activeBridgeNamesToClient.computeIfAbsent(bridge, newBridge -> {
-                    System.out.println("New one created " + newBridge.getId());
-                    final BridgeMqttClient bClient = bridgeMqttClientFactory.createRemoteClient(newBridge);
-                    bClient.createForwarders().forEach(messageForwarder::addForwarder);
-                    Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
-                    return bClient;
-                });
-                if (!bridgeMqttClient.isConnected()) {
-                    final ListenableFuture<Void> future = bridgeMqttClient.start();
-                    Futures.addCallback(future, new FutureCallback<>() {
-                        public void onSuccess(@Nullable final Void result) {
-                            log.info("Bridge '{}' to remote broker {}:{} started in {}ms.",
-                                    bridge.getId(),
-                                    bridge.getHost(),
-                                    bridge.getPort(),
-                                    (System.currentTimeMillis() - start));
-                            bridgeNameToLastError.remove(bridge.getId());
-                            final HiveMQEdgeRemoteEvent startedEvent =
-                                    new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED);
-                            startedEvent.addUserData("cloudBridge",
-                                    String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
-                            startedEvent.addUserData("name", bridgeName);
-                            remoteService.fireUsageEvent(startedEvent);
-                            Checkpoints.checkpoint("mqtt-bridge-connected");
-                        }
-
-                        @Override
-                        public void onFailure(final @NotNull Throwable t) {
-                            log.error("Unable To Start Bridge '{}'.", bridge.getId(), t);
-                            bridgeNameToLastError.put(bridge.getId(), t);
-                            final HiveMQEdgeRemoteEvent errorEvent =
-                                    new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
-                            errorEvent.addUserData("cloudBridge",
-                                    String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
-                            errorEvent.addUserData("cause", t.getMessage());
-                            errorEvent.addUserData("name", bridgeName);
-                            remoteService.fireUsageEvent(errorEvent);
-                        }
-                    }, executorService);
-                }
-            });
-    }
-
-    protected static @NotNull Optional<MqttBridge> getBridgeByName(final @NotNull String bridgeName, final @Nullable List<MqttBridge> bridges) {
-        log.info("Getting bridge '{}' from {}", bridgeName, bridges);
-        return Optional.ofNullable(bridges)
-                .flatMap(bridgeList ->
-                        bridgeList
-                            .stream()
-                                .filter(bridge -> bridge.getId().equals(bridgeName))
-                                .findFirst());
-    }
 
     public @Nullable Throwable getLastError(final @NotNull String bridgeName) {
         return bridgeNameToLastError.get(bridgeName);
     }
 
     public boolean isConnected(final @NotNull String bridgeName) {
-        return getBridgeByName(bridgeName, allKnownBridgeConfigs)
-                .map(bridge -> {
-                    final BridgeMqttClient client;
-                    if ((client = activeBridgeNamesToClient.get(bridge)) != null) {
-                        return client.isConnected();
-                    }
-                    return false;
-                })
-                .orElse(false);
+        final var mqttBridgeAndClient = activeBridgeNamesToClient.get(bridgeName);
+        if(mqttBridgeAndClient != null) {
+            return mqttBridgeAndClient.mqttClient().isConnected();
+        }
+        return false;
     }
 
     public boolean isRunning(final @NotNull String bridgeName) {
-        return getBridgeByName(bridgeName, allKnownBridgeConfigs)
-                .map(activeBridgeNamesToClient::containsKey)
-                .orElse(false);
+        return activeBridgeNamesToClient.containsKey(bridgeName);
     }
 
-    public boolean restartBridge(
-            final @NotNull String bridgeName, final @Nullable MqttBridge newBridgeConfig) {
+    public synchronized void stopBridgeAndRemoveQueues(final @NotNull String bridgeName) {
+        stopBridge(bridgeName, true, List.of());
+    }
 
-        return getBridgeByName(bridgeName, allKnownBridgeConfigs)
-                .map(bridge -> {
-                    if (activeBridgeNamesToClient.containsKey(bridge)) {
-                        final List<String> unchangedForwarders = newForwarderIds(newBridgeConfig);
-                        stopBridge(bridgeName, true, unchangedForwarders);
-                        startBridge(bridgeName);
-                        return true;
-                    }
-                    return false;
-                })
-                .orElse(false);
+    public synchronized void stopBridge(
+            final @NotNull String bridgeName,
+            final boolean clearQueue,
+            final @NotNull List<String> retainQueueForForwarders) {
+        final var mqttBridgeAndClient = activeBridgeNamesToClient.remove(bridgeName);
+        if (mqttBridgeAndClient != null) {
+            log.info("Stopping bridge '{}'", bridgeName);
+            internalStopBridge(mqttBridgeAndClient, clearQueue, retainQueueForForwarders);
+        } else {
+            log.debug("Not stopping bridge '{}' since it wasn't started", bridgeName);
+        }
+    }
+
+    public synchronized boolean restartBridge(
+            final @NotNull String bridgId, final @Nullable MqttBridge newBridgeConfig) {
+        final var bridgeToClient = activeBridgeNamesToClient.remove(bridgId);
+        if (bridgeToClient != null) {
+            log.info("Restarting bridge '{}'", bridgeToClient);
+            final List<String> unchangedForwarders = newForwarderIds(newBridgeConfig);
+            stopBridge(bridgId, true, unchangedForwarders);
+            final var mqttBridgeAndClient = new MqttBridgeAndClient(
+                    newBridgeConfig,
+                    internalStartBridge(newBridgeConfig != null ? newBridgeConfig : bridgeToClient.bridge()));
+            activeBridgeNamesToClient.put(
+                    bridgId,
+                    mqttBridgeAndClient);
+            allKnownBridgeConfigs.put(bridgId, newBridgeConfig);
+            return true;
+        } else {
+            log.debug("Not restarting bridge '{}' since it wasn't active", bridgeToClient);
+            return false;
+        }
+    }
+
+    public synchronized boolean startBridge(final @NotNull String bridgId) {
+        var bridge = allKnownBridgeConfigs.get(bridgId);
+        if (bridge != null && !activeBridgeNamesToClient.containsKey(bridgId)) {
+            log.info("Starting bridge '{}'", bridgId);
+            final var mqttBridgeAndClient = new MqttBridgeAndClient(
+                    bridge,
+                    internalStartBridge(bridge));
+            activeBridgeNamesToClient.put(
+                    bridgId,
+                    mqttBridgeAndClient);
+            return true;
+        } else {
+            log.debug("Not starting bridge '{}' since it was already started", bridgId);
+            return false;
+        }
+    }
+
+    private synchronized void internalStopBridge(final @NotNull MqttBridgeAndClient bridgeAndClient,
+                                                final boolean clearQueue,
+                                                final @NotNull List<String> retainQueueForForwarders) {
+        final var start = System.currentTimeMillis();
+        final var bridgeId = bridgeAndClient.bridge().getId();
+        final var client = bridgeAndClient.mqttClient();
+        try {
+            bridgeAndClient.mqttClient().stop();
+        } finally {
+            log.info("Stopped bridge '{}' in {}ms", bridgeId, (System.currentTimeMillis() - start));
+            try {
+                for (final MqttForwarder forwarder : client.getActiveForwarders()) {
+                    final boolean clearQueueForThisForwarder =
+                            clearQueue && !retainQueueForForwarders.contains(forwarder.getId());
+                    messageForwarder.removeForwarder(forwarder, clearQueueForThisForwarder);
+                }
+            } catch (final Exception e) {
+                log.error("Error removing bridge forwarders for '{}'", bridgeId, e);
+            }
+        }
+    }
+
+    private BridgeMqttClient internalStartBridgeMqttClient(final @NotNull MqttBridge bridge, final @NotNull BridgeMqttClient bridgeMqttClient) {
+        final var start = System.currentTimeMillis();
+        final var bridgeId = bridge.getId();
+        final ListenableFuture<Void> future = bridgeMqttClient.start();
+        Futures.addCallback(future, new FutureCallback<>() {
+            public void onSuccess(@Nullable final Void result) {
+                log.info("Bridge '{}' to remote broker {}:{} started in {}ms.",
+                        bridge.getId(),
+                        bridge.getHost(),
+                        bridge.getPort(),
+                        (System.currentTimeMillis() - start));
+                bridgeNameToLastError.remove(bridge.getId());
+                final HiveMQEdgeRemoteEvent startedEvent =
+                        new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED);
+                startedEvent.addUserData("cloudBridge",
+                        String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                startedEvent.addUserData("name", bridgeId);
+                remoteService.fireUsageEvent(startedEvent);
+                Checkpoints.checkpoint("mqtt-bridge-connected");
+            }
+
+            @Override
+            public void onFailure(final @NotNull Throwable t) {
+                log.error("Unable oo start bridge '{}'.", bridge.getId(), t);
+                bridgeNameToLastError.put(bridge.getId(), t);
+                final HiveMQEdgeRemoteEvent errorEvent =
+                        new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
+                errorEvent.addUserData("cloudBridge",
+                        String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                errorEvent.addUserData("cause", t.getMessage());
+                errorEvent.addUserData("name", bridgeId);
+                remoteService.fireUsageEvent(errorEvent);
+            }
+        }, executorService);
+
+        return bridgeMqttClient;
+    }
+
+    private BridgeMqttClient internalStartBridge(final @NotNull MqttBridge bridge) {
+        final var bridgeId = bridge.getId();
+        log.debug("Starting bridge '{}'", bridgeId);
+        final BridgeMqttClient bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
+        bridgeMqttClient.createForwarders().forEach(messageForwarder::addForwarder);
+        Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
+        return internalStartBridgeMqttClient(bridge, bridgeMqttClient);
     }
 
     private @NotNull List<String> newForwarderIds(final @Nullable MqttBridge newBridgeConfig) {
@@ -291,6 +292,10 @@ public class BridgeService {
                 .map(localSubscription -> BridgeMqttClient.createForwarderId(newBridgeConfig.getId(),
                         localSubscription))
                 .collect(Collectors.toList());
+    }
+
+    private synchronized void stopAllBridges() {
+        activeBridgeNamesToClient.values().forEach(bridge -> internalStopBridge(bridge, false, List.of()));
     }
 
     private static class BridgeShutdownHook implements HiveMQShutdownHook {
@@ -316,4 +321,6 @@ public class BridgeService {
             return Priority.HIGH;
         }
     }
+
+    public record MqttBridgeAndClient(MqttBridge bridge, BridgeMqttClient mqttClient) {}
 }
