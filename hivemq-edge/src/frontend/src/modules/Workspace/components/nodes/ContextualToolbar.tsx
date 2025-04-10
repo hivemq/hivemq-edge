@@ -1,8 +1,8 @@
 import type { MouseEventHandler } from 'react'
 import { type FC, useMemo } from 'react'
-import type { Edge, Node } from '@xyflow/react'
+import type { Node } from '@xyflow/react'
 import { useReactFlow } from '@xyflow/react'
-import { getOutgoers, MarkerType, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
+import { getOutgoers, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { useNavigate } from 'react-router-dom'
 
 import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
-import { EntityType, Status } from '@/api/__generated__'
+import { EntityType } from '@/api/__generated__'
 import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 
@@ -21,11 +21,10 @@ import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { Group, NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
-import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
-import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
+import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 
@@ -56,7 +55,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const { data } = useGetAdapterTypes()
   const { data: combiners } = useListCombiners()
   const navigate = useNavigate()
-  const { fitView } = useReactFlow()
+  const { fitView, getNodesBounds } = useReactFlow()
 
   const selectedNodes = useMemo(() => {
     return nodes.filter((node) => node.selected)
@@ -103,63 +102,12 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
+    const rect = getNodesBounds(selectedGroupCandidates)
 
-    const groupId = `${IdStubs.GROUP_NODE}@${selectedGroupCandidates.map((node) => node.data.id).join('+')}`
-    const groupTitle = t('workspace.grouping.untitled')
-    const rect = getGroupLayout(selectedGroupCandidates)
-    const newGroupNode: Node<Group, NodeTypes.CLUSTER_NODE> = {
-      id: groupId,
-      type: NodeTypes.CLUSTER_NODE,
-      data: {
-        childrenNodeIds: selectedGroupCandidates.map((node) => node.id),
-        title: groupTitle,
-        isOpen: true,
-        colorScheme: 'red',
-      },
-      style: {
-        width: rect.width,
-        height: rect.height,
-      },
-      position: { x: rect.x, y: rect.y },
-    }
+    const groupRect = getGroupBounds(rect)
+    const { newGroupNode, newAEdge } = createGroup(selectedGroupCandidates, groupRect, theme)
 
-    const groupStatus: Status = {
-      runtime: selectedGroupCandidates.every((node) => {
-        if ('status' in node.data) return node.data.status?.runtime === Status.runtime.STARTED
-        return false
-      })
-        ? Status.runtime.STARTED
-        : Status.runtime.STOPPED,
-      connection: selectedGroupCandidates.every((node) => {
-        if ('status' in node.data) return node.data.status?.connection === Status.connection.CONNECTED
-        return false
-      })
-        ? Status.connection.CONNECTED
-        : Status.connection.DISCONNECTED,
-    }
-
-    const newAEdge: Edge = {
-      id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${groupId}`,
-      target: IdStubs.EDGE_NODE,
-      targetHandle: 'Top',
-      source: groupId,
-      hidden: true,
-      focusable: false,
-      type: EdgeTypes.REPORT_EDGE,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: getThemeForStatus(theme, groupStatus),
-      },
-      animated: groupStatus.connection === Status.connection.CONNECTED,
-      style: {
-        strokeWidth: 1.5,
-        stroke: getThemeForStatus(theme, groupStatus),
-      },
-    }
-
-    onInsertGroupNode(newGroupNode, newAEdge, rect)
+    onInsertGroupNode(newGroupNode, newAEdge, groupRect)
   }
 
   const onManageCombiners = () => {
