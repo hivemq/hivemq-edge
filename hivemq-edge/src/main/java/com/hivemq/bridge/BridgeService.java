@@ -82,8 +82,6 @@ public class BridgeService {
      * Synchronizes ALL bridges from the config into runtime instances
      */
     public synchronized void updateBridges(final @NotNull List<MqttBridge> bridges) {
-        System.out.println("GNAAARFF");
-        System.out.println(bridges);
         final Map<String, MqttBridge> newMapOfKnownBridges = Collections.synchronizedMap(new HashMap<>());
         final Map<String, MqttBridgeAndClient> newMapOfKActiveBridges = Collections.synchronizedMap(new HashMap<>());
         bridges.forEach(config -> newMapOfKnownBridges.put(config.getId(), config));
@@ -131,7 +129,6 @@ public class BridgeService {
 
         log.info("Adding new bridges");
         newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
-            System.out.println("Adding bridge !!!!!!" + bridgeId);
             if (!activeBridgeNamesToClient.containsKey(bridgeId)) {
                 log.info("Adding bridge {}", bridgeId);
                 newMapOfKActiveBridges.put(
