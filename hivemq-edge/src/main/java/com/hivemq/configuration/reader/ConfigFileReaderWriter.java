@@ -516,10 +516,18 @@ public class ConfigFileReaderWriter {
         if (requiresRestart.isEmpty()) {
             log.debug("Config can be applied");
             configurators.forEach(c -> c.applyConfig(config));
-            bridgeExtractor.updateConfig(config);
-            protocolAdapterExtractor.updateConfig(config);
-            dataCombiningExtractor.updateConfig(config);
-            unsExtractor.updateConfig(config);
+            if (bridgeExtractor.updateConfig(config) != Configurator.ConfigResult.SUCCESS) {
+                return false;
+            }
+            if (protocolAdapterExtractor.updateConfig(config) != Configurator.ConfigResult.SUCCESS) {
+                return false;
+            }
+            if (dataCombiningExtractor.updateConfig(config) != Configurator.ConfigResult.SUCCESS) {
+                return false;
+            }
+            if (unsExtractor.updateConfig(config) != Configurator.ConfigResult.SUCCESS) {
+                return false;
+            }
             return true;
         } else {
             log.error("Config requires restart because of: {}", requiresRestart);
