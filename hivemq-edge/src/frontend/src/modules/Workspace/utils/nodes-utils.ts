@@ -326,7 +326,19 @@ export const getGluedPosition = (
   centroid?: Node,
   type: LAYOUT_GLUE_TYPE = LAYOUT_GLUE_TYPE.HALF_SPACE
 ): XYPosition => {
-  const [, spacing] = gluedNodeDefinition[source.type as NodeTypes]
+  const [, spacing] = gluedNodeDefinition[source.type as NodeTypes] || []
+
+  if (!spacing) {
+    return source.position
+  }
+
+  // Do not shift position if nodes are in a group; their position is relative to the group
+  if (source.parentId) {
+    return {
+      x: source.position.x,
+      y: source.position.y + spacing,
+    }
+  }
 
   // Half-space position (the glued node is located up/down based on relative location to centroid)
   if (centroid && type === LAYOUT_GLUE_TYPE.HALF_SPACE) {
