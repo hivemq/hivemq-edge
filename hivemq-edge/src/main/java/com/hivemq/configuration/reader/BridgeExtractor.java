@@ -113,14 +113,16 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     @Override
     public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
         var bridgeEntities = convertBridgeConfigs(config);
-        bridgeEntities.forEach(entity -> bridgeIds.add(entity.getId()));
 
         Set<String> bridgeIds = new HashSet<>();
-        bridgeEntities.stream()
+        var duplicates = bridgeEntities.stream()
             .filter(n -> !bridgeIds.add(n.getId()))
             .toList();
 
-
+        if(!duplicates.isEmpty()) {
+            log.error("Duplicated bridgeIds found: {}", duplicates);
+            return Configurator.ConfigResult.ERROR;
+        }
 
         this.bridgeEntities = bridgeEntities;
         notifyConsumer();
