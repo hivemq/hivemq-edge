@@ -3,7 +3,9 @@ import { type FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils
 import {
   filterSupportedProperties,
   formatPath,
+  fromJsonPath,
   isMappingSupported,
+  toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 
 const MOCK_PROPERTY: FlatJSONSchema7 = {
@@ -40,5 +42,22 @@ describe('formatPath', () => {
     expect(formatPath('string')).toStrictEqual('string')
     expect(formatPath('path.to.string')).toStrictEqual('path.​to.​string')
     expect(formatPath('path.to.string')).not.toStrictEqual('path. to. string')
+  })
+})
+
+describe('toJsonPath', () => {
+  it('should tell when a property should be returned', async () => {
+    expect(toJsonPath('')).toStrictEqual('$')
+    expect(toJsonPath('$.123')).toStrictEqual('$.123')
+    expect(toJsonPath('123')).toStrictEqual('$.123')
+  })
+})
+
+describe('fromJsonPath', () => {
+  it('should tell when a property should be returned', async () => {
+    expect(fromJsonPath('')).toStrictEqual('')
+    expect(fromJsonPath('$')).toStrictEqual('')
+    expect(fromJsonPath('$.123')).toStrictEqual('123')
+    expect(fromJsonPath('123')).toStrictEqual('123')
   })
 })
