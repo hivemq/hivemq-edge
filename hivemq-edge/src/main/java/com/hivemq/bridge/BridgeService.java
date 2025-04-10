@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,6 +82,8 @@ public class BridgeService {
      * Synchronizes ALL bridges from the config into runtime instances
      */
     public synchronized void updateBridges(final @NotNull List<MqttBridge> bridges) {
+        System.out.println("GNAAARFF");
+        System.out.println(bridges);
         final Map<String, MqttBridge> newMapOfKnownBridges = Collections.synchronizedMap(new HashMap<>());
         final Map<String, MqttBridgeAndClient> newMapOfKActiveBridges = Collections.synchronizedMap(new HashMap<>());
         bridges.forEach(config -> newMapOfKnownBridges.put(config.getId(), config));
@@ -97,7 +100,10 @@ public class BridgeService {
         // first stop bridges as they might use the same clientId in case the id of a bridge was changed
         //remove any orphaned connections
         log.info("Stopping missing bridges");
-        newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
+        var missingBridges = new HashSet<>(allKnownBridgeConfigs.keySet());
+        missingBridges.removeAll(newMapOfKnownBridges.keySet());
+
+        missingBridges.forEach(bridgeId -> {
             final var active = activeBridgeNamesToClient.remove(bridgeId);
             if(active != null) {
                 log.info("Removing bridge {}", bridgeId);
@@ -125,6 +131,7 @@ public class BridgeService {
 
         log.info("Adding new bridges");
         newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
+            System.out.println("Adding bridge !!!!!!" + bridgeId);
             if (!activeBridgeNamesToClient.containsKey(bridgeId)) {
                 log.info("Adding bridge {}", bridgeId);
                 newMapOfKActiveBridges.put(
@@ -229,6 +236,7 @@ public class BridgeService {
                             clearQueue && !retainQueueForForwarders.contains(forwarder.getId());
                     messageForwarder.removeForwarder(forwarder, clearQueueForThisForwarder);
                 }
+                Checkpoints.checkpoint("mqtt-bridge-stopped");
             } catch (final Exception e) {
                 log.error("Error removing bridge forwarders for '{}'", bridgeId, e);
             }
