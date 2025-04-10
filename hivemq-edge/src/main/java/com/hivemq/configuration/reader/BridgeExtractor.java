@@ -45,7 +45,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -109,7 +112,17 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
 
     @Override
     public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
-        bridgeEntities = convertBridgeConfigs(config);
+        var bridgeEntities = convertBridgeConfigs(config);
+        bridgeEntities.forEach(entity -> bridgeIds.add(entity.getId()));
+
+        Set<String> bridgeIds = new HashSet<>();
+        bridgeEntities.stream()
+            .filter(n -> !bridgeIds.add(n.getId()))
+            .toList();
+
+
+
+        this.bridgeEntities = bridgeEntities;
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
