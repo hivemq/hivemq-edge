@@ -124,7 +124,10 @@ public class ConfigFileReaderWriter {
         final File configFile = configurationFile.file().get();
         final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
         this.configEntity = hiveMQConfigEntity;
-        setConfiguration(hiveMQConfigEntity);
+        if(!setConfiguration(hiveMQConfigEntity)) {
+            log.error("Unable to apply the given configuration.");
+            throw new UnrecoverableException(false);
+        }
 
         return hiveMQConfigEntity;
     }
