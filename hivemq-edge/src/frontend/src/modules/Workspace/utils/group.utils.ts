@@ -25,7 +25,7 @@ export const getGroupBounds = (rect: Rect): Rect => {
 export const createGroup = (
   selectedGroupCandidates: (NodeAdapterType | NodeDeviceType)[],
   rect: Rect,
-  theme: WithCSSVar<Dict>
+  theme: Partial<WithCSSVar<Dict>>
 ) => {
   const groupId = `${IdStubs.GROUP_NODE}@${selectedGroupCandidates.map((node) => node.data.id).join('+')}`
   const groupTitle = i18n.t('workspace.grouping.untitled')
@@ -60,7 +60,7 @@ export const createGroup = (
       : Status.connection.DISCONNECTED,
   }
 
-  const newAEdge: Edge = {
+  const newGroupEdge: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${groupId}`,
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Top',
@@ -81,5 +81,5 @@ export const createGroup = (
     },
   }
 
-  return { newGroupNode, newAEdge, rect }
+  return { newGroupNode, newGroupEdge, rect }
 }
