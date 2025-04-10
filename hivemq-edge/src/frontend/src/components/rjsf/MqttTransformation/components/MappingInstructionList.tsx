@@ -8,6 +8,7 @@ import { List, ListItem } from '@chakra-ui/react'
 import type { Instruction } from '@/api/__generated__'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 
 interface MappingEditorProps extends Omit<ListProps, 'onChange'> {
   instructions: Instruction[]
@@ -32,7 +33,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
       {properties.map((property) => {
         const instructionIndex = instructions
           ? instructions.findIndex((instruction) => {
-              const fullPath = [...property.path, property.key].join('.')
+              const fullPath = ['$', ...property.path, property.key].join('.')
               return instruction.destination === fullPath
             })
           : -1
@@ -47,8 +48,8 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
                 let newMappings = [...(instructions || [])]
                 if (source) {
                   const newItem: Instruction = {
-                    source: source,
-                    destination: destination,
+                    source: toJsonPath(source),
+                    destination: toJsonPath(destination),
                     sourceRef: sourceRef,
                   }
                   if (instructionIndex !== -1) {

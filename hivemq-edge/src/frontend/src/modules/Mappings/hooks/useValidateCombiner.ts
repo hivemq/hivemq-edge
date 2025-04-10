@@ -18,6 +18,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 
+import { fromJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 import { type FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
@@ -240,10 +241,10 @@ export const useValidateCombiner = (
       //   errors.addError(t('combiner.error.validation.notInstruction'))
 
       formData?.instructions?.forEach((instruction, index) => {
-        if (!knownPaths.includes(instruction.destination))
+        if (!knownPaths.includes(fromJsonPath(instruction.destination)))
           errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionDestinationPath'))
 
-        if (!allPathsFromSources.includes(instruction.source))
+        if (!allPathsFromSources.includes(fromJsonPath(instruction.source)))
           errors.instructions?.[index]?.addError(t('combiner.error.validation.notInstructionSourcePath'))
       })
 
