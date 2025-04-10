@@ -94,6 +94,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     @Override
     public @NotNull Response addBridge(final @NotNull com.hivemq.edge.api.model.Bridge bridge) {
         sanitize(bridge);
+        System.out.println("ADDING BRIDGE: " + bridge.getId());
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
@@ -144,6 +145,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
 
     @Override
     public @NotNull Response removeBridge(final @NotNull String bridgeId) {
+        System.out.println("DELETING BRIDGE: " + bridgeId);
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
