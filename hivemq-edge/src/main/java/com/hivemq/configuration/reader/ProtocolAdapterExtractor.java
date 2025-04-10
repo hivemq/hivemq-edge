@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.adapter.TagEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.xml.bind.ValidationEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, List<@NotNull ProtocolAdapterEntity>> {
     private volatile @NotNull List<ProtocolAdapterEntity> allConfigs =  List.of();
@@ -53,16 +55,24 @@ public class ProtocolAdapterExtractor implements ReloadableExtractor<List<@NotNu
     }
 
     @Override
-    public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
+    public synchronized Configurator.@NotNull ConfigResult updateConfig(final HiveMQConfigEntity config) {
+        final List<ValidationEvent> validationEvents = new ArrayList<>();
         final var newConfigs = List.copyOf(config.getProtocolAdapterConfig());
-        return updateTagNames(newConfigs)
-                .map(duplicates -> Configurator.ConfigResult.ERROR)
-                .orElseGet(() -> {
-                    allConfigs = newConfigs;
-                    //We don'T write here because this method is triggered as the result of a write
-                    notifyConsumer();
-                    return Configurator.ConfigResult.SUCCESS;
-                });
+        newConfigs.forEach(entity -> entity.validate(validationEvents));
+        final List<ValidationEvent> errorEvents = validationEvents.stream()
+                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR ||
+                        event.getSeverity() == ValidationEvent.ERROR)
+                .toList();
+        if (!errorEvents.isEmpty()) {
+            errorEvents.forEach(event -> log.error("Protocol adapter config error: {}", event.getMessage()));
+            return Configurator.ConfigResult.ERROR;
+        }
+        return updateTagNames(newConfigs).map(duplicates -> Configurator.ConfigResult.ERROR).orElseGet(() -> {
+            allConfigs = newConfigs;
+            //We don'T write here because this method is triggered as the result of a write
+            notifyConsumer();
+            return Configurator.ConfigResult.SUCCESS;
+        });
     }
 
     public synchronized Configurator.ConfigResult updateAllAdapters(final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {

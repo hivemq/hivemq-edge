@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
@@ -120,11 +121,26 @@ public class ProtocolAdapterEntity {
         if (protocolId == null || protocolId.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
+        final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
         if (northboundMappingEntities != null) {
             northboundMappingEntities.forEach(from -> from.validate(validationEvents));
+            northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
+                if (!tagNameSet.contains(tagName)) {
+                    validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                            "Tag name [" + tagName + "] in northbound mapping is not found",
+                            null));
+                }
+            });
         }
         if (southboundMappingEntities != null) {
             southboundMappingEntities.forEach(to -> to.validate(validationEvents));
+            southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
+                if (!tagNameSet.contains(tagName)) {
+                    validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                            "Tag name [" + tagName + "] in southbound mapping is not found",
+                            null));
+                }
+            });
         }
     }
 
