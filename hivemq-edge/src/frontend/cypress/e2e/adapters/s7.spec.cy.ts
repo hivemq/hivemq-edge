@@ -236,7 +236,7 @@ describe('S7 adapter', () => {
 
       workspacePage.navLink.click()
       workspacePage.canvas.should('be.visible')
-      workspacePage.toolbox.fit.click().type('tab')
+      workspacePage.toolbox.fit.click()
 
       workspacePage.edgeNode.click()
       workspacePage.nodeToolbar.should('be.visible').should('have.attr', 'data-id', 'edge')
