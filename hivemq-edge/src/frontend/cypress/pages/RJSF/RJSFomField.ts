@@ -85,7 +85,7 @@ export class RJSFomField {
           return cy.get(`${rootSelector} tbody tr`)
         },
 
-        rowAction(index: number) {
+        row(index: number) {
           return {
             get edit() {
               cy.get(`${rootSelector} tbody tr`)
