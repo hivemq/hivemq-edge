@@ -29,8 +29,8 @@ describe('useListDomainNorthboundMappings', () => {
           fieldMapping: {
             instructions: [
               {
-                destination: 'lastName',
-                source: 'dropped-property',
+                destination: '$.lastName',
+                source: '$.dropped-property',
               },
             ],
           },

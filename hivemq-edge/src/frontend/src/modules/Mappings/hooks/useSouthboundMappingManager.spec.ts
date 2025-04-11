@@ -33,8 +33,8 @@ describe('useSouthboundMappingManager', () => {
           fieldMapping: expect.objectContaining<FieldMapping>({
             instructions: [
               {
-                destination: 'lastName',
-                source: 'dropped-property',
+                destination: '$.lastName',
+                source: '$.dropped-property',
               },
             ],
           }),
