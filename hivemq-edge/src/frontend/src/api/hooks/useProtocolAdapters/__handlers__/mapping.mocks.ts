@@ -9,7 +9,7 @@ export const MOCK_SOUTHBOUND_MAPPING: SouthboundMapping = {
   topicFilter: 'my/filter',
   tagName: 'my/tag',
   fieldMapping: {
-    instructions: [{ source: 'dropped-property', destination: 'lastName' }],
+    instructions: [{ source: '$.dropped-property', destination: '$.lastName' }],
   },
 }
 
