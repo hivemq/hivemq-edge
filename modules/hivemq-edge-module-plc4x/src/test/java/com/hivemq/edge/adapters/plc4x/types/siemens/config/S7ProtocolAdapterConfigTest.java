@@ -25,6 +25,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -45,6 +46,7 @@ import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdap
 import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -128,11 +130,7 @@ class S7ProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/s7-adapter-minimal-missing-tag-config.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test

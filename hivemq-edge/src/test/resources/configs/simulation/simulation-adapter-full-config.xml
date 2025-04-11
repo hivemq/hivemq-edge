@@ -43,6 +43,12 @@
                     </mqttUserProperties>
                 </northboundMapping>
             </northboundMappings>
+            <tags>
+                <tag>
+                    <name>tag</name>
+                    <description>description</description>
+                </tag>
+            </tags>
         </protocol-adapter>
     </protocol-adapters>
 </hivemq>

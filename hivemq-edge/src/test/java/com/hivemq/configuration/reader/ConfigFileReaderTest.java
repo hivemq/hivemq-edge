@@ -103,7 +103,13 @@ public class ConfigFileReaderTest {
                         "                   </mqttUserProperty>\n" +
                         "                   </mqttUserProperties>" +
                         "                </northboundMapping>" +
-                        "            </northboundMappings>" +
+                        "            </northboundMappings>\n" +
+                        "            <tags>\n" +
+                        "                <tag>\n" +
+                        "                    <name>test</name>\n" +
+                        "                    <description>description1</description>\n" +
+                        "                </tag>\n" +
+                        "            </tags>\n" +
                         "        </protocol-adapter>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",

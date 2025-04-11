@@ -25,6 +25,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -43,6 +44,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -139,11 +141,7 @@ class ADSProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/ads-adapter-minimal-missing-tag-config.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag-name"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
 

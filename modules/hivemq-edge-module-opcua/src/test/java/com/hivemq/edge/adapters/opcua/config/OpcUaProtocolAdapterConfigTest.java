@@ -23,6 +23,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -159,11 +160,7 @@ class OpcUaProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/opcua-adapter-minimal-config-missing-tag.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("ns=1;i=1004"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
