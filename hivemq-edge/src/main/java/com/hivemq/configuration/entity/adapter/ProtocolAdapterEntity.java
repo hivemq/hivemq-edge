@@ -121,26 +121,36 @@ public class ProtocolAdapterEntity {
         if (protocolId == null || protocolId.isEmpty()) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
-        final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
-        if (northboundMappingEntities != null) {
-            northboundMappingEntities.forEach(from -> from.validate(validationEvents));
-            northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
-                if (!tagNameSet.contains(tagName)) {
-                    validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                            "Tag name [" + tagName + "] in northbound mapping is not found",
-                            null));
-                }
-            });
+        if ((northboundMappingEntities == null || northboundMappingEntities.isEmpty()) &&
+                (southboundMappingEntities == null || southboundMappingEntities.isEmpty())) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                    "northbound or southbound mappings are missing",
+                    null));
         }
-        if (southboundMappingEntities != null) {
-            southboundMappingEntities.forEach(to -> to.validate(validationEvents));
-            southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
-                if (!tagNameSet.contains(tagName)) {
-                    validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                            "Tag name [" + tagName + "] in southbound mapping is not found",
-                            null));
-                }
-            });
+        if (tags == null || tags.isEmpty()) {
+            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tags are missing", null));
+        } else {
+            final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+            if (northboundMappingEntities != null && !northboundMappingEntities.isEmpty()) {
+                northboundMappingEntities.forEach(from -> from.validate(validationEvents));
+                northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
+                    if (!tagNameSet.contains(tagName)) {
+                        validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                                "Tag name [" + tagName + "] in northbound mapping is not found",
+                                null));
+                    }
+                });
+            }
+            if (southboundMappingEntities != null && !southboundMappingEntities.isEmpty()) {
+                southboundMappingEntities.forEach(to -> to.validate(validationEvents));
+                southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
+                    if (!tagNameSet.contains(tagName)) {
+                        validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                                "Tag name [" + tagName + "] in southbound mapping is not found",
+                                null));
+                    }
+                });
+            }
         }
     }
 

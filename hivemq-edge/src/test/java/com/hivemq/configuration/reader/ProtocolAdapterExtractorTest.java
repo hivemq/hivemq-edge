@@ -55,15 +55,150 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenAdapterIdAndProtocolIdAreValidAndOthersAreEmpty_setConfigurationShouldReturnTrue()
-            throws IOException {
+    public void whenNoMappings_thenApplyConfigShouldFail() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenNoMappingsNoTags_thenApplyConfigShouldFail() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenNoTags_thenApplyConfigShouldFail() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                        </northboundMapping>
+                      </northboundMappings>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenUnexpectedXmlElementIsUnderHivemq_thenApplyConfigShouldFail() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <adapterId>simInvalid</adapterId>
+                  <protocolId>simulation</protocolId>
+                  <configVersion>1</configVersion>
+                  <config>
+                    <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                    <timeout>10000</timeout>
+                    <minDelay>0</minDelay>
+                    <maxDelay>0</maxDelay>
+                  </config>
+                </hivemq>
+                """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenNoMappingsNoTags_setConfigurationShouldReturnFalse() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final ProtocolAdapterEntity protocolAdapterEntity =
                 new ProtocolAdapterEntity("adapterId", "protocolId", 1, Map.of(), List.of(), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isTrue();
+        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+    }
+
+    @Test
+    public void whenNoMappings_setConfigurationShouldReturnFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final HiveMQConfigEntity entity = configFileReader.applyConfig();
+        assertThat(entity).isNotNull();
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("abc", "def", Map.of())));
+        entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
+        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+    }
+
+    @Test
+    public void whenNoTags_setConfigurationShouldReturnFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final HiveMQConfigEntity entity = configFileReader.applyConfig();
+        assertThat(entity).isNotNull();
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
+                "topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                false,
+                true,
+                List.of(),
+                100);
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(northboundMappingEntity),
+                List.of(),
+                List.of());
+        entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
+        assertThat(configFileReader.setConfiguration(entity)).isFalse();
     }
 
     @Test
