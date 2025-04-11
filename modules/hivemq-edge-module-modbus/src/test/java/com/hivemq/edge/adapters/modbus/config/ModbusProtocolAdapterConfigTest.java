@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -40,6 +41,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -131,11 +133,7 @@ public class ModbusProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missingTag() throws Exception {
         final URL resource = getClass().getResource("/modbus-adapter-minimal-config-missing-tag.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test

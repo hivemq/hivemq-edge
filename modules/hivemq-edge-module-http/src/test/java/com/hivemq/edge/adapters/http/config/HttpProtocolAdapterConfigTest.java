@@ -33,6 +33,7 @@ import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -135,11 +136,7 @@ public class HttpProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_missingTag() throws Exception {
         final URL resource = getClass().getResource("/http-config-defaults-missing-tag.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test

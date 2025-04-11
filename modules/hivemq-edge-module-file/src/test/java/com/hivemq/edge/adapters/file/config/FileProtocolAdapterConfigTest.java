@@ -127,9 +127,7 @@ class FileProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missing_tag() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-minimal-config-missing-tag.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags()).isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
