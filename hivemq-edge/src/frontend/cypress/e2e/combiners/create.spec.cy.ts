@@ -112,6 +112,23 @@ describe('Combiner', () => {
     rjsf.field('mappings').table.noDataMessage.should('have.text', 'No data received yet.')
     rjsf.field('mappings').table.addItem.click()
     rjsf.field('mappings').table.rows.should('have.length', 1)
-    rjsf.field('mappings').table.rowAction(0).edit.click()
+    rjsf.field('mappings').table.row(0).edit.click()
+
+    combinerForm.mappingEditor.form.should('be.visible')
+    combinerForm.mappingEditor.sources.selector.should('contain.text', 'Select tags and topic filters to combine ...')
+    combinerForm.mappingEditor.sources.selector.click()
+    combinerForm.mappingEditor.sources.options.should('have.length', 3)
+
+    combinerForm.mappingEditor.sources.selector.type('a/topic/')
+    combinerForm.mappingEditor.sources.options.click()
+    combinerForm.mappingEditor.sources.selector.should('contain.text', 'a/topic/+/filter')
+    combinerForm.mappingEditor.sources.schema.should('have.length', 2)
+    combinerForm.mappingEditor.primary.selector.type('a/topic{enter}')
+
+    combinerForm.mappingEditor.destination.selector.type('my/topic{enter}')
+    combinerForm.mappingEditor.destination.inferSchema.click()
+
+    combinerForm.inferSchema.modal.should('be.visible')
+    combinerForm.inferSchema.submit.click()
   })
 })
