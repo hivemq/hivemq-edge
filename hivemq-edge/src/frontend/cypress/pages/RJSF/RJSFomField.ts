@@ -1,5 +1,15 @@
 // MUST BE USED WITHIN a field element in a RJSF form
 export class RJSFomField {
+  get form() {
+    return cy.get('[role="dialog"]')
+  }
+
+  header = {
+    get title() {
+      return cy.get('')
+    },
+  }
+
   /**
    * Retrieve all fields in the form
    */
@@ -64,6 +74,34 @@ export class RJSFomField {
 
       get errors() {
         return cy.get(`${rootSelector} #${safeId}__error`)
+      },
+
+      table: {
+        get noDataMessage() {
+          return cy.get(`${rootSelector} tbody tr td [role="alert"][data-status="info"]`)
+        },
+
+        get rows() {
+          return cy.get(`${rootSelector} tbody tr`)
+        },
+
+        rowAction(index: number) {
+          return {
+            get edit() {
+              cy.get(`${rootSelector} tbody tr`)
+                .eq(index)
+                .within(() => {
+                  cy.getByTestId('combiner-mapping-list-edit').as('edit')
+                })
+              return cy.get('@edit')
+            },
+          }
+        },
+
+        get addItem() {
+          // Should be made more generic; remove reference to specific deployment (combiner)
+          return cy.get(`${rootSelector} tfoot button[data-testid="combiner-mapping-list-add"]`)
+        },
       },
     }
   }
