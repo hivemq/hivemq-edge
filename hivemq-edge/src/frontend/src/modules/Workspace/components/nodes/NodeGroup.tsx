@@ -1,6 +1,12 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NodeProps, NodeRemoveChange, NodeReplaceChange, EdgeRemoveChange } from '@xyflow/react'
+import type {
+  NodeProps,
+  NodePositionChange,
+  NodeRemoveChange,
+  NodeReplaceChange,
+  EdgeRemoveChange,
+} from '@xyflow/react'
 import { Handle, NodeResizer, Position } from '@xyflow/react'
 import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
@@ -34,22 +40,21 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
   }
 
   const handleUngroup = () => {
-    // TODO[NVL] Create a store action
+    const content = nodes.filter((node) => data.childrenNodeIds.includes(node.id))
+    const changeContent = content.map<NodeReplaceChange>((node) => ({
+      id: node.id,
+      item: { ...node, parentId: undefined },
+      type: 'replace',
+    }))
+    const changeContent2 = content.map<NodePositionChange>((node) => ({
+      id: node.id,
+      position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
+      type: 'position',
+    }))
+
     onToggleGroup({ id, data }, true)
-    onNodesChange(
-      nodes.map((node) => {
-        if (data.childrenNodeIds.includes(node.id)) {
-          return {
-            item: {
-              ...node,
-              parentId: undefined,
-              position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
-            },
-            type: 'replace',
-          } as NodeReplaceChange
-        } else return { item: node, type: 'replace' } as NodeReplaceChange
-      })
-    )
+    onNodesChange(changeContent)
+    onNodesChange(changeContent2)
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
     onEdgesChange(
       edges.filter((edge) => edge.source === id).map((e) => ({ id: e.id, type: 'remove' }) as EdgeRemoveChange)

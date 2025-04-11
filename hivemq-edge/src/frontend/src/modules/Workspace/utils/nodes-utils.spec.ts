@@ -3,7 +3,12 @@ import type { Edge, Node } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
+import {
+  MOCK_NODE_ADAPTER,
+  MOCK_NODE_BRIDGE,
+  MOCK_NODE_EDGE,
+  MOCK_NODE_LISTENER,
+} from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import type { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
@@ -20,6 +25,8 @@ import {
   createEdgeNode,
   createListenerNode,
   getDefaultMetricsFor,
+  getGluedPosition,
+  LAYOUT_GLUE_TYPE,
 } from './nodes-utils.ts'
 
 describe('createEdgeNode', () => {
@@ -280,6 +287,59 @@ describe('createCombinerNode', () => {
           target: '6991ff43-9105-445f-bce3-976720df40a3',
         }),
       ],
+    })
+  })
+})
+
+describe('getGluedPosition', () => {
+  it('should handle unsupported node', async () => {
+    const source: Node = { ...MOCK_NODE_LISTENER, position: { x: 0, y: 0 } }
+    expect(getGluedPosition(source)).toStrictEqual({
+      x: 0,
+      y: 0,
+    })
+  })
+
+  it('should handle nodes in a group', async () => {
+    const source: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 }, parentId: 'my-group' }
+    expect(getGluedPosition(source)).toStrictEqual({
+      x: 0,
+      y: -200,
+    })
+  })
+
+  it('should handle top half-space', async () => {
+    const source: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+    const centroid: Node = { ...MOCK_NODE_EDGE, position: { x: 50, y: 50 } }
+    expect(getGluedPosition(source, centroid)).toStrictEqual({
+      x: 0,
+      y: -200,
+    })
+  })
+
+  it('should handle bottom half-space', async () => {
+    const source: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+    const centroid: Node = { ...MOCK_NODE_EDGE, position: { x: 50, y: -50 } }
+    expect(getGluedPosition(source, centroid)).toStrictEqual({
+      x: 0,
+      y: 200,
+    })
+  })
+
+  it('should handle radial position', async () => {
+    const source: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+    const centroid: Node = { ...MOCK_NODE_EDGE, position: { x: 0, y: 50 } }
+    expect(getGluedPosition(source, centroid, LAYOUT_GLUE_TYPE.RADIAL)).toStrictEqual({
+      x: 0,
+      y: -400,
+    })
+  })
+
+  it('should handle default position', async () => {
+    const source: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+    expect(getGluedPosition(source)).toStrictEqual({
+      x: 0,
+      y: -200,
     })
   })
 })
