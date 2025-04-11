@@ -1,6 +1,6 @@
-import { Page } from '../Page.ts'
+import { ShellPage } from '../ShellPage.ts'
 
-export class WorkspacePage extends Page {
+export class WorkspacePage extends ShellPage {
   get navLink() {
     cy.get('nav [role="list"]')
       .eq(0)
@@ -60,6 +60,27 @@ export class WorkspacePage extends Page {
    */
   deviceNode(id: string) {
     return cy.get(`[role="button"][data-id="device@adapter@${id}"]`)
+  }
+
+  combinerNode(id: string) {
+    return cy.get(`[role="button"][data-id="${id}"]`)
+  }
+
+  act = {
+    /**
+     * @todo This "double-back" sequence is necessary to effectively select multiple nodes. Need to check for better alternative
+     * @param nodes
+     */
+    selectReactFlowNodes(nodes: string[]) {
+      const [first, ...rest] = nodes
+      workspacePage.adapterNode(first).type('{meta}', { release: false })
+      workspacePage.adapterNode(first).click()
+      rest.forEach((node) => {
+        workspacePage.adapterNode(node).click()
+      })
+      workspacePage.adapterNode(first).type('{meta}')
+      // workspacePage.adapterNode('first').type('{leftArrow}{leftArrow}')
+    },
   }
 }
 
