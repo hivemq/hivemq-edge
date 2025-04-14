@@ -1,9 +1,10 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Node } from '@xyflow/react'
 import { Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
@@ -12,7 +13,7 @@ import { getDefaultMetricsFor } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 interface LinkPropertyDrawerProps {
   nodeId: string
-  selectedNode: Node<Bridge | Adapter>
+  selectedNode: Node<Bridge | Adapter | Combiner>
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void
@@ -26,6 +27,12 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
       ? protocols?.items?.find((e) => e.id === (selectedNode as Node<Adapter>).data.type)
       : undefined
 
+  const displayInfo = useMemo(() => {
+    if (selectedNode.type === NodeTypes.COMBINER_NODE)
+      return { name: (selectedNode.data as Combiner).name, description: t('combiner.type') }
+    return { name: selectedNode.data.id, description: adapterProtocol?.name }
+  }, [adapterProtocol?.name, selectedNode.data, selectedNode.type, t])
+
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
       <DrawerContent>
@@ -34,10 +41,10 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
         <DrawerHeader>
           <Text>{t('workspace.observability.header', { context: selectedNode.type })}</Text>
           <NodeNameCard
-            name={selectedNode.data.id}
+            name={displayInfo.name}
             type={selectedNode.type as NodeTypes}
             icon={adapterProtocol?.logoUrl}
-            description={adapterProtocol?.name}
+            description={displayInfo.description}
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
