@@ -164,17 +164,17 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <DestinationSchemaLoader
             formData={props.formData}
             formContext={formContext}
-            onChange={(schema) => {
+            onChange={(schema, instructions) => {
               if (!props.formData) return
 
               props.onChange({
                 ...props.formData,
                 destination: { topic: props.formData.destination.topic, schema },
+                instructions: instructions || [],
               })
             }}
             onChangeInstructions={(v: Instruction[]) => {
               if (!props.formData) return
-              if (!v.length) return
 
               props.onChange({
                 ...props.formData,
