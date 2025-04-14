@@ -9,9 +9,17 @@ export class ShellPage extends Page {
     return cy.get('[role="region"][aria-label="Notifications-top-right"] [role="status"] [data-status]')
   }
 
+  get closeToast() {
+    return cy.get('[role="region"][aria-label="Notifications-top-right"] [role="status"] [data-status] button')
+  }
+
   toast = {
     get success() {
       return cy.get('[role="region"][aria-label="Notifications-top-right"] [role="status"] [data-status="success"]')
+    },
+
+    get error() {
+      return cy.get('[role="region"][aria-label="Notifications-top-right"] [role="status"] [data-status="error"]')
     },
   }
 }
