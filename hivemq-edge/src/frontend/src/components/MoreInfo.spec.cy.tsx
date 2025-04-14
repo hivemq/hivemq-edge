@@ -1,3 +1,4 @@
+import { WAIT_FOR_ANIMATION } from '../../cypress/config.utils'
 import MoreInfo from './MoreInfo'
 
 const MOCK_STATUS_TEXT = 'This is a test'
@@ -33,7 +34,9 @@ describe('MoreInfo', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link={'http://my.example.com'} />)
-    cy.getByTestId('more-info-trigger').click()
+    cy.getByTestId('more-info-trigger').realClick()
+
+    cy.wait(WAIT_FOR_ANIMATION)
     cy.getByTestId('more-info-popover').should('be.visible')
     cy.checkAccessibility()
   })

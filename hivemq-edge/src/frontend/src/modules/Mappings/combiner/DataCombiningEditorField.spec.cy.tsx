@@ -70,7 +70,7 @@ describe('DataCombiningEditorField', () => {
     cy.getByTestId('combining-editor-destination-header').should('contain.text', 'Destination')
 
     cy.getByTestId('combining-editor-sources-attributes').within(() => {
-      cy.get('[role="group"] label').should('have.text', 'Source tags and topic filters')
+      cy.get('[role="group"] label').should('have.text', 'Integration points')
       cy.get('[role="group"] label + div').within(() => {
         //TODO[TEXT] The ReactSelect component need a better distribution of data-testid
       })

@@ -190,7 +190,7 @@ describe('Combiner', () => {
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'my adapter')
   })
 
-  it.only('should delete the first combiner', () => {
+  it('should delete the first combiner', () => {
     workspacePage.canvas.should('be.visible')
     workspacePage.toolbox.fit.click()
 
