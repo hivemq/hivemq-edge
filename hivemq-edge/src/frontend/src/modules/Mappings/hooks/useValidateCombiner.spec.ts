@@ -388,7 +388,6 @@ describe('useValidateCombiner', () => {
     it.skip('should not validate when a topic filter schema is invalid', async () => {
       const result = await loadingEntities(sources, [
         http.get('**/management/topic-filters', () => {
-          console.log('XXXXXXX 11')
           return HttpResponse.json<TopicFilterList>(
             { items: [{ ...MOCK_TOPIC_FILTER, schema: MOCK_TOPIC_FILTER_SCHEMA_INVALID }] },
             { status: 200 }

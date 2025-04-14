@@ -927,7 +927,8 @@
       "aria-label": "Open the Observability panel",
       "header_ADAPTER_NODE": "Adapter Observability",
       "header_BRIDGE_NODE": "Bridge Observability",
-      "header_CLUSTER_NODE": "Group Observability"
+      "header_CLUSTER_NODE": "Group Observability",
+      "header_COMBINER_NODE": "Combiner Observability"
     },
     "datahub": {
       "aria-label": "Open the Data Hub policy",
@@ -1012,6 +1013,9 @@
         "expand": "Expand the chart",
         "collapse": "Collapse the chart"
       }
+    },
+    "error": {
+      "noMetrics": "There is no metrics available for this entity"
     },
     "charts": {
       "list": "List of metrics",
