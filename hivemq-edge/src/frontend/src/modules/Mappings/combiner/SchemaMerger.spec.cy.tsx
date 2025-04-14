@@ -33,7 +33,7 @@ describe('SchemaMerger', () => {
       )
       cy.getByTestId('schema-infer-merged').should('have.attr', 'data-invalid')
       cy.getByTestId('schema-infer-merged').within(() => {
-        cy.get('label').should('have.text', 'Suggested merged schema')
+        cy.get('label').should('contain.text', 'Suggested merged schema')
         cy.get('#schema-infer-properties-feedback').should('have.text', 'You need to define the source schemas first')
       })
 

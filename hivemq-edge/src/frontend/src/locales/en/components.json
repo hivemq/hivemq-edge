@@ -333,5 +333,9 @@
       "property": "Property",
       "example": "Example"
     }
+  },
+  "MoreInfo": {
+    "title": "More information",
+    "link": "More information"
   }
 }
