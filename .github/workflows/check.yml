@@ -3,7 +3,9 @@ name: CI Check
 on:
   push:
     paths:
-      - 'i-do-not-exist/**'
+      - '**'
+      - '!hivemq-edge/src/frontend/**'
+      - '!.github/workflows/**'
 
 concurrency:
   group: ${{ github.ref }}-check
