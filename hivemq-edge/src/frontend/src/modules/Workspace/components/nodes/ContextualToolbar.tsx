@@ -106,7 +106,6 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
     const groupRect = getGroupBounds(rect)
     const { newGroupNode, newGroupEdge } = createGroup(selectedGroupCandidates, groupRect, theme)
-
     onInsertGroupNode(newGroupNode, newGroupEdge, groupRect)
   }
 
