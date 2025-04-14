@@ -31,7 +31,7 @@ describe('MoreInfo', () => {
       .should('have.attr', 'href')
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link={'http://my.example.com'} />)
     cy.getByTestId('more-info-trigger').realClick()
