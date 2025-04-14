@@ -5,7 +5,7 @@ import type { Node } from '@xyflow/react'
 import { useEdges, useNodes } from '@xyflow/react'
 import { useDisclosure } from '@chakra-ui/react'
 
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
@@ -28,30 +28,26 @@ const NodePanelController: FC = () => {
   const { nodeId } = useParams()
 
   const selectedNode = nodes.find(
-    (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+    (node) => node.id === nodeId && (node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
 
-  const selectedEdge = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.EDGE_NODE)
-  const selectedDevice = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.DEVICE_NODE) as
+  const selectedEdge = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.EDGE_NODE)
+  const selectedDevice = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.DEVICE_NODE) as
     | Node<DeviceMetadata>
     | undefined
 
-  const selectedLinkSource = nodes.find((e) => {
-    const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
+  const selectedLinkSource = nodes.find((node) => {
+    const link = edges.find((edge) => edge.id === nodeId && edge.type === EdgeTypes.DYNAMIC_EDGE)
     if (!link) return undefined
-    return e.id === link.source // && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
-  }) as Node<Bridge | Adapter | Group> | undefined
+    return node.id === link.source
+  }) as Node<Bridge | Adapter | Group | Combiner> | undefined
 
-  const selectedGroup = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.CLUSTER_NODE) as
+  const selectedGroup = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.CLUSTER_NODE) as
     | Node<Group>
     | undefined
 
   useEffect(() => {
     if (!nodes.length) return
-    // if (!selectedNode || !nodeId) {
-    //   navigate('/workspace', { replace: true })
-    //   return
-    // }
     onOpen()
   }, [navigate, nodeId, nodes.length, onOpen, selectedNode])
 
@@ -84,7 +80,7 @@ const NodePanelController: FC = () => {
       {selectedLinkSource && selectedLinkSource.type !== NodeTypes.CLUSTER_NODE && (
         <LinkPropertyDrawer
           nodeId={nodeId}
-          selectedNode={selectedLinkSource as Node<Bridge | Adapter>}
+          selectedNode={selectedLinkSource as Node<Adapter | Bridge | Combiner>}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}
