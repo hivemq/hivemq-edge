@@ -27,6 +27,7 @@ import {
   formatPath,
   fromJsonPath,
   isMappingSupported,
+  toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
@@ -96,8 +97,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   const onHandleClear = () => {
     setState(DropState.IDLE)
     const fullPath = [...property.path, property.key].join('.')
-
-    onChange?.(undefined, fullPath as string)
+    onChange?.(undefined, toJsonPath(fullPath))
   }
 
   if (!isSupported)
