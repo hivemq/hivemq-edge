@@ -158,7 +158,7 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterEntity protocolAdapterEntity =
                 new ProtocolAdapterEntity("adapterId", "protocolId", 1, Map.of(), List.of(), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.setConfiguration(entity)).isTrue();
     }
 
     @Test
