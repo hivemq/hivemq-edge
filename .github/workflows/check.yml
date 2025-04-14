@@ -2,8 +2,9 @@ name: CI Check
 
 on:
   push:
-    paths-ignore:
-      - hivemq-edge/src/frontend/**
+    paths:
+      - '**'
+      - '!hivemq-edge/src/frontend/**'
 
 concurrency:
   group: ${{ github.ref }}-check
