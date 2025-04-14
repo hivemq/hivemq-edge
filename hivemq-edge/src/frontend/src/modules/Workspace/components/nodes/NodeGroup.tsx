@@ -46,7 +46,7 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
       item: { ...node, parentId: undefined },
       type: 'replace',
     }))
-    const changeContent2 = content.map<NodePositionChange>((node) => ({
+    const changePosition = content.map<NodePositionChange>((node) => ({
       id: node.id,
       position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
       type: 'position',
@@ -54,7 +54,7 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
 
     onToggleGroup({ id, data }, true)
     onNodesChange(changeContent)
-    onNodesChange(changeContent2)
+    onNodesChange(changePosition)
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
     onEdgesChange(
       edges.filter((edge) => edge.source === id).map((e) => ({ id: e.id, type: 'remove' }) as EdgeRemoveChange)
