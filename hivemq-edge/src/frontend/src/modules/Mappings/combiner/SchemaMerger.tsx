@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
+import MoreInfo from '@/components/MoreInfo'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem'
 import { type FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 
@@ -95,7 +96,13 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
           <Text data-testid={'schema-infer-prompt'}>{t('combiner.schema.schemaManager.infer.message')}</Text>
 
           <FormControl isInvalid={isError} data-testid={'schema-infer-merged'} id={'schema-infer-properties'}>
-            <FormLabel>{t('combiner.schema.schemaManager.infer.title')}</FormLabel>
+            <FormLabel>
+              {t('combiner.schema.schemaManager.infer.title')}
+              <MoreInfo
+                description={t('combiner.schema.schemaManager.infer.moreInfo')}
+                link={'https://docs.hivemq.com/hivemq-edge/installing-hivemq-edge.html'}
+              />
+            </FormLabel>
             <Box borderWidth={1} p={2} borderColor={isError ? 'red.500' : 'inherit'}>
               <List minH={50}>
                 {properties.map((property) => {
