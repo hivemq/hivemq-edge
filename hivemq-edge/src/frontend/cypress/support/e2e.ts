@@ -3,6 +3,7 @@ import 'cypress-each'
 import '@percy/cypress'
 import 'cypress-real-events'
 import '@cypress/code-coverage/support'
+import '@4tw/cypress-drag-drop'
 
 import './commands'
 

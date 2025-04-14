@@ -112,6 +112,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@4tw/cypress-drag-drop": "^2.3.0",
     "@chakra-ui/cli": "^2.4.1",
     "@cypress/code-coverage": "^3.13.11",
     "@eslint/js": "^9.17.0",
