@@ -27,7 +27,7 @@ import { MdOutlineEventNote } from 'react-icons/md'
 
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 
-import type { Group } from '../../types.ts'
+import type { Group, NodeAdapterType } from '../../types.ts'
 import { NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
@@ -59,13 +59,13 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
   const { t } = useTranslation()
   const { onGroupSetData } = useWorkspaceStore()
 
-  const adapterIDs = selectedNode.data.childrenNodeIds.map<Node | undefined>((e) => nodes.find((x) => x.id === e))
-  const metrics = adapterIDs.map((x) => (x ? getDefaultMetricsFor(x) : [])).flat()
+  const adapterIDs = nodes.filter((node) => selectedNode.data.childrenNodeIds.includes(node.id))
+  const metrics = adapterIDs.map((node) => (node ? getDefaultMetricsFor(node) : [])).flat()
 
   const linkEventLog = useMemo(() => {
     const searchParams = new URLSearchParams()
     for (const node of adapterIDs) {
-      if (node) searchParams.append('source', node.data.id)
+      if (node) searchParams.append('source', node.data.id as string)
     }
     return `/event-logs?${searchParams.toString()}`
   }, [adapterIDs])
@@ -80,7 +80,7 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
       type={selectedNode.type as NodeTypes}
       filters={adapterIDs.reduce<MetricsFilter[]>((acc, cur) => {
         if (cur && cur.type === NodeTypes.ADAPTER_NODE) {
-          acc.push({ id: cur.data.id, type: `com.hivemq.edge.protocol-adapters.${cur.data.type}` })
+          acc.push({ id: (cur as NodeAdapterType).data.id, type: `com.hivemq.edge.protocol-adapters.${cur.data.type}` })
         }
         return acc
       }, [])}
@@ -114,7 +114,7 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
             </CardHeader>
             <CardBody>
               <EventLogTable
-                globalSourceFilter={adapterIDs.map((e) => e?.data.id)}
+                globalSourceFilter={adapterIDs.map((e) => e.data.id as string)}
                 variant="summary"
                 maxEvents={10}
                 isSingleSource={false}
