@@ -59,6 +59,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
 
       const conflictName: [number, string][] = []
       properties.forEach((property, pathIndex) => {
+        property.metadata = reference
         if (reference.type === DataIdentifierReference.type.TAG) {
           const index = tagIndexMap.get(reference.id)
           property.origin = `${STUB_TAG_PROPERTY}${index}`
@@ -90,7 +91,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
   return (
     <>
       <ModalBody>
-        <VStack spacing={2} alignItems={'flex-start'}>
+        <VStack spacing={4} alignItems={'flex-start'}>
           <Text data-testid={'schema-infer-prompt'}>{t('combiner.schema.schemaManager.infer.message')}</Text>
 
           <FormControl isInvalid={isError} data-testid={'schema-infer-merged'} id={'schema-infer-properties'}>

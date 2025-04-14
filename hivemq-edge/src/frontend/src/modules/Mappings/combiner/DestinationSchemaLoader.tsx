@@ -1,7 +1,6 @@
 import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7 } from 'json-schema'
-
 import {
   Button,
   ButtonGroup,
@@ -16,9 +15,10 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 
-import type { DataCombining, Instruction } from '@/api/__generated__'
+import type { DataCombining, DataIdentifierReference, Instruction } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
+import { toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 import {
   type FlatJSONSchema7,
   getSchemaFromPropertyList,
@@ -33,7 +33,7 @@ import SchemaMerger from './SchemaMerger'
 interface DestinationSchemaLoaderProps {
   formData?: DataCombining
   formContext?: CombinerContext
-  onChange: (schema: string) => void
+  onChange: (schema: string, v?: Instruction[]) => void
   onChangeInstructions: (v: Instruction[]) => void
 }
 
@@ -67,7 +67,18 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   const handleSchemaMerge = (properties: FlatJSONSchema7[]) => {
     const schema = getSchemaFromPropertyList(properties)
     const destinationSchema = encodeDataUriJsonSchema(schema)
-    onChange(destinationSchema)
+    const autoInstructions = properties.map<Instruction>((property) => {
+      const { id, type } = property.metadata || {}
+      const instruction: DataIdentifierReference = { id: id as string, type: type as DataIdentifierReference.type }
+      const [, ...source] = property.key.split('_')
+      return {
+        sourceRef: instruction,
+        destination: toJsonPath([...property.path, property.key].join('.')),
+        source: toJsonPath([...property.path, source.join('_')].join('.')),
+      }
+    })
+
+    onChange(destinationSchema, autoInstructions)
     onClose()
   }
 
@@ -123,6 +134,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
       {schema?.schema && (
         <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
           <MappingInstructionList
+            id={'destination-mapping-editor'}
             schema={schema.schema}
             instructions={formData?.instructions || []}
             onChange={handleInstructionChange}
