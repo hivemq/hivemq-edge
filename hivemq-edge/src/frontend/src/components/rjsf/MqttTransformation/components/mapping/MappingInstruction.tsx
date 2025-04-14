@@ -23,7 +23,12 @@ import type { DataIdentifierReference, Instruction } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
-import { formatPath, isMappingSupported } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
+import {
+  formatPath,
+  fromJsonPath,
+  isMappingSupported,
+  toJsonPath,
+} from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
@@ -92,8 +97,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   const onHandleClear = () => {
     setState(DropState.IDLE)
     const fullPath = [...property.path, property.key].join('.')
-
-    onChange?.(undefined, fullPath as string)
+    onChange?.(undefined, toJsonPath(fullPath))
   }
 
   if (!isSupported)
@@ -129,7 +133,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             flex={3}
           >
             {instruction?.source ? (
-              <Code>{formatPath(instruction.source)}</Code>
+              <Code>{formatPath(fromJsonPath(instruction.source))}</Code>
             ) : (
               <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
                 {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}

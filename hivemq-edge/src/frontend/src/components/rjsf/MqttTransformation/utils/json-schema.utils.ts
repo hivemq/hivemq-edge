@@ -7,6 +7,7 @@ import type { JsonNode } from '@/api/__generated__'
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 import i18n from '@/config/i18n.config.ts'
+import type { DataReference } from '../../../../api/hooks/useDomainModel/useGetCombinedDataSchemas'
 
 export const ARRAY_ITEM_INDEX = '___index'
 
@@ -15,6 +16,7 @@ export interface FlatJSONSchema7 extends JSONSchema7 {
   key: string
   arrayType?: string
   origin?: string
+  metadata?: DataReference
 }
 
 export const getProperty = (

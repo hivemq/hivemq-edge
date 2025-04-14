@@ -76,8 +76,8 @@ describe('MappingDrawer', () => {
         fieldMapping: {
           instructions: [
             {
-              source: 'dropped-property',
-              destination: 'lastName',
+              source: '$.dropped-property',
+              destination: '$.lastName',
             },
           ],
         },
