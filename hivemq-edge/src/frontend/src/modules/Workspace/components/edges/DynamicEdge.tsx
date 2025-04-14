@@ -92,5 +92,4 @@ export const DynamicEdge: FC<EdgeProps> = ({ id, source, target, markerEnd, styl
       )}
     </>
   )
-  // return <path id={id} className="react-flow__edge-path" d={edgePath} markerEnd={markerEnd} style={style} />
 }
