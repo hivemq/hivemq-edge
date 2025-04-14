@@ -64,7 +64,7 @@ public class ProtocolAdapterExtractorTest {
                       <protocolId>simulation</protocolId>
                       <configVersion>1</configVersion>
                       <config>
-                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
                         <timeout>10000</timeout>
                         <minDelay>0</minDelay>
                         <maxDelay>0</maxDelay>
@@ -83,7 +83,7 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenNoMappingsNoTags_thenApplyConfigShouldFail() throws IOException {
+    public void whenNoMappingsNoTags_thenApplyConfigShouldPass() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
                 <hivemq>
                   <protocol-adapters>
@@ -92,7 +92,7 @@ public class ProtocolAdapterExtractorTest {
                       <protocolId>simulation</protocolId>
                       <configVersion>1</configVersion>
                       <config>
-                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
                         <timeout>10000</timeout>
                         <minDelay>0</minDelay>
                         <maxDelay>0</maxDelay>
@@ -101,7 +101,7 @@ public class ProtocolAdapterExtractorTest {
                   </protocol-adapters>
                 </hivemq>
                 """);
-        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        assertThat(configFileReader.applyConfig()).isNotNull();
     }
 
     @Test
@@ -114,7 +114,7 @@ public class ProtocolAdapterExtractorTest {
                       <protocolId>simulation</protocolId>
                       <configVersion>1</configVersion>
                       <config>
-                        <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
                         <timeout>10000</timeout>
                         <minDelay>0</minDelay>
                         <maxDelay>0</maxDelay>
@@ -140,7 +140,7 @@ public class ProtocolAdapterExtractorTest {
                   <protocolId>simulation</protocolId>
                   <configVersion>1</configVersion>
                   <config>
-                    <pollingIntervalMillis>notAnInteger</pollingIntervalMillis>
+                    <pollingIntervalMillis>123</pollingIntervalMillis>
                     <timeout>10000</timeout>
                     <minDelay>0</minDelay>
                     <maxDelay>0</maxDelay>
@@ -151,14 +151,14 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenNoMappingsNoTags_setConfigurationShouldReturnFalse() throws IOException {
+    public void whenNoMappingsNoTags_setConfigurationShouldReturnTrue() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final ProtocolAdapterEntity protocolAdapterEntity =
                 new ProtocolAdapterEntity("adapterId", "protocolId", 1, Map.of(), List.of(), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.setConfiguration(entity)).isTrue();
     }
 
     @Test

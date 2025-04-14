@@ -115,41 +115,49 @@ public class ProtocolAdapterEntity {
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        if (adapterId == null || adapterId.isEmpty()) {
+        final boolean adapterIdMissing = adapterId == null || adapterId.isEmpty();
+        final boolean protocolIdMissing = protocolId == null || protocolId.isEmpty();
+        final boolean northboundMappingMissing =
+                northboundMappingEntities == null || northboundMappingEntities.isEmpty();
+        final boolean southboundMappingMissing =
+                southboundMappingEntities == null || southboundMappingEntities.isEmpty();
+        final boolean tagsMissing = tags == null || tags.isEmpty();
+        if (adapterIdMissing) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "adapterId is missing", null));
         }
-        if (protocolId == null || protocolId.isEmpty()) {
+        if (protocolIdMissing) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
-        if ((northboundMappingEntities == null || northboundMappingEntities.isEmpty()) &&
-                (southboundMappingEntities == null || southboundMappingEntities.isEmpty())) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                    "northbound or southbound mappings are missing",
-                    null));
-        }
-        if (tags == null || tags.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tags are missing", null));
-        } else {
-            final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
-            if (northboundMappingEntities != null && !northboundMappingEntities.isEmpty()) {
-                northboundMappingEntities.forEach(from -> from.validate(validationEvents));
-                northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
-                    if (!tagNameSet.contains(tagName)) {
-                        validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                                "Tag name [" + tagName + "] in northbound mapping is not found",
-                                null));
-                    }
-                });
+        if (!northboundMappingMissing || !southboundMappingMissing || !tagsMissing) {
+            if (northboundMappingMissing && southboundMappingMissing) {
+                validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                        "northbound or southbound mappings are missing",
+                        null));
             }
-            if (southboundMappingEntities != null && !southboundMappingEntities.isEmpty()) {
-                southboundMappingEntities.forEach(to -> to.validate(validationEvents));
-                southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
-                    if (!tagNameSet.contains(tagName)) {
-                        validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                                "Tag name [" + tagName + "] in southbound mapping is not found",
-                                null));
-                    }
-                });
+            if (tagsMissing) {
+                validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tags are missing", null));
+            } else {
+                final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+                if (!northboundMappingMissing) {
+                    northboundMappingEntities.forEach(from -> from.validate(validationEvents));
+                    northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
+                        if (!tagNameSet.contains(tagName)) {
+                            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                                    "Tag name [" + tagName + "] in northbound mapping is not found",
+                                    null));
+                        }
+                    });
+                }
+                if (!southboundMappingMissing) {
+                    southboundMappingEntities.forEach(to -> to.validate(validationEvents));
+                    southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
+                        if (!tagNameSet.contains(tagName)) {
+                            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
+                                    "Tag name [" + tagName + "] in southbound mapping is not found",
+                                    null));
+                        }
+                    });
+                }
             }
         }
     }
