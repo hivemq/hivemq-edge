@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Accordion,
   AccordionButton,
@@ -12,8 +13,8 @@ import {
   useDisclosure,
   useTheme,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import type { MetricDefinition, MetricsFilter } from './types.ts'
@@ -60,10 +61,11 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defa
   }
 
   const metrics = getMetricsFor(nodeId)
+  console.log('XXXXXXX mer', metrics)
 
   useEffect(() => {
-    const gg = getMetricsFor(nodeId)
-    if (gg.length === 0 && initMetrics) {
+    const metrics = getMetricsFor(nodeId)
+    if (metrics.length === 0 && initMetrics) {
       initMetrics.map((e) => {
         addMetrics(nodeId, e, defaultChartType)
       })
@@ -81,7 +83,7 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defa
             else onOpen()
           }}
         >
-          <AccordionItem>
+          <AccordionItem isDisabled={!metrics.length}>
             <AccordionButton data-testid="metrics-toggle">
               <Box as="span" flex="1" textAlign="left">
                 {t('metrics.editor.title')}
@@ -107,6 +109,9 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defa
         role="list"
         aria-label={t('metrics.charts.list')}
       >
+        {!metrics.length && (
+          <ErrorMessage status={'info'} message={t('metrics.error.noMetrics')} gridColumn={'1 / span 2'} />
+        )}
         {metrics.map((e) => {
           const { id } = extractMetricInfo(e.metrics)
           const colorSchemeIndex = filters.findIndex((e) => e.id === id)
