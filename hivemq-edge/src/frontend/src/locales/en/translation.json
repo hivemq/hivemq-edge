@@ -1324,10 +1324,10 @@
           "description": "Define the elements to combine",
           "primary": {
             "title": "Primary key",
-            "description": "Select the tag or topic filter that will act as the trigger for combining"
+            "description": "Select the integration point (tag or topic filter) that will act as the trigger for combining"
           },
           "combinedData": {
-            "title": "Source tags and topic filters",
+            "title": "Integration points",
             "description": "Select the tags and topic filters you want to use for combining"
           },
           "combinedSchema": {
