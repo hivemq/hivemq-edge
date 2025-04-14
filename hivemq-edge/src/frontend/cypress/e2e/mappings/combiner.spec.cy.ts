@@ -59,11 +59,38 @@ describe('Combiner', () => {
     }).as('postCombiner')
 
     cy.intercept('GET', '/api/v1/management/combiners', (req) => {
-      // Create a new entity for the "post" model.
       const allCombinerData = mswDB.combiner.getAll()
       const allCombiners = allCombinerData.map<Combiner>((data) => ({ ...JSON.parse(data.json) }))
       req.reply(200, { items: allCombiners })
     }).as('getCombiners')
+
+    cy.intercept<Combiner>('PUT', '/api/v1/management/combiners/**', (req) => {
+      const combiner = req.body
+      mswDB.combiner.update({
+        where: {
+          id: {
+            equals: combiner.id,
+          },
+        },
+
+        data: { json: JSON.stringify({ ...combiner, id: COMBINER_ID }) },
+      })
+
+      req.reply(200, '')
+    }).as('putCombiner')
+
+    cy.intercept<Combiner>('DELETE', '/api/v1/management/combiners/**', (req) => {
+      if (req.url.endsWith(COMBINER_ID)) {
+        mswDB.combiner.delete({
+          where: {
+            id: {
+              equals: COMBINER_ID,
+            },
+          },
+        })
+        req.reply(200, '')
+      } else req.reply(400)
+    }).as('deleteCombiner')
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
@@ -93,6 +120,8 @@ describe('Combiner', () => {
       .should('contain.text', "We've successfully created the combiner for you.")
 
     cy.wait('@getCombiners')
+
+    workspacePage.closeToast.click()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
@@ -130,5 +159,73 @@ describe('Combiner', () => {
 
     combinerForm.inferSchema.modal.should('be.visible')
     combinerForm.inferSchema.submit.click()
+
+    combinerForm.mappingEditor.destination.schema.should('have.length', 2)
+    combinerForm.mappingEditor.instruction(0).mapping.should('have.text', 'description')
+    combinerForm.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
+    combinerForm.mappingEditor.instruction(1).mapping.should('have.text', 'name')
+    combinerForm.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
+
+    combinerForm.mappingEditor.submit.click()
+
+    adapterPage.config.formTab(2).click()
+
+    rjsf.field('mappings').table.rows.should('have.length', 1)
+    combinerForm.table.destination.should('have.text', 'my / topic')
+    combinerForm.table.sources.within(() => {
+      cy.getByTestId('primary-wrapper').should('have.length', 1)
+      cy.getByTestId('primary-wrapper').should('have.text', 'a / topic / + / filter')
+    })
+
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(500)
+
+    combinerForm.submit.click()
+
+    // workspacePage.toast.error
+    //   .should('contain.text', 'There was a problem trying to update the combiner')
+    workspacePage.toast.success.should('contain.text', "We've successfully updated the combiner for you")
+    workspacePage.closeToast.click()
+
+    workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'my adapter')
+  })
+
+  it.only('should delete the first combiner', () => {
+    workspacePage.canvas.should('be.visible')
+    workspacePage.toolbox.fit.click()
+
+    workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
+    workspacePage.toolbar.combine.click()
+
+    cy.wait('@postCombiner')
+    workspacePage.toast.success
+      .should('be.visible')
+      .should('contain.text', "We've successfully created the combiner for you.")
+
+    cy.wait('@getCombiners')
+
+    workspacePage.closeToast.click()
+
+    workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
+
+    // double tap is needed
+    workspacePage.combinerNode(COMBINER_ID).click()
+    workspacePage.combinerNode(COMBINER_ID).dblclick()
+
+    combinerForm.form.should('be.visible')
+    combinerForm.delete.click()
+
+    combinerForm.confirmDelete.modal.should('be.visible')
+    combinerForm.confirmDelete.submit.click()
+    combinerForm.confirmDelete.modal.should('not.exist')
+
+    cy.wait('@deleteCombiner')
+    workspacePage.toast.success
+      .should('be.visible')
+      .should('contain.text', "We've successfully deleted the combiner for you.")
+
+    cy.wait('@getCombiners')
+
+    workspacePage.closeToast.click()
   })
 })
