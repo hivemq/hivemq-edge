@@ -13,10 +13,21 @@ import {
   ModalCloseButton,
   VStack,
   useDisclosure,
+  FormLabel,
+  FormHelperText,
+  FormControl,
+  HStack,
+  Icon,
+  Box,
 } from '@chakra-ui/react'
+import { LuDownload, LuUpload } from 'react-icons/lu'
+import { RiAiGenerate } from 'react-icons/ri'
 
-import type { DataCombining, DataIdentifierReference, Instruction } from '@/api/__generated__'
+import type { DataCombining, Instruction } from '@/api/__generated__'
+import type { DataIdentifierReference } from '@/api/__generated__'
+import IconButton from '@/components/Chakra/IconButton'
 import ErrorMessage from '@/components/ErrorMessage'
+import { SelectEntityType } from '@/components/MQTT/types'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
 import { toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 import {
@@ -31,6 +42,9 @@ import type { CombinerContext } from '../types'
 import SchemaMerger from './SchemaMerger'
 
 interface DestinationSchemaLoaderProps {
+  title: string | undefined
+  description: string | undefined
+  isInvalid: boolean
   formData?: DataCombining
   formContext?: CombinerContext
   onChange: (schema: string, v?: Instruction[]) => void
@@ -47,6 +61,9 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   formContext,
   onChange,
   onChangeInstructions,
+  title,
+  description,
+  isInvalid,
 }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -85,7 +102,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   const handleSchemaDownload = () => {
     if (!formData?.destination?.schema) return
 
-    const handler = validateSchemaFromDataURI(formData?.destination?.schema)
+    const handler = validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
     if (handler.schema) downloadJSON<JSONSchema7>(handler.schema.title || 'topic-untitled', handler.schema)
   }
 
@@ -95,40 +112,59 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   const schema = useMemo(() => {
     if (!formData?.destination?.schema) return undefined
-    return validateSchemaFromDataURI(formData?.destination?.schema)
+    return validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
   }, [formData?.destination?.schema])
 
   return (
-    <>
-      <ButtonGroup size="sm" variant="outline" flexWrap={'wrap'} rowGap={2} mb={2}>
-        <Button
-          data-testid={'combiner-destination-infer'}
-          isDisabled={!isTopicDefined}
-          onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
+    <FormControl isInvalid={isInvalid}>
+      <HStack>
+        <FormLabel flex={3} marginEnd={0}>
+          {title}
+        </FormLabel>
+        <ButtonGroup
+          isAttached
+          size="sm"
+          variant="outline"
+          justifyContent={'flex-end'}
+          flexWrap={'wrap'}
+          rowGap={2}
+          mb={1}
         >
-          {t('combiner.schema.schemaManager.action.infer')}
-        </Button>
-        <Button
-          data-testid={'combiner-destination-upload'}
-          isDisabled={!isTopicDefined}
-          onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
-        >
-          {t('combiner.schema.schemaManager.action.upload')}
-        </Button>
+          <IconButton
+            icon={<Icon as={RiAiGenerate} />}
+            data-testid={'combiner-destination-infer'}
+            isDisabled={!isTopicDefined}
+            onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
+            aria-label={t('combiner.schema.schemaManager.action.infer')}
+          />
+          <IconButton
+            icon={<Icon as={LuUpload} />}
+            data-testid={'combiner-destination-upload'}
+            isDisabled={!isTopicDefined}
+            onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
+            aria-label={t('combiner.schema.schemaManager.action.upload')}
+          />
 
-        <Button
-          data-testid={'combiner-destination-download'}
-          onClick={handleSchemaDownload}
-          isDisabled={!isDestSchemaDefined}
-        >
-          {t('combiner.schema.schemaManager.action.download')}
-        </Button>
-      </ButtonGroup>
+          <IconButton
+            icon={<Icon as={LuDownload} />}
+            data-testid={'combiner-destination-download'}
+            onClick={handleSchemaDownload}
+            isDisabled={!isDestSchemaDefined}
+            aria-label={t('combiner.schema.schemaManager.action.download')}
+          ></IconButton>
+        </ButtonGroup>
+      </HStack>
 
       {!formData?.destination?.schema && (
-        <VStack flex={1}>
+        <Box borderWidth={1} p={3}>
           <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
-        </VStack>
+        </Box>
+      )}
+
+      {schema?.status === 'error' && (
+        <Box borderWidth={1} p={3}>
+          <ErrorMessage type={schema?.message} message={schema?.error} />
+        </Box>
       )}
 
       {schema?.schema && (
@@ -173,6 +209,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
           )}
         </ModalContent>
       </Modal>
-    </>
+      <FormHelperText>{description}</FormHelperText>
+    </FormControl>
   )
 }

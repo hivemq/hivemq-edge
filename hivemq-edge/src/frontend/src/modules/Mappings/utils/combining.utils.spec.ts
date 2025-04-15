@@ -95,7 +95,7 @@ const schemaSuite: TestEachSchemaSuite[] = [
       expect.objectContaining({
         adapterId: 'string',
         schema: expect.objectContaining({
-          message: 'Your topic filter is currently assigned a valid schema',
+          message: 'Your tag is currently assigned a valid schema',
           schema: expect.objectContaining({
             description: 'A simple form example.',
           }),

@@ -109,7 +109,7 @@ describe('DataCombiningEditorField', () => {
     cy.getByTestId('combining-editor-destination-schema').within(() => {
       cy.get('[role="group"] label').should('have.text', 'Destination schema')
       cy.get('[role="alert"]').should('have.text', 'There are no schemas available yet')
-      cy.get('[role="group"] label + div + div + div').should('have.text', 'The text below the schema browser')
+      cy.get('[role="group"] div[id$="-helptext"]').should('have.text', 'The text below the schema browser')
     })
 
     cy.getByTestId('combining-editor-sources-primary').within(() => {
