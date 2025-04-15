@@ -3,16 +3,15 @@ import { useTranslation } from 'react-i18next'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 import {
+  ButtonGroup,
   FormControl,
   FormErrorMessage,
   FormHelperText,
   FormLabel,
   Grid,
   GridItem,
-  HStack,
-  Icon,
+  VStack,
 } from '@chakra-ui/react'
-import { FaRightFromBracket } from 'react-icons/fa6'
 
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
@@ -20,6 +19,8 @@ import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
+import { AutoMapping } from './components/AutoMapping'
+import { ClearMappings } from './components/ClearMappings'
 import { DestinationSchemaLoader } from './DestinationSchemaLoader'
 import { PrimarySelect } from './PrimarySelect'
 
@@ -154,9 +155,33 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         </FormControl>
       </GridItem>
       <GridItem>
-        <HStack height={'100%'} justifyContent={'center'}>
-          <Icon as={FaRightFromBracket} />
-        </HStack>
+        <VStack height={'100%'} justifyContent={'center'}>
+          <ButtonGroup size={'sm'} flexDirection={'column'} alignItems={'flex-end'} gap={2}>
+            <AutoMapping
+              formData={props.formData}
+              formContext={formContext}
+              onChange={(instructions: Instruction[]) => {
+                if (!props.formData) return
+
+                props.onChange({
+                  ...props.formData,
+                  instructions: instructions,
+                })
+              }}
+            />
+            <ClearMappings
+              formData={props.formData}
+              onChange={(instructions: Instruction[]) => {
+                if (!props.formData) return
+
+                props.onChange({
+                  ...props.formData,
+                  instructions: instructions,
+                })
+              }}
+            />
+          </ButtonGroup>
+        </VStack>
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
         <DestinationSchemaLoader
