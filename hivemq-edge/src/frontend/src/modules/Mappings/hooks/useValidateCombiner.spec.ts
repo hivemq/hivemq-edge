@@ -532,7 +532,7 @@ describe('useValidateCombiner', () => {
       )
       expect(errors).toStrictEqual([
         expect.objectContaining({
-          message: 'Not a valid JSONSchema: `properties` is missing',
+          message: "Not a valid JSONSchema: `properties` doesn't contain any properties",
         }),
       ])
     })
