@@ -15,8 +15,10 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 
-import type { DataCombining, DataIdentifierReference, Instruction } from '@/api/__generated__'
+import type { DataCombining, Instruction } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage'
+import { SelectEntityType } from '@/components/MQTT/types'
 import { MappingInstructionList } from '@/components/rjsf/MqttTransformation/components/MappingInstructionList'
 import { toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 import {
@@ -85,7 +87,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   const handleSchemaDownload = () => {
     if (!formData?.destination?.schema) return
 
-    const handler = validateSchemaFromDataURI(formData?.destination?.schema)
+    const handler = validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
     if (handler.schema) downloadJSON<JSONSchema7>(handler.schema.title || 'topic-untitled', handler.schema)
   }
 
@@ -95,7 +97,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   const schema = useMemo(() => {
     if (!formData?.destination?.schema) return undefined
-    return validateSchemaFromDataURI(formData?.destination?.schema)
+    return validateSchemaFromDataURI(formData?.destination?.schema, DataIdentifierReference.type.TAG)
   }, [formData?.destination?.schema])
 
   return (
@@ -130,6 +132,8 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
           <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
         </VStack>
       )}
+
+      {schema?.status === 'error' && <ErrorMessage type={schema?.message} message={schema?.error} />}
 
       {schema?.schema && (
         <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
