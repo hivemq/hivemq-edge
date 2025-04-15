@@ -162,7 +162,7 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenNoMappings_setConfigurationShouldReturnFalse() throws IOException {
+    public void whenNoMappings_setConfigurationShouldReturnTrue() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
@@ -174,7 +174,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(),
                 List.of(new TagEntity("abc", "def", Map.of())));
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.setConfiguration(entity)).isTrue();
     }
 
     @Test
