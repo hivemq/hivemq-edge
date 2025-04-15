@@ -86,17 +86,17 @@ export const getSchemasFromReferences = (
 
     // TODO[30744] Type of schema inconsistent between tag and topic filter
     if (typeof data === 'string') {
-      dataReference.schema = validateSchemaFromDataURI(data)
+      dataReference.schema = validateSchemaFromDataURI(data, dataReference.type)
     } else if (typeof data === 'object') {
       dataReference.schema = {
         schema: data || undefined,
         status: 'success',
-        message: i18n.t('topicFilter.schema.status.success'),
+        message: i18n.t('schema.status.success', { context: dataReference.type }),
       }
     } else {
       dataReference.schema = {
         status: 'warning',
-        message: i18n.t('topicFilter.error.schema.noAssignedSchema', { context: dataReference.type }),
+        message: i18n.t('schema.validation.noAssignedSchema', { context: dataReference.type }),
       }
     }
     return dataReference
