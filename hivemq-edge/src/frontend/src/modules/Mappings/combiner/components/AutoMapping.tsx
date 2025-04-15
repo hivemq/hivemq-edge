@@ -41,16 +41,16 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
     )
 
     return schemas
-      .map((e) => {
-        const gg = getPropertyListFrom(e.schema?.schema as JSONSchema7)
+      .map((dataRef) => {
+        const properties = getPropertyListFrom(dataRef.schema?.schema as JSONSchema7)
 
         const instruction: DataIdentifierReference = {
-          id: e.id as string,
-          type: e.type as DataIdentifierReference.type,
+          id: dataRef.id as string,
+          type: dataRef.type as DataIdentifierReference.type,
         }
 
-        gg.forEach((e) => (e.metadata = instruction))
-        return gg
+        properties.forEach((property) => (property.metadata = instruction))
+        return properties
       })
       .flat()
   }, [references, schemaQueries])
@@ -58,8 +58,8 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
   const schema = useMemo(() => {
     if (!formData?.destination?.schema) return []
 
-    const hhh = validateSchemaFromDataURI(formData?.destination?.schema)
-    return hhh.schema ? getPropertyListFrom(hhh.schema) : []
+    const handler = validateSchemaFromDataURI(formData?.destination?.schema)
+    return handler.schema ? getPropertyListFrom(handler.schema) : []
   }, [formData?.destination?.schema])
 
   const handleMatching = () => {
@@ -67,7 +67,6 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
 
     const inst = schema.reduce<Instruction[]>((acc, cur) => {
       const bestMatch = findBestMatch(cur, displayedSchemas, null)
-      console.log('XXXXXX mat', bestMatch)
       if (bestMatch?.value) {
         const { id, type } = bestMatch.value.metadata || {}
         const ref: DataIdentifierReference = { id: id as string, type: type as DataIdentifierReference.type }
@@ -81,7 +80,6 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
       return acc
     }, [])
 
-    console.log('XXXXXX mat', inst)
     onChange?.(inst)
   }
 
