@@ -97,7 +97,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
   const schema = useMemo(() => {
     if (!formData?.destination?.schema) return undefined
-    return validateSchemaFromDataURI(formData?.destination?.schema, DataIdentifierReference.type.TAG)
+    return validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
   }, [formData?.destination?.schema])
 
   return (
