@@ -146,7 +146,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       </GridItem>
       <GridItem data-testid={'combining-editor-sources-schemas'}>
         <FormControl>
-          <FormLabel>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
+          <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
           <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
           {!sourceError && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedSchema.description')}</FormHelperText>
@@ -159,31 +159,30 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         </HStack>
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
-        <FormControl isInvalid={Boolean(destinationError)}>
-          <FormLabel>{destSchemaOptions.title}</FormLabel>
-          <DestinationSchemaLoader
-            formData={props.formData}
-            formContext={formContext}
-            onChange={(schema, instructions) => {
-              if (!props.formData) return
+        <DestinationSchemaLoader
+          isInvalid={Boolean(destinationError)}
+          title={destSchemaOptions.title}
+          description={destSchemaOptions.description}
+          formData={props.formData}
+          formContext={formContext}
+          onChange={(schema, instructions) => {
+            if (!props.formData) return
 
-              props.onChange({
-                ...props.formData,
-                destination: { topic: props.formData.destination.topic, schema },
-                instructions: instructions || [],
-              })
-            }}
-            onChangeInstructions={(v: Instruction[]) => {
-              if (!props.formData) return
+            props.onChange({
+              ...props.formData,
+              destination: { topic: props.formData.destination.topic, schema },
+              instructions: instructions || [],
+            })
+          }}
+          onChangeInstructions={(v: Instruction[]) => {
+            if (!props.formData) return
 
-              props.onChange({
-                ...props.formData,
-                instructions: v,
-              })
-            }}
-          />
-          <FormHelperText>{destSchemaOptions.description}</FormHelperText>
-        </FormControl>
+            props.onChange({
+              ...props.formData,
+              instructions: v,
+            })
+          }}
+        />
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-sources-primary'}>
         <FormControl isInvalid={Boolean(primaryError)}>
