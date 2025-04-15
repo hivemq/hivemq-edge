@@ -20,6 +20,7 @@ import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetComb
 
 import { fromJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 import { type FlatJSONSchema7, getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { SelectEntityType } from '@/components/MQTT/types'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
@@ -95,6 +96,7 @@ export const useValidateCombiner = (
   const allPathsFromSources = useMemo<string[]>(() => {
     return allSchemaReferences.reduce<string[]>((acc, cur) => {
       let flatList: FlatJSONSchema7[]
+      // TODO[NVL] This is a hack to identify whether TOPIC FILTER (string) or TAG (object). When unified, it won't work
       if (typeof cur.data === 'string') {
         const handleSchema = validateSchemaFromDataURI(cur.data)
         flatList = handleSchema.schema ? getPropertyListFrom(handleSchema.schema) : []
@@ -173,7 +175,7 @@ export const useValidateCombiner = (
    */
   const validateDestinationSchema = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
-      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema)
+      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
       if (handleSchema.status !== 'success' || !handleSchema.schema)
         errors.destination?.schema?.addError(handleSchema.error || handleSchema.message)
       else {
@@ -231,7 +233,7 @@ export const useValidateCombiner = (
 
   const validateInstructions = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
     (formData, errors) => {
-      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema)
+      const handleSchema = validateSchemaFromDataURI(formData?.destination?.schema, SelectEntityType.TOPIC)
       const properties = handleSchema.schema && getPropertyListFrom(handleSchema.schema)
 
       const knownPaths = properties?.map((e) => [...e.path, e.key].join('.')) || []
