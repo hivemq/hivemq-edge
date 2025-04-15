@@ -128,12 +128,7 @@ public class ProtocolAdapterEntity {
         if (protocolIdMissing) {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
-        if (!northboundMappingMissing || !southboundMappingMissing || !tagsMissing) {
-            if (northboundMappingMissing && southboundMappingMissing) {
-                validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                        "northbound or southbound mappings are missing",
-                        null));
-            }
+        if (!northboundMappingMissing || !southboundMappingMissing) {
             if (tagsMissing) {
                 validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tags are missing", null));
             } else {
