@@ -31,9 +31,9 @@ describe('DestinationSchemaLoader', () => {
 
     cy.get('@onChange').should('have.not.been.called')
 
-    cy.getByTestId('combiner-destination-infer').should('have.text', 'Infer a schema')
-    cy.getByTestId('combiner-destination-upload').should('have.text', 'Upload a new schema')
-    cy.getByTestId('combiner-destination-download').should('have.text', 'Download the schema')
+    cy.getByTestId('combiner-destination-infer').should('have.attr', 'aria-label', 'Infer a schema')
+    cy.getByTestId('combiner-destination-upload').should('have.attr', 'aria-label', 'Upload a new schema')
+    cy.getByTestId('combiner-destination-download').should('have.attr', 'aria-label', 'Download the schema')
 
     cy.get('[role="dialog"]#chakra-modal-destination-schema').should('not.exist')
     cy.getByTestId('combiner-destination-upload').click()
