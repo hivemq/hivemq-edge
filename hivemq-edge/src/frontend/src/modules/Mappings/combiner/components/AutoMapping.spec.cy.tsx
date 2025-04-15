@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import { Box, Card, CardBody, CardHeader, Code, chakra as Chakra, List, ListItem } from '@chakra-ui/react'
+import { Box, Card, CardBody, CardHeader, Code, List, ListItem } from '@chakra-ui/react'
 
 import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import type { DataCombining, Instruction } from '@/api/__generated__'
