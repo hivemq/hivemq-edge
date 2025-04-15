@@ -129,6 +129,7 @@ public class ProtocolAdapterEntity {
             validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "protocolId is missing", null));
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (!northboundMappingMissing || !southboundMappingMissing) {
 =======
         if (!northboundMappingMissing || !southboundMappingMissing || !tagsMissing) {
@@ -138,6 +139,9 @@ public class ProtocolAdapterEntity {
                         null));
             }
 >>>>>>> 1d5298a77 (refactor: Loose the check on all absence of northbound mappings, southbound mappings, tags)
+=======
+        if (!northboundMappingMissing || !southboundMappingMissing) {
+>>>>>>> 7c844a548 (fix: Loose the check on empty tags)
             if (tagsMissing) {
                 validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tags are missing", null));
             } else {
