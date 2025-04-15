@@ -106,7 +106,7 @@ export const getSchemasFromReferences = (
   })
 }
 
-type AutoMatchAccumulator = {
+export type AutoMatchAccumulator = {
   distance: number
   value: FlatJSONSchema7
 }

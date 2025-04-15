@@ -14,6 +14,7 @@ import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/ma
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers, MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
+import type { AutoMatchAccumulator } from './combining.utils'
 import { findBestMatch, getCombinedDataEntityReference, getSchemasFromReferences } from './combining.utils'
 import type { FlatJSONSchema7 } from '../../../components/rjsf/MqttTransformation/utils/json-schema.utils'
 
@@ -162,11 +163,11 @@ describe('getSchemasFromReferences', () => {
   })
 })
 
-interface TestMAtchSuite {
+interface TestMatchSuite {
   test: string
   source: FlatJSONSchema7
   candidates: FlatJSONSchema7[]
-  result: FlatJSONSchema7 | undefined
+  result: AutoMatchAccumulator | undefined
   min?: number | null
 }
 
@@ -175,8 +176,8 @@ const mocProperty: FlatJSONSchema7 = {
   key: 'test_string1',
 }
 
-const tests: TestMAtchSuite[] = [
-  { test: 'same source', source: mocProperty, candidates: [mocProperty], result: mocProperty },
+const tests: TestMatchSuite[] = [
+  { test: 'same source', source: mocProperty, candidates: [mocProperty], result: { distance: 0, value: mocProperty } },
   {
     test: 'same source',
     source: mocProperty,
@@ -184,7 +185,7 @@ const tests: TestMAtchSuite[] = [
       { path: [], key: 'aaaa' },
       { path: [], key: 'test_string2' },
     ],
-    result: { path: [], key: 'test_string2' },
+    result: { distance: 1, value: { path: [], key: 'test_string2' } },
   },
   {
     test: 'same source',
@@ -198,7 +199,7 @@ const tests: TestMAtchSuite[] = [
 ]
 
 describe('findBestMatch', () => {
-  it.each<TestMAtchSuite>(tests)('should work for $test', ({ source, candidates, result }) => {
+  it.each<TestMatchSuite>(tests)('should work for $test', ({ source, candidates, result }) => {
     expect(findBestMatch(source, candidates)).toStrictEqual(result)
   })
 })
