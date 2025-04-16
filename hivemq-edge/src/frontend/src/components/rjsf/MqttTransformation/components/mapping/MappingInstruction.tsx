@@ -93,8 +93,20 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
     })
   }, [onChange, property])
 
-  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : 'gray.500'
-  const backgroundColor = state === DropState.DRAG_OVER ? 'green.100' : 'inherit'
+  const activeColor = useMemo(() => {
+    if (state === DropState.DRAG_OVER || state === DropState.COMPLETED) return 'green'
+    if (isDragging && source && isValidDrop(property)) return 'green'
+    return 'gray.500'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, isValidDrop, property.key, source, state])
+
+  const backgroundColor = useMemo(() => {
+    if (state === DropState.DRAG_OVER) return 'green.100'
+    if (isDragging && source && isValidDrop(property)) return 'green.50'
+    return 'inherit'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, isValidDrop, property.key, source, state])
+
   const isSupported = isMappingSupported(property)
 
   const onHandleClear = () => {
