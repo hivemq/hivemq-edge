@@ -4,7 +4,6 @@ import type { ListProps } from '@chakra-ui/react'
 import { Heading, List, ListItem } from '@chakra-ui/react'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
-import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 
@@ -13,7 +12,6 @@ interface JsonSchemaBrowserProps extends ListProps {
   isDraggable?: boolean
   hasExamples?: boolean
   dataReference?: DataReference
-  onKeyboardDrag?: (prop: FlatJSONSchema7) => void
 }
 
 const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
@@ -21,7 +19,6 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
   isDraggable = false,
   hasExamples = false,
   dataReference,
-  onKeyboardDrag,
   ...props
 }) => {
   const properties = useMemo(() => {
@@ -45,7 +42,6 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
                 isDraggable={isDraggable}
                 hasExamples={hasExamples}
                 hasTooltip
-                onKeyboardDrag={onKeyboardDrag}
               />
             </ListItem>
           )

@@ -9,7 +9,8 @@ import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-u
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { KEY_DRAG_START } from '@/hooks/useAccessibleDraggable/type'
+import { EDGE_HOTKEY } from '@/hooks/useAccessibleDraggable/type'
+import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
 
 interface PropertyItemProps {
   property: FlatJSONSchema7
@@ -19,7 +20,6 @@ interface PropertyItemProps {
   hasDescription?: boolean
   dataReference?: DataReference
   hasPathAsName?: boolean
-  onKeyboardDrag?: (prop: FlatJSONSchema7) => void
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -30,10 +30,10 @@ const PropertyItem: FC<PropertyItemProps> = ({
   hasDescription = false,
   hasPathAsName = false,
   dataReference,
-  onKeyboardDrag,
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
+  const { startDragging } = useAccessibleDraggable()
 
   useEffect(() => {
     if (!isDraggable) return
@@ -69,8 +69,8 @@ const PropertyItem: FC<PropertyItemProps> = ({
       role="group"
       aria-label={t('GenericSchema.structure.property')}
       onKeyUp={(event) => {
-        if (event.key === KEY_DRAG_START) {
-          onKeyboardDrag?.(property)
+        if (event.key === EDGE_HOTKEY.ENTER && isDraggable) {
+          startDragging?.({ property, dataReference })
         }
       }}
     >
