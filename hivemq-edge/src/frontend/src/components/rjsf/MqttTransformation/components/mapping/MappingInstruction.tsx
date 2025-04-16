@@ -58,7 +58,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
   const dropTargetRef = useRef<HTMLDivElement | null>(null)
-  const { endDragging, isValidDrop, isDragging } = useAccessibleDraggable()
+  const { endDragging, isValidDrop, isDragging, source } = useAccessibleDraggable()
 
   useEffect(() => {
     const element = dropTargetRef.current
@@ -136,7 +136,16 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
             flex={3}
             onKeyUp={(e) => {
-              if (isDragging && e.key === 'Enter' && isValidDrop(property)) {
+              if (isDragging && source && e.key === 'Enter' && isValidDrop(property)) {
+                const sourceRef: DataIdentifierReference | undefined = source?.dataReference
+                  ? { id: source?.dataReference.id, type: source?.dataReference.type }
+                  : undefined
+                onChange?.(
+                  [...source.property.path, source.property.key].join('.') as string,
+                  [...property.path, property.key].join('.') as string,
+                  sourceRef
+                )
+
                 endDragging(property)
               }
             }}

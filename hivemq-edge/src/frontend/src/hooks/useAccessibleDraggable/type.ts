@@ -6,6 +6,10 @@ export interface AccessibleDraggableProps {
   isValidDrop: (target: FlatJSONSchema7) => boolean
   startDragging: (data: { property: FlatJSONSchema7; dataReference?: DataReference | undefined }) => void
   endDragging: (property?: FlatJSONSchema7) => void
+  source?: {
+    property: FlatJSONSchema7
+    dataReference?: DataReference | undefined
+  }
 }
 
 export const EDGE_HOTKEY = {

@@ -12,15 +12,15 @@ const TOAST_DRAGGABLE = 'TOAST_DRAGGABLE'
 
 export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const [source, setSource] = useState<{ property: FlatJSONSchema7; dataReference?: DataReference | undefined } | null>(
-    null
-  )
+  const [source, setSource] = useState<
+    { property: FlatJSONSchema7; dataReference?: DataReference | undefined } | undefined
+  >(undefined)
 
   const toast = useToast({
     id: TOAST_DRAGGABLE,
     onCloseComplete: () => {
       setIsDragging(false)
-      setSource(null)
+      setSource(undefined)
     },
   })
 
@@ -34,15 +34,11 @@ export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children })
     [toast]
   )
 
-  const onEndDragging = useCallback(
-    (target?: FlatJSONSchema7) => {
-      setIsDragging(false)
-      setSource(null)
-      toast.close(TOAST_DRAGGABLE)
-      if (target) console.log('XXXXXXXXX target', target)
-    },
-    [toast]
-  )
+  const onEndDragging = useCallback(() => {
+    setIsDragging(false)
+    setSource(undefined)
+    toast.close(TOAST_DRAGGABLE)
+  }, [toast])
 
   // TODO[NVL] ESCAPE is caught by Chakra (for closing the modals) and cannot be intercepted yet; reverting to BACKSPACE
   useHotkeys([DATAHUB_HOTKEY.ESCAPE, DATAHUB_HOTKEY.BACKSPACE], () => {
@@ -61,6 +57,7 @@ export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children })
   }, [onEndDragging])
 
   const defaultAccessibleDraggableValues: AccessibleDraggableProps = {
+    source,
     isDragging: isDragging,
     startDragging: onStartDragging,
     endDragging: onEndDragging,
