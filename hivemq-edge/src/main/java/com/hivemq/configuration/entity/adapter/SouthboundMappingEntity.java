@@ -16,6 +16,7 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.edge.api.model.FieldMapping;
 import com.hivemq.edge.api.model.Instruction;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
-public class SouthboundMappingEntity {
+public class SouthboundMappingEntity implements EntityValidatable {
 
     @XmlElement(name = "topicFilter", required = true)
     private final @NotNull String topicFilter;
@@ -70,16 +71,11 @@ public class SouthboundMappingEntity {
         return topicFilter;
     }
 
+    @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        if (topicFilter == null || topicFilter.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "topicFilter is missing", null));
-        }
-        if (tagName == null || tagName.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
-        }
-        if (fromNorthSchema == null || fromNorthSchema.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "fromNorthSchema is missing", null));
-        }
+        EntityValidatable.notEmpty(validationEvents, topicFilter, "topicFilter");
+        EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
+        EntityValidatable.notEmpty(validationEvents, fromNorthSchema, "fromNorthSchema");
     }
 
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {

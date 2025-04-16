@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.configuration.reader;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
@@ -52,6 +67,221 @@ public class ProtocolAdapterExtractorTest {
                 </hivemq>
                 """);
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,0", "true,1", "true,2", "false,-1", "false,3", "false,abc"})
+    public void whenNorthboundMappingQoSIsProvided_thenApplyConfigShouldWorkAsExpected(
+            final boolean valid,
+            final @NotNull String maxQoS)
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                          <maxQos>${maxQoS}</maxQos>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """.replace("${maxQoS}", maxQoS));
+        if (valid) {
+            assertThat(configFileReader.applyConfig()).isNotNull();
+        } else {
+            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,MQTTMessagePerTag", "true,MQTTMessagePerSubscription", "false,abc"})
+    public void whenNorthboundMappingMessageHandlingOptionsIsProvided_thenApplyConfigShouldWorkAsExpected(
+            final boolean valid,
+            final @NotNull String messageHandlingOptions)
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                          <messageHandlingOptions>${messageHandlingOptions}</messageHandlingOptions>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """.replace("${messageHandlingOptions}", messageHandlingOptions));
+        if (valid) {
+            assertThat(configFileReader.applyConfig()).isNotNull();
+        } else {
+            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true", "true,false", "false,abc"})
+    public void whenNorthboundMappingIncludeTagNamesIsProvided_thenApplyConfigShouldWorkAsExpected(
+            final boolean valid,
+            final @NotNull String includeTagNames)
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                          <includeTagNames>${includeTagNames}</includeTagNames>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """.replace("${includeTagNames}", includeTagNames));
+        if (valid) {
+            assertThat(configFileReader.applyConfig()).isNotNull();
+        } else {
+            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true", "true,false", "false,abc"})
+    public void whenNorthboundMappingIncludeTimestampIsProvided_thenApplyConfigShouldWorkAsExpected(
+            final boolean valid,
+            final @NotNull String includeTimestamp)
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                          <includeTimestamp>${includeTimestamp}</includeTimestamp>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """.replace("${includeTimestamp}", includeTimestamp));
+        if (valid) {
+            assertThat(configFileReader.applyConfig()).isNotNull();
+        } else {
+            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,1", "true,123", "false,0", "false,-1", "false,abc"})
+    public void whenNorthboundMappingMessageExpiryIntervalIsProvided_thenApplyConfigShouldWorkAsExpected(
+            final boolean valid,
+            final @NotNull String messageExpiryInterval)
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <tagName>tag1</tagName>
+                          <messageExpiryInterval>${messageExpiryInterval}</messageExpiryInterval>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """.replace("${messageExpiryInterval}", messageExpiryInterval));
+        if (valid) {
+            assertThat(configFileReader.applyConfig()).isNotNull();
+        } else {
+            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        }
     }
 
     @Test
