@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
@@ -30,6 +31,7 @@ import {
   toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
@@ -56,6 +58,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
   const dropTargetRef = useRef<HTMLDivElement | null>(null)
+  const { endDragging, isValidDrop, isDragging } = useAccessibleDraggable()
 
   useEffect(() => {
     const element = dropTargetRef.current
@@ -122,6 +125,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
         <CardBody display="flex" flexDirection="row" gap={2}>
           <Box
+            tabIndex={0}
             {...getDropZoneBorder(activeColor)}
             backgroundColor={backgroundColor}
             p={4}
@@ -131,6 +135,11 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             role="group"
             aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
             flex={3}
+            onKeyUp={(e) => {
+              if (isDragging && e.key === 'Enter' && isValidDrop(property)) {
+                endDragging(property)
+              }
+            }}
           >
             {instruction?.source ? (
               <Code>{formatPath(fromJsonPath(instruction.source))}</Code>

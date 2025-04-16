@@ -3,8 +3,9 @@ import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils
 
 export interface AccessibleDraggableProps {
   isDragging: boolean
+  isValidDrop: (target: FlatJSONSchema7) => boolean
   startDragging: (data: { property: FlatJSONSchema7; dataReference?: DataReference | undefined }) => void
-  endDragging: () => void
+  endDragging: (property?: FlatJSONSchema7) => void
 }
 
 export const EDGE_HOTKEY = {
