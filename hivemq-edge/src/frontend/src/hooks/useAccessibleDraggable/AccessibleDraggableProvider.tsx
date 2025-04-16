@@ -2,22 +2,41 @@ import { type FC, type PropsWithChildren, useCallback, useEffect, useState } fro
 import { useToast } from '@chakra-ui/react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import { DATAHUB_HOTKEY } from '@/extensions/datahub/utils/datahub.utils'
+
 import { AccessibleDraggableContext, type AccessibleDraggableProps } from './index'
 
 const TOAST_DRAGGABLE = 'TOAST_DRAGGABLE'
 
 export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const toast = useToast({ id: TOAST_DRAGGABLE })
+  const [source, setSource] = useState<{ property: FlatJSONSchema7; dataReference?: DataReference | undefined } | null>(
+    null
+  )
 
-  const onStartDragging = useCallback(() => {
-    setIsDragging(true)
-    if (!toast.isActive(TOAST_DRAGGABLE)) toast({ duration: null, isClosable: true, description: `Dragging is active` })
-  }, [toast])
+  const toast = useToast({
+    id: TOAST_DRAGGABLE,
+    onCloseComplete: () => {
+      setIsDragging(false)
+      setSource(null)
+    },
+  })
+
+  const onStartDragging = useCallback(
+    (data: { property: FlatJSONSchema7; dataReference?: DataReference | undefined }) => {
+      setIsDragging(true)
+      setSource(data)
+      if (!toast.isActive(TOAST_DRAGGABLE))
+        toast({ duration: null, isClosable: true, description: `Dragging is active` })
+    },
+    [toast]
+  )
 
   const onEndDragging = useCallback(() => {
     setIsDragging(false)
+    setSource(null)
     toast.close(TOAST_DRAGGABLE)
   }, [toast])
 
