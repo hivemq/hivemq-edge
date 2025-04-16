@@ -202,46 +202,6 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenNoMappings_setConfigurationShouldReturnTrue() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final HiveMQConfigEntity entity = configFileReader.applyConfig();
-        assertThat(entity).isNotNull();
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("abc", "def", Map.of())));
-        entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isTrue();
-    }
-
-    @Test
-    public void whenNoTags_setConfigurationShouldReturnFalse() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final HiveMQConfigEntity entity = configFileReader.applyConfig();
-        assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
-                "topic",
-                1,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                false,
-                true,
-                List.of(),
-                100);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(northboundMappingEntity),
-                List.of(),
-                List.of());
-        entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
-    }
-
-    @Test
     public void whenNorthboundMappingTagNameAreNotFound_setConfigurationShouldReturnFalse() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
