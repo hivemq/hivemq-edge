@@ -1374,7 +1374,9 @@
         },
         "action": {
           "save": "Save",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "generateMappings": "Suggest appropriate mappings",
+          "clearMappings": "Clear mappings"
         },
         "combinedSelector": {
           "placeholder": "Select tags and topic filters to combine ...",
