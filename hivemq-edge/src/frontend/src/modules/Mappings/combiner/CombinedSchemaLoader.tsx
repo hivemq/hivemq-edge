@@ -6,6 +6,7 @@ import type { DataCombining } from '@/api/__generated__'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import ErrorMessage from '@/components/ErrorMessage'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
+import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { getFilteredDataReferences, getSchemasFromReferences } from '@/modules/Mappings/utils/combining.utils'
 
@@ -16,6 +17,7 @@ interface CombinedSchemaLoaderProps {
 
 export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, formContext }) => {
   const { t } = useTranslation()
+  const { startDragging } = useAccessibleDraggable()
 
   // TODO[NVL] This is almost a duplicate of the CombinedEntitySelect; reuse
   const references = useMemo(() => {
@@ -52,6 +54,10 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
             schema={{ ...dataReference.schema?.schema, title: dataReference.id }}
             isDraggable
             hasExamples
+            onKeyboardDrag={(property) => {
+              console.log('XXXXXXXX keyboard dragging property: ', property)
+              startDragging()
+            }}
           />
         )
       })}
