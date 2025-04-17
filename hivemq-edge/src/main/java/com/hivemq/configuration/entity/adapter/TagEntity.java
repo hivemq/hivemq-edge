@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
@@ -36,8 +37,8 @@ public class TagEntity implements EntityValidatable {
     @XmlElement(name = "name", required = true)
     private final @NotNull String name;
 
-    @XmlElement(name = "description", required = true)
-    private final @NotNull String description;
+    @XmlElement(name = "description")
+    private final @Nullable String description;
 
     @XmlElement(name = "definition")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -52,7 +53,7 @@ public class TagEntity implements EntityValidatable {
 
     public TagEntity(
             final @NotNull String name,
-            final @NotNull String description,
+            final @Nullable String description,
             final @NotNull Map<String, Object> definition) {
         this.name = name;
         this.description = description;
@@ -63,7 +64,7 @@ public class TagEntity implements EntityValidatable {
         return definition;
     }
 
-    public @NotNull String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -106,6 +107,5 @@ public class TagEntity implements EntityValidatable {
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         EntityValidatable.notEmpty(validationEvents, name, "tag name");
-        EntityValidatable.notEmpty(validationEvents, description, "tag description");
     }
 }

@@ -197,7 +197,7 @@ public class ConfigurationMigrator {
                     .filter(tagName -> !tagNameSet.contains(tagName))
                     .forEach(tagName -> {
                         tagNameSet.add(tagName);
-                        tagEntities.add(new TagEntity(tagName, tagName, Map.of()));
+                        tagEntities.add(new TagEntity(tagName, "", Map.of()));
                     });
 
             return List.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
