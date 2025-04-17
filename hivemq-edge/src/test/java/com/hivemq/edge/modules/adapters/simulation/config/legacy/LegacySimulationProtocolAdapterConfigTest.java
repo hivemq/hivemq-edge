@@ -46,7 +46,8 @@ class LegacySimulationProtocolAdapterConfigTest {
             assertThat(cfg.getProtocolAdapterConfig()).hasSize(1).allSatisfy(entity -> {
                 assertThat(entity.getProtocolId()).isEqualTo("simulation");
                 assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
-                assertThat(entity.getTags()).hasSize(0);
+                assertThat(entity.getTags()).hasSize(1);
+                assertThat(entity.getTags().get(0).getName()).isEqualTo("ignored");
                 assertThat(entity.getNorthboundMappingEntities()).hasSize(2).anySatisfy(mapping -> {
                     assertThat(mapping.getMaxQoS()).isEqualTo(1);
                     assertThat(mapping.getTagName()).isEqualTo("ignored");
@@ -78,7 +79,8 @@ class LegacySimulationProtocolAdapterConfigTest {
             assertThat(cfg.getProtocolAdapterConfig()).hasSize(1).satisfiesExactly(entity -> {
                 assertThat(entity.getProtocolId()).isEqualTo("simulation");
                 assertThat(entity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
-                assertThat(entity.getTags()).hasSize(0);
+                assertThat(entity.getTags()).hasSize(1);
+                assertThat(entity.getTags().get(0).getName()).isEqualTo("ignored");
                 assertThat(entity.getNorthboundMappingEntities()).hasSize(1).anySatisfy(mapping -> {
                     assertThat(mapping.getMaxQoS()).isEqualTo(0);
                     assertThat(mapping.getTagName()).isEqualTo("ignored");
