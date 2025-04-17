@@ -4,7 +4,7 @@ import type { IconType } from 'react-icons'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
+import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack, type StackProps } from '@chakra-ui/react'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
@@ -33,7 +33,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
-  const { startDragging } = useAccessibleDraggable()
+  const { startDragging, isDragging, source } = useAccessibleDraggable()
 
   useEffect(() => {
     if (!isDraggable) return
@@ -57,6 +57,12 @@ const PropertyItem: FC<PropertyItemProps> = ({
   // TODO[NVL] Only extracting the first value of any examples. Might want to provide something more user-friendly
   const examples = Array.isArray(property.examples) ? property.examples[0] : property.examples
 
+  const dragStyle: Partial<StackProps> = {
+    zIndex: 1800,
+    position: 'relative',
+    backgroundColor: 'white',
+  }
+
   return (
     <HStack
       key={path}
@@ -74,6 +80,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
         }
       }}
       sx={{
+        ...(isDragging && source?.property.key === property.key && dragStyle),
         '&:focus-visible': {
           boxShadow: 'var(--chakra-shadows-outline)',
           outline: 'unset',
