@@ -137,7 +137,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
         <CardBody display="flex" flexDirection="row" gap={2}>
           <Box
-            tabIndex={0}
+            tabIndex={isDragging && source && isValidDrop(property) ? 0 : undefined}
             {...getDropZoneBorder(activeColor)}
             backgroundColor={backgroundColor}
             p={4}
@@ -160,6 +160,12 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
                 endDragging(property)
               }
+            }}
+            sx={{
+              '&:focus-visible': {
+                boxShadow: 'var(--chakra-shadows-outline)',
+                outline: 'unset',
+              },
             }}
           >
             {instruction?.source ? (
