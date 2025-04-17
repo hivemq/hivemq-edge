@@ -18,16 +18,19 @@ package com.hivemq.configuration.entity.adapter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class TagEntity {
+public class TagEntity implements EntityValidatable {
 
 
     @XmlElement(name = "name", required = true)
@@ -98,5 +101,11 @@ public class TagEntity {
     @Override
     public int hashCode() {
         return Objects.hash(getName(), getDescription(), getDefinition());
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        EntityValidatable.notEmpty(validationEvents, name, "tag name");
+        EntityValidatable.notEmpty(validationEvents, description, "tag description");
     }
 }

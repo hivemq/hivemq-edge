@@ -484,7 +484,7 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @Test
-    public void whenSouthboundMappingTagNameAreNotFound_setConfigurationShouldReturnFalse() throws IOException {
+    public void whenSouthboundMappingTagNameIsNotFound_setConfigurationShouldReturnFalse() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();

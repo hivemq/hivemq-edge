@@ -22,12 +22,14 @@ import com.hivemq.edge.api.model.FieldMapping;
 import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
 public class SouthboundMappingEntity implements EntityValidatable {
@@ -39,7 +41,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
     private final @NotNull String tagName;
 
     @XmlElement(name = "fieldMapping", required = true)
-    private final @NotNull FieldMappingEntity fieldMapping;
+    private final @Nullable FieldMappingEntity fieldMapping;
 
     @XmlElement(name = "fromNorthSchema", required = true)
     private final @NotNull String fromNorthSchema;
@@ -76,6 +78,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
         EntityValidatable.notEmpty(validationEvents, topicFilter, "topicFilter");
         EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
         EntityValidatable.notEmpty(validationEvents, fromNorthSchema, "fromNorthSchema");
+        Optional.ofNullable(fieldMapping).ifPresent(entity -> entity.validate(validationEvents));
     }
 
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
@@ -121,7 +124,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SouthboundMappingEntity that = (SouthboundMappingEntity) o;

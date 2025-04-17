@@ -27,7 +27,6 @@ import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -123,9 +122,15 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                 southboundMappingEntities == null || southboundMappingEntities.isEmpty();
         EntityValidatable.notEmpty(validationEvents, adapterId, "adapterId");
         EntityValidatable.notEmpty(validationEvents, protocolId, "protocolId");
+        if (tags != null) {
+            tags.forEach(entity-> entity.validate(validationEvents));
+        }
         if ((!northboundMappingMissing || !southboundMappingMissing) &&
                 EntityValidatable.notEmpty(validationEvents, tags, "tags")) {
-            final Set<String> tagNameSet = tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+            final Set<String> tagNameSet = tags.stream()
+                    .map(TagEntity::getName)
+                    .filter(tagName -> tagName != null && !tagName.isEmpty())
+                    .collect(Collectors.toSet());
             if (!northboundMappingMissing) {
                 northboundMappingEntities.forEach(from -> from.validate(validationEvents));
                 northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
