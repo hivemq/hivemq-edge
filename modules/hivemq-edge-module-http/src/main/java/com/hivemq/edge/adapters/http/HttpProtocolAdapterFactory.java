@@ -80,7 +80,8 @@ public class HttpProtocolAdapterFactory
                         legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
                         legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
                         legacyHttpAdapterConfig.getHttpRequestBody(),
-                        legacyHttpAdapterConfig.getHttpHeaders())));
+                        legacyHttpAdapterConfig.getHttpHeaders(),
+                        false)));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),

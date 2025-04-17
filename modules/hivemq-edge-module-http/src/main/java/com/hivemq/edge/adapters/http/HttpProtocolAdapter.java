@@ -60,6 +60,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -79,6 +80,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
     private static final @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
+    private static final @NotNull String PLAIN_ENCODED_VALUE = "data:%s;%s";
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
     private static final @NotNull String RESPONSE_DATA = "httpResponseData";
 
@@ -227,11 +229,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
         return httpClient
                     .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
+                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName(), tagDef.getReturnAsText()));
     }
 
     private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,
-                                          final @NotNull String tagName) {
+                                          final @NotNull String tagName, final @NotNull Boolean returnAsText) {
         Object payloadData = null;
         String responseContentType = null;
 
@@ -264,9 +266,14 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                     if (responseContentType == null) {
                         responseContentType = PLAIN_MIME_TYPE;
                     }
-                    final String base64 =
-                            Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                    payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
+                    if(returnAsText) {
+                        payloadData = String.format(PLAIN_ENCODED_VALUE, responseContentType,
+                                new String(bodyData.getBytes(), StandardCharsets.UTF_8));
+                    } else {
+                        final String base64 =
+                                Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                        payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
+                    }
                 }
             }
         }

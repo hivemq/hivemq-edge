@@ -59,17 +59,26 @@ public class HttpTagDefinition implements TagDefinition {
                        required = true)
     private final @NotNull String url;
 
+    @JsonProperty(value = "returnAsText", required = false)
+    @ModuleConfigField(title = "Return as clear text",
+                       description = "Return the content as clear text and not base64 (if possible)",
+                       format = ModuleConfigField.FieldType.UNSPECIFIED,
+                       required = false)
+    private final @NotNull Boolean returnAsText;
+
     @JsonCreator
     public HttpTagDefinition(@JsonProperty(value = "url", required = true) final @NotNull String url,
                              @JsonProperty(value = "httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
                              @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
                              @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
                              @JsonProperty(value = "httpRequestBody") final @Nullable String httpRequestBody,
-                             @JsonProperty(value = "httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders) {
+                             @JsonProperty(value = "httpHeaders") final @Nullable List<HttpSpecificAdapterConfig.HttpHeader> httpHeaders,
+                             @JsonProperty(value = "returnAsText") final @NotNull Boolean returnAsText) {
         this.url = url;
         this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, GET);
         this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, JSON);
         this.httpRequestBody = httpRequestBody;
+        this.returnAsText = returnAsText;
         if (httpRequestTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
             this.httpRequestTimeoutSeconds = Math.min(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS);
@@ -83,7 +92,7 @@ public class HttpTagDefinition implements TagDefinition {
         return url;
     }
 
-
+    public @NotNull Boolean getReturnAsText() {return returnAsText;}
 
     public @NotNull HttpSpecificAdapterConfig.HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
