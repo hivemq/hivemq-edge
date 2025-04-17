@@ -337,5 +337,11 @@
   "MoreInfo": {
     "title": "More information",
     "link": "More information"
+  },
+  "AccessibleDraggable": {
+    "alert": {
+      "title": "Dragging is active",
+      "description": "Use TAB / SHIFT+TAB to go through the destinations. Use DELETE to cancel"
+    }
   }
 }
