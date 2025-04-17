@@ -1,4 +1,6 @@
 import type { FC } from 'react'
+import { useCallback } from 'react'
+import type { Edge, Node } from '@xyflow/react'
 import { useOnSelectionChange } from '@xyflow/react'
 
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
@@ -7,8 +9,8 @@ import { isBehaviorPolicyNodeType, isDataPolicyNodeType } from '@datahub/utils/n
 const ToolboxSelectionListener: FC = () => {
   const { setNode } = usePolicyChecksStore()
 
-  useOnSelectionChange({
-    onChange: ({ nodes }) => {
+  const onChange = useCallback<(params: { nodes: Node[]; edges: Edge[] }) => void>(
+    ({ nodes }) => {
       if (nodes.length === 1) {
         const [node] = nodes
         if (isDataPolicyNodeType(node) || isBehaviorPolicyNodeType(node)) {
@@ -18,9 +20,12 @@ const ToolboxSelectionListener: FC = () => {
       }
       setNode(undefined)
     },
-  })
+    [setNode]
+  )
 
-  return <div></div>
+  useOnSelectionChange({ onChange })
+
+  return null
 }
 
 export default ToolboxSelectionListener
