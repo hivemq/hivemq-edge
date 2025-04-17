@@ -73,6 +73,12 @@ const PropertyItem: FC<PropertyItemProps> = ({
           startDragging?.({ property, dataReference })
         }
       }}
+      sx={{
+        '&:focus-visible': {
+          boxShadow: 'var(--chakra-shadows-outline)',
+          outline: 'unset',
+        },
+      }}
     >
       <HStack gap={0} ref={draggableRef} flex={1}>
         <Tooltip label={type} placement="top" hasArrow>
