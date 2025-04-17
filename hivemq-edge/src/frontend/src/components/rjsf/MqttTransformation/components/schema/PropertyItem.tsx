@@ -76,9 +76,10 @@ const PropertyItem: FC<PropertyItemProps> = ({
       aria-label={t('GenericSchema.structure.property')}
       onKeyUp={(event) => {
         if (event.key === EDGE_HOTKEY.ENTER && isDraggable) {
-          startDragging?.({ property, dataReference })
+          startDragging?.({ property, dataReference, ref: draggableRef })
         }
       }}
+      ref={draggableRef}
       sx={{
         ...(isDragging && source?.property.key === property.key && dragStyle),
         '&:focus-visible': {

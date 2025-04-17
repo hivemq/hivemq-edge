@@ -6,7 +6,7 @@ import config from '@/config'
 import { useAccessibleDraggable } from './useAccessibleDraggable'
 
 export const AccessibleDraggableLock: FC<PropsWithChildren> = ({ children }) => {
-  const { isDragging } = useAccessibleDraggable()
+  const { isDragging, ref } = useAccessibleDraggable()
 
   const dragStyle: Partial<BoxProps> = {
     backgroundColor: 'white',
@@ -14,7 +14,7 @@ export const AccessibleDraggableLock: FC<PropsWithChildren> = ({ children }) => 
   }
 
   return (
-    <FocusLock isDisabled={!isDragging}>
+    <FocusLock isDisabled={!isDragging} finalFocusRef={ref} restoreFocus>
       {isDragging && <ModalOverlay />}
       <Chakra.div
         zIndex={1800}
