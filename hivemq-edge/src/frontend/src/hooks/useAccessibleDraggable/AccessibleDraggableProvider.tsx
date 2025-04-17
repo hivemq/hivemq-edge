@@ -1,6 +1,7 @@
-import { type FC, type PropsWithChildren, useCallback, useEffect, useState } from 'react'
+import { type FC, type PropsWithChildren, useCallback, useEffect, useState, useRef, type MutableRefObject } from 'react'
 import { useToast } from '@chakra-ui/react'
 import { useHotkeys } from 'react-hotkeys-hook'
+import { useTranslation } from 'react-i18next'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
@@ -11,6 +12,9 @@ import { AccessibleDraggableContext, type AccessibleDraggableProps } from './ind
 const TOAST_DRAGGABLE = 'TOAST_DRAGGABLE'
 
 export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children }) => {
+  const { t } = useTranslation('components')
+  const draggableRef = useRef<HTMLDivElement | null>(null)
+
   const [isDragging, setIsDragging] = useState(false)
   const [source, setSource] = useState<
     { property: FlatJSONSchema7; dataReference?: DataReference | undefined } | undefined
@@ -22,22 +26,37 @@ export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children })
       setIsDragging(false)
       setSource(undefined)
     },
+    variant: 'top-accent',
+    duration: null,
+    isClosable: true,
+    containerStyle: {
+      width: '800px',
+      maxWidth: '100%',
+    },
+    // title: t('AccessibleDraggable.alert.title'),
+    description: t('AccessibleDraggable.alert.description'),
   })
 
   const onStartDragging = useCallback(
-    (data: { property: FlatJSONSchema7; dataReference?: DataReference | undefined }) => {
+    (data: {
+      property: FlatJSONSchema7
+      dataReference?: DataReference | undefined
+      ref?: MutableRefObject<HTMLDivElement | null>
+    }) => {
       setIsDragging(true)
       setSource(data)
-      if (!toast.isActive(TOAST_DRAGGABLE))
-        toast({ duration: null, isClosable: true, description: `Dragging is active` })
+      if (data.ref) draggableRef.current = data.ref.current
+      if (!toast.isActive(TOAST_DRAGGABLE)) toast()
     },
     [toast]
   )
 
   const onEndDragging = useCallback(() => {
+    draggableRef.current?.focus()
     setIsDragging(false)
     setSource(undefined)
     toast.close(TOAST_DRAGGABLE)
+    draggableRef.current = null
   }, [toast])
 
   // TODO[NVL] ESCAPE is caught by Chakra (for closing the modals) and cannot be intercepted yet; reverting to BACKSPACE
@@ -66,6 +85,7 @@ export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children })
 
       return source.property.type === target.type && source.property.arrayType === target.arrayType
     },
+    ref: draggableRef,
   }
 
   return (

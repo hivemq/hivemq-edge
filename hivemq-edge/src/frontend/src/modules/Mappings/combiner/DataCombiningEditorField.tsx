@@ -52,7 +52,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
   return (
     <AccessibleDraggableProvider>
-      <Grid templateColumns="1fr repeat(2, 1px) 1fr" gap={6}>
+      <Grid templateColumns="1fr repeat(2, 1px) 1fr" rowGap={4} columnGap={6}>
         <GridItem colSpan={2} data-testid={'combining-editor-source-header'}>
           {sourceOptions.title && (
             <TitleFieldTemplate

@@ -131,7 +131,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   return (
     <HStack>
       <Card size="sm" variant="outline" w="100%">
-        <CardHeader>
+        <CardHeader pb={0}>
           <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
         </CardHeader>
 
@@ -142,6 +142,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             backgroundColor={backgroundColor}
             p={4}
             py={2}
+            margin={'auto'}
             ref={dropTargetRef}
             data-testid="mapping-instruction-dropzone"
             role="group"
