@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
@@ -30,6 +31,7 @@ import {
   toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
@@ -56,6 +58,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
   const dropTargetRef = useRef<HTMLDivElement | null>(null)
+  const { endDragging, isValidDrop, isDragging, source } = useAccessibleDraggable()
 
   useEffect(() => {
     const element = dropTargetRef.current
@@ -90,8 +93,20 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
     })
   }, [onChange, property])
 
-  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : 'gray.500'
-  const backgroundColor = state === DropState.DRAG_OVER ? 'green.100' : 'inherit'
+  const activeColor = useMemo(() => {
+    if (state === DropState.DRAG_OVER || state === DropState.COMPLETED) return 'green'
+    if (isDragging && source && isValidDrop(property)) return 'green'
+    return 'gray.500'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, isValidDrop, property.key, source, state])
+
+  const backgroundColor = useMemo(() => {
+    if (state === DropState.DRAG_OVER) return 'green.100'
+    if (isDragging && source && isValidDrop(property)) return 'green.50'
+    return 'inherit'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, isValidDrop, property.key, source, state])
+
   const isSupported = isMappingSupported(property)
 
   const onHandleClear = () => {
@@ -116,21 +131,43 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
   return (
     <HStack>
       <Card size="sm" variant="outline" w="100%">
-        <CardHeader>
+        <CardHeader pb={0}>
           <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
         </CardHeader>
 
         <CardBody display="flex" flexDirection="row" gap={2}>
           <Box
+            tabIndex={isDragging && source && isValidDrop(property) ? 0 : undefined}
             {...getDropZoneBorder(activeColor)}
             backgroundColor={backgroundColor}
             p={4}
             py={2}
+            margin={'auto'}
             ref={dropTargetRef}
             data-testid="mapping-instruction-dropzone"
             role="group"
             aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
             flex={3}
+            onKeyUp={(e) => {
+              if (isDragging && source && e.key === 'Enter' && isValidDrop(property)) {
+                const sourceRef: DataIdentifierReference | undefined = source?.dataReference
+                  ? { id: source?.dataReference.id, type: source?.dataReference.type }
+                  : undefined
+                onChange?.(
+                  [...source.property.path, source.property.key].join('.') as string,
+                  [...property.path, property.key].join('.') as string,
+                  sourceRef
+                )
+
+                endDragging(property)
+              }
+            }}
+            sx={{
+              '&:focus-visible': {
+                boxShadow: 'var(--chakra-shadows-outline)',
+                outline: 'unset',
+              },
+            }}
           >
             {instruction?.source ? (
               <Code>{formatPath(fromJsonPath(instruction.source))}</Code>

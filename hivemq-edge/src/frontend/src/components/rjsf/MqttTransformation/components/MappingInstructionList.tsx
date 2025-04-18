@@ -29,7 +29,7 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
   }, [schema])
 
   return (
-    <List {...props}>
+    <List {...props} gap={2}>
       {properties.map((property) => {
         const instructionIndex = instructions
           ? instructions.findIndex((instruction) => {
