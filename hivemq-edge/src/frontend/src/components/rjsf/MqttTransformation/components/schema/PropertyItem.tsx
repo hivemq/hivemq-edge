@@ -11,6 +11,7 @@ import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-ty
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { EDGE_HOTKEY } from '@/hooks/useAccessibleDraggable/type'
 import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
+import { Z_INDICES } from '@/modules/Theme/utils'
 
 interface PropertyItemProps {
   property: FlatJSONSchema7
@@ -58,7 +59,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
   const examples = Array.isArray(property.examples) ? property.examples[0] : property.examples
 
   const dragStyle: Partial<StackProps> = {
-    zIndex: 1800,
+    zIndex: Z_INDICES.ACCESSIBLE_DRAG_N_DROP,
     position: 'relative',
     backgroundColor: 'white',
   }

@@ -30,10 +30,9 @@ export const AccessibleDraggableProvider: FC<PropsWithChildren> = ({ children })
     duration: null,
     isClosable: true,
     containerStyle: {
-      width: '800px',
+      width: 'var(--chakra-sizes-2xl)',
       maxWidth: '100%',
     },
-    // title: t('AccessibleDraggable.alert.title'),
     description: t('AccessibleDraggable.alert.description'),
   })
 
