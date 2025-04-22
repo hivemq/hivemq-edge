@@ -7,6 +7,7 @@ import { MdOutlineEventNote } from 'react-icons/md'
 import { TypeIdentifier } from '@/api/__generated__'
 import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import { SourceCombiner } from './table/SourceCombiner'
 
 interface SourceLinkProps {
   source: TypeIdentifier | undefined
@@ -40,6 +41,10 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
     case TypeIdentifier.type.USER:
       icon = <Icon as={PiUserFill} mr={2} />
       break
+    // TODO[31411] The COMBINER type identifier is missing from the OpenAPI specs
+    // @ts-ignore
+    case 'DATA_COMBINING':
+      return <SourceCombiner source={source} />
     default:
       break
   }
