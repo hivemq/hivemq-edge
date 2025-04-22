@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
