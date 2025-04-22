@@ -17,11 +17,14 @@ package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.entity.EntityValidatable;
 import org.jetbrains.annotations.NotNull;
 
+import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.XmlElement;
+import java.util.List;
 
-public class DataIdentifierReferenceEntity {
+public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
@@ -52,5 +55,10 @@ public class DataIdentifierReferenceEntity {
 
     public static DataIdentifierReferenceEntity from(com.hivemq.edge.api.model.DataIdentifierReference ref) {
         return new DataIdentifierReferenceEntity(ref.getId(), DataIdentifierReference.Type.from(ref.getType()));
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        // TODO
     }
 }

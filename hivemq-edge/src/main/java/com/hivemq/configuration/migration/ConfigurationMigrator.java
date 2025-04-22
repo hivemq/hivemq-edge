@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("deprecation")
@@ -186,6 +187,17 @@ public class ConfigurationMigrator {
                     .stream()
                     .map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
                     .collect(Collectors.toList());
+
+            // The default tag name of the northbound mapping entity is "ignored" which is not added to the tag entities.
+            // We add the default tag name to the tag entities here to avoid failures in further validation.
+            final Set<String> tagNameSet = tagEntities.stream().map(TagEntity::getName).collect(Collectors.toSet());
+            northboundMappingEntities.stream()
+                    .map(NorthboundMappingEntity::getTagName)
+                    .filter(tagName -> !tagNameSet.contains(tagName))
+                    .forEach(tagName -> {
+                        tagNameSet.add(tagName);
+                        tagEntities.add(new TagEntity(tagName, "", Map.of()));
+                    });
 
             return List.of(new ProtocolAdapterEntity(configTagsTuple.getAdapterId(),
                     protocolId,
