@@ -34,6 +34,7 @@ import {
   type FlatJSONSchema7,
   getSchemaFromPropertyList,
 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
+import { AccessibleDraggableLock } from '@/hooks/useAccessibleDraggable'
 import SchemaUploader from '@/modules/TopicFilters/components/SchemaUploader'
 import { encodeDataUriJsonSchema, validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 import { downloadJSON } from '@/utils/download.utils'
@@ -168,17 +169,19 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
       )}
 
       {schema?.schema && (
-        <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
-          <MappingInstructionList
-            id={'destination-mapping-editor'}
-            schema={schema.schema}
-            instructions={formData?.instructions || []}
-            onChange={handleInstructionChange}
-            display={'flex'}
-            flexDirection={'column'}
-            gap={4}
-          />
-        </VStack>
+        <AccessibleDraggableLock>
+          <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
+            <MappingInstructionList
+              id={'destination-mapping-editor'}
+              schema={schema.schema}
+              instructions={formData?.instructions || []}
+              onChange={handleInstructionChange}
+              display={'flex'}
+              flexDirection={'column'}
+              gap={4}
+            />
+          </VStack>
+        </AccessibleDraggableLock>
       )}
 
       <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose} id={'destination-schema'}>
