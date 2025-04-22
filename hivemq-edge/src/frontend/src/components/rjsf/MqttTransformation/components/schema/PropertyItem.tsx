@@ -4,11 +4,14 @@ import type { IconType } from 'react-icons'
 import { useTranslation } from 'react-i18next'
 import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack } from '@chakra-ui/react'
+import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack, type StackProps } from '@chakra-ui/react'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { EDGE_HOTKEY } from '@/hooks/useAccessibleDraggable/type'
+import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
+import { Z_INDICES } from '@/modules/Theme/utils'
 
 interface PropertyItemProps {
   property: FlatJSONSchema7
@@ -31,6 +34,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
 }) => {
   const { t } = useTranslation('components')
   const draggableRef = useRef<HTMLDivElement | null>(null)
+  const { startDragging, isDragging, source } = useAccessibleDraggable()
 
   useEffect(() => {
     if (!isDraggable) return
@@ -54,6 +58,12 @@ const PropertyItem: FC<PropertyItemProps> = ({
   // TODO[NVL] Only extracting the first value of any examples. Might want to provide something more user-friendly
   const examples = Array.isArray(property.examples) ? property.examples[0] : property.examples
 
+  const dragStyle: Partial<StackProps> = {
+    zIndex: Z_INDICES.ACCESSIBLE_DRAG_N_DROP,
+    position: 'relative',
+    backgroundColor: 'white',
+  }
+
   return (
     <HStack
       key={path}
@@ -65,8 +75,21 @@ const PropertyItem: FC<PropertyItemProps> = ({
       alignItems="flex-start"
       role="group"
       aria-label={t('GenericSchema.structure.property')}
+      onKeyUp={(event) => {
+        if (event.key === EDGE_HOTKEY.ENTER && isDraggable) {
+          startDragging?.({ property, dataReference, ref: draggableRef })
+        }
+      }}
+      ref={draggableRef}
+      sx={{
+        ...(isDragging && source?.property.key === property.key && dragStyle),
+        '&:focus-visible': {
+          boxShadow: 'var(--chakra-shadows-outline)',
+          outline: 'unset',
+        },
+      }}
     >
-      <HStack gap={0} ref={draggableRef} flex={1}>
+      <HStack gap={0} flex={1}>
         <Tooltip label={type} placement="top" hasArrow>
           <Box marginInlineEnd={2} aria-label={type} role="img" display="flex" data-testid="property-type">
             <Icon as={TypeIcon as IconType} color="green.500" m={0} />

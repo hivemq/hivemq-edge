@@ -13,9 +13,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { AccessibleDraggableProvider } from '@/hooks/useAccessibleDraggable'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
+
 import '@/config/i18n.config.ts'
+
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 
@@ -56,12 +59,14 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
       <ChakraProvider theme={themeHiveMQ}>
         <AuthProvider>
           <MemoryRouter {...routerProps}>
-            <main style={{ padding: '20px' }}>
-              <VisuallyHidden>
-                <h1>Component Testing</h1>
-              </VisuallyHidden>
-              {Test ? <Test>{component}</Test> : component}
-            </main>
+            <AccessibleDraggableProvider>
+              <main style={{ padding: '20px' }}>
+                <VisuallyHidden>
+                  <h1>Component Testing</h1>
+                </VisuallyHidden>
+                {Test ? <Test>{component}</Test> : component}
+              </main>
+            </AccessibleDraggableProvider>
           </MemoryRouter>
         </AuthProvider>
       </ChakraProvider>

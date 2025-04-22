@@ -27,7 +27,6 @@ describe('PropertyItem', () => {
 
     cy.getByAriaLabel('Property')
       .should('have.attr', 'tabindex', '0')
-      .children()
       .should('have.text', 'Billing address')
       .should('have.attr', 'draggable', 'true')
   })
