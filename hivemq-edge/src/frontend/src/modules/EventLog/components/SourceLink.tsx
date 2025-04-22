@@ -21,7 +21,7 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
 
   switch (source?.type) {
     case TypeIdentifier.type.ADAPTER:
-      icon = <Icon as={PiPlugsConnectedFill} mr={2} />
+      icon = <Icon as={PiPlugsConnectedFill} mr={2} data-type={TypeIdentifier.type.ADAPTER} />
       state = {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type?.identifier,
@@ -29,17 +29,17 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
       to = `/protocol-adapters/edit/${type?.identifier}/${source.identifier}`
       break
     case TypeIdentifier.type.ADAPTER_TYPE:
-      icon = <Icon as={PiPlugsConnectedFill} mr={2} />
+      icon = <Icon as={PiPlugsConnectedFill} mr={2} data-type={TypeIdentifier.type.ADAPTER_TYPE} />
       break
     case TypeIdentifier.type.BRIDGE:
-      icon = <Icon as={PiBridgeThin} fontSize="20px" mr={2} />
+      icon = <Icon as={PiBridgeThin} fontSize="20px" mr={2} data-type={TypeIdentifier.type.BRIDGE} />
       to = `/mqtt-bridges/${source.identifier}`
       break
     case TypeIdentifier.type.EVENT:
-      icon = <Icon as={MdOutlineEventNote} mr={2} />
+      icon = <Icon as={MdOutlineEventNote} mr={2} data-type={TypeIdentifier.type.EVENT} />
       break
     case TypeIdentifier.type.USER:
-      icon = <Icon as={PiUserFill} mr={2} />
+      icon = <Icon as={PiUserFill} mr={2} data-type={TypeIdentifier.type.USER} />
       break
     // TODO[31411] The COMBINER type identifier is missing from the OpenAPI specs
     // @ts-ignore
@@ -57,7 +57,14 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
     )
 
   return (
-    <ChakraLink as={ReactRouterLink} to={to} state={state} whiteSpace="nowrap" display="inline-flex">
+    <ChakraLink
+      as={ReactRouterLink}
+      to={to}
+      state={state}
+      whiteSpace="nowrap"
+      display="inline-flex"
+      alignItems="center"
+    >
       {Boolean(icon) && icon}
       {source?.identifier}
     </ChakraLink>

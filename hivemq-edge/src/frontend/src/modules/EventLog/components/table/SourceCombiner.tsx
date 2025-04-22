@@ -23,9 +23,10 @@ export const SourceCombiner: FC<SourceLinkProps> = ({ source }) => {
       to={`/workspace/combiner/${source.identifier}`}
       whiteSpace="nowrap"
       display="inline-flex"
+      alignItems="center"
     >
-      <Icon as={HqCombiner} mr={2} fontSize="1rem" />
-      <Text>{visibleName}</Text>
+      <Icon as={HqCombiner} mr={2} data-type="DATA_COMBINING" />
+      {visibleName}
     </ChakraLink>
   )
 }
