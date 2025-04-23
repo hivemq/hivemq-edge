@@ -115,7 +115,14 @@ public class DataCombinerManager {
         combinersToBeDeleted.forEach(uuid -> {
             try {
                 log.debug("Deleting data combiner '{}'", uuid);
+                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
                 deleteDataCombinerInternal(uuid);
+                var dataCombinerName = dataCombiner.name();
+                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
+                eventService.createCombinerEvent(dataCombiner.id())
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Combiner '%s' was permanently deleted.", nameOrId))
+                        .fire();
             } catch (final Exception e) {
                 failedDataCombiners.add(uuid);
                 log.error("Failed deleting data combiner {}", uuid, e);
@@ -125,7 +132,14 @@ public class DataCombinerManager {
         combinersToBeCreated.forEach(uuid -> {
             try {
                 log.debug("Creating data combiner '{}'", uuid);
-                createDataCombinerInternal(mapOfNewCombinersByUUID.get(uuid));
+                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
+                createDataCombinerInternal(dataCombiner);
+                var dataCombinerName = dataCombiner.name();
+                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
+                eventService.createCombinerEvent(dataCombiner.id())
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Combiner '%s' was successfully created.", nameOrId))
+                        .fire();
             } catch (final Exception e) {
                 failedDataCombiners.add(uuid);
                 log.error("Failed adding data combiner {}", uuid, e);
@@ -135,7 +149,14 @@ public class DataCombinerManager {
         combinersToBeUpdated.forEach(uuid -> {
             try {
                 log.debug("Updating data combiner '{}'", uuid);
+                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
                 internalUpdateDataCombiner(mapOfNewCombinersByUUID.get(uuid));
+                var dataCombinerName = dataCombiner.name();
+                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
+                eventService.createCombinerEvent(dataCombiner.id())
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Combiner '%s' was successfully updated.", nameOrId))
+                        .fire();
             } catch (final Exception e) {
                 failedDataCombiners.add(uuid);
                 log.error("Failed updating data combiner {}", uuid, e);
@@ -145,8 +166,8 @@ public class DataCombinerManager {
 
         if (failedDataCombiners.isEmpty()) {
             eventService.configurationEvent()
-                    .withSeverity(Event.SEVERITY.WARN)
-                    .withMessage("Configuration has been succesfully reloaded")
+                    .withSeverity(Event.SEVERITY.INFO)
+                    .withMessage("Configuration has been successfully updated")
                     .fire();
         } else {
             eventService.configurationEvent()
@@ -199,13 +220,8 @@ public class DataCombinerManager {
             } catch (final ExecutionException e) {
                 throw new RuntimeException(e);
             }
-
-            eventService.createDataCombiningEvent(id)
-                    .withSeverity(Event.SEVERITY.WARN)
-                    .withMessage(String.format("Data Combining '%s' was deleted from the system permanently.", id))
-                    .fire();
         } else {
-            log.error("Tried removing non existing data combining '{}'", id);
+            log.error("Tried removing non existing data combiner '{}'", id);
         }
         return false;
     }
