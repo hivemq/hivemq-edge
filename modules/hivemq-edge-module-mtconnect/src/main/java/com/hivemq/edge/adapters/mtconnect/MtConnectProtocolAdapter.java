@@ -190,8 +190,8 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                 }, () -> {
                                     final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
                                     dataList.stream()
-                                            .map(data -> dataPointFactory.createJsonDataPoint(data.getTagName(),
-                                                    Objects.requireNonNull(data.getJsonString())))
+                                            .map(data -> dataPointFactory.create(data.getTagName(),
+                                                    Objects.requireNonNull(data.getJsonNode())))
                                             .forEach(pollingOutput::addDataPoint);
                                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
                                     pollingOutput.finish();
@@ -232,7 +232,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             if (optionalContentType.map(value -> CONTENT_TYPE_TEXT_XML.equals(value) ||
                     CONTENT_TYPE_APPLICATION_XML.equals(value)).orElse(false)) {
                 try {
-                    mtConnectData.setJsonString(processXml(httpResponse.body(), definition));
+                    mtConnectData.setJsonNode(processXml(httpResponse.body(), definition));
                 } catch (final Exception e) {
                     mtConnectData.setSuccessful(false);
                     mtConnectData.setCause(e);
@@ -251,7 +251,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         return mtConnectData;
     }
 
-    protected @NotNull String processXml(
+    protected @NotNull JsonNode processXml(
             final @NotNull String body,
             final @NotNull MtConnectAdapterTagDefinition definition)
             throws JsonProcessingException, XMLParseException, JAXBException {
@@ -272,7 +272,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             } else {
                 try (StringReader stringReader = new StringReader(body)) {
                     final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
-                    return objectMapper.writeValueAsString(element.getValue());
+                    return objectMapper.convertValue(element.getValue(), JsonNode.class);
                 } catch (final Exception e) {
                     throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
                 }
@@ -283,7 +283,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         if (jsonNodeSchemaLocation == null) {
             throw new XMLParseException("Attribute schemaLocation is not found");
         }
-        return objectMapper.writeValueAsString(rootNode);
+        return rootNode;
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.mtconnect.models;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,14 +23,15 @@ public class MtConnectData {
     private final @NotNull String url;
     private final @NotNull String tagName;
     private boolean successful;
-    private @Nullable String jsonString;
+    private @Nullable JsonNode jsonNode;
     private @Nullable String errorMessage;
     private @Nullable Throwable cause;
+
     public MtConnectData(@NotNull final String url, final boolean successful, final @NotNull String tagName) {
         this.url = url;
         this.successful = successful;
         this.tagName = tagName;
-        jsonString = null;
+        jsonNode = null;
         errorMessage = null;
         cause = null;
     }
@@ -66,11 +68,11 @@ public class MtConnectData {
         this.successful = successful;
     }
 
-    public @Nullable String getJsonString() {
-        return jsonString;
+    public @Nullable JsonNode getJsonNode() {
+        return jsonNode;
     }
 
-    public void setJsonString(@NotNull final String jsonString) {
-        this.jsonString = jsonString;
+    public void setJsonNode(@NotNull final JsonNode jsonNode) {
+        this.jsonNode = jsonNode;
     }
 }
