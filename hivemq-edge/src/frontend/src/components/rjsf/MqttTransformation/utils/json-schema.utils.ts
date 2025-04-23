@@ -11,7 +11,32 @@ import type { DataReference } from '../../../../api/hooks/useDomainModel/useGetC
 
 export const ARRAY_ITEM_INDEX = '___index'
 
-export interface FlatJSONSchema7 extends JSONSchema7 {
+export const SCHEMA_SUPPORTED_PROPERTIES: (keyof JSONSchema7)[] = [
+  // See also https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.3
+  'maxLength',
+  'minLength',
+  'pattern',
+  // See also https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.2
+  'exclusiveMinimum',
+  'minimum',
+  'exclusiveMaximum',
+  'maximum',
+  'multipleOf',
+  // See also https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.4
+  'maxItems',
+  'minItems',
+  'uniqueItems',
+  'items',
+  // not yet supported
+  //  "contains", "items"
+  // See also https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.5
+  'maxProperties',
+  'minProperties',
+  // not yet supported
+  //  "required", "properties"
+]
+
+export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {
   path: string[]
   key: string
   arrayType?: string
@@ -43,8 +68,24 @@ export const getProperty = (
   }
 
   // Add the property
-  const { type, description, title: titleRef, examples } = tempProperty as JSONSchema7
-  const mainProps: FlatJSONSchema7 = { key, path, type, description, title: titleRef || title || key, examples }
+  const { type, description, title: titleRef, examples, ...allProperties } = tempProperty as JSONSchema7
+
+  const validProperties = Object.fromEntries(
+    Object.entries(allProperties).filter(([key]) => SCHEMA_SUPPORTED_PROPERTIES.includes(key as keyof JSONSchema7))
+  )
+
+  const mainProps: FlatJSONSchema7 = {
+    // internal properties
+    key,
+    path,
+    // common JSONSchema7 properties
+    type,
+    description,
+    title: titleRef || title || key,
+    examples,
+    // other valid properties
+    ...validProperties,
+  }
 
   const subProperties: FlatJSONSchema7[] = []
   if (type === 'object') {
