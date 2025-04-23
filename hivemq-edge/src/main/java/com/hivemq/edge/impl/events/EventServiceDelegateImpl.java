@@ -66,6 +66,12 @@ public class EventServiceDelegateImpl implements EventService {
     }
 
     @Override
+    public @NotNull EventBuilder createCombinerEvent(@NotNull final UUID uuid) {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+                .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, uuid.toString()));
+    }
+
+    @Override
     public @NotNull EventBuilder bridgeEvent() {
         return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
     }
