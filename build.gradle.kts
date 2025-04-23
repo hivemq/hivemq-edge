@@ -44,6 +44,14 @@ tasks.register("test") {
     dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
+tasks.register("jacocoTestReport") {
+    group = "verification"
+
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
 tasks.register("classes") {
     dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
