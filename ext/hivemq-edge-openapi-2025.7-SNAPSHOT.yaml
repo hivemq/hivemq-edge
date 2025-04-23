@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2025.6-SNAPSHOT
+  version: 2025.4-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -3793,6 +3793,51 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
       summary: Get the domain tag with the given name in this Edge instance
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/tags/{tagName}/writing-schema:
+    get:
+      description: Get the writing schema for this tag
+      operationId: get-domain-tag-writing-schema
+      parameters:
+        - description: The tag name (urlencoded).
+          in: path
+          name: tagName
+          required: true
+          schema:
+            type: string
+            format: urlencoded
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: data-url
+                description: The optional writing JSON schema for this domain tag.
+              examples:
+                tag writing schema example:
+                  description: An example for domain tags writing schema
+                  summary: 'An example for a writing JSON schema for a tag '
+                  value:
+                    $id: https://example.com/tag.schema.json
+                    type: object
+                    properties:
+                      turns:
+                        type: int
+                      location:
+                        type: string
+                      required:
+                        - turns
+                        - location
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Either tag doesn't exist or it doesn't have a schema
+      summary: Get the writing schema for the domain tag with the given name in this Edge instance
       tags:
         - Protocol Adapters
   /api/v1/management/protocol-adapters/types:
