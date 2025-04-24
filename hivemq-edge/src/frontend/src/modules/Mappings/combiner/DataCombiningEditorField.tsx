@@ -44,10 +44,14 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const destTopicOptions = getUiOptions(uiSchema?.destination?.topic)
   const destSchemaOptions = getUiOptions(uiSchema?.destination?.schema)
 
-  const sourceError = props.errorSchema?.sources?.__errors
-  const primaryError = props.errorSchema?.sources?.primary?.__errors
-  const destinationError = props.errorSchema?.destination?.topic?.__errors
-  // TODO[RJSF] Create a custom error message, ensuring tag + topic filters >= 1
+  const sourceErrors = props.errorSchema?.sources?.__errors
+  const primaryErrors = props.errorSchema?.sources?.primary?.__errors
+  const destinationErrors = props.errorSchema?.destination?.topic?.__errors
+  const destinationSchemaErrors = props.errorSchema?.destination?.schema?.__errors
+
+  const hasError = (field?: string[]) => {
+    return Boolean(field?.length)
+  }
 
   return (
     <Grid templateColumns="1fr repeat(2, 1px) 1fr" rowGap={4} columnGap={6}>
@@ -88,7 +92,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         )}
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-sources-attributes'}>
-        <FormControl isInvalid={Boolean(sourceError)}>
+        <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
             tags={formData?.sources?.tags}
@@ -122,14 +126,14 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               })
             }}
           />
-          {!sourceError && (
+          {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedData.description')}</FormHelperText>
           )}
-          <FormErrorMessage>{sourceError?.join(' ')}</FormErrorMessage>
+          <FormErrorMessage>{sourceErrors?.join(' ')}</FormErrorMessage>
         </FormControl>
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-topic'}>
-        <FormControl isInvalid={Boolean(destinationError)}>
+        <FormControl isInvalid={hasError(destinationErrors)}>
           <FormLabel>{destTopicOptions.title}</FormLabel>
           <SelectTopic
             isMulti={false}
@@ -143,16 +147,16 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
             }}
           />
-          {!destinationError && <FormHelperText>{destTopicOptions.description}</FormHelperText>}
+          {!hasError(destinationErrors) && <FormHelperText>{destTopicOptions.description}</FormHelperText>}
 
-          <FormErrorMessage>{destinationError}</FormErrorMessage>
+          <FormErrorMessage>{destinationErrors}</FormErrorMessage>
         </FormControl>
       </GridItem>
       <GridItem data-testid={'combining-editor-sources-schemas'}>
         <FormControl>
           <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
           <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
-          {!sourceError && (
+          {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedSchema.description')}</FormHelperText>
           )}
         </FormControl>
@@ -188,7 +192,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
         <DestinationSchemaLoader
-          isInvalid={Boolean(destinationError)}
+          isInvalid={hasError(destinationSchemaErrors)}
           title={destSchemaOptions.title}
           description={destSchemaOptions.description}
           formData={props.formData}
@@ -213,7 +217,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         />
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-sources-primary'}>
-        <FormControl isInvalid={Boolean(primaryError)}>
+        <FormControl isInvalid={hasError(primaryErrors)}>
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
@@ -236,7 +240,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               })
             }}
           />
-          {!primaryError && <FormHelperText>{primaryOptions.description}</FormHelperText>}
+          {!hasError(primaryErrors) && <FormHelperText>{primaryOptions.description}</FormHelperText>}
           <FormErrorMessage>{props.errorSchema?.sources?.primary?.__errors}</FormErrorMessage>
         </FormControl>
       </GridItem>
