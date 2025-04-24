@@ -125,7 +125,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
         },
       },
     ]
-  }, [adapterId, props, t])
+  }, [adapterId, capabilities, props, t])
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
 
   const handleTagSubmit = (data: DomainTag | undefined) => {
