@@ -183,17 +183,7 @@ export const MOCK_MQTT_SCHEMA_METADATA: RJSFSchema = {
         exclusiveMinimum: 4,
         examples: [1, 2, 3, 4],
       },
-      // contains: {
-      //   type: 'integer',
-      //   title: 'integer',
-      //   description: 'The description for a integer property',
-      //   multipleOf: 2,
-      //   maximum: 150,
-      //   exclusiveMaximum: 148,
-      //   minimum: 2,
-      //   exclusiveMinimum: 4,
-      //   examples: [1, 2, 3, 4],
-      // },
+      // contains is not yet supported
     },
     object: {
       type: 'object',
@@ -202,20 +192,6 @@ export const MOCK_MQTT_SCHEMA_METADATA: RJSFSchema = {
       examples: [{ test: 1 }],
       maxProperties: 4,
       minProperties: 1,
-      // required: ['test'],
-      // properties: {
-      //   test: {
-      //     type: 'integer',
-      //     title: 'integer',
-      //     description: 'The description for a integer property',
-      //     multipleOf: 2,
-      //     maximum: 150,
-      //     exclusiveMaximum: 148,
-      //     minimum: 2,
-      //     exclusiveMinimum: 4,
-      //     examples: [1, 2, 3, 4],
-      //   },
-      // },
     },
   },
 }
