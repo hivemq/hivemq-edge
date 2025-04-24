@@ -1,12 +1,18 @@
 import { expect } from 'vitest'
+import type { JSONSchema7 } from 'json-schema'
+import type { RJSFSchema } from '@rjsf/utils'
+import {
+  MOCK_MQTT_SCHEMA_METADATA,
+  MOCK_MQTT_SCHEMA_PLAIN,
+  MOCK_MQTT_SCHEMA_REFS,
+} from '@/__test-utils__/rjsf/schema.mocks.ts'
+
 import {
   type FlatJSONSchema7,
   getPropertyListFrom,
   payloadToSchema,
   reducerSchemaExamples,
-} from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import type { RJSFSchema } from '@rjsf/utils'
-import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks.ts'
+} from './json-schema.utils.ts'
 
 describe('getPropertyListFrom', () => {
   it('should return an empty list of properties', async () => {
@@ -42,27 +48,27 @@ describe('getPropertyListFrom', () => {
   it('should handle definitions', async () => {
     expect(getPropertyListFrom(MOCK_MQTT_SCHEMA_REFS)).toStrictEqual<FlatJSONSchema7[]>(
       expect.arrayContaining([
-        {
+        expect.objectContaining({
           description: undefined,
           key: 'billing_address',
           path: [],
           title: 'Billing address',
           type: 'object',
-        },
-        {
+        }),
+        expect.objectContaining({
           description: undefined,
           key: 'street_address',
           path: ['billing_address'],
           title: 'street_address',
           type: 'string',
-        },
-        {
+        }),
+        expect.objectContaining({
           description: undefined,
           key: 'children',
           path: ['tree'],
           title: 'children',
           type: 'array',
-        },
+        }),
       ])
     )
   })
@@ -70,24 +76,46 @@ describe('getPropertyListFrom', () => {
   it('should handle self-contained schema', async () => {
     expect(getPropertyListFrom(MOCK_MQTT_SCHEMA_PLAIN)).toStrictEqual<FlatJSONSchema7[]>(
       expect.arrayContaining([
-        {
+        expect.objectContaining({
           description: undefined,
           examples: undefined,
           key: 'firstName',
           path: [],
           title: 'First name',
           type: 'string',
-        },
-        {
+        }),
+        expect.objectContaining({
           description: undefined,
           examples: undefined,
           key: 'telephone',
           path: [],
           title: 'Telephone',
           type: 'string',
-        },
+        }),
       ])
     )
+  })
+
+  interface SchemaSuite {
+    type: string
+  }
+
+  const nodeUpdateTests: SchemaSuite[] = [
+    { type: 'string' },
+    { type: 'number' },
+    { type: 'integer' },
+    { type: 'boolean' },
+    { type: 'array' },
+    { type: 'object' },
+  ]
+
+  it.each<SchemaSuite>(nodeUpdateTests)('should work for $type', ({ type }) => {
+    const hhhh = getPropertyListFrom(MOCK_MQTT_SCHEMA_METADATA).find((e) => e.key === type)
+    expect(hhhh).not.toBeUndefined()
+    const { properties } = MOCK_MQTT_SCHEMA_METADATA
+    const flat = { ...(properties?.[type] as Omit<JSONSchema7, 'required'>), key: type, path: [] } as FlatJSONSchema7
+
+    expect(hhhh).toStrictEqual<FlatJSONSchema7>(expect.objectContaining(flat))
   })
 })
 
