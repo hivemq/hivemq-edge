@@ -275,5 +275,19 @@ export const useValidateCombiner = (
     return errors
   }
 
-  return isSuccess ? validateCombiner : undefined
+  const validateCombining: CustomValidator<DataCombining, RJSFSchema, CombinerContext> = (formData, errors) => {
+    if (!formData) {
+      errors.addError(t('combiner.error.validation.notValidPayload'))
+      return errors
+    }
+
+    validateDataSources(formData, errors)
+    validateDataSourceSchemas(formData, errors)
+    validateDestinationSchema(formData, errors)
+    validateInstructions(formData, errors)
+
+    return errors
+  }
+
+  return isSuccess ? { validateCombiner, validateCombining } : undefined
 }
