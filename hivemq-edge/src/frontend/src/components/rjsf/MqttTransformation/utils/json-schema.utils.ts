@@ -42,6 +42,7 @@ export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {
   arrayType?: string
   origin?: string
   metadata?: DataReference
+  required?: boolean
 }
 
 export const getProperty = (
