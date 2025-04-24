@@ -2094,9 +2094,6 @@ components:
             - ADAPTER_TYPE
             - EVENT
             - USER
-            - DATA_COMBINING
-            - COMBINER
-            - EDGE
       required:
         - type
     UsernamePasswordCredentials:
