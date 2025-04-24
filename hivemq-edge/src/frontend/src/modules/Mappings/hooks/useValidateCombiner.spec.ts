@@ -84,7 +84,7 @@ describe('useValidateCombiner', () => {
       expect(result.current).not.toBeUndefined()
     })
 
-    const formValidation = result.current?.(formData, errors)
+    const formValidation = result.current?.validateCombiner(formData, errors)
     return toErrorList(formValidation)
   }
 

@@ -18,6 +18,7 @@ import {
 import type { DataCombining } from '@/api/__generated__'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
+import { useValidateCombiner } from '../hooks/useValidateCombiner'
 import type { CombinerContext } from '../types'
 
 interface MappingDrawerProps<T> {
@@ -32,6 +33,7 @@ interface MappingDrawerProps<T> {
 const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onClose, onSubmit, ...props }) => {
   const { t } = useTranslation()
   const [isExpanded, setExpanded] = useBoolean(true)
+  const validator = useValidateCombiner(props.formContext?.queries || [], props.formContext?.entities || [])
 
   return (
     <Drawer isOpen={true} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={onClose} variant="hivemq">
@@ -54,6 +56,7 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
                 onSubmit={(e) => {
                   onSubmit(e.formData)
                 }}
+                customValidate={validator?.validateCombining}
               />
             </CardBody>
           </Card>
