@@ -1,3 +1,4 @@
+import type { UseQueryResult } from '@tanstack/react-query'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
@@ -15,9 +16,10 @@ import {
   DrawerOverlay,
   useBoolean,
 } from '@chakra-ui/react'
-import type { DataCombining } from '@/api/__generated__'
+import type { DataCombining, DomainTagList, EntityReference, TopicFilterList } from '@/api/__generated__'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
+import { useValidateCombiner } from '../hooks/useValidateCombiner'
 import type { CombinerContext } from '../types'
 
 interface MappingDrawerProps<T> {
@@ -32,6 +34,10 @@ interface MappingDrawerProps<T> {
 const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onClose, onSubmit, ...props }) => {
   const { t } = useTranslation()
   const [isExpanded, setExpanded] = useBoolean(true)
+  const validator = useValidateCombiner(
+    props.formContext?.queries as UseQueryResult<DomainTagList | TopicFilterList, Error>[],
+    props.formContext?.entities as EntityReference[]
+  )
 
   return (
     <Drawer isOpen={true} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={onClose} variant="hivemq">
@@ -54,6 +60,7 @@ const DataCombiningEditorDrawer: FC<MappingDrawerProps<DataCombining>> = ({ onCl
                 onSubmit={(e) => {
                   onSubmit(e.formData)
                 }}
+                customValidate={validator?.validateCombining}
               />
             </CardBody>
           </Card>

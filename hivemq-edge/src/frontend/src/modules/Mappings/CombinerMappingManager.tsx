@@ -64,7 +64,7 @@ const CombinerMappingManager: FC = () => {
   }, [selectedNode?.data?.sources?.items])
 
   const sources = useGetCombinedEntities(entities)
-  const validateCombiner = useValidateCombiner(sources, entities)
+  const validator = useValidateCombiner(sources, entities)
   const updateCombiner = useUpdateCombiner()
   const deleteCombiner = useDeleteCombiner()
 
@@ -137,7 +137,7 @@ const CombinerMappingManager: FC = () => {
               formData={selectedNode.data}
               onSubmit={handleOnSubmit}
               formContext={{ queries: sources, entities } as CombinerContext}
-              customValidate={validateCombiner}
+              customValidate={validator?.validateCombiner}
             />
           )}
         </DrawerBody>
