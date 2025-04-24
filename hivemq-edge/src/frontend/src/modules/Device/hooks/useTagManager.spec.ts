@@ -79,6 +79,7 @@ describe('useTagManager', () => {
         isError: true,
         isLoading: false,
         isPending: false,
+        capabilities: undefined,
       })
     )
   })
@@ -173,6 +174,7 @@ describe('useTagManager', () => {
     expect(result.current.onDelete).toBeTypeOf('function')
     expect(result.current.onUpdate).toBeTypeOf('function')
     expect(result.current.onupdateCollection).toBeTypeOf('function')
+    expect(result.current.capabilities).toStrictEqual(['READ', 'DISCOVER', 'WRITE', 'COMBINE'])
   })
 
   it('should do it properly', async () => {
