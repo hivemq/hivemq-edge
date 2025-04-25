@@ -20,7 +20,7 @@ const themeHiveMQ = extendTheme({
   },
 
   colors: colors,
-  components: components,
+  components,
 })
 
 export default themeHiveMQ

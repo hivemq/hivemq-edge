@@ -9,6 +9,8 @@ import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
+import { PLCTag, Topic, TopicFilter as TopicFilterComponent } from '@/components/MQTT/EntityTag'
+import { SelectEntityType } from '@/components/MQTT/types'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
@@ -108,6 +110,13 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         isClearable
         placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
         components={{
+          MultiValueContainer: ({ children, ...props }) => (
+            <>
+              {props.data.type === SelectEntityType.TOPIC && <Topic tagTitle={children} mr={3} />}
+              {props.data.type === SelectEntityType.TAG && <PLCTag tagTitle={children} mr={3} />}
+              {props.data.type === SelectEntityType.TOPIC_FILTER && <TopicFilterComponent tagTitle={children} mr={3} />}
+            </>
+          ),
           Option: ({ children, ...props }) => {
             return (
               <chakraComponents.Option {...props}>
@@ -122,7 +131,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
                       </Text>
                     </Box>
                   </HStack>
-                  <Text fontSize="sm" noOfLines={3} ml={2} lineHeight={'normal'} textAlign={'justify'}>
+                  <Text fontSize="sm" noOfLines={3} ml={4} lineHeight={'normal'} textAlign={'justify'}>
                     {props.data.description}
                   </Text>
                 </VStack>
