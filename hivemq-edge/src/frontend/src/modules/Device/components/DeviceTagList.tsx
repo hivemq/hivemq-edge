@@ -26,7 +26,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter, onClose }) => {
 
   const formContext: DeviceTagListContext = {
     adapterId: adapter.id,
-    capabilities: capabilities,
+    capabilities,
   }
 
   return (
