@@ -302,7 +302,7 @@ public class ProtocolAdapterManager {
         if (failedAdapters.isEmpty()) {
             eventService.configurationEvent()
                     .withSeverity(Event.SEVERITY.INFO)
-                    .withMessage("Configuration has been succesfully updated")
+                    .withMessage("Configuration has been successfully updated")
                     .fire();
         } else {
             eventService.configurationEvent()
