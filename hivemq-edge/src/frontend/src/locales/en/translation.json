@@ -634,7 +634,7 @@
           "edit": "Edit the tag",
           "delete": "Delete the tag",
           "add": "Add a new tag",
-          "schema": "View the schema",
+          "schema": "View the WRITE schema",
           "submit": "Submit"
         }
       },

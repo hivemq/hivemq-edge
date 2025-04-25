@@ -1,10 +1,11 @@
 import type { RJSFSchema } from '@rjsf/utils'
 
 import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
+import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import { tagListJsonSchema } from '@/api/schemas'
 import { MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA, MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { formatTopicString } from '@/components/MQTT/topic-utils'
-import { MockAdapterType } from '../../../__test-utils__/adapters/types'
+import type { DeviceTagListContext } from '../types'
 
 import { TagTableField } from './TagTableField'
 
@@ -88,6 +89,7 @@ describe('TagTableField', () => {
         formData={{
           items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
         }}
+        formContext={{ adapterId: 'opcua-1', capabilities: ['READ', 'WRITE'] } as DeviceTagListContext}
         onChange={onChange}
         onSubmit={onSubmit}
         onError={onError}
@@ -112,7 +114,17 @@ describe('TagTableField', () => {
       .within(() => {
         cy.get('button').eq(0).as('actEdit').should('have.attr', 'aria-label', 'Edit the tag')
         cy.get('button').eq(1).as('actDelete').should('have.attr', 'aria-label', 'Delete the tag')
+        cy.get('button').eq(2).as('actSchema').should('have.attr', 'aria-label', 'View the WRITE schema')
       })
+
+    cy.get('[role="dialog"]').should('not.exist')
+    cy.get('@actSchema').click()
+    cy.get('[role="dialog"]').should('be.visible')
+    cy.get('[role="dialog"]').within(() => {
+      cy.get('header').should('have.text', 'Manage the schema for the tag')
+
+      cy.getByAriaLabel('Close').click()
+    })
 
     cy.get('[role="dialog"]').should('not.exist')
     cy.get('@actEdit').click()
@@ -141,6 +153,30 @@ describe('TagTableField', () => {
 
       cy.get('tbody tr ').eq(1).should('contain.text', '< unset >')
     })
+  })
+
+  it('should not show schema if not WRITE', () => {
+    cy.mountWithProviders(
+      <CustomFormTesting
+        schema={mockTagListSchema}
+        uiSchema={mockTagListUISchema}
+        formData={{
+          items: MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA),
+        }}
+        formContext={{ adapterId: 'opcua-1', capabilities: ['READ'] } as DeviceTagListContext}
+        onChange={cy.stub}
+        onSubmit={cy.stub}
+        onError={cy.stub}
+      />
+    )
+
+    cy.get('tbody tr td')
+      .eq(2)
+      .within(() => {
+        cy.get('button').eq(0).as('actEdit').should('have.attr', 'aria-label', 'Edit the tag')
+        cy.get('button').eq(1).as('actDelete').should('have.attr', 'aria-label', 'Delete the tag')
+        cy.getByAriaLabel('View the WRITE schema').should('not.exist')
+      })
   })
 
   it('should be accessible', () => {

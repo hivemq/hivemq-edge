@@ -19,7 +19,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
   const itemErrorColor = useToken('colors', useColorModeValue('red.100', 'rgba(254, 178, 178, 0.16)'))
 
   const { schema, registry, uiSchema } = props
-  const { adapterId } = props.formContext || {}
+  const { adapterId, capabilities } = props.formContext || {}
 
   const fieldOptions = getUiOptions(uiSchema)
 
@@ -91,21 +91,23 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
                   onClick={() => handleDelete(info.row.index)}
                 />
               </ButtonGroup>
-              <TagSchemaDrawer
-                tag={info.row.original}
-                adapterId={adapterId as string}
-                trigger={({ onOpen: onOpenArrayDrawer }) => (
-                  <ButtonGroup size="sm">
-                    <IconButton
-                      data-testid={'tag-list-schema'}
-                      aria-label={t('device.drawer.table.actions.schema')}
-                      icon={<LuView />}
-                      onClick={onOpenArrayDrawer}
-                      isDisabled={isSchemaError(info.row.index)}
-                    />
-                  </ButtonGroup>
-                )}
-              />
+              {capabilities?.includes('WRITE') && (
+                <TagSchemaDrawer
+                  tag={info.row.original}
+                  adapterId={adapterId as string}
+                  trigger={({ onOpen: onOpenArrayDrawer }) => (
+                    <ButtonGroup size="sm">
+                      <IconButton
+                        data-testid={'tag-list-schema'}
+                        aria-label={t('device.drawer.table.actions.schema')}
+                        icon={<LuView />}
+                        onClick={onOpenArrayDrawer}
+                        isDisabled={isSchemaError(info.row.index)}
+                      />
+                    </ButtonGroup>
+                  )}
+                />
+              )}
             </ButtonGroup>
           )
         },
@@ -123,7 +125,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
         },
       },
     ]
-  }, [adapterId, props, t])
+  }, [adapterId, capabilities, props, t])
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
 
   const handleTagSubmit = (data: DomainTag | undefined) => {

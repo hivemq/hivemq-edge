@@ -16,7 +16,7 @@ interface DeviceTagListProps {
 
 const DeviceTagList: FC<DeviceTagListProps> = ({ adapter, onClose }) => {
   const { t } = useTranslation()
-  const { isLoading, isError, context, onupdateCollection } = useTagManager(adapter.id)
+  const { isLoading, isError, context, onupdateCollection, capabilities } = useTagManager(adapter.id)
 
   const onHandleSubmit = (data: IChangeEvent) => {
     if (!data.formData) return
@@ -26,6 +26,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter, onClose }) => {
 
   const formContext: DeviceTagListContext = {
     adapterId: adapter.id,
+    capabilities,
   }
 
   return (
