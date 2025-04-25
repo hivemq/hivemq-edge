@@ -4,6 +4,7 @@ import { formControlTheme } from './FormControl.ts'
 import { formErrorMessageTheme } from './FormErrorMessage.ts'
 import { buttonTheme } from './Button.ts'
 import { spinnerTheme } from './Spinner.ts'
+import { alertTheme } from './Alert'
 
 const components = {
   Spinner: spinnerTheme,
@@ -12,6 +13,7 @@ const components = {
   Drawer: drawerTheme,
   Form: formControlTheme,
   FormError: formErrorMessageTheme,
+  Alert: alertTheme,
 }
 
 export default components
