@@ -41,7 +41,11 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
               <Heading as="h3" size="sm">
                 {dataReference.id}
               </Heading>
-              <ErrorMessage message={dataReference.schema?.message} status={dataReference.schema?.status} />
+              <ErrorMessage
+                message={dataReference.schema?.message}
+                status={dataReference.schema?.status}
+                variant={'light'}
+              />
             </Box>
           )
         }
@@ -52,6 +56,8 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
             schema={{ ...dataReference.schema?.schema, title: dataReference.id }}
             isDraggable
             hasExamples
+            px={4}
+            py={3}
           />
         )
       })}
