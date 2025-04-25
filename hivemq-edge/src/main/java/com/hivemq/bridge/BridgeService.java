@@ -86,18 +86,15 @@ public class BridgeService {
         final Map<String, MqttBridgeAndClient> newMapOfKActiveBridges = Collections.synchronizedMap(new HashMap<>());
         bridges.forEach(config -> newMapOfKnownBridges.put(config.getId(), config));
 
-        log.info("Refreshing bridges {}", newMapOfKnownBridges.keySet());
-
         final long start = System.currentTimeMillis();
-        if (log.isTraceEnabled()) {
-            log.trace("Updating {} active bridges connections from {} configured connections",
+        if (log.isDebugEnabled()) {
+            log.debug("Updating {} active bridges connections from {} configured connections",
                     activeBridgeNamesToClient.size(),
                     newMapOfKnownBridges.size());
         }
 
         // first stop bridges as they might use the same clientId in case the id of a bridge was changed
         //remove any orphaned connections
-        log.info("Stopping missing bridges");
         var missingBridges = new HashSet<>(allKnownBridgeConfigs.keySet());
         missingBridges.removeAll(newMapOfKnownBridges.keySet());
 
@@ -111,7 +108,6 @@ public class BridgeService {
             }
         });
 
-        log.info("Restarting bridges with changed config");
         newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
             final var active = activeBridgeNamesToClient.get(bridgeId);
             if(active != null) {
@@ -127,7 +123,6 @@ public class BridgeService {
             };
         });
 
-        log.info("Adding new bridges");
         newMapOfKnownBridges.forEach((bridgeId, bridge) -> {
             if (!activeBridgeNamesToClient.containsKey(bridgeId)) {
                 log.info("Adding bridge {}", bridgeId);
