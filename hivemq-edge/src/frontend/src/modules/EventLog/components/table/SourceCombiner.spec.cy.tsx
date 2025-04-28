@@ -1,12 +1,10 @@
-import type { TypeIdentifier } from '@/api/__generated__'
+import { TypeIdentifier } from '@/api/__generated__'
 import { mockCombiner, mockCombinerId } from '@/api/hooks/useCombiners/__handlers__'
 
 import { SourceCombiner } from './SourceCombiner'
 
 const mockCombinerIdentifier: TypeIdentifier = {
-  // TODO[31411] The COMBINER type identifier is missing from the OpenAPI specs
-  // @ts-ignore
-  type: 'DATA_COMBINING',
+  type: TypeIdentifier.type.COMBINER,
   identifier: mockCombinerId,
 }
 
@@ -22,7 +20,7 @@ describe('SourceCombiner', () => {
     cy.get('a').should('have.text', 'my-combiner')
     cy.get('a').should('have.attr', 'href', `/workspace/combiner/${mockCombinerId}`)
 
-    cy.get('a > svg').should('have.attr', 'data-type', 'DATA_COMBINING')
+    cy.get('a > svg').should('have.attr', 'data-type', TypeIdentifier.type.COMBINER)
   })
 
   it('should render non-existent combiner', () => {

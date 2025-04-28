@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { Link as ReactRouterLink } from 'react-router-dom'
 import { Icon, Link as ChakraLink, Text } from '@chakra-ui/react'
 
-import type { TypeIdentifier } from '@/api/__generated__'
+import { TypeIdentifier } from '@/api/__generated__'
 import { useGetCombiner } from '@/api/hooks/useCombiners'
 import { HqCombiner } from '@/components/Icons'
 
@@ -25,7 +25,7 @@ export const SourceCombiner: FC<SourceLinkProps> = ({ source }) => {
       display="inline-flex"
       alignItems="center"
     >
-      <Icon as={HqCombiner} mr={2} data-type="DATA_COMBINING" />
+      <Icon as={HqCombiner} mr={2} data-type={TypeIdentifier.type.COMBINER} />
       {visibleName}
     </ChakraLink>
   )
