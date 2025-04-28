@@ -41,9 +41,8 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
     case TypeIdentifier.type.USER:
       icon = <Icon as={PiUserFill} mr={2} data-type={TypeIdentifier.type.USER} />
       break
-    // TODO[31411] The COMBINER type identifier is missing from the OpenAPI specs
-    // @ts-ignore
-    case 'DATA_COMBINING':
+    case TypeIdentifier.type.DATA_COMBINING:
+    case TypeIdentifier.type.COMBINER:
       return <SourceCombiner source={source} />
     default:
       break
