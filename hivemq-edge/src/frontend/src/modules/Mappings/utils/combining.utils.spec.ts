@@ -14,7 +14,9 @@ import { mappingHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__/ma
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers, MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
-import { getCombinedDataEntityReference, getSchemasFromReferences } from './combining.utils'
+import type { AutoMatchAccumulator } from './combining.utils'
+import { findBestMatch, getCombinedDataEntityReference, getSchemasFromReferences } from './combining.utils'
+import type { FlatJSONSchema7 } from '../../../components/rjsf/MqttTransformation/utils/json-schema.utils'
 
 interface TestEachSuite {
   test: string
@@ -95,7 +97,7 @@ const schemaSuite: TestEachSchemaSuite[] = [
       expect.objectContaining({
         adapterId: 'string',
         schema: expect.objectContaining({
-          message: 'Your topic filter is currently assigned a valid schema',
+          message: 'Your tag is currently assigned a valid schema',
           schema: expect.objectContaining({
             description: 'A simple form example.',
           }),
@@ -158,5 +160,46 @@ describe('getSchemasFromReferences', () => {
         }),
       }),
     ])
+  })
+})
+
+interface TestMatchSuite {
+  test: string
+  source: FlatJSONSchema7
+  candidates: FlatJSONSchema7[]
+  result: AutoMatchAccumulator | undefined
+  min?: number | null
+}
+
+const mocProperty: FlatJSONSchema7 = {
+  path: [],
+  key: 'test_string1',
+}
+
+const tests: TestMatchSuite[] = [
+  { test: 'same source', source: mocProperty, candidates: [mocProperty], result: { distance: 0, value: mocProperty } },
+  {
+    test: 'same source',
+    source: mocProperty,
+    candidates: [
+      { path: [], key: 'aaaa' },
+      { path: [], key: 'test_string2' },
+    ],
+    result: { distance: 1, value: { path: [], key: 'test_string2' } },
+  },
+  {
+    test: 'same source',
+    source: mocProperty,
+    candidates: [
+      { path: [], key: 'aaaa' },
+      { path: [], key: 'bbbb' },
+    ],
+    result: undefined,
+  },
+]
+
+describe('findBestMatch', () => {
+  it.each<TestMatchSuite>(tests)('should work for $test', ({ source, candidates, result }) => {
+    expect(findBestMatch(source, candidates)).toStrictEqual(result)
   })
 })

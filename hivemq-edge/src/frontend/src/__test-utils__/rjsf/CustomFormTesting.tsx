@@ -11,7 +11,10 @@ import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate'
 import { DescriptionFieldTemplate, ErrorListTemplate, TitleFieldTemplate } from '@/components/rjsf/Templates'
 
 interface CustomFormTestingProps
-  extends Pick<FormProps<unknown>, 'schema' | 'uiSchema' | 'formData' | 'onChange' | 'onSubmit' | 'onError'> {
+  extends Pick<
+    FormProps<unknown>,
+    'schema' | 'uiSchema' | 'formData' | 'onChange' | 'onSubmit' | 'onError' | 'formContext'
+  > {
   id?: string
 }
 
@@ -19,6 +22,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
   schema,
   uiSchema,
   formData,
+  formContext,
   onChange,
   onError,
   onSubmit,
@@ -29,6 +33,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
       validator={validator}
       uiSchema={uiSchema}
       formData={formData}
+      formContext={formContext}
       onChange={onChange}
       onError={onError}
       onSubmit={onSubmit}

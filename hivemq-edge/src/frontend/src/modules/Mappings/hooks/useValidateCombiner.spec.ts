@@ -84,7 +84,7 @@ describe('useValidateCombiner', () => {
       expect(result.current).not.toBeUndefined()
     })
 
-    const formValidation = result.current?.(formData, errors)
+    const formValidation = result.current?.validateCombiner(formData, errors)
     return toErrorList(formValidation)
   }
 
@@ -502,7 +502,7 @@ describe('useValidateCombiner', () => {
       )
       expect(errors).toStrictEqual([
         expect.objectContaining({
-          message: 'Your topic filter is currently not assigned a schema',
+          message: 'Your topic is currently not assigned a schema',
         }),
       ])
     })
@@ -532,7 +532,7 @@ describe('useValidateCombiner', () => {
       )
       expect(errors).toStrictEqual([
         expect.objectContaining({
-          message: "The destination schema doesn't have any property to be mapped into",
+          message: "Not a valid JSONSchema: `properties` doesn't contain any properties",
         }),
       ])
     })

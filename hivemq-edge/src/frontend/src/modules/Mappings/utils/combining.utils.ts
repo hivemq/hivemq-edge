@@ -9,6 +9,9 @@ import {
   type TopicFilter,
 } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
+import { AUTO_MATCH_DISTANCE } from '@/components/rjsf/BatchModeMappings/utils/config.utils'
+import levenshtein from '@/components/rjsf/BatchModeMappings/utils/levenshtein.utils'
+import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
@@ -86,19 +89,50 @@ export const getSchemasFromReferences = (
 
     // TODO[30744] Type of schema inconsistent between tag and topic filter
     if (typeof data === 'string') {
-      dataReference.schema = validateSchemaFromDataURI(data)
+      dataReference.schema = validateSchemaFromDataURI(data, dataReference.type)
     } else if (typeof data === 'object') {
       dataReference.schema = {
         schema: data || undefined,
         status: 'success',
-        message: i18n.t('topicFilter.schema.status.success'),
+        message: i18n.t('schema.status.success', { context: dataReference.type }),
       }
     } else {
       dataReference.schema = {
         status: 'warning',
-        message: i18n.t('topicFilter.error.schema.noAssignedSchema', { context: dataReference.type }),
+        message: i18n.t('schema.validation.noAssignedSchema', { context: dataReference.type }),
       }
     }
     return dataReference
   })
+}
+
+export type AutoMatchAccumulator = {
+  distance: number
+  value: FlatJSONSchema7
+}
+
+/**
+ *
+ * @param source
+ * @param candidates
+ * @param minDistance The minimum Levenshtein distance for a match, `null` for the best candidate
+ */
+export const findBestMatch = (
+  source: FlatJSONSchema7,
+  candidates: FlatJSONSchema7[],
+  minDistance: number | null = AUTO_MATCH_DISTANCE
+): AutoMatchAccumulator | undefined => {
+  const smallestValue = candidates.reduce<AutoMatchAccumulator>((acc, property) => {
+    const fullPath = (property: FlatJSONSchema7) => [...property.path, property.key].join('.')
+
+    if (source.type !== property.type) return acc
+
+    const distance = Math.min(
+      ...[levenshtein(property.key, source.key), levenshtein(fullPath(property), fullPath(source))]
+    )
+    return distance < acc.distance || acc.distance === undefined ? { value: property, distance } : acc
+  }, {} as AutoMatchAccumulator)
+
+  if (minDistance === null) return smallestValue
+  return smallestValue.distance <= minDistance ? smallestValue : undefined
 }

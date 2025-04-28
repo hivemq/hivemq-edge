@@ -1,25 +1,26 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FieldProps, RJSFSchema } from '@rjsf/utils'
-import { getTemplate, getUiOptions } from '@rjsf/utils'
+import { getTemplate, getUiOptions, type FieldProps, type RJSFSchema } from '@rjsf/utils'
 import {
+  ButtonGroup,
   FormControl,
   FormErrorMessage,
   FormHelperText,
   FormLabel,
   Grid,
   GridItem,
-  HStack,
-  Icon,
+  VStack,
 } from '@chakra-ui/react'
-import { FaRightFromBracket } from 'react-icons/fa6'
 
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import type { CombinerContext } from '@/modules/Mappings/types'
+
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
+import { AutoMapping } from './components/AutoMapping'
+import { ClearMappings } from './components/ClearMappings'
 import { DestinationSchemaLoader } from './DestinationSchemaLoader'
 import { PrimarySelect } from './PrimarySelect'
 
@@ -43,13 +44,17 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const destTopicOptions = getUiOptions(uiSchema?.destination?.topic)
   const destSchemaOptions = getUiOptions(uiSchema?.destination?.schema)
 
-  const sourceError = props.errorSchema?.sources?.__errors
-  const primaryError = props.errorSchema?.sources?.primary?.__errors
-  const destinationError = props.errorSchema?.destination?.topic?.__errors
-  // TODO[RJSF] Create a custom error message, ensuring tag + topic filters >= 1
+  const sourceErrors = props.errorSchema?.sources?.__errors
+  const primaryErrors = props.errorSchema?.sources?.primary?.__errors
+  const destinationErrors = props.errorSchema?.destination?.topic?.__errors
+  const destinationSchemaErrors = props.errorSchema?.destination?.schema?.__errors
+
+  const hasError = (field?: string[]) => {
+    return Boolean(field?.length)
+  }
 
   return (
-    <Grid templateColumns="1fr repeat(2, 1px) 1fr" gap={6}>
+    <Grid templateColumns="1fr repeat(2, 1px) 1fr" rowGap={4} columnGap={6}>
       <GridItem colSpan={2} data-testid={'combining-editor-source-header'}>
         {sourceOptions.title && (
           <TitleFieldTemplate
@@ -87,7 +92,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         )}
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-sources-attributes'}>
-        <FormControl isInvalid={Boolean(sourceError)}>
+        <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
             tags={formData?.sources?.tags}
@@ -95,37 +100,40 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
             formContext={formContext}
             onChange={(values) => {
               if (!formData) return
-              const tag: string[] = []
-              const filter: string[] = []
 
-              let isPrimary = false
-              values.forEach((entity) => {
-                if (entity.type === DataIdentifierReference.type.TAG) tag.push(entity.value)
-                if (entity.type === DataIdentifierReference.type.TOPIC_FILTER) filter.push(entity.value)
-                if (formData.sources.primary?.type === entity.type && formData.sources.primary?.id === entity.value)
-                  isPrimary = true
-              })
+              const tags = values
+                .filter((entity) => entity.type === DataIdentifierReference.type.TAG)
+                .map((entity) => entity.value)
+
+              const filters = values
+                .filter((entity) => entity.type === DataIdentifierReference.type.TOPIC_FILTER)
+                .map((entity) => entity.value)
+
+              const isPrimary = values.some(
+                (entity) =>
+                  formData.sources.primary?.type === entity.type && formData.sources.primary?.id === entity.value
+              )
 
               props.onChange({
                 ...formData,
                 sources: {
                   ...formData.sources,
-                  tags: tag,
-                  topicFilters: filter,
+                  tags: tags,
+                  topicFilters: filters,
                   // @ts-ignore TODO[30935] check for type clash on primary
                   primary: isPrimary ? formData.sources.primary : undefined,
                 },
               })
             }}
           />
-          {!sourceError && (
+          {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedData.description')}</FormHelperText>
           )}
-          <FormErrorMessage>{sourceError?.join(' ')}</FormErrorMessage>
+          <FormErrorMessage>{sourceErrors?.join(' ')}</FormErrorMessage>
         </FormControl>
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-topic'}>
-        <FormControl isInvalid={Boolean(destinationError)}>
+        <FormControl isInvalid={hasError(destinationErrors)}>
           <FormLabel>{destTopicOptions.title}</FormLabel>
           <SelectTopic
             isMulti={false}
@@ -139,54 +147,77 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
             }}
           />
-          {!destinationError && <FormHelperText>{destTopicOptions.description}</FormHelperText>}
+          {!hasError(destinationErrors) && <FormHelperText>{destTopicOptions.description}</FormHelperText>}
 
-          <FormErrorMessage>{destinationError}</FormErrorMessage>
+          <FormErrorMessage>{destinationErrors}</FormErrorMessage>
         </FormControl>
       </GridItem>
       <GridItem data-testid={'combining-editor-sources-schemas'}>
         <FormControl>
-          <FormLabel>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
+          <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
           <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
-          {!sourceError && (
+          {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedSchema.description')}</FormHelperText>
           )}
         </FormControl>
       </GridItem>
       <GridItem>
-        <HStack height={'100%'} justifyContent={'center'}>
-          <Icon as={FaRightFromBracket} />
-        </HStack>
+        <VStack height={'100%'} justifyContent={'center'}>
+          <ButtonGroup size={'sm'} flexDirection={'column'} alignItems={'flex-end'} gap={2}>
+            <AutoMapping
+              formData={props.formData}
+              formContext={formContext}
+              onChange={(instructions: Instruction[]) => {
+                if (!props.formData) return
+
+                props.onChange({
+                  ...props.formData,
+                  instructions: instructions,
+                })
+              }}
+            />
+            <ClearMappings
+              formData={props.formData}
+              onChange={(instructions: Instruction[]) => {
+                if (!props.formData) return
+
+                props.onChange({
+                  ...props.formData,
+                  instructions: instructions,
+                })
+              }}
+            />
+          </ButtonGroup>
+        </VStack>
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
-        <FormControl isInvalid={Boolean(destinationError)}>
-          <FormLabel>{destSchemaOptions.title}</FormLabel>
-          <DestinationSchemaLoader
-            formData={props.formData}
-            formContext={formContext}
-            onChange={(schema, instructions) => {
-              if (!props.formData) return
+        <DestinationSchemaLoader
+          isInvalid={hasError(destinationSchemaErrors)}
+          title={destSchemaOptions.title}
+          description={destSchemaOptions.description}
+          formData={props.formData}
+          formContext={formContext}
+          onChange={(schema, instructions) => {
+            if (!props.formData) return
 
-              props.onChange({
-                ...props.formData,
-                destination: { topic: props.formData.destination.topic, schema },
-                instructions: instructions || [],
-              })
-            }}
-            onChangeInstructions={(v: Instruction[]) => {
-              if (!props.formData) return
+            props.onChange({
+              ...props.formData,
+              destination: { topic: props.formData.destination.topic, schema },
+              instructions: instructions || [],
+            })
+          }}
+          onChangeInstructions={(v: Instruction[]) => {
+            if (!props.formData) return
 
-              props.onChange({
-                ...props.formData,
-                instructions: v,
-              })
-            }}
-          />
-          <FormHelperText>{destSchemaOptions.description}</FormHelperText>
-        </FormControl>
+            props.onChange({
+              ...props.formData,
+              instructions: v,
+            })
+          }}
+        />
       </GridItem>
       <GridItem colSpan={2} data-testid={'combining-editor-sources-primary'}>
-        <FormControl isInvalid={Boolean(primaryError)}>
+        <FormControl isInvalid={hasError(primaryErrors)}>
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
@@ -209,7 +240,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
               })
             }}
           />
-          {!primaryError && <FormHelperText>{primaryOptions.description}</FormHelperText>}
+          {!hasError(primaryErrors) && <FormHelperText>{primaryOptions.description}</FormHelperText>}
           <FormErrorMessage>{props.errorSchema?.sources?.primary?.__errors}</FormErrorMessage>
         </FormControl>
       </GridItem>

@@ -104,6 +104,7 @@ export const useTagManager = (adapterId: string) => {
   return {
     // The context of the operations
     context,
+    capabilities: protocol?.capabilities,
     // The CRUD operations
     data: tagList || { items: [] },
     onCreate,
