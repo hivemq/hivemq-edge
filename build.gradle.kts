@@ -44,6 +44,12 @@ tasks.register("test") {
     dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
 
+tasks.register("jacocoTestReport") {
+    group = "verification"
+
+    dependsOn(gradle.includedBuilds.filter { it.name == "hivemq-edge" }.map { it.task(":$name") })
+}
+
 tasks.register("classes") {
     dependsOn(gradle.includedBuilds.map { it.task(":$name") })
 }
