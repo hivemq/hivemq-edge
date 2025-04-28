@@ -23,6 +23,7 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,8 @@ public class DataCombinerManager {
         dataCombiningConfig.registerConsumer(this::refresh);
     }
 
-    private void refresh(List<DataCombiner> configs) {
+    @VisibleForTesting
+    public void refresh(List<DataCombiner> configs) {
         log.info("Refreshing data combiners");
 
         log.info("DataCombiners: {}", idToDataCombiningInformation.keySet());
@@ -115,11 +117,11 @@ public class DataCombinerManager {
         combinersToBeDeleted.forEach(uuid -> {
             try {
                 log.debug("Deleting data combiner '{}'", uuid);
-                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
+                var dataCombiningInformation = idToDataCombiningInformation.get(uuid);
                 deleteDataCombinerInternal(uuid);
-                var dataCombinerName = dataCombiner.name();
-                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
-                eventService.createCombinerEvent(dataCombiner.id())
+                var dataCombinerName = dataCombiningInformation.dataCombiner().name();
+                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiningInformation.dataCombiner().id();
+                eventService.createCombinerEvent(dataCombiningInformation.dataCombiner().id())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Combiner '%s' was permanently deleted.", nameOrId))
                         .fire();
