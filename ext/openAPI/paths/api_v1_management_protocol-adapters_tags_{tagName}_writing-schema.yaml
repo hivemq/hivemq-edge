@@ -1,0 +1,45 @@
+get:
+  description: Get the writing schema for this tag
+  operationId: get-domain-tag-writing-schema
+  parameters:
+    - description: The tag name (urlencoded).
+      in: path
+      name: tagName
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: string
+            format: data-url
+            description: >-
+              The optional writing JSON schema for this domain tag.
+          examples:
+            tag writing schema example:
+              description: An example for domain tags writing schema
+              summary: 'An example for a writing JSON schema for a tag '
+              value:
+                "$id": "https://example.com/tag.schema.json"
+                "type": "object"
+                "properties":
+                  "turns":
+                    "type": "int"
+                  "location":
+                    "type": "string"
+                  "required":
+                    - "turns"
+                    - "location"
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Either tag doesn't exist or it doesn't have a schema
+  summary: Get the writing schema for the domain tag with the given name in this Edge instance
+  tags:
+    - Protocol Adapters

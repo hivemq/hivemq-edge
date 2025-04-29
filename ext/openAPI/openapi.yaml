@@ -242,6 +242,8 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_tags.yaml
   /api/v1/management/protocol-adapters/tags/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_tags_{tagName}.yaml
+  /api/v1/management/protocol-adapters/tags/{tagName}/writing-schema:
+    $ref: paths/api_v1_management_protocol-adapters_tags_{tagName}_writing-schema.yaml
   /api/v1/management/protocol-adapters/types:
     $ref: paths/api_v1_management_protocol-adapters_types.yaml
   /api/v1/management/protocol-adapters/types/{adapterType}:
