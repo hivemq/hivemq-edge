@@ -8,6 +8,7 @@ pluginManagement {
     }
 }
 includeBuild("./hivemq-edge")
+includeBuild("./hivemq-edge-frontend")
 
 // ** module-deps ** //
 

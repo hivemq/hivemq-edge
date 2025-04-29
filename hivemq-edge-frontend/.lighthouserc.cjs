@@ -7,7 +7,7 @@ module.exports = {
   ci: {
     collect: {
       // collect options here
-      staticDistDir: 'hivemq-edge/src/frontend/dist',
+      staticDistDir: './hivemq-edge-frontend/dist',
       url: ['http://localhost/app/login'],
       isSinglePageApplication: true,
       numberOfRuns: 3,
