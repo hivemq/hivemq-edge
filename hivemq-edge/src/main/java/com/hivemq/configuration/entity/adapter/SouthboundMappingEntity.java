@@ -24,8 +24,8 @@ import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

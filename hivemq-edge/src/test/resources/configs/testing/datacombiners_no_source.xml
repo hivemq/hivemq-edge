@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <data-combiners>
+        <data-combiner>
+            <id>067ce8b4-8bd7-47ef-b300-1b58177437cc</id>
+            <name>combinerTest</name>
+            <description>test-combiner</description>
+            <data-combinings>
+                <data-combining>
+                    <id>c374fdbf-31e1-4b0b-9518-45f3efd2016d</id>
+                    <destination>
+                        <topic>TOPIC</topic>
+                        <schema>{}</schema>
+                    </destination>
+                    <instructions></instructions>
+                </data-combining>
+            </data-combinings>
+        </data-combiner>
+    </data-combiners>
+</hivemq>

@@ -20,7 +20,7 @@ import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

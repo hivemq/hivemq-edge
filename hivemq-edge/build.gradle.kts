@@ -139,8 +139,8 @@ dependencies {
 
 
     // config
-    implementation(libs.jakarta.xml.bind.api)
-    runtimeOnly(libs.jaxb.impl)
+    implementation(libs.jaxb4.impl)
+    implementation(libs.jaxb4.bind)
 
     // metrics
     implementation(libs.dropwizard.metrics)

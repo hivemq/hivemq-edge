@@ -20,27 +20,28 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.EntityValidatable;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
+import java.util.Objects;
 
 public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private final @NotNull String id;
+    private @NotNull String id;
 
     @JsonProperty("type")
     @XmlElement(name = "type")
-    private final @NotNull DataIdentifierReference.Type type;
+    private @NotNull DataIdentifierReference.Type type;
 
-
+    // no-arg for jaxb
     public DataIdentifierReferenceEntity() {
-        this.id = "id";
-        this.type = null;
     }
 
     public DataIdentifierReferenceEntity(@NotNull final String id, @NotNull final DataIdentifierReference.Type type) {
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(id, "id must not be null");
         this.id = id;
         this.type = type;
     }
@@ -60,5 +61,10 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         // TODO
+    }
+
+    @Override
+    public String toString() {
+        return "DataIdentifierReferenceEntity{" + "id='" + id + '\'' + ", type=" + type + '}';
     }
 }
