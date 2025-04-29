@@ -26,15 +26,17 @@ import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.edge.modules.api.events.EventStore;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
 public class DataCombinerManagerTest {
@@ -42,7 +44,20 @@ public class DataCombinerManagerTest {
     @Test
     public void test_add() {
         var now = System.currentTimeMillis();
-        var eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
+        var eventService = new EventServiceDelegateImpl(new EventStore() {
+
+            private final @NotNull List<Event> events = new ArrayList<>();
+
+            @Override
+            public void storeEvent(@NotNull Event event) {
+                events.add(event);
+            }
+
+            @Override
+            public @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit) {
+                return events;
+            }
+        });
 
         var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
         var dataCombiningExtractor = mock(DataCombiningExtractor.class);
@@ -51,6 +66,8 @@ public class DataCombinerManagerTest {
         dataCombinerManager.start();
         var combiner = new DataCombiner(UUID.randomUUID(), "namey", "description", List.of(), List.of());
         dataCombinerManager.refresh(List.of(combiner));
+
+        await().until(() -> getFitleredEvents(eventService, now).size() == 1);
 
         assertThat(getFitleredEvents(eventService, now))
                 .extracting(Event::getSource, Event::getMessage)
@@ -73,11 +90,13 @@ public class DataCombinerManagerTest {
         dataCombinerManager.refresh(List.of(combiner));
         dataCombinerManager.refresh(List.of());
 
+        await().until(() -> getFitleredEvents(eventService, now).size() == 2);
+
         assertThat(getFitleredEvents(eventService, now))
                 .extracting(Event::getSource, Event::getMessage)
                 .containsExactlyInAnyOrder(
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created."),
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was permanently deleted.")
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was permanently deleted."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
                 );
     }
 
@@ -96,12 +115,14 @@ public class DataCombinerManagerTest {
         dataCombinerManager.refresh(List.of(combiner));
         dataCombinerManager.refresh(List.of(combiner2));
 
+        await().until(() -> getFitleredEvents(eventService, now).size() == 3);
+
         assertThat(getFitleredEvents(eventService, now))
                 .extracting(Event::getSource, Event::getMessage)
                 .containsExactlyInAnyOrder(
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner2.id().toString()), "Combiner 'namey2' was successfully created."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created."),
                         tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was permanently deleted."),
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner2.id().toString()), "Combiner 'namey2' was successfully created.")
                 );
     }
 
@@ -123,12 +144,12 @@ public class DataCombinerManagerTest {
         assertThat(getFitleredEvents(eventService, now))
                 .extracting(Event::getSource, Event::getMessage)
                 .containsExactlyInAnyOrder(
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created."),
-                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey2' was successfully updated.")
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey2' was successfully updated."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
                 );
     }
 
-    private static @NotNull Stream<Event> getFitleredEvents(EventServiceDelegateImpl eventService, long now) {
-        return eventService.readEvents(now, 100).stream().filter(event -> !event.getMessage().equals("Configuration has been successfully updated"));
+    private static @NotNull List<Event> getFitleredEvents(EventServiceDelegateImpl eventService, long now) {
+        return eventService.readEvents(now, 100).stream().filter(event -> !event.getMessage().equals("Configuration has been successfully updated")).toList();
     }
 }
