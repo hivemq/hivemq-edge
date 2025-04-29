@@ -44,20 +44,7 @@ public class DataCombinerManagerTest {
     @Test
     public void test_add() {
         var now = System.currentTimeMillis();
-        var eventService = new EventServiceDelegateImpl(new EventStore() {
-
-            private final @NotNull List<Event> events = new ArrayList<>();
-
-            @Override
-            public void storeEvent(@NotNull Event event) {
-                events.add(event);
-            }
-
-            @Override
-            public @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit) {
-                return events;
-            }
-        });
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
         var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
         var dataCombiningExtractor = mock(DataCombiningExtractor.class);
@@ -79,7 +66,7 @@ public class DataCombinerManagerTest {
     @Test
     public void test_addThenDelete() {
         var now = System.currentTimeMillis();
-        var eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
         var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
         var dataCombiningExtractor = mock(DataCombiningExtractor.class);
@@ -103,7 +90,7 @@ public class DataCombinerManagerTest {
     @Test
     public void test_addAndDeleteInOneGo() {
         var now = System.currentTimeMillis();
-        var eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
         var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
         var dataCombiningExtractor = mock(DataCombiningExtractor.class);
@@ -129,7 +116,7 @@ public class DataCombinerManagerTest {
     @Test
     public void test_addThenUpdate() {
         var now = System.currentTimeMillis();
-        var eventService = new EventServiceDelegateImpl(new InMemoryEventImpl());
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
         var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
         var dataCombiningExtractor = mock(DataCombiningExtractor.class);
@@ -151,5 +138,22 @@ public class DataCombinerManagerTest {
 
     private static @NotNull List<Event> getFitleredEvents(EventServiceDelegateImpl eventService, long now) {
         return eventService.readEvents(now, 100).stream().filter(event -> !event.getMessage().equals("Configuration has been successfully updated")).toList();
+    }
+
+    private static @NotNull EventStore createEventStore() {
+        return new EventStore() {
+
+            private final @NotNull List<Event> events = new ArrayList<>();
+
+            @Override
+            public void storeEvent(@NotNull Event event) {
+                events.add(event);
+            }
+
+            @Override
+            public @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit) {
+                return events;
+            }
+        };
     }
 }
