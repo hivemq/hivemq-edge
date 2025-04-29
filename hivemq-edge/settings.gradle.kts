@@ -21,7 +21,7 @@ pluginManagement {
     includeBuild("../edge-plugins")
 }
 
-includeBuild("./src/frontend") {
+includeBuild("../hivemq-edge-frontend") {
     name = "hivemq-edge-frontend"
 }
 
