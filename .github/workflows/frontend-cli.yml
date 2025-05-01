@@ -167,6 +167,38 @@ jobs:
           uploadArtifacts: true # save results as an action artifacts
           configPath: 'hivemq-edge-frontend/.lighthouserc.cjs'
 
+  cypress_matrix:
+    runs-on: ubuntu-latest
+    needs: [ build_production ]
+    strategy:
+      matrix:
+        cypress: [
+          { component: false, spec: "./cypress/e2e/**/*", lcov_target: "e2e" },
+          { component: true, spec: "./src/components/**/*", lcov_target: "components" },
+          { component: true, spec: "./src/extensions/**/*", lcov_target: "extensions" }
+          { component: true, spec: "./src/modules/**/*", lcov_target: "modules" }
+        ]
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-#      - name: 📸 Run Percy visual tests
-#        run: echo "Check the Percy tests on the other workflow"
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge/src/frontend/
+          run-install: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: application
+          path: hivemq-edge/src/frontend/dist
+
+      - name: 🧪 Run Cypress suite
+        uses: cypress-io/github-action@v6
+        with:
+          component: ${{ matrix.cypress.component }}
+          spec: ${{ matrix.cypress.spec }}
+          start: pnpm preview
+          working-directory: ./hivemq-edge/src/frontend/
+          quiet: true
