@@ -134,3 +134,13 @@ jobs:
           start: pnpm preview --port 3000
           working-directory: ./hivemq-edge-frontend/
           quiet: true
+
+      # after the test run completes store videos
+      - name: 💾 Upload Cypress - ${{ matrix.cypress.lcov_target }} videos
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cypress-${{ matrix.cypress.lcov_target }}-videos
+          path: hivemq-edge-frontend/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
