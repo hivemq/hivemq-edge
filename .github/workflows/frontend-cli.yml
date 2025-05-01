@@ -176,7 +176,7 @@ jobs:
           { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
           { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
           { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
-          { component: true, spec: "./src/modules/**/*", lcov_target: "Modules" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
           { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
         ]
     name: Cypress - ${{ matrix.cypress.lcov_target }}
