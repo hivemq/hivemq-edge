@@ -148,11 +148,15 @@ jobs:
       # after the test, store LCOV summary
       - name: copy LCOV file
         if: ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info') != '' }}
-        uses: canastro/copy-file-action@master
-        with:
-          flags: '--parents'
-          source: hivemq-edge-frontend/coverage-cypress/lcov.info
-          target: hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+        run: |                    
+          mkdir hivemq-edge-frontend/coverage-cypress
+          echo hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info')
+          cp hivemq-edge-frontend/coverage-cypress/lcov.info hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+#        uses: canastro/copy-file-action@master
+#        with:
+#          flags: '--parents'
+#          source: hivemq-edge-frontend/coverage-cypress/lcov.info
+#          target: hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
 
 
   cypress_upload_codecov:
