@@ -147,6 +147,7 @@ jobs:
 
       # after the test, store LCOV summary
       - name: copy LCOV file
+        if: ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info') != '' }}
         uses: canastro/copy-file-action@master
         with:
           source: hivemq-edge-frontend/coverage-cypress/lcov.info
