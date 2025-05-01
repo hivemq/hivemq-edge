@@ -149,9 +149,9 @@ jobs:
       - name: copy LCOV file
         if: ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info') != '' }}
         run: |                    
-          mkdir hivemq-edge-frontend/coverage-cypress
-          echo hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info')
-          cp hivemq-edge-frontend/coverage-cypress/lcov.info hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+          mkdir ./coverage-combined
+          echo hashFiles('./coverage-cypress/lcov.info')
+          cp ./coverage-cypress/lcov.info ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
 #        uses: canastro/copy-file-action@master
 #        with:
 #          flags: '--parents'
