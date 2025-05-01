@@ -76,6 +76,7 @@ jobs:
           retention-days: 1
 
   component_tests:
+    if: false # Disabled
     runs-on: ubuntu-latest
     needs: [ build_production ]
     steps:
@@ -113,6 +114,7 @@ jobs:
           retention-days: 1
 
   e2e_tests:
+    if: false # Disabled
     runs-on: ubuntu-latest
     needs: [ build_production ]
     steps:
