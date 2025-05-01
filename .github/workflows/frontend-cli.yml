@@ -152,18 +152,20 @@ jobs:
           mkdir ./coverage-combined
           echo ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info')  }}
           cp ./coverage-cypress/lcov.info ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
-#        uses: canastro/copy-file-action@master
-#        with:
-#          flags: '--parents'
-#          source: hivemq-edge-frontend/coverage-cypress/lcov.info
-#          target: hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+      - name: 💾 Upload Cypress code coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cypress-${{ matrix.cypress.lcov_target }}-code-coverage
+          path: ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+          if-no-files-found: ignore
+          retention-days: 1
 
 
   cypress_upload_codecov:
     runs-on: ubuntu-latest
     needs: [ cypress_matrix ]
+    if: success() || failure()
     steps:
-
       - name: 💾 Upload Cypress code coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
