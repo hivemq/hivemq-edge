@@ -135,12 +135,33 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
           quiet: true
 
-      # after the test run completes store videos
+      # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.lcov_target }} videos
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cypress-${{ matrix.cypress.lcov_target }}-videos
           path: hivemq-edge-frontend/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
+
+      # after the test, store LCOV summary
+      - name: copy LCOV file
+        uses: canastro/copy-file-action@master
+        with:
+          source: hivemq-edge-frontend/coverage-cypress/lcov.info
+          target: hivemq-edge-frontend/coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+
+
+  cypress_upload_codecov:
+    runs-on: ubuntu-latest
+    needs: [ cypress_matrix ]
+    steps:
+
+      - name: 💾 Upload Cypress code coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cypress-code-coverage
+          path: hivemq-edge-frontend/coverage-combined/**.*
           if-no-files-found: ignore
           retention-days: 1
