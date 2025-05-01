@@ -150,7 +150,7 @@ jobs:
         if: ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info') != '' }}
         run: |                    
           mkdir ./coverage-combined
-          echo hashFiles('./coverage-cypress/lcov.info')
+          echo ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info')  }}
           cp ./coverage-cypress/lcov.info ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
 #        uses: canastro/copy-file-action@master
 #        with:
