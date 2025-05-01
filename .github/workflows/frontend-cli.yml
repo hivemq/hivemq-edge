@@ -175,7 +175,7 @@ jobs:
         cypress: [
           { component: false, spec: "./cypress/e2e/**/*", lcov_target: "e2e" },
           { component: true, spec: "./src/components/**/*", lcov_target: "components" },
-          { component: true, spec: "./src/extensions/**/*", lcov_target: "extensions" }
+          { component: true, spec: "./src/extensions/**/*", lcov_target: "extensions" },
           { component: true, spec: "./src/modules/**/*", lcov_target: "modules" }
         ]
     steps:
