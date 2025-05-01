@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cypress-component-videos
-          path: hivemq-edge/src/frontend/cypress/videos
+          path: hivemq-edge-frontend/cypress/videos
           if-no-files-found: ignore
           retention-days: 1
 
@@ -141,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cypress-e2e-videos
-          path: hivemq-edge/src/frontend/cypress/videos
+          path: hivemq-edge-frontend/cypress/videos
           if-no-files-found: ignore
           retention-days: 1
 
@@ -185,14 +185,14 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: application
-          path: hivemq-edge/src/frontend/dist
+          path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress suite
         uses: cypress-io/github-action@v6
@@ -200,5 +200,5 @@ jobs:
           component: ${{ matrix.cypress.component }}
           spec: ${{ matrix.cypress.spec }}
           start: pnpm preview
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           quiet: true
