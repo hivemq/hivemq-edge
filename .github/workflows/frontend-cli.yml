@@ -52,7 +52,15 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
 
       - name: 🧪 Run Test
-        run: pnpm test
+        run: pnpm test:coverage
+
+      - name: 💾 Upload Vitest Code Coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vitest-code-coverage
+          path: hivemq-edge-frontend/coverage-vitest/lcov.info
+          if-no-files-found: ignore
+          retention-days: 1
 
   build_production:
     runs-on: ubuntu-latest
