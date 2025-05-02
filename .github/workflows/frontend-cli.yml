@@ -135,6 +135,16 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
           quiet: true
 
+      - name: Read coverage-cypress/lcov.info
+        id: lcov
+        uses: jaywcjlove/github-action-read-file@main
+        with:
+          path: ./coverage-cypress/lcov.info
+
+      - name: Echo ./coverage-cypress/lcov.info
+        run: echo "${{ steps.lcov.outputs.content }}"
+
+
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.lcov_target }} videos
         if: failure()
