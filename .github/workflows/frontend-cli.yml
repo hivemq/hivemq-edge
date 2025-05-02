@@ -169,7 +169,7 @@ jobs:
       - name: Download All LCOV Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: coverage-combined
+          path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
           merge-multiple: true
-      - run: ls -R my-artifact
+      - run: ls -R lcov
