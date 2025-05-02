@@ -14,7 +14,7 @@ env:
 
 defaults:
   run:
-    working-directory: ./hivemq-edge-frontend/
+    working-directory: ./-frontend/
 
 # Cancel previous workflow on a follow-up push event
 # https://stackoverflow.com/a/72408109
@@ -172,4 +172,6 @@ jobs:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
           merge-multiple: true
+      - run: pwd
+      - run: ls -R
       - run: ls -R hivemq-edge-frontend/coverage-combined
