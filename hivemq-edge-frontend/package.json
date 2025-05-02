@@ -163,9 +163,6 @@
   "msw": {
     "workerDirectory": "public"
   },
-  "nyc": {
-    "report-dir": "./coverage-cypress"
-  },
   "engines": {
     "node": "18",
     "pnpm": "8"
