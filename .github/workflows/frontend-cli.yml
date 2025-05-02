@@ -57,7 +57,7 @@ jobs:
       - name: 💾 Upload Vitest Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: vitest-code-coverage
+          name: lcov-vitest
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
           if-no-files-found: ignore
           retention-days: 1
@@ -156,7 +156,7 @@ jobs:
       - name: 💾 Upload Cypress Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: cypress-${{ matrix.cypress.lcov_target }}-lcov
+          name: lcov-cypress-${{ matrix.cypress.lcov_target }}
           path: hivemq-edge-frontend/coverage-cypress/lcov.info
           if-no-files-found: ignore
           retention-days: 1
