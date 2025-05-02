@@ -175,4 +175,3 @@ jobs:
       - run: pwd
       - run: ls -R
       - run: ls -R ./coverage-combined
-x
