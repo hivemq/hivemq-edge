@@ -12,9 +12,9 @@ on:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-defaults:
-  run:
-    working-directory: ./hivemq-edge-frontend/
+#defaults:
+#  run:
+#    working-directory: ./hivemq-edge-frontend/
 
 # Cancel previous workflow on a follow-up push event
 # https://stackoverflow.com/a/72408109
