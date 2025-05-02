@@ -42,8 +42,6 @@ jobs:
 
   unit_tests:
     runs-on: ubuntu-latest
-    outputs:
-      vitest-lcov: ${{ steps.vitest-code-coverage.outputs.artifact-id }}
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -58,7 +56,6 @@ jobs:
 
       - name: 💾 Upload Vitest Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        id: vitest-code-coverage
         with:
           name: vitest-code-coverage
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
