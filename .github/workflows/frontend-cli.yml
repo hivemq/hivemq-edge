@@ -42,6 +42,8 @@ jobs:
 
   unit_tests:
     runs-on: ubuntu-latest
+    outputs:
+      vitest-lcov: ${{ steps.vitest-code-coverage.outputs.artifact-id }}
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -56,6 +58,7 @@ jobs:
 
       - name: 💾 Upload Vitest Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: vitest-code-coverage
         with:
           name: vitest-code-coverage
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
@@ -143,16 +146,6 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
           quiet: true
 
-      - name: Read coverage-cypress/lcov.info
-        id: lcov
-        uses: jaywcjlove/github-action-read-file@main
-        with:
-          path: ./coverage-cypress/lcov.info
-
-      - name: Echo ./coverage-cypress/lcov.info
-        run: echo "${{ steps.lcov.outputs.content }}"
-
-
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.lcov_target }} videos
         if: failure()
@@ -163,31 +156,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      # after the test, store LCOV summary
-      - name: copy LCOV file
-        if: ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info') != '' }}
-        run: |                    
-          mkdir ./coverage-combined
-          echo ${{ hashFiles('hivemq-edge-frontend/coverage-cypress/lcov.info')  }}
-          cp ./coverage-cypress/lcov.info ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
-      - name: 💾 Upload Cypress code coverage
+      - name: 💾 Upload Cypress Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: cypress-${{ matrix.cypress.lcov_target }}-code-coverage
-          path: ./coverage-combined/lcov-${{ matrix.cypress.lcov_target }}.info
+          name: vitest-code-coverage
+          path: hivemq-edge-frontend/coverage-cypress/lcov.info
           if-no-files-found: ignore
           retention-days: 1
 
-
-  cypress_upload_codecov:
+  combine_code_coverage:
     runs-on: ubuntu-latest
-    needs: [ cypress_matrix ]
+    needs: [ cypress_matrix, unit_tests ]
     if: success() || failure()
     steps:
-      - name: 💾 Upload Cypress code coverage
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: cypress-code-coverage
-          path: hivemq-edge-frontend/coverage-combined/**.*
-          if-no-files-found: ignore
-          retention-days: 1
+      - env:
+          VITEST: ${{needs.unit_tests.outputs.vitest-lcov}}
+        run: echo "Artifact ID from previous job is $VITEST"
