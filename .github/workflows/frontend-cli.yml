@@ -176,3 +176,18 @@ jobs:
           merge-multiple: false
       # Should contain the lcov.info summary, in subdirectory named from the tasks
       - run: ls -R ./coverage-combined
+
+  sonarqube:
+    name: SonarQube
+    needs: [ combine_code_coverage ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: hivemq-edge-frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
