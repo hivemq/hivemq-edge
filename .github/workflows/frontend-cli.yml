@@ -171,7 +171,8 @@ jobs:
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
-          merge-multiple: true
+          merge-multiple: false
       - run: pwd
       - run: ls -R
-      - run: ls -R hivemq-edge-frontend/coverage-combined
+      - run: ls -R ./coverage-combined
+x
