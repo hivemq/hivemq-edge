@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
           
       - name: Check for frontend changes
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.1
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: changes
         with:
           filters: |
@@ -53,7 +53,7 @@ jobs:
         run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
       - if: steps.changes.outputs.edge == 'true'
         name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984
+        uses: EnricoMi/publish-unit-test-result-action@a4f4abe3e43cc98f887b5351f3243906feb2197a
         with:
           files: |
             ${{ github.workspace }}/**/build/test-results/**/*.xml
