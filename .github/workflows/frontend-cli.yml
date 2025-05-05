@@ -6,7 +6,7 @@ name: Frontend - React Testing Pyramid
 on:
   push:
     paths:
-      - hivemq-edge/src/frontend/**
+      - hivemq-edge-frontend/**
       - .github/workflows/frontend-cli.yml
       - .github/actions/setup_node/action.yml
 env:
@@ -14,7 +14,7 @@ env:
 
 defaults:
   run:
-    working-directory: ./hivemq-edge/src/frontend/
+    working-directory: ./hivemq-edge-frontend/
 
 # Cancel previous workflow on a follow-up push event
 # https://stackoverflow.com/a/72408109
@@ -32,7 +32,7 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
 
       - name: 🧪 Run Prettier
         run: pnpm lint:prettier
@@ -49,7 +49,7 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
 
       - name: 🧪 Run Test
         run: pnpm test
@@ -63,7 +63,7 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
 
       - name: 🏗️ Build Application
         run: pnpm run build
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: application
-          path: hivemq-edge/src/frontend/dist
+          path: ./hivemq-edge-frontend/dist
           retention-days: 1
 
   component_tests:
@@ -85,21 +85,21 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: application
-          path: hivemq-edge/src/frontend/dist
+          path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v6
         with:
           component: true
           start: pnpm preview
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           quiet: false
 
       # after the test run completes store videos
@@ -122,20 +122,20 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: application
-          path: hivemq-edge/src/frontend/dist
+          path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress E2E
         uses: cypress-io/github-action@v6
         with:
           start: pnpm preview --port 3000
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           quiet: false
       - name: 💾 Upload E2E videos
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -156,7 +156,7 @@ jobs:
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: application
-          path: hivemq-edge/src/frontend/dist
+          path: ./hivemq-edge-frontend/dist
 
       - name: 🚥 Run Lighthouse audits
         uses: treosh/lighthouse-ci-action@2f8dda6cf4de7d73b29853c3f29e73a01e297bd8 # v12
@@ -165,7 +165,7 @@ jobs:
           temporaryPublicStorage: true # upload lighthouse report to the temporary storage
           ## budgetPath: ./budget.json # test performance budgets
           uploadArtifacts: true # save results as an action artifacts
-          configPath: 'hivemq-edge/src/frontend/.lighthouserc.cjs'
+          configPath: 'hivemq-edge-frontend/.lighthouserc.cjs'
 
 
 #      - name: 📸 Run Percy visual tests

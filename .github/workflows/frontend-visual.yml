@@ -7,7 +7,7 @@ on:
   pull_request:
     branches: [master]
     paths:
-      - hivemq-edge/src/frontend/**
+      - hivemq-edge-frontend/**
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./hivemq-edge/src/frontend/
+        working-directory: ./hivemq-edge-frontend/
     strategy:
       matrix:
         node-version: [18.16.0]
@@ -45,14 +45,14 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           quiet: true
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           start: pnpm dev
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v6
         with:
           quiet: true
-          working-directory: ./hivemq-edge/src/frontend/
+          working-directory: ./hivemq-edge-frontend/
           component: true
           start: pnpm dev
 

@@ -2,8 +2,6 @@ name: CI Check
 
 on:
   push:
-    paths-ignore:
-      - hivemq-edge/src/frontend/**
 
 concurrency:
   group: ${{ github.ref }}-check
@@ -15,7 +13,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - name: Checkout Extension SDK
+        with:
+          fetch-depth: 0
+          
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.1
+        id: changes
+        with:
+          filters: |
+            edge:
+              - 'hivemq-edge/**'
+              - 'edge-plugins/**'
+              - 'docker/**'
+              - 'modules/**'
+      - if: steps.changes.outputs.edge == 'true'
+        name: Checkout Extension SDK
         run: |
           git clone https://github.com/hivemq/hivemq-extension-sdk.git ../hivemq-extension-sdk
           cd ../hivemq-extension-sdk
@@ -30,20 +42,23 @@ jobs:
           cd ../hivemq-mtconnect-protocol
           git checkout ${GITHUB_REF#refs/heads/} || true
           cd ../hivemq-edge
-      - name: Setup Java
+      - if: steps.changes.outputs.edge == 'true'
+        name: Setup Java
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
         with:
           distribution: 'adopt'
           java-version: '17'
-      - name: Check
+      - if: steps.changes.outputs.edge == 'true'
+        name: Check
         run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
-      - name: Publish Test Results
+      - if: steps.changes.outputs.edge == 'true'
+        name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984
-        if: always()
         with:
           files: |
             ${{ github.workspace }}/**/build/test-results/**/*.xml
-      - name: Add coverage to PR
+      - if: steps.changes.outputs.edge == 'true'
+        name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 #v1.7.1
         with:
