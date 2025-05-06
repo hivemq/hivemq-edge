@@ -1,0 +1,26 @@
+name: CI Check
+
+on:
+  workflow_call:
+
+defaults:
+  run:
+    working-directory: ./hivemq-edge-frontend/
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+
+      - name: 🧪 Run Prettier
+        run: pnpm lint:prettier
+
+      - name: 🧪 Run ESLint
+        run: pnpm lint:eslint
