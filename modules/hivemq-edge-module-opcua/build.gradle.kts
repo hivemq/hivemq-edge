@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.milo.bsdParserGson)
     implementation(libs.milo.client)
     implementation(libs.milo.dictionaryReader)
+    implementation(libs.jaxb2.impl)
 }
 
 dependencies {
