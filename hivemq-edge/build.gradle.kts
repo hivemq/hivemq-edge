@@ -100,11 +100,7 @@ java {
     withSourcesJar()
 }
 
-
 /* ******************** dependencies ******************** */
-
-// Repository settings are now applied by the repository-convention plugin
-
 
 // Runtime stuffs
 dependencies {
@@ -332,7 +328,6 @@ tasks.shadowJar {
         into("httpd")
     }
 }
-
 
 val hivemqZip by tasks.registering(Zip::class) {
     group = "distribution"
