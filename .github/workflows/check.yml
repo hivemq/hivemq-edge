@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changed:
+  check-for-changes:
     runs-on: ubuntu-latest
     outputs:
       frontend-changed: ${{ steps.frontend.outputs.changed }}
@@ -39,22 +39,22 @@ jobs:
               - 'hivemq-edge-frontend/**'
 
   check-frontend:
-    needs: changed
+    needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
-    if: needs.changed.outputs.frontend-changed == 'true'
+    if: needs.check-for-changes.outputs.frontend-changed == 'true'
 
   check-backend:
-    needs: changed
+    needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
-    if: needs.changed.outputs.backend-changed == 'true'
+    if: needs.check-for-changes.outputs.backend-changed == 'true'
 
   check:
     runs-on: ubuntu-latest
-    needs: [changed, check-frontend, check-backend]
+    needs: [check-for-changes, check-frontend, check-backend]
     if: always()
     steps:
       - name: Check if frontend job succeeded
-        if: needs.changed.outputs.frontend-changed == 'true'
+        if: needs.check-for-changes.outputs.frontend-changed == 'true'
         run: |
           if [[ "${{ needs.check-frontend.result }}" != "success" ]]; then
             echo "Frontend check failed"
@@ -62,7 +62,7 @@ jobs:
           fi
       
       - name: Check if backend job succeeded
-        if: needs.changed.outputs.backend-changed == 'true'
+        if: needs.check-for-changes.outputs.backend-changed == 'true'
         run: |
           if [[ "${{ needs.check-backend.result }}" != "success" ]]; then
             echo "Backend check failed"
