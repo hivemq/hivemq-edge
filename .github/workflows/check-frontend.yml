@@ -4,11 +4,12 @@
 name: Frontend - React Testing Pyramid
 
 on:
-  push:
-    paths:
-      - hivemq-edge-frontend/**
-      - .github/workflows/frontend-cli.yml
-      - .github/actions/setup_node/action.yml
+  workflow_call:
+#  push:
+#    paths:
+#      - hivemq-edge-frontend/**
+#      - .github/workflows/frontend-cli.yml
+#      - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
