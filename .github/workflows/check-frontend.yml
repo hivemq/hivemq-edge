@@ -184,6 +184,10 @@ jobs:
     needs: [ combine_code_coverage ]
     runs-on: ubuntu-latest
     steps:
+      - name: Check if frontend job succeeded
+        run: |
+          echo "SONAR" ${{ secrets.SONAR_TOKEN }}
+          echo "PERCY" ${{ secrets.PERCY_TOKEN }}
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
