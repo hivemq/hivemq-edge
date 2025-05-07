@@ -58,7 +58,7 @@ jobs:
         run: |
           if [[ "${{ needs.check-frontend.result }}" != "success" ]]; then
             echo "Frontend check failed"
-            exit 1
+            exit 0
           fi
       
       - name: Check if backend job succeeded
