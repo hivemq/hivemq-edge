@@ -6,15 +6,16 @@ name: Frontend - React Testing Pyramid
 on:
   workflow_dispatch:
   workflow_call:
+
 #  push:
 #    paths:
 #      - hivemq-edge-frontend/**
 #      - .github/workflows/frontend-cli.yml
 #      - .github/actions/setup_node/action.yml
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+#env:
+#  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
 defaults:
   run:

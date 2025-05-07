@@ -3,6 +3,11 @@ name: CI Check
 on:
   push:
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
