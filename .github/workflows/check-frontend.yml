@@ -13,6 +13,8 @@ on:
 #      - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
 defaults:
   run:
@@ -184,10 +186,10 @@ jobs:
     needs: [ combine_code_coverage ]
     runs-on: ubuntu-latest
     steps:
-      - name: Check if frontend job succeeded
+      - name: check super secrets
         run: |
-          echo "SONAR" ${{ secrets.SONAR_TOKEN }}
-          echo "PERCY" ${{ secrets.PERCY_TOKEN }}
+          echo "SONAR" ${{ env.SONAR_TOKEN }}
+          echo "PERCY" ${{ env.PERCY_TOKEN }}
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
@@ -198,15 +200,4 @@ jobs:
           args: >
             -Dsonar.verbose=true
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
-  config_test:
-    name: Config
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if frontend job succeeded
-        run: |
-          echo "SONAR" ${{ secrets.SONAR_TOKEN }}
-          echo "PERCY" ${{ secrets.PERCY_TOKEN }}
-          echo "GIT" ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
