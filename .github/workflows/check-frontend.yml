@@ -184,8 +184,6 @@ jobs:
 
   sonarqube:
     name: SonarQube
-    env:
-      LOCAL_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     needs: [ combine_code_coverage ]
     runs-on: ubuntu-latest
     steps:
@@ -199,4 +197,4 @@ jobs:
           args: >
             -Dsonar.verbose=true
         env:
-          SONAR_TOKEN: ${{ env.LOCAL_SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
