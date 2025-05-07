@@ -50,6 +50,8 @@ jobs:
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
 
   check-backend:
+    env:
+      LOCAL_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'

@@ -16,6 +16,8 @@ on:
 #  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 #  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+env:
+  NEXT_PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
 defaults:
   run:
@@ -190,6 +192,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+        env:
+          SONAR_TOKEN: ${{ env.LOCAL_SONAR_TOKEN }}
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         with:
@@ -197,4 +202,4 @@ jobs:
           args: >
             -Dsonar.verbose=true
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ env.NEXT_PERCY_TOKEN }}
