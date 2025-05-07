@@ -17,7 +17,7 @@ package com.hivemq.configuration.entity.api;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
 
 /**

@@ -18,7 +18,7 @@ package com.hivemq.configuration.entity.bridge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})

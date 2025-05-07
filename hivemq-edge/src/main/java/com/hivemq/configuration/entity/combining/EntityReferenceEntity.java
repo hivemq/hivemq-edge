@@ -20,16 +20,17 @@ import com.hivemq.combining.model.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 public class EntityReferenceEntity {
 
-    @JsonProperty("type")
-    @XmlElement(name = "type")
+    @JsonProperty(value = "type", required = true)
+    @XmlElement(name = "type", required = true)
     private @NotNull EntityType type;
 
-    @JsonProperty("id")
-    @XmlElement(name = "id")
+    @JsonProperty(value = "id", required = true)
+    @XmlElement(name = "id", required = true)
     private @NotNull String id;
 
     // no-arg for jaxb
@@ -37,8 +38,18 @@ public class EntityReferenceEntity {
     }
 
     public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(id, "id must not be null");
         this.type = type;
         this.id = id;
+    }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public @NotNull EntityType getType() {
+        return type;
     }
 
     @Override
@@ -64,14 +75,6 @@ public class EntityReferenceEntity {
         int result = type.hashCode();
         result = 31 * result + id.hashCode();
         return result;
-    }
-
-    public @NotNull String getId() {
-        return id;
-    }
-
-    public @NotNull EntityType getType() {
-        return type;
     }
 
 

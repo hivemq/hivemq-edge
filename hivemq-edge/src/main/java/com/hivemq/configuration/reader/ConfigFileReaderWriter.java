@@ -38,18 +38,19 @@ import com.hivemq.util.render.IfUtil;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.ValidationEventLocator;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.ValidationEventLocator;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -424,7 +425,8 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    private @NotNull HiveMQConfigEntity readConfigFromXML(final @NotNull File configFile) {
+    @VisibleForTesting
+    public @NotNull HiveMQConfigEntity readConfigFromXML(final @NotNull File configFile) {
 
         log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = new ArrayList<>();

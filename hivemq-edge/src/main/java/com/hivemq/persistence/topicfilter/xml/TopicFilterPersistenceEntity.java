@@ -21,31 +21,31 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement(name = "topic-filters-persistence")
-@XmlAccessorType(XmlAccessType.NONE)
+@XmlAccessorType(XmlAccessType.FIELD)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TopicFilterPersistenceEntity {
+    public static final @NotNull String NO_NAMESPACE_SCHEMA_LOCATION = "topic-filters.xsd";
+    public static final @NotNull String SCHEMA_LOCATION = "http://www.w3.org/2001/XMLSchema-instance";
 
     @SuppressWarnings("unused")
     @JacksonXmlProperty(isAttribute = true, localName = "xmlns:xsi")
-    private final @NotNull String nameSpace = "http://www.w3.org/2001/XMLSchema-instance";
+    private final @NotNull String nameSpace = SCHEMA_LOCATION;
 
     @SuppressWarnings("unused")
     @JacksonXmlProperty(isAttribute = true, localName = "xsi:noNamespaceSchemaLocation")
-    private final @NotNull String schemaLocation = "topic-filters.xsd";
+    private final @NotNull String schemaLocation = NO_NAMESPACE_SCHEMA_LOCATION;
 
     @XmlElementWrapper(name = "topicFilters", required = true)
     @XmlElement(name = "topicFilter", required = true)
-    @XmlElementRef(required = false)
     private @NotNull List<TopicFilterXmlEntity> tags;
 
     // JaxB needs a default constructor

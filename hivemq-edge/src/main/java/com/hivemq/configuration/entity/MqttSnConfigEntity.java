@@ -24,7 +24,7 @@ import com.hivemq.configuration.entity.mqttsn.TopicRegistrationsHeldDuringSleepE
 import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.MqttsnConstants;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
