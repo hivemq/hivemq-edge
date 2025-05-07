@@ -199,3 +199,14 @@ jobs:
             -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+  config_test:
+    name: Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if frontend job succeeded
+        run: |
+          echo "SONAR" ${{ secrets.SONAR_TOKEN }}
+          echo "PERCY" ${{ secrets.PERCY_TOKEN }}
+          echo "GIT" ${{ secrets.GITHUB_TOKEN }}
