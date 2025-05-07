@@ -4,77 +4,70 @@ on:
   push:
 
 concurrency:
-  group: ${{ github.ref }}-check
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
+  check-for-changes:
     runs-on: ubuntu-latest
+    outputs:
+      frontend-changed: ${{ steps.frontend.outputs.changed }}
+      backend-changed: ${{ steps.backend.outputs.changed }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
           
-      - name: Check for frontend changes
+      - name: Check for backend changes
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.1
-        id: changes
+        id: backend
         with:
           filters: |
-            edge:
+            changed:
               - 'hivemq-edge/**'
               - 'edge-plugins/**'
               - 'docker/**'
               - 'modules/**'
-      - if: steps.changes.outputs.edge == 'true'
-        name: Checkout Extension SDK
+
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.1
+        id: frontend
+        with:
+          filters: |
+            changed:
+              - 'hivemq-edge-frontend/**'
+
+  check-frontend:
+    needs: check-for-changes
+    uses: ./.github/workflows/check-frontend.yml
+    if: needs.check-for-changes.outputs.frontend-changed == 'true'
+
+  check-backend:
+    needs: check-for-changes
+    uses: ./.github/workflows/check-backend.yml
+    if: needs.check-for-changes.outputs.backend-changed == 'true'
+
+  check:
+    runs-on: ubuntu-latest
+    needs: [check-for-changes, check-frontend, check-backend]
+    if: always()
+    steps:
+      - name: Check if frontend job succeeded
+        if: needs.check-for-changes.outputs.frontend-changed == 'true'
         run: |
-          git clone https://github.com/hivemq/hivemq-extension-sdk.git ../hivemq-extension-sdk
-          cd ../hivemq-extension-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
-          git clone https://github.com/hivemq/hivemq-edge-extension-sdk.git ../hivemq-edge-extension-sdk
-          cd ../hivemq-edge-extension-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
-          git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
-          cd ../hivemq-edge-adapter-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
-          git clone https://github.com/hivemq/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
-          cd ../hivemq-mtconnect-protocol
-          git checkout ${GITHUB_REF#refs/heads/} || true
-          cd ../hivemq-edge
-      - if: steps.changes.outputs.edge == 'true'
-        name: Setup Java
-        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
-        with:
-          distribution: 'adopt'
-          java-version: '17'
-      - if: steps.changes.outputs.edge == 'true'
-        name: Check
-        run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
-      - if: steps.changes.outputs.edge == 'true'
-        name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984
-        with:
-          files: |
-            ${{ github.workspace }}/**/build/test-results/**/*.xml
-      - if: steps.changes.outputs.edge == 'true'
-        name: Add coverage to PR
-        id: jacoco
-        uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 #v1.7.1
-        with:
-          paths: |
-            ${{ github.workspace }}/**/build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 40
-          min-coverage-changed-files: 60
-          title: Coverage Report
-          update-comment: true
-          pass-emoji: ✅
-          fail-emoji: ❌
-          debug-mode: true
-      - name: Upload coverage report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: coverage-java
-          path: build/reports/jacoco/jacocoMergedReport/html
-          retention-days: 1
+          if [[ "${{ needs.check-frontend.result }}" != "success" ]]; then
+            echo "Frontend check failed"
+            exit 1
+          fi
+      
+      - name: Check if backend job succeeded
+        if: needs.check-for-changes.outputs.backend-changed == 'true'
+        run: |
+          if [[ "${{ needs.check-backend.result }}" != "success" ]]; then
+            echo "Backend check failed"
+            exit 1
+          fi
+      
+      - name: All checks passed
+        run: echo "All required checks passed successfully!"
