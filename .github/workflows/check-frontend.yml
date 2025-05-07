@@ -4,6 +4,7 @@
 name: Frontend - React Testing Pyramid
 
 on:
+  workflow_dispatch:
   workflow_call:
 #  push:
 #    paths:
