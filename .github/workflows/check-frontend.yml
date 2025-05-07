@@ -195,5 +195,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         with:
           projectBaseDir: hivemq-edge-frontend
+          args: >
+            -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
