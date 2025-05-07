@@ -5,6 +5,7 @@ on:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # For frontend usage; secrets cannot be accessed in a conditional job
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
