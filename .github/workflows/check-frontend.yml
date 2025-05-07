@@ -187,11 +187,6 @@ jobs:
     needs: [ combine_code_coverage ]
     runs-on: ubuntu-latest
     steps:
-      - name: check super secrets
-        working-directory: ./hivemq-edge-frontend/
-        run: |
-          echo "SONAR" ${{ env.SONAR_TOKEN }}
-          echo "PERCY" ${{ env.PERCY_TOKEN }}
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
