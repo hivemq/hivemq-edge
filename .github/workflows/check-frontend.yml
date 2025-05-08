@@ -6,6 +6,11 @@ name: Frontend - React Testing Pyramid
 on:
   workflow_dispatch:
   workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      PERCY_TOKEN:
+        required: false
 
 #  push:
 #    paths:
