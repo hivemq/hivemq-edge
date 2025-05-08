@@ -193,6 +193,15 @@ jobs:
     outputs:
       LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
     steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
       - id: percy
         run: |
           echo "nonce=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
@@ -255,6 +264,15 @@ jobs:
       LOCAL_NONCE: ${{ needs.percy_matrix.outputs.LOCAL_NONCE }}
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
     steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
       - run: percy build:finalize
         env:
           PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
