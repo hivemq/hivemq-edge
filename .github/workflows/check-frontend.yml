@@ -12,9 +12,9 @@ on:
       PERCY_TOKEN:
         required: false
 
-#defaults:
-#  run:
-#    working-directory: hivemq-edge-frontend/
+defaults:
+  run:
+    working-directory: hivemq-edge-frontend/
 
 jobs:
   lint:
