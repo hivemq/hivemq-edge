@@ -14,7 +14,7 @@ on:
 
 defaults:
   run:
-    working-directory: hivemq-edge-frontend/
+    working-directory: ./hivemq-edge-frontend/
 
 jobs:
   lint:
