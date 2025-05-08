@@ -106,13 +106,13 @@ jobs:
     strategy:
       matrix:
         cypress: [
-          { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
-          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
-          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
-          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
-          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
+          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
+          { component: true, spec: "./src/components/**/*", target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
         ]
-    name: Cypress - ${{ matrix.cypress.lcov_target }}
+    name: Cypress - ${{ matrix.cypress.target }}
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -139,11 +139,11 @@ jobs:
           quiet: true
 
       # after the test, store videos
-      - name: 💾 Upload Cypress - ${{ matrix.cypress.lcov_target }} videos
+      - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: cypress-${{ matrix.cypress.lcov_target }}-videos
+          name: cypress-${{ matrix.cypress.target }}-videos
           path: hivemq-edge-frontend/cypress/videos
           if-no-files-found: ignore
           retention-days: 1
@@ -151,7 +151,7 @@ jobs:
       - name: 💾 Upload Cypress Code Coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: lcov-cypress-${{ matrix.cypress.lcov_target }}
+          name: lcov-cypress-${{ matrix.cypress.target }}
           path: hivemq-edge-frontend/coverage-cypress/lcov.info
           if-no-files-found: ignore
           retention-days: 1
@@ -217,14 +217,15 @@ jobs:
       LOCAL_NONCE: ${{ env.LOCAL_NONCE }}
     strategy:
       matrix:
+        # Should be reused
         cypress: [
-          { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
-          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
-          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
-          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
-          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
+          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
+          { component: true, spec: "./src/components/**/*", target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
         ]
-    name: Cypress - ${{ matrix.cypress.lcov_target }}
+    name: Percy - ${{ matrix.cypress.target }}
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -254,14 +255,14 @@ jobs:
           PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
-#      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.lcov_target }}
+#      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.target }}
 #        if: ${{ matrix.cypress.component == true }}
 #        run: npx percy exec --parallel -- cypress run -q --component --spec ${{ matrix.cypress.spec }}
 #        env:
 #          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
 #          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 #
-#      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.lcov_target }}
+#      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.target }}
 #        if: ${{ matrix.cypress.component == false }}
 #        run: npx percy exec --parallel -- cypress run -q --spec ${{ matrix.cypress.spec }}
 #        env:
