@@ -171,6 +171,7 @@ jobs:
           merge-multiple: false
       # Should contain the lcov.info summary, in subdirectory named from the tasks
       - run: ls -R ./coverage-combined
+      - run: ls -R **/**/*.info
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
@@ -179,7 +180,7 @@ jobs:
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
-            -Dsonar.verbose=false
+            -Dsonar.verbose=true
             -Dsonar.javascript.lcov.reportPaths=/home/runner/work/hivemq-edge/hivemq-edge/hivemq-edge-frontend/coverage-combined/lcov-cypress-Components/lcov.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
