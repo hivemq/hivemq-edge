@@ -194,7 +194,8 @@ jobs:
       LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
     steps:
       - id: percy
-        run: echo "nonce=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "nonce=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
   percy_matrix:
     needs: percy_prepare
