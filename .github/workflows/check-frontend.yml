@@ -12,25 +12,9 @@ on:
       PERCY_TOKEN:
         required: false
 
-#  push:
-#    paths:
-#      - hivemq-edge-frontend/**
-#      - .github/workflows/frontend-cli.yml
-#      - .github/actions/setup_node/action.yml
-#env:
-#  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-
 defaults:
   run:
     working-directory: ./hivemq-edge-frontend/
-
-## Cancel previous workflow on a follow-up push event
-## https://stackoverflow.com/a/72408109
-#concurrency:
-#  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-#  cancel-in-progress: true
 
 jobs:
   lint:
@@ -123,10 +107,10 @@ jobs:
       matrix:
         cypress: [
           { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
-#          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
-#          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
-#          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
-#          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
+          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
         ]
     name: Cypress - ${{ matrix.cypress.lcov_target }}
     steps:
@@ -200,6 +184,6 @@ jobs:
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
-            -Dsonar.verbose=true
+            -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
