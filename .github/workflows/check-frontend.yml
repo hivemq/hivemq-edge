@@ -285,7 +285,7 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
           run-install: true
 
-      - run: percy build:finalize
+      - run: npx percy build:finalize
         env:
           PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
