@@ -252,7 +252,14 @@ jobs:
 
       - name: 📸 Run Percy visual tests - ${{ matrix.cypress.lcov_target }}
         if: ${{ matrix.cypress.component == true }}
-        run: percy exec --parallel -- cypress run -q --component --spec ${{ matrix.cypress.spec }}
+        run: npx percy exec --parallel -- cypress run -q --component --spec ${{ matrix.cypress.spec }}
+        env:
+          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.lcov_target }}
+        if: ${{ matrix.cypress.component == false }}
+        run: npx percy exec --parallel -- cypress run -q --spec ${{ matrix.cypress.spec }}
         env:
           PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
