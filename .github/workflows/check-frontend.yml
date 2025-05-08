@@ -156,11 +156,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-  combine_code_coverage:
-    runs-on: ubuntu-latest
+  sonarqube:
+    name: SonarQube
     needs: [ cypress_matrix, unit_tests ]
     # Should we collect partial test results and combine them ?
     if: success() || failure()
+    runs-on: ubuntu-latest
     steps:
       - name: Download All LCOV Artifacts
         uses: actions/download-artifact@v4
@@ -170,12 +171,6 @@ jobs:
           merge-multiple: false
       # Should contain the lcov.info summary, in subdirectory named from the tasks
       - run: ls -R ./coverage-combined
-
-  sonarqube:
-    name: SonarQube
-    needs: [ combine_code_coverage ]
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
