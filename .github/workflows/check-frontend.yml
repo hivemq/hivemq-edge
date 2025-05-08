@@ -204,7 +204,7 @@ jobs:
 
       - id: percy
         run: |
-          echo "nonce=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+          echo "nonce=$(date +'%s')" >> "$GITHUB_OUTPUT"
 
   percy_matrix:
     needs: percy_prepare
