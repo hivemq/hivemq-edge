@@ -186,3 +186,75 @@ jobs:
             -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  percy_prepare:
+    needs: [ build_production ]
+    runs-on: ubuntu-latest
+    outputs:
+      LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
+    steps:
+      - id: percy
+        run: echo "nonce=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+  percy_matrix:
+    needs: percy_prepare
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      LOCAL_NONCE: ${{ needs.percy_prepare.outputs.LOCAL_NONCE }}
+      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+    outputs:
+      LOCAL_NONCE: ${{ env.LOCAL_NONCE }}
+    strategy:
+      matrix:
+        cypress: [
+          { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
+          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
+        ]
+    name: Cypress - ${{ matrix.cypress.lcov_target }}
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: application
+          path: ./hivemq-edge-frontend/dist
+
+#      - name: 📸 Run Percy visual tests
+#        uses: cypress-io/github-action@v6
+#        with:
+#          component: ${{ matrix.cypress.component }}
+#          spec: ${{ matrix.cypress.spec }}
+#          start: pnpm preview --port 3000
+#          working-directory: ./hivemq-edge-frontend/
+#          quiet: true
+
+      - name: 📸 Run Percy visual tests - ${{ matrix.cypress.lcov_target }}
+        if: ${{ matrix.cypress.component == true }}
+        run: percy exec --parallel -- cypress run -q --component --spec ${{ matrix.cypress.spec }}
+        env:
+          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+  percy_finalise:
+    needs: [ percy_matrix ]
+    runs-on: ubuntu-latest
+    env:
+      LOCAL_NONCE: ${{ needs.percy_matrix.outputs.LOCAL_NONCE }}
+      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+    steps:
+      - run: percy build:finalize
+        env:
+          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
