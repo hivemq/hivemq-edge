@@ -1,9 +1,10 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: XXXXXXX
+name: Frontend - React Testing Pyramid
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - hivemq-edge-frontend/**
@@ -11,8 +12,6 @@ on:
       - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
 defaults:
   run:
@@ -115,10 +114,10 @@ jobs:
       matrix:
         cypress: [
           { component: false, spec: "./cypress/e2e/**/*", lcov_target: "E2E" },
-#          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
-#          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
-#          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
-#          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
+          { component: true, spec: "./src/components/**/*", lcov_target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", lcov_target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", lcov_target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", lcov_target: "Workspace" }
         ]
     name: Cypress - ${{ matrix.cypress.lcov_target }}
     steps:
@@ -191,7 +190,5 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         with:
           projectBaseDir: hivemq-edge-frontend
-          args: >
-            -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
