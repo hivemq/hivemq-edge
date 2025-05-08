@@ -180,5 +180,6 @@ jobs:
           projectBaseDir: hivemq-edge-frontend
           args: >
             -Dsonar.verbose=false
+            -Dsonar.javascript.lcov.reportPaths=**/coverage-combined/**/lcov.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
