@@ -21,6 +21,7 @@ buildscript {
 
 plugins {
     java
+    idea
     `java-library`
     `maven-publish`
     signing
