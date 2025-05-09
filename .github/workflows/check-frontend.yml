@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: Frontend - React Testing Pyramid
 
 on:
@@ -18,6 +15,7 @@ defaults:
 
 jobs:
   lint:
+    name: Linting
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -35,6 +33,7 @@ jobs:
         run: pnpm lint:eslint
 
   unit_tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -57,6 +56,7 @@ jobs:
           retention-days: 1
 
   build_production:
+    name: Build Production
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -78,6 +78,7 @@ jobs:
           retention-days: 1
 
   lighthouse:
+    name: Lighthouse Performance
     runs-on: ubuntu-latest
     needs: [ build_production ]
     steps:
@@ -207,56 +208,6 @@ jobs:
             -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
-#  percy_matrix:
-#    needs: percy_prepare
-#    runs-on: ubuntu-latest
-#    continue-on-error: true
-#    env:
-#      LOCAL_NONCE: ${{ needs.percy_prepare.outputs.LOCAL_NONCE }}
-#      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-#    outputs:
-#      LOCAL_NONCE: ${{ env.LOCAL_NONCE }}
-#    strategy:
-#      matrix:
-#        # Should be reused
-#        cypress: [
-#          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
-#          { component: true, spec: "./src/components/**/*", target: "Components" },
-#          { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
-#          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
-#          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
-#        ]
-#    name: Percy - ${{ matrix.cypress.target }}
-#    steps:
-#      - name: 👓 Checkout repository
-#        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-#
-#      - name: 🏗️ Setup node environment
-#        uses: ./.github/actions/setup_node
-#        with:
-#          working-directory: ./hivemq-edge-frontend/
-#          run-install: true
-#
-#      - name: Download artifact
-#        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
-#        with:
-#          name: application
-#          path: ./hivemq-edge-frontend/dist
-#
-#      - name: 📸 Run Percy visual tests
-#        uses: cypress-io/github-action@v6
-#        with:
-#          component: ${{ matrix.cypress.component }}
-#          spec: ${{ matrix.cypress.spec }}
-#          start: pnpm preview --port 3000
-#          working-directory: ./hivemq-edge-frontend/
-#          command-prefix: 'npx percy exec --parallel'
-#          quiet: true
-#        env:
-#          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
-#          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   percy_finalise:
     name: Percy (finalise)
