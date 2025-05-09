@@ -165,25 +165,19 @@ jobs:
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-
-      - name: 🏗️ Setup node environment
-        uses: ./.github/actions/setup_node
         with:
-          working-directory: ./hivemq-edge-frontend/
-          run-install: true
-
-      - name: Download All LCOV Artifacts
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Download all LCOV Artifacts
         uses: actions/download-artifact@v4
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
           merge-multiple: false
-      # Should contain the lcov.info summary, in subdirectory named from the tasks
-      - run: ls -R ./coverage-combined
-      - run: ls -R **/**/*.info
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Verify LCOV Artifacts
+        # Should contain the lcov.info summary, in subdirectory named from the tasks
+        run: \
+          ls -R ./coverage-combined
+          ls -R **/**/*.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         with:
