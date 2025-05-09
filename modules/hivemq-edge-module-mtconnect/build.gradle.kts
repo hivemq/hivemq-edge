@@ -27,10 +27,9 @@ dependencies {
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.jackson.dataformat.xml)
-    // V4 supports XSD 1.1
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
-    implementation("com.hivemq:hivemq-mtconnect-protocol")
+    implementation(libs.mtconnect.protocol)
 }
 
 dependencies {
@@ -44,9 +43,6 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.mockito.junitJupiter)
-    // V4 supports XSD 1.1
-    implementation(libs.jaxb4.impl)
-    implementation(libs.jaxb4.bind)
 }
 
 tasks.test {

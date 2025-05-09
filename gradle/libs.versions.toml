@@ -36,6 +36,7 @@ milo = "0.6.15"
 mockito = "5.17.0"
 modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
+mtconnect-protocol = "1.0.0"
 netty = "4.2.0.Final"
 org_json = "20250107"
 pmd = "6.55.0"
@@ -103,6 +104,7 @@ milo-dictionaryReader = { module = "org.eclipse.milo:dictionary-reader", version
 milo-server = { module = "org.eclipse.milo:sdk-server", version.ref = "milo" }
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
+mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
