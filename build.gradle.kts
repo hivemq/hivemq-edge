@@ -1,6 +1,7 @@
 group = "com.hivemq"
 
 plugins {
+    idea
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
@@ -51,11 +52,11 @@ tasks.register("jacocoTestReport") {
 }
 
 tasks.register("classes") {
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("testClasses") {
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 
