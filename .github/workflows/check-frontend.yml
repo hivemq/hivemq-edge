@@ -175,7 +175,7 @@ jobs:
           merge-multiple: false
       - name: Verify LCOV Artifacts
         # Should contain the lcov.info summary, in subdirectory named from the tasks
-        run: \
+        run: >
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
