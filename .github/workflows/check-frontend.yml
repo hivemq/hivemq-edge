@@ -183,6 +183,6 @@ jobs:
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
-            -Dsonar.verbose=true
+            -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
