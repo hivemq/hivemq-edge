@@ -190,6 +190,5 @@ jobs:
           projectBaseDir: hivemq-edge-frontend
           args: >
             -Dsonar.verbose=true
-            -Dsonar.javascript.lcov.reportPaths=**/*.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
