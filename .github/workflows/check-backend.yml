@@ -23,9 +23,6 @@ jobs:
           git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
           cd ../hivemq-edge-adapter-sdk
           git checkout ${GITHUB_REF#refs/heads/} || true
-          git clone https://github.com/hivemq/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
-          cd ../hivemq-mtconnect-protocol
-          git checkout ${GITHUB_REF#refs/heads/} || true
           cd ../hivemq-edge
 
       - name: Setup Java
