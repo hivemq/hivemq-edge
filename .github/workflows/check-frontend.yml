@@ -4,24 +4,17 @@
 name: Frontend - React Testing Pyramid
 
 on:
+  workflow_dispatch:
   workflow_call:
-#  push:
-#    paths:
-#      - hivemq-edge-frontend/**
-#      - .github/workflows/frontend-cli.yml
-#      - .github/actions/setup_node/action.yml
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      PERCY_TOKEN:
+        required: false
 
 defaults:
   run:
     working-directory: ./hivemq-edge-frontend/
-
-## Cancel previous workflow on a follow-up push event
-## https://stackoverflow.com/a/72408109
-#concurrency:
-#  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-#  cancel-in-progress: true
 
 jobs:
   lint:
@@ -163,32 +156,33 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-  combine_code_coverage:
-    runs-on: ubuntu-latest
+  sonarqube:
+    name: SonarQube
     needs: [ cypress_matrix, unit_tests ]
     # Should we collect partial test results and combine them ?
     if: success() || failure()
+    runs-on: ubuntu-latest
     steps:
-      - name: Download All LCOV Artifacts
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Download all LCOV Artifacts
         uses: actions/download-artifact@v4
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
           merge-multiple: false
-      # Should contain the lcov.info summary, in subdirectory named from the tasks
-      - run: ls -R ./coverage-combined
-
-  sonarqube:
-    name: SonarQube
-    needs: [ combine_code_coverage ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Verify LCOV Artifacts
+        # Should contain the lcov.info summary, in subdirectory named from the tasks
+        run: |
+          ls -R ./coverage-combined
+          ls -R **/**/*.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         with:
           projectBaseDir: hivemq-edge-frontend
+          args: >
+            -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -3,6 +3,12 @@ name: CI Check
 on:
   push:
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # For frontend usage; secrets cannot be accessed in a conditional job
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -42,6 +48,9 @@ jobs:
     needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   check-backend:
     needs: check-for-changes

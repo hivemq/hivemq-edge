@@ -140,3 +140,5 @@ Together. they contain - and enforce - parts of the testing pyramid for frontend
 ### Percy - Visual testing
 
 ### Lighthouse - Performance testing
+
+### SonarQube Cloud
