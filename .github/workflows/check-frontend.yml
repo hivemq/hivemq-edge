@@ -163,6 +163,15 @@ jobs:
     if: success() || failure()
     runs-on: ubuntu-latest
     steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
       - name: Download All LCOV Artifacts
         uses: actions/download-artifact@v4
         with:
