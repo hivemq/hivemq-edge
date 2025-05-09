@@ -100,11 +100,13 @@ jobs:
           configPath: 'hivemq-edge-frontend/.lighthouserc.cjs'
 
   percy_prepare:
-    name: Percy Parallel - Prepare
+    name: Percy (initialise parallel)
     runs-on: ubuntu-latest
     outputs:
       LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
     steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - id: percy
         run: |
           echo "nonce=$(date +'%s')" >> "$GITHUB_OUTPUT"
@@ -257,6 +259,7 @@ jobs:
 #          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   percy_finalise:
+    name: Percy (finalise)
     needs: [ cypress_matrix ]
     runs-on: ubuntu-latest
     env:
