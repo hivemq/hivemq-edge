@@ -28,6 +28,6 @@
       "@datahub/*": ["src/extensions/datahub/*"]
     }
   },
-  "include": ["src/*.{js,css,d.ts,ts}", "cypress/*.*"],
+  "include": ["src/*.{js,css,d.ts,ts}", "cypress/*.*", "src/types/cypress.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
