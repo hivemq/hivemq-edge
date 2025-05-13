@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -72,7 +71,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
         this.tags = input.getTags();
 
         log.debug("Building connection string");
-        final String compiledUri = getConnectionString(adapterConfig.getType());
+        String compiledUri = getConnectionString(adapterConfig.getType());
         assert compiledUri != null;
         log.debug(compiledUri);
         this.databaseConnection = new DatabaseConnection(compiledUri,
@@ -82,7 +81,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
                 adapterConfig.getEncrypt());
     }
 
-    private @Nullable String getConnectionString(final DatabaseType inputType) {
+    private @Nullable String getConnectionString(DatabaseType inputType) {
         switch (inputType){
             case POSTGRESQL -> {
                 return String.format("jdbc:postgresql://%s:%s/%s?ssl=%s",
@@ -128,7 +127,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
 
         log.debug("Loading MySQL Driver");
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("com.mysql.jdbc.Driver");
         } catch (final ClassNotFoundException e) {
             output.failStart(e, null);
             return;
@@ -141,6 +140,8 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
             output.failStart(e, null);
             return;
         }
+
+
 
         databaseConnection.connect();
 
@@ -176,10 +177,12 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        log.debug("Getting polling context for {}", adapterInformation.getDisplayName());
+        log.debug("Getting polling context");
         final PollingContext pollingContext = pollingInput.getPollingContext();
 
-        log.debug("Handling tags for the database adapter : {}", adapterInformation.getDisplayName());
+        /* Connect to the database and execute the query */
+        log.debug("Checking database connection state");
+        log.debug("Handling tags for the adapter");
         tags.stream()
                 .filter(tag -> tag.getName().equals(pollingContext.getTagName()))
                 .findFirst()
