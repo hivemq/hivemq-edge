@@ -22,7 +22,7 @@
     "cypress:run:matrix:e2e": "cypress run -q --e2e --spec ./cypress/e2e/Login/**/* && copyfiles --flat ./coverage-cypress/lcov.info ./coverage-cypress/coverage-final.json ./coverage-combined/e2e",
     "cypress:run:matrix:components": "cypress run -q --component --spec ./src/components/ConnectionStatusBadge/**/* && copyfiles --flat ./coverage-cypress/lcov.info ./coverage-combined/components",
     "cypress:run:matrix:extensions": "cypress run -q --component --spec ./src/extensions/datahub/components/controls/CanvasControls.spec.cy.tsx && copyfiles --flat ./coverage-cypress/lcov.info ./coverage-combined/extensions",
-    "cypress:run:matrix:modules": "cypress run -q --component --spec ./src/modules/**/*",
+    "cypress:run:matrix:modules": "cypress run -q --component --spec './src/modules/**/*'",
     "cypress:percy": "LOCAL_NONCE=$(date '+%s') && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy exec --parallel -- cypress run --e2e && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy exec --parallel -- cypress run --component && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy build:finalize ",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
