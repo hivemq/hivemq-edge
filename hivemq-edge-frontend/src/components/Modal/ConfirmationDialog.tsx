@@ -44,8 +44,8 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
           </AlertDialogHeader>
 
           <AlertDialogBody>
-            <Text>{message}</Text>
-            {prompt && <Text>{prompt}</Text>}
+            <Text data-testid="confirmation-message">{message}</Text>
+            {prompt && <Text data-testid="confirmation-prompt">{prompt}</Text>}
           </AlertDialogBody>
 
           <AlertDialogFooter>
