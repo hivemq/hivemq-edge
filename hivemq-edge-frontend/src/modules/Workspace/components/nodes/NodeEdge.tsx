@@ -55,10 +55,10 @@ const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
         p={2}
         h={120}
       >
-        <VStack h={'100%'} justifyContent={'center'}>
+        <VStack h="100%" justifyContent="center">
           <Image data-testid="edge-node-icon" src={logo} alt={t('workspace.node.edge')} boxSize="96px" />
         </VStack>
-        <VStack h={'100%'} flex={1} justifyContent={'space-between'}>
+        <VStack h="100%" flex={1} justifyContent="space-between">
           <Text data-testid="edge-node-title">{t('branding.appName')}</Text>
           <MappingBadge destinations={topicFilters} type={SelectEntityType.TOPIC_FILTER} />
         </VStack>

@@ -92,15 +92,15 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
   return (
     <>
       <ModalBody>
-        <VStack spacing={4} alignItems={'flex-start'}>
-          <Text data-testid={'schema-infer-prompt'}>{t('combiner.schema.schemaManager.infer.message')}</Text>
+        <VStack spacing={4} alignItems="flex-start">
+          <Text data-testid="schema-infer-prompt">{t('combiner.schema.schemaManager.infer.message')}</Text>
 
-          <FormControl isInvalid={isError} data-testid={'schema-infer-merged'} id={'schema-infer-properties'}>
+          <FormControl isInvalid={isError} data-testid="schema-infer-merged" id="schema-infer-properties">
             <FormLabel>
               {t('combiner.schema.schemaManager.infer.title')}
               <MoreInfo
                 description={t('combiner.schema.schemaManager.infer.moreInfo')}
-                link={'https://docs.hivemq.com/hivemq-edge/installing-hivemq-edge.html'}
+                link="https://docs.hivemq.com/hivemq-edge/installing-hivemq-edge.html"
               />
             </FormLabel>
             <Box borderWidth={1} p={2} borderColor={isError ? 'red.500' : 'inherit'}>
@@ -121,11 +121,11 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       </ModalBody>
       <ModalFooter>
         <ButtonGroup variant="outline">
-          <Button data-testid={'schema-infer-cancel'} onClick={onClose}>
+          <Button data-testid="schema-infer-cancel" onClick={onClose}>
             {t('action.cancel')}
           </Button>
           <Button
-            data-testid={'schema-infer-generate'}
+            data-testid="schema-infer-generate"
             isDisabled={isError}
             onClick={() => onUpload(properties)}
             variant="primary"

@@ -122,25 +122,17 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
         <FormLabel flex={3} marginEnd={0}>
           {title}
         </FormLabel>
-        <ButtonGroup
-          isAttached
-          size="sm"
-          variant="outline"
-          justifyContent={'flex-end'}
-          flexWrap={'wrap'}
-          rowGap={2}
-          mb={1}
-        >
+        <ButtonGroup isAttached size="sm" variant="outline" justifyContent="flex-end" flexWrap="wrap" rowGap={2} mb={1}>
           <IconButton
             icon={<Icon as={RiAiGenerate} />}
-            data-testid={'combiner-destination-infer'}
+            data-testid="combiner-destination-infer"
             isDisabled={!isTopicDefined}
             onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
             aria-label={t('combiner.schema.schemaManager.action.infer')}
           />
           <IconButton
             icon={<Icon as={LuUpload} />}
-            data-testid={'combiner-destination-upload'}
+            data-testid="combiner-destination-upload"
             isDisabled={!isTopicDefined}
             onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
             aria-label={t('combiner.schema.schemaManager.action.upload')}
@@ -148,7 +140,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
           <IconButton
             icon={<Icon as={LuDownload} />}
-            data-testid={'combiner-destination-download'}
+            data-testid="combiner-destination-download"
             onClick={handleSchemaDownload}
             isDisabled={!isDestSchemaDefined}
             aria-label={t('combiner.schema.schemaManager.action.download')}
@@ -158,7 +150,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
       {!formData?.destination?.schema && (
         <Box borderWidth={1} p={3}>
-          <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />
+          <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status="info" />
         </Box>
       )}
 
@@ -170,21 +162,21 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
 
       {schema?.schema && (
         <AccessibleDraggableLock>
-          <VStack w="100%" justifyContent={'center'} alignItems={'stretch'} gap={3}>
+          <VStack w="100%" justifyContent="center" alignItems="stretch" gap={3}>
             <MappingInstructionList
-              id={'destination-mapping-editor'}
+              id="destination-mapping-editor"
               schema={schema.schema}
               instructions={formData?.instructions || []}
               onChange={handleInstructionChange}
-              display={'flex'}
-              flexDirection={'column'}
+              display="flex"
+              flexDirection="column"
               gap={4}
             />
           </VStack>
         </AccessibleDraggableLock>
       )}
 
-      <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose} id={'destination-schema'}>
+      <Modal isOpen={isOpen && Boolean(schemaEditor)} onClose={onClose} id="destination-schema">
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />

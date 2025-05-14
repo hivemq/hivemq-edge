@@ -77,7 +77,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
             <ButtonGroup role="toolbar">
               <ButtonGroup isAttached size="sm">
                 <IconButton
-                  data-testid={'tag-list-edit'}
+                  data-testid="tag-list-edit"
                   aria-label={t('device.drawer.table.actions.edit')}
                   icon={<LuPencil />}
                   onClick={() => setSelectedItem(info.row.index)}
@@ -85,7 +85,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
                   // variant={isRowError(info.row.index) ? 'solid' : 'outline'}
                 />
                 <IconButton
-                  data-testid={'tag-list-delete'}
+                  data-testid="tag-list-delete"
                   aria-label={t('device.drawer.table.actions.delete')}
                   icon={<LuTrash />}
                   onClick={() => handleDelete(info.row.index)}
@@ -98,7 +98,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
                   trigger={({ onOpen: onOpenArrayDrawer }) => (
                     <ButtonGroup size="sm">
                       <IconButton
-                        data-testid={'tag-list-schema'}
+                        data-testid="tag-list-schema"
                         aria-label={t('device.drawer.table.actions.schema')}
                         icon={<LuView />}
                         onClick={onOpenArrayDrawer}
@@ -115,7 +115,7 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
           return (
             <ButtonGroup isAttached size="sm">
               <IconButton
-                data-testid={'tag-list-add'}
+                data-testid="tag-list-add"
                 aria-label={t('device.drawer.table.actions.add')}
                 icon={<LuPlus />}
                 onClick={handleAdd}

@@ -1,12 +1,4 @@
-import 'cypress-axe'
-import 'cypress-each'
-import '@percy/cypress'
-import 'cypress-real-events'
-import '@cypress/code-coverage/support'
-
-import './commands'
-
-import type { MountOptions, MountReturn } from 'cypress/react'
+import type { MountOptions } from 'cypress/react'
 import { mount } from 'cypress/react'
 import type { MemoryRouterProps } from 'react-router-dom'
 import { MemoryRouter } from 'react-router-dom'
@@ -22,29 +14,18 @@ import '@/config/i18n.config.ts'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 
-// Augment the Cypress namespace to include type definitions for
-// your custom command.
-// Alternatively, can be defined in cypress/support/component.d.ts
-// with a <reference path="./component" /> at the top of your spec.
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Cypress {
-    interface Chainable {
-      mount: typeof mount
-
-      mountWithProviders(
-        component: React.ReactNode,
-        options?: MountOptions & { routerProps?: MemoryRouterProps } & {
-          wrapper?: React.JSXElementConstructor<{ children: React.ReactNode }>
-        }
-      ): Cypress.Chainable<MountReturn>
-    }
+/**
+ * * Attempts to find an element with a test id attribute of the given param value
+ * @example
+ * cy.getByTestId('btn')
+ * */
+export const mountWithProviders = (
+  component: React.ReactNode,
+  options?: MountOptions & { routerProps?: MemoryRouterProps } & {
+    wrapper?: React.JSXElementConstructor<{ children: React.ReactNode }>
   }
-}
-
-Cypress.Commands.add('mount', mount)
-Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
-  const { routerProps = { initialEntries: ['/'] }, wrapper: Test, ...mountOptions } = options
+) => {
+  const { routerProps = { initialEntries: ['/'] }, wrapper: Test, ...mountOptions } = options || {}
 
   const wrapped = (
     <QueryClientProvider
@@ -74,4 +55,4 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
   )
 
   return mount(wrapped, mountOptions)
-})
+}

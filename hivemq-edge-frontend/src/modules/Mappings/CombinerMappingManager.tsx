@@ -114,7 +114,7 @@ const CombinerMappingManager: FC = () => {
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={handleClose} variant="hivemq">
+    <Drawer isOpen={isOpen} placement="right" size="lg" onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}>
         <DrawerCloseButton />
@@ -141,7 +141,7 @@ const CombinerMappingManager: FC = () => {
             />
           )}
         </DrawerBody>
-        <DrawerFooter justifyContent={'space-between'}>
+        <DrawerFooter justifyContent="space-between">
           <ButtonGroup>
             {config.isDevMode && (
               <FormControl display="flex" alignItems="center">

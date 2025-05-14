@@ -42,7 +42,7 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   return (
     <Card size="sm">
       <CardHeader>
-        <Text as="span" data-testid={'tag-schema-header'}>
+        <Text as="span" data-testid="tag-schema-header">
           {t('device.drawer.table.column.name')}
         </Text>{' '}
         <PLCTag tagTitle={tag.name} mr={3} />
@@ -52,7 +52,7 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
 
         {isError && <ErrorMessage message={t('device.errors.noSchemaLoaded')} />}
         {data && (
-          <FormControl isInvalid={isError} data-testid={'tag-schema-panel'} id={'tag-schema-panel'}>
+          <FormControl isInvalid={isError} data-testid="tag-schema-panel" id="tag-schema-panel">
             <FormLabel>{t('device.drawer.schema.label')}</FormLabel>
             <Box borderWidth={1} p={2}>
               <JsonSchemaBrowser schema={data} hasExamples />
@@ -64,7 +64,7 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
       {data && (
         <CardFooter>
           <ButtonGroup>
-            <Button data-testid={'tag-schema-download'} onClick={handleSchemaDownload}>
+            <Button data-testid="tag-schema-download" onClick={handleSchemaDownload}>
               {t('device.drawer.schema.action.download')}
             </Button>
           </ButtonGroup>

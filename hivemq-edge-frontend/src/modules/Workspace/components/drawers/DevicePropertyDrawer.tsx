@@ -61,7 +61,7 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <DeviceTagList adapter={adapter} onClose={onClose} />
         </DrawerBody>
-        <DrawerFooter justifyContent={'flex-end'}>
+        <DrawerFooter justifyContent="flex-end">
           <ButtonGroup>
             {selectedNode && (
               <Button variant="primary" type="submit" form="tag-listing-form">

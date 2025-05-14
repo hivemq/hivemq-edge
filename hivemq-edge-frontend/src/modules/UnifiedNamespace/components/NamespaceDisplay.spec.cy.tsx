@@ -1,5 +1,5 @@
-/// <reference types="cypress" />
-
+// it works with the direct import
+// import 'cypress/cypress.d.ts'
 import NamespaceDisplay from './NamespaceDisplay.tsx'
 import { MOCK_BREADCRUMB, MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
 
@@ -16,6 +16,8 @@ describe('NamespaceDisplay', () => {
       breadcrumb: MOCK_BREADCRUMB.filter((crumb) => crumb !== 'Site'),
     },
   ]
+
+  // it.each should be working now
   it.each(selectors)(
     (selector) => `should render properly ${selector.test}`,
     (selector) => {

@@ -110,7 +110,7 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defa
         aria-label={t('metrics.charts.list')}
       >
         {!metrics.length && (
-          <ErrorMessage status={'info'} message={t('metrics.error.noMetrics')} gridColumn={'1 / span 2'} />
+          <ErrorMessage status="info" message={t('metrics.error.noMetrics')} gridColumn="1 / span 2" />
         )}
         {metrics.map((e) => {
           const { id } = extractMetricInfo(e.metrics)

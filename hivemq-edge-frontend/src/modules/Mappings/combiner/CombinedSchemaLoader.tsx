@@ -32,7 +32,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
 
   return (
     <Box borderWidth={1} p={3}>
-      {!displayedSchemas.length && <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status={'info'} />}
+      {!displayedSchemas.length && <ErrorMessage message={t('combiner.error.noSchemaLoadedYet')} status="info" />}
       {displayedSchemas.map((dataReference) => {
         const hasSchema = dataReference.schema?.status === 'success' && dataReference.schema.schema
 
@@ -51,7 +51,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
               <ErrorMessage
                 message={dataReference.schema?.message}
                 status={dataReference.schema?.status}
-                variant={'light'}
+                variant="light"
               />
             </Box>
           )

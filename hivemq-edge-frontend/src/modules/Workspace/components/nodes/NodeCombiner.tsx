@@ -39,16 +39,16 @@ const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dra
         h={120}
       >
         <VStack
-          h={'100%'}
+          h="100%"
           p={4}
           backgroundColor={bgColour}
           borderTopLeftRadius={30}
           borderBottomLeftRadius={30}
-          justifyContent={'center'}
+          justifyContent="center"
         >
           <Icon as={HqCombiner} boxSize={10} />
         </VStack>
-        <VStack p={2} h={'100%'} justifyContent={'space-evenly'}>
+        <VStack p={2} h="100%" justifyContent="space-evenly">
           <Text data-testid="combiner-description" noOfLines={1}>
             {data.name}
           </Text>

@@ -27,24 +27,24 @@ const MoreInfo: FC<MoreInfoProps> = ({ description, link }) => {
     <Popover placement="right">
       <PopoverTrigger>
         <IconButton
-          size={'sm'}
+          size="sm"
           icon={<Icon as={LuInfo} />}
           aria-label={t('MoreInfo.title')}
-          variant={'ghost'}
-          data-testid={'more-info-trigger'}
+          variant="ghost"
+          data-testid="more-info-trigger"
         />
       </PopoverTrigger>
       <PopoverContent
-        fontSize={'sm'}
+        fontSize="sm"
         aria-label={t('MoreInfo.title')}
-        boxShadow={'var(--chakra-shadows-dark-lg)'}
-        data-testid={'more-info-popover'}
+        boxShadow="var(--chakra-shadows-dark-lg)"
+        data-testid="more-info-popover"
       >
         <PopoverArrow />
         <PopoverBody as={VStack} alignItems="flex-start">
-          <Text data-testid={'more-info-message'}>{description}</Text>
+          <Text data-testid="more-info-message">{description}</Text>
           {link && (
-            <Link href={link} isExternal data-testid={'more-info-link'}>
+            <Link href={link} isExternal data-testid="more-info-link">
               {t('MoreInfo.link')} <ExternalLinkIcon mx="2px" />
             </Link>
           )}

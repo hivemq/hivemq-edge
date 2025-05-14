@@ -30,7 +30,7 @@ const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => {
     <ConditionalWrapper
       condition={isPrimary}
       wrapper={(children) => (
-        <Tag data-testid="primary-wrapper" role={'group'} p={1} variant="outline">
+        <Tag data-testid="primary-wrapper" role="group" p={1} variant="outline">
           <TagLeftIcon boxSize="12px" as={FaKey} ml={1} aria-label={t('combiner.schema.mapping.primary.aria-label')} />
           {children}
         </Tag>
@@ -101,7 +101,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           }
 
           return (
-            <HStack flexWrap={'wrap'}>
+            <HStack flexWrap="wrap">
               {info.row.original.sources?.tags?.map((tag) => (
                 <PrimaryWrapper key={tag} isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TAG, tag))}>
                   <PLCTag tagTitle={tag} />
@@ -129,13 +129,13 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
             <ButtonGroup isAttached size="xs">
               <IconButton
                 aria-label={t('combiner.schema.mappings.table.edit')}
-                data-testid={'combiner-mapping-list-edit'}
+                data-testid="combiner-mapping-list-edit"
                 icon={<LuPencil />}
                 onClick={() => setSelectedItem(info.row.index)}
               />
               <IconButton
                 aria-label={t('combiner.schema.mappings.table.delete')}
-                data-testid={'combiner-mapping-list-delete'}
+                data-testid="combiner-mapping-list-delete"
                 icon={<LuTrash />}
                 onClick={() => handleDelete(info.row.index)}
               />
@@ -146,7 +146,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           return (
             <ButtonGroup isAttached size="sm">
               <IconButton
-                data-testid={'combiner-mapping-list-add'}
+                data-testid="combiner-mapping-list-add"
                 aria-label={t('combiner.schema.mappings.table.add')}
                 icon={<LuPlus />}
                 onClick={handleAdd}
