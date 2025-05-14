@@ -1,7 +1,7 @@
-/// <reference types="cypress" />
 import type { ContextObject } from 'axe-core'
 import type { Options } from 'cypress-axe'
 
+// TODO[NVL] Duplicate from Cypress. Still failing to get them recognised by the IDE in the src
 declare global {
   namespace Cypress {
     interface Chainable {

@@ -10,8 +10,8 @@ import pluginQuery from '@tanstack/eslint-plugin-query'
 
 export default tsEslint.config(
   { ignores: ['dist', '**/__generated__/*'] },
-  reactPlugin.configs.flat.recommended, // This is not a plugin object, but a shareable config object
-  reactPlugin.configs.flat['jsx-runtime'], // Add this if you are using React 17+
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat['jsx-runtime'],
   pluginCypress.configs.recommended,
   ...pluginQuery.configs['flat/recommended'],
   eslintConfigPrettier,
