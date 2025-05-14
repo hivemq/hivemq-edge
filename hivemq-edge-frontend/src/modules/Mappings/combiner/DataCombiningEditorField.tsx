@@ -55,7 +55,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
   return (
     <Grid templateColumns="1fr repeat(2, 1px) 1fr" rowGap={4} columnGap={6}>
-      <GridItem colSpan={2} data-testid={'combining-editor-source-header'}>
+      <GridItem colSpan={2} data-testid="combining-editor-source-header">
         {sourceOptions.title && (
           <TitleFieldTemplate
             id="root_sources__title"
@@ -73,7 +73,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           />
         )}
       </GridItem>
-      <GridItem colSpan={2} data-testid={'combining-editor-destination-header'}>
+      <GridItem colSpan={2} data-testid="combining-editor-destination-header">
         {destOptions.title && (
           <TitleFieldTemplate
             id="root_destination__title"
@@ -91,7 +91,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           />
         )}
       </GridItem>
-      <GridItem colSpan={2} data-testid={'combining-editor-sources-attributes'}>
+      <GridItem colSpan={2} data-testid="combining-editor-sources-attributes">
         <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
@@ -132,13 +132,13 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormErrorMessage>{sourceErrors?.join(' ')}</FormErrorMessage>
         </FormControl>
       </GridItem>
-      <GridItem colSpan={2} data-testid={'combining-editor-destination-topic'}>
+      <GridItem colSpan={2} data-testid="combining-editor-destination-topic">
         <FormControl isInvalid={hasError(destinationErrors)}>
           <FormLabel>{destTopicOptions.title}</FormLabel>
           <SelectTopic
             isMulti={false}
             isCreatable={true}
-            id={'destination'}
+            id="destination"
             value={formData?.destination?.topic || null}
             onChange={(topic) => {
               if (!props.formData) return
@@ -152,7 +152,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormErrorMessage>{destinationErrors}</FormErrorMessage>
         </FormControl>
       </GridItem>
-      <GridItem data-testid={'combining-editor-sources-schemas'}>
+      <GridItem data-testid="combining-editor-sources-schemas">
         <FormControl>
           <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
           <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
@@ -162,8 +162,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         </FormControl>
       </GridItem>
       <GridItem>
-        <VStack height={'100%'} justifyContent={'center'}>
-          <ButtonGroup size={'sm'} flexDirection={'column'} alignItems={'flex-end'} gap={2}>
+        <VStack height="100%" justifyContent="center">
+          <ButtonGroup size="sm" flexDirection="column" alignItems="flex-end" gap={2}>
             <AutoMapping
               formData={props.formData}
               formContext={formContext}
@@ -190,7 +190,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           </ButtonGroup>
         </VStack>
       </GridItem>
-      <GridItem colSpan={2} data-testid={'combining-editor-destination-schema'}>
+      <GridItem colSpan={2} data-testid="combining-editor-destination-schema">
         <DestinationSchemaLoader
           isInvalid={hasError(destinationSchemaErrors)}
           title={destSchemaOptions.title}
@@ -216,12 +216,12 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           }}
         />
       </GridItem>
-      <GridItem colSpan={2} data-testid={'combining-editor-sources-primary'}>
+      <GridItem colSpan={2} data-testid="combining-editor-sources-primary">
         <FormControl isInvalid={hasError(primaryErrors)}>
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
-            id={'mappings-primary'}
+            id="mappings-primary"
             onChange={(values) => {
               if (!props.formData) return
 

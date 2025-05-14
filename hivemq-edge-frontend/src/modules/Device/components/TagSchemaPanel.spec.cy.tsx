@@ -14,7 +14,7 @@ describe('TagSchemaPanel', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<TagSchemaPanel adapterId={'test'} tag={mocTag} />)
+    cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
 
     cy.getByTestId('tag-schema-header').should('have.text', 'Tag')
     cy.getByTestId('topic-wrapper').should('have.text', 'opcua-1 / power / off')
@@ -32,7 +32,7 @@ describe('TagSchemaPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<TagSchemaPanel adapterId={'test'} tag={mocTag} />)
+    cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
 
     cy.checkAccessibility()
   })

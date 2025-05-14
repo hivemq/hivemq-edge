@@ -97,8 +97,8 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
     <Box {...boxProps}>
       <Select<EntityOption, true, GroupBase<EntityOption>>
         inputId={id}
-        id={'combiner-entity-select'}
-        instanceId={'entity'}
+        id="combiner-entity-select"
+        instanceId="entity"
         options={allOptions}
         isLoading={isLoading}
         isMulti
@@ -131,7 +131,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
                       </Text>
                     </Box>
                   </HStack>
-                  <Text fontSize="sm" noOfLines={3} ml={4} lineHeight={'normal'} textAlign={'justify'}>
+                  <Text fontSize="sm" noOfLines={3} ml={4} lineHeight="normal" textAlign="justify">
                     {props.data.description}
                   </Text>
                 </VStack>

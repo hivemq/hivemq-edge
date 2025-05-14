@@ -21,7 +21,7 @@ describe('MoreInfo', () => {
   })
 
   it('should render properly with link', () => {
-    cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link={'http://my.example.com'} />)
+    cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link="http://my.example.com" />)
     cy.getByTestId('more-info-trigger').click()
     cy.getByTestId('more-info-popover').should('be.visible')
     cy.getByTestId('more-info-message').should('have.text', 'This is a test')
@@ -33,7 +33,7 @@ describe('MoreInfo', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link={'http://my.example.com'} />)
+    cy.mountWithProviders(<MoreInfo description={MOCK_STATUS_TEXT} link="http://my.example.com" />)
     cy.getByTestId('more-info-trigger').realClick()
 
     cy.wait(WAIT_FOR_ANIMATION)

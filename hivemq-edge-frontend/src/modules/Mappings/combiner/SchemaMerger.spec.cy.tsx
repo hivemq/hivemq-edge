@@ -4,7 +4,7 @@ import SchemaMerger from './SchemaMerger'
 
 // TODO[NVL] This is wrong: the modal should be a reusable component
 const Wrapper: FC<PropsWithChildren> = ({ children }) => (
-  <Modal isOpen={true} onClose={cy.stub} id={'destination-schema'}>
+  <Modal isOpen={true} onClose={cy.stub} id="destination-schema">
     <ModalOverlay />
     <ModalContent>
       <ModalCloseButton />

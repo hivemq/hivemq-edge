@@ -52,7 +52,7 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, onChange }
     <Select<PrimaryOption>
       id={id}
       options={primaryOptions}
-      data-testid={'combiner-mapping-primaryOptions'}
+      data-testid="combiner-mapping-primaryOptions"
       value={primaryValue}
       onChange={onChange}
       isClearable

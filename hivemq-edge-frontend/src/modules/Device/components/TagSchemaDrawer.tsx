@@ -40,7 +40,7 @@ const TagSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ tag, adapterId, trigger }
         size="lg"
         onClose={props.onClose}
         closeOnOverlayClick={false}
-        id={'tag-schema'}
+        id="tag-schema"
       >
         <DrawerOverlay />
         <DrawerContent>

@@ -40,7 +40,7 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
 
   return (
     <HStack as="nav" aria-label={t('components:pagination.ariaLabel')} gap={8} mt={4}>
-      <ButtonGroup isAttached variant="ghost" data-testid={'table-pagination-navigation'}>
+      <ButtonGroup isAttached variant="ghost" data-testid="table-pagination-navigation">
         <PaginationButton
           icon={<LuSkipBack />}
           onClick={() => table.setPageIndex(0)}
@@ -68,7 +68,7 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
       </ButtonGroup>
 
       {showPageControls && (
-        <Box role="group" data-testid={'table-pagination-currentPage'}>
+        <Box role="group" data-testid="table-pagination-currentPage">
           <Text fontSize="md" whiteSpace="nowrap">
             {t('components:pagination.pageOf', {
               page: table.getState().pagination.pageIndex + 1,
@@ -79,7 +79,7 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
       )}
 
       {showPageControls && options?.enablePaginationGoTo && (
-        <FormControl display="flex" alignItems="center" w="inherit" data-testid={'table-pagination-goto'}>
+        <FormControl display="flex" alignItems="center" w="inherit" data-testid="table-pagination-goto">
           <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
           <NumberInput
             size="sm"
@@ -104,7 +104,7 @@ const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) =>
             display="flex"
             alignItems="baseline"
             justifyContent="flex-end"
-            data-testid={'table-pagination-perPages'}
+            data-testid="table-pagination-perPages"
           >
             <FormLabel>{t('components:pagination.perPage')}</FormLabel>
             <Select

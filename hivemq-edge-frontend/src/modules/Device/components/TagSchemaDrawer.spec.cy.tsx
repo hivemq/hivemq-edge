@@ -9,7 +9,7 @@ import TagSchemaDrawer from './TagSchemaDrawer'
 const mocTag = MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA)[0]
 
 const trigger: (disclosureProps: UseDisclosureProps) => JSX.Element = ({ onOpen: onOpenArrayDrawer }) => (
-  <Button data-testid={'dev-trigger'} onClick={onOpenArrayDrawer}>
+  <Button data-testid="dev-trigger" onClick={onOpenArrayDrawer}>
     The trigger
   </Button>
 )
@@ -22,7 +22,7 @@ describe('TagSchemaDrawer', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<TagSchemaDrawer adapterId={'test'} tag={mocTag} trigger={trigger} />)
+    cy.mountWithProviders(<TagSchemaDrawer adapterId="test" tag={mocTag} trigger={trigger} />)
 
     cy.get('[role="dialog"]#chakra-modal-tag-schema').should('not.exist')
 
@@ -39,7 +39,7 @@ describe('TagSchemaDrawer', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<TagSchemaDrawer adapterId={'test'} tag={mocTag} trigger={trigger} />)
+    cy.mountWithProviders(<TagSchemaDrawer adapterId="test" tag={mocTag} trigger={trigger} />)
     cy.getByTestId('dev-trigger').click()
 
     cy.checkAccessibility()
