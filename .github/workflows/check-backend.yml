@@ -31,8 +31,11 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
 
-      - name: Check
-        run: ./gradlew test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
+      - uses: burrunan/gradle-cache-action@663fbad34e03c8f12b27f4999ac46e3d90f87eca # v3.0.1
+        name: Build container
+        with:
+          arguments: :test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
+          gradle-version: wrapper
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984
