@@ -5,9 +5,18 @@ export interface PolicySchemaExpanded extends PolicySchema {
 }
 
 export const groupResourceItems = (data: SchemaList | undefined) => {
-  if (!data || !data.items) return []
+  if (!data || !data.items || !data.items.length) return []
 
-  const schemasGroupedById = Object.groupBy(data.items, (schema) => schema.id)
+  // TODO[33008] Update Node to 21; Object.groupBy is not supported in Node 18 or 20
+  // const schemasGroupedById = Object.groupBy(data.items, (schema) => schema.id)
+  const schemasGroupedById = data.items.reduce<Record<string, PolicySchema[]>>((acc, schema) => {
+    if (!acc[schema.id]) {
+      acc[schema.id] = []
+    }
+    acc[schema.id].push(schema)
+    return acc
+  }, {})
+
   const schemaGroups = Object.entries(schemasGroupedById).filter(([, schemas]) => schemas !== undefined) as [
     string,
     PolicySchema[],
