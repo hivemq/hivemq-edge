@@ -37,11 +37,15 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
     return [
       {
         accessorKey: 'id',
-        cell: (info) => (
-          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
-            <Text>{info.getValue<string>()}</Text>
-          </Skeleton>
-        ),
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
+              <Text as="span" ml={info.row.getParentRow() ? 4 : 0}>
+                {info.getValue<string>()}
+              </Text>
+            </Skeleton>
+          )
+        },
         header: t('Listings.schema.header.id'),
       },
       {
