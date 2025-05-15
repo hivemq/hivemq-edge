@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
+  Text,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import type { FocusableElement } from '@chakra-ui/utils'
@@ -17,11 +18,20 @@ interface ConfirmationDialogProps {
   onClose: () => void
   header: string
   message: string
+  prompt?: string
   action?: string | null
   onSubmit?: () => void
 }
 
-const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, header, message, action, onSubmit }) => {
+const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
+  isOpen,
+  onClose,
+  header,
+  message,
+  prompt,
+  action,
+  onSubmit,
+}) => {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>()
 
@@ -33,7 +43,10 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, head
             {header}
           </AlertDialogHeader>
 
-          <AlertDialogBody>{message}</AlertDialogBody>
+          <AlertDialogBody>
+            <Text data-testid="confirmation-message">{message}</Text>
+            {prompt && <Text data-testid="confirmation-prompt">{prompt}</Text>}
+          </AlertDialogBody>
 
           <AlertDialogFooter>
             <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">

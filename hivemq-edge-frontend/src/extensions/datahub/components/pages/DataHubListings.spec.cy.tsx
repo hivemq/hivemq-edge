@@ -53,8 +53,7 @@ describe('DataHubListings', () => {
     cy.getByTestId('list-action-delete').click()
 
     cy.get("[role='alertdialog']").as('modal').should('be.visible')
-    cy.get('@modal').find('header').should('have.text', 'Delete Item')
-    cy.get('@modal').find('header').should('have.text', 'Delete Item')
+    cy.get('@modal').find('header').should('have.text', 'Delete Schema')
     cy.get('@modal').find('footer').find('button').as('actions')
     cy.get('@actions').eq(0).click()
     cy.get("[role='alertdialog']").should('not.exist')
