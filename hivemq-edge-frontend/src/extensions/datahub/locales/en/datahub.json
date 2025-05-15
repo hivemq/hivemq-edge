@@ -82,7 +82,14 @@
         "clear": "Clear the draft"
       }
     },
-
+    "resources": {
+      "versions_RANGE_zero": "no version",
+      "versions_RANGE_one": "1",
+      "versions_RANGE_other": "1–{{ count }}",
+      "versions_COUNT_zero": "no version",
+      "versions_COUNT_one": "{{ count }} version xxx",
+      "versions_COUNT_other": "{{ count }} versions"
+    },
     "schema": {
       "label": "List of schemas",
       "header": {
