@@ -29,7 +29,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
   onDownload,
   onExpand,
   isExpanded = false,
-  canExpand = true,
+  canExpand = false,
   canDownload = true,
   canDelete = true,
 }) => {
