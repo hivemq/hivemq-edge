@@ -3,35 +3,35 @@ import { useMemo } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-
 import { Skeleton, Text } from '@chakra-ui/react'
-
-import type { PolicySchema } from '@/api/__generated__'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import { downloadJSON } from '@/utils/download.utils.ts'
+
+import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDeleteSchema.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.ts'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
-import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDeleteSchema.ts'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { downloadJSON } from '@/utils/download.utils.ts'
+import type { PolicySchemaExpanded } from '@datahub/utils/policy.utils'
+import { groupResourceItems } from '@datahub/utils/policy.utils'
 
 const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllSchemas()
   const deleteSchema = useDeleteSchema()
 
-  const safeData = useMemo<PolicySchema[]>(() => {
+  const expandedData = useMemo(() => {
     if (isLoading) return [mockSchemaTempHumidity]
 
-    return [...(data?.items || [])]
-  }, [isLoading, data?.items])
+    return groupResourceItems(data)
+  }, [data, isLoading])
 
-  const columns = useMemo<ColumnDef<PolicySchema>[]>(() => {
-    const onHandleDownload = (info: CellContext<PolicySchema, unknown>) => () => {
-      downloadJSON<PolicySchema>(info.row.original.id, info.row.original)
+  const columns = useMemo<ColumnDef<PolicySchemaExpanded>[]>(() => {
+    const onHandleDownload = (info: CellContext<PolicySchemaExpanded, unknown>) => () => {
+      downloadJSON<PolicySchemaExpanded>(info.row.original.id, info.row.original)
     }
 
     return [
@@ -87,6 +87,11 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
               <DataHubListAction
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
                 onDownload={onHandleDownload(info)}
+                onExpand={info.row.getToggleExpandedHandler()}
+                canDownload={!info.row.getCanExpand()}
+                canDelete={!info.row.getParentRow()}
+                canExpand={info.row.getCanExpand()}
+                isExpanded={info.row.getIsExpanded()}
               />
             </Skeleton>
           )
@@ -96,11 +101,12 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
-    <PaginatedTable<PolicySchema>
+    <PaginatedTable<PolicySchemaExpanded>
       aria-label={t('Listings.schema.label')}
-      data={safeData}
+      data={expandedData}
       columns={columns}
       isError={isError}
+      getSubRows={(data) => data.children}
     />
   )
 }
