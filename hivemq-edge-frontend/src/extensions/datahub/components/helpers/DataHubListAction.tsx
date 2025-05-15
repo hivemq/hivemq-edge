@@ -1,7 +1,8 @@
 import type { FC, MouseEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TiChevronRightOutline } from 'react-icons/ti'
 import { useNavigate } from 'react-router-dom'
-import { ButtonGroup, HStack } from '@chakra-ui/react'
+import { ButtonGroup, HStack, Icon } from '@chakra-ui/react'
 import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -14,9 +15,24 @@ interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
   onDelete?: MouseEventHandler<HTMLButtonElement>
   onDownload?: MouseEventHandler<HTMLButtonElement>
+  onExpand?: MouseEventHandler<HTMLButtonElement>
+  isExpanded?: boolean
+  canExpand?: boolean
+  canDelete?: boolean
+  canDownload?: boolean
 }
 
-const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelete, onDownload }) => {
+const DataHubListAction: FC<DataHubListActionProps> = ({
+  policy,
+  onEdit,
+  onDelete,
+  onDownload,
+  onExpand,
+  isExpanded = false,
+  canExpand = true,
+  canDownload = true,
+  canDelete = true,
+}) => {
   const { t } = useTranslation('datahub')
   const navigate = useNavigate()
   const { setStatus } = useDataHubDraftStore()
@@ -25,18 +41,32 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
     // If not policy, it's a resource toolbar
     return (
       <ButtonGroup size="sm" isAttached>
-        <IconButton
-          data-testid="list-action-download"
-          onClick={onDownload}
-          aria-label={t('Listings.action.download')}
-          icon={<LuDownload />}
-        />
-        <IconButton
-          data-testid="list-action-delete"
-          onClick={onDelete}
-          aria-label={t('Listings.action.delete')}
-          icon={<LuTrash2 />}
-        />
+        {canDownload && (
+          <IconButton
+            data-testid="list-action-download"
+            onClick={onDownload}
+            aria-label={t('Listings.action.download')}
+            icon={<LuDownload />}
+          />
+        )}
+        {canDelete && (
+          <IconButton
+            data-testid="list-action-delete"
+            onClick={onDelete}
+            aria-label={t('Listings.action.delete')}
+            icon={<LuTrash2 />}
+          />
+        )}
+        {canExpand && (
+          <IconButton
+            onClick={onExpand}
+            size="sm"
+            aria-label="Show the versions"
+            icon={
+              <Icon as={TiChevronRightOutline} fontSize="1.5rem" transform={isExpanded ? 'rotate(90deg)' : undefined} />
+            }
+          />
+        )}
       </ButtonGroup>
     )
   }
