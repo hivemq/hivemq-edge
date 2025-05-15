@@ -38,7 +38,9 @@
       "config": "Configure",
       "download": "Download",
       "delete": "Delete",
-      "copy": "Copy"
+      "copy": "Copy",
+      "expand": "Show the versions",
+      "collapse": "Hide the versions"
     },
     "tabs": {
       "policy": {

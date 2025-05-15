@@ -61,7 +61,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
           <IconButton
             onClick={onExpand}
             size="sm"
-            aria-label="Show the versions"
+            aria-label={isExpanded ? t('Listings.action.collapse') : t('Listings.action.expand')}
             icon={
               <Icon as={TiChevronRightOutline} fontSize="1.5rem" transform={isExpanded ? 'rotate(90deg)' : undefined} />
             }
