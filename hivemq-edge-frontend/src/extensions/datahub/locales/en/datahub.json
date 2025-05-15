@@ -56,8 +56,14 @@
     },
     "modal": {
       "delete": {
-        "header": "Delete Item",
-        "message": "Are you sure? You can't undo this action afterward."
+        "header_SCHEMA": "Delete Schema",
+        "header_FUNCTION": "Delete Script",
+        "header_DATA_POLICY": "Delete Data Policy",
+        "header_BEHAVIOR_POLICY": "Delete Behaviour Policy",
+        "message": "The policy will be deleted.",
+        "message_SCHEMA": "Schemas are internally stored as a bundle; every version of the schema will be deleted.",
+        "message_FUNCTION": "Scripts are internally stored as a bundle; every version of the script will be deleted.",
+        "prompt": "You can't undo this action afterward. Are you sure?"
       }
     },
     "policy": {
