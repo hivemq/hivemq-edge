@@ -62,9 +62,13 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       {
         accessorKey: 'version',
         cell: (info) => {
+          const value = info.getValue<number>()
+          const formattedValue = info.row.getCanExpand()
+            ? t('Listings.resources.versions', { context: 'COUNT', count: value })
+            : value
           return (
             <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
-              <Text>{info.getValue<string>()}</Text>
+              <Text>{formattedValue}</Text>
             </Skeleton>
           )
         },
