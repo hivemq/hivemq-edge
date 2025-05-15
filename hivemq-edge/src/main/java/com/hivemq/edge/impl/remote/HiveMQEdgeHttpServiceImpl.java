@@ -378,7 +378,7 @@ public class HiveMQEdgeHttpServiceImpl {
             return false;
         }
         try {
-            URL url = new URL(remote);
+            new URL(remote);
             return true;
         } catch(MalformedURLException e){
             return false;
