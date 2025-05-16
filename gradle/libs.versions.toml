@@ -32,7 +32,7 @@ jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.6"
 junit-jupiter = "5.12.2"
 logback = "1.5.18"
-milo = "0.6.15"
+milo = "1.0.0-M2"
 mockito = "5.17.0"
 modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
@@ -98,10 +98,14 @@ jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-milo-bsdParserGson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref = "milo" }
-milo-client = { module = "org.eclipse.milo:sdk-client", version.ref = "milo" }
-milo-dictionaryReader = { module = "org.eclipse.milo:dictionary-reader", version.ref = "milo" }
-milo-server = { module = "org.eclipse.milo:sdk-server", version.ref = "milo" }
+
+milo-client = { module = "org.eclipse.milo:milo-sdk-client", version.ref = "milo" }
+milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
+milo-encoding-json = { module = "org.eclipse.milo:milo-encoding-json", version.ref = "milo" }
+milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref = "milo" }
+milo-dtd-reader = { module = "org.eclipse.milo:milo-dtd-reader", version.ref = "milo" }
+milo-dtd-manager = { module = "org.eclipse.milo:milo-dtd-manager", version.ref = "milo" }
+
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}

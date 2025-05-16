@@ -15,11 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.mqtt2opcua;
 
-import org.eclipse.milo.opcua.binaryschema.GenericEnumCodec;
-import org.eclipse.milo.opcua.binaryschema.GenericStructCodec;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.DataTypeCodec;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.jetbrains.annotations.NotNull;
 import org.opcfoundation.opcua.binaryschema.FieldType;
 
@@ -28,24 +26,33 @@ public final class BuiltInDataTypeConverter {
     private BuiltInDataTypeConverter() {
     }
 
-    public static @NotNull BuiltinDataType convertFieldTypeToBuiltInDataType(
+    public static @NotNull OpcUaDataType convertFieldTypeToBuiltInDataType(
             final @NotNull FieldType fieldType,
             final @NotNull OpcUaClient client) {
         final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
         final boolean isStandard = namespaceURI.startsWith("http://opcfoundation.org/");
         if (isStandard) {
             final String localPart = fieldType.getTypeName().getLocalPart();
-            return BuiltinDataType.valueOf(localPart);
+            return OpcUaDataType.valueOf(localPart);
         } else {
-            final DataTypeCodec dataTypeCodec =
-                    client.getDynamicDataTypeManager().getCodec(namespaceURI, fieldType.getTypeName().getLocalPart());
-            if (dataTypeCodec instanceof GenericEnumCodec) {
-                // enum are encoded as integers
-                return BuiltinDataType.Int32;
-            } else if (dataTypeCodec instanceof GenericStructCodec) {
-                return BuiltinDataType.ExtensionObject;
+            try {
+                final var dataTypeCodec = client
+                        .getDynamicDataTypeManager()
+                        .getTypeDictionary(namespaceURI)
+                        .getType(fieldType.getTypeName().getLocalPart())
+                        .getCodec();
+                //TODO fix this
+                throw new RuntimeException("Enum handling not implemented yer");
+//            if (dataTypeCodec instanceof GenericEnumCodec) {
+//                // enum are encoded as integers
+//                return OpcUaDataType.Int32;
+//            } else if (dataTypeCodec instanceof StructCodec) {
+//                return OpcUaDataType.ExtensionObject;
+//            }
+            } catch (UaException e) {
+                throw new RuntimeException(e);
             }
         }
-        throw new IllegalArgumentException();
+//        throw new IllegalArgumentException();
     }
 }
