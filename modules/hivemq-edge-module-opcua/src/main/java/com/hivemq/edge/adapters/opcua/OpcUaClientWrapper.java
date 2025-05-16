@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -38,11 +37,9 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
-import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
-import org.eclipse.milo.opcua.sdk.client.api.UaSession;
-import org.eclipse.milo.opcua.sdk.client.dtd.DataTypeDictionarySessionInitializer;
+import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -60,6 +57,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -95,7 +94,7 @@ public class OpcUaClientWrapper {
 
     public @NotNull CompletableFuture<Void> stop() {
         return opcUaSubscriptionLifecycle.stop()
-                .thenCompose(ignored -> client.disconnect().thenApply(ignored2 -> null));
+                .thenCompose(ignored -> client.disconnectAsync().thenApply(ignored2 -> null));
     }
 
     public void createMqttPayloadJsonSchema(
@@ -155,7 +154,9 @@ public class OpcUaClientWrapper {
             final Object opcuaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId);
             final Variant variant = new Variant(opcuaObject);
             final DataValue dataValue = new DataValue(variant, null, null);
-            final CompletableFuture<StatusCode> writeFuture = client.writeValue(nodeId, dataValue);
+            final CompletableFuture<List<StatusCode>> writeFuture = client.writeValuesAsync(List.of(nodeId), List.of(dataValue));
+
+            //TODO statusCode wasn't a list before
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
                     log.error("Exception while writing to opcua node '{}'", writeContext.getTagName(), throwable);
@@ -183,8 +184,8 @@ public class OpcUaClientWrapper {
                 uint(0),
                 uint(BrowseResultMask.All.getValue()));
 
-        return client.browse(browse)
-                .thenCompose(browseResult -> handleBrowseResult(client, parent, callback, depth, browseResult));
+        return client.browseAsync(browse)
+                .thenCompose(browseResult -> handleBrowseResult(client, parent, callback, depth, new BrowseResult[]{browseResult}));
     }
 
     private static @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -192,13 +193,17 @@ public class OpcUaClientWrapper {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth,
-            final BrowseResult browseResult) {
-        final ReferenceDescription[] references = browseResult.getReferences();
+            final BrowseResult[] browseResults) {
+        final List<CompletableFuture<Void>> childFutures = new ArrayList<>();
+        final var references = new ArrayList<ReferenceDescription>();
+        final var continuationPoints = new ArrayList<ByteString>();
 
-        final ImmutableList.Builder<CompletableFuture<Void>> childFutures = ImmutableList.builder();
-
-        if (references == null) {
-            return CompletableFuture.completedFuture(null);
+        for (final BrowseResult result : browseResults) {
+            final var continuationPoint = result.getContinuationPoint();
+            if(continuationPoint != null) {
+                continuationPoints.add(continuationPoint);
+            }
+            Collections.addAll(references, result.getReferences());
         }
 
         for (final ReferenceDescription rd : references) {
@@ -210,18 +215,19 @@ public class OpcUaClientWrapper {
             }
         }
 
-        final ByteString continuationPoint = browseResult.getContinuationPoint();
-        if (continuationPoint != null && !continuationPoint.isNull()) {
+        if (!continuationPoints.isEmpty()) {
             childFutures.add(Objects.requireNonNull(client)
-                    .browseNext(false, continuationPoint)
-                    .thenCompose(nextBrowseResult -> handleBrowseResult(client,
-                            parent,
-                            callback,
-                            depth,
-                            nextBrowseResult)));
+                    .browseNextAsync(false,continuationPoints)
+                    .thenCompose(nextBrowseResult ->
+                            handleBrowseResult(
+                                    client,
+                                    parent,
+                                    callback,
+                                    depth,
+                                    nextBrowseResult.getResults())));
         }
 
-        return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
+        return CompletableFuture.allOf(childFutures.toArray(new CompletableFuture[]{}));
     }
 
     private static @Nullable NodeType getNodeType(final @NotNull ReferenceDescription ref) {
@@ -254,14 +260,18 @@ public class OpcUaClientWrapper {
             final @NotNull DataPointFactory dataPointFactory) throws UaException {
         final String configPolicyUri = adapterConfig.getSecurity().getPolicy().getSecurityPolicy().getUri();
 
-        final OpcUaClient opcUaClient = OpcUaClient.create(adapterConfig.getUri(),
+        final OpcUaClient opcUaClient = OpcUaClient.create(
+                adapterConfig.getUri().toString(),
                 new OpcUaEndpointFilter(adapterId, configPolicyUri, adapterConfig),
+                null,
                 new OpcUaClientConfigurator(adapterConfig, adapterId));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
-        opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
+        //TODO deactivated, check if it still works
+        //opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
 
         //-- Seems to be not connection monitoring hook, use the session activity listener
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
+
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
                 log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
@@ -283,7 +293,7 @@ public class OpcUaClientWrapper {
                     .fire();
         });
 
-        return opcUaClient.connect().thenCompose(uaClient -> {
+        return opcUaClient.connectAsync().thenCompose(uaClient -> {
             final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
                     opcUaClient,
                     adapterId,
