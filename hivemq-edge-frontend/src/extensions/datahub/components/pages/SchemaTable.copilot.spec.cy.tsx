@@ -1,4 +1,3 @@
-import { DateTime } from 'luxon'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
@@ -51,9 +50,6 @@ describe('SchemaTable (Copilot)', () => {
     })
 
     it('should render schema data correctly', () => {
-      const now = DateTime.fromISO(MOCK_CREATED_AT).plus({ day: 2 }).toJSDate()
-      // clock is interferring with request !
-      // cy.clock(now)
       cy.mountWithProviders(<SchemaTable />)
       cy.wait('@getSchemasSuccess')
 

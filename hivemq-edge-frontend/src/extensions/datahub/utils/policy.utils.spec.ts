@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import type { SchemaList } from '@/api/__generated__'
-import { MOCK_SCHEMA_ID, mockSchemaTempHumidity } from '../api/hooks/DataHubSchemasService/__handlers__'
+import { mockSchemaTempHumidity } from '../api/hooks/DataHubSchemasService/__handlers__'
 import type { PolicySchemaExpanded } from './policy.utils'
 import { groupResourceItems } from './policy.utils'
 
