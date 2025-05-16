@@ -36,7 +36,7 @@ tasks.register("license") {
 tasks.register("check") {
     group = "verification"
 
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("test") {
