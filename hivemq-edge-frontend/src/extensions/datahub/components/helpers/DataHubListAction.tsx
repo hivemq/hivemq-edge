@@ -59,6 +59,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
         )}
         {canExpand && (
           <IconButton
+            data-testid="list-action-collapse"
             onClick={onExpand}
             size="sm"
             aria-label={isExpanded ? t('Listings.action.collapse') : t('Listings.action.expand')}
