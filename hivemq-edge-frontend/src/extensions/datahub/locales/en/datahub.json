@@ -38,7 +38,9 @@
       "config": "Configure",
       "download": "Download",
       "delete": "Delete",
-      "copy": "Copy"
+      "copy": "Copy",
+      "expand": "Show the versions",
+      "collapse": "Hide the versions"
     },
     "tabs": {
       "policy": {
@@ -80,7 +82,14 @@
         "clear": "Clear the draft"
       }
     },
-
+    "resources": {
+      "versions_RANGE_zero": "no version",
+      "versions_RANGE_one": "1",
+      "versions_RANGE_other": "1–{{ count }}",
+      "versions_COUNT_zero": "no version",
+      "versions_COUNT_one": "{{ count }} version xxx",
+      "versions_COUNT_other": "{{ count }} versions"
+    },
     "schema": {
       "label": "List of schemas",
       "header": {
