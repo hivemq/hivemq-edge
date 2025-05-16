@@ -15,10 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
@@ -32,9 +30,13 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 public class KeystoreUtil {
 
@@ -47,13 +49,13 @@ public class KeystoreUtil {
             //load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
-            final ImmutableList.Builder<X509Certificate> certificates = ImmutableList.<X509Certificate>builder();
+            final List<X509Certificate> certificates = new ArrayList<>();
             final Iterator<String> aliasIter = keyStore.aliases().asIterator();
             while (aliasIter.hasNext()) {
                 final String alias = aliasIter.next();
                 certificates.add((X509Certificate) keyStore.getCertificate(alias));
             }
-            return certificates.build();
+            return Collections.unmodifiableList(certificates);
         } catch (final FileNotFoundException e) {
             throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
         } catch (final KeyStoreException | IOException e) {
@@ -71,19 +73,19 @@ public class KeystoreUtil {
     public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
         //if no truststore is set use java default
         try {
-            final ImmutableList.Builder<X509Certificate> certificates = ImmutableList.<X509Certificate>builder();
+            final List<X509Certificate> certificates = new ArrayList<>();
             // Loads default Root CA certificates (generally, from JAVA_HOME/lib/cacerts)
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init((KeyStore) null);
-            for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
-                if (trustManager instanceof X509TrustManager) {
-                    for (X509Certificate acceptedIssuer : ((X509TrustManager) trustManager).getAcceptedIssuers()) {
-                        certificates.add(acceptedIssuer);
-                    }
-                }
-            }
-            return certificates.build();
+            return Arrays.stream(trustManagerFactory
+                    .getTrustManagers())
+                    .flatMap(trustManager -> {
+                        if (trustManager instanceof X509TrustManager) {
+                            return Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers());
+                        }
+                        return Stream.empty();
+                    }).toList();
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
             throw new SslException("Not able to load system default truststore", e);
         }

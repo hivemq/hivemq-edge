@@ -23,12 +23,10 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
-import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaServiceFaultException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -44,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.SubscriptionListener {
+public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.SubscriptionListener {
 
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycle.class);
 
@@ -80,14 +78,14 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     @Override
-    public void onKeepAlive(final @NotNull UaSubscription subscription, final @NotNull DateTime publishTime) {
-        UaSubscriptionManager.SubscriptionListener.super.onKeepAlive(subscription, publishTime);
+    public void onKeepAliveReceived(final @NotNull OpcUaSubscription subscription) {
+        OpcUaSubscription.SubscriptionListener.super.onKeepAliveReceived(subscription);
         protocolAdapterMetricsService.increment("subscription.keepalive.count");
     }
 
     @Override
     public void onSubscriptionTransferFailed(
-            final @NotNull UaSubscription subscription, final @NotNull StatusCode statusCode) {
+            final @NotNull OpcUaSubscription subscription, final @NotNull StatusCode statusCode) {
 
         protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
 
@@ -135,13 +133,13 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
 
-        return opcUaClient.getSubscriptionManager()
-                .createSubscription(opcUaToMqttConfig.getPublishingInterval())
+        return opcUaClient
+                .createSubscriptionAsync(opcUaToMqttConfig.getPublishingInterval())
                 .thenCompose(uaSubscription -> new OpcUaSubscriptionConsumer(
                         uaSubscription,
                         opcUaToMqttConfig,
                         readValueId,
-                        opcUaClient.getDynamicSerializationContext(),
+                        opcUaClient.getDynamicEncodingContext(),
                         protocolAdapterTagStreamingService,
                         eventService,
                         adapterId,

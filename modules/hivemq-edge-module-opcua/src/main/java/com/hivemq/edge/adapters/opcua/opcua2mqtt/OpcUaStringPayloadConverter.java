@@ -73,9 +73,9 @@ public class OpcUaStringPayloadConverter {
             return convertPayloadToString(((Variant) value).getValue());
         } else if (value instanceof DiagnosticInfo) {
             final DiagnosticInfo diagnosticInfo = (DiagnosticInfo) value;
-            return (diagnosticInfo.getSymbolicId() == -1 ?
-                    diagnosticInfo.getLocalizedText() :
-                    diagnosticInfo.getSymbolicId()) + ": " + diagnosticInfo.getAdditionalInfo();
+            return (diagnosticInfo.symbolicId() == -1 ?
+                    diagnosticInfo.localizedText() :
+                    diagnosticInfo.symbolicId()) + ": " + diagnosticInfo.additionalInfo();
         } else {
             //fallback, best effort
             return value.toString();

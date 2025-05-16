@@ -27,7 +27,9 @@ import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
@@ -56,17 +58,17 @@ public class OpcUaSubscriptionConsumer {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull String protocolAdapterId;
-    private final @NotNull UaSubscription uaSubscription;
+    private final @NotNull OpcUaSubscription uaSubscription;
     private final @NotNull OpcuaTag tag;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
-    private final @NotNull SerializationContext serializationContext;
+    private final @NotNull EncodingContext serializationContext;
 
     public OpcUaSubscriptionConsumer(
-            final @NotNull UaSubscription uaSubscription,
+            final @NotNull OpcUaSubscription uaSubscription,
             final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
             final @NotNull ReadValueId readValueId,
-            final @NotNull SerializationContext serializationContext,
+            final @NotNull EncodingContext serializationContext,
             final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService,
             final @NotNull EventService eventService,
             final @NotNull String adapterId,
@@ -87,7 +89,8 @@ public class OpcUaSubscriptionConsumer {
 
     public CompletableFuture<SubscriptionResult> start() {
         // create a new client handle, these have to be unique for each handle.
-        final UInteger clientHandle = uaSubscription.nextClientHandle();
+        //TODO was using .nextClientHandle() beforehand, is this correct?
+        final UInteger clientHandle = uaSubscription.getClient().newRequestHeader().getRequestHandle();;
 
         final MonitoringParameters parameters = new MonitoringParameters(clientHandle,
                 (double) opcUaToMqttConfig.getPublishingInterval(),
@@ -98,7 +101,7 @@ public class OpcUaSubscriptionConsumer {
         final MonitoredItemCreateRequest request =
                 new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting, parameters);
 
-        final UaSubscription.ItemCreationCallback onItemCreated =
+        final OpcUaSubscription.ItemCreationCallback onItemCreated =
                 (item, id) -> {
                     final AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
                     item.setValueConsumer(value -> {
@@ -149,12 +152,12 @@ public class OpcUaSubscriptionConsumer {
 
     public record SubscriptionResult (
             @NotNull OpcuaTag opcuaTag,
-            @NotNull UaSubscription uaSubscription,
+            @NotNull OpcUaSubscription uaSubscription,
             @NotNull OpcUaSubscriptionConsumer consumer) {}
 
     private static byte @NotNull [] convertPayload(
             final @NotNull DataValue dataValue,
-            final @NotNull SerializationContext serializationContext) {
+            final @NotNull EncodingContext serializationContext) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
             return EMTPY_BYTES;
