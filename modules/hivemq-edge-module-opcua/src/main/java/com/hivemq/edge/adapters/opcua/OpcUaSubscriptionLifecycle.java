@@ -26,6 +26,7 @@ import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaServiceFaultException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
@@ -84,9 +85,7 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
     }
 
     @Override
-    public void onSubscriptionTransferFailed(
-            final @NotNull OpcUaSubscription subscription, final @NotNull StatusCode statusCode) {
-
+    public void onTransferFailed(final OpcUaSubscription subscription, final StatusCode statusCode) {
         protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
 
         //clear subscription from the map since it is dead
@@ -124,32 +123,47 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
         } else {
             log.error("Received Transfer Failure {} for a non existent subscription: {}", subscription, statusCode);
         }
+
     }
 
 
-    public @NotNull CompletableFuture<Void> subscribe(final @NotNull OpcuaTag opcuaTag) {
+    public @NotNull CompletableFuture<Object> subscribe(final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
                 new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
 
-        return opcUaClient
-                .createSubscriptionAsync(opcUaToMqttConfig.getPublishingInterval())
-                .thenCompose(uaSubscription -> new OpcUaSubscriptionConsumer(
-                        uaSubscription,
-                        opcUaToMqttConfig,
-                        readValueId,
-                        opcUaClient.getDynamicEncodingContext(),
-                        protocolAdapterTagStreamingService,
-                        eventService,
-                        adapterId,
-                        protocolAdapterId,
-                        opcuaTag,
-                        dataPointFactory).start())
-                .thenApply(result -> {
-                    subscriptionMap.put(result.uaSubscription().getSubscriptionId(), result);
+        final var subscription = new OpcUaSubscription(opcUaClient);
+        subscription.setPublishingInterval((double)opcUaToMqttConfig.getPublishingInterval());
+        return subscription
+                .createAsync()
+                .thenCompose(v -> {
+                    try {
+                        return new OpcUaSubscriptionConsumer(
+                                subscription,
+                                opcUaToMqttConfig,
+                                readValueId,
+                                opcUaClient.getDynamicEncodingContext(),
+                                protocolAdapterTagStreamingService,
+                                eventService,
+                                adapterId,
+                                protocolAdapterId,
+                                opcuaTag,
+                                dataPointFactory)
+                                .start();
+                    } catch (UaException e) {
+                        return CompletableFuture.failedFuture(e);
+                    }
+                })
+                .thenCompose(result -> {
+                    subscription
+                            .getSubscriptionId()
+                            .ifPresentOrElse(
+                                    id -> subscriptionMap.put(id, result),
+                                    () -> log.error("Subscription ID is not present for tag {}", opcuaTag)
+                            );
                     return null;
-                });
+                }).toCompletableFuture();
     }
 
     public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<OpcuaTag> tags) {
