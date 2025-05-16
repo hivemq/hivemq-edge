@@ -21,14 +21,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
-import org.eclipse.milo.opcua.sdk.client.DataTypeTreeBuilder;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
-import org.eclipse.milo.opcua.sdk.core.DataTypeTree;
-import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
+import org.eclipse.milo.opcua.sdk.client.typetree.DataTypeTreeBuilder;
+import org.eclipse.milo.opcua.sdk.core.dtd.AbstractBsdCodec;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.DataTypeCodec;
+import org.eclipse.milo.opcua.stack.core.encoding.DataTypeCodec;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
@@ -70,14 +71,14 @@ public class JsonSchemaGenerator {
             }
 
             final NodeId dataTypeNodeId = uaVariableNode.getDataType();
-            final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
+            final DataType dataType = tree.getDataType(dataTypeNodeId);
             final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
             if (dataType == null) {
                 output.fail("Unable to find the data type for the given node id '" + destinationNodeId + "'.");
                 return;
             }
-            final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
-            if (builtinType != BuiltinDataType.ExtensionObject) {
+            final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
+            if (builtinType != OpcUaDataType.ExtensionObject) {
                 if(dimensions != null && dimensions.length > 0) {
                     output.finish(builtinJsonSchema.getJsonSchema(builtinType, dimensions));
                 } else {
@@ -95,12 +96,12 @@ public class JsonSchemaGenerator {
 
     public void addNestedStructureInformation(
             final @NotNull ObjectNode propertiesNode, final @NotNull FieldType fieldType, final @NotNull UInteger[] dimensions) {
-        final BuiltinDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
+        final OpcUaDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
 
         final ObjectNode nestedPropertiesNode = objectMapper.createObjectNode();
         propertiesNode.set(fieldType.getName(), nestedPropertiesNode);
 
-        if (builtinDataType != BuiltinDataType.ExtensionObject) {
+        if (builtinDataType != OpcUaDataType.ExtensionObject) {
             BuiltinJsonSchema.populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, objectMapper);
         } else if(dimensions != null && dimensions.length > 0) {
             BuiltinJsonSchema.populatePropertiesForArray(nestedPropertiesNode, builtinDataType, objectMapper, dimensions);
@@ -109,11 +110,9 @@ public class JsonSchemaGenerator {
             final ObjectNode innerProperties = objectMapper.createObjectNode();
             nestedPropertiesNode.set("properties", innerProperties);
 
-            client.getStaticDataTypeManager().getDataTypeDictionary(fieldType.getTypeName().getNamespaceURI());
+            client.getStaticDataTypeManager().getTypeDictionary(fieldType.getTypeName().getNamespaceURI());
             final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
-            final ExpandedNodeId expandedNodeId = new ExpandedNodeId.Builder().setNamespaceUri(namespaceURI)
-                    .setIdentifier(fieldType.getTypeName().getLocalPart())
-                    .build();
+            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.getTypeName().getLocalPart());
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
 
@@ -121,7 +120,7 @@ public class JsonSchemaGenerator {
             }
 
             final NodeId dataTypeId = optionalDataTypeId.get();
-            final DataTypeTree.DataType dataType = tree.getDataType(dataTypeId);
+            final DataType dataType = tree.getDataType(dataTypeId);
             if (dataType == null) {
                 throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
                         dataTypeId +
@@ -179,11 +178,11 @@ public class JsonSchemaGenerator {
     private @NotNull Map<String, FieldType> getStructureInformation(final @NotNull NodeId binaryEncodingId) {
         try {
             final DataTypeCodec dataTypeCodec =
-                    client.getDynamicSerializationContext().getDataTypeManager().getCodec(binaryEncodingId);
-            final Field f = AbstractCodec.class.getDeclaredField("fields"); //NoSuchFieldException
+                    client.getDynamicEncodingContext().getDataTypeManager().getCodec(binaryEncodingId);
+            final Field f = AbstractBsdCodec.class.getDeclaredField("fields"); //NoSuchFieldException
             f.setAccessible(true);
             return (Map<String, FieldType>) f.get(dataTypeCodec);
-        } catch (final NoSuchFieldException | IllegalAccessException e) {
+        } catch (final NoSuchFieldException | IllegalAccessException | UaException e) {
             if (e.getMessage() != null) {
                 throw new RuntimeException("Unable to find information on fields in the codec: " + e.getMessage());
             } else {

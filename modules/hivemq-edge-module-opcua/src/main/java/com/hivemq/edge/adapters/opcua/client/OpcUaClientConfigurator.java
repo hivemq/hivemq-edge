@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.google.common.collect.ImmutableList;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
@@ -25,13 +24,13 @@ import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
-import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;
-import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder;
-import org.eclipse.milo.opcua.sdk.client.api.identity.CompositeProvider;
-import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
-import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
-import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
-import org.eclipse.milo.opcua.stack.client.security.DefaultClientCertificateValidator;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
+import org.eclipse.milo.opcua.sdk.client.identity.CompositeProvider;
+import org.eclipse.milo.opcua.sdk.client.identity.IdentityProvider;
+import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
+import org.eclipse.milo.opcua.sdk.client.identity.X509IdentityProvider;
+import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
+import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.jetbrains.annotations.NotNull;
@@ -40,13 +39,14 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
-public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilder, OpcUaClientConfig> {
+public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilder> {
 
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
     private final @NotNull String adapterId;
@@ -58,7 +58,7 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
     }
 
     @Override
-    public @NotNull OpcUaClientConfig apply(final OpcUaClientConfigBuilder opcUaClientConfigBuilder) {
+    public void accept(final OpcUaClientConfigBuilder opcUaClientConfigBuilder) {
 
         opcUaClientConfigBuilder.setApplicationName(LocalizedText.english("HiveMQ Edge"));
         opcUaClientConfigBuilder.setApplicationUri("urn:hivemq:edge:client");
@@ -79,8 +79,6 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
             opcUaClientConfigBuilder.setKeyPair(new KeyPair(keyPairWithChain.getPublicKey().getPublicKey(),
                     keyPairWithChain.getPrivateKey()));
         }
-
-        return opcUaClientConfigBuilder.build();
     }
 
 
@@ -123,7 +121,7 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
             final boolean tlsEnabled,
             final @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain) {
 
-        final ImmutableList.Builder<IdentityProvider> identityProviderBuilder = ImmutableList.builder();
+        final List<IdentityProvider> identityProviderBuilder = new ArrayList<>();
         final Auth auth = adapterConfig.getAuth();
 
         if (auth != null) {
@@ -140,7 +138,7 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
             }
         }
 
-        final ImmutableList<IdentityProvider> identityProviders = identityProviderBuilder.build();
+        final List<IdentityProvider> identityProviders = List.copyOf(identityProviderBuilder);
         if (identityProviders.size() == 1) {
             opcUaClientConfigBuilder.setIdentityProvider(identityProviders.get(0));
         } else if (identityProviders.size() > 1) {
@@ -162,10 +160,11 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
             trustedCerts = KeystoreUtil.getCertificatesFromDefaultTruststore();
         }
         final CertificateTrustListManager trustListManager = new CertificateTrustListManager(trustedCerts);
-        final DefaultClientCertificateValidator certificateValidator = new DefaultClientCertificateValidator(
+
+        return new DefaultClientCertificateValidator(
                 trustListManager,
-                Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS));
-        return certificateValidator;
+                Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
+                new MemoryCertificateQuarantine());
     }
 
     private boolean checkTruststoreAvailable(final @Nullable Tls tlsConfig) {

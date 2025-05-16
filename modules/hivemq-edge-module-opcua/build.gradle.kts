@@ -28,9 +28,13 @@ dependencies {
     compileOnly(libs.jackson.databind)
 
     compileOnly(libs.apache.commonsLang)
-    implementation(libs.milo.bsdParserGson)
+
+    implementation(libs.milo.encoding.json)
+    implementation(libs.milo.encoding.xml)
     implementation(libs.milo.client)
-    implementation(libs.milo.dictionaryReader)
+    implementation(libs.milo.server)
+    implementation(libs.milo.dtd.reader)
+    implementation(libs.milo.dtd.manager)
 }
 
 dependencies {

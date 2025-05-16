@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -23,9 +22,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import org.eclipse.milo.opcua.binaryschema.Struct;
+import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -51,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.UUID;
 
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
@@ -63,7 +63,7 @@ public class OpcUaJsonPayloadConverter {
     private static @NotNull OpcuaTag tag;
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull SerializationContext serializationContext,
+            final @NotNull EncodingContext serializationContext,
             final @NotNull DataValue dataValue) {
         final Object value = dataValue.getValue().getValue();
         final JsonObject jsonObject = new JsonObject();
@@ -78,7 +78,7 @@ public class OpcUaJsonPayloadConverter {
     
     private static JsonElement convertValue(
             final @NotNull Object value,
-            final @NotNull SerializationContext serializationContext) {
+            final @NotNull EncodingContext serializationContext) {
         if (value instanceof DataValue) {
             return convertValue(((DataValue) value).getValue(), serializationContext);
         } else if (value instanceof Boolean) {
@@ -192,7 +192,7 @@ public class OpcUaJsonPayloadConverter {
     @NotNull
     private static JsonPrimitive convertByteString(final @NotNull ByteString value) {
         final byte[] bytes = value.bytesOrEmpty();
-        return new JsonPrimitive(BaseEncoding.base64().encode(bytes));
+        return new JsonPrimitive(Base64.getEncoder().encodeToString(bytes));
     }
 
     @NotNull
@@ -229,19 +229,19 @@ public class OpcUaJsonPayloadConverter {
 
     private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value) {
         final JsonObject diagnosticInfo = new JsonObject();
-        diagnosticInfo.add("symbolicId", new JsonPrimitive(value.getSymbolicId()));
-        diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.getNamespaceUri()));
-        diagnosticInfo.add("locale", new JsonPrimitive(value.getLocale()));
-        diagnosticInfo.add("localizedText", new JsonPrimitive(value.getLocalizedText()));
-        if (value.getAdditionalInfo() != null) {
-            diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.getAdditionalInfo()));
+        diagnosticInfo.add("symbolicId", new JsonPrimitive(value.symbolicId()));
+        diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.namespaceUri()));
+        diagnosticInfo.add("locale", new JsonPrimitive(value.locale()));
+        diagnosticInfo.add("localizedText", new JsonPrimitive(value.localizedText()));
+        if (value.additionalInfo() != null) {
+            diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.additionalInfo()));
         }
-        if (value.getInnerStatusCode() != null) {
-            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.getInnerStatusCode()));
+        if (value.innerStatusCode() != null) {
+            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.innerStatusCode()));
         }
-        if (value.getInnerDiagnosticInfo() != null) {
+        if (value.innerDiagnosticInfo() != null) {
             diagnosticInfo.add("innerDiagnosticInfo",
-                    convertDiagnosticInfo(value.getInnerDiagnosticInfo()));
+                    convertDiagnosticInfo(value.innerDiagnosticInfo()));
         }
         return diagnosticInfo;
     }
