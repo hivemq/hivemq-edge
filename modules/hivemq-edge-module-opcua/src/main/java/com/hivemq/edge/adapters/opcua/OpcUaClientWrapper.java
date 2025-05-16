@@ -263,7 +263,10 @@ public class OpcUaClientWrapper {
         final OpcUaClient opcUaClient = OpcUaClient.create(
                 adapterConfig.getUri().toString(),
                 new OpcUaEndpointFilter(adapterId, configPolicyUri, adapterConfig),
-                null,
+                c -> {
+                    log.error("FIX THIS!!!!x");
+                    System.out.println("CUSTOMIZER CALLED " + c);
+                },
                 new OpcUaClientConfigurator(adapterConfig, adapterId));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         //TODO deactivated, check if it still works
@@ -302,16 +305,16 @@ public class OpcUaClientWrapper {
                     eventService,
                     protocolAdapterTagStreamingService,
                     adapterConfig.getOpcuaToMqttConfig(),
-                    dataPointFactory);
-
-            opcUaClient.getSubscriptionManager().addSubscriptionListener(opcUaSubscriptionLifecycle);
+                    dataPointFactory,
+                    tags);
 
             try {
                 final JsonToOpcUAConverter jsonToOpcUAConverter = new JsonToOpcUAConverter(opcUaClient);
                 final JsonSchemaGenerator jsonSchemaGenerator =
                         new JsonSchemaGenerator(opcUaClient, new ObjectMapper());
                 if (adapterConfig.getOpcuaToMqttConfig() != null) {
-                    return opcUaSubscriptionLifecycle.subscribeAll(tags)
+                    return opcUaSubscriptionLifecycle
+                            .start()
                             .thenApply(ignored -> new OpcUaClientWrapper(
                                     opcUaClient,
                                     opcUaSubscriptionLifecycle,
