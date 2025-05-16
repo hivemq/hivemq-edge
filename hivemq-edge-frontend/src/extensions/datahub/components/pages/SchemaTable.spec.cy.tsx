@@ -40,9 +40,50 @@ describe('SchemaTable', () => {
     cy.get('@firstItemContent').eq(3).should('have.text', '2 days ago')
   })
 
+  it('should render expandable data', () => {
+    cy.intercept('/api/v1/data-hub/schemas', {
+      items: [mockSchemaTempHumidity, { ...mockSchemaTempHumidity, version: 2 }],
+    }).as('getSchemas')
+
+    cy.mountWithProviders(<SchemaTable />)
+    cy.wait('@getSchemas')
+
+    cy.get('tbody tr').should('have.length', 1)
+    cy.get('tbody tr').first().as('firstItem')
+
+    cy.get('@firstItem').find('td').as('firstItemContent')
+    cy.get('@firstItemContent').should('have.length', 5)
+    cy.get('@firstItemContent').eq(0).should('have.text', 'my-schema-id')
+    cy.get('@firstItemContent').eq(1).should('have.text', 'JSON')
+    cy.get('@firstItemContent').eq(2).should('have.text', '2 versions')
+    cy.get('@firstItemContent').eq(3).should('have.text', '2 days ago')
+    cy.get('@firstItemContent')
+      .eq(4)
+      .within(() => {
+        cy.getByAriaLabel('Show the versions').should('be.visible').should('not.be.disabled')
+        cy.getByAriaLabel('Show the versions').click()
+      })
+    cy.get('tbody tr').should('have.length', 3)
+    cy.get('tbody tr').eq(2).find('td').as('childrenRow')
+    cy.get('@childrenRow').eq(2).should('have.text', '2')
+
+    cy.get('@firstItemContent')
+      .eq(4)
+      .within(() => {
+        cy.getByAriaLabel('Hide the versions').should('be.visible').should('not.be.disabled')
+        cy.getByAriaLabel('Hide the versions').click()
+      })
+    cy.get('tbody tr').should('have.length', 1)
+  })
+
   it('should be accessible', () => {
+    cy.intercept('/api/v1/data-hub/schemas', {
+      items: [mockSchemaTempHumidity, { ...mockSchemaTempHumidity, version: 2 }],
+    }).as('getSchemas')
+
     cy.injectAxe()
     cy.mountWithProviders(<SchemaTable />)
+
     cy.checkAccessibility()
   })
 })
