@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.security;
 
-import com.google.common.collect.ImmutableList;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.cert.X509CRL;
@@ -26,37 +26,34 @@ import java.util.List;
 
 public class CertificateTrustListManager implements TrustListManager {
 
-    private final @NotNull ImmutableList<X509Certificate> trustedCerts;
+    private final @NotNull List<X509Certificate> trustedCerts;
+    private final @NotNull DateTime dateTime;
 
     public CertificateTrustListManager(final @NotNull List<X509Certificate> trustedCerts) {
-        this.trustedCerts = ImmutableList.copyOf(trustedCerts);
+        this.trustedCerts = List.copyOf(trustedCerts);
+        this.dateTime = DateTime.now();
     }
 
     @Override
-    public ImmutableList<X509CRL> getIssuerCrls() {
-        return ImmutableList.of();
+    public List<X509CRL> getIssuerCrls() {
+        return List.of();
     }
 
     @Override
-    public ImmutableList<X509CRL> getTrustedCrls() {
-        return ImmutableList.of();
+    public List<X509CRL> getTrustedCrls() {
+        return List.of();
     }
 
     @Override
-    public ImmutableList<X509Certificate> getIssuerCertificates() {
+    public List<X509Certificate> getIssuerCertificates() {
         //allowed for chain building, but not "trusted"
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override
-    public ImmutableList<X509Certificate> getTrustedCertificates() {
+    public List<X509Certificate> getTrustedCertificates() {
         //"trusted" certs
-        return ImmutableList.copyOf(trustedCerts);
-    }
-
-    @Override
-    public ImmutableList<X509Certificate> getRejectedCertificates() {
-        return ImmutableList.of();
+        return List.copyOf(trustedCerts);
     }
 
     @Override
@@ -90,11 +87,6 @@ public class CertificateTrustListManager implements TrustListManager {
     }
 
     @Override
-    public void addRejectedCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
     public boolean removeIssuerCertificate(final ByteString thumbprint) {
         return false;
     }
@@ -105,7 +97,7 @@ public class CertificateTrustListManager implements TrustListManager {
     }
 
     @Override
-    public boolean removeRejectedCertificate(final ByteString thumbprint) {
-        return false;
+    public DateTime getLastUpdateTime() {
+        return dateTime;
     }
 }
