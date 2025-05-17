@@ -190,7 +190,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Download all LCOV Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
@@ -201,7 +201,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf # v5
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
