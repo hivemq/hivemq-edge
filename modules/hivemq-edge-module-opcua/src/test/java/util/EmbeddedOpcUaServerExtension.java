@@ -46,6 +46,7 @@ import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
+import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateStore;
 import org.eclipse.milo.opcua.stack.core.security.MemoryTrustListManager;
@@ -152,9 +153,13 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
                     @Override
                     protected X509Certificate[] createRsaSha256CertificateChain(KeyPair keyPair) {
-                        return certificate.loader.getServerCertificateChain();
+                        // For a self-signed certificate, the chain consists of just the certificate itself
+                        return new X509Certificate[]{certificate};
                     }
                 };
+
+        var certificateValidator =
+                new DefaultServerCertificateValidator(trustListManager, certificateQuarantine);
 
         var defaultGroup =
                 DefaultApplicationGroup.createAndInitialize(
@@ -163,17 +168,10 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
                 .setIdentityValidator(new CompositeValidator(
                         new AnonymousIdentityValidator(),
-                        new UsernameIdentityValidator(auth -> {
-                            System.out.println("WHAAAAT1");
-                            return "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword());
-                        }),
-                        new X509IdentityValidator(cert -> {
-                            System.out.println("WHAAAAT2");
-                            return true;
-                        })))
+                        new UsernameIdentityValidator(auth -> "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword())),
+                        new X509IdentityValidator(cert -> true)))
                 .setEndpoints(endpointConfigurations)
-//                .setCertificateManager(new DefaultCertificateManager(keyPair, certificate))
-                .setCertificateManager(new DefaultCertificateManager(new MemoryCertificateQuarantine(), defaultGroup))
+                .setCertificateManager(new DefaultCertificateManager(certificateQuarantine, defaultGroup))
                 .build();
 
         //TODO check whether the transportProfile thingy is correct
