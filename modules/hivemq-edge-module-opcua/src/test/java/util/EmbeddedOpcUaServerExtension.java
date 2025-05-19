@@ -33,6 +33,7 @@ import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
 import org.eclipse.milo.opcua.sdk.server.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
+import org.eclipse.milo.opcua.sdk.server.identity.AnonymousIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.CompositeValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
@@ -43,8 +44,12 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
+import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
+import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateStore;
+import org.eclipse.milo.opcua.stack.core.security.MemoryTrustListManager;
+import org.eclipse.milo.opcua.stack.core.security.RsaSha256CertificateFactory;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -133,14 +138,42 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
             }
         }
 
+
+        var trustListManager = new MemoryTrustListManager();
+        var certificateStore = new MemoryCertificateStore();
+        var certificateQuarantine = new MemoryCertificateQuarantine();
+
+        var certificateFactory =
+                new RsaSha256CertificateFactory() {
+                    @Override
+                    protected KeyPair createRsaSha256KeyPair() {
+                        return keyPair;
+                    }
+
+                    @Override
+                    protected X509Certificate[] createRsaSha256CertificateChain(KeyPair keyPair) {
+                        return certificate.loader.getServerCertificateChain();
+                    }
+                };
+
+        var defaultGroup =
+                DefaultApplicationGroup.createAndInitialize(
+                        trustListManager, certificateStore, certificateFactory, certificateValidator);
+
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
                 .setIdentityValidator(new CompositeValidator(
-                        new UsernameIdentityValidator(auth ->
-                                "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword())),
-                        new X509IdentityValidator(cert -> true)))
+                        new AnonymousIdentityValidator(),
+                        new UsernameIdentityValidator(auth -> {
+                            System.out.println("WHAAAAT1");
+                            return "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword());
+                        }),
+                        new X509IdentityValidator(cert -> {
+                            System.out.println("WHAAAAT2");
+                            return true;
+                        })))
                 .setEndpoints(endpointConfigurations)
 //                .setCertificateManager(new DefaultCertificateManager(keyPair, certificate))
-                .setCertificateManager(new DefaultCertificateManager(new MemoryCertificateQuarantine()))
+                .setCertificateManager(new DefaultCertificateManager(new MemoryCertificateQuarantine(), defaultGroup))
                 .build();
 
         //TODO check whether the transportProfile thingy is correct
@@ -207,7 +240,6 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
         JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
         converter = converter.setProvider(BouncyCastleProvider.PROVIDER_NAME);
-
         return converter.getCertificate(certificateBuilder.build(contentSigner));
     }
 
