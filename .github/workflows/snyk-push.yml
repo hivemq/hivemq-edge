@@ -1,0 +1,110 @@
+name: Run Snyk monitor on push
+
+on:
+  push:
+    branches:
+      - master**
+      - add-snyk
+  workflow_call:
+    inputs:
+      github_ref:
+        required: true
+        type: string
+
+jobs:
+  run-snyk-monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Select GitHub ref
+        id: select_github_ref
+        shell: bash
+        run: |
+          workflow_call_github_ref=${{ inputs.github_ref }}
+          echo "selected_github_ref=${workflow_call_github_ref:-${{ github.ref_name }}}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
+        with:
+          distribution: 'temurin'
+          java-version: |
+            8
+            11
+
+      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+        with:
+          path: hivemq-edge
+          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+#        with:
+#          repository: hivemq/hivemq-platform-sdk
+#          path: hivemq-platform-sdk
+#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+#
+#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+#        with:
+#          repository: hivemq/hivemq-enterprise-extension-sdk
+#          path: hivemq-enterprise-extension-sdk
+#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+#
+#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+#        with:
+#          repository: hivemq/hivemq-extension-sdk
+#          path: hivemq-extension-sdk
+#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+#
+#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+#        with:
+#          repository: hivemq/hivemq-data-hub
+#          path: hivemq-data-hub
+#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+      - name: Setup Snyk
+        uses: snyk/actions/setup@master
+
+      - name: Run Snyk monitor
+        shell: bash
+        run: |
+          snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge \
+            --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d \
+            --project-tags=kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++(Selected),kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5 \
+            hivemq-edge
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ secrets.JENKINS_GITHUB_USERNAME }}
+          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+#      - name: Run Snyk monitor
+#        shell: bash
+#        run: |
+#          snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-broker \
+#            --project-name=hivemq-recovery-tool --remote-repo-url=hivemq-recovery-tool --project-lifecycle=development -d \
+#            --project-tags=kanbanize_board_name=SAR,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Prioritized,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5 \
+#            hivemq-enterprise/hivemq-recovery-tool
+#        env:
+#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ secrets.JENKINS_GITHUB_USERNAME }}
+#          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+#      - name: Setup Node.js
+#        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+#        with:
+#          node-version: '20.13.1'
+#
+#      - name: Run Snyk Frontend monitor
+#        shell: bash
+#        run: |
+#          snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-broker \
+#            --project-name=hivemq-control-center --remote-repo-url=hivemq-control-center --project-lifecycle=development -d \
+#            --project-tags="\"kanbanize_board_name=Tooling++&++Extension,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Selected,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\"" \
+#          hivemq-enterprise/control-center-frontend
+#        env:
+#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#          NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+#          GH_NPM_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
