@@ -287,6 +287,7 @@ public class OpcUaClientWrapper {
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
+
         opcUaClient.addFaultListener(serviceFault -> {
             log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", adapterId, serviceFault);
             eventService.createAdapterEvent(adapterId, protocolId)
@@ -296,40 +297,41 @@ public class OpcUaClientWrapper {
                     .fire();
         });
 
-        return opcUaClient.connectAsync().thenCompose(uaClient -> {
-            final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
-                    opcUaClient,
-                    adapterId,
-                    protocolId,
-                    protocolAdapterMetricsService,
-                    eventService,
-                    protocolAdapterTagStreamingService,
-                    adapterConfig.getOpcuaToMqttConfig(),
-                    dataPointFactory,
-                    tags);
-
-            try {
-                final JsonToOpcUAConverter jsonToOpcUAConverter = new JsonToOpcUAConverter(opcUaClient);
-                final JsonSchemaGenerator jsonSchemaGenerator =
-                        new JsonSchemaGenerator(opcUaClient, new ObjectMapper());
-                if (adapterConfig.getOpcuaToMqttConfig() != null) {
-                    return opcUaSubscriptionLifecycle
-                            .start()
-                            .thenApply(ignored -> new OpcUaClientWrapper(
-                                    opcUaClient,
-                                    opcUaSubscriptionLifecycle,
-                                    jsonToOpcUAConverter,
-                                    jsonSchemaGenerator,
-                                    dataPointFactory));
-                } else {
-                    return CompletableFuture.completedFuture(null);
-                }
-            } catch (final UaException e) {
-                log.error("Unable to create the converters for writing.", e);
-                output.failStart(e, "Unable to create the converters for writing.");
-                return CompletableFuture.failedFuture(e);
-            }
-        });
+        return opcUaClient
+                .connectAsync()
+                .thenCompose(uaClient -> {
+                    final OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
+                            opcUaClient,
+                            adapterId,
+                            protocolId,
+                            protocolAdapterMetricsService,
+                            eventService,
+                            protocolAdapterTagStreamingService,
+                            adapterConfig.getOpcuaToMqttConfig(),
+                            dataPointFactory,
+                            tags);
+                    try {
+                        final JsonToOpcUAConverter jsonToOpcUAConverter = new JsonToOpcUAConverter(opcUaClient);
+                        final JsonSchemaGenerator jsonSchemaGenerator =
+                                new JsonSchemaGenerator(opcUaClient, new ObjectMapper());
+                        if (adapterConfig.getOpcuaToMqttConfig() != null) {
+                            return opcUaSubscriptionLifecycle
+                                    .start()
+                                    .thenApply(ignored -> new OpcUaClientWrapper(
+                                            opcUaClient,
+                                            opcUaSubscriptionLifecycle,
+                                            jsonToOpcUAConverter,
+                                            jsonSchemaGenerator,
+                                            dataPointFactory));
+                        } else {
+                            return CompletableFuture.completedFuture(null);
+                        }
+                    } catch (final UaException e) {
+                        log.error("Unable to create the converters for writing.", e);
+                        output.failStart(e, "Unable to create the converters for writing.");
+                        return CompletableFuture.failedFuture(e);
+                    }
+                });
     }
 
 

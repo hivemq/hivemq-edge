@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
@@ -165,17 +166,15 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
     }
 
     public @NotNull CompletableFuture<Object> start() {
-
         subscription = new OpcUaSubscription(opcUaClient);
         subscription.setPublishingInterval((double)opcUaToMqttConfig.getPublishingInterval());
         subscription.setSubscriptionListener(this);
-
         tags.forEach(opcuaTag -> {
             final String nodeId = opcuaTag.getDefinition().getNode();
             log.info("Subscribing to OPC UA node {}", nodeId);
             final ReadValueId readValueId =
                     new ReadValueId(NodeId.parse(nodeId), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
-            var monitoredItem = OpcUaMonitoredItem
+            final var monitoredItem = OpcUaMonitoredItem
                     .newDataItem(readValueId.getNodeId(), MonitoringMode.Reporting);
             monitoredItem.setQueueSize(uint(opcUaToMqttConfig.getServerQueueSize()));
             monitoredItem.setSamplingInterval(opcUaToMqttConfig.getPublishingInterval());

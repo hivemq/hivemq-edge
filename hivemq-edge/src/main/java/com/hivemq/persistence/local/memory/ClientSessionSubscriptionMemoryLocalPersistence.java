@@ -34,8 +34,8 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.ThreadPreConditions;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;

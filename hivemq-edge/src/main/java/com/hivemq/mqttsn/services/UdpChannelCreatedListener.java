@@ -19,7 +19,7 @@ import com.hivemq.bootstrap.netty.BroadcastChannelCreatedListener;
 import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author Simon L Johnson

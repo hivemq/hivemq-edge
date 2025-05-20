@@ -87,29 +87,31 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             synchronized (this) {
                 if (opcUaClientWrapper == null) {
                     try {
-                        OpcUaClientWrapper.createAndConnect(
-                                adapterId,
-                                adapterConfig,
-                                tags,
-                                protocolAdapterState,
-                                moduleServices.eventService(),
-                                input.moduleServices().protocolAdapterTagStreamingService(),
-                                adapterInformation.getProtocolId(),
-                                protocolAdapterMetricsService,
-                                output,
-                                dataPointFactory).thenApply(wrapper -> {
-                            protocolAdapterState.setConnectionStatus(CONNECTED);
-                            output.startedSuccessfully();
-                            opcUaClientWrapper = wrapper;
-                            return wrapper;
-                        }).exceptionally(throwable -> {
-                            log.error("Not able to connect and subscribe to OPC UA server {}",
-                                    adapterConfig.getUri(),
-                                    throwable);
-                            protocolAdapterState.setErrorConnectionStatus(throwable, null);
-                            output.failStart(throwable, throwable.getMessage());
-                            return null;
-                        });
+                        OpcUaClientWrapper
+                                .createAndConnect(
+                                    adapterId,
+                                    adapterConfig,
+                                    tags,
+                                    protocolAdapterState,
+                                    moduleServices.eventService(),
+                                    input.moduleServices().protocolAdapterTagStreamingService(),
+                                    adapterInformation.getProtocolId(),
+                                    protocolAdapterMetricsService,
+                                    output,
+                                    dataPointFactory)
+                                .thenApply(wrapper -> {
+                                    protocolAdapterState.setConnectionStatus(CONNECTED);
+                                    output.startedSuccessfully();
+                                    opcUaClientWrapper = wrapper;
+                                    return wrapper;
+                                }).exceptionally(throwable -> {
+                                    log.error("Not able to connect and subscribe to OPC UA server {}",
+                                            adapterConfig.getUri(),
+                                            throwable);
+                                    protocolAdapterState.setErrorConnectionStatus(throwable, null);
+                                    output.failStart(throwable, throwable.getMessage());
+                                    return null;
+                                });
                     } catch (final Exception e) {
                         log.error("Not able to start OPC UA client for server {}", adapterConfig.getUri(), e);
                         protocolAdapterState.setConnectionStatus(DISCONNECTED);

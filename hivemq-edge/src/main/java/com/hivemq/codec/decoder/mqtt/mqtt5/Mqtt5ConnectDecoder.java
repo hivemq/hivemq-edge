@@ -41,7 +41,7 @@ import com.hivemq.util.Strings;
 import com.hivemq.util.Topics;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 import static com.hivemq.mqtt.message.connect.CONNECT.DEFAULT_PROBLEM_INFORMATION_REQUESTED;

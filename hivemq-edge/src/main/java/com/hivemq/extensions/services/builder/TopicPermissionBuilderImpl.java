@@ -30,7 +30,7 @@ import com.hivemq.extension.sdk.api.services.builder.TopicPermissionBuilder;
 import com.hivemq.extensions.auth.parameter.TopicPermissionImpl;
 import com.hivemq.util.Topics;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.SharedSubscription;
 

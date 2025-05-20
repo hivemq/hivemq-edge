@@ -23,7 +23,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;

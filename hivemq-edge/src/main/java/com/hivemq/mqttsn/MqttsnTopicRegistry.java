@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.MqttsnConstants;
 import org.slj.mqtt.sn.wire.MqttsnWireUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;

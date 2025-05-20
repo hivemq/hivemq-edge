@@ -25,8 +25,8 @@ import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
 import org.jctools.queues.MpscLinkedQueue;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;

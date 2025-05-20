@@ -29,7 +29,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
