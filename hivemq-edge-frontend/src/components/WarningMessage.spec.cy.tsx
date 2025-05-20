@@ -1,4 +1,3 @@
-/// <reference types="cypress" />
 import WarningMessage from '@/components/WarningMessage.tsx'
 
 const MOCK_PROMPT = 'This is a prompt'

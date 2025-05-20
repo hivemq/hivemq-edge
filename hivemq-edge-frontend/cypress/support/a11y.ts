@@ -1,4 +1,4 @@
-import { RuleObject } from 'axe-core'
+import type { RuleObject } from 'axe-core'
 
 export const ignoreGlobalRules: { rules: RuleObject } = {
   rules: {
