@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -29,7 +30,6 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -37,6 +37,17 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
+import com.hivemq.edge.adapters.opcua.util.Bytes;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -44,9 +55,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation.PROTOCOL_ID;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
@@ -59,7 +76,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull String adapterId;
     private final @NotNull DataPointFactory dataPointFactory;
-    private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper;
+    private volatile @Nullable OpcUaClient opcUaClient;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -82,40 +99,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-
-        if (opcUaClientWrapper == null) {
+        if (opcUaClient == null) {
             synchronized (this) {
-                if (opcUaClientWrapper == null) {
+                if (opcUaClient == null) {
                     try {
-                        OpcUaClientWrapper
-                                .createAndConnect(
-                                    adapterId,
-                                    adapterConfig,
-                                    tags,
-                                    protocolAdapterState,
-                                    moduleServices.eventService(),
-                                    input.moduleServices().protocolAdapterTagStreamingService(),
-                                    adapterInformation.getProtocolId(),
-                                    protocolAdapterMetricsService,
-                                    output,
-                                    dataPointFactory)
-                                .thenApply(wrapper -> {
-                                    protocolAdapterState.setConnectionStatus(CONNECTED);
-                                    output.startedSuccessfully();
-                                    opcUaClientWrapper = wrapper;
-                                    return wrapper;
-                                }).exceptionally(throwable -> {
-                                    log.error("Not able to connect and subscribe to OPC UA server {}",
-                                            adapterConfig.getUri(),
-                                            throwable);
-                                    protocolAdapterState.setErrorConnectionStatus(throwable, null);
-                                    output.failStart(throwable, throwable.getMessage());
-                                    return null;
-                                });
-                    } catch (final Exception e) {
-                        log.error("Not able to start OPC UA client for server {}", adapterConfig.getUri(), e);
-                        protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                        output.failStart(e, "Not able to start OPC UA client for server " + adapterConfig.getUri());
+                        final var newOcpUaClient = createOpcUaClient(output);
+
+                        opcUaClient = newOcpUaClient;
+
+                    } catch (UaException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
@@ -124,37 +117,116 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
     }
 
-    @Override
-    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        if (opcUaClientWrapper != null) {
-            synchronized (this) {
-                if (opcUaClientWrapper != null) {
-                    opcUaClientWrapper.stop().whenComplete((aVoid, t) -> {
-                        if (t != null) {
-                            protocolAdapterState.setErrorConnectionStatus(t, null);
-                            output.failStop(t, null);
-                        } else {
-                            opcUaClientWrapper = null;
-                            protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                            output.stoppedSuccessfully();
+    private @NotNull OpcUaClient createOpcUaClient(final @NotNull ProtocolAdapterStartOutput output) throws UaException {
+        final var newOcpUaClient = OpcUaClient.create(
+                adapterConfig.getUri(),
+                endpoints -> endpoints.stream().findFirst(),
+                transportConfigBuilder -> {},
+                clientConfigBuilder ->
+                        //TODO MUST BE CONFIGURABLE!!!!!!!!!
+                        clientConfigBuilder
+                                .setApplicationName(LocalizedText.english("eclipse milo opc-ua client"))
+                                .setApplicationUri("urn:eclipse:milo:examples:client"));
+        newOcpUaClient
+                .connectAsync()
+                .thenCompose(client -> {
+                    final var nodeIdToTag = tags.stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            tag -> NodeId.parse(tag.getDefinition().getNode()),
+                                            tag -> tag));
+
+                    final Map<OpcuaTag, Boolean> tagToFirstSeen = new ConcurrentHashMap<>();
+
+                    var subscription = new OpcUaSubscription(client);
+                    subscription.setPublishingInterval((double)adapterConfig.getOpcuaToMqttConfig().getPublishingInterval());
+                    subscription.setSubscriptionListener(new OpcUaSubscription.SubscriptionListener() {
+                        @Override
+                        public void onDataReceived(
+                                final OpcUaSubscription subscription,
+                                final List<OpcUaMonitoredItem> items,
+                                final List<DataValue> values) {
+                            for (int i = 0; i < items.size(); i++) {
+                                final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
+                                if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
+                                    moduleServices.eventService().createAdapterEvent(adapterId, PROTOCOL_ID)
+                                            .withSeverity(Event.SEVERITY.INFO)
+                                            .withMessage(String.format("Adapter '%s' took first sample for tag '%s'",
+                                                    adapterId,
+                                                    tag.getName()))
+                                            .fire();
+
+                                }
+                                final var value = values.get(i);
+                                try {
+                                    final var convertedPayload = new String(convertPayload(value, client.getDynamicEncodingContext()));
+                                    moduleServices.protocolAdapterTagStreamingService().feed(tag.getName(), List.of(dataPointFactory.createJsonDataPoint(tag.getName(), convertedPayload)));
+                                } catch (UaException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
                         }
                     });
+
+                    return subscription
+                            .createAsync()
+                            .thenCompose(ignored -> {
+                                tags.forEach(opcuaTag -> {
+                                    final String nodeId = opcuaTag.getDefinition().getNode();
+                                    var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
+                                    monitoredItem.setQueueSize(uint(adapterConfig.getOpcuaToMqttConfig().getServerQueueSize()));
+                                    monitoredItem.setSamplingInterval(adapterConfig.getOpcuaToMqttConfig().getPublishingInterval());
+                                    subscription.addMonitoredItem(monitoredItem);
+                                });
+
+                                try {
+                                    subscription.synchronizeMonitoredItems();
+                                    return CompletableFuture.completedFuture(null);
+                                } catch (MonitoredItemSynchronizationException ex) {
+                                    return CompletableFuture.failedFuture(ex);
+                                }
+                            });
+                })
+                .whenComplete((ignored, throwable) -> {
+                        if (throwable != null) {
+                            log.error("Failed to connect", throwable);
+                            output.failStart(throwable, "Failed to connect");
+                            protocolAdapterState.setConnectionStatus(ERROR);
+                            newOcpUaClient.disconnectAsync();
+                        } else {
+                            log.info("Subscription created successfully");
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
+                            output.startedSuccessfully();
+                        }
+                    });
+        return newOcpUaClient;
+    }
+
+    @Override
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+        if (opcUaClient != null) {
+            synchronized (this) {
+                if (opcUaClient != null) {
+                    opcUaClient
+                            .disconnectAsync()
+                            .whenComplete((client, throwable) -> {
+                                opcUaClient = null;
+                                if (throwable != null) {
+                                    output.failStop(throwable, "Failed to stop");
+                                } else {
+                                    output.stoppedSuccessfully();
+                                }
+                            });
                 }
             }
-        } else {
-            log.info("Tried to stop OPC UA client for server {} which wasn't started", adapterConfig.getUri());
         }
     }
 
     @Override
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        if (opcUaClientWrapperTemp != null) {
-            opcUaClientWrapperTemp.discoverValues(input, output);
-        } else {
-            log.warn("Tried executing discoverValues while client wasn't started");
-        }
+        //TODO implement discovery
+        output.finish();
     }
 
     @Override
@@ -164,43 +236,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
-        final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        final WritingContext writeContext = input.getWritingContext();
-        if (opcUaClientWrapperTemp != null) {
-            tags.stream()
-                    .filter(tag -> tag.getName().equals(writeContext.getTagName()))
-                    .findFirst()
-                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
-                            () -> output.fail("Subscription for protocol adapter failed because the used tag '" +
-                                    writeContext.getTagName() +
-                                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
-        } else {
-            log.warn("Tried executing write while client wasn't started");
-        }
+        //TODO implement write
+        output.finish();
     }
 
     @Override
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
-        final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-        if (opcUaClientWrapperTemp != null) {
-            tags.stream()
-                    .filter(tag -> tag.getName().equals(input.getTagName()))
-                    .findFirst()
-                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.createMqttPayloadJsonSchema(def, output),
-                            () -> {
-                                log.warn(
-                                        "The tag '{}' was not found during creation of schema for tags on remote plc. Available tags: {}",
-                                        input.getTagName(),
-                                        tags);
-                                output.tagNotFound(String.format(
-                                        "The tag '%s' was not found during creation of schema for tags on remote plc. Available tags: '%s'",
-                                        input.getTagName(),
-                                        tags));
-                            });
-        } else {
-            output.adapterNotStarted();
-        }
+        //TODO implement createTagSchema
     }
 
     @Override
@@ -213,4 +256,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         return protocolAdapterState;
     }
 
+
+
+    public static final byte[] EMTPY_BYTES = new byte[]{};
+
+    private static byte @NotNull [] convertPayload(
+            final @NotNull DataValue dataValue,
+            final @NotNull EncodingContext serializationContext) {
+        //null value, emtpy buffer
+        if (dataValue.getValue().getValue() == null) {
+            return EMTPY_BYTES;
+        }
+        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext, dataValue));
+    }
 }

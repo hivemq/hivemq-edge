@@ -38,6 +38,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.eclipse.milo.opcua.stack.core.util.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,39 +104,6 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
     @Override
     public synchronized void onTransferFailed(final OpcUaSubscription deadSubscription, final StatusCode statusCode) {
         protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
-
-        if(subscription != null) {
-            subscription = null;
-        }
-        start().exceptionally(ex -> {
-                    if (ex instanceof UaServiceFaultException) {
-                        final UaServiceFaultException cause = (UaServiceFaultException) ex.getCause();
-                        if (cause.getStatusCode().getValue() == StatusCodes.Bad_SubscriptionIdInvalid) {
-                            log.warn("Failed resubscribing to OPC UA after transfer failure: {}", statusCode, ex);
-                            //TODO there was another subscribe attempt in here, do we need that????
-    //                        try {
-    //                            subscribe(subscriptionResult.opcuaTag()).exceptionally(t -> {
-    //                                log.error("Problem resucbscribing after subscription {} failed with {}",
-    //                                        subscription.getSubscriptionId(),
-    //                                        statusCode,
-    //                                        t);
-    //                                return null;
-    //                            }).get();
-    //                        } catch (InterruptedException | ExecutionException e) {
-    //                            log.error("Problem resucbscribing after subscription {} failed with {}",
-    //                                    subscription.getSubscriptionId(),
-    //                                    statusCode,
-    //                                    e);
-    //                        }
-                        } else {
-                            log.error("Not able to recreate OPC UA subscription after transfer failure", ex);
-                        }
-                    } else {
-                        log.error("Not able to recreate OPC UA subscription after transfer failure", ex);
-                    }
-                    return null;
-                });
-
     }
 
     @Override
@@ -165,7 +133,7 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
         }
     }
 
-    public @NotNull CompletableFuture<Object> start() {
+    public @NotNull CompletableFuture<Unit> start() {
         subscription = new OpcUaSubscription(opcUaClient);
         subscription.setPublishingInterval((double)opcUaToMqttConfig.getPublishingInterval());
         subscription.setSubscriptionListener(this);
@@ -183,43 +151,7 @@ public class OpcUaSubscriptionLifecycle implements OpcUaSubscription.Subscriptio
 
         return subscription
                 .createAsync()
-                .thenCompose(v -> {
-                    final var failures = subscription
-                            .createMonitoredItems()
-                            .stream()
-                            .map(item -> {
-                                if (item.isGood()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("OPC UA subscription created for nodeId={}",
-                                                item.monitoredItem().getReadValueId().getNodeId());
-                                    }
-                                    return Optional.empty();
-                                } else {
-                                    final String descriptions = StatusCodes
-                                            .lookup(item.serviceResult().getValue())
-                                            .map(descriptionArray -> String.join(",", descriptionArray))
-                                            .orElse("no further description");
-
-                                    log.warn("OPC UA subscription failed for nodeId '{}': {} (status={})",
-                                            item.monitoredItem().getReadValueId().getNodeId(),
-                                            descriptions,
-                                            item.serviceResult());
-
-                                    return Optional.of("OPC UA subscription failed for nodeId `" +
-                                            item.monitoredItem().getReadValueId().getNodeId() +
-                                            "`: " + descriptions +" (status '" +
-                                            item.serviceResult() +
-                                            "')");
-                                }
-                            })
-                            .filter(Optional::isPresent)
-                            .toList();
-                    if (!failures.isEmpty()) {
-                        //TODO needs a nicer error message
-                        return CompletableFuture.failedFuture(new OpcUaException(failures.toString()));
-                    }
-                    return CompletableFuture.completedFuture(null);
-                }).toCompletableFuture();
+                .toCompletableFuture();
     }
 
     @NotNull

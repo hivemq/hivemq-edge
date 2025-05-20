@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
+import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -65,13 +66,20 @@ public class OpcUaJsonPayloadConverter {
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull EncodingContext serializationContext,
             final @NotNull DataValue dataValue) {
-        final Object value = dataValue.getValue().getValue();
+        final var value = dataValue.getValue().getValue();
         final JsonObject jsonObject = new JsonObject();
 
         if  (value instanceof DataValue) {
             addDataValueFields((DataValue) value, jsonObject);
         }
-        jsonObject.add("value", convertValue(value, serializationContext));
+
+        final var converted = convertValue(value, serializationContext);
+
+        if (converted instanceof JsonObject) {
+            jsonObject.add("value", convertValue(((JsonObject)converted).get("members"), serializationContext));
+        } else {
+            jsonObject.add("value", convertValue(value, serializationContext));
+        }
 
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
