@@ -36,58 +36,18 @@ jobs:
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
-#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
-#        with:
-#          repository: hivemq/hivemq-platform-sdk
-#          path: hivemq-platform-sdk
-#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
-#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-#
-#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
-#        with:
-#          repository: hivemq/hivemq-enterprise-extension-sdk
-#          path: hivemq-enterprise-extension-sdk
-#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
-#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-#
-#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
-#        with:
-#          repository: hivemq/hivemq-extension-sdk
-#          path: hivemq-extension-sdk
-#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
-#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-#
-#      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
-#        with:
-#          repository: hivemq/hivemq-data-hub
-#          path: hivemq-data-hub
-#          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
-#          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-
       - name: Setup Snyk
         uses: snyk/actions/setup@master
 
       - name: Run Snyk monitor
         shell: bash
-        run: |
-          snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge \
-            --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d \
-            --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++(Selected),kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\"" \
-            hivemq-edge
+        run: >
+          snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
+          --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d
+          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
+          hivemq-edge
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ secrets.JENKINS_GITHUB_USERNAME }}
-          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-
-#      - name: Run Snyk monitor
-#        shell: bash
-#        run: |
-#          snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-broker \
-#            --project-name=hivemq-recovery-tool --remote-repo-url=hivemq-recovery-tool --project-lifecycle=development -d \
-#            --project-tags=kanbanize_board_name=SAR,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Prioritized,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5 \
-#            hivemq-enterprise/hivemq-recovery-tool
-#        env:
-#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 #          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ secrets.JENKINS_GITHUB_USERNAME }}
 #          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
