@@ -21,8 +21,8 @@ import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundIntercept
 import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.services.interceptor.GlobalInterceptorRegistry;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Lukas Brandl

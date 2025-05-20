@@ -28,7 +28,7 @@ import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class Persistences {
 

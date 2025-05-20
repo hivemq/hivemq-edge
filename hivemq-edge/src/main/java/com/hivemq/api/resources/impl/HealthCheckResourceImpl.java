@@ -20,9 +20,9 @@ import com.hivemq.api.AbstractApi;
 import com.hivemq.edge.api.HealthCheckEndpointApi;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Simple health check response that returns status code 200.

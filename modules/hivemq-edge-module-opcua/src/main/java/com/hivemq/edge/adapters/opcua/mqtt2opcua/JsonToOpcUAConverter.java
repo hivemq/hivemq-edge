@@ -20,19 +20,16 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.typetree.DataTypeTreeBuilder;
-import org.eclipse.milo.opcua.sdk.core.dtd.AbstractBsdCodec;
+import org.eclipse.milo.opcua.sdk.core.dtd.BsdStructWrapper;
 import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
-import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
-import org.eclipse.milo.opcua.stack.core.encoding.DataTypeCodec;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
@@ -43,20 +40,16 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
-import org.opcfoundation.opcua.binaryschema.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.opcua.mqtt2opcua.BuiltInDataTypeConverter.convertFieldTypeToBuiltInDataType;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Guid;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int16;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int32;
@@ -101,7 +94,7 @@ public class JsonToOpcUAConverter {
                         dataTypeNodeId +
                         "'");
             }
-            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType);
+            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType.getBrowseName().getName());
 
             final var builtinType = tree.getBuiltinType(dataType.getNodeId());
             log.debug(
@@ -111,7 +104,6 @@ public class JsonToOpcUAConverter {
                     dataType,
                     builtinType,
                     rootNode);
-
             if (builtinType != OpcUaDataType.ExtensionObject) {
                 if(rootNode.isArray()) {
                     return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
@@ -120,55 +112,31 @@ public class JsonToOpcUAConverter {
                 }
             }
 
-            final var binaryEncodingId = dataType.getBinaryEncodingId();
-            if (binaryEncodingId == null) {
-                log.warn("No encoding was present for data type: '{}'.", dataType);
-                throw new RuntimeException("No encoding was present for data type: '" + dataType + "'");
-            }
-            log.debug("DataType '{}' has binary encoding id '{}'.", dataType, binaryEncodingId);
+            final var field = JsonSchemaGenerator.processExtensionObject(client, dataType, true, null);
 
-            final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
+            final var genericStruct = Struct.builder("CustomStruct");
 
+            field.nestedFields()
+                    .forEach(nestedField -> {
+                        final var key = nestedField.name();
+                        final var jsonNode = rootNode.get(key);
+                        genericStruct.addMember(key, parseToOpcUACompatibleObject(jsonNode, nestedField));
+                    });
 
-            log.debug("Found fields '{}' for binary encoding id '{}'.", fields, binaryEncodingId);
-
-            final var structuredType = DynamicStructType.newInstance(dataType);
-
-            // Add all fields to the structured type
-            for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-                final String key = entry.getKey();
-                final FieldType fieldType = entry.getValue();
-                final JsonNode jsonNode = rootNode.get(key);
-                if (jsonNode == null) {
-                    log.warn("Expected field '{}' to be present in the json '{}', but field was not present.",
-                            key,
-                            rootNode);
-                    throw new RuntimeException("Expected field '" +
-                            key +
-                            "' to be present in the json, but field was not present.");
-                }
-                log.debug("Parsing '{}' for field type '{}'", jsonNode, fieldType);
-
-                structuredType.getMembers().put(key, parseToOpcUACompatibleObject(jsonNode, fieldType));
-            }
-
-            return ExtensionObject.encode(
-                    client.getDynamicEncodingContext(),
-                    structuredType);
+            return new BsdStructWrapper<>(dataType, genericStruct);
         } catch (final UaException e) {
             throw new RuntimeException(e);
         }
     }
 
+
     private @NotNull Object parseToOpcUACompatibleObject(
-            final @NotNull JsonNode jsonNode, final @NotNull FieldType fieldType) {
-        final OpcUaDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
+        final OpcUaDataType builtinDataType = fieldType.dataType();
 
-        client.getStaticDataTypeManager().getTypeDictionary(fieldType.getTypeName().getNamespaceURI());
-
-        if (builtinDataType == OpcUaDataType.ExtensionObject) {
-            final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
-            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.getTypeName().getLocalPart());
+        if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
+            final String namespaceURI = fieldType.namespaceUri();
+            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.customDataType().getBrowseName().getName());
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
@@ -200,8 +168,9 @@ public class JsonToOpcUAConverter {
             if (binaryEncodingId == null) {
                 throw new IllegalStateException("Binary encoding id was null for nested struct.");
             }
-            return extractExtensionObject(jsonNode, binaryEncodingId);
+            return extractExtensionObject(jsonNode, fieldType);
         }
+
         return parsetoOpcUAObject(builtinDataType, jsonNode);
     }
 
@@ -267,21 +236,18 @@ public class JsonToOpcUAConverter {
     }
 
     private @NotNull Struct extractExtensionObject(
-            final @NotNull JsonNode jsonNode, final @NotNull NodeId binaryEncodingId) {
-        final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
-
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
         var builder = Struct.builder("CustomStruct");
 
-        for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-            final String key = entry.getKey();
-            final FieldType fieldType = entry.getValue();
+        fieldInformation.nestedFields().forEach(field -> {
+            final String key = field.name();
             final JsonNode nestedObjectNode = jsonNode.get(key);
             if (nestedObjectNode == null) {
                 throw new RuntimeException("No nested json was found for key '" + key + "'.");
             }
-            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, fieldType);
+            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, field);
             builder.addMember(key, parsed);
-        }
+        });
         return builder.build();
     }
 
@@ -523,19 +489,6 @@ public class JsonToOpcUAConverter {
             return jsonNode.asBoolean();
         } else {
             throw createException(jsonNode, OpcUaDataType.Boolean.name());
-        }
-    }
-
-
-    private @NotNull Map<String, FieldType> getStructureInformation(final @NotNull NodeId binaryEncodingId) {
-        try {
-            final DataTypeCodec dataTypeCodec =
-                    client.getDynamicEncodingContext().getDataTypeManager().getCodec(binaryEncodingId);
-            final Field f = AbstractBsdCodec.class.getDeclaredField("fields"); //NoSuchFieldException
-            f.setAccessible(true);
-            return (Map<String, FieldType>) f.get(dataTypeCodec);
-        } catch (final NoSuchFieldException | IllegalAccessException | UaException e) {
-            throw new RuntimeException("Unable to find information on fields in the codec", e);
         }
     }
 

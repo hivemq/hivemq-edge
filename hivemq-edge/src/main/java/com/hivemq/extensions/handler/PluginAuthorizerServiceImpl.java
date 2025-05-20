@@ -45,8 +45,8 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.util.Topics;
 import io.netty.channel.ChannelHandlerContext;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

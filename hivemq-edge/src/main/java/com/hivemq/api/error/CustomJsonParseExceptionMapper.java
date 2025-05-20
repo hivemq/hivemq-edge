@@ -22,8 +22,8 @@ import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import java.util.List;
 
 public class CustomJsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {

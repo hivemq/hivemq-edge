@@ -30,8 +30,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.bootstrap.ClientConnection.CHANNEL_ATTRIBUTE_NAME;
 

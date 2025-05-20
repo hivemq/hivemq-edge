@@ -58,7 +58,7 @@ import com.hivemq.uns.ioc.UnsServiceModule;
 import dagger.BindsInstance;
 import dagger.Component;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Set;
 
 @SuppressWarnings({"NullabilityAnnotations", "UnusedReturnValue"})

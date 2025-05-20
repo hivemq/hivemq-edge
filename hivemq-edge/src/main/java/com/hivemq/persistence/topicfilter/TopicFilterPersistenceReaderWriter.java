@@ -15,33 +15,34 @@
  */
 package com.hivemq.persistence.topicfilter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.persistence.topicfilter.xml.TopicFilterPersistenceEntity;
+import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import com.hivemq.persistence.util.JaxbUtils;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.persistence.topicfilter.xml.TopicFilterPersistenceEntity;
-import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
+;
 
 @Singleton
 public class TopicFilterPersistenceReaderWriter {
@@ -56,7 +57,7 @@ public class TopicFilterPersistenceReaderWriter {
             final @NotNull SystemInformation systemInformation) {
         this.persistenceFile = new File(systemInformation.getSecondaryHiveMQHomeFolder(), PERSISTENCE_FILE_NAME);
         xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonXmlAnnotationIntrospector(),
-                new JaxbAnnotationIntrospector(TypeFactory.defaultInstance())));
+                new JakartaXmlBindAnnotationIntrospector(TypeFactory.defaultInstance())));
         xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
         xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
     }

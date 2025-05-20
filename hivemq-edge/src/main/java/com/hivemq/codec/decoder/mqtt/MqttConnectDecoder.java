@@ -31,8 +31,8 @@ import com.hivemq.util.ClientIds;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * The MQTT 'parent' decoder which decides to which actual MQTT decoder the message is delegated to

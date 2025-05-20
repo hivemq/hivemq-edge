@@ -22,17 +22,17 @@ jackson = "2.18.3"
 jacoco = "0.8.11"
 jsonSchemaInferrer = "0.2.1"
 javassist = "3.30.2-GA"
-javax-annotation-api = "1.3.2"
+jakarta-annotation-api = "2.1.1"
 jaxb2 = "2.3.9"
 jaxb4-bind = "4.0.2"
 jaxb4-impl = "4.0.5"
 jctools = "4.0.5"
-jersey = "2.46"
+jersey = "3.1.10"
 jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.6"
 junit-jupiter = "5.12.2"
 logback = "1.5.18"
-milo = "1.0.0-M2"
+milo = "1.0.0"
 mockito = "5.17.0"
 modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
@@ -85,10 +85,10 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref = "jackson" }
+jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider", version.ref = "jackson" }
 javacrumbs-futureConverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
-javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation-api" }
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
 jaxb2-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb2" }
 jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jaxb4-bind" }
 jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }

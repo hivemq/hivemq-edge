@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.persistence.SingleWriterService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class Services {
 

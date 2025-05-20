@@ -24,7 +24,7 @@ import com.hivemq.edge.modules.adapters.data.TagManager;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class ModuleServicesImpl implements ModuleServices {
 

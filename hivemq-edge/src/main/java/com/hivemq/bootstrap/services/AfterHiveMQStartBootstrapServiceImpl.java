@@ -31,8 +31,8 @@ import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.protocols.ProtocolAdapterManager;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBootstrapService {

@@ -23,7 +23,7 @@ import com.hivemq.mqtt.message.reason.Mqtt5UnsubAckReasonCode;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
