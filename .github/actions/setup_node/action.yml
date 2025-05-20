@@ -15,7 +15,7 @@ runs:
       name: Install pnpm
       id: pnpm-install
       with:
-        version: 8.4.0
+        version: 10.11.0
         run_install: ${{ inputs.run-install }}
 
     - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
