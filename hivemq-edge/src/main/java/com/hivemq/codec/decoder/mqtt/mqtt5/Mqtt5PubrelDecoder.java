@@ -30,8 +30,8 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
 import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;

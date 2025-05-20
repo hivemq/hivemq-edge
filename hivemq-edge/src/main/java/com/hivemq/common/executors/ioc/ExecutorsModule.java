@@ -18,7 +18,7 @@ package com.hivemq.common.executors.ioc;
 import dagger.Module;
 import dagger.Provides;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

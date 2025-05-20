@@ -40,7 +40,7 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 

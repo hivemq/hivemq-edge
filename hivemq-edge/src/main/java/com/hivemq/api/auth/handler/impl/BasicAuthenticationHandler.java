@@ -23,11 +23,11 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.Base64;
 import java.util.Optional;
 

@@ -111,30 +111,11 @@ public class BuiltinJsonSchema {
         }
     }
 
-    public @NotNull JsonNode getJsonSchema(final @NotNull OpcUaDataType builtinDataType) {
+    public @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
         return classToJsonSchema.get(builtinDataType);
     }
 
-    private @NotNull JsonNode createJsonSchemaForBuiltinType(
-            final @NotNull String title, final @NotNull OpcUaDataType builtinDataType) {
-        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
-        rootNode.set("title", new TextNode(title));
-        rootNode.set("type", new TextNode("object"));
-        rootNode.set("properties", propertiesNode);
-        propertiesNode.set("value", valueNode);
-        populatePropertiesForBuiltinType(valueNode, builtinDataType, OBJECT_MAPPER);
-
-        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
-        requiredAttributes.add("value");
-        rootNode.set("required", requiredAttributes);
-
-        return rootNode;
-    }
-
-    public @NotNull JsonNode getJsonSchema(final @NotNull OpcUaDataType builtinDataType,
+    public @NotNull JsonNode createJsonSchemaForArrayType(final @NotNull OpcUaDataType builtinDataType,
                                            final @NotNull UInteger[] dimensions) {
 
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
@@ -278,5 +259,22 @@ public class BuiltinJsonSchema {
             case DiagnosticInfo:
                 throw new RuntimeException("unsupported builtin data type '" + builtinDataType.name() + "'");
         }
+    }
+
+    private static @NotNull JsonNode createJsonSchemaForBuiltinType(final @NotNull String title, final @NotNull OpcUaDataType builtinDataType) {
+        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
+        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("title", new TextNode(title));
+        rootNode.set("type", new TextNode("object"));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+        populatePropertiesForBuiltinType(valueNode, builtinDataType, OBJECT_MAPPER);
+
+        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
+        return rootNode;
     }
 }

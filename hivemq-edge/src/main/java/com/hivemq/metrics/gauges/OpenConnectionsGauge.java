@@ -18,7 +18,7 @@ package com.hivemq.metrics.gauges;
 import com.codahale.metrics.Gauge;
 import io.netty.channel.group.ChannelGroup;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class OpenConnectionsGauge implements Gauge<Integer> {
 

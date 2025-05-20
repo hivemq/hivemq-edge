@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.executor.task.*;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
