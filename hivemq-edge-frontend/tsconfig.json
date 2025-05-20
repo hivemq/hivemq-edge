@@ -1,33 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "types": ["cypress", "cypress-axe", "@percy/cypress", "cypress-real-events", "vite/client", "cypress-each"],
-    "esModuleInterop": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    // alias
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"],
-      "@datahub/*": ["src/extensions/datahub/*"]
-    }
-  },
-  "include": ["src/*.{js,css,d.ts,ts}", "cypress/*.*", "src/types/cypress.d.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
 }
