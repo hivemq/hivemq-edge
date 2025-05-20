@@ -7,6 +7,7 @@ import { checkAccessibility } from './commands/checkAccessibility'
 import { clearInterceptList } from './commands/clearInterceptList'
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable {
       getByTestId(value: string): Chainable<JQuery<HTMLElement>>
