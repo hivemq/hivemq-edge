@@ -20,136 +20,237 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
-import org.eclipse.milo.opcua.sdk.client.typetree.DataTypeTreeBuilder;
-import org.eclipse.milo.opcua.sdk.core.dtd.AbstractBsdCodec;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.encoding.DataTypeCodec;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
+import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.opcfoundation.opcua.binaryschema.FieldType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.edge.adapters.opcua.mqtt2opcua.BuiltInDataTypeConverter.convertFieldTypeToBuiltInDataType;
-
 public class JsonSchemaGenerator {
+
+    private static final Logger log = LoggerFactory.getLogger(JsonSchemaGenerator.class);
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
     private final @NotNull BuiltinJsonSchema builtinJsonSchema;
     private final @NotNull ObjectMapper objectMapper;
 
+    public record FieldInformation(
+            String name,
+            String namespaceUri,
+            OpcUaDataType dataType,
+            DataType customDataType,
+            boolean isEnum,
+            UInteger[] arrayDimensions,
+            boolean required,
+            List<FieldInformation> nestedFields) {}
+
+    public static CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(
+            final @NotNull OpcUaClient client, final @NotNull OpcuaTag tag) {
+        final String nodeId = tag.getDefinition().getNode();
+        try {
+            final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
+            var parsed = NodeId.parse(nodeId);
+            return jsonSchemaGenerator
+                    .collectTypeInfo(parsed)
+                    .thenApply(info -> {
+                        //TODO BuiltinJsonSchema should be an instance variable
+                        if(info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+                            return new BuiltinJsonSchema().createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                        }
+                        else if(info.nestedFields() == null || info.nestedFields().isEmpty()) {
+                            return new BuiltinJsonSchema().createJsonSchemaForBuiltInType(info.dataType());
+                        } else {
+                            return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
+                        }
+                    })
+                    .thenApply(Optional::of);
+        } catch (UaException e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
     public JsonSchemaGenerator(final @NotNull OpcUaClient client, final @NotNull ObjectMapper objectMapper)
             throws UaException {
         this.client = client;
-        this.tree = DataTypeTreeBuilder.build(client);
+        this.tree = client.getDataTypeTree();
         this.objectMapper = objectMapper;
         this.builtinJsonSchema = new BuiltinJsonSchema();
     }
 
-    public void createJsonSchema(
-            final @NotNull NodeId destinationNodeId, final @NotNull TagSchemaCreationOutput output) {
+    private CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
         final CompletableFuture<UaVariableNode> variableNodeFuture =
                 client.getAddressSpace().getVariableNodeAsync(destinationNodeId);
-        variableNodeFuture.whenComplete((uaVariableNode, throwable) -> {
-            if (throwable != null) {
-                // no node was found for the given nodeId
-                output.tagNotFound("No node was found for the given node id '" + destinationNodeId + "'");
-                return;
-            }
 
-            final NodeId dataTypeNodeId = uaVariableNode.getDataType();
-            final DataType dataType = tree.getDataType(dataTypeNodeId);
-            final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
-            if (dataType == null) {
-                output.fail("Unable to find the data type for the given node id '" + destinationNodeId + "'.");
-                return;
-            }
-            final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
-            if (builtinType != OpcUaDataType.ExtensionObject) {
-                if(dimensions != null && dimensions.length > 0) {
-                    output.finish(builtinJsonSchema.getJsonSchema(builtinType, dimensions));
-                } else {
-                    output.finish(builtinJsonSchema.getJsonSchema(builtinType));
-                }
-            } else {
-                final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
-                if (binaryEncodingId == null) {
-                    output.fail("No encoding was present for the complex data type: '" + dataType + "'.");
-                }
-                output.finish(jsonSchemaFromNodeId(binaryEncodingId, dimensions));
-            }
-        });
+        return variableNodeFuture
+                .thenApply(uaVariableNode -> {
+                    final NodeId dataTypeNodeId = uaVariableNode.getDataType();
+                    final DataType dataType = tree.getDataType(dataTypeNodeId);
+                    final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
+
+                    if (dataType == null) {
+                        throw new RuntimeException("Unable to find the data type for the given node id '" + destinationNodeId + "'.");
+                    }
+                    final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
+
+                    if (builtinType != OpcUaDataType.ExtensionObject) {
+                        return new FieldInformation(
+                                null, //No name since this is the root
+                                dataType.getNodeId().expanded(client.getNamespaceTable()).getNamespaceUri(),
+                                builtinType,
+                                null,
+                                false,
+                                dimensions,
+                                true,
+                                List.of());
+                    } else {
+                        if (dataType.getBinaryEncodingId() == null) {
+                            throw new RuntimeException("No encoding was present for the complex data type: '" + dataType + "'.");
+                        }
+                        return processExtensionObject(client, dataType,true, null);
+                    }
+                }).exceptionally(throwable -> {
+                    throw new RuntimeException("Problem accessing node", throwable);
+                });
     }
 
-    public void addNestedStructureInformation(
-            final @NotNull ObjectNode propertiesNode, final @NotNull FieldType fieldType, final @NotNull UInteger[] dimensions) {
-        final OpcUaDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
+    public static FieldInformation processExtensionObject(final @NotNull OpcUaClient client, final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
+        try {
+
+            final var dataTypeDefiniton = dataType.getDataTypeDefinition();
+
+            if(dataTypeDefiniton instanceof final StructureDefinition structureDefiniton) {
+                final var properties = Arrays.stream(structureDefiniton.getFields()).map(field -> {
+                            final String localPart;
+                            try {
+                                localPart = client.getDataTypeTree().getDataType(field.getDataType()).getBrowseName().name();
+                            } catch (UaException e) {
+                                throw new RuntimeException(e);
+                            }
+                            final var fieldName = field.getName();
+                            final var isRequired = !field.getIsOptional();
+                            final var namespaceUri = field.getDataType().expanded(client.getNamespaceTable()).getNamespaceUri();
+                            final boolean isStandard = namespaceUri.startsWith("http://opcfoundation.org/");
+                            final var opcUaType = isStandard ? OpcUaDataType.valueOf(localPart) : null;
+
+                            if (isStandard) {
+                                return new FieldInformation(
+                                        fieldName,
+                                        namespaceUri,
+                                        opcUaType,
+                                        null,
+                                        false,
+                                        null,
+                                        isRequired,
+                                        List.of());
+                            } else {
+                                try {
+                                    return processExtensionObject(
+                                            client,
+                                            client.getDataTypeTree().getDataType(field.getDataType()),
+                                            isRequired,
+                                            fieldName);
+
+                                } catch (final UaException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                }).toList();
+
+                return new FieldInformation(
+                        name,
+                        client.getNamespaceTable().get(dataType.getBrowseName().getNamespaceIndex()),
+                        null,
+                        dataType,
+                        false,
+                        null,
+                        required,
+                        properties);
+            } else if (dataTypeDefiniton instanceof final EnumDefinition enumDefinition) {
+                throw new RuntimeException("Enums not implemented yet");
+            } else {
+                throw new RuntimeException("Unsupported type definition: " + dataTypeDefiniton.getClass().getName());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addNestedStructureInformation(
+            final @NotNull ObjectNode propertiesNode,
+            final @NotNull FieldInformation fieldType) {
+        final OpcUaDataType builtinDataType = fieldType.dataType;
 
         final ObjectNode nestedPropertiesNode = objectMapper.createObjectNode();
-        propertiesNode.set(fieldType.getName(), nestedPropertiesNode);
+        propertiesNode.set(fieldType.name(), nestedPropertiesNode);
 
-        if (builtinDataType != OpcUaDataType.ExtensionObject) {
+        if (builtinDataType != OpcUaDataType.ExtensionObject && fieldType.customDataType() == null) {
             BuiltinJsonSchema.populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, objectMapper);
-        } else if(dimensions != null && dimensions.length > 0) {
-            BuiltinJsonSchema.populatePropertiesForArray(nestedPropertiesNode, builtinDataType, objectMapper, dimensions);
+        } else if(fieldType.arrayDimensions() != null && fieldType.arrayDimensions().length > 0) {
+            BuiltinJsonSchema.populatePropertiesForArray(nestedPropertiesNode, builtinDataType, objectMapper, fieldType.arrayDimensions());
         } else {
             nestedPropertiesNode.set("type", new TextNode("object"));
             final ObjectNode innerProperties = objectMapper.createObjectNode();
             nestedPropertiesNode.set("properties", innerProperties);
 
-            client.getStaticDataTypeManager().getTypeDictionary(fieldType.getTypeName().getNamespaceURI());
-            final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
-            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.getTypeName().getLocalPart());
-            final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
-            if (optionalDataTypeId.isEmpty()) {
-
-                throw new RuntimeException("Expanded node id '" + expandedNodeId + "' could not be parsed to node id.");
+            if(fieldType.namespaceUri() != null) {
+                verifyDataTypeforField(fieldType);
             }
 
-            final NodeId dataTypeId = optionalDataTypeId.get();
-            final DataType dataType = tree.getDataType(dataTypeId);
-            if (dataType == null) {
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeId +
-                        "'");
-            }
-
-            final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
-            if (binaryEncodingId == null) {
-                throw new RuntimeException("Binary encoding id was null for nested struct.");
-            }
-
-            final Map<String, FieldType> embeddedFields = getStructureInformation(binaryEncodingId);
             final ArrayNode requiredAttributesArray = objectMapper.createArrayNode();
-            for (final Map.Entry<String, FieldType> entry : embeddedFields.entrySet()) {
-                requiredAttributesArray.add(entry.getValue().getName());
-                addNestedStructureInformation(innerProperties, entry.getValue(), dimensions);
+            for (final FieldInformation entry : fieldType.nestedFields()) {
+                if(entry.required()) {
+                    requiredAttributesArray.add(entry.name());
+                }
+                addNestedStructureInformation(innerProperties, entry);
             }
             nestedPropertiesNode.set("required", requiredAttributesArray);
         }
     }
 
-    private @NotNull JsonNode jsonSchemaFromNodeId(final @Nullable NodeId binaryEncodingId, final @NotNull UInteger[] dimensions) {
+    private void verifyDataTypeforField(final @NotNull FieldInformation fieldType) {
+        client.getStaticDataTypeManager().getTypeDictionary(fieldType.namespaceUri());
+
+        final ExpandedNodeId expandedNodeId = fieldType.customDataType() == null ? fieldType.dataType().getNodeId().expanded() : fieldType.customDataType().getNodeId().expanded();
+        final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
+        if (optionalDataTypeId.isEmpty()) {
+            throw new RuntimeException("Expanded node id '" + expandedNodeId + "' could not be parsed to node id.");
+        }
+
+        final NodeId dataTypeId = optionalDataTypeId.get();
+        final DataType dataType = tree.getDataType(dataTypeId);
+        if (dataType == null) {
+            throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
+                    dataTypeId +
+                    "'");
+        }
+        final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
         if (binaryEncodingId == null) {
             throw new RuntimeException("Binary encoding id was null for nested struct.");
         }
+    }
+
+    private @NotNull JsonNode jsonSchemaFromNodeId(final @NotNull FieldInformation fieldInformation) {
 
         final ObjectNode rootNode = objectMapper.createObjectNode();
         rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2020-12/schema"));
-        rootNode.set("title", new TextNode("CustomStruct: " + binaryEncodingId.toParseableString()));
+        rootNode.set("title", new TextNode("CustomStruct: " + (fieldInformation.dataType() != null ? fieldInformation.dataType().getNodeId().toParseableString() : fieldInformation.customDataType().getNodeId().toParseableString())));
         rootNode.set("type", new TextNode("object"));
 
         final ObjectNode valueNode = objectMapper.createObjectNode();
@@ -159,14 +260,18 @@ public class JsonSchemaGenerator {
         final ObjectNode propertiesNode = objectMapper.createObjectNode();
         valueNode.set("properties", propertiesNode);
 
-        final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
-        final ArrayNode requiredAttributesArray = objectMapper.createArrayNode();
 
-        for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-            requiredAttributesArray.add(entry.getValue().getName());
-            final FieldType fieldType = entry.getValue();
-            addNestedStructureInformation(propertiesNode, fieldType, dimensions);
-        }
+        final ArrayNode requiredAttributesArray = objectMapper.createArrayNode();
+        fieldInformation.nestedFields()
+                .forEach(fieldInfo -> {
+                    if(fieldInfo.required()) {
+                        //TODO in the old version we added ALL fields to the list of required ones,
+                        // this is correct but may break compatibility
+                        requiredAttributesArray.add(fieldInfo.name());
+                    }
+                    addNestedStructureInformation(propertiesNode, fieldInfo);
+                });
+
         valueNode.set("required", requiredAttributesArray);
 
         final ArrayNode requiredProperties = objectMapper.createArrayNode();
@@ -175,19 +280,4 @@ public class JsonSchemaGenerator {
         return rootNode;
     }
 
-    private @NotNull Map<String, FieldType> getStructureInformation(final @NotNull NodeId binaryEncodingId) {
-        try {
-            final DataTypeCodec dataTypeCodec =
-                    client.getDynamicEncodingContext().getDataTypeManager().getCodec(binaryEncodingId);
-            final Field f = AbstractBsdCodec.class.getDeclaredField("fields"); //NoSuchFieldException
-            f.setAccessible(true);
-            return (Map<String, FieldType>) f.get(dataTypeCodec);
-        } catch (final NoSuchFieldException | IllegalAccessException | UaException e) {
-            if (e.getMessage() != null) {
-                throw new RuntimeException("Unable to find information on fields in the codec: " + e.getMessage());
-            } else {
-                throw new RuntimeException("Unable to find information on fields in the codec.");
-            }
-        }
-    }
 }

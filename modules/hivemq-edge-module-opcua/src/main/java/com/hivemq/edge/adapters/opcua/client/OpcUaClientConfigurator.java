@@ -65,6 +65,7 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
         opcUaClientConfigBuilder.setProductUri("https://github.com/hivemq/hivemq-edge");
         opcUaClientConfigBuilder.setSessionName(() -> "HiveMQ Edge " + adapterId);
 
+
         final Tls tlsConfig = adapterConfig.getTls();
         final boolean tlsEnabled = tlsConfig != null && tlsConfig.isEnabled();
         final boolean keystoreAvailable = checkKeystoreAvailable(tlsConfig, tlsEnabled);

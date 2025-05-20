@@ -24,9 +24,9 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.api.GatewayEndpointApi;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.OutputStreamWriter;
 
 /**
