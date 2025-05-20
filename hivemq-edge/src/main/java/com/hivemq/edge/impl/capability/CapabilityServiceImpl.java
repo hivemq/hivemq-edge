@@ -20,7 +20,7 @@ import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.edge.HiveMQCapabilityService;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;

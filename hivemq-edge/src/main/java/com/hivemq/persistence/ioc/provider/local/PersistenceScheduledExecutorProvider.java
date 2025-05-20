@@ -22,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.ioc.annotation.Persistence;
 import com.hivemq.util.ThreadFactoryUtil;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;

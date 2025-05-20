@@ -28,8 +28,8 @@ import org.slj.mqtt.sn.MqttsnConstants;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnRegister;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * Handle the REGISTER flow from MQTT-SN Clients. For each inbound REGISTER call, check

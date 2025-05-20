@@ -30,7 +30,7 @@ import com.hivemq.extensions.ioc.annotation.PluginTaskQueue;
 import com.hivemq.util.Exceptions;
 import com.hivemq.util.ThreadFactoryUtil;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;

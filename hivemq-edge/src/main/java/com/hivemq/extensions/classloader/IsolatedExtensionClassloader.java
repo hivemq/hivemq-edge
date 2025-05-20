@@ -49,7 +49,7 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     private static final ImmutableSet<String> restrictedPackages = new ImmutableSet.Builder<String>().add(
             // JDK
             "java.",
-            "javax.annotation",
+            "jakarta.annotation",
             "jdk.",
 
             // HiveMQ

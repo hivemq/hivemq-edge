@@ -21,8 +21,8 @@ import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.InFileSingleWriter;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 public class SingleWriterProvider {
 
