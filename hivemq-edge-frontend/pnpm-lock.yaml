@@ -76,7 +76,7 @@ importers:
         version: 1.33.1(ajv@8.17.1)
       '@rjsf/chakra-ui':
         specifier: 5.24.8
-        version: 5.24.8(4130b5f2b62d51f8cd387eb9b9537d63)
+        version: 5.24.8(l76ihnmse2ebnlb5gob43mtdue)
       '@rjsf/core':
         specifier: 5.24.8
         version: 5.24.8(@rjsf/utils@5.24.8(react@18.2.0))(react@18.2.0)
@@ -154,7 +154,7 @@ importers:
         version: 1.8.4(debug@4.3.7)
       chakra-react-select:
         specifier: 4.7.6
-        version: 4.7.6(3bb475f4f698409cc31f968568fec243)
+        version: 4.7.6(nvkcn5nbjr7llgqiwoojn5bbhq)
       csstype:
         specifier: 3.1.2
         version: 3.1.2
@@ -10513,14 +10513,14 @@ snapshots:
 
   '@remix-run/router@1.6.2': {}
 
-  '@rjsf/chakra-ui@5.24.8(4130b5f2b62d51f8cd387eb9b9537d63)':
+  '@rjsf/chakra-ui@5.24.8(l76ihnmse2ebnlb5gob43mtdue)':
     dependencies:
       '@chakra-ui/icons': 2.1.1(@chakra-ui/system@2.6.2(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(react@18.2.0))(react@18.2.0))(react@18.2.0)
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(framer-motion@10.12.21(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@chakra-ui/system': 2.6.2(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(react@18.2.0))(react@18.2.0)
       '@rjsf/core': 5.24.8(@rjsf/utils@5.24.8(react@18.2.0))(react@18.2.0)
       '@rjsf/utils': 5.24.8(react@18.2.0)
-      chakra-react-select: 4.7.6(3bb475f4f698409cc31f968568fec243)
+      chakra-react-select: 4.7.6(nvkcn5nbjr7llgqiwoojn5bbhq)
       framer-motion: 10.12.21(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react: 18.2.0
       react-select: 5.10.1(@types/react@18.0.28)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -11862,7 +11862,7 @@ snapshots:
       loupe: 3.1.3
       pathval: 2.0.0
 
-  chakra-react-select@4.7.6(3bb475f4f698409cc31f968568fec243):
+  chakra-react-select@4.7.6(nvkcn5nbjr7llgqiwoojn5bbhq):
     dependencies:
       '@chakra-ui/form-control': 2.2.0(@chakra-ui/system@2.6.2(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(react@18.2.0))(react@18.2.0))(react@18.2.0)
       '@chakra-ui/icon': 3.2.0(@chakra-ui/system@2.6.2(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.4(@types/react@18.0.28)(react@18.2.0))(@types/react@18.0.28)(react@18.2.0))(react@18.2.0))(react@18.2.0)
