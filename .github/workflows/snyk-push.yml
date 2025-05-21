@@ -48,22 +48,20 @@ jobs:
           hivemq-edge/hivemq-edge
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-#          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ secrets.JENKINS_GITHUB_USERNAME }}
-#          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
-#      - name: Setup Node.js
-#        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-#        with:
-#          node-version: '20.13.1'
-#
-#      - name: Run Snyk Frontend monitor
-#        shell: bash
-#        run: |
-#          snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-broker \
-#            --project-name=hivemq-control-center --remote-repo-url=hivemq-control-center --project-lifecycle=development -d \
-#            --project-tags="\"kanbanize_board_name=Tooling++&++Extension,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Selected,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\"" \
-#          hivemq-enterprise/control-center-frontend
-#        env:
-#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-#          NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
-#          GH_NPM_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20.13.1'
+
+      - name: Run Snyk Frontend monitor
+        shell: bash
+        run: >
+          snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
+          --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d
+          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
+          hivemq-enterprise/hivemq-edge-frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+          GH_NPM_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
