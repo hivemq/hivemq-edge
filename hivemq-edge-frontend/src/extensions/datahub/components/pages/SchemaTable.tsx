@@ -1,9 +1,11 @@
+import IconButton from '@/components/Chakra/IconButton.tsx'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Skeleton, Text } from '@chakra-ui/react'
+import { HStack, Icon, Skeleton, Text } from '@chakra-ui/react'
+import { LuChevronRight } from 'react-icons/lu'
 
 import type { PolicySchema, SchemaList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
@@ -39,10 +41,27 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         accessorKey: 'id',
         cell: (info) => {
           return (
-            <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
+            <Skeleton isLoaded={!isLoading} whiteSpace="nowrap" as={HStack} justifyContent="space-between">
               <Text as="span" ml={info.row.getParentRow() ? 4 : 0}>
                 {info.getValue<string>()}
               </Text>
+              {info.row.getCanExpand() && (
+                <IconButton
+                  data-testid="list-action-collapse"
+                  onClick={info.row.getToggleExpandedHandler()}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="gray"
+                  aria-label={info.row.getIsExpanded() ? t('Listings.action.collapse') : t('Listings.action.expand')}
+                  icon={
+                    <Icon
+                      as={LuChevronRight}
+                      fontSize="1.5rem"
+                      transform={info.row.getIsExpanded() ? 'rotate(90deg)' : undefined}
+                    />
+                  }
+                />
+              )}
             </Skeleton>
           )
         },
@@ -95,11 +114,8 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
               <DataHubListAction
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
                 onDownload={onHandleDownload(info)}
-                onExpand={info.row.getToggleExpandedHandler()}
                 canDownload={!info.row.getCanExpand()}
                 canDelete={!info.row.getParentRow()}
-                canExpand={info.row.getCanExpand()}
-                isExpanded={info.row.getIsExpanded()}
               />
             </Skeleton>
           )
