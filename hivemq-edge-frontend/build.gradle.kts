@@ -10,7 +10,7 @@ description = "Frontend for HiveMQ Edge"
 node {
   download.set(true)
   version.set("18.20.6")
-  pnpmVersion.set("8")
+  pnpmVersion.set("9")
 }
 
 tasks.withType<PnpmTask>().configureEach {

@@ -1,8 +1,9 @@
+/// <reference types="cypress" />
+import type { ContextObject, Result } from 'axe-core'
+import type { Options } from 'cypress-axe'
 import { ignoreGlobalRules } from '../a11y.ts'
-import * as axe from 'axe-core'
-import { Options } from 'cypress-axe'
 
-const violationCallback = (violations: axe.Result[]) => {
+const violationCallback = (violations: Result[]) => {
   for (const violation of violations) {
     for (const node of violation.nodes) {
       cy.log(violation.id, node.target, node.html)
@@ -11,7 +12,7 @@ const violationCallback = (violations: axe.Result[]) => {
 }
 
 export const checkAccessibility = (
-  context?: string | Node | axe.ContextObject | undefined,
+  context?: string | Node | ContextObject | undefined,
   options?: Options | undefined,
   skipFailures?: boolean
 ): void => {
