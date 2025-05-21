@@ -60,7 +60,7 @@ jobs:
           snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d
           --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
-          hivemq-enterprise/hivemq-edge-frontend
+          hivemq-edge/hivemq-edge-frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
