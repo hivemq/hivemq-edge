@@ -1,8 +1,7 @@
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
-import type { CombinedPolicy } from '@datahub/types.ts'
-import { PolicyType } from '@datahub/types.ts'
+import { type CombinedPolicy, PolicyType } from '@datahub/types.ts'
 
 describe('DataHubListAction', () => {
   beforeEach(() => {
@@ -37,7 +36,6 @@ describe('DataHubListAction', () => {
           policy={undefined}
           onDownload={cy.stub().as('onDownload')}
           onDelete={cy.stub().as('onDelete')}
-          onExpand={cy.stub().as('onExpand')}
           onEdit={cy.stub().as('onEdit')}
         />
       )
@@ -55,7 +53,6 @@ describe('DataHubListAction', () => {
       cy.getByTestId('list-action-delete').click()
       cy.get('@onDelete').should('have.been.called')
 
-      cy.getByTestId('list-action-collapse').should('not.exist')
       cy.getByTestId('list-action-draft').should('not.exist')
       cy.getByTestId('list-action-view-edit').should('not.exist')
     })
@@ -64,15 +61,13 @@ describe('DataHubListAction', () => {
       cy.mountWithProviders(
         <DataHubListAction
           policy={undefined}
-          canExpand
           onDownload={cy.stub().as('onDownload')}
           onDelete={cy.stub().as('onDelete')}
-          onExpand={cy.stub().as('onExpand')}
           onEdit={cy.stub().as('onEdit')}
         />
       )
 
-      cy.get('button').should('have.length', 3)
+      cy.get('button').should('have.length', 2)
 
       cy.get('@onDownload').should('not.have.been.called')
       cy.getByTestId('list-action-download').should('have.attr', 'aria-label', 'Download')
@@ -83,12 +78,6 @@ describe('DataHubListAction', () => {
       cy.getByTestId('list-action-delete').should('have.attr', 'aria-label', 'Delete')
       cy.getByTestId('list-action-delete').click()
       cy.get('@onDelete').should('have.been.called')
-
-      cy.get('@onExpand').should('not.have.been.called')
-      cy.getByTestId('list-action-collapse').should('not.be.disabled')
-      cy.getByTestId('list-action-collapse').should('have.attr', 'aria-label', 'Show the versions')
-      cy.getByTestId('list-action-collapse').click()
-      cy.get('@onExpand').should('have.been.called')
 
       cy.getByTestId('list-action-draft').should('not.exist')
       cy.getByTestId('list-action-view-edit').should('not.exist')

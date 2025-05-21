@@ -58,7 +58,7 @@ describe('SchemaTable', () => {
     cy.get('@firstItemContent').eq(2).should('have.text', '2 versions')
     cy.get('@firstItemContent').eq(3).should('have.text', '2 days ago')
     cy.get('@firstItemContent')
-      .eq(4)
+      .eq(0)
       .within(() => {
         cy.getByAriaLabel('Show the versions').should('be.visible').should('not.be.disabled')
         cy.getByAriaLabel('Show the versions').click()
@@ -68,7 +68,7 @@ describe('SchemaTable', () => {
     cy.get('@childrenRow').eq(2).should('have.text', '2')
 
     cy.get('@firstItemContent')
-      .eq(4)
+      .eq(0)
       .within(() => {
         cy.getByAriaLabel('Hide the versions').should('be.visible').should('not.be.disabled')
         cy.getByAriaLabel('Hide the versions').click()
