@@ -1,13 +1,12 @@
 import { describe, expect } from 'vitest'
 
-import type { SchemaList } from '@/api/__generated__'
-import { mockSchemaTempHumidity } from '../api/hooks/DataHubSchemasService/__handlers__'
-import type { PolicySchemaExpanded } from './policy.utils'
-import { groupResourceItems } from './policy.utils'
+import type { PolicySchema, SchemaList } from '@/api/__generated__'
+import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import { type ExpandableGroupedResource, groupResourceItems } from './policy.utils'
 
 interface GroupSchemaTest {
   data: SchemaList | undefined
-  result: PolicySchemaExpanded[]
+  result: ExpandableGroupedResource<PolicySchema>[]
   prompt: {
     input: string
     output: string
@@ -84,7 +83,7 @@ describe('groupResourceItems', () => {
   it.each<GroupSchemaTest>(resourceNameTestSuite)(
     'should return $prompt.output with $prompt.input',
     ({ data, result }) => {
-      expect(groupResourceItems(data)).toStrictEqual(result)
+      expect(groupResourceItems<SchemaList, PolicySchema>(data)).toStrictEqual(result)
     }
   )
 })
