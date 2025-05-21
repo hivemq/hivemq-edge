@@ -1,11 +1,9 @@
-import IconButton from '@/components/Chakra/IconButton.tsx'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { HStack, Icon, Skeleton, Text } from '@chakra-ui/react'
-import { LuChevronRight } from 'react-icons/lu'
+import { HStack, Skeleton, Text } from '@chakra-ui/react'
 
 import type { PolicySchema, SchemaList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
@@ -16,6 +14,7 @@ import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDel
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.ts'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { ExpandVersionButton } from '@datahub/components/helpers/ExpandVersionButton.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { groupResourceItems, type ExpandableGroupedResource } from '@datahub/utils/policy.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
@@ -46,20 +45,9 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
                 {info.getValue<string>()}
               </Text>
               {info.row.getCanExpand() && (
-                <IconButton
-                  data-testid="list-action-collapse"
+                <ExpandVersionButton
                   onClick={info.row.getToggleExpandedHandler()}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="gray"
-                  aria-label={info.row.getIsExpanded() ? t('Listings.action.collapse') : t('Listings.action.expand')}
-                  icon={
-                    <Icon
-                      as={LuChevronRight}
-                      fontSize="1.5rem"
-                      transform={info.row.getIsExpanded() ? 'rotate(90deg)' : undefined}
-                    />
-                  }
+                  isExpanded={info.row.getIsExpanded()}
                 />
               )}
             </Skeleton>
