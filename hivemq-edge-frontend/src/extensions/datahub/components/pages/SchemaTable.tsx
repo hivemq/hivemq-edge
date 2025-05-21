@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Skeleton, Text } from '@chakra-ui/react'
 
+import type { PolicySchema, SchemaList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { downloadJSON } from '@/utils/download.utils.ts'
@@ -14,9 +15,8 @@ import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGe
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import { groupResourceItems, type ExpandableGroupedResource } from '@datahub/utils/policy.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
-import type { PolicySchemaExpanded } from '@datahub/utils/policy.utils'
-import { groupResourceItems } from '@datahub/utils/policy.utils'
 
 const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
@@ -26,12 +26,12 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const expandedData = useMemo(() => {
     if (isLoading) return [mockSchemaTempHumidity]
 
-    return groupResourceItems(data)
+    return groupResourceItems<SchemaList, PolicySchema>(data)
   }, [data, isLoading])
 
-  const columns = useMemo<ColumnDef<PolicySchemaExpanded>[]>(() => {
-    const onHandleDownload = (info: CellContext<PolicySchemaExpanded, unknown>) => () => {
-      downloadJSON<PolicySchemaExpanded>(info.row.original.id, info.row.original)
+  const columns = useMemo<ColumnDef<ExpandableGroupedResource<PolicySchema>>[]>(() => {
+    const onHandleDownload = (info: CellContext<ExpandableGroupedResource<PolicySchema>, unknown>) => () => {
+      downloadJSON<ExpandableGroupedResource<PolicySchema>>(info.row.original.id, info.row.original)
     }
 
     return [
@@ -109,7 +109,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
-    <PaginatedTable<PolicySchemaExpanded>
+    <PaginatedTable<ExpandableGroupedResource<PolicySchema>>
       aria-label={t('Listings.schema.label')}
       data={expandedData}
       columns={columns}
