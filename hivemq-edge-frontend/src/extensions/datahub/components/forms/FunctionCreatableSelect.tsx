@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 
 import type { FunctionSpecs } from '../../types.ts'
-import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -72,7 +71,6 @@ const getValue = (props: WidgetProps) => {
 }
 
 const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
-  const { functions } = useDataHubDraftStore()
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
   const onCreatableSelectChange = useCallback<

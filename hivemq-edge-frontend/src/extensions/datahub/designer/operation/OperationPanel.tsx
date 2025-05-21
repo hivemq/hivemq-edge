@@ -20,7 +20,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
-  const { nodes, edges, functions } = useDataHubDraftStore()
+  const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const formData = useMemo(() => {

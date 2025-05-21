@@ -23,7 +23,6 @@ describe('checkValidityTransformFunction', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
@@ -83,7 +82,6 @@ describe('checkValidityTransformFunction', () => {
           id: '1',
         },
       ],
-      functions: [],
     }
 
     const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
@@ -155,7 +153,6 @@ describe('checkValidityTransformFunction', () => {
           id: '1',
         },
       ],
-      functions: [],
     }
 
     const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
@@ -234,7 +231,6 @@ describe('checkValidityTransformFunction', () => {
           id: '2',
         },
       ],
-      functions: [],
     }
 
     const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
@@ -320,7 +316,6 @@ describe('checkValidityTransformFunction', () => {
           id: '3',
         },
       ],
-      functions: [],
     }
 
     const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
@@ -387,7 +382,6 @@ describe('checkValidityPipeline', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const results = checkValidityPipeline(MOCK_NODE_DATA_POLICY, DataPolicyData.Handle.ON_SUCCESS, MOCK_STORE)
@@ -406,7 +400,6 @@ describe('checkValidityPipeline', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const results = checkValidityPipeline(MOCK_NODE_DATA_POLICY, DataPolicyData.Handle.ON_SUCCESS, MOCK_STORE)
@@ -418,7 +411,6 @@ describe('processOperations', () => {
   const MOCK_STORE: WorkspaceState = {
     nodes: [],
     edges: [],
-    functions: [],
   }
 
   it('should return error if not configured', async () => {

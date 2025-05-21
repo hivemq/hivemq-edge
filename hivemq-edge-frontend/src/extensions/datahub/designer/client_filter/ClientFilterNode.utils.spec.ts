@@ -20,7 +20,6 @@ describe('checkValidityClients', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityClients(MOCK_NODE_BEHAVIOR_POLICY, MOCK_STORE)
@@ -75,7 +74,6 @@ describe('checkValidityClients', () => {
           id: '2',
         },
       ],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityClients(MOCK_NODE_BEHAVIOR_POLICY, MOCK_STORE)
@@ -114,7 +112,6 @@ describe('checkValidityClients', () => {
           id: '1',
         },
       ],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityClients(MOCK_NODE_BEHAVIOR_POLICY, MOCK_STORE)

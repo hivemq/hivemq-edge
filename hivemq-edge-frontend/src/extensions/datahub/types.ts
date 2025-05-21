@@ -38,7 +38,6 @@ export enum DesignerStatus {
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
-  functions: FunctionSpecs[]
 }
 
 export interface WorkspaceStatus {
@@ -56,7 +55,6 @@ export interface WorkspaceAction {
   onAddEdges: (changes: EdgeAddChange[]) => void
   onUpdateNodes: <T>(item: string, data: T) => void
 
-  onAddFunctions: (changes: FunctionSpecs[]) => void
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 
   isDirty: () => boolean
