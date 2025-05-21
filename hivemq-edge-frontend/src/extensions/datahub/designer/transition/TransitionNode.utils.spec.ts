@@ -26,7 +26,6 @@ describe('checkValidityTransitions', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_BEHAVIOR],
       edges: [],
-      functions: [],
     }
 
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(MOCK_NODE_BEHAVIOR, MOCK_STORE)
@@ -58,7 +57,6 @@ describe('checkValidityTransitions', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_BEHAVIOR, MOCK_NODE_TRANSITION],
       edges: [{ id: '1', source: MOCK_NODE_BEHAVIOR.id, target: MOCK_NODE_TRANSITION.id }],
-      functions: [],
     }
 
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(MOCK_NODE_BEHAVIOR, MOCK_STORE)
@@ -164,7 +162,6 @@ describe('checkValidityTransitions', () => {
           id: '3',
         },
       ],
-      functions: [],
     }
 
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(MOCK_NODE_BEHAVIOR, MOCK_STORE)
@@ -208,7 +205,6 @@ describe('checkValidityTransitions', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_BEHAVIOR, MOCK_NODE_TRANSITION],
       edges: [{ id: '1', source: MOCK_NODE_BEHAVIOR.id, target: MOCK_NODE_TRANSITION.id }],
-      functions: [],
     }
 
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(MOCK_NODE_BEHAVIOR, MOCK_STORE)

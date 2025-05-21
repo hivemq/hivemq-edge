@@ -7,7 +7,6 @@ import type {
   BehaviorPolicyData,
   DataPolicyData,
   DesignerStatus,
-  FunctionSpecs,
   WorkspaceAction,
   WorkspaceState,
   WorkspaceStatus,
@@ -84,9 +83,6 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
             return node
           }),
         })
-      },
-      onAddFunctions: (changes: FunctionSpecs[]) => {
-        set({ functions: [...get().functions, ...changes] })
       },
       onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>): string | undefined => {
         if (node.type !== DataHubNodeType.BEHAVIOR_POLICY && node.type !== DataHubNodeType.DATA_POLICY) return undefined
