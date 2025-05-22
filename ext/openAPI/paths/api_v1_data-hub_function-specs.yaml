@@ -1,0 +1,21 @@
+get:
+  description: >-
+    This endpoints provides the means to get information on the available
+    Functions for the HiveMQ Data Hub.
+  operationId: getFunctionSpecs
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/FunctionSpecs.yaml
+      description: Success
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+  summary: Get all functions as a list of function specifications
+  tags:
+    - Data Hub - Functions

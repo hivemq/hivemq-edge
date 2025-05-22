@@ -176,6 +176,8 @@ paths:
     $ref: paths/api_v1_data-hub_fsm.yaml
   /api/v1/data-hub/functions:
     $ref: paths/api_v1_data-hub_functions.yaml
+  /api/v1/data-hub/function-specs:
+    $ref: paths/api_v1_data-hub_function-specs.yaml
   /api/v1/data-hub/schemas:
     $ref: paths/api_v1_data-hub_schemas.yaml
   /api/v1/data-hub/schemas/{schemaId}:
