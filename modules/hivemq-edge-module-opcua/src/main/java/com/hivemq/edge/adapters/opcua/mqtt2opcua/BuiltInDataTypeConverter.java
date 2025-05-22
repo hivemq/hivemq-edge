@@ -26,7 +26,7 @@ public final class BuiltInDataTypeConverter {
     private BuiltInDataTypeConverter() {
     }
 
-    public static @NotNull OpcUaDataType convertFieldTypeToBuiltInDataType(
+    public static @NotNull OpcUaDataType convertFieldTypeToBuiltInDataType_old(
             final @NotNull FieldType fieldType,
             final @NotNull OpcUaClient client) {
         final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
@@ -55,4 +55,5 @@ public final class BuiltInDataTypeConverter {
         }
 //        throw new IllegalArgumentException();
     }
+
 }

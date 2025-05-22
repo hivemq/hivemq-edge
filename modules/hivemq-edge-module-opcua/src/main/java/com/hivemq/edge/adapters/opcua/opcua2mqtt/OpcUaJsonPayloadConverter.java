@@ -72,15 +72,13 @@ public class OpcUaJsonPayloadConverter {
         if  (value instanceof DataValue) {
             addDataValueFields((DataValue) value, jsonObject);
         }
-
         final var converted = convertValue(value, serializationContext);
 
         if (converted instanceof JsonObject) {
-            jsonObject.add("value", convertValue(((JsonObject)converted).get("members"), serializationContext));
+            jsonObject.add("value", converted);
         } else {
             jsonObject.add("value", convertValue(value, serializationContext));
         }
-
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
     
@@ -172,6 +170,12 @@ public class OpcUaJsonPayloadConverter {
             struct.getMembers()
                     .values()
                     .forEach(member -> structRoot.add(member.getName(), convertValue(member.getValue(), serializationContext)));
+            return structRoot;
+        } else if (value instanceof DynamicStructType) {
+            final DynamicStructType struct = (DynamicStructType) value;
+            final JsonObject structRoot = new JsonObject();
+            struct.getMembers()
+                    .forEach((key, value1) -> structRoot.add(key, convertValue(value1, serializationContext)));
             return structRoot;
         } else if(value.getClass().isArray()) {
             final Object[] values = (Object[])value;

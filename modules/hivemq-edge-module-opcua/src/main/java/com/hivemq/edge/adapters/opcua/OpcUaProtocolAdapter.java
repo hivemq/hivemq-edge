@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -39,6 +40,9 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
@@ -46,6 +50,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
     private final @Nullable OpcUaConnection opcUaConnection;
+    private final @NotNull Map<String, OpcuaTag> tagNameToTag;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -53,9 +58,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
+        var tagList = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
+        tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
+
         this.opcUaConnection = new OpcUaConnection(
                 input.getConfig().getUri(),
-                input.getTags().stream().map(tag -> (OpcuaTag)tag).toList(),
+                tagList,
                 input.getConfig().getOpcuaToMqttConfig(),
                 input.moduleServices().protocolAdapterTagStreamingService(),
                 input.adapterFactories().dataPointFactory(),
@@ -105,8 +113,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        //TODO implement discovery
-        output.finish();
+        opcUaConnection
+                .discoverValues(input.getRootNode(), input.getDepth())
+                .whenComplete((collectedNodes, throwable) -> {
+                    if (throwable != null) {
+                        output.fail(throwable, "Unable to discover values");
+                    } else {
+                        final var nodeTree = output.getNodeTree();
+                        collectedNodes.forEach(node -> nodeTree.addNode(
+                                node.id(),
+                                node.name(),
+                                node.value(),
+                                node.description(),
+                                node.parentId(),
+                                node.nodeType(),
+                                node.selectable()));
+                        output.finish();
+                    }
+                });
     }
 
     @Override
@@ -116,25 +140,56 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
-//        final OpcUaClientWrapper opcUaClientWrapperTemp = opcUaClientWrapper;
-//        final WritingContext writeContext = input.getWritingContext();
-//        if (opcUaClientWrapperTemp != null) {
-//            tags.stream()
-//                    .filter(tag -> tag.getName().equals(writeContext.getTagName()))
-//                    .findFirst()
-//                    .ifPresentOrElse(def -> opcUaClientWrapperTemp.write(input, output, (OpcuaTag) def),
-//                            () -> output.fail("Subscription for protocol adapter failed because the used tag '" +
-//                                    writeContext.getTagName() +
-//                                    "' was not found. For the subscription to work the tag must be created via REST API or the UI."));
-//        } else {
-//            log.warn("Tried executing write while client wasn't started");
-//        }
+        final WritingContext writeContext = input.getWritingContext();
+        var opcuaTag = tagNameToTag.get(writeContext.getTagName());
+        if(opcUaConnection.isStarted()) {
+            if(opcuaTag != null) {
+                opcUaConnection
+                        .write(opcuaTag, (OpcUaPayload)input.getWritingPayload())
+                        .whenComplete((statusCode, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
+                                output.fail(throwable, null);
+                            } else {
+                                log.debug("Wrote tag='{}'", opcuaTag.getName());
+                                output.finish();
+                            }
+                        });
+            } else {
+                log.error("Tried executing write with a non existent tag '{}'", writeContext.getTagName());
+            }
+        } else {
+            log.warn("Tried executing write while client wasn't started");
+        }
     }
 
     @Override
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
-        //TODO implement createTagSchema
+        //TODO treat non-existent tags
+        var tag = tagNameToTag.get(input.getTagName());
+        opcUaConnection
+                .createTagScheam(tag)
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while creating tag schema '{}'", input.getTagName(), throwable);
+                        output.fail(throwable, null);
+                    } else {
+                        log.debug("Created tag schema='{}'", input.getTagName());
+                        result.schema()
+                                .ifPresentOrElse(
+                                    schema -> {
+                                        log.debug("Schema inferred for tag='{}'", input.getTagName());
+                                        output.finish(schema);
+                                    },
+                                    () -> {
+                                        log.error("No schema inferred for tag='{}': {}", input.getTagName(), result.errorMessage());
+                                        output.fail(result.errorMessage());
+                                    }
+                                );
+
+                    }
+                });
     }
 
     @Override

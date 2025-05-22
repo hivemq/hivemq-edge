@@ -7,6 +7,9 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
+import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
+import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
 import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -18,6 +21,8 @@ import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,14 +58,14 @@ public class OpcUaConnection {
     private volatile OpcUaClient opcUaClientInstance;
 
     public OpcUaConnection(
-            @NotNull final String uri,
-            @NotNull final List<OpcuaTag> tags,
-            @NotNull final OpcUaToMqttConfig toMqttConfig,
-            @NotNull final ProtocolAdapterTagStreamingService tagStreamingService,
-            @NotNull final DataPointFactory dataPointFactory,
-            @NotNull final EventService eventService,
-            @NotNull final String adapterId,
-            @NotNull final ProtocolAdapterState protocolAdapterState) {
+            final @NotNull String uri,
+            final @NotNull List<OpcuaTag> tags,
+            final @NotNull OpcUaToMqttConfig toMqttConfig,
+            final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull EventService eventService,
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterState protocolAdapterState) {
         this.uri = uri;
         this.tags = tags;
         this.toMqttConfig = toMqttConfig;
@@ -136,6 +141,32 @@ public class OpcUaConnection {
         }
     }
 
+    public boolean isStarted() {
+        return opcUaClientInstance != null;
+    }
+
+    public CompletableFuture<List<StatusCode>> write(
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull OpcUaPayload opcUAWritePayload
+    ) {
+        final JsonToOpcUAConverter converter;
+        try {
+            converter = new JsonToOpcUAConverter(opcUaClientInstance);
+        } catch (UaException e) {
+            log.error("Failed creating JsonToOpcUAConverter", e);
+            return CompletableFuture.failedFuture(e);
+        }
+
+        log.debug("Write for opcua is invoked with payload '{}' for tag '{}' ", opcUAWritePayload, opcuaTag.getName());
+
+        final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
+        final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId);
+        final Variant variant = new Variant(opcuaObject);
+        final DataValue dataValue = new DataValue(variant, null, null);
+        return opcUaClientInstance
+                        .writeValuesAsync(List.of(nodeId), List.of(dataValue));
+    }
+
     private @NotNull CompletionStage<Object> createSubscription(final @NotNull OpcUaClient client) {
         final var nodeIdToTag = tags.stream()
                 .collect(
@@ -201,6 +232,16 @@ public class OpcUaConnection {
                 }
             }
         };
+    }
+
+    public CompletableFuture<List<OpcUaBrowser.CollectedNode>> discoverValues(
+            final @NotNull String rootNode,
+            final int depth) {
+        return OpcUaBrowser.discoverValues(opcUaClientInstance, rootNode, depth);
+    }
+
+    public CompletableFuture<JsonSchemaGenerator.Result> createTagScheam(OpcuaTag tag) {
+        return JsonSchemaGenerator.createMqttPayloadJsonSchema(opcUaClientInstance, tag);
     }
 
     private static byte @NotNull [] convertPayload(
