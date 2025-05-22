@@ -1,0 +1,18 @@
+type: array
+description: List of function configurations
+items:
+  type: object
+  properties:
+    functionId:
+      type: string
+      description: The unique name of the function
+    metadata:
+      $ref: ./FunctionMetadata.yaml
+    schema:
+      $ref: ./JsonNode.yaml
+    uiSchema:
+      $ref: ./JsonNode.yaml
+  required:
+    - functionId
+    - metadata
+    - schema
