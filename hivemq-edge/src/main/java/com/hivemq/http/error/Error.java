@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -31,6 +33,7 @@ public class Error {
     public static final @NotNull String REQUIRED_FIELD_MISSING_TITLE = "Required field missing";
     public static final @NotNull String AT_LEAST_ONE_FIELD_MISSING_TITLE = "One of the fields must be present.";
     public static final @NotNull String EMPTY_STRING_TITLE = "String must not be empty";
+    private static final Logger log = LoggerFactory.getLogger(Error.class);
 
     @JsonProperty(value = "detail", required = true)
     @Schema(description = "Detailed contextual description of this error")
@@ -40,18 +43,39 @@ public class Error {
     @Schema(description = "The parameter causing the issue")
     private final @Nullable String parameter;
 
+    @JsonProperty(value = "type", required = true)
+    @Schema(description = "The type of the error")
+    private final @NotNull String type;
+
     @JsonCreator
     public Error(
             final @JsonProperty("detail") @NotNull String detail,
             final @JsonProperty("parameter") @Nullable String parameter) {
         this.parameter = parameter;
         this.detail = detail;
+        type = getClass().getSimpleName();
     }
 
     public Error(
             final @JsonProperty("detail") @NotNull String detail) {
         this.detail = detail;
         this.parameter = null;
+        type = getClass().getSimpleName();
+    }
+
+    public static @NotNull <E extends Error> List<Error> cast(final @NotNull List<E> errors) {
+        return errors.stream().map(e -> (Error) e).toList();
+    }
+
+    public static @NotNull <E extends Error> Error missingField(final @NotNull Class<E> eClass, final @NotNull String field) {
+        final String detail = String.format("Required field '%s' is missing", field);
+        try {
+            final var constructor = eClass.getConstructor(String.class, String.class);
+            return constructor.newInstance(detail, field);
+        } catch (final Throwable t) {
+            log.warn("Failed to create error of type {} for field {}. Using default constructor.", eClass.getName(), field, t);
+        }
+        return new Error(detail, field);
     }
 
     public static @NotNull Error missingField(final @NotNull String field) {
@@ -167,15 +191,22 @@ public class Error {
         return detail;
     }
 
+    public @NotNull String getType() {
+        return type;
+    }
+
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "Error{" +
-            "detail='" +
-            getDetail() +
-            '\'' +
-            ", parameter='" +
-            parameter +
-            '\'' +
-            '}';
+                "detail='" +
+                detail +
+                '\'' +
+                ", parameter='" +
+                parameter +
+                '\'' +
+                ", type='" +
+                type +
+                '\'' +
+                '}';
     }
 }

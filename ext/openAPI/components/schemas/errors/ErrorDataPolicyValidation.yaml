@@ -1,10 +1,15 @@
 type: object
 properties:
+  type:
+    type: string
+    enum:
+      - ErrorDataPolicyValidation
   detail:
     type: string
-    description: Detailed contextual description of this error
+    description: The data policy validation error
   parameter:
     type: string
     description: The parameter causing the issue
 required:
   - detail
+  - type

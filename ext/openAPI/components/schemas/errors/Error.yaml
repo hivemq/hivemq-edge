@@ -1,0 +1,15 @@
+type: object
+properties:
+  type:
+    type: string
+    enum:
+      - Error
+  detail:
+    type: string
+    description: Detailed contextual description of this error
+  parameter:
+    type: string
+    description: The parameter causing the issue
+required:
+  - detail
+  - type
