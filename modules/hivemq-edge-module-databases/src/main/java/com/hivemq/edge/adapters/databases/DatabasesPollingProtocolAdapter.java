@@ -71,42 +71,15 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
         this.tags = input.getTags();
 
         log.debug("Building connection string");
-        String compiledUri = getConnectionString(adapterConfig.getType());
-        assert compiledUri != null;
-        log.debug(compiledUri);
-        this.databaseConnection = new DatabaseConnection(compiledUri,
+
+        this.databaseConnection = new DatabaseConnection(adapterConfig.getType(),
+                adapterConfig.getServer(),
+                adapterConfig.getPort(),
+                adapterConfig.getDatabase(),
                 adapterConfig.getUsername(),
                 adapterConfig.getPassword(),
                 adapterConfig.getConnectionTimeout(),
                 adapterConfig.getEncrypt());
-    }
-
-    private @Nullable String getConnectionString(DatabaseType inputType) {
-        switch (inputType){
-            case POSTGRESQL -> {
-                return String.format("jdbc:postgresql://%s:%s/%s?ssl=%s",
-                        adapterConfig.getServer(),
-                        adapterConfig.getPort(),
-                        adapterConfig.getDatabase(),
-                        adapterConfig.getEncrypt());
-                }
-            case MYSQL -> {
-                    return String.format("jdbc:mysql://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
-                            adapterConfig.getServer(),
-                            adapterConfig.getPort(),
-                            adapterConfig.getDatabase(),
-                            adapterConfig.getEncrypt());
-                }
-            case MSSQL -> {
-                return String.format("jdbc:sqlserver://%s:%s;databaseName=%s;",
-                        adapterConfig.getServer(),
-                        adapterConfig.getPort(),
-                        adapterConfig.getDatabase());
-            }
-            default -> {
-                return null;
-            }
-        }
     }
 
     @Override
@@ -199,9 +172,9 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
             log.debug("Getting tag definition");
             /* Get the tag definition (Query, RowLimit and Split Lines)*/
             final DatabasesAdapterTagDefinition definition = tag.getDefinition();
-
+            log.debug("Executing query : {}", definition.getQuery());
             /* Execute query and handle result */
-            final PreparedStatement preparedStatement = connection.prepareStatement(tag.getDefinition().getQuery());
+            final PreparedStatement preparedStatement = connection.prepareStatement(definition.getQuery());
             final ResultSet result = preparedStatement.executeQuery();
             assert result != null;
             final ArrayList<ObjectNode> resultObject = new ArrayList<>();
@@ -215,7 +188,8 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
 
                 /* Publish datapoint with a single line if split is required */
                 if (definition.getSpiltLinesInIndividualMessages()) {
-                    log.debug("Splitting lines in multiple messages");
+                    log.debug("Creating unique message");
+                    log.debug("Value : {}", node);
                     output.addDataPoint("queryResult", node);
                 } else {
                     resultObject.add(node);
@@ -225,6 +199,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
             /* Publish datapoint with all lines if no split is required */
             if (!definition.getSpiltLinesInIndividualMessages()) {
                 log.debug("Publishing all lines in a single message");
+                log.debug("Value : {}", resultObject);
                 output.addDataPoint("queryResult", resultObject);
             }
         } catch (final Exception e) {

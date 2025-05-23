@@ -99,15 +99,13 @@ public class DatabasesAdapterConfig implements ProtocolSpecificAdapterConfig {
     @JsonProperty(value = "encrypt")
     @ModuleConfigField(title = "Encrypt",
                        description = "Use TLS to communicate with the remote database",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       required = true)
+                       format = ModuleConfigField.FieldType.BOOLEAN)
     protected Boolean encrypt;
 
     @JsonProperty(value = "trustCertificate")
     @ModuleConfigField(title = "Trust Certificate",
                        description = "Do you want to trust remote certificate",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       required = true)
+                       format = ModuleConfigField.FieldType.BOOLEAN)
     protected Boolean trustCertificate;
 
     @JsonProperty(value = "connectionTimeoutSeconds")

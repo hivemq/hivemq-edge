@@ -32,7 +32,8 @@ jctools = "4.0.5"
 jersey = "2.46"
 jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.6"
-junit-jupiter = "5.12.2"
+junit-jupiter = "5.11.4"
+junit = "4.13.2"
 logback = "1.5.18"
 milo = "0.6.15"
 mockito = "5.17.0"
@@ -103,6 +104,8 @@ jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
+junit = { module = "junit:junit", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 milo-bsdParserGson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref = "milo" }
 milo-client = { module = "org.eclipse.milo:sdk-client", version.ref = "milo" }
