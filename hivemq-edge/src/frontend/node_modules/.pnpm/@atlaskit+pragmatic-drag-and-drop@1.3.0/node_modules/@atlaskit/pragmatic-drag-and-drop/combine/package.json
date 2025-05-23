@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/combine",
+  "main": "../dist/cjs/entry-point/combine.js",
+  "module": "../dist/esm/entry-point/combine.js",
+  "module:es2019": "../dist/es2019/entry-point/combine.js",
+  "sideEffects": true,
+  "types": "../dist/types/entry-point/combine.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../dist/types-ts4.5/entry-point/combine.d.ts"
+      ]
+    }
+  }
+}

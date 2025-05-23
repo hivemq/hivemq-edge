@@ -18,19 +18,21 @@ package com.hivemq.configuration.entity.adapter;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.configuration.entity.EntityValidatable;
+import com.hivemq.mqtt.message.QoS;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.helpers.ValidationEventImpl;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class NorthboundMappingEntity {
+public class NorthboundMappingEntity implements EntityValidatable {
 
     @XmlElement(name = "topic", required = true)
     private final @NotNull String topic;
@@ -45,17 +47,17 @@ public class NorthboundMappingEntity {
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
     @XmlElement(name = "includeTagNames", required = true)
-    private final boolean includeTagNames;
+    private final @Nullable Boolean includeTagNames;
 
     @XmlElement(name = "includeTimestamp", required = true)
-    private final boolean includeTimestamp;
+    private final @Nullable Boolean includeTimestamp;
 
     @XmlElementWrapper(name = "mqttUserProperties", required = true)
     @XmlElement(name = "mqttUserProperty")
     private final @NotNull List<MqttUserPropertyEntity> userProperties;
 
     @XmlElement(name = "messageExpiryInterval", required = true)
-    private final @NotNull long messageExpiryInterval;
+    private final @NotNull Long messageExpiryInterval;
 
     // no-arg constructor for JaxB
     public NorthboundMappingEntity() {
@@ -85,7 +87,66 @@ public class NorthboundMappingEntity {
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
-        this.messageExpiryInterval = messageExpiryInterval;;
+        this.messageExpiryInterval = messageExpiryInterval;
+    }
+
+    public static @NotNull NorthboundMappingEntity fromPersistence(final @NotNull NorthboundMapping northboundMapping) {
+        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
+        return new NorthboundMappingEntity(northboundMapping.getTagName(),
+                northboundMapping.getMqttTopic(),
+                northboundMapping.getMqttQos(),
+                northboundMapping.getMessageHandlingOptions(),
+                northboundMapping.getIncludeTagNames(),
+                northboundMapping.getIncludeTimestamp(),
+                mqttUserPropertyEntities,
+                northboundMapping.getMessageExpiryInterval());
+    }
+
+    public static @NotNull NorthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.NorthboundMapping northboundMapping) {
+        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
+                .stream()
+                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
+                        mqttUserProperty.getValue()))
+                .collect(Collectors.toList());
+
+        final var qos = switch (northboundMapping.getMaxQoS()) {
+            case AT_MOST_ONCE -> 0;
+            case AT_LEAST_ONCE -> 1;
+            case EXACTLY_ONCE -> 2;
+        };
+
+        return new NorthboundMappingEntity(northboundMapping.getTagName(),
+                northboundMapping.getTopic(),
+                qos,
+                MessageHandlingOptions.MQTTMessagePerTag,
+                northboundMapping.getIncludeTagNames(),
+                northboundMapping.getIncludeTimestamp(),
+                mqttUserPropertyEntities,
+                northboundMapping.getMessageExpiryInterval() != null ?
+                        northboundMapping.getMessageExpiryInterval() :
+                        Long.MAX_VALUE);
+    }
+
+    public static @NotNull NorthboundMappingEntity fromPollingContext(PollingContext ctx) {
+        final List<MqttUserPropertyEntity> mqttUserProperties = ctx.getUserProperties()
+                .stream()
+                .map(mqttUserPropertyEntity -> new MqttUserPropertyEntity(mqttUserPropertyEntity.getName(),
+                        mqttUserPropertyEntity.getValue()))
+                .collect(Collectors.toList());
+
+        return new NorthboundMappingEntity(ctx.getTagName(),
+                ctx.getMqttTopic(),
+                ctx.getMqttQos(),
+                ctx.getMessageHandlingOptions(),
+                ctx.getIncludeTagNames(),
+                ctx.getIncludeTimestamp(),
+                mqttUserProperties,
+                ctx.getMessageExpiryInterval());
     }
 
     public @NotNull String getTagName() {
@@ -116,59 +177,25 @@ public class NorthboundMappingEntity {
         return maxQoS;
     }
 
-    @NotNull public long getMessageExpiryInterval() {
+    public long getMessageExpiryInterval() {
         return messageExpiryInterval;
     }
 
+    @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        if (topic == null || topic.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "topic is missing", null));
+        EntityValidatable.notEmpty(validationEvents, topic, "topic");
+        EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
+        EntityValidatable.notMatch(validationEvents,
+                () -> QoS.valueOf(maxQoS) != null,
+                () -> "maxQoS " + maxQoS + " is invalid");
+        EntityValidatable.notNull(validationEvents, messageHandlingOptions, "messageHandlingOptions");
+        EntityValidatable.notNull(validationEvents, includeTagNames, "includeTagNames");
+        EntityValidatable.notNull(validationEvents, includeTimestamp, "includeTimestamp");
+        if (EntityValidatable.notNull(validationEvents, messageExpiryInterval, "messageExpiryInterval")) {
+            EntityValidatable.notMatch(validationEvents,
+                    () -> messageExpiryInterval > 0,
+                    () -> "messageExpiryInterval " + messageExpiryInterval + " is not greater than 0");
         }
-        if (tagName == null || tagName.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
-        }
-    }
-
-    public static @NotNull NorthboundMappingEntity fromPersistence(final @NotNull NorthboundMapping northboundMapping) {
-        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
-                .stream()
-                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
-                        mqttUserProperty.getValue()))
-                .collect(Collectors.toList());
-
-        return new NorthboundMappingEntity(
-                northboundMapping.getTagName(),
-                northboundMapping.getMqttTopic(),
-                northboundMapping.getMqttQos(),
-                northboundMapping.getMessageHandlingOptions(),
-                northboundMapping.getIncludeTagNames(),
-                northboundMapping.getIncludeTimestamp(),
-                mqttUserPropertyEntities,
-                northboundMapping.getMessageExpiryInterval());
-    }
-
-    public static @NotNull NorthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.NorthboundMapping northboundMapping) {
-        final List<MqttUserPropertyEntity> mqttUserPropertyEntities = northboundMapping.getUserProperties()
-                .stream()
-                .map(mqttUserProperty -> new MqttUserPropertyEntity(mqttUserProperty.getName(),
-                        mqttUserProperty.getValue()))
-                .collect(Collectors.toList());
-
-        final var qos = switch (northboundMapping.getMaxQoS()) {
-            case AT_MOST_ONCE -> 0;
-            case AT_LEAST_ONCE -> 1;
-            case EXACTLY_ONCE -> 2;
-        };
-
-        return new NorthboundMappingEntity(
-                northboundMapping.getTagName(),
-                northboundMapping.getTopic(),
-                qos,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                northboundMapping.getIncludeTagNames(),
-                northboundMapping.getIncludeTimestamp(),
-                mqttUserPropertyEntities,
-                northboundMapping.getMessageExpiryInterval() != null ? northboundMapping.getMessageExpiryInterval() : Long.MAX_VALUE);
     }
 
     public @NotNull NorthboundMapping toPersistence() {
@@ -177,8 +204,7 @@ public class NorthboundMappingEntity {
                 .map(mqttUserPropertyEntity -> new MqttUserProperty(mqttUserPropertyEntity.getName(),
                         mqttUserPropertyEntity.getValue()))
                 .collect(Collectors.toList());
-        return new NorthboundMapping(
-                this.getTagName(),
+        return new NorthboundMapping(this.getTagName(),
                 this.getTopic(),
                 this.getMaxQoS(),
                 this.getMessageExpiryInterval(),
@@ -191,10 +217,9 @@ public class NorthboundMappingEntity {
     public @NotNull com.hivemq.edge.api.model.NorthboundMapping toApi() {
         final List<com.hivemq.edge.api.model.MqttUserProperty> mqttUserProperties = this.getUserProperties()
                 .stream()
-                .map(mqttUserPropertyEntity ->
-                        (com.hivemq.edge.api.model.MqttUserProperty) com.hivemq.edge.api.model.MqttUserProperty.builder()
-                            .name(mqttUserPropertyEntity.getName())
-                            .value(mqttUserPropertyEntity.getValue())
+                .map(mqttUserPropertyEntity -> (com.hivemq.edge.api.model.MqttUserProperty) com.hivemq.edge.api.model.MqttUserProperty.builder()
+                        .name(mqttUserPropertyEntity.getName())
+                        .value(mqttUserPropertyEntity.getValue())
                         .build())
                 .toList();
 
@@ -206,8 +231,7 @@ public class NorthboundMappingEntity {
             default -> com.hivemq.edge.api.model.QoS.AT_MOST_ONCE;
         };
 
-        return com.hivemq.edge.api.model.NorthboundMapping
-                .builder()
+        return com.hivemq.edge.api.model.NorthboundMapping.builder()
                 .tagName(this.getTagName())
                 .topic(this.getTopic())
                 .maxQoS(maxQos)
@@ -242,28 +266,14 @@ public class NorthboundMappingEntity {
                 '}';
     }
 
-    public static @NotNull NorthboundMappingEntity fromPollingContext(PollingContext ctx) {
-        final List<MqttUserPropertyEntity> mqttUserProperties = ctx.getUserProperties()
-                .stream()
-                .map(mqttUserPropertyEntity -> new MqttUserPropertyEntity(mqttUserPropertyEntity.getName(),
-                        mqttUserPropertyEntity.getValue()))
-                .collect(Collectors.toList());
-
-        return new NorthboundMappingEntity(
-                ctx.getTagName(),
-                ctx.getMqttTopic(),
-                ctx.getMqttQos(),
-                ctx.getMessageHandlingOptions(),
-                ctx.getIncludeTagNames(),
-                ctx.getIncludeTimestamp(),
-                mqttUserProperties,
-                ctx.getMessageExpiryInterval());
-    }
-
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final NorthboundMappingEntity that = (NorthboundMappingEntity) o;
         return getMaxQoS() == that.getMaxQoS() &&
                 isIncludeTagNames() == that.isIncludeTagNames() &&

@@ -59,7 +59,7 @@ tasks.test {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(configurations.runtimeClasspath)
-    into("${buildDir}/deps/libs")
+    into("${layout.buildDirectory}/deps/libs")
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }

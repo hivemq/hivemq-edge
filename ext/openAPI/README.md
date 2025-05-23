@@ -60,3 +60,4 @@ redocly split  <source to file>/openAPI.yaml --outDir <destination folter>/
 - Any change to the document MUST be done on a new clean PR
 - Any change to the document MUST be reviewed and approved by both backend and frontend
 - Changes to either backend or frontend code MUST NOT be added to the PR proposing the modifications of the specs
+

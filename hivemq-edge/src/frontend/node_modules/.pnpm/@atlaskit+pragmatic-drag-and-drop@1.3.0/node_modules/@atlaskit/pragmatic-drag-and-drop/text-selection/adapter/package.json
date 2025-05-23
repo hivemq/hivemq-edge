@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/text-selection/adapter",
+  "main": "../../dist/cjs/entry-point/text-selection/adapter.js",
+  "module": "../../dist/esm/entry-point/text-selection/adapter.js",
+  "module:es2019": "../../dist/es2019/entry-point/text-selection/adapter.js",
+  "sideEffects": true,
+  "types": "../../dist/types/entry-point/text-selection/adapter.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../../dist/types-ts4.5/entry-point/text-selection/adapter.d.ts"
+      ]
+    }
+  }
+}

@@ -1,0 +1,232 @@
+name: Frontend - React Testing Pyramid
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      PERCY_TOKEN:
+        required: false
+
+defaults:
+  run:
+    working-directory: ./hivemq-edge-frontend/
+
+jobs:
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+
+      - name: 🧪 Run Prettier
+        run: pnpm lint:prettier
+
+      - name: 🧪 Run ESLint
+        run: pnpm lint:eslint
+
+  unit_tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+
+      - name: 🧪 Run Test
+        run: pnpm test:coverage
+
+      - name: 💾 Upload Vitest Code Coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lcov-vitest
+          path: hivemq-edge-frontend/coverage-vitest/lcov.info
+          if-no-files-found: ignore
+          retention-days: 1
+
+  build_production:
+    name: Build Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+
+      - name: 🏗️ Build Application
+        run: pnpm run build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: application
+          path: ./hivemq-edge-frontend/dist
+          retention-days: 1
+
+  lighthouse:
+    name: Lighthouse Performance
+    runs-on: ubuntu-latest
+    needs: [ build_production ]
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: application
+          path: ./hivemq-edge-frontend/dist
+
+      - name: 🚥 Run Lighthouse audits
+        uses: treosh/lighthouse-ci-action@2f8dda6cf4de7d73b29853c3f29e73a01e297bd8 # v12
+        id: lighthouse
+        with:
+          temporaryPublicStorage: true # upload lighthouse report to the temporary storage
+          ## budgetPath: ./budget.json # test performance budgets
+          uploadArtifacts: true # save results as an action artifacts
+          configPath: 'hivemq-edge-frontend/.lighthouserc.cjs'
+
+  percy_prepare:
+    name: Percy (initialise parallel)
+    runs-on: ubuntu-latest
+    outputs:
+      LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - id: percy
+        run: |
+          echo "nonce=$(date +'%s')" >> "$GITHUB_OUTPUT"
+
+  cypress_matrix:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [ build_production, percy_prepare ]
+    env:
+      LOCAL_NONCE: ${{ needs.percy_prepare.outputs.LOCAL_NONCE }}
+      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+    outputs:
+      LOCAL_NONCE: ${{ env.LOCAL_NONCE }}
+    strategy:
+      matrix:
+        cypress: [
+          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
+          { component: true, spec: "./src/components/**/*", target: "Components" },
+          { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
+          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
+          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
+        ]
+    name: Cypress - ${{ matrix.cypress.target }}
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: application
+          path: ./hivemq-edge-frontend/dist
+
+      - name: 🧪 Run Cypress suite
+        uses: cypress-io/github-action@v6
+        with:
+          component: ${{ matrix.cypress.component }}
+          spec: ${{ matrix.cypress.spec }}
+          start: pnpm preview --port 3000
+          working-directory: ./hivemq-edge-frontend/
+          command-prefix: 'npx percy exec --parallel'
+          quiet: true
+        env:
+          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+      # after the test, store videos
+      - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cypress-${{ matrix.cypress.target }}-videos
+          path: hivemq-edge-frontend/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: 💾 Upload Cypress Code Coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lcov-cypress-${{ matrix.cypress.target }}
+          path: hivemq-edge-frontend/coverage-cypress/lcov.info
+          if-no-files-found: ignore
+          retention-days: 1
+
+  sonarqube:
+    name: SonarQube
+    needs: [ cypress_matrix, unit_tests ]
+    # Should we collect partial test results and combine them ?
+    if: success() || failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Download all LCOV Artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: hivemq-edge-frontend/coverage-combined
+          pattern: lcov-*
+          merge-multiple: false
+      - name: Verify LCOV Artifacts
+        # Should contain the lcov.info summary, in subdirectory named from the tasks
+        run: |
+          ls -R ./coverage-combined
+          ls -R **/**/*.info
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf # v5
+        with:
+          projectBaseDir: hivemq-edge-frontend
+          args: >
+            -Dsonar.verbose=false
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  percy_finalise:
+    name: Percy (finalise)
+    needs: [ cypress_matrix ]
+    runs-on: ubuntu-latest
+    env:
+      LOCAL_NONCE: ${{ needs.cypress_matrix.outputs.LOCAL_NONCE }}
+      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+          run-install: true
+
+      - run: npx percy build:finalize
+        env:
+          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}

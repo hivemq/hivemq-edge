@@ -1,0 +1,2 @@
+import{_ as i}from"./PropertyPanelController-B_GTknPx.js";(function(){try{var t=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},s=new t.Error().stack;s&&(t._sentryDebugIds=t._sentryDebugIds||{},t._sentryDebugIds[s]="93185ea5-8e70-432a-8f09-478b08afb011",t._sentryDebugIdIdentifier="sentry-dbid-93185ea5-8e70-432a-8f09-478b08afb011")}catch{}})();var e,n=(e=class{constructor(s){this.init=s,this.records=this.init()}reset(){this.records=this.init()}},i(e,"ImperativeState"),e);export{n as I};
+//# sourceMappingURL=chunk-RGXPSUNZ-TLZ7wQwX.js.map

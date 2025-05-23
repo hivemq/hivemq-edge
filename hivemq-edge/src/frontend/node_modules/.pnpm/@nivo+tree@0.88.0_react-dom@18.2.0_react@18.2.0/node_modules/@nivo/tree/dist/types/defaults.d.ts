@@ -1,0 +1,5 @@
+import { CommonProps, TreeCanvasProps, TreeSvgProps } from './types';
+export declare const commonDefaultProps: Pick<CommonProps<any>, 'identity' | 'mode' | 'layout' | 'nodeSize' | 'nodeColor' | 'fixNodeColorAtDepth' | 'linkCurve' | 'linkThickness' | 'linkColor' | 'enableLabel' | 'label' | 'labelsPosition' | 'orientLabel' | 'labelOffset' | 'isInteractive' | 'useMesh' | 'meshDetectionRadius' | 'debugMesh' | 'highlightAncestorNodes' | 'highlightDescendantNodes' | 'highlightAncestorLinks' | 'highlightDescendantLinks' | 'nodeTooltipPosition' | 'nodeTooltipAnchor' | 'role' | 'animate' | 'motionConfig'>;
+export declare const svgDefaultProps: typeof commonDefaultProps & Required<Pick<TreeSvgProps<any>, 'layers' | 'nodeComponent' | 'linkComponent' | 'labelComponent' | 'linkTooltipAnchor'>>;
+export declare const canvasDefaultProps: typeof commonDefaultProps & Required<Pick<TreeCanvasProps<any>, 'layers' | 'renderNode' | 'renderLink' | 'renderLabel' | 'pixelRatio'>>;
+//# sourceMappingURL=defaults.d.ts.map

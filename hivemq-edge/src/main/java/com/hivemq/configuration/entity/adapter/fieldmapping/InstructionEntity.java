@@ -17,15 +17,19 @@ package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
-public class InstructionEntity {
+public class InstructionEntity implements EntityValidatable {
 
     @JsonProperty("source")
     @XmlElement(name = "source")
@@ -98,5 +102,11 @@ public class InstructionEntity {
     @Override
     public int hashCode() {
         return Objects.hash(getSourceFieldName(), getDestinationFieldName());
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        // TODO
+        Optional.ofNullable(origin).ifPresent(entity -> entity.validate(validationEvents));
     }
 }

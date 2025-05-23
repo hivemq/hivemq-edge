@@ -1,0 +1,1 @@
+{"version":3,"file":"SankeyNodeTooltip.d.ts","sourceRoot":"","sources":["../../src/SankeyNodeTooltip.tsx"],"names":[],"mappings":";AACA,OAAO,EAAE,WAAW,EAAE,WAAW,EAAE,eAAe,EAAE,MAAM,SAAS,CAAA;AAEnE,MAAM,WAAW,sBAAsB,CAAC,CAAC,SAAS,WAAW,EAAE,CAAC,SAAS,WAAW;IAChF,IAAI,EAAE,eAAe,CAAC,CAAC,EAAE,CAAC,CAAC,CAAA;CAC9B;AAED,eAAO,MAAM,iBAAiB,wGAI7B,CAAA"}

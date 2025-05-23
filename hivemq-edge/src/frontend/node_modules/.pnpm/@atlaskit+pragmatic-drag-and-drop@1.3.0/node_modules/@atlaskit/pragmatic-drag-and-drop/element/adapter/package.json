@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/element/adapter",
+  "main": "../../dist/cjs/entry-point/element/adapter.js",
+  "module": "../../dist/esm/entry-point/element/adapter.js",
+  "module:es2019": "../../dist/es2019/entry-point/element/adapter.js",
+  "sideEffects": true,
+  "types": "../../dist/types/entry-point/element/adapter.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../../dist/types-ts4.5/entry-point/element/adapter.d.ts"
+      ]
+    }
+  }
+}

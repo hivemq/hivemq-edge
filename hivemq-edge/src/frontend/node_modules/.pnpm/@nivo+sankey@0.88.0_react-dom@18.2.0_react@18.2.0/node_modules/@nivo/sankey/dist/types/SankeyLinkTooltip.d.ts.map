@@ -1,0 +1,1 @@
+{"version":3,"file":"SankeyLinkTooltip.d.ts","sourceRoot":"","sources":["../../src/SankeyLinkTooltip.tsx"],"names":[],"mappings":";AACA,OAAO,EAAE,WAAW,EAAE,WAAW,EAAE,eAAe,EAAE,MAAM,SAAS,CAAA;AAgBnE,MAAM,WAAW,sBAAsB,CAAC,CAAC,SAAS,WAAW,EAAE,CAAC,SAAS,WAAW;IAChF,IAAI,EAAE,eAAe,CAAC,CAAC,EAAE,CAAC,CAAC,CAAA;CAC9B;AAED,eAAO,MAAM,iBAAiB,wGAe7B,CAAA"}

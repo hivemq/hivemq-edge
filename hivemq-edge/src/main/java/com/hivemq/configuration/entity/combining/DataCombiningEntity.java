@@ -20,39 +20,36 @@ import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 
 // JAXB can not handle records ... :-(
 public class DataCombiningEntity {
 
-    @JsonProperty("id")
-    @XmlElement(name = "id")
-    private final @NotNull UUID id;
+    @JsonProperty(value = "id", required = true)
+    @XmlElement(name = "id", required = true)
+    private @NotNull UUID id;
 
-    @JsonProperty("sources")
-    @XmlElement(name = "sources")
-    private final @NotNull DataCombiningSourcesEntity sources;
+    @JsonProperty(value = "sources", required = true)
+    @XmlElement(name = "sources", required = true)
+    private @NotNull DataCombiningSourcesEntity sources;
 
-    @JsonProperty("destination")
-    @XmlElement(name = "destination")
-    private final @NotNull DataCombiningDestinationEntity destination;
+    @JsonProperty(value = "destination", required = true)
+    @XmlElement(name = "destination", required = true)
+    private @NotNull DataCombiningDestinationEntity destination;
 
-    @JsonProperty("instructions")
-    @XmlElementWrapper(name = "instructions")
+    @JsonProperty(value = "instructions", required = true)
+    @XmlElementWrapper(name = "instructions", required = true)
     @XmlElement(name = "instruction")
-    private final @NotNull List<InstructionEntity> instructions;
+    private @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
     public DataCombiningEntity() {
-        this.destination = new DataCombiningDestinationEntity();
-        this.id = UUID.randomUUID();
-        this.sources = new DataCombiningSourcesEntity();
-        this.instructions = new ArrayList<>();
     }
 
     public DataCombiningEntity(
@@ -60,10 +57,30 @@ public class DataCombiningEntity {
             final @NotNull DataCombiningSourcesEntity sources,
             final @NotNull DataCombiningDestinationEntity destination,
             final @NotNull List<InstructionEntity> instructions) {
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(sources, "sources must not be null");
+        Objects.requireNonNull(destination, "destination must not be null");
+        Objects.requireNonNull(instructions, "instructions must not be null");
         this.id = id;
         this.sources = sources;
         this.destination = destination;
         this.instructions = instructions;
+    }
+
+    public @NotNull UUID getId() {
+        return id;
+    }
+
+    public @NotNull List<InstructionEntity> getInstructions() {
+        return instructions;
+    }
+
+    public @NotNull DataCombiningSourcesEntity getSources() {
+        return sources;
+    }
+
+    public @NotNull DataCombiningDestinationEntity getDestination() {
+        return destination;
     }
 
     @Override
@@ -100,22 +117,5 @@ public class DataCombiningEntity {
         result = 31 * result + destination.hashCode();
         result = 31 * result + instructions.hashCode();
         return result;
-    }
-
-
-    public @NotNull UUID getId() {
-        return id;
-    }
-
-    public @NotNull List<InstructionEntity> getInstructions() {
-        return instructions;
-    }
-
-    public @NotNull DataCombiningSourcesEntity getSources() {
-        return sources;
-    }
-
-    public @NotNull DataCombiningDestinationEntity getDestination() {
-        return destination;
     }
 }

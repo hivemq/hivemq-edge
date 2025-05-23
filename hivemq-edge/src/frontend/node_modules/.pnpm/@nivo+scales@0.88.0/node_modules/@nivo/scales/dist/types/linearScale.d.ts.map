@@ -1,0 +1,1 @@
+{"version":3,"file":"linearScale.d.ts","sourceRoot":"","sources":["../../src/linearScale.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,WAAW,EAAe,WAAW,IAAI,aAAa,EAAE,MAAM,UAAU,CAAA;AACjF,OAAO,EAAE,eAAe,EAAE,WAAW,EAAE,iBAAiB,EAAE,SAAS,EAAE,MAAM,SAAS,CAAA;AAEpF,eAAO,MAAM,iBAAiB,6EAQvB,eAAe,yCAEZ,MAAM,QACN,SAAS,wBAyBlB,CAAA;AAED,eAAO,MAAM,eAAe,2GAS3B,CAAA"}

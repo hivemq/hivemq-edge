@@ -1,0 +1,30 @@
+{
+    "name": "@types/scheduler",
+    "version": "0.23.0",
+    "description": "TypeScript definitions for scheduler",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/scheduler",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Nathan Bierema",
+            "githubUsername": "Methuselah96",
+            "url": "https://github.com/Methuselah96"
+        },
+        {
+            "name": "Sebastian Silbermann",
+            "githubUsername": "eps1lon",
+            "url": "https://github.com/eps1lon"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/scheduler"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "d0aa79298fef5ad2c8802ed3691de2c1849dfcc22f231f196d2053ae10087bed",
+    "typeScriptVersion": "4.7"
+}

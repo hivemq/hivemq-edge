@@ -1,0 +1,1 @@
+{"version":3,"file":"Crosshair.d.ts","sourceRoot":"","sources":["../../src/Crosshair.tsx"],"names":[],"mappings":";AAEA,OAAO,EAAE,aAAa,EAAE,MAAM,SAAS,CAAA;AAEvC,UAAU,cAAc;IACpB,KAAK,EAAE,MAAM,CAAA;IACb,MAAM,EAAE,MAAM,CAAA;IACd,IAAI,EAAE,aAAa,CAAA;IACnB,CAAC,EAAE,MAAM,CAAA;IACT,CAAC,EAAE,MAAM,CAAA;CACZ;AAED,eAAO,MAAM,SAAS,sEAAwC,cAAc,iBAsC1E,CAAA"}

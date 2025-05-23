@@ -1,0 +1,66 @@
+/// <reference types="react" />
+import { LayerId, ChordCommonProps } from './types';
+export declare const commonDefaultProps: Omit<ChordCommonProps, 'valueFormat' | 'margin' | 'theme' | 'onArcMouseEnter' | 'onArcMouseMove' | 'onArcMouseLeave' | 'onArcClick' | 'onRibbonMouseEnter' | 'onRibbonMouseMove' | 'onRibbonMouseLeave' | 'onRibbonClick' | 'renderWrapper' | 'ariaLabel' | 'ariaLabelledBy' | 'ariaDescribedBy'> & {
+    layers: LayerId[];
+};
+export declare const svgDefaultProps: {
+    ribbonBlendMode: NonNullable<import("@nivo/core").CssMixBlendMode | undefined>;
+    ribbonTooltip: import("react").MemoExoticComponent<({ ribbon }: import("./types").RibbonTooltipComponentProps) => JSX.Element>;
+    legends: import("@nivo/legends").LegendProps[];
+    label: import("@nivo/core").PropertyAccessor<Omit<import("./types").ArcDatum, "label" | "color">, string>;
+    animate: boolean;
+    motionConfig: string | Partial<import("@react-spring/core").AnimationConfig>;
+    padAngle: number;
+    innerRadiusRatio: number;
+    innerRadiusOffset: number;
+    colors: import("@nivo/colors").OrdinalColorScaleConfig<Omit<import("./types").ArcDatum, "label" | "color">>;
+    arcOpacity: number;
+    activeArcOpacity: number;
+    inactiveArcOpacity: number;
+    arcBorderWidth: number;
+    arcBorderColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    arcTooltip: import("./types").ArcTooltipComponent;
+    ribbonOpacity: number;
+    activeRibbonOpacity: number;
+    inactiveRibbonOpacity: number;
+    ribbonBorderWidth: number;
+    ribbonBorderColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    enableLabel: boolean;
+    labelOffset: number;
+    labelRotation: number;
+    labelTextColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    isInteractive: boolean;
+    role: string;
+    layers: LayerId[];
+};
+export declare const canvasDefaultProps: {
+    pixelRatio: number;
+    legends: import("@nivo/legends").LegendProps[];
+    label: import("@nivo/core").PropertyAccessor<Omit<import("./types").ArcDatum, "label" | "color">, string>;
+    animate: boolean;
+    motionConfig: string | Partial<import("@react-spring/core").AnimationConfig>;
+    padAngle: number;
+    innerRadiusRatio: number;
+    innerRadiusOffset: number;
+    colors: import("@nivo/colors").OrdinalColorScaleConfig<Omit<import("./types").ArcDatum, "label" | "color">>;
+    arcOpacity: number;
+    activeArcOpacity: number;
+    inactiveArcOpacity: number;
+    arcBorderWidth: number;
+    arcBorderColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    arcTooltip: import("./types").ArcTooltipComponent;
+    ribbonBlendMode: import("@nivo/core").CssMixBlendMode;
+    ribbonOpacity: number;
+    activeRibbonOpacity: number;
+    inactiveRibbonOpacity: number;
+    ribbonBorderWidth: number;
+    ribbonBorderColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    enableLabel: boolean;
+    labelOffset: number;
+    labelRotation: number;
+    labelTextColor: import("@nivo/colors").InheritedColorConfig<import("./types").ArcDatum>;
+    isInteractive: boolean;
+    role: string;
+    layers: LayerId[];
+};
+//# sourceMappingURL=defaults.d.ts.map

@@ -16,19 +16,21 @@
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public class FieldMappingEntity {
+public class FieldMappingEntity implements EntityValidatable {
 
     @XmlElementWrapper(name = "instructions")
     @XmlElement(name = "instruction")
@@ -83,5 +85,10 @@ public class FieldMappingEntity {
     @Override
     public int hashCode() {
         return Objects.hashCode(getInstructions());
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        instructions.forEach(entity -> entity.validate(validationEvents));
     }
 }

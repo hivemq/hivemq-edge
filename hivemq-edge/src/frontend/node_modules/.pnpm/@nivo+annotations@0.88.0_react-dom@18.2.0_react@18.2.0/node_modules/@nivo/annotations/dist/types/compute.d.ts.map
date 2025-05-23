@@ -1,0 +1,1 @@
+{"version":3,"file":"compute.d.ts","sourceRoot":"","sources":["../../src/compute.ts"],"names":[],"mappings":"AAUA,OAAO,EACH,wBAAwB,EACxB,0BAA0B,EAC1B,eAAe,EACf,iBAAiB,EACjB,sBAAsB,EACzB,MAAM,SAAS,CAAA;AAGhB,eAAO,MAAM,eAAe;OAEjB,MAAM;OACN,MAAM;;;;;;8BAwDP,CAAA;AAEV,eAAO,MAAM,YAAY,YACZ,MAAM,WACN,MAAM,WACN,MAAM,WACN,MAAM,WAKlB,CAAA;AAED,eAAO,MAAM,iBAAiB,iDAE3B,sBA8FF,CAAA"}
