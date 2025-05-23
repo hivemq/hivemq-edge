@@ -34,7 +34,7 @@ import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import io.netty.channel.group.ChannelGroup;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public class MetricsModule {

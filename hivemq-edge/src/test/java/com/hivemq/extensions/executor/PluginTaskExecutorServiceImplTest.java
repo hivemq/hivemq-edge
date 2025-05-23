@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.util.Iterator;
 import java.util.List;
 

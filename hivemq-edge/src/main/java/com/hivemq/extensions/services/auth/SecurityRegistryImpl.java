@@ -24,8 +24,8 @@ import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticator
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

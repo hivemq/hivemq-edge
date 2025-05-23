@@ -22,9 +22,9 @@ import com.hivemq.api.auth.provider.ITokenVerifier;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.Token;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.container.ContainerRequestContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import java.util.Optional;
 
 /**

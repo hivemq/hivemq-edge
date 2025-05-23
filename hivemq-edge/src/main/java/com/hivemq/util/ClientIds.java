@@ -19,8 +19,8 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.hivemq.configuration.HivemqId;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 

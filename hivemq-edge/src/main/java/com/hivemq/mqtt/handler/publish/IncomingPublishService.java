@@ -46,8 +46,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelHandlerContext;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 
 /**

@@ -36,7 +36,7 @@ import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.CLIENT_LIFECYCLE_EVENT_HANDLER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.CONNECTION_LIMITER;

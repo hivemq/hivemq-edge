@@ -20,8 +20,8 @@ import com.hivemq.api.auth.handler.AuthenticationResult;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Optional;
 
 /**

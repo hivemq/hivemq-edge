@@ -16,8 +16,8 @@
 package com.hivemq.util;
 
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * Simple Wrapper used to have an easier time in unit tests when nano time is used in methods and we want to control/mock it.
