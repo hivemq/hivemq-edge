@@ -13,5 +13,9 @@ properties:
   inLicenseAllowed:
     type: boolean
     description: The function can be used with the current user's license
+  supportedEvents:
+    type: array
+    items:
+      $ref: ./BehaviorPolicyTransitionEvent.yaml
     
 
