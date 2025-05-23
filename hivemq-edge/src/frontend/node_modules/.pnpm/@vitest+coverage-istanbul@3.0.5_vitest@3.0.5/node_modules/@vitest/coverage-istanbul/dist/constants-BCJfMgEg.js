@@ -1,0 +1,3 @@
+const COVERAGE_STORE_KEY = "__VITEST_COVERAGE__";
+
+export { COVERAGE_STORE_KEY as C };

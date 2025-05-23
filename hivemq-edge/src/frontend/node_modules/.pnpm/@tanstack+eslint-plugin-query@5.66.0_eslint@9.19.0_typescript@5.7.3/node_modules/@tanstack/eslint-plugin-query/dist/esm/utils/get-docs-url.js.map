@@ -1,0 +1,1 @@
+{"version":3,"file":"get-docs-url.js","sources":["../../../src/utils/get-docs-url.ts"],"sourcesContent":["export const getDocsUrl = (ruleName: string): string =>\n  `https://tanstack.com/query/latest/docs/eslint/${ruleName}`\n"],"names":[],"mappings":"AAAO,MAAM,aAAa,CAAC,aACzB,iDAAiD,QAAQ;"}

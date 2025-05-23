@@ -1,0 +1,1 @@
+{"version":3,"file":"bandScale.d.ts","sourceRoot":"","sources":["../../src/bandScale.ts"],"names":[],"mappings":"AAAA,OAAO,EAAa,SAAS,IAAI,WAAW,EAAE,MAAM,UAAU,CAAA;AAC9D,OAAO,EAAE,iBAAiB,EAAE,SAAS,EAAE,aAAa,EAAE,WAAW,EAAE,SAAS,EAAE,MAAM,SAAS,CAAA;AAE7F,eAAO,MAAM,eAAe,yCACN,aAAa,wCAEzB,MAAM,QACN,SAAS,qBAQlB,CAAA;AAED,eAAO,MAAM,aAAa,4EAKzB,CAAA"}

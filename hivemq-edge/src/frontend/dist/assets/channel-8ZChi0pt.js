@@ -1,0 +1,2 @@
+import{U as r,I as d}from"./PropertyPanelController-B_GTknPx.js";(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},n=new e.Error().stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="1041a73a-b137-41d0-b0bf-5c0b95411403",e._sentryDebugIdIdentifier="sentry-dbid-1041a73a-b137-41d0-b0bf-5c0b95411403")}catch{}})();const o=(e,n)=>r.lang.round(d.parse(e)[n]);export{o as c};
+//# sourceMappingURL=channel-8ZChi0pt.js.map

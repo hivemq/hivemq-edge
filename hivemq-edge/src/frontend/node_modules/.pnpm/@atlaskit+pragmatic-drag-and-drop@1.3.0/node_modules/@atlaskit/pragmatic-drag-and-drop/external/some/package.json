@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/external/some",
+  "main": "../../dist/cjs/entry-point/external/some.js",
+  "module": "../../dist/esm/entry-point/external/some.js",
+  "module:es2019": "../../dist/es2019/entry-point/external/some.js",
+  "sideEffects": true,
+  "types": "../../dist/types/entry-point/external/some.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../../dist/types-ts4.5/entry-point/external/some.d.ts"
+      ]
+    }
+  }
+}

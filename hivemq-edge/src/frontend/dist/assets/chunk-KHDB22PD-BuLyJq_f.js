@@ -1,0 +1,2 @@
+import{o}from"./index-cMih3SEP.js";(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},n=new e.Error().stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="e949a4e3-50f5-4a12-b80d-c14a68e6ec34",e._sentryDebugIdIdentifier="sentry-dbid-e949a4e3-50f5-4a12-b80d-c14a68e6ec34")}catch{}})();var a=o({displayName:"ChevronDownIcon",d:"M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"});export{a as C};
+//# sourceMappingURL=chunk-KHDB22PD-BuLyJq_f.js.map

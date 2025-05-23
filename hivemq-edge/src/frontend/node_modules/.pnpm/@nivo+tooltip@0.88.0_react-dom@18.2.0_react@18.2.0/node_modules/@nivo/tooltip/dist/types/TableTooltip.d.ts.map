@@ -1,0 +1,1 @@
+{"version":3,"file":"TableTooltip.d.ts","sourceRoot":"","sources":["../../src/TableTooltip.tsx"],"names":[],"mappings":"AAAA,OAAO,EAAuB,SAAS,EAAE,MAAM,OAAO,CAAA;AAQtD,UAAU,iBAAiB;IACvB,KAAK,CAAC,EAAE,SAAS,CAAA;IACjB,aAAa,CAAC,EAAE,MAAM,GAAG,CAAC,OAAO,CAAA;IACjC,IAAI,CAAC,EAAE,SAAS,EAAE,EAAE,CAAA;CACvB;AAED,eAAO,MAAM,YAAY,uEAA8C,iBAAiB,wBA8BtF,CAAA"}
