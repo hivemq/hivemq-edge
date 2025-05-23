@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -224,7 +223,14 @@ public class OpcUaConnection {
             final @NotNull Map<OpcuaTag, Boolean> tagToFirstSeen) {
         return new OpcUaSubscription.SubscriptionListener() {
             @Override
+            public void onKeepAliveReceived(final OpcUaSubscription subscription) {
+                //TODO add metrics: protocolAdapterMetricsService.increment("subscription.keepalive.count");
+                OpcUaSubscription.SubscriptionListener.super.onKeepAliveReceived(subscription);
+            }
+
+            @Override
             public void onTransferFailed(final OpcUaSubscription subscription, final StatusCode status) {
+                //TODO add metrics protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
                 OpcUaSubscription.SubscriptionListener.super.onTransferFailed(subscription, status);
             }
 

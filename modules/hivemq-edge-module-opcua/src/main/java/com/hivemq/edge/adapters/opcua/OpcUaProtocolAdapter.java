@@ -58,7 +58,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
-        var tagList = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
+        final var tagList = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
         tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
 
         this.opcUaConnection = new OpcUaConnection(
@@ -142,7 +142,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         final WritingContext writeContext = input.getWritingContext();
-        var opcuaTag = tagNameToTag.get(writeContext.getTagName());
+        final var opcuaTag = tagNameToTag.get(writeContext.getTagName());
         if(opcUaConnection.isStarted()) {
             if(opcuaTag != null) {
                 System.out.println(input.getWritingPayload());
@@ -169,7 +169,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         //TODO treat non-existent tags
-        var tag = tagNameToTag.get(input.getTagName());
+        final var tag = tagNameToTag.get(input.getTagName());
         opcUaConnection
                 .createTagScheam(tag)
                 .whenComplete((result, throwable) -> {

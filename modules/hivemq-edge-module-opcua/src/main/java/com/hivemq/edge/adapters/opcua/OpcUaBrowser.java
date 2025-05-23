@@ -119,7 +119,7 @@ public class OpcUaBrowser {
 
         if (!continuationPoints.isEmpty()) {
             //TODO this looks liek a bug in Milo
-            var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
+            final var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
             if(!cont.isEmpty()) {
                 childFutures.add(Objects.requireNonNull(client)
                         .browseNextAsync(false, continuationPoints)

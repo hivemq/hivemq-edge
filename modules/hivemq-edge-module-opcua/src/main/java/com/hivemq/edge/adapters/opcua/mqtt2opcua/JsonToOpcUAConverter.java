@@ -51,7 +51,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator.parseIt;
+import static com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator.generateFieldInformationForEncoding;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Guid;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int16;
 import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int32;
@@ -122,7 +122,7 @@ public class JsonToOpcUAConverter {
             }
             log.debug("DataType '{}' has binary encoding id '{}'.", dataType, binaryEncodingId);
 
-            final var fields = parseIt(client, binaryEncodingId);
+            final var fields = generateFieldInformationForEncoding(client, binaryEncodingId);
 
 
             log.debug("Found fields '{}' for binary encoding id '{}'.", fields, binaryEncodingId);

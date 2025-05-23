@@ -175,7 +175,7 @@ public class JsonSchemaGenerator {
 
 
         final ArrayNode requiredAttributesArray = objectMapper.createArrayNode();
-        parseIt(client, binaryEncodingId).forEach(fieldInformation -> {
+        generateFieldInformationForEncoding(client, binaryEncodingId).forEach(fieldInformation -> {
             if(fieldInformation.required()) {
                 //TODO in the old version we added ALL fields to the list of required ones,
                 // this is correct but may break compatibility
@@ -200,16 +200,18 @@ public class JsonSchemaGenerator {
             boolean required,
             List<FieldInformation> nestedFields) {}
 
-    public static List<FieldInformation> parseIt(final @NotNull OpcUaClient client, final @NotNull NodeId binaryEncodingId) {
+    public static List<FieldInformation> generateFieldInformationForEncoding(final @NotNull OpcUaClient client, final @NotNull NodeId binaryEncodingId) {
         try {
             final var definition = extractStructureDefinition(client, binaryEncodingId);
             final List<FieldInformation> ret = new ArrayList<>();
             for (final StructureField field : definition.getFields()) {
+
                 final var dataType = OpcUaDataType.fromNodeId(field.getDataType());
+
                 if(OpcUaDataType.ExtensionObject.equals(dataType)) {
                     final var dataTypeId = field.getTypeId().toNodeId(client.getNamespaceTable());
                     final DataType nextType = client.getDataTypeTree().getDataType(dataTypeId.get());
-                    final var subFields = parseIt(client, nextType.getBinaryEncodingId());
+                    final var subFields = generateFieldInformationForEncoding(client, nextType.getBinaryEncodingId());
                     ret.add(new FieldInformation(
                             field.getName(),
                             dataType.getNodeId().expanded(client.getNamespaceTable()).getNamespaceUri(),
