@@ -1,4 +1,5 @@
 get:
+  deprecated: true
   description: >-
     This endpoints provides the means to get information on the available
     Functions for the HiveMQ Data Hub. The information is provided in form of a
