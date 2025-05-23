@@ -13,30 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hivemq.http.error;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class ErrorType {
-    private final @NotNull String type;
-    private final @NotNull String title;
-    private final @NotNull String detail;
-
-    public ErrorType(@NotNull final String type, @NotNull final String title, @NotNull final String detail) {
-        this.type = type;
-        this.title = title;
-        this.detail = detail;
+public class ErrorDataPolicyValidation extends Error {
+    public ErrorDataPolicyValidation(final @NotNull String detail, final @Nullable String parameter) {
+        super(detail, parameter);
     }
 
-    public @NotNull String getType() {
-        return type;
-    }
-
-    public @NotNull String getTitle() {
-        return title;
-    }
-
-    public @NotNull String getDetail() {
-        return detail;
+    public ErrorDataPolicyValidation(final @NotNull String detail) {
+        super(detail);
     }
 }

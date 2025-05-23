@@ -8,7 +8,9 @@ properties:
   errors:
     type: array
     items:
-      $ref: ./Error.yaml
+      oneOf:
+        - $ref: ./errors/Error.yaml
+        - $ref: ./errors/ErrorDataPolicyValidation.yaml
   status:
     type: integer
     format: int32
