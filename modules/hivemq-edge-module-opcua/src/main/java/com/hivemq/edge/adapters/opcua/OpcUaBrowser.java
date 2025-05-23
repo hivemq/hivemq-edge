@@ -50,9 +50,6 @@ public class OpcUaBrowser {
         }
 
         final var collectedNodes = new ArrayList<CollectedNode>();
-
-
-
         return browse(client, browseRoot, null, (ref, parent) -> {
                 final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
                 final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
@@ -105,7 +102,10 @@ public class OpcUaBrowser {
             if(continuationPoint != null) {
                 continuationPoints.add(continuationPoint);
             }
-            Collections.addAll(references, result.getReferences());
+            final var refs = result.getReferences();
+            if(refs != null) {
+                Collections.addAll(references, result.getReferences());
+            }
         }
 
         for (final ReferenceDescription rd : references) {
@@ -118,15 +118,18 @@ public class OpcUaBrowser {
         }
 
         if (!continuationPoints.isEmpty()) {
-            childFutures.add(Objects.requireNonNull(client)
-                    .browseNextAsync(false,continuationPoints)
-                    .thenCompose(nextBrowseResult ->
-                            handleBrowseResult(
-                                    client,
-                                    parent,
-                                    callback,
-                                    depth,
-                                    nextBrowseResult.getResults())));
+            //TODO this looks liek a bug in Milo
+            var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
+            if(!cont.isEmpty()) {
+                childFutures.add(Objects.requireNonNull(client)
+                        .browseNextAsync(false, continuationPoints)
+                        .thenCompose(nextBrowseResult -> handleBrowseResult(
+                                            client,
+                                            parent,
+                                            callback,
+                                            depth,
+                                            nextBrowseResult.getResults())));
+            }
         }
 
         return CompletableFuture.allOf(childFutures.toArray(new CompletableFuture[]{}));

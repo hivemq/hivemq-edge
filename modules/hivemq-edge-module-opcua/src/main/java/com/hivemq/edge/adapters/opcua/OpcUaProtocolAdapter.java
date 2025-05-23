@@ -64,7 +64,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.opcUaConnection = new OpcUaConnection(
                 input.getConfig().getUri(),
                 tagList,
-                input.getConfig().getOpcuaToMqttConfig(),
+                input.getConfig(),
                 input.moduleServices().protocolAdapterTagStreamingService(),
                 input.adapterFactories().dataPointFactory(),
                 input.moduleServices().eventService(),
@@ -117,6 +117,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 .discoverValues(input.getRootNode(), input.getDepth())
                 .whenComplete((collectedNodes, throwable) -> {
                     if (throwable != null) {
+                        throwable.printStackTrace();
                         output.fail(throwable, "Unable to discover values");
                     } else {
                         final var nodeTree = output.getNodeTree();
@@ -144,6 +145,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         var opcuaTag = tagNameToTag.get(writeContext.getTagName());
         if(opcUaConnection.isStarted()) {
             if(opcuaTag != null) {
+                System.out.println(input.getWritingPayload());
                 opcUaConnection
                         .write(opcuaTag, (OpcUaPayload)input.getWritingPayload())
                         .whenComplete((statusCode, throwable) -> {
