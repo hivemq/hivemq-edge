@@ -1,0 +1,10 @@
+type: object
+description: List of function configurations
+properties:
+  items:
+    type: array
+    description: List of function configurations
+    items:
+      $ref: ./FunctionSpecs.yaml
+required:
+  - items

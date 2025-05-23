@@ -8,7 +8,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/FunctionSpecs.yaml
+            $ref: ../components/schemas/FunctionSpecsList.yaml
       description: Success
     '500':
       content:
