@@ -1,10 +1,10 @@
 package com.hivemq.api.errors.common;
 
-import com.hivemq.api.errors.ErrorBase;
+import com.hivemq.api.errors.ApiError;
 import com.hivemq.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 
-public class TemporaryNotAvailableError extends ErrorBase<TemporaryNotAvailableError> {
+public class TemporaryNotAvailableError extends ApiError<TemporaryNotAvailableError> {
     public TemporaryNotAvailableError() {
         super("errors/common/TemporaryNotAvailableError",
                 "The endpoint is temporarily not available",

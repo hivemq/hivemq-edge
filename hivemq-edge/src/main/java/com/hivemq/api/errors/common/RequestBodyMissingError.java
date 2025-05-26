@@ -1,14 +1,14 @@
 package com.hivemq.api.errors.common;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.errors.ErrorBase;
+import com.hivemq.api.errors.ApiError;
 import com.hivemq.http.HttpStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class RequestBodyMissingError extends ErrorBase<RequestBodyMissingError> {
+public class RequestBodyMissingError extends ApiError<RequestBodyMissingError> {
     @JsonProperty("parameterName")
     @Schema(description = "Correlation id")
     protected @NotNull String parameterName;
