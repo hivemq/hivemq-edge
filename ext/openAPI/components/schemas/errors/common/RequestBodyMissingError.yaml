@@ -1,5 +1,5 @@
 allOf:
-  - $ref: "../ErrorBase.yaml"
+  - $ref: "../ApiError.yaml"
   - type: object
     properties:
       parameterName:
