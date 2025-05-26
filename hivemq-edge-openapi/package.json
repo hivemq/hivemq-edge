@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "start": "redocly preview-docs -p 8888",
-    "build": "redocly bundle -o dist/bundle.yaml",
+    "build": "redocly bundle openapi/openapi.yaml -o dist/bundle.yaml",
     "test": "redocly lint"
   }
 }
