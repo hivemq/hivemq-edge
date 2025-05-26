@@ -1,7 +1,0 @@
-name: filter
-description: The URL-encoded filter of the topic filter that should be deleted.
-in: path
-required: true
-schema:
-  type: string
-  format: urlencoded

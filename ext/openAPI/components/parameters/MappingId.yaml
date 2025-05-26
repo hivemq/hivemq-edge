@@ -1,7 +1,0 @@
-name: mappingId
-description: The unique id of the mapping to retrieve.
-in: path
-required: true
-schema:
-  type: string
-  format: uuid

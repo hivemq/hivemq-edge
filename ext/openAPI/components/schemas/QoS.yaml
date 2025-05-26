@@ -1,7 +1,0 @@
-type: string
-description: The maximum MQTT-QoS for the outgoing messages.
-enum:
-  - AT_MOST_ONCE
-  - AT_LEAST_ONCE
-  - EXACTLY_ONCE
-default: EXACTLY_ONCE

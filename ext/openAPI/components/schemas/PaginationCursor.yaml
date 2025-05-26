@@ -1,6 +1,0 @@
-type: object
-description: Links for pagination
-nullable: true
-properties:
-  next:
-    type: string

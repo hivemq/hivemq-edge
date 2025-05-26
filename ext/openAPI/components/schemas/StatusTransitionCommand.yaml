@@ -1,9 +1,0 @@
-type: object
-properties:
-  command:
-    type: string
-    description: The command to perform on the target connection.
-    enum:
-      - START
-      - STOP
-      - RESTART
