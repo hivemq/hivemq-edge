@@ -399,7 +399,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
       description: DataPolicy creation failed
     '409':
       content:
@@ -417,7 +417,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
     '507':
       content:

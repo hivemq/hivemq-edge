@@ -1152,7 +1152,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/RequestBodyMissingError'
           description: DataPolicy creation failed
         '409':
           content:
@@ -1170,7 +1170,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
@@ -4746,6 +4746,41 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
+    Error2:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Correlation id
+        detail:
+          type: string
+          description: A detailed description of the error.
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the error type.
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code associated with the error.
+      required:
+        - title
+        - status
+        - type
+    RequestBodyMissingError:
+      allOf:
+        - $ref: '#/components/schemas/Error2'
+        - type: object
+          properties:
+            parameterName:
+              type: string
+              description: The name of the missing request body parameter.
+    TemporaryNotAvailableError:
+      allOf:
+        - $ref: '#/components/schemas/Error2'
     Errors:
       type: object
     PolicySchema:
