@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -27,6 +29,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.databases.config.DatabaseType;
@@ -47,8 +52,10 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
+
+public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabasesPollingProtocolAdapter.class);
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -60,6 +67,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull List<Tag> tags;
     private final @NotNull DatabaseConnection databaseConnection;
+    private final @NotNull AdapterFactories adapterFactories;
 
     public DatabasesPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -69,6 +77,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags = input.getTags();
+        this.adapterFactories = input.adapterFactories();
 
         log.debug("Building connection string");
 
@@ -149,24 +158,16 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public void poll(final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
-        log.debug("Getting polling context");
-        final PollingContext pollingContext = pollingInput.getPollingContext();
-
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         /* Connect to the database and execute the query */
-        log.debug("Checking database connection state");
         log.debug("Handling tags for the adapter");
-        tags.stream()
-                .filter(tag -> tag.getName().equals(pollingContext.getTagName()))
-                .findFirst()
-                .ifPresentOrElse(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag),
-                        () -> pollingOutput.fail("Polling for Database protocol adapter failed because the used tag '" +
-                                pollingInput.getPollingContext().getTagName() +
-                                "' was not found. For the polling to work the tag must be created via REST API or the UI."));
+        tags.forEach(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag));
+
+        protocolAdapterState.setConnectionStatus(STATELESS);
         pollingOutput.finish();
     }
 
-    private void loadDataFromDB(final @NotNull PollingOutput output, final @NotNull DatabasesAdapterTag tag) {
+    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull DatabasesAdapterTag tag) {
         // ARM to ensure the connection is closed afterward
         try (final Connection connection = databaseConnection.getConnection()) {
             log.debug("Getting tag definition");
@@ -179,6 +180,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
             assert result != null;
             final ArrayList<ObjectNode> resultObject = new ArrayList<>();
             final ResultSetMetaData resultSetMD = result.getMetaData();
+            final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
             while (result.next()) {
                 final int numColumns = resultSetMD.getColumnCount();
                 final ObjectNode node = OBJECT_MAPPER.createObjectNode();
@@ -190,7 +192,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
                 if (definition.getSpiltLinesInIndividualMessages()) {
                     log.debug("Creating unique message");
                     log.debug("Value : {}", node);
-                    output.addDataPoint("queryResult", node);
+                    output.addDataPoint(dataPointFactory.create(tag.getName(), node));
                 } else {
                     resultObject.add(node);
                 }
@@ -200,7 +202,7 @@ public class DatabasesPollingProtocolAdapter implements PollingProtocolAdapter {
             if (!definition.getSpiltLinesInIndividualMessages()) {
                 log.debug("Publishing all lines in a single message");
                 log.debug("Value : {}", resultObject);
-                output.addDataPoint("queryResult", resultObject);
+                output.addDataPoint(dataPointFactory.create(tag.getName(), resultObject));
             }
         } catch (final Exception e) {
             output.fail(e, null);
