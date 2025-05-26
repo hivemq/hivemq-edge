@@ -74,6 +74,29 @@ public class ErrorDataPolicyValidation extends Error {
         return this;
     }
 
+    @Override
+    public @NotNull String toString() {
+        return "ErrorDataPolicyValidation{" +
+                "detail='" +
+                getDetail() +
+                '\'' +
+                ", parameter='" +
+                getParameter() +
+                '\'' +
+                ", type='" +
+                getType() +
+                '\'' +
+                ", path='" +
+                path +
+                '\'' +
+                ", rule=" +
+                rule +
+                ", title='" +
+                title +
+                '\'' +
+                '}';
+    }
+
     public enum ErrorDataPolicyValidationRule {
         MissingField("data-policy-validation-missing-field"),
         ;
