@@ -1,2 +1,2 @@
 allOf:
-  - $ref: "../ErrorBase.yaml"
+  - $ref: "../ApiError.yaml"
