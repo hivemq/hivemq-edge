@@ -6,7 +6,7 @@ properties:
     description: The function is a terminal element of a pipeline
   isDataOnly:
     type: boolean
-    description: The function is only abvailable for Data Policies
+    description: The function is only available for Data Policies
   hasArguments:
     type: boolean
     description: The function has extra arguments
