@@ -10,6 +10,15 @@ properties:
   parameter:
     type: string
     description: The parameter causing the issue
+  path:
+    type: string
+    description: The path of the issue
+  rule:
+    type: string
+    description: The rule of the issue
+  title:
+    type: string
+    description: The title of the issue
 required:
   - detail
   - type
