@@ -27,4 +27,8 @@ public class ErrorDataPolicyValidation extends Error {
     public ErrorDataPolicyValidation(final @NotNull String detail) {
         super(detail);
     }
+
+    public static @NotNull ErrorDataPolicyValidation missingField(final @NotNull String field) {
+        return new ErrorDataPolicyValidation(String.format("Required field '%s' is missing", field), field);
+    }
 }

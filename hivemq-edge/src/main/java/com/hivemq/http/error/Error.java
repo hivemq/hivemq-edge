@@ -33,7 +33,6 @@ public class Error {
     public static final @NotNull String REQUIRED_FIELD_MISSING_TITLE = "Required field missing";
     public static final @NotNull String AT_LEAST_ONE_FIELD_MISSING_TITLE = "One of the fields must be present.";
     public static final @NotNull String EMPTY_STRING_TITLE = "String must not be empty";
-    private static final Logger log = LoggerFactory.getLogger(Error.class);
 
     @JsonProperty(value = "detail", required = true)
     @Schema(description = "Detailed contextual description of this error")
@@ -65,17 +64,6 @@ public class Error {
 
     public static @NotNull <E extends Error> List<Error> cast(final @NotNull List<E> errors) {
         return errors.stream().map(e -> (Error) e).toList();
-    }
-
-    public static @NotNull <E extends Error> Error missingField(final @NotNull Class<E> eClass, final @NotNull String field) {
-        final String detail = String.format("Required field '%s' is missing", field);
-        try {
-            final var constructor = eClass.getConstructor(String.class, String.class);
-            return constructor.newInstance(detail, field);
-        } catch (final Throwable t) {
-            log.warn("Failed to create error of type {} for field {}. Using default constructor.", eClass.getName(), field, t);
-        }
-        return new Error(detail, field);
     }
 
     public static @NotNull Error missingField(final @NotNull String field) {
