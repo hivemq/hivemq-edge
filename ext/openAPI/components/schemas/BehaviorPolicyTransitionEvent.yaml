@@ -1,0 +1,9 @@
+type: string
+description: Accepted event in transition
+enum:
+  - Event.OnAny
+  - Connection.OnDisconnect
+  - Mqtt.OnInboundConnect
+  - Mqtt.OnInboundDisconnect
+  - Mqtt.OnInboundPublish
+  - Mqtt.OnInboundSubscribe

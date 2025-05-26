@@ -1,0 +1,19 @@
+description: The configuration of a DataHub operation function
+type: object
+properties:
+  functionId:
+    type: string
+    description: The unique name of the function
+  metadata:
+    $ref: ./FunctionMetadata.yaml
+    description: The metadata associated with the function
+  schema:
+    $ref: ./JsonNode.yaml
+    description: the full JSON-Schema describimng the function and its arguments
+  uiSchema:
+    $ref: ./JsonNode.yaml
+    description: An optional UI Schema to customise the rendering of the configuraton form
+required:
+  - functionId
+  - metadata
+  - schema
