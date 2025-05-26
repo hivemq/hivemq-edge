@@ -270,7 +270,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
       description: Policy creation failed
     '409':
       content:
@@ -288,7 +288,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/TemporaryNotAvailableError.yaml"
       description: Temporarily unavailable
     '507':
       content:
