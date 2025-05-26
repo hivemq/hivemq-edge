@@ -6,8 +6,9 @@
   },
   "private": true,
   "scripts": {
-    "start": "redocly preview-docs -p 8888",
-    "build": "redocly bundle openapi/openapi.yaml -o dist/bundle.yaml",
-    "test": "redocly lint"
+    "dev:start": "redocly preview-docs -p 8888",
+    "dev:build": "redocly bundle openapi/openapi.yaml -o dist/bundle.yaml",
+    "dev:test": "redocly lint",
+    "prod:release": "redocly bundle openapi/openapi.yaml -o ../ext/hivemq-edge-openapi-2025.9-SNAPSHOT.yaml"
   }
 }
