@@ -15,7 +15,7 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.api.errors.Error;
+import com.hivemq.api.errors.ErrorBase;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class ErrorResponseUtil {
                 .build();
     }
 
-    public static @NotNull Response errorResponse(final @NotNull Error<?> error) {
+    public static @NotNull Response errorResponse(final @NotNull ErrorBase<?> error) {
         return Response.status(error.getStatus())
                 .entity(error)
                 .header("Content-Type", "application/json;charset=utf-8")
