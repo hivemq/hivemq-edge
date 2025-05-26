@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public abstract class ErrorBase<E extends ErrorBase<E>> {
+public abstract class ApiError<E extends ApiError<E>> {
 
     @JsonProperty("code")
     @Schema(description = "Correlation id")
@@ -27,7 +27,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
     protected @NotNull String type;
 
     @JsonCreator
-    public ErrorBase(
+    public ApiError(
             @JsonProperty(value = "type") final @NotNull String type,
             @JsonProperty(value = "title") final @NotNull String title,
             @JsonProperty(value = "detail") final @Nullable String detail,
@@ -44,7 +44,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         return code;
     }
 
-    public @NotNull ErrorBase<E> setCode(@Nullable final String code) {
+    public @NotNull ApiError<E> setCode(@Nullable final String code) {
         this.code = code;
         return this;
     }
@@ -53,7 +53,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         return detail;
     }
 
-    public @NotNull ErrorBase<E> setDetail(@Nullable final String detail) {
+    public @NotNull ApiError<E> setDetail(@Nullable final String detail) {
         this.detail = detail;
         return this;
     }
@@ -62,7 +62,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         return status;
     }
 
-    public @NotNull ErrorBase<E> setStatus(final int status) {
+    public @NotNull ApiError<E> setStatus(final int status) {
         this.status = status;
         return this;
     }
@@ -71,7 +71,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         return title;
     }
 
-    public @NotNull ErrorBase<E> setTitle(@NotNull final String title) {
+    public @NotNull ApiError<E> setTitle(@NotNull final String title) {
         this.title = Objects.requireNonNull(title);
         return this;
     }
@@ -80,7 +80,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         return type;
     }
 
-    public @NotNull ErrorBase<E> setType(@NotNull final String type) {
+    public @NotNull ApiError<E> setType(@NotNull final String type) {
         this.type = Objects.requireNonNull(type);
         return this;
     }
@@ -110,7 +110,7 @@ public abstract class ErrorBase<E extends ErrorBase<E>> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final ErrorBase<?> errorBase = (ErrorBase<?>) o;
+        final ApiError<?> errorBase = (ApiError<?>) o;
         return status == errorBase.status &&
                 Objects.equals(code, errorBase.code) &&
                 Objects.equals(detail, errorBase.detail) &&
