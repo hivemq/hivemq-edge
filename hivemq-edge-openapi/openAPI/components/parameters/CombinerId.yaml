@@ -1,0 +1,7 @@
+name: combinerId
+description: The unique id of the combiner to retrieve.
+in: path
+required: true
+schema:
+  type: string
+  format: uuid

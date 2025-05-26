@@ -1,0 +1,9 @@
+type: object
+description: >-
+  The deserializers used by the policy for particular message and/or payload
+  types.
+properties:
+  publish:
+    $ref: ./BehaviorPolicyDeserializer.yaml
+  will:
+    $ref: ./BehaviorPolicyDeserializer.yaml

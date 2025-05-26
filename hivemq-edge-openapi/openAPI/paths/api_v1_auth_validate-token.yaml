@@ -1,0 +1,21 @@
+post:
+  description: Authorize the presented user to obtain a secure token for use on the API.
+  operationId: validate-token
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ApiBearerToken.yaml
+  responses:
+    '200':
+      description: The token was valid
+    '401':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: The token was invalid
+  summary: Authorize the presented user to obtain a secure token for use on the API.
+  tags:
+    - Authentication
+    - Authentication Endpoint
