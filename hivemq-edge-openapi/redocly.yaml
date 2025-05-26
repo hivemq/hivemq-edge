@@ -1,12 +1,14 @@
 # See https://redocly.com/docs/cli/configuration/ for more information.
 apis:
-  sample@v1: 
-    root: openapi/openapi.yaml
+  hivemq-edge@v1: 
+    root: ./openapi/openapi.yaml
 extends:
   - recommended
 rules:
   no-unused-components: error
-  no-server-example.com: off
+  ### Custom rules - error must be fixed
+  security-defined: off
+  no-server-example.com: error
 theme:
   openapi:
     htmlTemplate: ./docs/index.html
