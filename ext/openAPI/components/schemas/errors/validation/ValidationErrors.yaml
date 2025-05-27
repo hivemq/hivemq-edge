@@ -1,0 +1,12 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      errors:
+        type: array
+        description: List of validation errors.
+        items:
+          anyOf:
+            - $ref: "./MissingFieldValidationError.yaml"
+    required:
+      - errors
