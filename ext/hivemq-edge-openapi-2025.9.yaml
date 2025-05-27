@@ -444,7 +444,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestBodyMissingError'
+                anyOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/BehaviorPolicyValidationErrors'
           description: Policy creation failed
         '409':
           content:
@@ -1152,7 +1154,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestBodyMissingError'
+                anyOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/DataPolicyValidationErrors'
           description: DataPolicy creation failed
         '409':
           content:
@@ -4625,12 +4629,12 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/BehaviorPolicy'
-    ErrorBase:
+    ApiError:
       type: object
       properties:
         code:
           type: string
-          description: Correlation id
+          description: Correlation id.
         detail:
           type: string
           description: A detailed description of the error.
@@ -4651,15 +4655,54 @@ components:
         - type
     RequestBodyMissingError:
       allOf:
-        - $ref: '#/components/schemas/ErrorBase'
+        - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
             parameterName:
               type: string
               description: The name of the missing request body parameter.
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed contextual description of the validation error.
+        type:
+          type: string
+          description: Type of the validation error.
+      required:
+        - detail
+        - type
+    MissingFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The missing field.
+          required:
+            - field
+            - type
+    ValidationErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            errors:
+              type: array
+              description: List of validation errors.
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/MissingFieldValidationError'
+          required:
+            - errors
+    BehaviorPolicyValidationErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
     TemporaryNotAvailableError:
       allOf:
-        - $ref: '#/components/schemas/ErrorBase'
+        - $ref: '#/components/schemas/ApiError'
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -4781,6 +4824,9 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
+    DataPolicyValidationErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
     Errors:
       type: object
     PolicySchema:
