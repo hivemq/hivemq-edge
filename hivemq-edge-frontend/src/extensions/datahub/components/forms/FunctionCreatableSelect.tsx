@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next'
 
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 
-import type { FunctionSpecs } from '../../types.ts'
+import { type FunctionSpecs } from '@datahub/types.ts'
+import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -71,6 +72,7 @@ const getValue = (props: WidgetProps) => {
 }
 
 const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
+  const { data: functions } = useGetFilteredFunction()
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
   const onCreatableSelectChange = useCallback<
