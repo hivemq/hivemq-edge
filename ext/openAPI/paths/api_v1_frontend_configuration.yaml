@@ -1,0 +1,122 @@
+get:
+  description: Obtain configuration.
+  operationId: get-configuration
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            default-configuration:
+              description: An example default gateway configuration.
+              summary: Example gateway configuration
+              value:
+                environment:
+                  properties:
+                    environment-type: TEST
+                cloudLink:
+                  displayText: HiveMQ Cloud
+                  url: https://hivemq.com/cloud
+                  description: >-
+                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed
+                    diam nonumy eirmod tempor invidunt ut labore et dolore magna
+                    aliquyam erat, sed diam voluptua. At vero eos et accusam et
+                    justo duo dolores et ea rebum. Stet clita kasd gubergren,
+                  external: true
+                gitHubLink:
+                  displayText: GitHub
+                  url: https://github.com/hivemq/hivemq-edge
+                  description: >-
+                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed
+                    diam nonumy eirmod tempor invidunt ut labore et dolore magna
+                    aliquyam erat, sed diam voluptua. At vero eos et accusam et
+                    justo duo dolores et ea rebum. Stet clita kasd gubergren,
+                  external: true
+                documentationLink:
+                  displayText: Documentation
+                  url: https://github.com/hivemq/hivemq-edge/README.MD
+                  description: >-
+                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed
+                    diam nonumy eirmod tempor invidunt ut labore et dolore magna
+                    aliquyam erat, sed diam voluptua. At vero eos et accusam et
+                    justo duo dolores et ea rebum. Stet clita kasd gubergren,
+                  external: true
+                firstUseInformation:
+                  firstUse: false
+                  prefillUsername: admin
+                  prefillPassword: password
+                  firstUseTitle: Welcome To HiveMQ Edge
+                  firstUseDescription: >-
+                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed
+                    diam nonumy eirmod tempor invidunt ut labore et dolore magna
+                    aliquyam erat, sed diam voluptua. At vero eos et accusam et
+                    justo duo dolores et ea rebum. Stet clita kasd gubergren, no
+                    sea takimata sanctus est Lorem ipsum dolor sit amet.
+                ctas:
+                  items:
+                    - displayText: Connect My First Device
+                      url: ./protocol-adapters?from=dashboard-cta
+                      description: >-
+                        Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+                        sed diam nonumy eirmod tempor invidunt ut labore et
+                        dolore magna aliquyam erat, sed diam voluptua. At vero
+                        eos et accusam et justo duo dolores et ea rebum. Stet
+                        clita kasd gubergren,
+                      external: false
+                    - displayText: Connect To My MQTT Broker
+                      url: ./bridges?from=dashboard-cta
+                      description: >-
+                        Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+                        sed diam nonumy eirmod tempor invidunt ut labore et
+                        dolore magna aliquyam erat, sed diam voluptua. At vero
+                        eos et accusam et justo duo dolores et ea rebum. Stet
+                        clita kasd gubergren,
+                      external: false
+                    - displayText: Learn More
+                      url: resources?from=dashboard-cta
+                      description: >-
+                        Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+                        sed diam nonumy eirmod tempor invidunt ut labore et
+                        dolore magna aliquyam erat, sed diam voluptua. At vero
+                        eos et accusam et justo duo dolores et ea rebum. Stet
+                        clita kasd gubergren,
+                      external: false
+                resources:
+                  items:
+                    - displayText: Power Of Smart Manufacturing
+                      url: >-
+                        https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
+                      description: ''
+                      target: ''
+                      imageUrl: ''
+                      external: true
+                    - displayText: Power Of Smart Manufacturing
+                      url: >-
+                        https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
+                      description: ''
+                      target: ''
+                      imageUrl: ''
+                      external: true
+                modules:
+                  items: []
+                extensions:
+                  items:
+                    - id: extension-1
+                      version: 1.0.0
+                      name: My First Extension
+                      description: >-
+                        Some extension description here which could span
+                        multiple lines
+                      author: HiveMQ
+                      priority: 0
+                    - id: hivemq-allow-all-extension
+                      version: 1.0.0
+                      name: Allow All Extension
+                      author: HiveMQ
+                      priority: 0
+                      installed: true
+          schema:
+            $ref: ../components/schemas/GatewayConfiguration.yaml
+      description: Success
+  summary: Obtain frontend configuration
+  tags:
+    - Frontend

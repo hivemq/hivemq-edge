@@ -1,0 +1,10 @@
+type: object
+description: User properties to be added to each outgoing mqtt message.
+properties:
+  name:
+    type: string
+  value:
+    type: string
+required:
+  - name
+  - value
