@@ -2,14 +2,15 @@ import type { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChang
 import type {
   BehaviorPolicy,
   BehaviorPolicyOnTransition,
+  BehaviorPolicyTransitionEvent,
   DataPolicy,
+  DataPolicyMatching,
   DataPolicyValidator,
   PolicyOperation,
   PolicySchema,
   SchemaReference,
   Script,
 } from '@/api/__generated__'
-import { type DataPolicyMatching } from '@/api/__generated__'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
 import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
@@ -310,19 +311,9 @@ export enum StateType {
   Publishing = 'Publishing',
 }
 
-// TODO[18761] Add to the OpenAPI specs, see https://hivemq.kanbanize.com/ctrl_board/4/cards/18761/details/
-export enum TransitionType {
-  ON_ANY = 'Event.OnAny',
-  ON_DISCONNECT = 'Connection.OnDisconnect',
-  ON_INBOUND_CONNECT = 'Mqtt.OnInboundConnect',
-  ON_INBOUND_DISCONNECT = 'Mqtt.OnInboundDisconnect',
-  ON_INBOUND_PUBLISH = 'Mqtt.OnInboundPublish',
-  ON_INBOUND_SUBSCRIBE = 'Mqtt.OnInboundSubscribe',
-}
-
 export interface TransitionData extends DataHubNodeData {
   model?: BehaviorPolicyType
-  event?: TransitionType
+  event?: BehaviorPolicyTransitionEvent
   from?: StateType
   to?: StateType
   type?: FsmState.Type

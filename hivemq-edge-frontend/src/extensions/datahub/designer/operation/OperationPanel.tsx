@@ -5,6 +5,7 @@ import type { CustomValidator } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 
+import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -13,13 +14,13 @@ import { getOperationSchema } from '@datahub/designer/operation/OperationPanel.u
 import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import type { DataPolicyData, PanelProps, TransitionData, TransitionType } from '@datahub/types.ts'
+import type { DataPolicyData, PanelProps, TransitionData } from '@datahub/types.ts'
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 
 interface OperationPanelContext {
   type: DataHubNodeType | undefined
-  transition: TransitionType | undefined
+  transition: BehaviorPolicyTransitionEvent | undefined
 }
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {

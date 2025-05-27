@@ -3,7 +3,7 @@ import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import type { BehaviorPolicyData, OperationData, TransitionData, WorkspaceState } from '@datahub/types.ts'
-import { BehaviorPolicyType, DataHubNodeType, StateType, TransitionType } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType, StateType } from '@datahub/types.ts'
 import {
   checkValidityTransitions,
   extractEventStates,
@@ -11,6 +11,7 @@ import {
   loadTransitions,
 } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import type { BehaviorPolicyOnTransition, PolicySchema, Script } from '@/api/__generated__'
+import { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import { type BehaviorPolicy } from '@/api/__generated__'
 
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
@@ -87,7 +88,7 @@ describe('checkValidityTransitions', () => {
         y: 325,
       },
       data: {
-        event: TransitionType.ON_INBOUND_DISCONNECT,
+        event: BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_DISCONNECT,
         from: StateType.NotDuplicated,
         to: StateType.Violated,
       },
@@ -197,7 +198,7 @@ describe('checkValidityTransitions', () => {
       data: {
         to: StateType.Violated,
         from: StateType.NotDuplicated,
-        event: TransitionType.ON_INBOUND_SUBSCRIBE,
+        event: BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_SUBSCRIBE,
       },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
@@ -261,7 +262,7 @@ describe('extractEventStates', () => {
       BehaviorPolicyType.MQTT_EVENT,
       { 'Connection.OnDisconnect': { pipeline: [] } },
       {
-        event: TransitionType.ON_DISCONNECT,
+        event: BehaviorPolicyTransitionEvent.CONNECTION_ON_DISCONNECT,
         model: BehaviorPolicyType.MQTT_EVENT,
       },
     ],
