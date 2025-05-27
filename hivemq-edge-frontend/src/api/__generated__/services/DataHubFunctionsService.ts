@@ -13,6 +13,7 @@ export class DataHubFunctionsService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
+     * @deprecated
      * Get all functions as a JSON Schema
      * This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
      * @returns JsonNode Success
