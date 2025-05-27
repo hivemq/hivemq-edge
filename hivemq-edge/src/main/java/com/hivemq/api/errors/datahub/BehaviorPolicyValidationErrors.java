@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class BahaviorPolicyValidationErrors extends ValidationErrors<BahaviorPolicyValidationErrors> {
-    protected BahaviorPolicyValidationErrors(
+public class BehaviorPolicyValidationErrors extends ValidationErrors<BehaviorPolicyValidationErrors> {
+    protected BehaviorPolicyValidationErrors(
             final @NotNull String title,
             final @Nullable String detail,
             final @Nullable List<ValidationError<?>> errors,
@@ -17,15 +17,13 @@ public class BahaviorPolicyValidationErrors extends ValidationErrors<BahaviorPol
         super(title, detail, errors, status, code);
     }
 
-    public static BahaviorPolicyValidationErrors of(final @NotNull String title, final @Nullable String detail) {
-        return new BahaviorPolicyValidationErrors(title, detail, null, 400, null);
-    }
-
-    public static BahaviorPolicyValidationErrors of(
-            final @NotNull String title,
-            final @Nullable String detail,
+    public static BehaviorPolicyValidationErrors of(
             final @Nullable List<ValidationError<?>> errors) {
-        return new BahaviorPolicyValidationErrors(title, detail, errors, 400, null);
+        return new BehaviorPolicyValidationErrors("Behavior policy is invalid",
+                "Behavior policy is invalid",
+                errors,
+                400,
+                null);
     }
 
     @Override
