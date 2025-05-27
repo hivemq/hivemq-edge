@@ -1,3 +1,4 @@
+import { useGetAllFunctions } from '@datahub/api/hooks/DataHubFunctionsService/useGetAllFunctions.ts'
 import { useMemo } from 'react'
 
 import { BehaviorPolicyTransitionEvent, type FunctionSpecs } from '@/api/__generated__'
@@ -43,8 +44,15 @@ export const useGetFilteredFunction = (
   transition?: BehaviorPolicyTransitionEvent
 ) => {
   const { isError, error, isLoading, isSuccess, data } = useGetAllFunctionSpecs()
+  const { data: xxxxxx } = useGetAllFunctions()
 
   const filteredFunctions = useMemo(() => {
+    console.log(
+      'XXXX filteredFunctions 1',
+      xxxxxx,
+      data?.items?.map((e) => e.metadata)
+    )
+
     if (!data || !data.items?.length) return []
 
     return data.items.filter((functionSpec) => {
