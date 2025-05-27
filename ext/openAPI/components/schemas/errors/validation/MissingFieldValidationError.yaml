@@ -1,0 +1,10 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      field:
+        type: string
+        description: The missing field.
+    required:
+      - field
+      - type
