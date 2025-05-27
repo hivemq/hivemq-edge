@@ -5,37 +5,47 @@ import com.hivemq.api.errors.ApiError;
 import com.hivemq.http.HttpStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public class RequestBodyMissingError extends ApiError<RequestBodyMissingError> {
-    @JsonProperty("parameterName")
-    @Schema(description = "Correlation id")
-    protected @NotNull String parameterName;
+    @JsonProperty("parameter")
+    @Schema(description = "Parameter")
+    protected @Nullable String parameter;
 
-    public RequestBodyMissingError(final @NotNull String parameterName) {
-        super("errors/common/RequestBodyMissingError",
-                "Required request body parameter " + parameterName + " missing",
-                "Required request body parameter " + parameterName + " missing",
-                HttpStatus.BAD_REQUEST_400,
-                null);
-        setParameterName(parameterName);
+    protected RequestBodyMissingError(
+            final @NotNull String title,
+            final @Nullable String detail,
+            final @Nullable String parameter) {
+        super(title, detail, HttpStatus.BAD_REQUEST_400, null);
+        setParameter(parameter);
     }
 
-    public @NotNull String getParameterName() {
-        return parameterName;
+    public static RequestBodyMissingError of(final @NotNull String parameter) {
+        return new RequestBodyMissingError("Required request body parameter " + parameter + " missing",
+                "Required request body parameter " + parameter + " missing",
+                parameter);
     }
 
-    public @NotNull RequestBodyMissingError setParameterName(final @NotNull String parameterName) {
-        this.parameterName = Objects.requireNonNull(parameterName);
+    public static RequestBodyMissingError of() {
+        return new RequestBodyMissingError("Required request body missing", "Required request body missing", null);
+    }
+
+    public @Nullable String getParameter() {
+        return parameter;
+    }
+
+    public @NotNull RequestBodyMissingError setParameter(final @Nullable String parameter) {
+        this.parameter = parameter;
         return this;
     }
 
     @Override
     public @NotNull String toString() {
         return "RequestBodyMissingError{" +
-                "parameterName='" +
-                parameterName +
+                "parameter='" +
+                parameter +
                 '\'' +
                 ", code='" +
                 code +
@@ -63,11 +73,11 @@ public class RequestBodyMissingError extends ApiError<RequestBodyMissingError> {
             return false;
         }
         final RequestBodyMissingError that = (RequestBodyMissingError) o;
-        return Objects.equals(parameterName, that.parameterName);
+        return Objects.equals(parameter, that.parameter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), parameterName);
+        return Objects.hash(super.hashCode(), parameter);
     }
 }
