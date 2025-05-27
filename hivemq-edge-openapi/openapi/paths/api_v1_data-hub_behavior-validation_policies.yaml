@@ -270,7 +270,9 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
+            anyOf:
+              - $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyValidationErrors.yaml"
       description: Policy creation failed
     '409':
       content:
