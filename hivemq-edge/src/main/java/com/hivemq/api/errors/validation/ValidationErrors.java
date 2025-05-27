@@ -21,7 +21,7 @@ public abstract class ValidationErrors<E> extends ApiError<ValidationErrors<E>> 
             final @Nullable String code) {
         super(title, detail, status, code);
         this.errors = new ArrayList<>();
-        if (errors != null) {
+        if (errors != null && !errors.isEmpty()) {
             this.errors.addAll(errors);
         }
     }
