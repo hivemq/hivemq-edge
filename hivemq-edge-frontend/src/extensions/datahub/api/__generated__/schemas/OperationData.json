@@ -13,12 +13,12 @@
         "functionId": {
           "title": "Function",
           "description": "You can use two categories of functions in your policies. Non-terminal functions allow further operations in the pipeline to be executed,\n                          while terminal functions end further operations in the pipeline",
-          "enum": [ ]
+          "enum": []
         }
       },
       "dependencies": {
         "functionId": {
-          "oneOf": [ ]
+          "oneOf": []
         }
       }
     }
