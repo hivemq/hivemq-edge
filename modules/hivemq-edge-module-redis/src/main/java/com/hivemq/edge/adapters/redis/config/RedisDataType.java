@@ -13,7 +13,7 @@ public enum RedisDataType {
 
     static {
         final Map<String, RedisDataType> temp = new HashMap<>();
-        for (RedisDataType e : values()) {
+        for (final RedisDataType e : values()) {
             temp.put(e.label, e);
         }
         BY_LABEL = Collections.unmodifiableMap(temp);
@@ -21,12 +21,12 @@ public enum RedisDataType {
 
     public final String label;
 
-    RedisDataType(String label) {
+    RedisDataType(final String label) {
         this.label = label;
     }
 
 
-    public static RedisDataType valueOfLabel(String label) {
+    public static RedisDataType valueOfLabel(final String label) {
         return BY_LABEL.get(label);
     }
 

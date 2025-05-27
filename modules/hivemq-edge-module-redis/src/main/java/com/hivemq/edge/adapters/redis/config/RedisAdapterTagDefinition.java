@@ -32,6 +32,7 @@ public class RedisAdapterTagDefinition implements TagDefinition {
     @JsonProperty(value = "field", required = false)
     @ModuleConfigField(title = "Field",
             description = "Optional field to get from Redis",
+            defaultValue = "",
             format = ModuleConfigField.FieldType.UNSPECIFIED)
     protected @Nullable String field;
 
@@ -45,9 +46,7 @@ public class RedisAdapterTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "getall", required = true)
     @ModuleConfigField(title = "Get all values",
-            description = "Get all value from the hash",
-            required = false,
-            defaultValue = "false",
+            description = "Get all value from the hash", defaultValue = "false",
             format = ModuleConfigField.FieldType.BOOLEAN)
     protected boolean getAll;
 

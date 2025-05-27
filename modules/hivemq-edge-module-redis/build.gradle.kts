@@ -8,7 +8,7 @@ plugins {
 
 
 group = "com.hivemq"
-version = "2024.9 ALPHA"
+version = "2025.8 ALPHA"
 
 repositories {
     mavenLocal()
@@ -21,7 +21,7 @@ dependencies {
     compileOnly("commons-io:commons-io:${property("commons-io.version")}")
     compileOnly("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     compileOnly("org.slf4j:slf4j-api:${property("slf4j.version")}")
-    implementation("redis.clients:jedis:5.0.2")
+    implementation("redis.clients:jedis:6.0.0")
 }
 
 dependencies {

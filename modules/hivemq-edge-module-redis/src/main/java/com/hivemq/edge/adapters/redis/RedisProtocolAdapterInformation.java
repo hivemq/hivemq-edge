@@ -58,6 +58,11 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
+    public @NotNull List<String> getLegacyProtocolIds() {
+        return ProtocolAdapterInformation.super.getLegacyProtocolIds();
+    }
+
+    @Override
     public @NotNull String getDisplayName() {
         // the name for this protocol adapter type that will be displayed within edge's ui
         return "Redis Protocol Adapter";
@@ -130,6 +135,11 @@ public class RedisProtocolAdapterInformation implements ProtocolAdapterInformati
             LOG.warn("The UISchema for the Redis Adapter could not be loaded from resources:", e);
             return null;
         }
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return 0;
     }
 
     @Override

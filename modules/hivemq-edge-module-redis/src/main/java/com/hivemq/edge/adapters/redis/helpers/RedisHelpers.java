@@ -8,16 +8,16 @@ import redis.clients.jedis.JedisPoolConfig;
 public class RedisHelpers {
     // Initialize Jedis Pool
     public JedisPool initJedisPool(final @NotNull RedisAdapterConfig adapterConfig) {
-        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        JedisPool jedisPool;
+        final JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        final JedisPool jedisPool;
         if(!adapterConfig.getPassword().isEmpty()) {
             if (!adapterConfig.getUsername().isEmpty()){
-                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60, adapterConfig.getUsername(),adapterConfig.getPassword());
+                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),180, adapterConfig.getUsername(),adapterConfig.getPassword());
             } else {
-                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),60,adapterConfig.getPassword());
+                jedisPool = new JedisPool(jedisPoolConfig,adapterConfig.getServer(),adapterConfig.getPort(),180,adapterConfig.getPassword());
             }
         } else {
-            jedisPool = new JedisPool(jedisPoolConfig, adapterConfig.getServer(), adapterConfig.getPort(), 60);
+            jedisPool = new JedisPool(jedisPoolConfig, adapterConfig.getServer(), adapterConfig.getPort(), 180);
         }
         return jedisPool;
     }
