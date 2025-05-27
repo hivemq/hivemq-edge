@@ -13,15 +13,37 @@ import { getOperationSchema } from '@datahub/designer/operation/OperationPanel.u
 import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
+import type { DataPolicyData, PanelProps, TransitionData, TransitionType } from '@datahub/types.ts'
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
+
+interface OperationPanelContext {
+  type: DataHubNodeType | undefined
+  transition: TransitionType | undefined
+}
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
-  const { data: functions } = useGetFilteredFunction()
+
+  const context = useMemo<OperationPanelContext>(() => {
+    const operationNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
+    if (!operationNode?.data) return { type: undefined, transition: undefined }
+
+    const set = getAllParents(operationNode, nodes, edges)
+    const type =
+      (Array.from(set).find((e) => e.type === DataHubNodeType.DATA_POLICY || e.type === DataHubNodeType.BEHAVIOR_POLICY)
+        ?.type as DataHubNodeType) ?? DataHubNodeType.DATA_POLICY
+
+    const transition = (
+      Array.from(set).find((e) => e.type === DataHubNodeType.TRANSITION)?.data as TransitionData | undefined
+    )?.event
+
+    return { type, transition }
+  }, [edges, nodes, selectedNode])
+
+  const { data: functions } = useGetFilteredFunction(context.type, context.transition)
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
