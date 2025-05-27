@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master**
-      - add-snyk
   workflow_call:
     inputs:
       github_ref:
