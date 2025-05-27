@@ -31,14 +31,6 @@ public class DatabasesAdapterTagDefinition implements TagDefinition {
             format = ModuleConfigField.FieldType.UNSPECIFIED)
     private final @Nullable String query;
 
-//    @JsonProperty(value = "rowLimit", required = true)
-//    @ModuleConfigField(title = "Row Limit",
-//            description = "Number of row to retrieve (default 10, maximum 99)",
-//            required = true,
-//            numberMin = 1,
-//            numberMax = 99)
-//    private final int rowLimit;
-
     @JsonProperty(value = "spiltLinesInIndividualMessages")
     @ModuleConfigField(title = "Split lines into individual messages ?",
             description = "Select this option to create a single message per line returned by the query (by default all lines are sent in a single message as an array).",
@@ -47,21 +39,14 @@ public class DatabasesAdapterTagDefinition implements TagDefinition {
 
     public DatabasesAdapterTagDefinition(
             @JsonProperty(value = "query") final @Nullable String query,
-            @JsonProperty(value = "rowLimit") final @Nullable Integer rowLimit,
             @JsonProperty(value = "spiltLinesInIndividualMessages") final @Nullable Boolean spiltLinesInIndividualMessages) {
         this.query = query;
-        assert rowLimit != null;
-        //this.rowLimit = rowLimit;
         this.spiltLinesInIndividualMessages = Objects.requireNonNullElse(spiltLinesInIndividualMessages, false);
     }
 
     public @Nullable String getQuery() {
         return query;
     }
-
-    //public int getRowLimit() {
-    //    return rowLimit;
-    //}
 
     public @NotNull Boolean getSpiltLinesInIndividualMessages() {
         return spiltLinesInIndividualMessages;
