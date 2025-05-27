@@ -1,27 +1,27 @@
-import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
-import type { Node } from '@xyflow/react'
-import { getIncomers } from '@xyflow/react'
+import { type FC, useCallback, useMemo } from 'react'
+import { type Node, getIncomers } from '@xyflow/react'
 import type { IChangeEvent } from '@rjsf/core'
 import type { CustomValidator } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
-
 import { Card, CardBody } from '@chakra-ui/react'
+
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
-import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
+import { getOperationSchema } from '@datahub/designer/operation/OperationPanel.utils.ts'
+import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
+import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
-import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
+  const { data: functions } = useGetFilteredFunction()
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
@@ -65,6 +65,10 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     [functions, onFormSubmit]
   )
 
+  const { schema, uiSchema } = useMemo(() => {
+    return getOperationSchema(functions)
+  }, [functions])
+
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     const isIdNotUnique = Boolean(pipelineIds?.find((id) => id === formData?.id))
     if (isIdNotUnique) errors['id']?.addError(t('error.validation.operation.notUnique'))
@@ -77,8 +81,8 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}
-          schema={MOCK_OPERATION_SCHEMA.schema}
-          uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
+          schema={schema}
+          uiSchema={uiSchema}
           formData={formData}
           widgets={datahubRJSFWidgets}
           noHtml5Validate={true}
