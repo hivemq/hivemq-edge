@@ -277,3 +277,21 @@ export const handlers = [
     return HttpResponse.json(MOCK_DATAHUB_FUNCTIONS, { status: 200 })
   }),
 ]
+
+export const handlersWithoutLicense = [
+  http.get('*/data-hub/functions', () => {
+    return HttpResponse.json<JsonNode>(mockFunctions, { status: 200 })
+  }),
+
+  http.get('*/data-hub/function-specs', () => {
+    return HttpResponse.json(
+      {
+        items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
+          specs.metadata.inLicenseAllowed = true
+          return specs
+        }),
+      },
+      { status: 200 }
+    )
+  }),
+]
