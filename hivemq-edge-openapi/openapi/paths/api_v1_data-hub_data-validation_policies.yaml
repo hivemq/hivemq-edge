@@ -399,7 +399,9 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
+            anyOf:
+              - $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyValidationErrors.yaml"
       description: DataPolicy creation failed
     '409':
       content:
