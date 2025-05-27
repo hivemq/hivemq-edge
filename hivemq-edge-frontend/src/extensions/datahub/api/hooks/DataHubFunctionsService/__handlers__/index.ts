@@ -9,7 +9,7 @@ export const MOCK_DATAHUB_FUNCTIONS_MQTT_USER_PROPERTY: FunctionSpecs = {
   metadata: {
     inLicenseAllowed: false,
     isTerminal: false,
-    isDataOnly: true,
+    isDataOnly: false,
     hasArguments: true,
     supportedEvents: [
       BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
@@ -75,7 +75,7 @@ export const MOCK_DATAHUB_FUNCTIONS_SYSTEM_LOG: FunctionSpecs = {
   metadata: {
     inLicenseAllowed: false,
     isTerminal: false,
-    isDataOnly: true,
+    isDataOnly: false,
     hasArguments: true,
     supportedEvents: [
       BehaviorPolicyTransitionEvent.EVENT_ON_ANY,
@@ -175,7 +175,7 @@ export const MOCK_DATAHUB_FUNCTIONS_METRICS_COUNTER_INC: FunctionSpecs = {
   metadata: {
     inLicenseAllowed: false,
     isTerminal: false,
-    isDataOnly: true,
+    isDataOnly: false,
     hasArguments: true,
     supportedEvents: [
       BehaviorPolicyTransitionEvent.EVENT_ON_ANY,
@@ -211,7 +211,7 @@ export const MOCK_DATAHUB_FUNCTIONS_MQTT_DISCONNECT: FunctionSpecs = {
   metadata: {
     inLicenseAllowed: false,
     isTerminal: true,
-    isDataOnly: true,
+    isDataOnly: false,
     hasArguments: false,
     supportedEvents: [
       BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
@@ -232,7 +232,7 @@ export const MOCK_DATAHUB_FUNCTIONS_MQTT_DROP: FunctionSpecs = {
   metadata: {
     inLicenseAllowed: false,
     isTerminal: true,
-    isDataOnly: true,
+    isDataOnly: false,
     hasArguments: true,
     supportedEvents: [
       BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_PUBLISH,
