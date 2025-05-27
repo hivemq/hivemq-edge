@@ -1,0 +1,11 @@
+type: object
+properties:
+  detail:
+    type: string
+    description: Detailed contextual description of the validation error.
+  type:
+    type: string
+    description: Type of the validation error.
+required:
+  - detail
+  - type
