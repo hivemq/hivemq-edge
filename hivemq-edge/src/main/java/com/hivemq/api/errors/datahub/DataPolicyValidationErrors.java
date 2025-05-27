@@ -17,15 +17,9 @@ public class DataPolicyValidationErrors extends ValidationErrors<DataPolicyValid
         super(title, detail, errors, status, code);
     }
 
-    public static DataPolicyValidationErrors of(final @NotNull String title, final @Nullable String detail) {
-        return new DataPolicyValidationErrors(title, detail, null, 400, null);
-    }
-
     public static DataPolicyValidationErrors of(
-            final @NotNull String title,
-            final @Nullable String detail,
             final @Nullable List<ValidationError<?>> errors) {
-        return new DataPolicyValidationErrors(title, detail, errors, 400, null);
+        return new DataPolicyValidationErrors("Data policy is invalid", "Data policy is invalid", errors, 400, null);
     }
 
     @Override
