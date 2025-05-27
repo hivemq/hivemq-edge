@@ -400,3 +400,7 @@ export type CombinedPolicy =
   | (DataPolicy & { type: PolicyType.DATA_POLICY })
   | (BehaviorPolicy & { type: PolicyType.BEHAVIOR_POLICY })
   | (DraftPolicy & { type: PolicyType.CREATE_POLICY })
+
+export interface ReactFlowSchemaFormContext {
+  functions: FunctionSpecs[]
+}

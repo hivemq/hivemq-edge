@@ -2,15 +2,14 @@ import type { FC } from 'react'
 import { useCallback } from 'react'
 import type { OptionProps, SingleValueProps, ActionMeta, OnChangeValue } from 'chakra-react-select'
 import { chakraComponents, Select } from 'chakra-react-select'
-import type { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { HStack, VStack, Text, FormLabel, FormControl } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 
-import { type FunctionSpecs } from '@datahub/types.ts'
-import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
+import type { FunctionSpecs, ReactFlowSchemaFormContext } from '@datahub/types.ts'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -71,9 +70,9 @@ const getValue = (props: WidgetProps) => {
   }
 }
 
-const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
-  const { data: functions } = useGetFilteredFunction()
+const FunctionCreatableSelect: FC<WidgetProps<unknown, RJSFSchema, ReactFlowSchemaFormContext>> = (props) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
+  const functions = props.formContext?.functions || []
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<FunctionSpecs, false>, actionMeta: ActionMeta<FunctionSpecs>) => void

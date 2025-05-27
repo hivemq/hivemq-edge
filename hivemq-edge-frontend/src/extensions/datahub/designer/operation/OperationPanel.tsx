@@ -84,6 +84,7 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
           schema={schema}
           uiSchema={uiSchema}
           formData={formData}
+          formContext={{ functions }}
           widgets={datahubRJSFWidgets}
           noHtml5Validate={true}
           onSubmit={onFixFormSubmit}
