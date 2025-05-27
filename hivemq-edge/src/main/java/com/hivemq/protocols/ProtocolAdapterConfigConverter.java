@@ -15,15 +15,16 @@
  */
 package com.hivemq.protocols;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
+import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
@@ -37,9 +38,6 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class ProtocolAdapterConfigConverter {
-
-    private static final @NotNull TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<>() {
-    };
 
     private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager;
     private final @NotNull ObjectMapper mapper;
@@ -68,21 +66,23 @@ public class ProtocolAdapterConfigConverter {
         final List<? extends Tag> tags = protocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
         final List<NorthboundMapping> northboundMappingList = protocolAdapterEntity.getNorthboundMappingEntities()
                 .stream()
-                .map(northbound -> northbound.to(mapper))
+                .map(NorthboundMappingEntity::toPersistence)
                 .collect(Collectors.toList());
         final List<SouthboundMapping> southboundMappingList = protocolAdapterEntity.getSouthboundMappingEntities()
                 .stream()
-                .map(southbound -> southbound.to(mapper))
+                .map(southbound -> southbound.toPersistence(mapper))
                 .collect(Collectors.toList());
 
         return new ProtocolAdapterConfig(protocolAdapterEntity.getAdapterId(),
                 protocolAdapterEntity.getProtocolId(),
-                protocolSpecificAdapterConfig, southboundMappingList,
+                protocolAdapterEntity.getConfigVersion(),
+                protocolSpecificAdapterConfig,
+                southboundMappingList,
                 northboundMappingList,
                 tags);
     }
 
-    private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
+    public @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(
             final @NotNull String protocolId) {
         final @NotNull Optional<ProtocolAdapterFactory<?>> factoryOptional =
                 protocolAdapterFactoryManager.get(protocolId);
@@ -109,12 +109,9 @@ public class ProtocolAdapterConfigConverter {
         return getProtocolAdapterFactory(protocolId).convertTagDefinitionObjects(mapper, domainTags);
     }
 
-    public @NotNull Map<String, Object> convertConfigToMaps(final @NotNull JsonNode config) {
-        return mapper.convertValue(config, MAP_TYPE_REFERENCE);
-    }
-
-    public @NotNull Map<String, Object> convertagTagsToMaps(final @NotNull Tag tag) {
-        return mapper.convertValue(tag, MAP_TYPE_REFERENCE);
+    public @NotNull <T extends Tag> T domaintTagToTag(
+            final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
+        return (T)getProtocolAdapterFactory(protocolId).convertTagDefinitionObject(mapper, domainTag.toTagMap());
     }
 
     public @NotNull JsonNode convertTagDefinitionToJsonNode(final @NotNull TagDefinition tagDefinition) {

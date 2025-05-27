@@ -15,28 +15,45 @@
  */
 package com.hivemq.configuration.entity.adapter.fieldmapping;
 
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.entity.EntityValidatable;
+import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-public class InstructionEntity {
+public class InstructionEntity implements EntityValidatable {
 
+    @JsonProperty("source")
     @XmlElement(name = "source")
-    private final @NotNull String sourceFieldName;
+    private @NotNull String sourceFieldName;
+
+    @JsonProperty("destination")
     @XmlElement(name = "destination")
-    private final @NotNull String destinationFieldName;
+    private @NotNull String destinationFieldName;
+
+    @JsonProperty("origin")
+    @XmlElement(name = "origin")
+    private @Nullable DataIdentifierReferenceEntity origin;
 
     // no- arg for JaxB
     public InstructionEntity() {
-        sourceFieldName = "";
-        destinationFieldName = "";
     }
 
     public InstructionEntity(
-            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
+            final @NotNull String sourceFieldName,
+            final @NotNull String destinationFieldName,
+            final @Nullable DataIdentifierReferenceEntity origin) {
         this.sourceFieldName = sourceFieldName;
         this.destinationFieldName = destinationFieldName;
+        this.origin = origin;
     }
 
     public @NotNull String getDestinationFieldName() {
@@ -47,11 +64,49 @@ public class InstructionEntity {
         return sourceFieldName;
     }
 
+    public @Nullable DataIdentifierReferenceEntity getOrigin() {
+        return origin;
+    }
+
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.getSourceFieldName(), model.getDestinationFieldName());
+        return new InstructionEntity(model.sourceFieldName(),
+                model.destinationFieldName(),
+                model.dataIdentifierReference() != null ? model.dataIdentifierReference().toPersistence() : null);
+    }
+
+    public static @NotNull InstructionEntity from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
+        return new InstructionEntity(model.getSource(),
+                model.getDestination(),
+                model.getSourceRef() != null ? DataIdentifierReferenceEntity.from(model.getSourceRef()) : null);
     }
 
     public @NotNull Instruction to() {
-        return new Instruction(getSourceFieldName(), getDestinationFieldName());
+        return new Instruction(getSourceFieldName(),
+                getDestinationFieldName(),
+                getOrigin() != null ? DataIdentifierReference.fromPersistence(getOrigin()) : null);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final InstructionEntity that = (InstructionEntity) o;
+        return Objects.equals(getSourceFieldName(), that.getSourceFieldName()) &&
+                Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getSourceFieldName(), getDestinationFieldName());
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        // TODO
+        Optional.ofNullable(origin).ifPresent(entity -> entity.validate(validationEvents));
     }
 }

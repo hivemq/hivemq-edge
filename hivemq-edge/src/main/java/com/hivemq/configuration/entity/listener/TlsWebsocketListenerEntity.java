@@ -17,9 +17,10 @@ package com.hivemq.configuration.entity.listener;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Dominik Obermaier
@@ -64,5 +65,22 @@ public class TlsWebsocketListenerEntity extends ListenerEntity {
         protocols.add("mqttv3.1");
         protocols.add("mqtt");
         return protocols;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final TlsWebsocketListenerEntity that = (TlsWebsocketListenerEntity) o;
+        return isAllowExtensions() == that.isAllowExtensions() &&
+                Objects.equals(getPath(), that.getPath()) &&
+                Objects.equals(getSubprotocols(), that.getSubprotocols()) &&
+                Objects.equals(getTls(), that.getTls());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getPath(), getSubprotocols(), isAllowExtensions(), getTls());
     }
 }

@@ -28,7 +28,7 @@ public class MqttBridge {
     private final int port;
     private final @NotNull String clientId;
     private final int keepAlive;
-    private final int sessionExpiry;
+    private final long sessionExpiry;
     private final boolean cleanStart;
     private final @Nullable String username;
     private final @Nullable String password;
@@ -46,7 +46,7 @@ public class MqttBridge {
             final int port,
             final @NotNull String clientId,
             final int keepAlive,
-            final int sessionExpiry,
+            final long sessionExpiry,
             final boolean cleanStart,
             final @Nullable String username,
             final @Nullable String password,
@@ -95,7 +95,7 @@ public class MqttBridge {
         return keepAlive;
     }
 
-    public int getSessionExpiry() {
+    public long getSessionExpiry() {
         return sessionExpiry;
     }
 
@@ -145,7 +145,7 @@ public class MqttBridge {
         private int port;
         private @Nullable String clientId;
         private int keepAlive;
-        private int sessionExpiry;
+        private long sessionExpiry;
         private boolean cleanStart;
         private @Nullable String username = null;
         private @Nullable String password = null;
@@ -157,47 +157,47 @@ public class MqttBridge {
         private int loopPreventionHopCount = 1;
         private boolean persist = true;
 
-        public @NotNull Builder withId(@NotNull String id) {
+        public @NotNull Builder withId(@NotNull final String id) {
             this.id = id;
             return this;
         }
 
-        public @NotNull Builder withHost(@NotNull String host) {
+        public @NotNull Builder withHost(@NotNull final String host) {
             this.host = host;
             return this;
         }
 
-        public @NotNull Builder withPort(int port) {
+        public @NotNull Builder withPort(final int port) {
             this.port = port;
             return this;
         }
 
-        public @NotNull Builder withClientId(@NotNull String clientId) {
+        public @NotNull Builder withClientId(@NotNull final String clientId) {
             this.clientId = clientId;
             return this;
         }
 
-        public @NotNull Builder withKeepAlive(int keepAlive) {
+        public @NotNull Builder withKeepAlive(final int keepAlive) {
             this.keepAlive = keepAlive;
             return this;
         }
 
-        public @NotNull Builder withSessionExpiry(int sessionExpiry) {
+        public @NotNull Builder withSessionExpiry(final long sessionExpiry) {
             this.sessionExpiry = sessionExpiry;
             return this;
         }
 
-        public @NotNull Builder withCleanStart(boolean cleanStart) {
+        public @NotNull Builder withCleanStart(final boolean cleanStart) {
             this.cleanStart = cleanStart;
             return this;
         }
 
-        public @NotNull Builder withUsername(@Nullable String username) {
+        public @NotNull Builder withUsername(@Nullable final String username) {
             this.username = username;
             return this;
         }
 
-        public @NotNull Builder withPassword(@Nullable String password) {
+        public @NotNull Builder withPassword(@Nullable final String password) {
             this.password = password;
             return this;
         }
@@ -222,23 +222,24 @@ public class MqttBridge {
             return this;
         }
 
-        public @NotNull Builder withLoopPreventionEnabled(boolean loopPreventionEnabled) {
+        public @NotNull Builder withLoopPreventionEnabled(final boolean loopPreventionEnabled) {
             this.loopPreventionEnabled = loopPreventionEnabled;
             return this;
         }
 
-        public @NotNull Builder withLoopPreventionHopCount(int loopPreventionHopCount) {
+        public @NotNull Builder withLoopPreventionHopCount(final int loopPreventionHopCount) {
             this.loopPreventionHopCount = loopPreventionHopCount;
             return this;
         }
 
-        public @NotNull Builder persist(boolean persist) {
+        public @NotNull Builder persist(final boolean persist) {
             this.persist = persist;
             return this;
         }
 
         public @NotNull MqttBridge build() {
-            return new MqttBridge(Objects.requireNonNull(id),
+            return new MqttBridge(
+                    Objects.requireNonNull(id),
                     Objects.requireNonNull(host),
                     port,
                     Objects.requireNonNull(clientId),
@@ -262,11 +263,9 @@ public class MqttBridge {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MqttBridge)) {
+        if (!(o instanceof final MqttBridge that)) {
             return false;
         }
-
-        MqttBridge that = (MqttBridge) o;
 
         if (port != that.port) {
             return false;
@@ -320,36 +319,57 @@ public class MqttBridge {
         result = 31 * result + port;
         result = 31 * result + clientId.hashCode();
         result = 31 * result + keepAlive;
-        result = 31 * result + sessionExpiry;
-        result = 31 * result + (cleanStart ? 1 : 0);
-        result = 31 * result + (username != null ? username.hashCode() : 0);
-        result = 31 * result + (password != null ? password.hashCode() : 0);
-        result = 31 * result + (bridgeTls != null ? bridgeTls.hashCode() : 0);
+        result = 31 * result + Long.hashCode(sessionExpiry);
+        result = 31 * result + Boolean.hashCode(cleanStart);
+        result = 31 * result + Objects.hashCode(username);
+        result = 31 * result + Objects.hashCode(password);
+        result = 31 * result + Objects.hashCode(bridgeTls);
+        result = 31 * result + Objects.hashCode(bridgeWebsocketConfig);
         result = 31 * result + remoteSubscriptions.hashCode();
         result = 31 * result + localSubscriptions.hashCode();
-        result = 31 * result + (loopPreventionEnabled ? 1 : 0);
+        result = 31 * result + Boolean.hashCode(loopPreventionEnabled);
         result = 31 * result + loopPreventionHopCount;
+        result = 31 * result + Boolean.hashCode(persist);
+
         return result;
     }
 
     @Override
     public @NotNull String toString() {
-        final StringBuilder sb = new StringBuilder("MqttBridge{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", host='").append(host).append('\'');
-        sb.append(", port=").append(port);
-        sb.append(", clientId='").append(clientId).append('\'');
-        sb.append(", keepAlive=").append(keepAlive);
-        sb.append(", sessionExpiry=").append(sessionExpiry);
-        sb.append(", cleanStart=").append(cleanStart);
-        sb.append(", username='").append(username).append('\'');
-        sb.append(", password='").append(password).append('\'');
-        sb.append(", bridgeTls=").append(bridgeTls);
-        sb.append(", remoteSubscriptions=").append(remoteSubscriptions);
-        sb.append(", localSubscriptions=").append(localSubscriptions);
-        sb.append(", loopPreventionEnabled=").append(loopPreventionEnabled);
-        sb.append(", loopPreventionHopCount=").append(loopPreventionHopCount);
-        sb.append('}');
-        return sb.toString();
+        return "MqttBridge{" +
+                "id='" +
+                id +
+                '\'' +
+                ", host='" +
+                host +
+                '\'' +
+                ", port=" +
+                port +
+                ", clientId='" +
+                clientId +
+                '\'' +
+                ", keepAlive=" +
+                keepAlive +
+                ", sessionExpiry=" +
+                sessionExpiry +
+                ", cleanStart=" +
+                cleanStart +
+                ", username='" +
+                username +
+                '\'' +
+                ", password='" +
+                password +
+                '\'' +
+                ", bridgeTls=" +
+                bridgeTls +
+                ", remoteSubscriptions=" +
+                remoteSubscriptions +
+                ", localSubscriptions=" +
+                localSubscriptions +
+                ", loopPreventionEnabled=" +
+                loopPreventionEnabled +
+                ", loopPreventionHopCount=" +
+                loopPreventionHopCount +
+                '}';
     }
 }

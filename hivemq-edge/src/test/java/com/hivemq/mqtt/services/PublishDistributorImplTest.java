@@ -18,15 +18,12 @@ package com.hivemq.mqtt.services;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.api.model.bridge.Bridge;
-import com.hivemq.bridge.BridgeService;
 import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -37,11 +34,10 @@ import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
 
@@ -51,9 +47,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -68,7 +64,7 @@ public class PublishDistributorImplTest {
     private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
     private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
     private final @NotNull ConfigurationService configurationService = mock();
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService = mock();
+    private final @NotNull BridgeExtractor bridgeConfiguration = mock();
     private final @NotNull MqttBridge bridge = mock();
     private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
 
@@ -81,11 +77,11 @@ public class PublishDistributorImplTest {
     @Before
     public void setUp() throws Exception {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
-        when(configurationService.bridgeConfiguration()).thenReturn(bridgeConfigurationService);
+        when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         publishDistributor = new PublishDistributorImpl(payloadPersistence, clientQueuePersistence, ()->clientSessionPersistence,
                 singleWriterService, configurationService);
-        when(bridgeConfigurationService.getBridges()).thenReturn(List.of(bridge));
+        when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
 
     @After

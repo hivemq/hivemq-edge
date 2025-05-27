@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.ModbusProtocolAdapterFactory;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,6 +41,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,7 +66,7 @@ public class ModbusProtocolAdapterConfigTest {
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeoutMillis()).isEqualTo(1337);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(modbusToMqttMapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
             assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
@@ -116,7 +119,7 @@ public class ModbusProtocolAdapterConfigTest {
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeoutMillis()).isEqualTo(5000);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
-        assertThat(protocolAdapterConfig.getFromEdgeMappings()).satisfiesExactly(modbusToMqttMapping -> {
+        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
             assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
@@ -130,11 +133,7 @@ public class ModbusProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_defaults_missingTag() throws Exception {
         final URL resource = getClass().getResource("/modbus-adapter-minimal-config-missing-tag.xml");
-        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-
-        assertThat(protocolAdapterConfig.missingTags())
-                .isPresent()
-                .hasValueSatisfying(set -> assertThat(set).contains("tag1"));
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
@@ -221,21 +220,7 @@ public class ModbusProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

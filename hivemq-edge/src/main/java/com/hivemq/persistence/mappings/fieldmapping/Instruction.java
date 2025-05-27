@@ -15,29 +15,27 @@
  */
 package com.hivemq.persistence.mappings.fieldmapping;
 
-import com.hivemq.api.model.mappings.fieldmapping.InstructionModel;
+import com.hivemq.combining.model.DataIdentifierReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class Instruction {
 
-    private final @NotNull String destinationFieldName;
-    private final @NotNull String sourceFieldName;
+public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName,
+                          @Nullable DataIdentifierReference dataIdentifierReference) {
 
-    public Instruction(
-            final @NotNull String sourceFieldName, final @NotNull String destinationFieldName) {
-        this.sourceFieldName = sourceFieldName;
-        this.destinationFieldName = destinationFieldName;
+    public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
+        return new Instruction(model.getSource(),
+                model.getDestination(),
+                DataIdentifierReference.from(model.getSourceRef()));
     }
 
-    public @NotNull String getDestinationFieldName() {
-        return destinationFieldName;
+    public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
+        final com.hivemq.edge.api.model.Instruction instruction =
+                new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
+        if (dataIdentifierReference() != null) {
+            instruction.sourceRef(dataIdentifierReference().to());
+        }
+        return instruction;
     }
 
-    public @NotNull String getSourceFieldName() {
-        return sourceFieldName;
-    }
-
-    public static Instruction from(final @NotNull InstructionModel model) {
-        return new Instruction(model.getSourceFieldName(), model.getDestinationFieldName());
-    }
 }

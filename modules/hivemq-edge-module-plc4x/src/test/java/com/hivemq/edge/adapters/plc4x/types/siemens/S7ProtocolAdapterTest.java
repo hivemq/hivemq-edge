@@ -16,13 +16,16 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,23 @@ public class S7ProtocolAdapterTest {
 
     @BeforeEach
     void setUp() {
+
+        var adapterFactories = mock(AdapterFactories.class);
+        when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+
+            @Override
+            public @NotNull DataPoint createJsonDataPoint(
+                    final @NotNull String tagName,
+                    final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+        });
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
     }
 
@@ -50,7 +69,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%IX200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -58,7 +77,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IW200", Plc4xDataType.DATA_TYPE.WORD));
         assertEquals("%IW200:WORD",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -66,7 +85,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%IX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -74,7 +93,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23.DBW200", Plc4xDataType.DATA_TYPE.WCHAR));
         assertEquals("%DB23.DBX200:WCHAR",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -82,7 +101,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23.DBD200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -90,7 +109,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DATE));
         assertEquals("%DB23:200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -98,7 +117,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB100:DBX200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:DBX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -106,7 +125,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB23:200", Plc4xDataType.DATA_TYPE.DINT));
         assertEquals("%DB23:200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     @Test
@@ -114,7 +133,7 @@ public class S7ProtocolAdapterTest {
         final Plc4xTag tag = new Plc4xTag("tag", "not set",
                 new Plc4xTagDefinition("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL));
         assertEquals("%DB100:200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub(), tag));
+                adapter.createTagAddressForSubscription(tag));
     }
 
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
@@ -124,8 +143,8 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull PollingContext subscription, final @NotNull Plc4xTag tag) {
-            return super.createTagAddressForSubscription(subscription, tag);
+        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
+            return super.createTagAddressForSubscription(tag);
         }
     }
 

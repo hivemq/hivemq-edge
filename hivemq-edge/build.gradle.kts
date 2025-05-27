@@ -1,6 +1,7 @@
 import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins.withId("com.hivemq.edge-version-updater") {
     project.ext.set(
@@ -9,8 +10,18 @@ plugins.withId("com.hivemq.edge-version-updater") {
     )
 }
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.openapitools:openapi-generator-gradle-plugin")
+    }
+}
+
 plugins {
     java
+    idea
     `java-library`
     `maven-publish`
     signing
@@ -26,13 +37,13 @@ plugins {
     alias(libs.plugins.spotbugs)
     alias(libs.plugins.forbiddenApis)
 
+    alias(libs.plugins.openapi.generator)
 
-    id("jacoco")
     id("pmd")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.27"
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
-
+    id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
@@ -84,30 +95,13 @@ metadata {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
     withJavadocJar()
     withSourcesJar()
 }
 
-
 /* ******************** dependencies ******************** */
-
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-        }
-    }
-}
-
 
 // Runtime stuffs
 dependencies {
@@ -142,8 +136,9 @@ dependencies {
 
 
     // config
-    implementation(libs.jakarta.xml.bind.api)
-    runtimeOnly(libs.jaxb.impl)
+    implementation(libs.jaxb2.impl)
+    implementation(libs.jaxb4.impl)
+    implementation(libs.jaxb4.bind)
 
     // metrics
     implementation(libs.dropwizard.metrics)
@@ -184,10 +179,12 @@ dependencies {
     implementation(libs.jackson.jaxrs.json.provider)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.databind.nullable)
     implementation(libs.jackson.dataformat.xml)
 
     //Open API
     implementation(libs.swagger.annotations)
+    implementation(libs.swagger.jaxrs)
 
     //JWT
     implementation(libs.jose4j)
@@ -197,6 +194,15 @@ dependencies {
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
     implementation(libs.jsonSchemaInferrer)
+
+    // Edge modules
+    compileOnly("com.hivemq:hivemq-edge-module-etherip")
+    compileOnly("com.hivemq:hivemq-edge-module-plc4x")
+    compileOnly("com.hivemq:hivemq-edge-module-http")
+    compileOnly("com.hivemq:hivemq-edge-module-modbus")
+    compileOnly("com.hivemq:hivemq-edge-module-mtconnect")
+    compileOnly("com.hivemq:hivemq-edge-module-opcua")
+    compileOnly("com.hivemq:hivemq-edge-module-file")
 }
 
 /* ******************** test ******************** */
@@ -205,9 +211,9 @@ dependencies {
     testAnnotationProcessor(libs.dagger.compiler)
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.vintageEngine)
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.vintage:junit-vintage-engine")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.mockito.junitJupiter)
 
@@ -240,6 +246,8 @@ tasks.test {
         "--add-opens",
         "java.base/sun.nio.ch=ALL-UNNAMED",
         "--add-opens",
+        "java.base/java.util=ALL-UNNAMED",
+        "--add-opens",
         "jdk.management/com.sun.management.internal=ALL-UNNAMED",
         "--add-exports",
         "java.base/jdk.internal.misc=ALL-UNNAMED"
@@ -260,40 +268,35 @@ tasks.test {
 }
 
 /* ******************** OpenAPI ******************** */
+val buildDirectory = layout.buildDirectory.get()
+tasks.register<GenerateTask>("genJaxRs") {
+    inputSpec.set("${projectDir}/../ext/hivemq-edge-openapi-${project.version}.yaml")
+    outputDir.set("${buildDirectory}/generated/openapi")
+    generatorName.set("jaxrs-spec")
+    apiPackage.set("com.hivemq.edge.api")
+    modelPackage.set("com.hivemq.edge.api.model")
+    invokerPackage.set("com.hivemq.edge.api")
+    generateApiTests.set(false)
+    configOptions.set(
+        hashMapOf(
+            "dateLibrary" to "java8",
+            "generateBuilders" to "true",
+            "generatePom" to "false",
+            "interfaceOnly" to "true",
+            "useTags" to "true",
+            "returnResponse" to "true",
+            "openApiNullable" to  "false"
+        )
+    )
+}
 
-tasks.resolve {
-    outputDir = temporaryDir
-    outputFileName = "hivemq-edge-openapi"
-    outputFormat = io.swagger.v3.plugins.gradle.tasks.ResolveTask.Format.YAML
-    classpath = sourceSets.main.get().runtimeClasspath
-    resourcePackages = setOf("com.hivemq.api.resources")
-    openApiFile = file("src/openapi/openapi-base.yaml")
-    sortOutput = true
-
-    doFirst {
-        delete(outputDir)
-        mkdir(outputDir)
+sourceSets {
+    main {
+        java {
+            srcDirs("${buildDirectory}/generated/openapi/src/gen/java")
+            srcDirs("${buildDirectory}/generated/openapi/src/main/java")
+        }
     }
-}
-
-val openApiSpec by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI yaml specification"
-
-    from(tasks.resolve)
-    into(layout.buildDirectory.dir("openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
-}
-
-
-val openApiDoc by tasks.registering(Sync::class) {
-    group = "openapi"
-    description = "Generates the OpenAPI html documentation"
-
-    from(openApiSpec)
-    from("src/openapi/index.html")
-    into(layout.buildDirectory.dir("docs/openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
 }
 
 /* ******************** distribution ******************** */
@@ -309,13 +312,24 @@ tasks.jar {
     )
 }
 
+tasks.compileJava {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
+tasks.named("sourcesJar") {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
+tasks.named("licenseMain") {
+    dependsOn(tasks.named("genJaxRs"))
+}
+
 tasks.shadowJar {
     mergeServiceFiles()
     from(frontendBinary) {
         into("httpd")
     }
 }
-
 
 val hivemqZip by tasks.registering(Zip::class) {
     group = "distribution"
@@ -358,10 +372,6 @@ tasks.javadoc {
 
 /* ******************** checks ******************** */
 
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
-
 pmd {
     toolVersion = libs.versions.pmd.get()
     sourceSets = listOf(project.sourceSets.main.get())
@@ -400,6 +410,7 @@ license {
     exclude("*.json")
     exclude("**/*.xml")
     exclude("**/RollingList.java")
+    exclude("**/api/**/*.java")
 }
 
 downloadLicenses {
@@ -561,5 +572,3 @@ artifacts {
     add(releaseJar.name, tasks.shadowJar)
     add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
-
-

@@ -10,30 +10,25 @@ plugins {
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
+    id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
+// exclude old transitive dependency versions that are provided by edge
+configurations.runtimeClasspath {
+    exclude("io.netty", "netty-buffer")
+    exclude("io.netty", "netty-handler")
+    exclude("io.netty", "netty-codec")
+    exclude("io.netty", "netty-common")
+    exclude("io.netty", "netty-transport")
 }
 
 dependencies {
@@ -44,14 +39,23 @@ dependencies {
     implementation(libs.plc4j.ads)
     implementation(libs.plc4j.api)
     implementation(libs.plc4j.transport.raw.socket)
+
+    constraints {
+        implementation(libs.org.json)
+    }
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.plc4j.api)
+
     testImplementation(libs.apache.commonsIO)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.mockito.junitJupiter)
-    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj)
 }
 
@@ -66,7 +70,7 @@ tasks.test {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(configurations.runtimeClasspath)
-    into("${buildDir}/deps/libs")
+    into("${layout.buildDirectory}/deps/libs")
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }

@@ -42,6 +42,7 @@ public class SystemInformationImpl implements SystemInformation {
 
     private @NotNull File homeFolder;
     private @NotNull File configFolder;
+    private @NotNull File secondaryConfigFolder;
     private @NotNull File logFolder;
     private @NotNull File licenseFolder;
     private @NotNull File dataFolder;
@@ -52,32 +53,42 @@ public class SystemInformationImpl implements SystemInformation {
     private final boolean embedded;
     private final int processorCount;
 
+    private final long configRefreshIntervalInMs;
+
     private final boolean usePathOfRunningJar;
+
+    private final boolean configWriteable;
 
     public SystemInformationImpl() {
         this(false);
     }
 
     public SystemInformationImpl(final boolean usePathOfRunningJar) {
-        this(usePathOfRunningJar, false, null, null, null, null, null);
+        this(usePathOfRunningJar, false, null, null, null, null, null, null);
     }
 
     public SystemInformationImpl(
             final boolean usePathOfRunningJar,
             final boolean embedded,
             final @Nullable File configFolder,
+            final @Nullable File secondaryConfigFolder,
             final @Nullable File dataFolder,
             final @Nullable File pluginFolder,
             final @Nullable File modulesFolder,
             final @Nullable File licenseFolder) {
+        final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
+        final String configWriteable = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
+        this.secondaryConfigFolder = secondaryConfigFolder;
         this.dataFolder = dataFolder;
         this.pluginFolder = pluginFolder;
         this.modulesFolder = modulesFolder;
         this.licenseFolder = licenseFolder;
         this.runningSince = System.currentTimeMillis();
+        this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
+        this.configWriteable = Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable );
         processorCount = getPhysicalProcessorCount();
     }
 
@@ -102,6 +113,24 @@ public class SystemInformationImpl implements SystemInformation {
                         false
                 )
         );
+
+        final String secondaryConfigFolderName = getSystemPropertyOrEnvironmentVariable(
+                SystemProperties.CONFIG_FOLDER_SECONDARY,
+                EnvironmentVariables.CONFIG_FOLDER_SECONDARY);
+
+        if (secondaryConfigFolderName == null) {
+            secondaryConfigFolder = configFolder;
+        } else {
+            secondaryConfigFolder = Objects.requireNonNullElseGet(
+                    configFolder,
+                    () -> setUpHiveMQFolder(
+                            SystemProperties.CONFIG_FOLDER_SECONDARY,
+                            EnvironmentVariables.CONFIG_FOLDER_SECONDARY,
+                            "conf",
+                            false
+                    )
+            );
+        }
 
         licenseFolder = Objects.requireNonNullElseGet(
                 licenseFolder,
@@ -179,6 +208,12 @@ public class SystemInformationImpl implements SystemInformation {
         return configFolder;
     }
 
+
+    @Override
+    public @NotNull File getSecondaryHiveMQHomeFolder() {
+        return secondaryConfigFolder;
+    }
+
     @Override
     public @NotNull File getLogFolder() {
         return logFolder;
@@ -207,6 +242,11 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public long getRunningSince() {
         return runningSince;
+    }
+
+    @Override
+    public long configRefreshIntervalInMs() {
+        return configRefreshIntervalInMs;
     }
 
     /**
@@ -322,5 +362,8 @@ public class SystemInformationImpl implements SystemInformation {
         return embedded;
     }
 
-
+    @Override
+    public boolean isConfigWriteable() {
+        return configWriteable;
+    }
 }

@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.Exceptions;
 import com.hivemq.util.ThreadFactoryUtil;
 import org.slf4j.Logger;
@@ -66,22 +65,17 @@ public class InFileSingleWriter implements SingleWriterService {
     private final @NotNull ProducerQueuesImpl @NotNull [] producers = new ProducerQueuesImpl[AMOUNT_OF_PRODUCERS];
 
     @VisibleForTesting
-    @NotNull ExecutorService singleWriterExecutor;
-
-    @VisibleForTesting
-    public final @NotNull ExecutorService @NotNull [] callbackExecutors;
+    @NotNull
+    ExecutorService singleWriterExecutor;
 
     @VisibleForTesting
     final @NotNull ScheduledExecutorService checkScheduler;
 
-    private final int amountOfQueues;
-
     @Inject
     public InFileSingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
-
         persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
-
-        threadPoolSize =internalConfigurationService.getInteger(InternalConfigurations.FILE_SINGLE_WRITER_THREAD_POOL_SIZE);
+        threadPoolSize =
+                internalConfigurationService.getInteger(InternalConfigurations.FILE_SINGLE_WRITER_THREAD_POOL_SIZE);
         log.info("Allocating {} threads for file single writer.", threadPoolSize);
         creditsPerExecution = InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.get();
         shutdownGracePeriod = InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.get();
@@ -89,19 +83,11 @@ public class InFileSingleWriter implements SingleWriterService {
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("single-writer-%d");
         singleWriterExecutor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
 
-        amountOfQueues = validAmountOfQueues(threadPoolSize, persistenceBucketCount);
+        final int amountOfQueues = validAmountOfQueues(threadPoolSize, persistenceBucketCount);
 
         for (int i = 0; i < producers.length; i++) {
             producers[i] = new ProducerQueuesImpl(this, amountOfQueues);
         }
-
-        callbackExecutors = new ExecutorService[amountOfQueues];
-        for (int i = 0; i < amountOfQueues; i++) {
-            final ThreadFactory callbackThreadFactory = ThreadFactoryUtil.create("single-writer-callback-" + i);
-            final ExecutorService executorService = Executors.newSingleThreadScheduledExecutor(callbackThreadFactory);
-            callbackExecutors[i] = executorService;
-        }
-
 
         final ThreadFactory checkThreadFactory =
                 new ThreadFactoryBuilder().setNameFormat("single-writer-scheduled-check-%d").build();
@@ -154,15 +140,6 @@ public class InFileSingleWriter implements SingleWriterService {
         }
     }
 
-
-    @NotNull
-    public ExecutorService callbackExecutor(final @NotNull String key) {
-        final int bucketsPerQueue = persistenceBucketCount / amountOfQueues;
-        final int bucketIndex = BucketUtils.getBucket(key, persistenceBucketCount);
-        final int queueIndex = bucketIndex / bucketsPerQueue;
-        return callbackExecutors[queueIndex];
-    }
-
     public void decrementNonemptyQueueCounter() {
         nonemptyQueueCounter.decrementAndGet();
     }
@@ -199,10 +176,6 @@ public class InFileSingleWriter implements SingleWriterService {
         return shutdownGracePeriod;
     }
 
-    public int getThreadPoolSize() {
-        return threadPoolSize;
-    }
-
     public @NotNull AtomicLong getGlobalTaskCount() {
         return globalTaskCount;
     }
@@ -213,10 +186,6 @@ public class InFileSingleWriter implements SingleWriterService {
 
     public @NotNull AtomicInteger getRunningThreadsCount() {
         return runningThreadsCount;
-    }
-
-    public @NotNull ExecutorService @NotNull [] getCallbackExecutors() {
-        return callbackExecutors;
     }
 
     public void stop() {
@@ -236,9 +205,6 @@ public class InFileSingleWriter implements SingleWriterService {
             //ignore
         }
         singleWriterExecutor.shutdownNow();
-        for (final ExecutorService callbackExecutor : callbackExecutors) {
-            callbackExecutor.shutdownNow();
-        }
         checkScheduler.shutdownNow();
     }
 
@@ -254,7 +220,7 @@ public class InFileSingleWriter implements SingleWriterService {
 
         private static final @NotNull SplittableRandom RANDOM = new SplittableRandom();
 
-        public SingleWriterTask(
+        SingleWriterTask(
                 final @NotNull AtomicLong nonemptyQueueCounter,
                 final @NotNull AtomicLong globalTaskCount,
                 final @NotNull AtomicInteger runningThreadsCount,
@@ -269,7 +235,6 @@ public class InFileSingleWriter implements SingleWriterService {
 
         public void run() {
             try {
-
                 final SplittableRandom random = RANDOM.split();
 
                 // It is possible that all tasks stop running while there are still non-empty queues.
@@ -334,6 +299,4 @@ public class InFileSingleWriter implements SingleWriterService {
             }
         }
     }
-
-
 }

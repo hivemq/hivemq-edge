@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence.topicfilter;
 
-import com.hivemq.api.model.topicFilters.TopicFilterModel;
+import com.hivemq.edge.api.model.TopicFilter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,7 +24,7 @@ class TopicFilterTest {
 
     @Test
     void fromTopicFilterModel_emptyString_nullSchema() {
-        final TopicFilter topicFilter = TopicFilter.fromTopicFilterModel(new TopicFilterModel("a", "b", ""));
+        final TopicFilterPojo topicFilter = TopicFilterPojo.fromModel(new TopicFilter().topicFilter("a").description( "b").schema(""));
         assertEquals("a", topicFilter.getTopicFilter());
         assertEquals("b", topicFilter.getDescription());
         assertNull(topicFilter.getSchema());

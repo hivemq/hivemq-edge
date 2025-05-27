@@ -20,8 +20,8 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ConfigFileReaderTest {
@@ -48,22 +50,7 @@ public class ConfigFileReaderTest {
     @Test
     public void whenConfigDoesNotExist_thenDoNotStartHiveMQ() throws IOException {
         final File tempFile = new File(tempDir, "conf.xml");
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(tempFile);
         assertThrows(UnrecoverableException.class, configFileReader::applyConfig);
     }
 
@@ -73,22 +60,7 @@ public class ConfigFileReaderTest {
         final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
         writer.write("");
         writer.close();
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(tempFile);
         assertThrows(UnrecoverableException.class, configFileReader::applyConfig);
     }
 
@@ -98,22 +70,7 @@ public class ConfigFileReaderTest {
         final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
         writer.write("<hivemq></hivemq>");
         writer.close();
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(tempFile);
         assertDoesNotThrow(configFileReader::applyConfig);
     }
 
@@ -146,28 +103,19 @@ public class ConfigFileReaderTest {
                         "                   </mqttUserProperty>\n" +
                         "                   </mqttUserProperties>" +
                         "                </northboundMapping>" +
-                        "            </northboundMappings>" +
+                        "            </northboundMappings>\n" +
+                        "            <tags>\n" +
+                        "                <tag>\n" +
+                        "                    <name>test</name>\n" +
+                        "                    <description>description1</description>\n" +
+                        "                </tag>\n" +
+                        "            </tags>\n" +
                         "        </protocol-adapter>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",
                 UTF_8);
 
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
-                mock(RestrictionConfigurator.class),
-                mock(SecurityConfigurator.class),
-                mock(MqttConfigurator.class),
-                mock(ListenerConfigurator.class),
-                mock(PersistenceConfigurator.class),
-                mock(MqttsnConfigurator.class),
-                mock(BridgeConfigurator.class),
-                mock(ApiConfigurator.class),
-                mock(UnsConfigurator.class),
-                mock(DynamicConfigConfigurator.class),
-                mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
-                mock(ModuleConfigurator.class),
-                mock(InternalConfigurator.class));
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(tempFile);
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
         final @NotNull List<ProtocolAdapterEntity> config = hiveMQConfigEntity.getProtocolAdapterConfig();
@@ -195,5 +143,51 @@ public class ConfigFileReaderTest {
                 protocolAdapterEntityAfterReload.getNorthboundMappingEntities().get(0).getUserProperties();
         assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
         assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
+    }
+
+    private static @NotNull ConfigFileReaderWriter getConfigFileReaderWriter(File tempFile) {
+        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
+
+        final RestrictionConfigurator restrictionConfigurator = mock(RestrictionConfigurator.class);
+        when(restrictionConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final SecurityConfigurator securityConfigurator = mock(SecurityConfigurator.class);
+        when(securityConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttConfigurator mqttConfigurator = mock(MqttConfigurator.class);
+        when(mqttConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ListenerConfigurator listenerConfigurator = mock(ListenerConfigurator.class);
+        when(listenerConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final PersistenceConfigurator persistenceConfigurator = mock(PersistenceConfigurator.class);
+        when(persistenceConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttsnConfigurator mqttsnConfigurator = mock(MqttsnConfigurator.class);
+        when(mqttsnConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final BridgeExtractor bridgeConfigurator = mock(BridgeExtractor.class);
+        when(bridgeConfigurator.updateConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ApiConfigurator apiConfigurator = mock(ApiConfigurator.class);
+        when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final DynamicConfigConfigurator dynamicConfigConfigurator = mock(DynamicConfigConfigurator.class);
+        when(dynamicConfigConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final UsageTrackingConfigurator usageTrackingConfigurator = mock(UsageTrackingConfigurator.class);
+        when(usageTrackingConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+        
+        final ModuleConfigurator moduleConfigurator = mock(ModuleConfigurator.class);
+        when(moduleConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final InternalConfigurator internalConfigurator = mock(InternalConfigurator.class);
+        when(internalConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+                configurationFile,
+                List.of());
+        return configFileReader;
     }
 }

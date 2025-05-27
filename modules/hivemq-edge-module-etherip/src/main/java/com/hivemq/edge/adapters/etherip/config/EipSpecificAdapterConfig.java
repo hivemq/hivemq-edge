@@ -107,8 +107,24 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         return slot;
     }
 
-    public @Nullable EipToMqttConfig getEipToMqttConfig() {
+    public @NotNull EipToMqttConfig getEipToMqttConfig() {
         return eipToMqttConfig;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final EipSpecificAdapterConfig that = (EipSpecificAdapterConfig) o;
+        return getPort() == that.getPort() &&
+                getBackplane() == that.getBackplane() &&
+                getSlot() == that.getSlot() &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(getHost(), that.getHost()) &&
+                Objects.equals(getEipToMqttConfig(), that.getEipToMqttConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, getHost(), getPort(), getBackplane(), getSlot(), getEipToMqttConfig());
+    }
 }

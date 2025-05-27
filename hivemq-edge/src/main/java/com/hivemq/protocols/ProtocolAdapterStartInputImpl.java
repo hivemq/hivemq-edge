@@ -15,28 +15,21 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
-import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
-import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import org.jetbrains.annotations.NotNull;
 
 class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {
 
-    private final @NotNull ModuleServicesImpl moduleServices;
-    private final @NotNull EventService eventService;
+    private final @NotNull ModuleServices moduleServices;
 
     ProtocolAdapterStartInputImpl(
-            final @NotNull ModuleServicesImpl moduleServices, final @NotNull EventService eventService) {
+            final @NotNull ModuleServices moduleServices) {
         this.moduleServices = moduleServices;
-        this.eventService = eventService;
     }
 
     @Override
     public @NotNull ModuleServices moduleServices() {
-        return new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
-                eventService,
-                moduleServices.protocolAdapterWritingService());
+        return moduleServices;
     }
 }

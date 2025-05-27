@@ -30,18 +30,6 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
     public static final int PORT_MIN = 1;
     public static final int PORT_MAX = 65535;
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-
-    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private @Nullable String id;
-
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
                        description = "IP Address or hostname of the device you wish to connect to",
@@ -77,7 +65,6 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
             @JsonProperty(value = "modbusToMqtt") final @Nullable ModbusToMqttConfig modbusToMQTTConfig) {
-        this.id = id;
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
@@ -105,4 +92,18 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         return modbusToMQTTConfig;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ModbusSpecificAdapterConfig that = (ModbusSpecificAdapterConfig) o;
+        return getPort() == that.getPort() &&
+                getTimeoutMillis() == that.getTimeoutMillis() &&
+                Objects.equals(getHost(), that.getHost()) &&
+                Objects.equals(getModbusToMQTTConfig(), that.getModbusToMQTTConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHost(), getPort(), getTimeoutMillis(), getModbusToMQTTConfig());
+    }
 }

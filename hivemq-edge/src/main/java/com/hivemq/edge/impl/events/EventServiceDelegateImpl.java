@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * SPI delegate which wraps multiple (chained) implementations and
@@ -59,7 +60,24 @@ public class EventServiceDelegateImpl implements EventService {
     }
 
     @Override
+    public @NotNull EventBuilder createDataCombiningEvent(@NotNull final UUID uuid) {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+                .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.DATA_COMBINING, uuid.toString()));
+    }
+
+    @Override
+    public @NotNull EventBuilder createCombinerEvent(@NotNull final UUID uuid) {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+                .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, uuid.toString()));
+    }
+
+    @Override
     public @NotNull EventBuilder bridgeEvent() {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
+    }
+
+    @Override
+    public @NotNull EventBuilder configurationEvent() {
         return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
     }
 

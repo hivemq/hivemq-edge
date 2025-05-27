@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.util.Checkpoints.EXTENSION_STARTED;
 
 /**
  * @author Georg Held
@@ -233,7 +234,7 @@ public class HiveMQExtensions {
                         extension.isEmbedded() ? "Embedded e" : "E",
                         extension.getName(),
                         extension.getVersion());
-                Checkpoints.checkpoint("extension-started");
+                Checkpoints.checkpoint(EXTENSION_STARTED);
             }
         } catch (final Throwable t) {
             log.error(

@@ -1,0 +1,286 @@
+delete:
+  description: |-
+    Deletes an existing data policy. 
+
+     
+  operationId: deleteDataPolicy
+  parameters:
+    - description: The identifier of the data policy to delete.
+      example: policy1
+      in: path
+      name: policyId
+      required: true
+      schema:
+        type: string
+    - description: The entity tag
+      in: header
+      name: If-Match
+      required: false
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Success, no response body
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: URL parameter missing
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+  summary: Delete a data policy
+  tags:
+    - Data Hub - Data Policies
+get:
+  description: |-
+    Get a specific data policy. 
+
+     This endpoint returns the content of the policy with the content-type `application/json`. 
+
+     
+  operationId: getDataPolicy
+  parameters:
+    - description: The identifier of the policy.
+      example: policy1
+      in: path
+      name: policyId
+      required: true
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of fields to include in the response. Allowed
+        values are: id, createdAt, lastUpdatedAt, matching, validation,
+        onSuccess, onFailure
+      example: id,createdAt
+      in: query
+      name: fields
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            get-response:
+              description: Get Policy
+              summary: Get Policy
+              value:
+                id: policy1
+                createdAt: '2023-04-19T13:35:00.930Z'
+                lastUpdatedAt: '2023-04-19T13:35:00.930Z'
+                matching:
+                  topicFilter: topic/+
+                validation:
+                  validators:
+                    - type: schema
+                      arguments:
+                        strategy: ALL_OF
+                        schemas:
+                          - schemaId: schema1
+                            version: '1'
+                onSuccess:
+                  pipeline:
+                    - id: logOperationSuccess
+                      functionId: System.log
+                      arguments:
+                        level: DEBUG
+                        message: >-
+                          ${clientId} sent a publish on topic '${topic}' with
+                          result '${validationResult}'
+                onFailure:
+                  pipeline:
+                    - id: logOperationFailure
+                      functionId: System.log
+                      arguments:
+                        level: WARN
+                        message: >-
+                          ${clientId} sent an invalid publish on topic
+                          '${topic}' with result '${validationResult}'
+          schema:
+            $ref: ../components/schemas/DataPolicy.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          examples:
+            param-missing:
+              description: Example response when a required parameter is missing.
+              summary: Required URL parameter missing
+              value:
+                errors:
+                  - title: Required parameter missing
+                    detail: Required URL parameter 'parameterName' is missing
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Bad request
+    '404':
+      content:
+        application/json:
+          examples:
+            not-found:
+              description: Policy not found
+              summary: Not found
+              value:
+                errors:
+                  - title: Resource not found
+                    detail: Resource with id 'my-resource-id' not found
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Resource not found
+  summary: Get a data policy
+  tags:
+    - Data Hub - Data Policies
+put:
+  description: >-
+    Update a data policy
+
+
+    The path parameter 'policyId' must match the 'id' of the policy in the
+    request body.
+     The matching part of policies cannot be changed with an update.
+     
+  operationId: updateDataPolicy
+  parameters:
+    - description: The identifier of the policy.
+      example: policy1
+      in: path
+      name: policyId
+      required: true
+      schema:
+        type: string
+    - description: The entity tag
+      in: header
+      name: If-Match
+      required: false
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        example:
+          id: policy1
+          matching:
+            topicFilter: topic/+
+          validation:
+            validators:
+              - type: schema
+                arguments:
+                  strategy: ALL_OF
+                  schemas:
+                    - schemaId: schema
+                      version: '1'
+          onSuccess:
+            pipeline:
+              - id: logOperationSuccess
+                functionId: System.log
+                arguments:
+                  level: DEBUG
+                  message: >-
+                    ${clientId} sent a publish on topic '${topic}' with result
+                    '${validationResult}'
+          onFailure:
+            pipeline:
+              - id: logOperationFailure
+                functionId: System.log
+                arguments:
+                  level: WARN
+                  message: >-
+                    ${clientId} sent an invalid publish on topic '${topic}' with
+                    result '${validationResult}'
+        schema:
+          $ref: ../components/schemas/DataPolicy.yaml
+    description: The data policy that should be updated.
+    required: true
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            response-example:
+              description: Example response.
+              summary: Policy was updated successfully
+              value:
+                id: policy1
+                createdAt: '2023-04-19T13:35:00.930Z'
+                lastUpdatedAt: '2023-09-26T11:17:22.311Z'
+                matching:
+                  topicFilter: topic/+
+                validation:
+                  validators:
+                    - type: schema
+                      arguments:
+                        strategy: ALL_OF
+                        schemas:
+                          - schemaId: schema1
+                            version: '1'
+                onSuccess:
+                  pipeline:
+                    - id: logOperationSuccess
+                      functionId: System.log
+                      arguments:
+                        level: DEBUG
+                        message: >-
+                          ${clientId} sent a publish on topic '${topic}' with
+                          result '${validationResult}'
+                onFailure:
+                  pipeline:
+                    - id: logOperationFailure
+                      functionId: System.log
+                      arguments:
+                        level: WARN
+                        message: >-
+                          ${clientId} sent an invalid publish on topic
+                          '${topic}' with result '${validationResult}'
+          schema:
+            $ref: ../components/schemas/DataPolicy.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy creation failed
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+    '507':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Insufficient storage
+  summary: Update an existing data policy
+  tags:
+    - Data Hub - Data Policies

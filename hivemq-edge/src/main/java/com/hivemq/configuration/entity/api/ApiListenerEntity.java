@@ -17,9 +17,10 @@ package com.hivemq.configuration.entity.api;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -39,4 +40,16 @@ public abstract class ApiListenerEntity {
         return bindAddress;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ApiListenerEntity that = (ApiListenerEntity) o;
+        return getPort() == that.getPort() && Objects.equals(getBindAddress(), that.getBindAddress());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPort(), getBindAddress());
+    }
 }

@@ -9,40 +9,38 @@ plugins {
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
+    id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
 }
 
 group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
-}
+// Repository settings are now applied by the repository-convention plugin
 
 dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.jackson.databind)
-    implementation(libs.digitalpetri.modbus.master.tcp)
+    compileOnly(libs.netty.buffer)
+    compileOnly(libs.netty.codec)
+    implementation(libs.digitalpetri.modbus.master.tcp){
+        // exclude old dependency versions that edge provides:
+        exclude("io.netty", "netty-buffer")
+        exclude("io.netty", "netty-codec")
+    }
 
+
+    testImplementation(libs.digitalpetri.modbus.master.tcp)
     testImplementation(libs.jackson.databind)
-    testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.guava)
@@ -61,7 +59,7 @@ tasks.test {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(configurations.runtimeClasspath)
-    into("${buildDir}/deps/libs")
+    into("${layout.buildDirectory}/deps/libs")
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
@@ -205,4 +203,3 @@ val javaComponent = components["java"] as AdhocComponentWithVariants
 javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
     skip()
 }
-

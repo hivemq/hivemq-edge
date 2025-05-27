@@ -21,8 +21,21 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.reader.ApiConfigurator;
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.configuration.reader.Configurator;
+import com.hivemq.configuration.reader.DynamicConfigConfigurator;
+import com.hivemq.configuration.reader.InternalConfigurator;
+import com.hivemq.configuration.reader.ListenerConfigurator;
+import com.hivemq.configuration.reader.ModuleConfigurator;
+import com.hivemq.configuration.reader.MqttConfigurator;
+import com.hivemq.configuration.reader.MqttsnConfigurator;
+import com.hivemq.configuration.reader.PersistenceConfigurator;
+import com.hivemq.configuration.reader.RestrictionConfigurator;
+import com.hivemq.configuration.reader.SecurityConfigurator;
+import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -38,7 +51,9 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class SimulationProtocolAdapterConfigTest {
@@ -211,21 +226,55 @@ class SimulationProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock(),
-                mock());
+        final RestrictionConfigurator restrictionConfigurator = mock(RestrictionConfigurator.class);
+        when(restrictionConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final SecurityConfigurator securityConfigurator = mock(SecurityConfigurator.class);
+        when(securityConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttConfigurator mqttConfigurator = mock(MqttConfigurator.class);
+        when(mqttConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ListenerConfigurator listenerConfigurator = mock(ListenerConfigurator.class);
+        when(listenerConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final PersistenceConfigurator persistenceConfigurator = mock(PersistenceConfigurator.class);
+        when(persistenceConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final MqttsnConfigurator mqttsnConfigurator = mock(MqttsnConfigurator.class);
+        when(mqttsnConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final BridgeExtractor bridgeConfigurator = mock(BridgeExtractor.class);
+        when(bridgeConfigurator.updateConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ApiConfigurator apiConfigurator = mock(ApiConfigurator.class);
+        when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final DynamicConfigConfigurator dynamicConfigConfigurator = mock(DynamicConfigConfigurator.class);
+        when(dynamicConfigConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final UsageTrackingConfigurator usageTrackingConfigurator = mock(UsageTrackingConfigurator.class);
+        when(usageTrackingConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ModuleConfigurator moduleConfigurator = mock(ModuleConfigurator.class);
+        when(moduleConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final InternalConfigurator internalConfigurator = mock(InternalConfigurator.class);
+        when(internalConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
+
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(
+                new ConfigurationFile(configFile),
+                List.of(restrictionConfigurator,
+                    securityConfigurator,
+                    mqttConfigurator,
+                    listenerConfigurator,
+                    persistenceConfigurator,
+                    mqttsnConfigurator,
+                    apiConfigurator,
+                    dynamicConfigConfigurator,
+                    usageTrackingConfigurator,
+                    moduleConfigurator,
+                    internalConfigurator));
         return readerWriter.applyConfig();
     }
 }

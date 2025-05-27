@@ -17,10 +17,11 @@ package com.hivemq.configuration.entity.bridge;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "mqtt")
@@ -34,7 +35,7 @@ public class BridgeMqttEntity {
     private boolean cleanStart = false;
 
     @XmlElement(name = "session-expiry", defaultValue = "3600")
-    private int sessionExpiry = 3600;
+    private long sessionExpiry = 3600;
 
     @XmlElement(name = "keep-alive", defaultValue = "60")
     private int keepAlive = 60;
@@ -47,7 +48,7 @@ public class BridgeMqttEntity {
         return cleanStart;
     }
 
-    public int getSessionExpiry() {
+    public long getSessionExpiry() {
         return sessionExpiry;
     }
 
@@ -63,11 +64,27 @@ public class BridgeMqttEntity {
         this.cleanStart = cleanStart;
     }
 
-    public void setSessionExpiry(final int sessionExpiry) {
+    public void setSessionExpiry(final long sessionExpiry) {
         this.sessionExpiry = sessionExpiry;
     }
 
     public void setKeepAlive(final int keepAlive) {
         this.keepAlive = keepAlive;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BridgeMqttEntity that = (BridgeMqttEntity) o;
+        return isCleanStart() == that.isCleanStart() &&
+                getSessionExpiry() == that.getSessionExpiry() &&
+                getKeepAlive() == that.getKeepAlive() &&
+                Objects.equals(getClientId(), that.getClientId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClientId(), isCleanStart(), getSessionExpiry(), getKeepAlive());
     }
 }

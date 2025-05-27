@@ -157,15 +157,15 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull String uniqueId,
             final @NotNull String forwarderId,
             final @NotNull String queueId) {
-        singleWriterService.callbackExecutor(queueId).execute(() -> {
-
-            //QoS 0 has no inflight marker
-            if (qos != QoS.AT_MOST_ONCE) {
-                //-- 15665 - > QoS 0 causes republishing
-                FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
-            }
+        //QoS 0 has no inflight marker
+        if (qos != QoS.AT_MOST_ONCE) {
+            //-- 15665 - > QoS 0 causes republishing
+            FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
+        }
+        FutureUtils.addExceptionLogger(singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
             continueForwarding(queueId, forwarders.get(forwarderId));
-        });
+            return null;
+        }));
     }
 
     private void continueForwarding(final @NotNull String queueId, final @NotNull MqttForwarder mqttForwarder) {
@@ -177,9 +177,10 @@ public class MessageForwarderImpl implements MessageForwarder {
 
     @Override
     public void messageAvailable(final @NotNull String queueId) {
-        singleWriterService.callbackExecutor(queueId).execute(() -> {
+        singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
             notEmptyQueues.add(queueId);
             checkBuffers();
+            return null;
         });
     }
 
@@ -260,9 +261,9 @@ public class MessageForwarderImpl implements MessageForwarder {
                 }
 
                 //which callback executor does not matter, but it must be scheduled to prevent a stack-overflow if multiple errors occur back-to-back
-                final Executor callbackExecutor = singleWriterService.callbackExecutor("forwarder");
-                callbackExecutor.execute(() -> {
+                singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
                     checkBuffers();
+                    return null;
                 });
             }
         }, MoreExecutors.directExecutor());

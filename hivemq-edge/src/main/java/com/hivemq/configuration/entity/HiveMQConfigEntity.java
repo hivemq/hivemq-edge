@@ -18,22 +18,24 @@ package com.hivemq.configuration.entity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
+import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Dominik Obermaier
@@ -43,6 +45,11 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class HiveMQConfigEntity {
+
+    public static final int CURRENT_CONFIG_VERSION = 1;
+
+    @XmlElement(name = "config-version", defaultValue = "" + CURRENT_CONFIG_VERSION)
+    private int version = CURRENT_CONFIG_VERSION;
 
     @XmlElementWrapper(name = "mqtt-listeners", required = true)
     @XmlElementRef(required = false)
@@ -87,6 +94,10 @@ public class HiveMQConfigEntity {
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
+    @XmlElementWrapper(name = "data-combiners")
+    @XmlElement(name = "data-combiner")
+    private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
+
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
@@ -95,11 +106,12 @@ public class HiveMQConfigEntity {
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
 
     // no-arg constructor as JaxB does need one
-    public HiveMQConfigEntity(){
+    public HiveMQConfigEntity() {
 
     }
 
     public HiveMQConfigEntity(
+            final @NotNull Integer version,
             final @NotNull AdminApiEntity api,
             final @NotNull DynamicConfigEntity gateway,
             final @NotNull Map<String, Object> moduleConfigs,
@@ -113,7 +125,9 @@ public class HiveMQConfigEntity {
             final @NotNull RestrictionsEntity restrictions,
             final @NotNull SecurityConfigEntity security,
             final @NotNull UnsConfigEntity uns,
-            final @NotNull UsageTrackingConfigEntity usageTracking) {
+            final @NotNull UsageTrackingConfigEntity usageTracking,
+            final @NotNull List<DataCombinerEntity> dataCombinerEntities) {
+        this.version = Objects.requireNonNullElse(version, CURRENT_CONFIG_VERSION);
         this.api = api;
         this.gateway = gateway;
         this.moduleConfigs = moduleConfigs;
@@ -128,6 +142,7 @@ public class HiveMQConfigEntity {
         this.security = security;
         this.uns = uns;
         this.usageTracking = usageTracking;
+        this.dataCombinerEntities = dataCombinerEntities;
     }
 
     public @NotNull List<ListenerEntity> getMqttListenerConfig() {
@@ -174,9 +189,13 @@ public class HiveMQConfigEntity {
         return moduleConfigs;
     }
 
-    public @NotNull UnsConfigEntity getUns() { return uns; }
+    public @NotNull UnsConfigEntity getUns() {
+        return uns;
+    }
 
-    public @NotNull DynamicConfigEntity getGatewayConfig() { return gateway;}
+    public @NotNull DynamicConfigEntity getGatewayConfig() {
+        return gateway;
+    }
 
     public @NotNull UsageTrackingConfigEntity getUsageTracking() {
         return usageTracking;
@@ -184,5 +203,58 @@ public class HiveMQConfigEntity {
 
     public @NotNull InternalConfigEntity getInternal() {
         return internal;
+    }
+
+    public @NotNull List<DataCombinerEntity> getDataCombinerEntities() {
+        return dataCombinerEntities;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final HiveMQConfigEntity that = (HiveMQConfigEntity) o;
+        return getVersion() == that.getVersion() &&
+                Objects.equals(mqttListeners, that.mqttListeners) &&
+                Objects.equals(mqttsnListeners, that.mqttsnListeners) &&
+                Objects.equals(mqtt, that.mqtt) &&
+                Objects.equals(mqttsn, that.mqttsn) &&
+                Objects.equals(restrictions, that.restrictions) &&
+                Objects.equals(security, that.security) &&
+                Objects.equals(persistence, that.persistence) &&
+                Objects.equals(mqttBridges, that.mqttBridges) &&
+                Objects.equals(api, that.api) &&
+                Objects.equals(getUns(), that.getUns()) &&
+                Objects.equals(gateway, that.gateway) &&
+                Objects.equals(getUsageTracking(), that.getUsageTracking()) &&
+                Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig()) &&
+                Objects.equals(getDataCombinerEntities(), that.getDataCombinerEntities()) &&
+                Objects.equals(getModuleConfigs(), that.getModuleConfigs()) &&
+                Objects.equals(getInternal(), that.getInternal());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getVersion(),
+                mqttListeners,
+                mqttsnListeners,
+                mqtt,
+                mqttsn,
+                restrictions,
+                security,
+                persistence,
+                mqttBridges,
+                api,
+                getUns(),
+                gateway,
+                getUsageTracking(),
+                getProtocolAdapterConfig(),
+                getDataCombinerEntities(),
+                getModuleConfigs(),
+                getInternal());
     }
 }

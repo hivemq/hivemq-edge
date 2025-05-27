@@ -19,28 +19,38 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.configuration.entity.api.ApiTlsEntity;
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPBroadcastListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
+import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
+import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.util.EnvVarUtil;
+import com.hivemq.util.ThreadFactoryUtil;
+import com.hivemq.util.render.EnvVarUtil;
+import com.hivemq.util.render.FileFragmentUtil;
+import com.hivemq.util.render.IfUtil;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.ValidationEventLocator;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.ValidationEventLocator;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -54,10 +64,23 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -65,66 +88,224 @@ public class ConfigFileReaderWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigFileReaderWriter.class);
     static final String XSD_SCHEMA = "config.xsd";
+    public static final String CONFIG_FRAGMENT_PATH = "/fragment/config";
 
     private final @NotNull ConfigurationFile configurationFile;
-    private final @NotNull ListenerConfigurator listenerConfigurator;
-    private final @NotNull MqttConfigurator mqttConfigurator;
-    private final @NotNull RestrictionConfigurator restrictionConfigurator;
-    private final @NotNull SecurityConfigurator securityConfigurator;
-    private final @NotNull PersistenceConfigurator persistenceConfigurator;
-    private final @NotNull MqttsnConfigurator mqttsnConfigurator;
-    private final @NotNull BridgeConfigurator bridgeConfigurator;
-    private final @NotNull ApiConfigurator apiConfigurator;
-    private final @NotNull UnsConfigurator unsConfigurator;
-    private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
-    private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
-    private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
-    private final @NotNull ModuleConfigurator moduleConfigurator;
-    private final @NotNull InternalConfigurator internalConfigurator;
-    protected @NotNull HiveMQConfigEntity configEntity;
+    protected volatile @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
+    private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
+    private final @NotNull List<Configurator<?>> configurators;
+    private final @NotNull Map<Path, Long> fragmentToModificationTime = new ConcurrentHashMap<>();
+
+    private final @NotNull BridgeExtractor bridgeExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
+    private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull UnsExtractor unsExtractor;
+    private final @NotNull List<ReloadableExtractor> reloadableExtractors;
+
+    private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
-            final @NotNull RestrictionConfigurator restrictionConfigurator,
-            final @NotNull SecurityConfigurator securityConfigurator,
-            final @NotNull MqttConfigurator mqttConfigurator,
-            final @NotNull ListenerConfigurator listenerConfigurator,
-            final @NotNull PersistenceConfigurator persistenceConfigurator,
-            final @NotNull MqttsnConfigurator mqttsnConfigurator,
-            final @NotNull BridgeConfigurator bridgeConfigurator,
-            final @NotNull ApiConfigurator apiConfigurator,
-            final @NotNull UnsConfigurator unsConfigurator,
-            final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator,
-            final @NotNull UsageTrackingConfigurator usageTrackingConfigurator,
-            final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator,
-            final @NotNull ModuleConfigurator moduleConfigurator,
-            final @NotNull InternalConfigurator internalConfigurator) {
-
+            final @NotNull List<Configurator<?>> configurators) {
         this.configurationFile = configurationFile;
-        this.listenerConfigurator = listenerConfigurator;
-        this.mqttConfigurator = mqttConfigurator;
-        this.restrictionConfigurator = restrictionConfigurator;
-        this.securityConfigurator = securityConfigurator;
-        this.persistenceConfigurator = persistenceConfigurator;
-        this.mqttsnConfigurator = mqttsnConfigurator;
-        this.bridgeConfigurator = bridgeConfigurator;
-        this.apiConfigurator = apiConfigurator;
-        this.unsConfigurator = unsConfigurator;
-        this.dynamicConfigConfigurator = dynamicConfigConfigurator;
-        this.usageTrackingConfigurator = usageTrackingConfigurator;
-        this.protocolAdapterConfigurator = protocolAdapterConfigurator;
-        this.moduleConfigurator = moduleConfigurator;
-        this.internalConfigurator = internalConfigurator;
+        this.configurators = configurators;
+        this.bridgeExtractor = new BridgeExtractor(this);
+        this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+        this.dataCombiningExtractor = new DataCombiningExtractor(this);
+        this.unsExtractor = new UnsExtractor(this);
+        reloadableExtractors = List.of(
+                bridgeExtractor,
+                protocolAdapterExtractor,
+                dataCombiningExtractor,
+                unsExtractor);
     }
 
-    public @NotNull HiveMQConfigEntity applyConfig() {
-        return readConfigFromXML();
+    public HiveMQConfigEntity applyConfig() {
+        if (configurationFile.file().isEmpty()) {
+            log.error("No configuration file present. Shutting down HiveMQ Edge.");
+            throw new UnrecoverableException(false);
+        }
+
+        final File configFile = configurationFile.file().get();
+        final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
+        this.configEntity = hiveMQConfigEntity;
+        if(!setConfiguration(hiveMQConfigEntity)) {
+            log.error("Unable to apply the given configuration.");
+            throw new UnrecoverableException(false);
+        }
+
+        return hiveMQConfigEntity;
+    }
+
+    public @NotNull DataCombiningExtractor getDataCombiningExtractor() {
+        return dataCombiningExtractor;
+    }
+
+    public @NotNull BridgeExtractor getBridgeExtractor() {
+        return bridgeExtractor;
+    }
+
+    public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
+        return protocolAdapterExtractor;
+    }
+
+    public @NotNull UnsExtractor getUnsExtractor() {
+        return unsExtractor;
+    }
+
+    public void applyConfigAndWatch(final long checkIntervalInMs) {
+        if(scheduledExecutorService != null) {
+            throw new IllegalStateException("Config watch was already started");
+        }
+        if (configurationFile.file().isEmpty()) {
+            log.error("No configuration file present. Shutting down HiveMQ Edge.");
+            throw new UnrecoverableException(false);
+        }
+
+        final File configFile = configurationFile.file().get();
+        final long interval = (checkIntervalInMs > 0) ? checkIntervalInMs : 0;
+        log.info("Rereading config file every {} ms", interval);
+
+        final AtomicLong fileModified = new AtomicLong();
+        final Map<Path, Long> fileModificationTimestamps;
+
+        final HiveMQConfigEntity entity = applyConfig();
+        fileModificationTimestamps = findFilesToWatch(entity);
+        final AtomicLong fileModifiedTimestamp = new AtomicLong();
+        try {
+            fileModifiedTimestamp.set(Files.getLastModifiedTime(configFile.toPath()).toMillis());
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to read last modified time from " + configFile.getAbsolutePath(), e);
+        }
+
+        final ThreadFactory threadFactory = ThreadFactoryUtil.create("hivemq-edge-config-watch-%d");
+        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        scheduledExecutorService.scheduleAtFixedRate(
+                () -> checkMonitoredFilesForChanges(configFile, fileModified, fileModificationTimestamps)
+                , 0, interval, TimeUnit.MILLISECONDS);
+        this.scheduledExecutorService = scheduledExecutorService;
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
+    }
+
+    private void checkMonitoredFilesForChanges(
+            final File configFile,
+            final @NotNull AtomicLong fileModified,
+            final @NotNull Map<Path, Long> fileModificationTimestamps) {
+        try {
+            final boolean devmode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
+
+            if(!devmode) {
+                final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
+
+                pathsToCheck.putAll(fileModificationTimestamps);
+
+                pathsToCheck.entrySet().forEach(pathToTs -> {
+                    try {
+                        if (!pathToTs.getKey().toString().equals(CONFIG_FRAGMENT_PATH) && Files.getFileAttributeView(pathToTs.getKey().toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
+                            log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                            System.exit(0);
+                        }
+                    } catch (final IOException e) {
+                        throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
+                    }
+                });
+            }
+            final long modified;
+
+            if(new File(CONFIG_FRAGMENT_PATH).exists()) {
+                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath()).toMillis();
+            } else {
+                log.warn("No fragment found, checking the full config, only used for testing");
+                modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+            }
+            if (modified > fileModified.get()) {
+                fileModified.set(modified);
+                final HiveMQConfigEntity hiveMQConfigEntity = readConfigFromXML(configFile);
+                this.configEntity = hiveMQConfigEntity;
+                if(!setConfiguration(hiveMQConfigEntity)) {
+                    if(!devmode) {
+                        log.error("Restarting because new config can't be hot-reloaded");
+                        System.exit(0);
+                    } else {
+                        log.error("TESTMODE, NOT RESTARTING");
+                    }
+                }
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Map<Path, Long> findFilesToWatch(final HiveMQConfigEntity entity) {
+        final Map<Path, Long> paths = new ConcurrentHashMap<>();
+
+        entity.getBridgeConfig().forEach(cfg -> {
+            final BridgeTlsEntity tls = cfg.getRemoteBroker().getTls();
+            if(tls != null) {
+                final KeystoreEntity keyStore = cfg.getRemoteBroker().getTls().getKeyStore();
+                if(keyStore != null) {
+                    final Path path = Paths.get(keyStore.getPath());
+                    try {
+                        paths.put(path, Files.getLastModifiedTime(path).toMillis());
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                final TruststoreEntity trustStore = cfg.getRemoteBroker().getTls().getTrustStore();
+                if(trustStore != null) {
+                    final Path path = Paths.get(trustStore.getPath());
+                    try {
+                        paths.put(path, Files.getLastModifiedTime(path).toMillis());
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+        final ApiTlsEntity tls = entity.getApiConfig().getTls();
+        if (tls != null && tls.getKeystoreEntity() != null) {
+            final Path path = Paths.get(tls.getKeystoreEntity().getPath());
+            try {
+                paths.put(path, Files.getLastModifiedTime(path).toMillis());
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return paths;
+    }
+
+    public void stopWatching() {
+        final ScheduledExecutorService scheduledExecutorService = this.scheduledExecutorService;
+        if(scheduledExecutorService != null) {
+            scheduledExecutorService.shutdownNow();
+        }
     }
 
     public void writeConfig() {
         writeConfigToXML(configurationFile, defaultBackupConfig);
+    }
+
+    public void writeConfigWithSync() {
+        if (log.isTraceEnabled()) {
+            log.trace("flushing configuration changes to entity layer");
+        }
+        try {
+            syncConfiguration();
+            if (configEntity.getGatewayConfig().isMutableConfigurationEnabled()) {
+                writeConfig();
+            }
+        } catch (final Exception e){
+            log.error("Configuration file sync failed: ", e);
+        } finally {
+            lastWrite.set(System.currentTimeMillis());
+        }
+    }
+
+    public @NotNull Long getLastWrite() {
+        return lastWrite.get();
     }
 
     public void setDefaultBackupConfig(final boolean defaultBackupConfig) {
@@ -244,14 +425,10 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    private @NotNull HiveMQConfigEntity readConfigFromXML() {
-        if (configurationFile.file().isEmpty()) {
-            log.error("No configuration file present. Shutting down HiveMQ Edge.");
-            throw new UnrecoverableException(false);
-        }
+    @VisibleForTesting
+    public @NotNull HiveMQConfigEntity readConfigFromXML(final @NotNull File configFile) {
 
-        final File configFile = configurationFile.file().get();
-        log.debug("Reading configuration file {}", configFile);
+        log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = new ArrayList<>();
 
         synchronized (lock) {
@@ -264,8 +441,15 @@ public class ConfigFileReaderWriter {
                 }
 
                 //replace environment variable placeholders
-                String configFileContent = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
+                String configFileContent = Files.readString(configFile.toPath());
+                final FileFragmentUtil.FragmentResult fragmentResult = FileFragmentUtil.replaceFragmentPlaceHolders(configFileContent);
+
+                fragmentToModificationTime.putAll(fragmentResult.getFragmentToModificationTime());
+
+                configFileContent = fragmentResult.getRenderResult(); //must happen before env rendering so templates can be used with envs
+                configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
+
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
                 final StreamSource streamSource = new StreamSource(is);
@@ -275,6 +459,7 @@ public class ConfigFileReaderWriter {
                         validationErrors.add(e);
                     }
                     return true;
+
                 });
 
                 final JAXBElement<? extends HiveMQConfigEntity> result =
@@ -284,18 +469,20 @@ public class ConfigFileReaderWriter {
                     throw new JAXBException("Parsing failed");
                 }
 
-                configEntity = result.getValue();
+                final HiveMQConfigEntity configEntity = result.getValue();
+
                 if (configEntity == null) {
                     throw new JAXBException("Result is null");
                 }
 
                 configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
 
+                configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
+
+
                 if (!validationErrors.isEmpty()) {
                     throw new JAXBException("Parsing failed");
                 }
-
-                setConfiguration(configEntity);
                 return configEntity;
 
             } catch (final JAXBException | IOException e) {
@@ -329,29 +516,70 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    void setConfiguration(final @NotNull HiveMQConfigEntity config) {
-        listenerConfigurator.setListenerConfig(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
-        mqttConfigurator.setMqttConfig(config.getMqttConfig());
-        restrictionConfigurator.setRestrictionsConfig(config.getRestrictionsConfig());
-        securityConfigurator.setSecurityConfig(config.getSecurityConfig());
-        persistenceConfigurator.setPersistenceConfig(config.getPersistenceConfig());
-        mqttsnConfigurator.setMqttsnConfig(config.getMqttsnConfig());
-        bridgeConfigurator.setBridgeConfig(config.getBridgeConfig());
-        apiConfigurator.setApiConfig(config.getApiConfig());
-        protocolAdapterConfigurator.setConfigs(config.getProtocolAdapterConfig());
-        apiConfigurator.setApiConfig(config.getApiConfig());
-        unsConfigurator.setUnsConfig(config.getUns());
-        dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
-        usageTrackingConfigurator.setConfig(config.getUsageTracking());
-        moduleConfigurator.setConfigs(config.getModuleConfigs());
-        internalConfigurator.setConfig(config.getInternal());
+    boolean setConfiguration(final @NotNull HiveMQConfigEntity config) {
+
+        final List<String> requiresRestart =
+                configurators.stream()
+                        .filter(c -> c.needsRestartWithConfig(config))
+                        .map(c -> c.getClass().getSimpleName())
+                        .collect(Collectors.toList());
+
+        if (requiresRestart.isEmpty()) {
+            log.debug("Config can be applied");
+            for (final Configurator<?> configurator : configurators) {
+                final @Nullable Configurator.ConfigResult configResult = configurator.applyConfig(config);
+                if (configResult == null) {
+                    log.error("Config {} can not be applied because the result is not found.",
+                            configurator.getClass().getSimpleName());
+                    return false;
+                }
+                switch (configResult) {
+                    case ERROR -> {
+                        log.error("Config {} can not be applied because an unrecoverable error is found.",
+                                configurator.getClass().getSimpleName());
+                        return false;
+                    }
+                    case NEEDS_RESTART -> {
+                        log.error("Config {} can not be applied because it requires restart.",
+                                configurator.getClass().getSimpleName());
+                        return false;
+                    }
+                }
+            }
+            for (final ReloadableExtractor<?, ?> reloadableExtractor : reloadableExtractors) {
+                final @Nullable Configurator.ConfigResult configResult = reloadableExtractor.updateConfig(config);
+                if (configResult == null) {
+                    log.error("Reloadable config {} can not be applied because the result is not found.",
+                            reloadableExtractor.getClass().getSimpleName());
+                    return false;
+                }
+                switch (configResult) {
+                    case ERROR -> {
+                        log.error("Reloadable config {} can not be applied because an unrecoverable error is found.",
+                                reloadableExtractor.getClass().getSimpleName());
+                        return false;
+                    }
+                    case NEEDS_RESTART -> {
+                        log.error("Reloadable config {} can not be applied because it requires restart.",
+                                reloadableExtractor.getClass().getSimpleName());
+                        return false;
+                    }
+                }
+            }
+            return true;
+        } else {
+            log.error("Config requires restart because of: {}", requiresRestart);
+            return false;
+        }
+
     }
 
     public void syncConfiguration() {
         Preconditions.checkNotNull(configEntity, "Configuration must be loaded to be synchronized");
-        unsConfigurator.syncUnsConfig(configEntity.getUns());
-        bridgeConfigurator.syncBridgeConfig(configEntity.getBridgeConfig());
-        protocolAdapterConfigurator.syncConfigs(configEntity.getProtocolAdapterConfig());
+        configurators.stream()
+                .filter(c -> c instanceof Syncable)
+                .forEach(c -> ((Syncable)c).sync(configEntity));
+        reloadableExtractors.forEach(reloadableExtractor -> reloadableExtractor.sync(configEntity));
     }
 
     protected Schema loadSchema() throws IOException, SAXException {

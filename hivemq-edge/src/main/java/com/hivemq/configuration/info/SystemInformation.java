@@ -45,6 +45,12 @@ public interface SystemInformation {
     File getHiveMQHomeFolder();
 
     /**
+     * @return a secondary folder where additional configs like topic filters are stored
+     */
+    @NotNull
+    File getSecondaryHiveMQHomeFolder();
+
+    /**
      * /**
      *
      * @return the config folder of HiveMQ
@@ -98,4 +104,15 @@ public interface SystemInformation {
      */
     boolean isEmbedded();
 
+    /**
+     * @return the interval between refreshing config files, 0 means no refreshing
+     */
+    long configRefreshIntervalInMs();
+
+    /**
+     * Indicates whether the config can be written
+     *
+     * @return false if the config can't be written.
+     */
+    boolean isConfigWriteable();
 }

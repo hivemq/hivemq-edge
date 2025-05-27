@@ -89,7 +89,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
 
-        log.debug("Uncaught exception in REST API", exception);
+        log.warn("Uncaught exception in REST API", exception);
         Exceptions.rethrowError(exception);
         return ErrorResponseUtil.errorResponse(new InternalServerError(null));
     }

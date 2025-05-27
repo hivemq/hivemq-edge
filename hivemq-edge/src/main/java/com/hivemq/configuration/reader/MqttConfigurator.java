@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -35,10 +37,12 @@ import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_RECEIVE_MAXIM
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 
-public class MqttConfigurator {
+public class MqttConfigurator implements Configurator<MqttConfigEntity>{
 
     private final @NotNull MqttConfigurationService mqttConfigurationService;
     private static final Logger log = LoggerFactory.getLogger(MqttConfigurator.class);
+    private volatile MqttConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
 
     @Inject
@@ -46,39 +50,50 @@ public class MqttConfigurator {
         this.mqttConfigurationService = mqttConfigurationService;
     }
 
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getMqttConfig())) {
+            return true;
+        }
+        return false;
+    }
 
-    void setMqttConfig(final @NotNull MqttConfigEntity mqttConfigEntity) {
+    @Override
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getMqttConfig();
+        this.initialized = true;
 
+        mqttConfigurationService.setRetainedMessagesEnabled(configEntity.getRetainedMessagesConfigEntity().isEnabled());
 
-        mqttConfigurationService.setRetainedMessagesEnabled(mqttConfigEntity.getRetainedMessagesConfigEntity().isEnabled());
+        mqttConfigurationService.setWildcardSubscriptionsEnabled(configEntity.getWildcardSubscriptionsConfigEntity().isEnabled());
+        mqttConfigurationService.setSubscriptionIdentifierEnabled(configEntity.getSubscriptionIdentifierConfigEntity().isEnabled());
+        mqttConfigurationService.setSharedSubscriptionsEnabled(configEntity.getSharedSubscriptionsConfigEntity().isEnabled());
 
-        mqttConfigurationService.setWildcardSubscriptionsEnabled(mqttConfigEntity.getWildcardSubscriptionsConfigEntity().isEnabled());
-        mqttConfigurationService.setSubscriptionIdentifierEnabled(mqttConfigEntity.getSubscriptionIdentifierConfigEntity().isEnabled());
-        mqttConfigurationService.setSharedSubscriptionsEnabled(mqttConfigEntity.getSharedSubscriptionsConfigEntity().isEnabled());
+        mqttConfigurationService.setMaximumQos(validateQoS(configEntity.getQoSConfigEntity().getMaxQos()));
 
-        mqttConfigurationService.setMaximumQos(validateQoS(mqttConfigEntity.getQoSConfigEntity().getMaxQos()));
+        mqttConfigurationService.setTopicAliasEnabled(configEntity.getTopicAliasConfigEntity().isEnabled());
+        mqttConfigurationService.setTopicAliasMaxPerClient(validateMaxPerClient(configEntity.getTopicAliasConfigEntity().getMaxPerClient()));
 
-        mqttConfigurationService.setTopicAliasEnabled(mqttConfigEntity.getTopicAliasConfigEntity().isEnabled());
-        mqttConfigurationService.setTopicAliasMaxPerClient(validateMaxPerClient(mqttConfigEntity.getTopicAliasConfigEntity().getMaxPerClient()));
+        mqttConfigurationService.setMaxQueuedMessages(configEntity.getQueuedMessagesConfigEntity().getMaxQueueSize());
+        mqttConfigurationService.setQueuedMessagesStrategy(MqttConfigurationService.QueuedMessagesStrategy.valueOf(configEntity.getQueuedMessagesConfigEntity().getQueuedMessagesStrategy().name()));
 
-        mqttConfigurationService.setMaxQueuedMessages(mqttConfigEntity.getQueuedMessagesConfigEntity().getMaxQueueSize());
-        mqttConfigurationService.setQueuedMessagesStrategy(MqttConfigurationService.QueuedMessagesStrategy.valueOf(mqttConfigEntity.getQueuedMessagesConfigEntity().getQueuedMessagesStrategy().name()));
-
-        final long clientSessionExpiryInterval = mqttConfigEntity.getSessionExpiryConfigEntity().getMaxInterval();
+        final long clientSessionExpiryInterval = configEntity.getSessionExpiryConfigEntity().getMaxInterval();
         mqttConfigurationService.setMaxSessionExpiryInterval(validateSessionExpiryInterval(clientSessionExpiryInterval));
 
-        final long maxMessageExpiryInterval = mqttConfigEntity.getMessageExpiryConfigEntity().getMaxInterval();
+        final long maxMessageExpiryInterval = configEntity.getMessageExpiryConfigEntity().getMaxInterval();
         mqttConfigurationService.setMaxMessageExpiryInterval(validateMessageExpiryInterval(maxMessageExpiryInterval));
 
-        final int serverReceiveMaximum = mqttConfigEntity.getReceiveMaximumConfigEntity().getServerReceiveMaximum();
+        final int serverReceiveMaximum = configEntity.getReceiveMaximumConfigEntity().getServerReceiveMaximum();
         mqttConfigurationService.setServerReceiveMaximum(validateServerReceiveMaximum(serverReceiveMaximum));
 
-        final int maxKeepAlive = mqttConfigEntity.getKeepAliveConfigEntity().getMaxKeepAlive();
+        final int maxKeepAlive = configEntity.getKeepAliveConfigEntity().getMaxKeepAlive();
         mqttConfigurationService.setKeepAliveMax(validateKeepAliveMaximum(maxKeepAlive));
-        mqttConfigurationService.setKeepAliveAllowZero(mqttConfigEntity.getKeepAliveConfigEntity().isAllowUnlimted());
+        mqttConfigurationService.setKeepAliveAllowZero(configEntity.getKeepAliveConfigEntity().isAllowUnlimted());
 
-        final int maxPacketSize = mqttConfigEntity.getPacketsConfigEntity().getMaxPacketSize();
+        final int maxPacketSize = configEntity.getPacketsConfigEntity().getMaxPacketSize();
         mqttConfigurationService.setMaxPacketSize(validateMaxPacketSize(maxPacketSize));
+
+        return ConfigResult.SUCCESS;
     }
 
     private int validateMaxPerClient(final int maxPerClient) {

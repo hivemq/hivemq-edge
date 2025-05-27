@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -57,9 +55,10 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     private final @NotNull String protocolAdapterId;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull List<Tag> opcuaTags;
+    private final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService;
     private final @NotNull OpcUaToMqttConfig opcUaToMqttConfig;
+    private final @NotNull DataPointFactory dataPointFactory;
+
 
     public OpcUaSubscriptionLifecycle(
             final @NotNull OpcUaClient opcUaClient,
@@ -67,17 +66,17 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
             final @NotNull String protocolAdapterId,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull List<Tag> opcuaTags,
-            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig) {
+            final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService,
+            final @NotNull OpcUaToMqttConfig opcUaToMqttConfig,
+            final @NotNull DataPointFactory dataPointFactory) {
         this.opcUaClient = opcUaClient;
         this.adapterId = adapterId;
         this.protocolAdapterId = protocolAdapterId;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
-        this.adapterPublishService = adapterPublishService;
-        this.opcuaTags = opcuaTags;
+        this.protocolAdapterTagStreamingService = protocolAdapterTagStreamingService;
         this.opcUaToMqttConfig = opcUaToMqttConfig;
+        this.dataPointFactory = dataPointFactory;
     }
 
     @Override
@@ -97,13 +96,13 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
                 subscriptionMap.remove(subscription.getSubscriptionId());
 
         if (subscriptionResult != null) {
-            subscribe(subscriptionResult.subscription).exceptionally(ex -> {
+            subscribe(subscriptionResult.opcuaTag()).exceptionally(ex -> {
                 if (ex instanceof UaServiceFaultException) {
-                    UaServiceFaultException cause = (UaServiceFaultException) ex.getCause();
+                    final UaServiceFaultException cause = (UaServiceFaultException) ex.getCause();
                     if (cause.getStatusCode().getValue() == StatusCodes.Bad_SubscriptionIdInvalid) {
                         log.warn("Resubscribing to OPC UA after transfer failure: {}", statusCode, ex);
                         try {
-                            subscribe(subscriptionResult.subscription).exceptionally(t -> {
+                            subscribe(subscriptionResult.opcuaTag()).exceptionally(t -> {
                                 log.error("Problem resucbscribing after subscription {} failed with {}",
                                         subscription.getSubscriptionId(),
                                         statusCode,
@@ -130,23 +129,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
 
-    public @NotNull Optional<Tag> findTag(final @NotNull String tagName) {
-        return opcuaTags.stream().filter(tag -> tag.getName().equals(tagName)).findFirst();
-    }
-
-
-    public @NotNull CompletableFuture<Void> subscribe(final @NotNull PollingContext subscription) {
-        final @NotNull String tagName = subscription.getTagName();
-
-        return findTag(subscription.getTagName()).map(tag -> subscribeToOpcua(subscription, (OpcuaTag) tag))
-                .orElseGet(() -> CompletableFuture.failedFuture(new IllegalArgumentException(
-                        "Opcua subscription for protocol adapter failed because the used tag '" +
-                                tagName +
-                                "' was not found. For the subscription to work the tag must be created via REST API or the UI.")));
-    }
-
-    private @NotNull CompletableFuture<Void> subscribeToOpcua(
-            final @NotNull PollingContext subscription, final @NotNull OpcuaTag opcuaTag) {
+    public @NotNull CompletableFuture<Void> subscribe(final @NotNull OpcuaTag opcuaTag) {
         final String nodeId = opcuaTag.getDefinition().getNode();
         log.info("Subscribing to OPC UA node {}", nodeId);
         final ReadValueId readValueId =
@@ -155,29 +138,28 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         return opcUaClient.getSubscriptionManager()
                 .createSubscription(opcUaToMqttConfig.getPublishingInterval())
                 .thenCompose(uaSubscription -> new OpcUaSubscriptionConsumer(
-                        opcUaToMqttConfig,
-                        subscription,
                         uaSubscription,
+                        opcUaToMqttConfig,
                         readValueId,
-                        adapterPublishService,
-                        eventService,
-                        Optional.ofNullable(opcUaClient.getStackClient().getConfig().getEndpoint()),
                         opcUaClient.getDynamicSerializationContext(),
-                        protocolAdapterMetricsService,
+                        protocolAdapterTagStreamingService,
+                        eventService,
                         adapterId,
-                        protocolAdapterId).start())
+                        protocolAdapterId,
+                        opcuaTag,
+                        dataPointFactory).start())
                 .thenApply(result -> {
-                    subscriptionMap.put(result.uaSubscription.getSubscriptionId(), result);
+                    subscriptionMap.put(result.uaSubscription().getSubscriptionId(), result);
                     return null;
                 });
     }
 
-    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<PollingContext> mappings) {
+    public @NotNull CompletableFuture<Void> subscribeAll(final @NotNull List<OpcuaTag> tags) {
 
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 
         final CompletableFuture[] subscriptionFutures =
-                mappings.stream().map(this::subscribe).toArray(CompletableFuture[]::new);
+                tags.stream().map(this::subscribe).toArray(CompletableFuture[]::new);
 
 
         CompletableFuture.allOf(subscriptionFutures).thenApply(unused -> {

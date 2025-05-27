@@ -16,18 +16,14 @@
 package util;
 
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
@@ -35,10 +31,8 @@ import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
@@ -55,14 +49,12 @@ public class TestConfigurationBootstrap {
     private final @NotNull SecurityConfigurationServiceImpl securityConfigurationService;
     private @NotNull ConfigurationServiceImpl configurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
-    private final @NotNull BridgeConfigurationService bridgeConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
-    private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
-    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
 
     public TestConfigurationBootstrap() {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
@@ -71,9 +63,7 @@ public class TestConfigurationBootstrap {
         restrictionsConfigurationService = new RestrictionsConfigurationServiceImpl();
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
-        bridgeConfigurationService = new BridgeConfigurationServiceImpl();
         apiConfigurationService = new ApiConfigurationServiceImpl();
-        unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         moduleConfigurationService = new ModuleConfigurationServiceImpl();
 
@@ -84,7 +74,6 @@ public class TestConfigurationBootstrap {
                 return false;
             }
         };
-        protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         configurationService = new ConfigurationServiceImpl(listenerConfigurationService,
                 mqttConfigurationService,
@@ -92,11 +81,10 @@ public class TestConfigurationBootstrap {
                 securityConfigurationService,
                 persistenceConfigurationService,
                 mqttsnConfigurationService,
-                bridgeConfigurationService,
                 apiConfigurationService,
-                unsConfigurationService,
                 dynamicConfigurationService,
-                usageTrackingConfigurationService, protocolAdapterConfigurationService, moduleConfigurationService,
+                usageTrackingConfigurationService,
+                moduleConfigurationService,
                 internalConfigurationService);
     }
 
@@ -146,10 +134,6 @@ public class TestConfigurationBootstrap {
 
     public void setMqttsnConfigurationService(final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
         this.mqttsnConfigurationService = mqttsnConfigurationService;
-    }
-
-    public @NotNull BridgeConfigurationService getBridgeConfigurationService() {
-        return bridgeConfigurationService;
     }
 
     public @NotNull ApiConfigurationService getApiConfigurationService() {

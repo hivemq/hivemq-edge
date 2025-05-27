@@ -1,0 +1,2426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Original file from the Apache 2.0 licensed project https://github.com/mtconnect/cppagent/tree/main/test_package. -->
+<MTConnectStreams xmlns:m="urn:mtconnect.org:MTConnectStreams:2.0" xmlns="urn:mtconnect.org:MTConnectStreams:2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:mtconnect.org:MTConnectStreams:2.0 http://schemas.mtconnect.org/schemas/MTConnectStreams_2.0.xsd">
+	<Header creationTime="2022-10-22T15:38:08Z" sender="DMZ-MTCNCT" instanceId="1665746507" version="2.0.0.11" deviceModelChangeTime="2022-10-20T22:10:03.142383Z" bufferSize="131072" nextSequence="2703542" firstSequence="2572470" lastSequence="2703541"/>
+	<Streams>
+		<DeviceStream name="Agent" uuid="0b49a3a0-18ca-0139-8748-2cde48001122">
+			<ComponentStream component="Adapter" name="HCN001" componentId="_c62b3518e4">
+				<Samples>
+					<AssetUpdateRate dataItemId="_c62b3518e4_asset_update_rate" sequence="10" statistic="AVERAGE" timestamp="2022-10-14T11:21:47.411962Z">UNAVAILABLE</AssetUpdateRate>
+					<ObservationUpdateRate dataItemId="_c62b3518e4_observation_update_rate" sequence="9" statistic="AVERAGE" timestamp="2022-10-14T11:21:47.411942Z">UNAVAILABLE</ObservationUpdateRate>
+				</Samples>
+				<Events>
+					<AdapterSoftwareVersion dataItemId="_c62b3518e4_adapter_software_version" sequence="130" timestamp="2022-10-14T11:21:47.495086Z">2.0.0.1</AdapterSoftwareVersion>
+					<ConnectionStatus dataItemId="_c62b3518e4_connection_status" sequence="1672499" timestamp="2022-10-20T22:10:02.937418Z">ESTABLISHED</ConnectionStatus>
+					<MTConnectVersion dataItemId="_c62b3518e4_mtconnect_version" sequence="131" timestamp="2022-10-14T11:21:47.49592Z">2.0</MTConnectVersion>
+				</Events>
+			</ComponentStream>
+			<ComponentStream component="Agent" name="Agent" componentId="agent_2cde48001122">
+				<Events>
+					<AssetChanged assetType="UNAVAILABLE" dataItemId="agent_2cde48001122_asset_chg" sequence="5" timestamp="2022-10-14T11:21:47.411483Z">UNAVAILABLE</AssetChanged>
+					<AssetCountDataSet count="0" dataItemId="agent_2cde48001122_asset_count" sequence="7" timestamp="2022-10-14T11:21:47.411917Z">UNAVAILABLE</AssetCountDataSet>
+					<AssetRemoved assetType="UNAVAILABLE" dataItemId="agent_2cde48001122_asset_rem" sequence="6" timestamp="2022-10-14T11:21:47.411902Z">UNAVAILABLE</AssetRemoved>
+					<Availability dataItemId="agent_avail" sequence="124" timestamp="2022-10-14T11:21:47.412884Z">AVAILABLE</Availability>
+					<DeviceAdded dataItemId="device_added" sequence="128" timestamp="2022-10-14T11:21:47.493157Z">5fd88408-7811-3c6b-5400-11f4026b6890</DeviceAdded>
+					<DeviceChanged dataItemId="device_changed" sequence="129" timestamp="2022-10-14T11:21:47.494123Z">5fd88408-7811-3c6b-5400-11f4026b6890</DeviceChanged>
+					<DeviceRemoved dataItemId="device_removed" sequence="127" timestamp="2022-10-14T11:21:47.49189Z">00000000-0000-0000-0000-000000000000</DeviceRemoved>
+				</Events>
+			</ComponentStream>
+		</DeviceStream>
+		<DeviceStream name="HCN001" uuid="5fd88408-7811-3c6b-5400-11f4026b6890">
+			<ComponentStream component="Axes" name="base" componentId="a">
+				<Condition>
+					<Normal dataItemId="servo_cond" sequence="1672500" timestamp="2022-10-20T22:07:36.1933Z" type="ACTUATOR"></Normal>
+					<Normal dataItemId="spindle_cond" sequence="1672509" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Rotary" name="B" componentId="ar">
+				<Samples>
+					<Angle dataItemId="Babs" sequence="2701717" subType="ACTUAL" timestamp="2022-10-22T15:32:14.5574Z">315</Angle>
+					<AngularVelocity dataItemId="Bfrt" sequence="2701731" timestamp="2022-10-22T15:32:14.9678Z">0</AngularVelocity>
+					<Load dataItemId="Bload" sequence="2701762" timestamp="2022-10-22T15:32:16.216Z">0</Load>
+					<Angle dataItemId="Bpos" sequence="2701718" subType="ACTUAL" timestamp="2022-10-22T15:32:14.5574Z">315</Angle>
+				</Samples>
+				<Events>
+					<RotaryMode dataItemId="arfunc" sequence="48" timestamp="2022-10-14T11:21:47.41234Z">UNAVAILABLE</RotaryMode>
+					<AxisState dataItemId="baxisstate" sequence="2701733" timestamp="2022-10-22T15:32:14.9678Z">STOPPED</AxisState>
+				</Events>
+				<Condition>
+					<Normal dataItemId="Btravel" sequence="1672515" timestamp="2022-10-20T22:07:36.1933Z" type="ANGLE"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Rotary" name="C" componentId="c">
+				<Samples>
+					<Angle dataItemId="Cabs" sequence="69" subType="ACTUAL" timestamp="2022-10-14T11:21:47.412518Z">UNAVAILABLE</Angle>
+					<AngularVelocity dataItemId="Cfrt" sequence="71" timestamp="2022-10-14T11:21:47.412531Z">UNAVAILABLE</AngularVelocity>
+					<Load dataItemId="Cload" sequence="67" timestamp="2022-10-14T11:21:47.412507Z">UNAVAILABLE</Load>
+					<Angle dataItemId="Cpos" sequence="51" subType="ACTUAL" timestamp="2022-10-14T11:21:47.412364Z">UNAVAILABLE</Angle>
+					<Load dataItemId="Sload" sequence="2701756" timestamp="2022-10-22T15:32:15.3912Z">0</Load>
+					<RotaryVelocity dataItemId="Srpm" sequence="2701735" subType="ACTUAL" timestamp="2022-10-22T15:32:14.9678Z">182</RotaryVelocity>
+					<Temperature compositionId="Cmotor" dataItemId="Stemp" sequence="2702426" timestamp="2022-10-22T15:33:32.4626Z">28</Temperature>
+				</Samples>
+				<Events>
+					<AxisState dataItemId="caxisstate" sequence="74" timestamp="2022-10-14T11:21:47.412549Z">UNAVAILABLE</AxisState>
+					<RotaryMode dataItemId="crfunc" sequence="1672550" timestamp="2022-10-20T22:07:36.1933Z">SPINDLE</RotaryMode>
+				</Events>
+				<Condition>
+					<Normal dataItemId="Ctravel" sequence="1672516" timestamp="2022-10-20T22:07:36.1933Z" type="ANGLE"></Normal>
+					<Normal dataItemId="Sload_cond" sequence="2697903" timestamp="2022-10-22T15:27:42.1649Z" type="LOAD"/>
+					<Unavailable dataItemId="Stemp_cond" sequence="72" timestamp="2022-10-14T11:21:47.412537Z" type="TEMPERATURE"/>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Controller" name="controller" componentId="cont">
+				<Events>
+					<EmergencyStop dataItemId="estop" sequence="1672519" timestamp="2022-10-20T22:07:36.1933Z">ARMED</EmergencyStop>
+					<FixtureId dataItemId="fixtureid" sequence="75" timestamp="2022-10-14T11:21:47.412555Z">UNAVAILABLE</FixtureId>
+					<MaintenanceListTable count="28" dataItemId="maintcheck" sequence="2702990" timestamp="2022-10-22T15:34:42.091Z">
+						<Entry key="DAILY-1">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Checking the slideway lubricant</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436567</Cell>
+						</Entry>
+						<Entry key="DAILY-2">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Checking the spindle lubricant</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436565</Cell>
+						</Entry>
+						<Entry key="DAILY-3">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Checking the coolant</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436564</Cell>
+						</Entry>
+						<Entry key="DAILY-4">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean the line filter</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436564</Cell>
+						</Entry>
+						<Entry key="DAILY-5">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Spindle cooling unit filter</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436561</Cell>
+						</Entry>
+						<Entry key="DAILY-6">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean the chip conveyor</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436560</Cell>
+						</Entry>
+						<Entry key="DAILY-7">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Function check of the EMG. STOP buttons</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436547</Cell>
+						</Entry>
+						<Entry key="DAILY-8">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Greasing the Magazine Chain</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436546</Cell>
+						</Entry>
+						<Entry key="DAILY-9">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Supplying grease to the ATC arm</Cell>
+							<Cell key="TARGET">0</Cell>
+							<Cell key="VALUE">3436545</Cell>
+						</Entry>
+						<Entry key="HRS1500-1">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean hydraulic unit strainer.</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-10">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change ATC unit oil(first time only)</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-11">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change shifter unit oil.(first only)</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-12">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change hydraulic unit oil(first)</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-2">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change table unit oil.</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-3">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Apply grease to all grease fittings</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-4">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Check chain tension.</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-5">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Check the air unit.</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-6">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clear Chips from Under Slide Covers</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-7">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean coolant tank / Change coolant.</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-8">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Check Piping and Hose</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS1500-9">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean lub-oil filter (filler port)</Cell>
+							<Cell key="TARGET">5400000</Cell>
+							<Cell key="VALUE">3436569</Cell>
+						</Entry>
+						<Entry key="HRS3000-1">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change ATC unit oil.</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-2">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change shifter unit oil.</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-3">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change oil of Hydraulic Unit</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-4">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Change spindle cooling oil.</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-5">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean Y-shaped strainer.</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-6">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Clean lub-oil filter (suction port)</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+						<Entry key="HRS3000-7">
+							<Cell key="LAST_SERVICE_DATE">2022-09-12T05:00:00.0000Z</Cell>
+							<Cell key="NAME">Check Z axis cable guide</Cell>
+							<Cell key="TARGET">10800000</Cell>
+							<Cell key="VALUE">3436568</Cell>
+						</Entry>
+					</MaintenanceListTable>
+					<PalletId dataItemId="pallet_num" sequence="34" timestamp="2022-10-14T11:21:47.412183Z">UNAVAILABLE</PalletId>
+					<WorkOffsetTable count="306" dataItemId="woffsettable" sequence="2673153" timestamp="2022-10-22T14:56:53.7417Z">
+						<Entry key="G54">
+							<Cell key="B">-0.8143</Cell>
+							<Cell key="X">-1332.963</Cell>
+							<Cell key="Y">-2159.976</Cell>
+							<Cell key="Z">-1699.243</Cell>
+						</Entry>
+						<Entry key="G54.1P1">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-686.0403</Cell>
+							<Cell key="Y">-1880.611</Cell>
+							<Cell key="Z">-2568.627</Cell>
+						</Entry>
+						<Entry key="G54.1P10">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-875.7916</Cell>
+							<Cell key="Y">-1118.917</Cell>
+							<Cell key="Z">-2615.594</Cell>
+						</Entry>
+						<Entry key="G54.1P100">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1521.184</Cell>
+							<Cell key="Y">-1560.121</Cell>
+							<Cell key="Z">-2534.264</Cell>
+						</Entry>
+						<Entry key="G54.1P101">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1527.037</Cell>
+							<Cell key="Y">-1560.121</Cell>
+							<Cell key="Z">-2516.565</Cell>
+						</Entry>
+						<Entry key="G54.1P102">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1139.964</Cell>
+							<Cell key="Y">-1560.121</Cell>
+							<Cell key="Z">-2534.352</Cell>
+						</Entry>
+						<Entry key="G54.1P103">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2081.843</Cell>
+							<Cell key="Y">-1769.178</Cell>
+							<Cell key="Z">-2931.674</Cell>
+						</Entry>
+						<Entry key="G54.1P104">
+							<Cell key="B">0.0001</Cell>
+							<Cell key="X">-1256.954</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2319.155</Cell>
+						</Entry>
+						<Entry key="G54.1P105">
+							<Cell key="B">0.0001</Cell>
+							<Cell key="X">-1757.546</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2361.854</Cell>
+						</Entry>
+						<Entry key="G54.1P106">
+							<Cell key="B">0.0001</Cell>
+							<Cell key="X">-1410.047</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2311.266</Cell>
+						</Entry>
+						<Entry key="G54.1P107">
+							<Cell key="B">0.0001</Cell>
+							<Cell key="X">-909.4544</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2469.227</Cell>
+						</Entry>
+						<Entry key="G54.1P108">
+							<Cell key="B">0.0001</Cell>
+							<Cell key="X">-1383.099</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2359.476</Cell>
+						</Entry>
+						<Entry key="G54.1P109">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1459.374</Cell>
+							<Cell key="Y">-2183.043</Cell>
+							<Cell key="Z">-2409.031</Cell>
+						</Entry>
+						<Entry key="G54.1P11">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1791.209</Cell>
+							<Cell key="Y">-1118.917</Cell>
+							<Cell key="Z">-2616.436</Cell>
+						</Entry>
+						<Entry key="G54.1P110">
+							<Cell key="B">0.0199</Cell>
+							<Cell key="X">-1383.401</Cell>
+							<Cell key="Y">-1554.147</Cell>
+							<Cell key="Z">-2425.885</Cell>
+						</Entry>
+						<Entry key="G54.1P111">
+							<Cell key="B">0.0199</Cell>
+							<Cell key="X">-1765.115</Cell>
+							<Cell key="Y">-1554.147</Cell>
+							<Cell key="Z">-2259.701</Cell>
+						</Entry>
+						<Entry key="G54.1P112">
+							<Cell key="B">0.0199</Cell>
+							<Cell key="X">-1283.599</Cell>
+							<Cell key="Y">-1554.147</Cell>
+							<Cell key="Z">-2392.495</Cell>
+						</Entry>
+						<Entry key="G54.1P113">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1037.846</Cell>
+							<Cell key="Y">-2192.513</Cell>
+							<Cell key="Z">-1907.179</Cell>
+						</Entry>
+						<Entry key="G54.1P114">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2169.521</Cell>
+							<Cell key="Y">-2192.513</Cell>
+							<Cell key="Z">-2237.869</Cell>
+						</Entry>
+						<Entry key="G54.1P115">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1036.577</Cell>
+							<Cell key="Y">-2192.449</Cell>
+							<Cell key="Z">-1909.753</Cell>
+						</Entry>
+						<Entry key="G54.1P116">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2166.947</Cell>
+							<Cell key="Y">-2192.449</Cell>
+							<Cell key="Z">-2236.6</Cell>
+						</Entry>
+						<Entry key="G54.1P117">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-636.0496</Cell>
+							<Cell key="Y">-1935.19</Cell>
+							<Cell key="Z">-1839.503</Cell>
+						</Entry>
+						<Entry key="G54.1P118">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-633.4466</Cell>
+							<Cell key="Y">-1935.181</Cell>
+							<Cell key="Z">-1841.866</Cell>
+						</Entry>
+						<Entry key="G54.1P119">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">-2192.449</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P12">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.646</Cell>
+							<Cell key="Y">-1118.939</Cell>
+							<Cell key="Z">-2285.71</Cell>
+						</Entry>
+						<Entry key="G54.1P120">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-2050.218</Cell>
+							<Cell key="Y">-1780.377</Cell>
+							<Cell key="Z">-1907.381</Cell>
+						</Entry>
+						<Entry key="G54.1P121">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-1385.482</Cell>
+							<Cell key="Y">-1696.703</Cell>
+							<Cell key="Z">-2122.991</Cell>
+						</Entry>
+						<Entry key="G54.1P122">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-2169.32</Cell>
+							<Cell key="Y">-1780.377</Cell>
+							<Cell key="Z">-2004.498</Cell>
+						</Entry>
+						<Entry key="G54.1P123">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-2072.202</Cell>
+							<Cell key="Y">-1780.377</Cell>
+							<Cell key="Z">-2047.4</Cell>
+						</Entry>
+						<Entry key="G54.1P124">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-1530.992</Cell>
+							<Cell key="Y">-1687.047</Cell>
+							<Cell key="Z">-2450.456</Cell>
+						</Entry>
+						<Entry key="G54.1P125">
+							<Cell key="B">-0.3177</Cell>
+							<Cell key="X">-497.6805</Cell>
+							<Cell key="Y">-1780.377</Cell>
+							<Cell key="Z">-2026.482</Cell>
+						</Entry>
+						<Entry key="G54.1P126">
+							<Cell key="B">-0.1348</Cell>
+							<Cell key="X">-1840.26</Cell>
+							<Cell key="Y">-1447.542</Cell>
+							<Cell key="Z">-2200.405</Cell>
+						</Entry>
+						<Entry key="G54.1P127">
+							<Cell key="B">-0.1348</Cell>
+							<Cell key="X">-1876.295</Cell>
+							<Cell key="Y">-1447.542</Cell>
+							<Cell key="Z">-2094.26</Cell>
+						</Entry>
+						<Entry key="G54.1P128">
+							<Cell key="B">-0.1348</Cell>
+							<Cell key="X">-1982.44</Cell>
+							<Cell key="Y">-1447.542</Cell>
+							<Cell key="Z">-2303.015</Cell>
+						</Entry>
+						<Entry key="G54.1P129">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P13">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-876.2132</Cell>
+							<Cell key="Y">-1118.896</Cell>
+							<Cell key="Z">-2617.157</Cell>
+						</Entry>
+						<Entry key="G54.1P130">
+							<Cell key="B">-0.1009</Cell>
+							<Cell key="X">-1365.128</Cell>
+							<Cell key="Y">-1011.768</Cell>
+							<Cell key="Z">-1940.237</Cell>
+						</Entry>
+						<Entry key="G54.1P131">
+							<Cell key="B">-0.1204</Cell>
+							<Cell key="X">-1365.77</Cell>
+							<Cell key="Y">-1011.583</Cell>
+							<Cell key="Z">-1940.356</Cell>
+						</Entry>
+						<Entry key="G54.1P132">
+							<Cell key="B">-0.1204</Cell>
+							<Cell key="X">-2136.344</Cell>
+							<Cell key="Y">-1011.583</Cell>
+							<Cell key="Z">-2156.98</Cell>
+						</Entry>
+						<Entry key="G54.1P133">
+							<Cell key="B">-0.1204</Cell>
+							<Cell key="X">-1301.23</Cell>
+							<Cell key="Y">-1011.583</Cell>
+							<Cell key="Z">-2014.424</Cell>
+						</Entry>
+						<Entry key="G54.1P134">
+							<Cell key="B">-0.1204</Cell>
+							<Cell key="X">-530.6558</Cell>
+							<Cell key="Y">-1011.583</Cell>
+							<Cell key="Z">-2214.36</Cell>
+						</Entry>
+						<Entry key="G54.1P135">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-406.4</Cell>
+							<Cell key="Y">-1384.3</Cell>
+							<Cell key="Z">-1562.1</Cell>
+						</Entry>
+						<Entry key="G54.1P136">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2504.396</Cell>
+							<Cell key="Y">-1391.254</Cell>
+							<Cell key="Z">-1831.001</Cell>
+						</Entry>
+						<Entry key="G54.1P137">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1313.631</Cell>
+							<Cell key="Y">-1351.531</Cell>
+							<Cell key="Z">-1765.13</Cell>
+						</Entry>
+						<Entry key="G54.1P138">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1403.844</Cell>
+							<Cell key="Y">-2063.71</Cell>
+							<Cell key="Z">-1646.482</Cell>
+						</Entry>
+						<Entry key="G54.1P139">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-236.8258</Cell>
+							<Cell key="Y">-2063.968</Cell>
+							<Cell key="Z">-2163.349</Cell>
+						</Entry>
+						<Entry key="G54.1P14">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1790.787</Cell>
+							<Cell key="Y">-1118.896</Cell>
+							<Cell key="Z">-2613.828</Cell>
+						</Entry>
+						<Entry key="G54.1P140">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2430.174</Cell>
+							<Cell key="Y">-2063.968</Cell>
+							<Cell key="Z">-2215.611</Cell>
+						</Entry>
+						<Entry key="G54.1P141">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1233.978</Cell>
+							<Cell key="Y">-605.4677</Cell>
+							<Cell key="Z">-1859.967</Cell>
+						</Entry>
+						<Entry key="G54.1P142">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1290.827</Cell>
+							<Cell key="Y">-1401.154</Cell>
+							<Cell key="Z">-1915.549</Cell>
+						</Entry>
+						<Entry key="G54.1P143">
+							<Cell key="B">-0.015</Cell>
+							<Cell key="X">-756.9988</Cell>
+							<Cell key="Y">-1447.579</Cell>
+							<Cell key="Z">-2228.507</Cell>
+						</Entry>
+						<Entry key="G54.1P144">
+							<Cell key="B">-0.015</Cell>
+							<Cell key="X">-818.8066</Cell>
+							<Cell key="Y">-1447.579</Cell>
+							<Cell key="Z">-2164.001</Cell>
+						</Entry>
+						<Entry key="G54.1P145">
+							<Cell key="B">-0.015</Cell>
+							<Cell key="X">-1910.001</Cell>
+							<Cell key="Y">-1447.579</Cell>
+							<Cell key="Z">-2460.333</Cell>
+						</Entry>
+						<Entry key="G54.1P146">
+							<Cell key="B">-0.0504</Cell>
+							<Cell key="X">-515.8265</Cell>
+							<Cell key="Y">-1147.827</Cell>
+							<Cell key="Z">-2155.659</Cell>
+						</Entry>
+						<Entry key="G54.1P147">
+							<Cell key="B">-0.0504</Cell>
+							<Cell key="X">-2151.174</Cell>
+							<Cell key="Y">-1147.827</Cell>
+							<Cell key="Z">-2096.302</Cell>
+						</Entry>
+						<Entry key="G54.1P148">
+							<Cell key="B">0.0265</Cell>
+							<Cell key="X">-854.7205</Cell>
+							<Cell key="Y">-1340.291</Cell>
+							<Cell key="Z">-1966.606</Cell>
+						</Entry>
+						<Entry key="G54.1P149">
+							<Cell key="B">0.0265</Cell>
+							<Cell key="X">-451.4738</Cell>
+							<Cell key="Y">-1340.291</Cell>
+							<Cell key="Z">-2264.42</Cell>
+						</Entry>
+						<Entry key="G54.1P15">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-690.6928</Cell>
+							<Cell key="Y">-1894.865</Cell>
+							<Cell key="Z">-2565.607</Cell>
+						</Entry>
+						<Entry key="G54.1P150">
+							<Cell key="B">0.0265</Cell>
+							<Cell key="X">-1812.28</Cell>
+							<Cell key="Y">-1340.291</Cell>
+							<Cell key="Z">-1861.174</Cell>
+						</Entry>
+						<Entry key="G54.1P151">
+							<Cell key="B">0.0265</Cell>
+							<Cell key="X">-2215.526</Cell>
+							<Cell key="Y">-1340.291</Cell>
+							<Cell key="Z">-2228.84</Cell>
+						</Entry>
+						<Entry key="G54.1P152">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2100.648</Cell>
+							<Cell key="Y">-2110.823</Cell>
+							<Cell key="Z">-2865.994</Cell>
+						</Entry>
+						<Entry key="G54.1P153">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-566.3522</Cell>
+							<Cell key="Y">-2110.823</Cell>
+							<Cell key="Z">-2620.406</Cell>
+						</Entry>
+						<Entry key="G54.1P154">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-563.2791</Cell>
+							<Cell key="Y">-2109.449</Cell>
+							<Cell key="Z">-2868.407</Cell>
+						</Entry>
+						<Entry key="G54.1P155">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2103.721</Cell>
+							<Cell key="Y">-2109.449</Cell>
+							<Cell key="Z">-2617.993</Cell>
+						</Entry>
+						<Entry key="G54.1P156">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-553.2953</Cell>
+							<Cell key="Y">-2033.325</Cell>
+							<Cell key="Z">-2741.557</Cell>
+						</Entry>
+						<Entry key="G54.1P157">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2113.705</Cell>
+							<Cell key="Y">-2033.325</Cell>
+							<Cell key="Z">-2744.843</Cell>
+						</Entry>
+						<Entry key="G54.1P158">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-553.8259</Cell>
+							<Cell key="Y">-2033.375</Cell>
+							<Cell key="Z">-2744.819</Cell>
+						</Entry>
+						<Entry key="G54.1P159">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2113.174</Cell>
+							<Cell key="Y">-2033.375</Cell>
+							<Cell key="Z">-2741.581</Cell>
+						</Entry>
+						<Entry key="G54.1P16">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1976.307</Cell>
+							<Cell key="Y">-1894.865</Cell>
+							<Cell key="Z">-2675.684</Cell>
+						</Entry>
+						<Entry key="G54.1P160">
+							<Cell key="B">0.0249</Cell>
+							<Cell key="X">-673.0109</Cell>
+							<Cell key="Y">-1753.384</Cell>
+							<Cell key="Z">-1997.004</Cell>
+						</Entry>
+						<Entry key="G54.1P161">
+							<Cell key="B">0.0249</Cell>
+							<Cell key="X">-445.2061</Cell>
+							<Cell key="Y">-1753.384</Cell>
+							<Cell key="Z">-2082.711</Cell>
+						</Entry>
+						<Entry key="G54.1P162">
+							<Cell key="B">0.0249</Cell>
+							<Cell key="X">-2221.794</Cell>
+							<Cell key="Y">-1753.384</Cell>
+							<Cell key="Z">-1952.714</Cell>
+						</Entry>
+						<Entry key="G54.1P163">
+							<Cell key="B">0.1356</Cell>
+							<Cell key="X">-1256.638</Cell>
+							<Cell key="Y">-991.8381</Cell>
+							<Cell key="Z">-1978.611</Cell>
+						</Entry>
+						<Entry key="G54.1P164">
+							<Cell key="B">0.1356</Cell>
+							<Cell key="X">-1417.866</Cell>
+							<Cell key="Y">-990.8619</Cell>
+							<Cell key="Z">-2015.451</Cell>
+						</Entry>
+						<Entry key="G54.1P165">
+							<Cell key="B">0.1356</Cell>
+							<Cell key="X">-670.511</Cell>
+							<Cell key="Y">-991.8381</Cell>
+							<Cell key="Z">-2350.163</Cell>
+						</Entry>
+						<Entry key="G54.1P166">
+							<Cell key="B">0.0183</Cell>
+							<Cell key="X">-1191.168</Cell>
+							<Cell key="Y">-860.8381</Cell>
+							<Cell key="Z">-1972.04</Cell>
+						</Entry>
+						<Entry key="G54.1P167">
+							<Cell key="B">0.0183</Cell>
+							<Cell key="X">-945.4401</Cell>
+							<Cell key="Y">-850.1711</Cell>
+							<Cell key="Z">-2335.582</Cell>
+						</Entry>
+						<Entry key="G54.1P168">
+							<Cell key="B">0.0183</Cell>
+							<Cell key="X">-1475.833</Cell>
+							<Cell key="Y">-860.8381</Cell>
+							<Cell key="Z">-2358.66</Cell>
+						</Entry>
+						<Entry key="G54.1P169">
+							<Cell key="B">0.0183</Cell>
+							<Cell key="X">-1718.04</Cell>
+							<Cell key="Y">-860.8381</Cell>
+							<Cell key="Z">-2273.393</Cell>
+						</Entry>
+						<Entry key="G54.1P17">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-681.5877</Cell>
+							<Cell key="Y">-1894.677</Cell>
+							<Cell key="Z">-2576.635</Cell>
+						</Entry>
+						<Entry key="G54.1P170">
+							<Cell key="B">0.1084</Cell>
+							<Cell key="X">-1478.594</Cell>
+							<Cell key="Y">-1524.986</Cell>
+							<Cell key="Z">-1694.496</Cell>
+						</Entry>
+						<Entry key="G54.1P171">
+							<Cell key="B">0.1084</Cell>
+							<Cell key="X">-2382.204</Cell>
+							<Cell key="Y">-1204.835</Cell>
+							<Cell key="Z">-2641.947</Cell>
+						</Entry>
+						<Entry key="G54.1P172">
+							<Cell key="B">0.1084</Cell>
+							<Cell key="X">-1434.753</Cell>
+							<Cell key="Y">-1204.835</Cell>
+							<Cell key="Z">-1950.404</Cell>
+						</Entry>
+						<Entry key="G54.1P173">
+							<Cell key="B">0.1084</Cell>
+							<Cell key="X">-284.7957</Cell>
+							<Cell key="Y">-1204.835</Cell>
+							<Cell key="Z">-2750.473</Cell>
+						</Entry>
+						<Entry key="G54.1P174">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2374.9</Cell>
+							<Cell key="Y">-1738.379</Cell>
+							<Cell key="Z">-2066.165</Cell>
+						</Entry>
+						<Entry key="G54.1P175">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1526.656</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P176">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1526.631</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P177">
+							<Cell key="B">0.1442</Cell>
+							<Cell key="X">-248.3549</Cell>
+							<Cell key="Y">-1515.132</Cell>
+							<Cell key="Z">-2414.032</Cell>
+						</Entry>
+						<Entry key="G54.1P178">
+							<Cell key="B">0.1442</Cell>
+							<Cell key="X">-824.468</Cell>
+							<Cell key="Y">-1515.132</Cell>
+							<Cell key="Z">-1658.055</Cell>
+						</Entry>
+						<Entry key="G54.1P179">
+							<Cell key="B">0.1442</Cell>
+							<Cell key="X">-2418.645</Cell>
+							<Cell key="Y">-1515.132</Cell>
+							<Cell key="Z">-2234.168</Cell>
+						</Entry>
+						<Entry key="G54.1P18">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1985.412</Cell>
+							<Cell key="Y">-1894.677</Cell>
+							<Cell key="Z">-2664.656</Cell>
+						</Entry>
+						<Entry key="G54.1P180">
+							<Cell key="B">0.1442</Cell>
+							<Cell key="X">-1842.532</Cell>
+							<Cell key="Y">-1515.132</Cell>
+							<Cell key="Z">-1529.645</Cell>
+						</Entry>
+						<Entry key="G54.1P181">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-264.2969</Cell>
+							<Cell key="Y">-1887.558</Cell>
+							<Cell key="Z">-2599.419</Cell>
+						</Entry>
+						<Entry key="G54.1P182">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2405.462</Cell>
+							<Cell key="Y">-1887.972</Cell>
+							<Cell key="Z">-2308.053</Cell>
+						</Entry>
+						<Entry key="G54.1P183">
+							<Cell key="B">-0.0655</Cell>
+							<Cell key="X">-2152.284</Cell>
+							<Cell key="Y">-1989.755</Cell>
+							<Cell key="Z">-2013.465</Cell>
+						</Entry>
+						<Entry key="G54.1P184">
+							<Cell key="B">-0.0655</Cell>
+							<Cell key="X">-450.3349</Cell>
+							<Cell key="Y">-1989.755</Cell>
+							<Cell key="Z">-2088.784</Cell>
+						</Entry>
+						<Entry key="G54.1P185">
+							<Cell key="B">-0.0655</Cell>
+							<Cell key="X">-1035.416</Cell>
+							<Cell key="Y">-1989.755</Cell>
+							<Cell key="Z">-1860.035</Cell>
+						</Entry>
+						<Entry key="G54.1P186">
+							<Cell key="B">-0.0655</Cell>
+							<Cell key="X">-2216.665</Cell>
+							<Cell key="Y">-1989.755</Cell>
+							<Cell key="Z">-1924.416</Cell>
+						</Entry>
+						<Entry key="G54.1P187">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1342.896</Cell>
+							<Cell key="Y">-1894.653</Cell>
+							<Cell key="Z">-2172.871</Cell>
+						</Entry>
+						<Entry key="G54.1P188">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1335.73</Cell>
+							<Cell key="Y">-1116.642</Cell>
+							<Cell key="Z">-2165.039</Cell>
+						</Entry>
+						<Entry key="G54.1P189">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.958</Cell>
+							<Cell key="Y">-1977.797</Cell>
+							<Cell key="Z">-2240.747</Cell>
+						</Entry>
+						<Entry key="G54.1P19">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-608.7786</Cell>
+							<Cell key="Y">-1993.495</Cell>
+							<Cell key="Z">-2486.639</Cell>
+						</Entry>
+						<Entry key="G54.1P190">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.86</Cell>
+							<Cell key="Y">-1139.68</Cell>
+							<Cell key="Z">-2185.274</Cell>
+						</Entry>
+						<Entry key="G54.1P191">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-775.5735</Cell>
+							<Cell key="Y">-1139.68</Cell>
+							<Cell key="Z">-1819.28</Cell>
+						</Entry>
+						<Entry key="G54.1P192">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1891.427</Cell>
+							<Cell key="Y">-1139.68</Cell>
+							<Cell key="Z">-1818</Cell>
+						</Entry>
+						<Entry key="G54.1P193">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1329.739</Cell>
+							<Cell key="Y">-1897.897</Cell>
+							<Cell key="Z">-2266.435</Cell>
+						</Entry>
+						<Entry key="G54.1P194">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.408</Cell>
+							<Cell key="Y">-987.0524</Cell>
+							<Cell key="Z">-2188.336</Cell>
+						</Entry>
+						<Entry key="G54.1P195">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.391</Cell>
+							<Cell key="Y">-1839.224</Cell>
+							<Cell key="Z">-2231.251</Cell>
+						</Entry>
+						<Entry key="G54.1P196">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.223</Cell>
+							<Cell key="Y">-1144.574</Cell>
+							<Cell key="Z">-2201.547</Cell>
+						</Entry>
+						<Entry key="G54.1P197">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2.54</Cell>
+							<Cell key="Y">-2.54</Cell>
+							<Cell key="Z">-2.54</Cell>
+						</Entry>
+						<Entry key="G54.1P198">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2.54</Cell>
+							<Cell key="Y">-2.54</Cell>
+							<Cell key="Z">-2.54</Cell>
+						</Entry>
+						<Entry key="G54.1P199">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1356.904</Cell>
+							<Cell key="Y">-1915.813</Cell>
+							<Cell key="Z">-2161.037</Cell>
+						</Entry>
+						<Entry key="G54.1P2">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1980.96</Cell>
+							<Cell key="Y">-1880.611</Cell>
+							<Cell key="Z">-2708.096</Cell>
+						</Entry>
+						<Entry key="G54.1P20">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2219.511</Cell>
+							<Cell key="Y">-1993.495</Cell>
+							<Cell key="Z">-2459.694</Cell>
+						</Entry>
+						<Entry key="G54.1P200">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.532</Cell>
+							<Cell key="Y">-1117.879</Cell>
+							<Cell key="Z">-2139.256</Cell>
+						</Entry>
+						<Entry key="G54.1P201">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.284</Cell>
+							<Cell key="Y">-1978.434</Cell>
+							<Cell key="Z">-2217.501</Cell>
+						</Entry>
+						<Entry key="G54.1P202">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.627</Cell>
+							<Cell key="Y">-1141.275</Cell>
+							<Cell key="Z">-2163.601</Cell>
+						</Entry>
+						<Entry key="G54.1P203">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-753.9008</Cell>
+							<Cell key="Y">-1141.275</Cell>
+							<Cell key="Z">-1971.167</Cell>
+						</Entry>
+						<Entry key="G54.1P204">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1913.099</Cell>
+							<Cell key="Y">-1141.275</Cell>
+							<Cell key="Z">-1970.913</Cell>
+						</Entry>
+						<Entry key="G54.1P205">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.579</Cell>
+							<Cell key="Y">-1880.795</Cell>
+							<Cell key="Z">-2081.713</Cell>
+						</Entry>
+						<Entry key="G54.1P206">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.007</Cell>
+							<Cell key="Y">-1117.647</Cell>
+							<Cell key="Z">-1938.349</Cell>
+						</Entry>
+						<Entry key="G54.1P207">
+							<Cell key="B">-0.8143</Cell>
+							<Cell key="X">-1332.897</Cell>
+							<Cell key="Y">-462.7337</Cell>
+							<Cell key="Z">-2523.604</Cell>
+						</Entry>
+						<Entry key="G54.1P208">
+							<Cell key="B">-0.8143</Cell>
+							<Cell key="X">-1334.103</Cell>
+							<Cell key="Y">-462.7337</Cell>
+							<Cell key="Z">-2520.836</Cell>
+						</Entry>
+						<Entry key="G54.1P209">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.31</Cell>
+							<Cell key="Y">-1117.639</Cell>
+							<Cell key="Z">-2105.923</Cell>
+						</Entry>
+						<Entry key="G54.1P21">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-608.0905</Cell>
+							<Cell key="Y">-1993.594</Cell>
+							<Cell key="Z">-2484.648</Cell>
+						</Entry>
+						<Entry key="G54.1P210">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1330.992</Cell>
+							<Cell key="Y">-2012.74</Cell>
+							<Cell key="Z">-2235.896</Cell>
+						</Entry>
+						<Entry key="G54.1P211">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1336.297</Cell>
+							<Cell key="Y">-1152.709</Cell>
+							<Cell key="Z">-2189.806</Cell>
+						</Entry>
+						<Entry key="G54.1P212">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-780.1059</Cell>
+							<Cell key="Y">-1152.709</Cell>
+							<Cell key="Z">-1739.643</Cell>
+						</Entry>
+						<Entry key="G54.1P213">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1886.894</Cell>
+							<Cell key="Y">-1152.709</Cell>
+							<Cell key="Z">-1745.237</Cell>
+						</Entry>
+						<Entry key="G54.1P214">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1335.21</Cell>
+							<Cell key="Y">-520.2837</Cell>
+							<Cell key="Z">-2583.891</Cell>
+						</Entry>
+						<Entry key="G54.1P215">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1331.79</Cell>
+							<Cell key="Y">-520.2837</Cell>
+							<Cell key="Z">-2546.909</Cell>
+						</Entry>
+						<Entry key="G54.1P216">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1329.903</Cell>
+							<Cell key="Y">-1114.931</Cell>
+							<Cell key="Z">-2211.842</Cell>
+						</Entry>
+						<Entry key="G54.1P217">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1337.055</Cell>
+							<Cell key="Y">-1902.777</Cell>
+							<Cell key="Z">-2277.136</Cell>
+						</Entry>
+						<Entry key="G54.1P218">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.678</Cell>
+							<Cell key="Y">-1092.005</Cell>
+							<Cell key="Z">-2188.108</Cell>
+						</Entry>
+						<Entry key="G54.1P219">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-778.4082</Cell>
+							<Cell key="Y">-1092.005</Cell>
+							<Cell key="Z">-1748.342</Cell>
+						</Entry>
+						<Entry key="G54.1P22">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2220.2</Cell>
+							<Cell key="Y">-1993.594</Cell>
+							<Cell key="Z">-2461.685</Cell>
+						</Entry>
+						<Entry key="G54.1P220">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1888.592</Cell>
+							<Cell key="Y">-1092.005</Cell>
+							<Cell key="Z">-1746.698</Cell>
+						</Entry>
+						<Entry key="G54.1P221">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.746</Cell>
+							<Cell key="Y">-506.3348</Cell>
+							<Cell key="Z">-2536.612</Cell>
+						</Entry>
+						<Entry key="G54.1P222">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.254</Cell>
+							<Cell key="Y">-506.3348</Cell>
+							<Cell key="Z">-2543.388</Cell>
+						</Entry>
+						<Entry key="G54.1P223">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.188</Cell>
+							<Cell key="Y">-1904.9</Cell>
+							<Cell key="Z">-2232.153</Cell>
+						</Entry>
+						<Entry key="G54.1P224">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-755.9703</Cell>
+							<Cell key="Y">-843.0288</Cell>
+							<Cell key="Z">-2485.688</Cell>
+						</Entry>
+						<Entry key="G54.1P225">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1841.386</Cell>
+							<Cell key="Y">-2171.782</Cell>
+							<Cell key="Z">-2010.007</Cell>
+						</Entry>
+						<Entry key="G54.1P226">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-600.3067</Cell>
+							<Cell key="Y">-2171.782</Cell>
+							<Cell key="Z">-2032.114</Cell>
+						</Entry>
+						<Entry key="G54.1P227">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1843.878</Cell>
+							<Cell key="Y">-2171.843</Cell>
+							<Cell key="Z">-2012.691</Cell>
+						</Entry>
+						<Entry key="G54.1P228">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-602.9907</Cell>
+							<Cell key="Y">-2171.843</Cell>
+							<Cell key="Z">-2029.622</Cell>
+						</Entry>
+						<Entry key="G54.1P229">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.487</Cell>
+							<Cell key="Y">-2159.76</Cell>
+							<Cell key="Z">-1701.453</Cell>
+						</Entry>
+						<Entry key="G54.1P23">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.106</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2290.626</Cell>
+						</Entry>
+						<Entry key="G54.1P230">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-291.7531</Cell>
+							<Cell key="Y">-2159.76</Cell>
+							<Cell key="Z">-2636.533</Cell>
+						</Entry>
+						<Entry key="G54.1P231">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2375.247</Cell>
+							<Cell key="Y">-2159.76</Cell>
+							<Cell key="Z">-2636.507</Cell>
+						</Entry>
+						<Entry key="G54.1P232">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.963</Cell>
+							<Cell key="Y">-2159.976</Cell>
+							<Cell key="Z">-1699.243</Cell>
+						</Entry>
+						<Entry key="G54.1P233">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-289.5428</Cell>
+							<Cell key="Y">-2159.976</Cell>
+							<Cell key="Z">-2637.057</Cell>
+						</Entry>
+						<Entry key="G54.1P234">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2377.457</Cell>
+							<Cell key="Y">-2159.976</Cell>
+							<Cell key="Z">-2635.983</Cell>
+						</Entry>
+						<Entry key="G54.1P235">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1335.229</Cell>
+							<Cell key="Y">-1970.258</Cell>
+							<Cell key="Z">-2209.906</Cell>
+						</Entry>
+						<Entry key="G54.1P236">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1336.592</Cell>
+							<Cell key="Y">-1969.66</Cell>
+							<Cell key="Z">-2210.552</Cell>
+						</Entry>
+						<Entry key="G54.1P237">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-320.7169</Cell>
+							<Cell key="Y">-2011.411</Cell>
+							<Cell key="Z">-2631.85</Cell>
+						</Entry>
+						<Entry key="G54.1P238">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1444.85</Cell>
+							<Cell key="Y">-2011.411</Cell>
+							<Cell key="Z">-1654.852</Cell>
+						</Entry>
+						<Entry key="G54.1P239">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2346.283</Cell>
+							<Cell key="Y">-2011.411</Cell>
+							<Cell key="Z">-2651.35</Cell>
+						</Entry>
+						<Entry key="G54.1P24">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-880.9257</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2614.302</Cell>
+						</Entry>
+						<Entry key="G54.1P240">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-330.3311</Cell>
+							<Cell key="Y">-2010.078</Cell>
+							<Cell key="Z">-2636.045</Cell>
+						</Entry>
+						<Entry key="G54.1P241">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1440.655</Cell>
+							<Cell key="Y">-2010.078</Cell>
+							<Cell key="Z">-1664.466</Cell>
+						</Entry>
+						<Entry key="G54.1P242">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2336.669</Cell>
+							<Cell key="Y">-2010.078</Cell>
+							<Cell key="Z">-2647.155</Cell>
+						</Entry>
+						<Entry key="G54.1P243">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1336.613</Cell>
+							<Cell key="Y">-1894.756</Cell>
+							<Cell key="Z">-1780.935</Cell>
+						</Entry>
+						<Entry key="G54.1P244">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-371.235</Cell>
+							<Cell key="Y">-1894.756</Cell>
+							<Cell key="Z">-2633.408</Cell>
+						</Entry>
+						<Entry key="G54.1P245">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2295.765</Cell>
+							<Cell key="Y">-1894.756</Cell>
+							<Cell key="Z">-2639.633</Cell>
+						</Entry>
+						<Entry key="G54.1P246">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1331.134</Cell>
+							<Cell key="Y">-1893.997</Cell>
+							<Cell key="Z">-1783.681</Cell>
+						</Entry>
+						<Entry key="G54.1P247">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-373.9805</Cell>
+							<Cell key="Y">-1893.997</Cell>
+							<Cell key="Z">-2638.886</Cell>
+						</Entry>
+						<Entry key="G54.1P248">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2293.02</Cell>
+							<Cell key="Y">-1893.997</Cell>
+							<Cell key="Z">-2634.154</Cell>
+						</Entry>
+						<Entry key="G54.1P249">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-753.3379</Cell>
+							<Cell key="Y">-1889.55</Cell>
+							<Cell key="Z">-2739.313</Cell>
+						</Entry>
+						<Entry key="G54.1P25">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1786.074</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2613.199</Cell>
+						</Entry>
+						<Entry key="G54.1P250">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1913.662</Cell>
+							<Cell key="Y">-1889.55</Cell>
+							<Cell key="Z">-2493.088</Cell>
+						</Entry>
+						<Entry key="G54.1P251">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.047</Cell>
+							<Cell key="Y">-889.028</Cell>
+							<Cell key="Z">-2048.108</Cell>
+						</Entry>
+						<Entry key="G54.1P252">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-638.4077</Cell>
+							<Cell key="Y">-889.028</Cell>
+							<Cell key="Z">-2597.873</Cell>
+						</Entry>
+						<Entry key="G54.1P253">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2028.592</Cell>
+							<Cell key="Y">-889.028</Cell>
+							<Cell key="Z">-2598.968</Cell>
+						</Entry>
+						<Entry key="G54.1P254">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.876</Cell>
+							<Cell key="Y">-1447.816</Cell>
+							<Cell key="Z">-2048.312</Cell>
+						</Entry>
+						<Entry key="G54.1P255">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-638.6119</Cell>
+							<Cell key="Y">-1447.816</Cell>
+							<Cell key="Z">-2598.044</Cell>
+						</Entry>
+						<Entry key="G54.1P256">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2028.388</Cell>
+							<Cell key="Y">-1447.816</Cell>
+							<Cell key="Z">-2598.796</Cell>
+						</Entry>
+						<Entry key="G54.1P257">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.884</Cell>
+							<Cell key="Y">-2006.66</Cell>
+							<Cell key="Z">-2048.481</Cell>
+						</Entry>
+						<Entry key="G54.1P258">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-638.7806</Cell>
+							<Cell key="Y">-2006.66</Cell>
+							<Cell key="Z">-2598.036</Cell>
+						</Entry>
+						<Entry key="G54.1P259">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2028.22</Cell>
+							<Cell key="Y">-2006.66</Cell>
+							<Cell key="Z">-2598.804</Cell>
+						</Entry>
+						<Entry key="G54.1P26">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.106</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2290.626</Cell>
+						</Entry>
+						<Entry key="G54.1P260">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-715.596</Cell>
+							<Cell key="Y">-786.0295</Cell>
+							<Cell key="Z">-2633.137</Cell>
+						</Entry>
+						<Entry key="G54.1P261">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1443.563</Cell>
+							<Cell key="Y">-786.0295</Cell>
+							<Cell key="Z">-2051.128</Cell>
+						</Entry>
+						<Entry key="G54.1P262">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1951.404</Cell>
+							<Cell key="Y">-786.0295</Cell>
+							<Cell key="Z">-2650.063</Cell>
+						</Entry>
+						<Entry key="G54.1P263">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-715.2584</Cell>
+							<Cell key="Y">-1358.365</Cell>
+							<Cell key="Z">-2633.206</Cell>
+						</Entry>
+						<Entry key="G54.1P264">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1443.494</Cell>
+							<Cell key="Y">-1358.365</Cell>
+							<Cell key="Z">-2050.791</Cell>
+						</Entry>
+						<Entry key="G54.1P265">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1951.742</Cell>
+							<Cell key="Y">-1358.365</Cell>
+							<Cell key="Z">-2649.994</Cell>
+						</Entry>
+						<Entry key="G54.1P266">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-716.1218</Cell>
+							<Cell key="Y">-1934.664</Cell>
+							<Cell key="Z">-2633.234</Cell>
+						</Entry>
+						<Entry key="G54.1P267">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1443.466</Cell>
+							<Cell key="Y">-1934.664</Cell>
+							<Cell key="Z">-2051.654</Cell>
+						</Entry>
+						<Entry key="G54.1P268">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1950.878</Cell>
+							<Cell key="Y">-1934.664</Cell>
+							<Cell key="Z">-2649.966</Cell>
+						</Entry>
+						<Entry key="G54.1P269">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-711.2963</Cell>
+							<Cell key="Y">-783.0638</Cell>
+							<Cell key="Z">-2631.059</Cell>
+						</Entry>
+						<Entry key="G54.1P27">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-880.9257</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2616.083</Cell>
+						</Entry>
+						<Entry key="G54.1P270">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1445.641</Cell>
+							<Cell key="Y">-783.0638</Cell>
+							<Cell key="Z">-2046.828</Cell>
+						</Entry>
+						<Entry key="G54.1P271">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1955.704</Cell>
+							<Cell key="Y">-783.0638</Cell>
+							<Cell key="Z">-2652.141</Cell>
+						</Entry>
+						<Entry key="G54.1P272">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-714.2358</Cell>
+							<Cell key="Y">-1358.779</Cell>
+							<Cell key="Z">-2631.106</Cell>
+						</Entry>
+						<Entry key="G54.1P273">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1445.594</Cell>
+							<Cell key="Y">-1358.779</Cell>
+							<Cell key="Z">-2049.768</Cell>
+						</Entry>
+						<Entry key="G54.1P274">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1952.764</Cell>
+							<Cell key="Y">-1358.779</Cell>
+							<Cell key="Z">-2652.094</Cell>
+						</Entry>
+						<Entry key="G54.1P275">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-712.7106</Cell>
+							<Cell key="Y">-1935.114</Cell>
+							<Cell key="Z">-2631.153</Cell>
+						</Entry>
+						<Entry key="G54.1P276">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1445.547</Cell>
+							<Cell key="Y">-1935.114</Cell>
+							<Cell key="Z">-2048.243</Cell>
+						</Entry>
+						<Entry key="G54.1P277">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1954.29</Cell>
+							<Cell key="Y">-1935.114</Cell>
+							<Cell key="Z">-2652.047</Cell>
+						</Entry>
+						<Entry key="G54.1P278">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-738.2444</Cell>
+							<Cell key="Y">-803.9839</Cell>
+							<Cell key="Z">-2613.223</Cell>
+						</Entry>
+						<Entry key="G54.1P279">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1331.397</Cell>
+							<Cell key="Y">-803.9839</Cell>
+							<Cell key="Z">-2147.945</Cell>
+						</Entry>
+						<Entry key="G54.1P28">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1786.074</Cell>
+							<Cell key="Y">-1118.625</Cell>
+							<Cell key="Z">-2612.122</Cell>
+						</Entry>
+						<Entry key="G54.1P280">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1928.756</Cell>
+							<Cell key="Y">-803.9839</Cell>
+							<Cell key="Z">-2609.017</Cell>
+						</Entry>
+						<Entry key="G54.1P281">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-738.0557</Cell>
+							<Cell key="Y">-1424.218</Cell>
+							<Cell key="Z">-2611.976</Cell>
+						</Entry>
+						<Entry key="G54.1P282">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.644</Cell>
+							<Cell key="Y">-1424.218</Cell>
+							<Cell key="Z">-2147.756</Cell>
+						</Entry>
+						<Entry key="G54.1P283">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1928.944</Cell>
+							<Cell key="Y">-1424.218</Cell>
+							<Cell key="Z">-2610.264</Cell>
+						</Entry>
+						<Entry key="G54.1P284">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-738.2292</Cell>
+							<Cell key="Y">-2043.919</Cell>
+							<Cell key="Z">-2611.913</Cell>
+						</Entry>
+						<Entry key="G54.1P285">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.707</Cell>
+							<Cell key="Y">-2043.919</Cell>
+							<Cell key="Z">-2147.929</Cell>
+						</Entry>
+						<Entry key="G54.1P286">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1928.771</Cell>
+							<Cell key="Y">-2043.919</Cell>
+							<Cell key="Z">-2610.327</Cell>
+						</Entry>
+						<Entry key="G54.1P287">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-740.3669</Cell>
+							<Cell key="Y">-804.4163</Cell>
+							<Cell key="Z">-2611.623</Cell>
+						</Entry>
+						<Entry key="G54.1P288">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.997</Cell>
+							<Cell key="Y">-804.4163</Cell>
+							<Cell key="Z">-2150.067</Cell>
+						</Entry>
+						<Entry key="G54.1P289">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1926.633</Cell>
+							<Cell key="Y">-804.4163</Cell>
+							<Cell key="Z">-2610.617</Cell>
+						</Entry>
+						<Entry key="G54.1P29">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1931.969</Cell>
+							<Cell key="Y">-2201.098</Cell>
+							<Cell key="Z">-2127.082</Cell>
+						</Entry>
+						<Entry key="G54.1P290">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-740.5297</Cell>
+							<Cell key="Y">-1423.912</Cell>
+							<Cell key="Z">-2610.604</Cell>
+						</Entry>
+						<Entry key="G54.1P291">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.016</Cell>
+							<Cell key="Y">-1423.912</Cell>
+							<Cell key="Z">-2150.23</Cell>
+						</Entry>
+						<Entry key="G54.1P292">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1926.47</Cell>
+							<Cell key="Y">-1423.912</Cell>
+							<Cell key="Z">-2611.636</Cell>
+						</Entry>
+						<Entry key="G54.1P293">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-740.675</Cell>
+							<Cell key="Y">-2044.079</Cell>
+							<Cell key="Z">-2610.568</Cell>
+						</Entry>
+						<Entry key="G54.1P294">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.052</Cell>
+							<Cell key="Y">-2044.079</Cell>
+							<Cell key="Z">-2150.375</Cell>
+						</Entry>
+						<Entry key="G54.1P295">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1926.325</Cell>
+							<Cell key="Y">-2044.079</Cell>
+							<Cell key="Z">-2611.673</Cell>
+						</Entry>
+						<Entry key="G54.1P296">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P297">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P298">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P299">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">-1152.769</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P3">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-680.8178</Cell>
+							<Cell key="Y">-188.9463</Cell>
+							<Cell key="Z">-2566.001</Cell>
+						</Entry>
+						<Entry key="G54.1P30">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-717.3814</Cell>
+							<Cell key="Y">-2201.098</Cell>
+							<Cell key="Z">-2037.61</Cell>
+						</Entry>
+						<Entry key="G54.1P300">
+							<Cell key="B">0</Cell>
+							<Cell key="X">0</Cell>
+							<Cell key="Y">0</Cell>
+							<Cell key="Z">0</Cell>
+						</Entry>
+						<Entry key="G54.1P31">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1309.494</Cell>
+							<Cell key="Y">-2209.583</Cell>
+							<Cell key="Z">-1968.618</Cell>
+						</Entry>
+						<Entry key="G54.1P32">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-588.5709</Cell>
+							<Cell key="Y">-2209.583</Cell>
+							<Cell key="Z">-2507.266</Cell>
+						</Entry>
+						<Entry key="G54.1P33">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1639.102</Cell>
+							<Cell key="Y">-2082.686</Cell>
+							<Cell key="Z">-2135.645</Cell>
+						</Entry>
+						<Entry key="G54.1P34">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1156.1</Cell>
+							<Cell key="Y">-2082.686</Cell>
+							<Cell key="Z">-1965.277</Cell>
+						</Entry>
+						<Entry key="G54.1P35">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-725.5411</Cell>
+							<Cell key="Y">-2082.686</Cell>
+							<Cell key="Z">-2133.532</Cell>
+						</Entry>
+						<Entry key="G54.1P36">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1029.076</Cell>
+							<Cell key="Y">-1872.517</Cell>
+							<Cell key="Z">-1791.458</Cell>
+						</Entry>
+						<Entry key="G54.1P37">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2285.242</Cell>
+							<Cell key="Y">-1872.517</Cell>
+							<Cell key="Z">-2334.128</Cell>
+						</Entry>
+						<Entry key="G54.1P38">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1030.033</Cell>
+							<Cell key="Y">-1872.053</Cell>
+							<Cell key="Z">-1790.009</Cell>
+						</Entry>
+						<Entry key="G54.1P39">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2286.691</Cell>
+							<Cell key="Y">-1872.053</Cell>
+							<Cell key="Z">-2335.085</Cell>
+						</Entry>
+						<Entry key="G54.1P4">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1986.182</Cell>
+							<Cell key="Y">-1880.586</Cell>
+							<Cell key="Z">-2710.722</Cell>
+						</Entry>
+						<Entry key="G54.1P40">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1034.666</Cell>
+							<Cell key="Y">-1871.631</Cell>
+							<Cell key="Z">-1791.192</Cell>
+						</Entry>
+						<Entry key="G54.1P41">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2285.508</Cell>
+							<Cell key="Y">-1871.631</Cell>
+							<Cell key="Z">-2339.718</Cell>
+						</Entry>
+						<Entry key="G54.1P42">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.155</Cell>
+							<Cell key="Y">-1014.342</Cell>
+							<Cell key="Z">-2141.002</Cell>
+						</Entry>
+						<Entry key="G54.1P43">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1935.698</Cell>
+							<Cell key="Y">-1014.342</Cell>
+							<Cell key="Z">-2615.855</Cell>
+						</Entry>
+						<Entry key="G54.1P44">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1904.437</Cell>
+							<Cell key="Y">-1014.342</Cell>
+							<Cell key="Z">-2513.219</Cell>
+						</Entry>
+						<Entry key="G54.1P45">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-731.3019</Cell>
+							<Cell key="Y">-1014.342</Cell>
+							<Cell key="Z">-2636.865</Cell>
+						</Entry>
+						<Entry key="G54.1P46">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1335.187</Cell>
+							<Cell key="Y">-1013.911</Cell>
+							<Cell key="Z">-2142.972</Cell>
+						</Entry>
+						<Entry key="G54.1P47">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1933.728</Cell>
+							<Cell key="Y">-1013.911</Cell>
+							<Cell key="Z">-2617.887</Cell>
+						</Entry>
+						<Entry key="G54.1P48">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1902.849</Cell>
+							<Cell key="Y">-1013.911</Cell>
+							<Cell key="Z">-2515.562</Cell>
+						</Entry>
+						<Entry key="G54.1P49">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-733.2724</Cell>
+							<Cell key="Y">-1013.911</Cell>
+							<Cell key="Z">-2634.833</Cell>
+						</Entry>
+						<Entry key="G54.1P5">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-609.2358</Cell>
+							<Cell key="Y">-1994.243</Cell>
+							<Cell key="Z">-2481.931</Cell>
+						</Entry>
+						<Entry key="G54.1P50">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1335.525</Cell>
+							<Cell key="Y">-1014.057</Cell>
+							<Cell key="Z">-2139.241</Cell>
+						</Entry>
+						<Entry key="G54.1P51">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1937.459</Cell>
+							<Cell key="Y">-1014.057</Cell>
+							<Cell key="Z">-2618.225</Cell>
+						</Entry>
+						<Entry key="G54.1P52">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1906.582</Cell>
+							<Cell key="Y">-1014.057</Cell>
+							<Cell key="Z">-2515.247</Cell>
+						</Entry>
+						<Entry key="G54.1P53">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-729.5409</Cell>
+							<Cell key="Y">-1014.057</Cell>
+							<Cell key="Z">-2634.495</Cell>
+						</Entry>
+						<Entry key="G54.1P54">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1942.158</Cell>
+							<Cell key="Y">-1447.467</Cell>
+							<Cell key="Z">-2225.404</Cell>
+						</Entry>
+						<Entry key="G54.1P55">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-815.704</Cell>
+							<Cell key="Y">-1447.467</Cell>
+							<Cell key="Z">-1855.142</Cell>
+						</Entry>
+						<Entry key="G54.1P56">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1386.699</Cell>
+							<Cell key="Y">-1447.467</Cell>
+							<Cell key="Z">-1747.48</Cell>
+						</Entry>
+						<Entry key="G54.1P57">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1942.219</Cell>
+							<Cell key="Y">-1752.288</Cell>
+							<Cell key="Z">-2225.52</Cell>
+						</Entry>
+						<Entry key="G54.1P58">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-815.8193</Cell>
+							<Cell key="Y">-1752.288</Cell>
+							<Cell key="Z">-1855.081</Cell>
+						</Entry>
+						<Entry key="G54.1P59">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1386.829</Cell>
+							<Cell key="Y">-1752.288</Cell>
+							<Cell key="Z">-1746.974</Cell>
+						</Entry>
+						<Entry key="G54.1P6">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2223.087</Cell>
+							<Cell key="Y">-1994.243</Cell>
+							<Cell key="Z">-2460.91</Cell>
+						</Entry>
+						<Entry key="G54.1P60">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1942.284</Cell>
+							<Cell key="Y">-2057.082</Cell>
+							<Cell key="Z">-2225.571</Cell>
+						</Entry>
+						<Entry key="G54.1P61">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-815.8712</Cell>
+							<Cell key="Y">-2057.082</Cell>
+							<Cell key="Z">-1855.016</Cell>
+						</Entry>
+						<Entry key="G54.1P62">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1386.907</Cell>
+							<Cell key="Y">-2057.082</Cell>
+							<Cell key="Z">-1747.487</Cell>
+						</Entry>
+						<Entry key="G54.1P63">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-485.2452</Cell>
+							<Cell key="Y">-1969.2</Cell>
+							<Cell key="Z">-2579.709</Cell>
+						</Entry>
+						<Entry key="G54.1P64">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2181.755</Cell>
+							<Cell key="Y">-1969.2</Cell>
+							<Cell key="Z">-2713.143</Cell>
+						</Entry>
+						<Entry key="G54.1P65">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1493.906</Cell>
+							<Cell key="Y">-1969.2</Cell>
+							<Cell key="Z">-1790.384</Cell>
+						</Entry>
+						<Entry key="G54.1P66">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-490.7463</Cell>
+							<Cell key="Y">-1969.186</Cell>
+							<Cell key="Z">-2570.027</Cell>
+						</Entry>
+						<Entry key="G54.1P67">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2176.254</Cell>
+							<Cell key="Y">-1969.186</Cell>
+							<Cell key="Z">-2722.825</Cell>
+						</Entry>
+						<Entry key="G54.1P68">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1498.567</Cell>
+							<Cell key="Y">-1969.186</Cell>
+							<Cell key="Z">-1792.483</Cell>
+						</Entry>
+						<Entry key="G54.1P69">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-630.4034</Cell>
+							<Cell key="Y">-2079.452</Cell>
+							<Cell key="Z">-2526.606</Cell>
+						</Entry>
+						<Entry key="G54.1P7">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-609.2381</Cell>
+							<Cell key="Y">-1993.881</Cell>
+							<Cell key="Z">-2481.319</Cell>
+						</Entry>
+						<Entry key="G54.1P70">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2211.984</Cell>
+							<Cell key="Y">-2079.452</Cell>
+							<Cell key="Z">-2528.756</Cell>
+						</Entry>
+						<Entry key="G54.1P71">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-630.1133</Cell>
+							<Cell key="Y">-2079.548</Cell>
+							<Cell key="Z">-2525.994</Cell>
+						</Entry>
+						<Entry key="G54.1P72">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2212.274</Cell>
+							<Cell key="Y">-2079.548</Cell>
+							<Cell key="Z">-2529.368</Cell>
+						</Entry>
+						<Entry key="G54.1P73">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.257</Cell>
+							<Cell key="Y">-1082.05</Cell>
+							<Cell key="Z">-2301.129</Cell>
+						</Entry>
+						<Entry key="G54.1P74">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-891.4293</Cell>
+							<Cell key="Y">-1082.05</Cell>
+							<Cell key="Z">-2635.191</Cell>
+						</Entry>
+						<Entry key="G54.1P75">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1775.571</Cell>
+							<Cell key="Y">-1082.05</Cell>
+							<Cell key="Z">-2635.116</Cell>
+						</Entry>
+						<Entry key="G54.1P76">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1333.545</Cell>
+							<Cell key="Y">-1082.07</Cell>
+							<Cell key="Z">-2300.357</Cell>
+						</Entry>
+						<Entry key="G54.1P77">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-890.6566</Cell>
+							<Cell key="Y">-1082.07</Cell>
+							<Cell key="Z">-2633.3</Cell>
+						</Entry>
+						<Entry key="G54.1P78">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1776.344</Cell>
+							<Cell key="Y">-1082.07</Cell>
+							<Cell key="Z">-2636.55</Cell>
+						</Entry>
+						<Entry key="G54.1P79">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-485.1311</Cell>
+							<Cell key="Y">-2163.023</Cell>
+							<Cell key="Z">-2553.453</Cell>
+						</Entry>
+						<Entry key="G54.1P8">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2223.77</Cell>
+							<Cell key="Y">-1993.881</Cell>
+							<Cell key="Z">-2461.522</Cell>
+						</Entry>
+						<Entry key="G54.1P80">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2181.869</Cell>
+							<Cell key="Y">-2163.023</Cell>
+							<Cell key="Z">-2561.98</Cell>
+						</Entry>
+						<Entry key="G54.1P81">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1523.247</Cell>
+							<Cell key="Y">-2163.023</Cell>
+							<Cell key="Z">-1755.703</Cell>
+						</Entry>
+						<Entry key="G54.1P82">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-484.0737</Cell>
+							<Cell key="Y">-2159.754</Cell>
+							<Cell key="Z">-2552.958</Cell>
+						</Entry>
+						<Entry key="G54.1P83">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2182.927</Cell>
+							<Cell key="Y">-2159.754</Cell>
+							<Cell key="Z">-2562.476</Cell>
+						</Entry>
+						<Entry key="G54.1P84">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1523.743</Cell>
+							<Cell key="Y">-2159.754</Cell>
+							<Cell key="Z">-1754.645</Cell>
+						</Entry>
+						<Entry key="G54.1P85">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1549.908</Cell>
+							<Cell key="Y">-1562.639</Cell>
+							<Cell key="Z">-2647.951</Cell>
+						</Entry>
+						<Entry key="G54.1P86">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1117.092</Cell>
+							<Cell key="Y">-1562.639</Cell>
+							<Cell key="Z">-2650.49</Cell>
+						</Entry>
+						<Entry key="G54.1P87">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1537.812</Cell>
+							<Cell key="Y">-1561.917</Cell>
+							<Cell key="Z">-2648.173</Cell>
+						</Entry>
+						<Entry key="G54.1P88">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1129.188</Cell>
+							<Cell key="Y">-1561.917</Cell>
+							<Cell key="Z">-2650.267</Cell>
+						</Entry>
+						<Entry key="G54.1P89">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2133.286</Cell>
+							<Cell key="Y">-2160.391</Cell>
+							<Cell key="Z">-2510.001</Cell>
+						</Entry>
+						<Entry key="G54.1P9">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1332.848</Cell>
+							<Cell key="Y">-1118.917</Cell>
+							<Cell key="Z">-2285.492</Cell>
+						</Entry>
+						<Entry key="G54.1P90">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-533.7142</Cell>
+							<Cell key="Y">-2160.391</Cell>
+							<Cell key="Z">-2605.432</Cell>
+						</Entry>
+						<Entry key="G54.1P91">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1473.57</Cell>
+							<Cell key="Y">-2160.391</Cell>
+							<Cell key="Z">-1771.647</Cell>
+						</Entry>
+						<Entry key="G54.1P92">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-935.4234</Cell>
+							<Cell key="Y">-2160.391</Cell>
+							<Cell key="Z">-1880.506</Cell>
+						</Entry>
+						<Entry key="G54.1P93">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2133.712</Cell>
+							<Cell key="Y">-2160.446</Cell>
+							<Cell key="Z">-2509.738</Cell>
+						</Entry>
+						<Entry key="G54.1P94">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-533.2878</Cell>
+							<Cell key="Y">-2160.446</Cell>
+							<Cell key="Z">-2605.696</Cell>
+						</Entry>
+						<Entry key="G54.1P95">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1473.328</Cell>
+							<Cell key="Y">-2160.446</Cell>
+							<Cell key="Z">-1771.22</Cell>
+						</Entry>
+						<Entry key="G54.1P96">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-935.0007</Cell>
+							<Cell key="Y">-2160.446</Cell>
+							<Cell key="Z">-1880.258</Cell>
+						</Entry>
+						<Entry key="G54.1P97">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1334.659</Cell>
+							<Cell key="Y">-1918.411</Cell>
+							<Cell key="Z">-1600.188</Cell>
+						</Entry>
+						<Entry key="G54.1P98">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-2476.512</Cell>
+							<Cell key="Y">-1918.411</Cell>
+							<Cell key="Z">-2617.359</Cell>
+						</Entry>
+						<Entry key="G54.1P99">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1145.816</Cell>
+							<Cell key="Y">-1560.121</Cell>
+							<Cell key="Z">-2516.653</Cell>
+						</Entry>
+						<Entry key="G55">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-960.8475</Cell>
+							<Cell key="Y">-1495.545</Cell>
+							<Cell key="Z">-1938.361</Cell>
+						</Entry>
+						<Entry key="G56">
+							<Cell key="B">90</Cell>
+							<Cell key="X">-1119.278</Cell>
+							<Cell key="Y">-2178.043</Cell>
+							<Cell key="Z">-2205.65</Cell>
+						</Entry>
+						<Entry key="G57">
+							<Cell key="B">270</Cell>
+							<Cell key="X">-921.2863</Cell>
+							<Cell key="Y">-1040.892</Cell>
+							<Cell key="Z">-1142.855</Cell>
+						</Entry>
+						<Entry key="G58">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1796.108</Cell>
+							<Cell key="Y">-1502.111</Cell>
+							<Cell key="Z">-2068.949</Cell>
+						</Entry>
+						<Entry key="G59">
+							<Cell key="B">0</Cell>
+							<Cell key="X">-1796.108</Cell>
+							<Cell key="Y">-1502.112</Cell>
+							<Cell key="Z">-2069.125</Cell>
+						</Entry>
+					</WorkOffsetTable>
+				</Events>
+				<Condition>
+					<Normal dataItemId="comms_cond" sequence="1672501" timestamp="2022-10-20T22:07:36.1933Z" type="COMMUNICATIONS"></Normal>
+					<Normal dataItemId="logic_cond" sequence="2633320" timestamp="2022-10-22T13:32:33.7845Z" type="LOGIC_PROGRAM"/>
+					<Normal dataItemId="system_cond" sequence="2699537" timestamp="2022-10-22T15:29:35.7981Z" type="SYSTEM"/>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Coolant" name="coolant" componentId="coolant">
+				<Samples>
+					<Concentration dataItemId="CONCENTRATION" sequence="115" timestamp="2022-10-14T11:21:47.41283Z">UNAVAILABLE</Concentration>
+					<Temperature dataItemId="cooltemp" sequence="114" timestamp="2022-10-14T11:21:47.412824Z">UNAVAILABLE</Temperature>
+				</Samples>
+				<Condition>
+					<Normal dataItemId="coolant_cond" sequence="1672507" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Device" name="HCN001" componentId="d1">
+				<Events>
+					<Availability dataItemId="avail" sequence="1672517" timestamp="2022-10-20T22:07:36.1933Z">AVAILABLE</Availability>
+					<AssetChanged assetType="CuttingTool" dataItemId="d1_asset_chg" sequence="2701994" timestamp="2022-10-22T15:35:07.560803Z">14054012.145</AssetChanged>
+					<AssetCountDataSet count="2" dataItemId="d1_asset_count" sequence="2575688" timestamp="2022-10-22T10:54:01.658997Z">
+						<Entry key="CuttingTool">160</Entry>
+						<Entry key="File">83</Entry>
+					</AssetCountDataSet>
+					<AssetRemoved assetType="CuttingTool" dataItemId="d1_asset_rem" sequence="2652539" timestamp="2022-10-22T14:35:37.499524Z">M8010W4194N1.158</AssetRemoved>
+					<EquipmentMode dataItemId="emdelay" sequence="2673150" subType="DELAY" timestamp="2022-10-22T14:56:53.3273Z">OFF</EquipmentMode>
+					<EquipmentMode dataItemId="emloaded" sequence="2703172" subType="LOADED" timestamp="2022-10-22T15:34:58.4485Z">ON</EquipmentMode>
+					<EquipmentMode dataItemId="emoperating" sequence="1672574" subType="OPERATING" timestamp="2022-10-20T22:07:36.1933Z">ON</EquipmentMode>
+					<EquipmentMode dataItemId="empowered" sequence="1672575" subType="POWERED" timestamp="2022-10-20T22:07:36.1933Z">ON</EquipmentMode>
+					<EquipmentMode dataItemId="emworking" sequence="2673151" subType="WORKING" timestamp="2022-10-22T14:56:53.3273Z">ON</EquipmentMode>
+					<FunctionalMode dataItemId="functionalmode" sequence="17" timestamp="2022-10-14T11:21:47.41205Z">UNAVAILABLE</FunctionalMode>
+					<Application dataItemId="gui" sequence="1672544" timestamp="2022-10-20T22:07:36.1933Z">MAZATROL</Application>
+					<Application dataItemId="guimfg" sequence="1672545" subType="MANUFACTURER" timestamp="2022-10-20T22:07:36.1933Z">MAZAK/MITSUBISHI</Application>
+					<Application dataItemId="guiversion" sequence="1672546" subType="VERSION" timestamp="2022-10-20T22:07:36.1933Z">2012W002-AF</Application>
+					<OperatingSystem dataItemId="operatingsystem" sequence="1672541" timestamp="2022-10-20T22:07:36.1933Z">WINDOWS</OperatingSystem>
+					<OperatingSystem dataItemId="osmfg" sequence="1672543" subType="MANUFACTURER" timestamp="2022-10-20T22:07:36.1933Z">MICROSOFT</OperatingSystem>
+					<OperatingSystem dataItemId="osversion" sequence="1672542" subType="VERSION" timestamp="2022-10-20T22:07:36.1933Z">6.2.9200.0</OperatingSystem>
+				</Events>
+			</ComponentStream>
+			<ComponentStream component="Door" name="door" componentId="door1">
+				<Events>
+					<DoorState dataItemId="doorstate" sequence="2636679" timestamp="2022-10-22T13:45:06.6649Z">CLOSED</DoorState>
+				</Events>
+			</ComponentStream>
+			<ComponentStream component="Electric" name="electric" componentId="elec">
+				<Condition>
+					<Normal dataItemId="electric_cond" sequence="1672506" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Hydraulic" name="hydraulic" componentId="hydraulic">
+				<Condition>
+					<Normal dataItemId="hydra_cond" sequence="1672505" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Lubrication" name="lubrication" componentId="lubrication">
+				<Condition>
+					<Normal dataItemId="lubrication_cond" sequence="1672508" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Path" name="path" componentId="path1">
+				<Samples>
+					<PathFeedrate dataItemId="Fact" sequence="2703173" subType="ACTUAL" timestamp="2022-10-22T15:34:58.4485Z">1.199952</PathFeedrate>
+					<CuttingSpeed dataItemId="cspeed" sequence="100" subType="ACTUAL" timestamp="2022-10-14T11:21:47.412735Z">UNAVAILABLE</CuttingSpeed>
+					<Orientation dataItemId="orientation" sequence="2701719" timestamp="2022-10-22T15:32:14.5574Z">0 315 0</Orientation>
+					<PathPosition dataItemId="pathpos" sequence="2703541" timestamp="2022-10-22T15:35:40.1773Z">-2.3015 100.865 -4.7</PathPosition>
+					<ProcessTimer dataItemId="proctimer" sequence="2703537" subType="PROCESS" timestamp="2022-10-22T15:35:40.1773Z">2328</ProcessTimer>
+				</Samples>
+				<Events>
+					<PathFeedrateOverride dataItemId="Fovr" sequence="2639298" subType="PROGRAMMED" timestamp="2022-10-22T13:49:47.6086Z">100</PathFeedrateOverride>
+					<PathFeedrateOverride dataItemId="Frapidovr" sequence="2636877" subType="RAPID" timestamp="2022-10-22T13:45:32.0561Z">100</PathFeedrateOverride>
+					<PartCount dataItemId="PartCountAct" sequence="1672520" subType="ALL" timestamp="2022-10-20T22:07:36.1933Z">125</PartCount>
+					<RotaryVelocityOverride dataItemId="Sovr" sequence="1672639" timestamp="2022-10-20T22:07:52.6069Z">100</RotaryVelocityOverride>
+					<ToolGroup dataItemId="Tool_group" sequence="2701694" timestamp="2022-10-22T15:32:13.3352Z">69045400</ToolGroup>
+					<ToolNumber dataItemId="Tool_number" sequence="2701693" timestamp="2022-10-22T15:32:13.3352Z">152</ToolNumber>
+					<ActiveAxes dataItemId="activeaxes" sequence="1672547" timestamp="2022-10-20T22:07:36.1933Z">X Y Z B</ActiveAxes>
+					<Program dataItemId="activeprog" sequence="2673157" subType="ACTIVE" timestamp="2022-10-22T14:56:53.7417Z">TH-6965-OP2</Program>
+					<ProgramComment dataItemId="activeprogram_cmt" sequence="2673158" subType="ACTIVE" timestamp="2022-10-22T14:56:53.7417Z"></ProgramComment>
+					<ControllerModeOverride dataItemId="cmodryrun" sequence="1672578" subType="DRY_RUN" timestamp="2022-10-20T22:07:36.1933Z">OFF</ControllerModeOverride>
+					<ControllerModeOverride dataItemId="cmomachineaxislock" sequence="1672579" subType="MACHINE_AXIS_LOCK" timestamp="2022-10-20T22:07:36.1933Z">OFF</ControllerModeOverride>
+					<ControllerModeOverride dataItemId="cmosingleblock" sequence="1672577" subType="SINGLE_BLOCK" timestamp="2022-10-20T22:07:36.1933Z">OFF</ControllerModeOverride>
+					<VariableDataSet count="170" dataItemId="cvars" sequence="2673152" timestamp="2022-10-22T14:56:53.7417Z">
+						<Entry key="105">1</Entry>
+						<Entry key="106">600000</Entry>
+						<Entry key="107">-334.0005</Entry>
+						<Entry key="108">-423.4956</Entry>
+						<Entry key="109">-423.501075</Entry>
+						<Entry key="110">0</Entry>
+						<Entry key="111">600</Entry>
+						<Entry key="112">2.96361348537756</Entry>
+						<Entry key="113">4.9999625</Entry>
+						<Entry key="114">1.598725</Entry>
+						<Entry key="115">0.54910000000001</Entry>
+						<Entry key="116">213.976</Entry>
+						<Entry key="118">0.000225090562380374</Entry>
+						<Entry key="119">5000</Entry>
+						<Entry key="120">1</Entry>
+						<Entry key="123">0.05</Entry>
+						<Entry key="124">-2.9576</Entry>
+						<Entry key="125">-68.50025</Entry>
+						<Entry key="126">198.97595</Entry>
+						<Entry key="127">-1.124525</Entry>
+						<Entry key="128">-0.308875</Entry>
+						<Entry key="129">1</Entry>
+						<Entry key="130">-120</Entry>
+						<Entry key="131">-39</Entry>
+						<Entry key="132">-48.0089</Entry>
+						<Entry key="133">-48.0089</Entry>
+						<Entry key="135">-3.74999999994685e-05</Entry>
+						<Entry key="136">-68.5</Entry>
+						<Entry key="138">-3.74999999994685e-05</Entry>
+						<Entry key="140">-3.74999999994685e-05</Entry>
+						<Entry key="143">4.9999625</Entry>
+						<Entry key="145">4.9999625</Entry>
+						<Entry key="146">-4.9999625</Entry>
+						<Entry key="148">0</Entry>
+						<Entry key="149">0</Entry>
+						<Entry key="150">0</Entry>
+						<Entry key="155">1</Entry>
+						<Entry key="157">0</Entry>
+						<Entry key="158">1</Entry>
+						<Entry key="159">2</Entry>
+						<Entry key="160">9871</Entry>
+						<Entry key="161">1</Entry>
+						<Entry key="162">10</Entry>
+						<Entry key="163">10.0589866613738</Entry>
+						<Entry key="164">1</Entry>
+						<Entry key="165">-0.15</Entry>
+						<Entry key="166">0.15</Entry>
+						<Entry key="180">0.0660999999999774</Entry>
+						<Entry key="199">0</Entry>
+						<Entry key="501">0.0452999999999975</Entry>
+						<Entry key="502">-0.0675999999999988</Entry>
+						<Entry key="503">0.01078115571822</Entry>
+						<Entry key="504">-0.00025305635952316</Entry>
+						<Entry key="505">-0.0434500000000071</Entry>
+						<Entry key="506">-0.156100000000009</Entry>
+						<Entry key="507">0.112650000000002</Entry>
+						<Entry key="508">-709.3778</Entry>
+						<Entry key="509">-791.9111</Entry>
+						<Entry key="520">-524.7885</Entry>
+						<Entry key="521">-850.3842</Entry>
+						<Entry key="522">-668.9932</Entry>
+						<Entry key="523">-0.8143</Entry>
+						<Entry key="525">-0.211500000000001</Entry>
+						<Entry key="526">-411.0068</Entry>
+						<Entry key="527">-525.2373</Entry>
+						<Entry key="528">-849.2047</Entry>
+						<Entry key="529">-667.1243</Entry>
+						<Entry key="530">-564.8633</Entry>
+						<Entry key="531">-767.8757</Entry>
+						<Entry key="532">-112.1243</Entry>
+						<Entry key="533">-1082.8633</Entry>
+						<Entry key="534">-784.901</Entry>
+						<Entry key="535">-59.4512</Entry>
+						<Entry key="536">-411.0068</Entry>
+						<Entry key="537">411.006854417892</Entry>
+						<Entry key="538">89.9705161693997</Entry>
+						<Entry key="539">-411.006799999987</Entry>
+						<Entry key="540">0.211500024977359</Entry>
+						<Entry key="541">-936.006799999987</Entry>
+						<Entry key="542">-1037.78849997502</Entry>
+						<Entry key="543">-50.73194170233</Entry>
+						<Entry key="544">-7.41811581544727</Entry>
+						<Entry key="545">-575.73194170233</Entry>
+						<Entry key="546">-948.918115815447</Entry>
+						<Entry key="551">2</Entry>
+						<Entry key="554">7.38905609893065</Entry>
+						<Entry key="565">0</Entry>
+						<Entry key="571">44.16635</Entry>
+						<Entry key="572">45.63945</Entry>
+						<Entry key="573">89.8058</Entry>
+						<Entry key="574">90.3608417050218</Entry>
+						<Entry key="575">45.1804208525109</Entry>
+						<Entry key="591">1</Entry>
+						<Entry key="592">0</Entry>
+						<Entry key="593">0</Entry>
+						<Entry key="594">0</Entry>
+						<Entry key="595">1</Entry>
+						<Entry key="596">0</Entry>
+						<Entry key="597">0</Entry>
+						<Entry key="598">0</Entry>
+						<Entry key="599">1</Entry>
+						<Entry key="600">2.956875</Entry>
+						<Entry key="601">2.963975</Entry>
+						<Entry key="602">0.000687500000000174</Entry>
+						<Entry key="603">0.00025000000000075</Entry>
+						<Entry key="604">0</Entry>
+						<Entry key="606">0.2</Entry>
+						<Entry key="608">0</Entry>
+						<Entry key="609">5000</Entry>
+						<Entry key="610">2.95257271156651</Entry>
+						<Entry key="611">2.93785408780152</Entry>
+						<Entry key="612">2.97297277371902</Entry>
+						<Entry key="613">2.9722951483046</Entry>
+						<Entry key="614">2.96879526761053</Entry>
+						<Entry key="615">2.97320267482624</Entry>
+						<Entry key="616">2.93831879954064</Entry>
+						<Entry key="617">2.95239100790716</Entry>
+						<Entry key="618">2.99649999999998</Entry>
+						<Entry key="619">3</Entry>
+						<Entry key="631">1</Entry>
+						<Entry key="632">0</Entry>
+						<Entry key="675">2</Entry>
+						<Entry key="676">0</Entry>
+						<Entry key="677">2</Entry>
+						<Entry key="678">2</Entry>
+						<Entry key="679">0</Entry>
+						<Entry key="680">1</Entry>
+						<Entry key="681">2</Entry>
+						<Entry key="682">7</Entry>
+						<Entry key="683">1</Entry>
+						<Entry key="684">0</Entry>
+						<Entry key="685">1</Entry>
+						<Entry key="689">1</Entry>
+						<Entry key="690">1</Entry>
+						<Entry key="691">1</Entry>
+						<Entry key="692">1</Entry>
+						<Entry key="693">1</Entry>
+						<Entry key="694">1</Entry>
+						<Entry key="695">1</Entry>
+						<Entry key="696">1</Entry>
+						<Entry key="697">1</Entry>
+						<Entry key="698">1</Entry>
+						<Entry key="699">1</Entry>
+						<Entry key="701">-84.74155</Entry>
+						<Entry key="702">-82.91175</Entry>
+						<Entry key="703">-0.317693160398398</Entry>
+						<Entry key="704">0</Entry>
+						<Entry key="705">-84.1299</Entry>
+						<Entry key="706">-84.17155</Entry>
+						<Entry key="707">0.0416500000000042</Entry>
+						<Entry key="799">0</Entry>
+						<Entry key="800">-161.3158</Entry>
+						<Entry key="801">-546.2037</Entry>
+						<Entry key="802">-618.1585</Entry>
+						<Entry key="803">-0.6938</Entry>
+						<Entry key="901">25.4</Entry>
+						<Entry key="975">165.0268</Entry>
+						<Entry key="976">185.17575</Entry>
+						<Entry key="977">159.4635</Entry>
+						<Entry key="978">32.0083</Entry>
+						<Entry key="981">0.000599999999963075</Entry>
+						<Entry key="982">-0.0124000000000137</Entry>
+						<Entry key="983">-0.00699999999994816</Entry>
+						<Entry key="984">0.0001</Entry>
+						<Entry key="990">230.845</Entry>
+						<Entry key="991">26</Entry>
+						<Entry key="994">1.8460625</Entry>
+						<Entry key="995">-106.9599125</Entry>
+						<Entry key="998">127.10725</Entry>
+						<Entry key="999">3.22862499999999</Entry>
+					</VariableDataSet>
+					<Execution dataItemId="execution" sequence="2673145" timestamp="2022-10-22T14:56:53.3273Z">ACTIVE</Execution>
+					<LineLabel dataItemId="linelabel" sequence="2701645" timestamp="2022-10-22T15:32:10.0371Z">16</LineLabel>
+					<LineNumber dataItemId="linenumber" sequence="2703411" subType="INCREMENTAL" timestamp="2022-10-22T15:35:24.9568Z">21</LineNumber>
+					<ControllerMode dataItemId="mode" sequence="2636681" timestamp="2022-10-22T13:45:10.7378Z">AUTOMATIC</ControllerMode>
+					<ProcessTime dataItemId="proctimestart" sequence="17792" subType="START" timestamp="2022-10-14T11:44:34.132031Z">UNAVAILABLE</ProcessTime>
+					<Program dataItemId="program" sequence="2673144" subType="MAIN" timestamp="2022-10-22T14:56:51.2953Z">TH-6965-OP2</Program>
+					<ProgramComment dataItemId="program_cmt" sequence="2261830" subType="MAIN" timestamp="2022-10-21T16:59:02.4885Z"></ProgramComment>
+					<WaitState dataItemId="waitstate" sequence="2633309" timestamp="2022-10-22T13:32:33.2941Z">UNAVAILABLE</WaitState>
+					<WorkOffset dataItemId="woffset" sequence="2701703" timestamp="2022-10-22T15:32:13.3352Z">G54.1P229</WorkOffset>
+					<Rotation dataItemId="workoffsetrot" sequence="102" timestamp="2022-10-14T11:21:47.412748Z">UNAVAILABLE</Rotation>
+					<Translation dataItemId="workoffsettrans" sequence="2701704" timestamp="2022-10-22T15:32:13.3352Z">-52.49948 -85.02991 -66.98634</Translation>
+				</Events>
+				<Condition>
+					<Normal dataItemId="motion_cond" sequence="1676917" timestamp="2022-10-20T23:18:58.0991Z" type="MOTION_PROGRAM"/>
+					<Normal dataItemId="path_system" sequence="1672511" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Personnel" name="personnel" componentId="personnel">
+				<Events>
+					<User dataItemId="operator" sequence="118" timestamp="2022-10-14T11:21:47.412848Z">UNAVAILABLE</User>
+				</Events>
+			</ComponentStream>
+			<ComponentStream component="Pneumatic" name="pneumatic" componentId="pneumatic">
+				<Condition>
+					<Normal dataItemId="pneu_cond" sequence="1672504" timestamp="2022-10-20T22:07:36.1933Z" type="SYSTEM"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Stock" name="stock" componentId="procstock">
+				<Events>
+					<Material dataItemId="stock" sequence="119" timestamp="2022-10-14T11:21:47.412853Z">UNAVAILABLE</Material>
+				</Events>
+			</ComponentStream>
+			<ComponentStream component="Environmental" name="environmental" componentId="room">
+				<Samples>
+					<Temperature dataItemId="rmtmp1" sequence="117" timestamp="2022-10-14T11:21:47.412843Z">UNAVAILABLE</Temperature>
+				</Samples>
+			</ComponentStream>
+			<ComponentStream component="WorkEnvelope" name="workenvelope" componentId="workenvelope">
+				<Condition>
+					<Unavailable dataItemId="envelope_cond" sequence="110" timestamp="2022-10-14T11:21:47.412792Z" type="SYSTEM"/>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Linear" name="X" componentId="x">
+				<Samples>
+					<Position dataItemId="Xabs" sequence="2703412" subType="ACTUAL" timestamp="2022-10-22T15:35:24.9568Z">-527.2963</Position>
+					<AxisFeedrate dataItemId="Xfrt" sequence="2703231" timestamp="2022-10-22T15:35:04.9668Z">0</AxisFeedrate>
+					<Load dataItemId="Xload" sequence="2701791" timestamp="2022-10-22T15:32:17.8916Z">3</Load>
+					<Position dataItemId="Xpos" sequence="2703413" subType="ACTUAL" timestamp="2022-10-22T15:35:24.9568Z">-2.3015</Position>
+					<Temperature compositionId="Xmotor" dataItemId="servotemp1" sequence="2679355" timestamp="2022-10-22T15:04:06.5731Z">38</Temperature>
+				</Samples>
+				<Events>
+					<AxisState dataItemId="xaxisstate" sequence="2703232" timestamp="2022-10-22T15:35:04.9668Z">STOPPED</AxisState>
+				</Events>
+				<Condition>
+					<Normal dataItemId="Xtravel" sequence="1672512" timestamp="2022-10-20T22:07:36.1933Z" type="POSITION"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Linear" name="Y" componentId="y">
+				<Samples>
+					<Position dataItemId="Yabs" sequence="2703539" subType="ACTUAL" timestamp="2022-10-22T15:35:40.1773Z">-749.4341</Position>
+					<AxisFeedrate dataItemId="Yfrt" sequence="2703538" timestamp="2022-10-22T15:35:40.1773Z">1.2128414844</AxisFeedrate>
+					<Load dataItemId="Yload" sequence="2703162" timestamp="2022-10-22T15:34:58.4485Z">31</Load>
+					<Position dataItemId="Ypos" sequence="2703540" subType="ACTUAL" timestamp="2022-10-22T15:35:40.1773Z">100.865</Position>
+					<Temperature compositionId="Ymotor" dataItemId="servotemp2" sequence="2675129" timestamp="2022-10-22T14:59:08.2568Z">45</Temperature>
+				</Samples>
+				<Events>
+					<AxisState dataItemId="yaxisstate" sequence="2703166" timestamp="2022-10-22T15:34:58.4485Z">TRAVEL</AxisState>
+				</Events>
+				<Condition>
+					<Normal dataItemId="Ytravel" sequence="1672513" timestamp="2022-10-20T22:07:36.1933Z" type="POSITION"></Normal>
+				</Condition>
+			</ComponentStream>
+			<ComponentStream component="Linear" name="Z" componentId="z">
+				<Samples>
+					<Position dataItemId="Zabs" sequence="2703168" subType="ACTUAL" timestamp="2022-10-22T15:34:58.4485Z">-502.7584</Position>
+					<AxisFeedrate dataItemId="Zfrt" sequence="2703167" timestamp="2022-10-22T15:34:58.4485Z">0</AxisFeedrate>
+					<Load dataItemId="Zload" sequence="2701767" timestamp="2022-10-22T15:32:16.6354Z">5</Load>
+					<Position dataItemId="Zpos" sequence="2703169" subType="ACTUAL" timestamp="2022-10-22T15:34:58.4485Z">-4.7</Position>
+					<Temperature compositionId="Zmotor" dataItemId="servotemp3" sequence="2701398" timestamp="2022-10-22T15:31:50.2072Z">38</Temperature>
+				</Samples>
+				<Events>
+					<AxisState dataItemId="zaxisstate" sequence="2703170" timestamp="2022-10-22T15:34:58.4485Z">STOPPED</AxisState>
+				</Events>
+				<Condition>
+					<Normal dataItemId="Ztravel" sequence="1672514" timestamp="2022-10-20T22:07:36.1933Z" type="POSITION"></Normal>
+				</Condition>
+			</ComponentStream>
+		</DeviceStream>
+	</Streams>
+</MTConnectStreams>

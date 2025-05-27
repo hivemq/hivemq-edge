@@ -17,10 +17,11 @@ package com.hivemq.configuration.entity.bridge;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "authentication")
@@ -36,5 +37,18 @@ public class BridgeAuthenticationEntity {
 
     public void setMqttSimpleAuthenticationEntity(final MqttSimpleAuthenticationEntity mqttSimpleAuthenticationEntity) {
         this.mqttSimpleAuthenticationEntity = mqttSimpleAuthenticationEntity;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BridgeAuthenticationEntity that = (BridgeAuthenticationEntity) o;
+        return Objects.equals(getMqttSimpleAuthenticationEntity(), that.getMqttSimpleAuthenticationEntity());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getMqttSimpleAuthenticationEntity());
     }
 }

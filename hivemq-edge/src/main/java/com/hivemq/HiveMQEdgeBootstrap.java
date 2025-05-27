@@ -17,6 +17,7 @@ package com.hivemq;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
+import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.HiveMQExceptionHandlerBootstrap;
 import com.hivemq.bootstrap.LoggingBootstrap;
@@ -30,14 +31,11 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -48,6 +46,8 @@ import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +95,11 @@ public class HiveMQEdgeBootstrap {
     public @NotNull Injector bootstrap() throws HiveMQEdgeStartupException {
         metricRegistry.addListener(new MetricRegistryLogger());
 
+        if(systemInformation.isConfigWriteable()) {
+            capabilityService.addCapability(new Capability("config-writeable",
+                    "Config can be manipulated via the REST API",
+                    "Changes to the configuration made via the REST API are persisted back into the config.xml."));
+        }
         LoggingBootstrap.prepareLogging();
 
         // Embedded has already called init as it is required to read the config file.
@@ -103,12 +108,12 @@ public class HiveMQEdgeBootstrap {
             //Create SystemInformation this early because logging depends on it
             systemInformation.init();
         }
-        // load available modules after system information is bootstrapped.
-        moduleLoader.loadModules();
-
 
         log.trace("Initializing Logging");
         LoggingBootstrap.initLogging(systemInformation.getConfigFolder());
+
+        // load available modules after system information is bootstrapped and logging is bootstrapped.
+        moduleLoader.loadModules();
 
         log.trace("Initializing Exception handlers");
         HiveMQExceptionHandlerBootstrap.addUnrecoverableExceptionHandler();
@@ -120,8 +125,6 @@ public class HiveMQEdgeBootstrap {
         // it is not null in case of integration tests
         // it is null when edge is started "usually"
         if (configService == null) {
-            final ConfigurationMigrator migrator = new ConfigurationMigrator(systemInformation, moduleLoader);
-            migrator.migrate();
             log.trace("Initializing configuration");
             configService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }
@@ -183,7 +186,7 @@ public class HiveMQEdgeBootstrap {
     }
 
     private void bootstrapCoreComponents() {
-        log.info("Integrating Core Modules");
+        log.debug("Integrating Core Modules");
         // configService is always set in caller
         Preconditions.checkNotNull(configService);
 

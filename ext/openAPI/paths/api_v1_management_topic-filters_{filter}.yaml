@@ -1,0 +1,66 @@
+get:
+  description: Get the specified topic filter
+  operationId: get-topicFilter
+  parameters:
+    - $ref: ../components/parameters/TopicFilterId.yaml
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TopicFilter.yaml
+      description: Success
+  summary: Get the specified topic filter
+  tags:
+    - Topic Filters
+delete:
+  description: Delete the specified topic filter.
+  operationId: delete-topicFilter
+  parameters:
+    - $ref: ../components/parameters/TopicFilterId.yaml
+  responses:
+    '200':
+      description: Success
+    '403':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Already Present
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Topic filter not found
+  summary: Delete an topic filter
+  tags:
+    - Topic Filters
+put:
+  description: Update a topic filter
+  operationId: update-topicFilter
+  parameters:
+    - $ref: ../components/parameters/TopicFilterId.yaml
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/TopicFilter.yaml
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Topic filter failed validation
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update a topic filter.
+  tags:
+    - Topic Filters

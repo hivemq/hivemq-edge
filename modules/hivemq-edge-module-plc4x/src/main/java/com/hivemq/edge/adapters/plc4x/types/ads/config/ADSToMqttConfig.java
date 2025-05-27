@@ -35,4 +35,20 @@ public class ADSToMqttConfig extends Plc4xToMqttConfig {
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         super(pollingIntervalMillis, maxPollingErrorsBeforeRemoval, publishChangedDataOnly);
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ADSToMqttConfig that = (ADSToMqttConfig) o;
+        return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
+                getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
+                getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPollingIntervalMillis(),
+                getMaxPollingErrorsBeforeRemoval(),
+                getPublishChangedDataOnly());
+    }
 }

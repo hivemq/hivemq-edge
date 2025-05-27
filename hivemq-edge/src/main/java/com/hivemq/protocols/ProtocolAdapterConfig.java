@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,18 +33,21 @@ public class ProtocolAdapterConfig {
     private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
+    private final int configVersion;
     private final @NotNull List<SouthboundMapping> southboundMappings;
     private final @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
+            final int configVersion,
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
             final @NotNull List<SouthboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull List<? extends Tag> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
+        this.configVersion = configVersion;
         this.southboundMappings = southboundMappings;
         this.northboundMappings = northboundMappings;
         this.adapterConfig = protocolSpecificConfig;
@@ -83,11 +87,61 @@ public class ProtocolAdapterConfig {
         return tags;
     }
 
-    public @NotNull List<NorthboundMapping> getFromEdgeMappings() {
+    public @NotNull List<NorthboundMapping> getNorthboundMappings() {
         return northboundMappings;
     }
 
-    public @NotNull List<SouthboundMapping> getToEdgeMappings() {
+    public @NotNull List<SouthboundMapping> getSouthboundMappings() {
         return southboundMappings;
+    }
+
+    public int getConfigVersion() {
+        return configVersion;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
+        return getConfigVersion() == that.getConfigVersion() &&
+                Objects.equals(getAdapterConfig(), that.getAdapterConfig()) &&
+                Objects.equals(getTags(), that.getTags()) &&
+                Objects.equals(getAdapterId(), that.getAdapterId()) &&
+                Objects.equals(getProtocolId(), that.getProtocolId()) &&
+                Objects.equals(getSouthboundMappings(), that.getSouthboundMappings()) &&
+                Objects.equals(getNorthboundMappings(), that.getNorthboundMappings());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getAdapterConfig(),
+                getTags(),
+                getAdapterId(),
+                getProtocolId(),
+                getConfigVersion(),
+                getSouthboundMappings(),
+                getNorthboundMappings());
+    }
+
+    @Override
+    public String toString() {
+        return "ProtocolAdapterConfig{" +
+                "adapterConfig=" +
+                adapterConfig +
+                ", tags=" +
+                tags +
+                ", adapterId='" +
+                adapterId +
+                '\'' +
+                ", protocolId='" +
+                protocolId +
+                '\'' +
+                ", configVersion=" +
+                configVersion +
+                ", southboundMappings=" +
+                southboundMappings +
+                ", northboundMappings=" +
+                northboundMappings +
+                '}';
     }
 }

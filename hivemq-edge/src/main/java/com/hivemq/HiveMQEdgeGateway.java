@@ -18,18 +18,16 @@ package com.hivemq;
 import com.hivemq.bootstrap.HiveMQEdgeNettyBootstrap;
 import com.hivemq.bootstrap.ListenerStartupInformation;
 import com.hivemq.bootstrap.StartupListenerVerifier;
-import com.hivemq.bridge.BridgeService;
+import com.hivemq.combining.runtime.DataCombinerManager;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
-import com.hivemq.persistence.PersistenceStartup;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.util.Checkpoints;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -37,36 +35,30 @@ import java.util.List;
 public class HiveMQEdgeGateway {
 
     private final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap;
-    private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull AdminService adminService;
-    private final @NotNull BridgeService bridgeService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
-    private final @NotNull PersistenceStartup persistenceStartup;
+    private final @NotNull DataCombinerManager dataCombinerManager;
 
     @Inject
     public HiveMQEdgeGateway(
             final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap,
-            final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
-            final @NotNull BridgeService bridgeService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
-            final @NotNull PersistenceStartup persistenceStartup) {
+            final @NotNull DataCombinerManager dataCombinerManager) {
         this.nettyBootstrap = nettyBootstrap;
-        this.payloadPersistence = payloadPersistence;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
-        this.bridgeService = bridgeService;
         this.protocolAdapterManager = protocolAdapterManager;
-        this.persistenceStartup = persistenceStartup;
+        this.dataCombinerManager = dataCombinerManager;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
-            bridgeService.updateBridges();
-            protocolAdapterManager.start().get();
+            protocolAdapterManager.start();
+            dataCombinerManager.start();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");

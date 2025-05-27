@@ -15,10 +15,12 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
+import java.util.Objects;
 
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 
@@ -36,5 +38,18 @@ public class PacketsConfigEntity {
 
     public int getMaxPacketSize() {
         return maxPacketSize;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final PacketsConfigEntity that = (PacketsConfigEntity) o;
+        return getMaxPacketSize() == that.getMaxPacketSize();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getMaxPacketSize());
     }
 }

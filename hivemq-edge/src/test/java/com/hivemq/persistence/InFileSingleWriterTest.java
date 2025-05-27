@@ -104,10 +104,6 @@ public class InFileSingleWriterTest {
         singleWriterServiceImpl.stop();
         assertTrue(singleWriterServiceImpl.checkScheduler.isShutdown());
         assertTrue(singleWriterServiceImpl.singleWriterExecutor.isShutdown());
-
-        for (final ExecutorService callbackExecutor : singleWriterServiceImpl.callbackExecutors) {
-            assertTrue(callbackExecutor.isShutdown());
-        }
     }
 
     private static class NoOpExecutor implements ExecutorService {

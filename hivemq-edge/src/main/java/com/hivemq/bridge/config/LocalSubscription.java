@@ -147,4 +147,27 @@ public class LocalSubscription {
         return uniqueId;
     }
 
+    @Override
+    public String toString() {
+        return "LocalSubscription{" +
+                "filters=" +
+                filters +
+                ", destination='" +
+                destination +
+                '\'' +
+                ", excludes=" +
+                excludes +
+                ", customUserProperties=" +
+                customUserProperties +
+                ", preserveRetain=" +
+                preserveRetain +
+                ", maxQoS=" +
+                maxQoS +
+                ", uniqueId='" +
+                uniqueId +
+                '\'' +
+                ", queueLimit=" +
+                queueLimit +
+                '}';
+    }
 }

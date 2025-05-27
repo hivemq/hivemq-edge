@@ -22,7 +22,6 @@ import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
-import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
@@ -99,7 +98,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         log.info("Setting default authentication behavior to ALLOW ALL");
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
 
-        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null, license);
+        systemInformation = new SystemInformationImpl(true, true, conf, conf, data, extensions, null, license);
         // we create the metric registry here to make it accessible before start
         metricRegistry = new MetricRegistry();
 
@@ -198,9 +197,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     @NotNull ConfigurationService bootstrapConfig() {
-        final ConfigurationMigrator configurationMigrator = new ConfigurationMigrator(systemInformation, moduleLoaderFactory.apply(systemInformation));
-        configurationMigrator.migrate();
-
         if (configurationService == null) {
             configurationService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }

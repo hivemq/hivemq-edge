@@ -9,6 +9,12 @@
                     <tagName>tag1</tagName>
                 </northboundMapping>
             </northboundMappings>
+            <tags>
+                <tag>
+                    <name>tag1</name>
+                    <description>description1</description>
+                </tag>
+            </tags>
         </protocol-adapter>
     </protocol-adapters>
 </hivemq>

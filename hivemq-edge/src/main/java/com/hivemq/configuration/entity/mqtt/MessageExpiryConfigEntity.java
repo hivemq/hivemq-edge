@@ -15,10 +15,12 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
+import java.util.Objects;
 
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
 
@@ -37,5 +39,18 @@ public class MessageExpiryConfigEntity {
 
     public long getMaxInterval() {
         return maxInterval;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MessageExpiryConfigEntity that = (MessageExpiryConfigEntity) o;
+        return getMaxInterval() == that.getMaxInterval();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getMaxInterval());
     }
 }

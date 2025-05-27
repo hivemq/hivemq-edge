@@ -1,51 +1,56 @@
 [versions]
-apache-commonsIO = "2.18.0"
+apache-commonsIO = "2.19.0"
 apache-commonsCompress = "1.27.1"
 apache-commonsLang = "3.17.0"
 apache-plc4x = "0.11.0"
-assertj = "3.26.3"
-awaitility = "4.2.2"
-bouncycastle = "1.70"
-byteBuddy = "1.15.11"
+assertj = "3.27.3"
+awaitility = "4.3.0"
+bouncycastle = "1.80"
+byteBuddy = "1.17.5"
 concurrentUnit = "0.4.6"
-dagger = "2.53.1"
-dropwizard-metrics = "4.2.29"
-equalsVerifier = "3.17.5"
+dagger = "2.56.2"
+dropwizard-metrics = "4.2.30"
+equalsVerifier = "3.19.3"
 future-converter = "1.2.0"
 guava = "32.1.3-jre"
 hivemq-edge-adapterSdk = "2024.5"
 hivemq-edge-extensionSdk = "2024.5"
 hivemq-extensionSdk = "4.30.0"
-hivemq-mqttClient = "1.3.4"
+hivemq-mqttClient = "1.3.5"
 kotlin = "1.9.25"
-jackson = "2.18.2"
+jackson = "2.18.3"
 jacoco = "0.8.11"
-jakarta-xml-bind = "2.3.3"
 jsonSchemaInferrer = "0.2.1"
 javassist = "3.30.2-GA"
 javax-annotation-api = "1.3.2"
-jaxb = "2.3.9"
+jaxb2 = "2.3.9"
+jaxb4-bind = "4.0.2"
+jaxb4-impl = "4.0.5"
 jctools = "4.0.5"
-jersey = "2.45"
+jersey = "2.46"
 jose4j = "0.9.6"
-jsonSchemaValidator = "1.5.4"
-junit-jupiter = "5.11.3"
-junit = "4.13.2"
-logback = "1.5.12"
+jsonSchemaValidator = "1.5.6"
+junit-jupiter = "5.12.2"
+logback = "1.5.18"
 milo = "0.6.15"
-mockito = "5.14.2"
+mockito = "5.17.0"
 modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
-netty = "4.1.115.Final"
+mtconnect-protocol = "1.0.0"
+netty = "4.2.0.Final"
+org_json = "20250107"
 pmd = "6.55.0"
 shrinkwrap = "1.2.6"
-slf4j = "2.0.16"
+slf4j = "2.0.17"
 spotBugs = "4.8.5"
 stefanBirkner-systemRules = "1.19.0"
-swagger-annotations = "2.2.27"
-victools-jsonschema = "4.37.0"
+swagger-annotations = "2.2.30"
+swagger-jaxrs = "1.6.15"
+victools-jsonschema = "4.38.0"
 wiremock = "3.0.1"
 zeroAllocationHashing = "0.16"
+openApiGeneratorVersion="7.12.0"
+jacksonDatabindNullable="0.2.6"
 
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
@@ -53,8 +58,8 @@ apache-commonsLang = { module = "org.apache.commons:commons-lang3", version.ref 
 apache-commonsCompress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commonsCompress" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
-bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 byteBuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
 concurrentUnit = { module = "net.jodah:concurrentunit", version.ref = "concurrentUnit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
@@ -77,22 +82,21 @@ hivemq-extensionSdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref 
 hivemq-mqttClient = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqttClient" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref = "jackson" }
-jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml-bind" }
 javacrumbs-futureConverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation-api" }
-jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb" }
+jaxb2-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb2" }
+jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jaxb4-bind" }
+jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
-junit = { module = "junit:junit", version.ref = "junit" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
-junit-vintageEngine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 milo-bsdParserGson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref = "milo" }
 milo-client = { module = "org.eclipse.milo:sdk-client", version.ref = "milo" }
@@ -100,12 +104,14 @@ milo-dictionaryReader = { module = "org.eclipse.milo:dictionary-reader", version
 milo-server = { module = "org.eclipse.milo:sdk-server", version.ref = "milo" }
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
+mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
 netty-commons = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
+org_json = { module = "org.json:json", version.ref = "org_json" }
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
@@ -115,6 +121,7 @@ shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", versio
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 stefanBirkner-systemRules = { module = "com.github.stefanbirkner:system-rules", version.ref = "stefanBirkner-systemRules" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
+swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools-jsonschema" }
 victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools-jsonschema" }
 wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }
@@ -132,7 +139,8 @@ versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }
 license = { id = "com.github.hierynomus.license", version = "0.16.1" }
 shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
-forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.8" }
+forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.9" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openApiGeneratorVersion" }
 
 
 

@@ -15,11 +15,11 @@
  */
 package com.hivemq.persistence.mappings;
 
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class SouthboundMapping implements InternalWritingContext {
 
@@ -51,6 +51,24 @@ public class SouthboundMapping implements InternalWritingContext {
         return fieldMapping;
     }
 
+    public static @NotNull SouthboundMapping fromModel(
+            final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping,
+            final @NotNull String schema) {
+        return new SouthboundMapping(southboundMapping.getTagName(),
+                southboundMapping.getTopicFilter(),
+                southboundMapping.getFieldMapping() != null ?
+                        FieldMapping.fromModel(southboundMapping.getFieldMapping()) :
+                        FieldMapping.DEFAULT_FIELD_MAPPING,
+                schema);
+    }
+
+    public @NotNull com.hivemq.edge.api.model.SouthboundMapping toModel() {
+        return new com.hivemq.edge.api.model.SouthboundMapping().topicFilter(this.getTopicFilter())
+                .tagName(this.getTagName())
+                .fieldMapping(this.fieldMapping.toModel());
+    }
+
+
     @Override
     public @NotNull String getSchema() {
         return schema;
@@ -68,5 +86,20 @@ public class SouthboundMapping implements InternalWritingContext {
                 tagName +
                 '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final SouthboundMapping that = (SouthboundMapping) o;
+        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                Objects.equals(getFieldMapping(), that.getFieldMapping()) &&
+                Objects.equals(getSchema(), that.getSchema());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopicFilter(), getTagName(), getFieldMapping(), getSchema());
     }
 }

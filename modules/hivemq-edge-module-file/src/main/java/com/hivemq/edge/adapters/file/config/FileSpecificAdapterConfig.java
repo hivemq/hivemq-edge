@@ -21,6 +21,8 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
@@ -53,5 +55,17 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {
         return fileToMqttConfig;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final FileSpecificAdapterConfig that = (FileSpecificAdapterConfig) o;
+        return Objects.equals(id, that.id) && Objects.equals(getFileToMqttConfig(), that.getFileToMqttConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, getFileToMqttConfig());
     }
 }

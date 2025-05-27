@@ -21,10 +21,11 @@ import com.hivemq.configuration.entity.security.RequestProblemInformationEntityC
 import com.hivemq.configuration.entity.security.UTF8ValidationEntity;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -61,5 +62,25 @@ public class SecurityConfigEntity {
 
     public @NotNull RequestProblemInformationEntityConfig getAllowRequestProblemInformationEntity() {
         return allowRequestProblemInformationEntity;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SecurityConfigEntity that = (SecurityConfigEntity) o;
+        return Objects.equals(getPayloadFormatValidationEntity(), that.getPayloadFormatValidationEntity()) &&
+                Objects.equals(getUtf8ValidationEntity(), that.getUtf8ValidationEntity()) &&
+                Objects.equals(getAllowEmptyClientIdEntity(), that.getAllowEmptyClientIdEntity()) &&
+                Objects.equals(getAllowRequestProblemInformationEntity(),
+                        that.getAllowRequestProblemInformationEntity());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPayloadFormatValidationEntity(),
+                getUtf8ValidationEntity(),
+                getAllowEmptyClientIdEntity(),
+                getAllowRequestProblemInformationEntity());
     }
 }

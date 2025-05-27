@@ -20,8 +20,8 @@ import com.hivemq.api.AbstractApi;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.model.components.Listener;
 import com.hivemq.api.model.components.ListenerList;
-import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.api.GatewayEndpointApi;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -32,7 +32,7 @@ import java.io.OutputStreamWriter;
 /**
  * @author Simon L Johnson
  */
-public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
+public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointApi {
 
     private final @NotNull ConfigurationService configurationService;
 
@@ -53,7 +53,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
     public @NotNull Response getListeners() {
 
         //-- Netty configured objects
-        ImmutableList.Builder<Listener> builder = new ImmutableList.Builder<>();
+        final ImmutableList.Builder<Listener> builder = new ImmutableList.Builder<>();
         configurationService.listenerConfiguration()
                 .getListeners()
                 .stream()
@@ -70,7 +70,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
         return Response.ok(new ListenerList(builder.build())).build();
     }
 
-    private Listener convertListener(com.hivemq.configuration.service.entity.Listener listener) {
+    private Listener convertListener(final com.hivemq.configuration.service.entity.Listener listener) {
         return new Listener(listener.getName(),
                 listener.getBindAddress(),
                 listener.getPort(),
@@ -80,10 +80,10 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
                 getProtocolForPort(listener.getPort()));
     }
 
-    private Listener convertApiListener(ApiListener listener) {
+    private Listener convertApiListener(final ApiListener listener) {
 
-        String protocol = getProtocolForPort(listener.getPort());
-        String listenerName = String.format("%s-listener-%s", protocol, listener.getPort());
+        final String protocol = getProtocolForPort(listener.getPort());
+        final String listenerName = String.format("%s-listener-%s", protocol, listener.getPort());
 
         return new Listener(listenerName,
                 listener.getBindAddress(),
@@ -94,7 +94,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
     }
 
 
-    private String getProtocolForPort(int port) {
+    private String getProtocolForPort(final int port) {
         //-- Uses IANA ports to map, otherwise its unknown
         //-- TODO Add element to config for protocol
         switch(port){
@@ -116,7 +116,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
         }
     }
 
-    private Listener.TRANSPORT getTransportForPort(int port) {
+    private Listener.TRANSPORT getTransportForPort(final int port) {
         //-- Uses IANA ports to map, otherwise its unknown
         //-- TODO Add element to config for protocol
         switch(port){

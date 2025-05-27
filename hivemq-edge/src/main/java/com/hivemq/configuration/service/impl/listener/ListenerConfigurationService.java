@@ -76,4 +76,7 @@ public interface ListenerConfigurationService {
     @ReadOnly
     @NotNull List<MqttsnUdpListener> getUdpListeners();
 
+    @ReadOnly
+    void clear();
+
 }

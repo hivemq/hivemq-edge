@@ -35,11 +35,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
-public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation{
+public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
-    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
     public static final String PROTOCOL_ID = "opcua";
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
+    private static final int CURRENT_CONFIG_VERSION = 1;
 
 
     private OpcUaProtocolAdapterInformation() {
@@ -97,7 +99,10 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE, ProtocolAdapterCapability.DISCOVER);
+        return EnumSet.of(ProtocolAdapterCapability.READ,
+                ProtocolAdapterCapability.WRITE,
+                ProtocolAdapterCapability.DISCOVER,
+                ProtocolAdapterCapability.COMBINE);
     }
 
     @Override
@@ -135,5 +140,10 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return BidirectionalOpcUaSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public int getCurrentConfigVersion() {
+        return CURRENT_CONFIG_VERSION;
     }
 }

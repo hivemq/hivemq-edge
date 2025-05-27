@@ -26,10 +26,10 @@ import com.hivemq.api.error.ApiException;
 import com.hivemq.api.errors.authentication.AuthenticationValidationError;
 import com.hivemq.api.errors.authentication.UnauthorizedError;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.api.model.auth.ApiBearerToken;
-import com.hivemq.api.model.auth.UsernamePasswordCredentials;
-import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.edge.api.AuthenticationApi;
+import com.hivemq.edge.api.model.ApiBearerToken;
+import com.hivemq.edge.api.model.UsernamePasswordCredentials;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +60,8 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         this.tokenVerifier = tokenVerifier;
     }
 
+
+
     @Override
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
 
@@ -72,18 +74,18 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         } else {
             final String userName = credentials.getUserName();
             final String password = credentials.getPassword();
-            Optional<UsernamePasswordRoles> usernamePasswordRoles = usernamePasswordProvider.findByUsername(userName);
+            final Optional<UsernamePasswordRoles> usernamePasswordRoles = usernamePasswordProvider.findByUsername(userName);
             if (usernamePasswordRoles.isPresent()) {
-                UsernamePasswordRoles user = usernamePasswordRoles.get();
+                final UsernamePasswordRoles user = usernamePasswordRoles.get();
                 if (user.getPassword().equals(password)) {
                     try {
-                        ApiBearerToken token = new ApiBearerToken(tokenGenerator.generateToken(user.toPrincipal()));
+                        final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));
                         if (logger.isTraceEnabled()) {
                             logger.trace("Bearer authentication was success, token generated for {}",
                                     user.getUserName());
                         }
                         return Response.ok(token).build();
-                    } catch (AuthenticationException e) {
+                    } catch (final AuthenticationException e) {
                         logger.warn("Authentication failed with error", e);
                         throw new ApiException("error encountered during authentication", e);
                     }
@@ -94,10 +96,10 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     }
 
     @Override
-    public @NotNull Response validate(final @Nullable ApiBearerToken token) {
+    public @NotNull Response validateToken(final @Nullable ApiBearerToken token) {
         Preconditions.checkNotNull(token);
         Preconditions.checkState(token.getToken() != null, "Token value cannot be <null>");
-        Optional<ApiPrincipal> principal = tokenVerifier.verify(token.getToken());
+        final Optional<ApiPrincipal> principal = tokenVerifier.verify(token.getToken());
         if (principal.isPresent()) {
             return Response.ok().build();
         } else {
@@ -106,15 +108,15 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     }
 
     @Override
-    public @NotNull Response reissueToken() {
+    public @NotNull Response refreshToken() {
         try {
-            ApiPrincipal principal = getAuthenticatedPrincipalFromContext();
-            ApiBearerToken token = new ApiBearerToken(tokenGenerator.generateToken(principal));
+            final ApiPrincipal principal = getAuthenticatedPrincipalFromContext();
+            final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(principal));
             if (logger.isTraceEnabled()) {
                 logger.trace("Token reissue requested for {}", principal.getName());
             }
             return Response.ok(token).build();
-        } catch (AuthenticationException e) {
+        } catch (final AuthenticationException e) {
             logger.warn("Authentication failed with error", e);
             throw new ApiException("error encountered during authentication", e);
         }

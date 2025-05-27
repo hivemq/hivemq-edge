@@ -11,14 +11,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: pnpm/action-setup@v3
+    - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
       name: Install pnpm
       id: pnpm-install
       with:
-        version: 8.4.0
+        version: 9
         run_install: ${{ inputs.run-install }}
 
-    - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: 18.16.0
         cache: 'pnpm'

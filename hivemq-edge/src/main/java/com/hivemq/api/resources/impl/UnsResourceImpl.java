@@ -16,18 +16,18 @@
 package com.hivemq.api.resources.impl;
 
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.ValidationError;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.api.model.uns.ISA95ApiBean;
-import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
-import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.http.error.ErrorType;
-import com.hivemq.util.ErrorResponseUtil;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.edge.api.UnsApi;
+import com.hivemq.edge.api.model.ISA95ApiBean;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.util.ErrorResponseUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -37,28 +37,31 @@ import javax.ws.rs.core.Response;
  */
 public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
-    private final @NotNull ConfigurationService configurationService;
     private final @NotNull UnifiedNamespaceService unifiedNamespaceService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public UnsResourceImpl(
-            final @NotNull ConfigurationService configurationService,
-            final @NotNull UnifiedNamespaceService unifiedNamespaceService) {
-        this.configurationService = configurationService;
+            final @NotNull UnifiedNamespaceService unifiedNamespaceService,
+            final @NotNull SystemInformation systemInformation) {
         this.unifiedNamespaceService = unifiedNamespaceService;
+        this.systemInformation = systemInformation;
     }
 
     @Override
-    public Response getIsa95() {
-        ISA95 isa95 = unifiedNamespaceService.getISA95();
-        ISA95ApiBean isa95ApiBean = ISA95ApiBean.convert(isa95);
+    public @NotNull Response getIsa95() {
+        final ISA95 isa95 = unifiedNamespaceService.getISA95();
+        final ISA95ApiBean isa95ApiBean = ISA95.convert(isa95);
         return Response.ok(isa95ApiBean).build();
     }
 
     @Override
-    public Response setIsa95(final ISA95ApiBean isa95) {
+    public @NotNull Response setIsa95(final @NotNull ISA95ApiBean isa95) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
 
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
 
         //-- Ensure we apply all validation
         ApiErrorUtils.validateRequiredEntity(errorMessages, "isa95", isa95);
@@ -81,7 +84,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
         if(ApiErrorUtils.hasRequestErrors(errorMessages)){
             return ErrorResponseUtil.errorResponse(new ValidationError(errorMessages.toErrorList()));
         } else {
-            unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
+            unifiedNamespaceService.setISA95(ISA95.unconvert(isa95));
             return Response.ok().build();
         }
     }

@@ -18,14 +18,15 @@ package com.hivemq.configuration.entity.bridge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "remote-subscription")
@@ -87,5 +88,22 @@ public class RemoteSubscriptionEntity {
 
     public void setCustomUserProperties(final List<CustomUserPropertyEntity> customUserProperties) {
         this.customUserProperties = customUserProperties;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final RemoteSubscriptionEntity that = (RemoteSubscriptionEntity) o;
+        return getMaxQoS() == that.getMaxQoS() &&
+                isPreserveRetain() == that.isPreserveRetain() &&
+                Objects.equals(getFilters(), that.getFilters()) &&
+                Objects.equals(getDestination(), that.getDestination()) &&
+                Objects.equals(getCustomUserProperties(), that.getCustomUserProperties());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getFilters(), getMaxQoS(), isPreserveRetain(), getDestination(), getCustomUserProperties());
     }
 }

@@ -15,7 +15,11 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,20 +64,11 @@ public interface ConfigurationService {
     @NotNull MqttsnConfigurationService mqttsnConfiguration();
 
     /**
-     * Returns the configuration service for MQTTSN configuration
-     *
-     * @return the bridge configuration service
-     */
-    @NotNull BridgeConfigurationService bridgeConfiguration();
-
-    /**
      * Returns the configuration service for Api configuration
      *
      * @return the api configuration service
      */
     @NotNull ApiConfigurationService apiConfiguration();
-
-    @NotNull UnsConfigurationService unsConfiguration();
 
     @NotNull SecurityConfigurationService securityConfiguration();
 
@@ -83,11 +78,17 @@ public interface ConfigurationService {
 
     @NotNull UsageTrackingConfigurationService usageTrackingConfiguration();
 
-    @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
-
     @NotNull ModuleConfigurationService commercialModuleConfigurationService();
 
     @NotNull InternalConfigurationService internalConfigurationService();
+
+    @NotNull BridgeExtractor bridgeExtractor();
+
+    @NotNull ProtocolAdapterExtractor protocolAdapterExtractor();
+
+    @NotNull DataCombiningExtractor dataCombiningExtractor();
+
+    @NotNull UnsExtractor unsExtractor();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 

@@ -70,6 +70,24 @@ public class RemoteSubscription {
         return maxQoS;
     }
 
+
+    @Override
+    public String toString() {
+        return "RemoteSubscription{" +
+                "filters=" +
+                filters +
+                ", destination='" +
+                destination +
+                '\'' +
+                ", customUserProperties=" +
+                customUserProperties +
+                ", preserveRetain=" +
+                preserveRetain +
+                ", maxQoS=" +
+                maxQoS +
+                '}';
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;

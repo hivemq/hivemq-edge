@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.concurrent.Executor;
 
 import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 
@@ -47,25 +46,23 @@ public class InMemorySingleWriter implements SingleWriterService {
     private static final int QUEUED_MESSAGES_QUEUE_INDEX = 3;
     private static final int ATTRIBUTE_STORE_QUEUE_INDEX = 4;
 
-    private final @NotNull InMemoryProducerQueues @NotNull [] producers = new InMemoryProducerQueues[AMOUNT_OF_PRODUCERS];
-    private final @NotNull InMemoryProducerQueues callbackProducerQueue;
+    private final @NotNull InMemoryProducerQueues @NotNull [] producers =
+            new InMemoryProducerQueues[AMOUNT_OF_PRODUCERS];
 
     private final int persistenceBucketCount;
 
     @Inject
     public InMemorySingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
 
-        persistenceBucketCount =  internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
-        final int threadPoolSize =internalConfigurationService.getInteger(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE);
+        persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
+        final int threadPoolSize =
+                internalConfigurationService.getInteger(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE);
 
         final int amountOfQueues = validAmountOfQueues(threadPoolSize, persistenceBucketCount);
 
         for (int i = 0; i < producers.length; i++) {
             producers[i] = new InMemoryProducerQueues(persistenceBucketCount, amountOfQueues);
         }
-        callbackProducerQueue = new InMemoryProducerQueues(persistenceBucketCount, amountOfQueues);
-
-
     }
 
     @VisibleForTesting
@@ -98,14 +95,6 @@ public class InMemorySingleWriter implements SingleWriterService {
         return producers[ATTRIBUTE_STORE_QUEUE_INDEX];
     }
 
-    public @NotNull Executor callbackExecutor(final @NotNull String key) {
-        return command -> callbackProducerQueue.submit(key, (bucketIndex) -> {
-                    command.run();
-                    return null; // this is fine, because Executors dont return anything. The return value will not be used.
-                }
-        );
-    }
-
     public int getPersistenceBucketCount() {
         return persistenceBucketCount;
     }
@@ -115,5 +104,4 @@ public class InMemorySingleWriter implements SingleWriterService {
             log.trace("Shutting down single writer");
         }
     }
-
 }

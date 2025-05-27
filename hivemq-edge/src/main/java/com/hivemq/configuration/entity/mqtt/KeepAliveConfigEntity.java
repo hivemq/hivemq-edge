@@ -15,10 +15,11 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -41,5 +42,18 @@ public class KeepAliveConfigEntity {
 
     public boolean isAllowUnlimted() {
         return allowUnlimted;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final KeepAliveConfigEntity that = (KeepAliveConfigEntity) o;
+        return getMaxKeepAlive() == that.getMaxKeepAlive() && isAllowUnlimted() == that.isAllowUnlimted();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMaxKeepAlive(), isAllowUnlimted());
     }
 }

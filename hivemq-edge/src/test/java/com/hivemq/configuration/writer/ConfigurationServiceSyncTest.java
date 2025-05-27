@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hivemq.configuration.writer;
 
 import com.google.common.collect.ImmutableList;
@@ -32,10 +33,10 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
-
 
     @Test
     public void test_sync_uns() throws IOException {
@@ -53,7 +54,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 .withEnabled(false)
                 .build();
 
-        configurationService.unsConfiguration().setISA95(isa95);
+        configurationService.unsExtractor().setISA95(isa95);
 
         //-- Check the writes have been proxied onto the configuration model
         assertISA95Equals(isa95, hiveMQConfigEntity.getUns().getIsa95());
@@ -73,18 +74,22 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         configurationService.setConfigFileReaderWriter(configFileReader);
 
         final List<ProtocolAdapterEntity> entities =
-                configurationService.protocolAdapterConfigurationService().getAllConfigs();
+                configurationService.protocolAdapterExtractor().getAllConfigs();
         Assert.assertEquals("Adapter type count should match", 3, entities.size());
 
-        //-- Remove first adapter
-        entities.remove(1);
+
+        //-- Remove an adapter
+        final var newEntities = new ArrayList<ProtocolAdapterEntity>();
+        newEntities.add(entities.get(0));
+        newEntities.add(entities.get(2));
+
 
         //-- Ensure the original config is NOT YET UPDATED
         Assert.assertEquals("instance count should NOT be reflected in configuration",
                 3,
                 hiveMQConfigEntity.getProtocolAdapterConfig().size());
 
-        configurationService.protocolAdapterConfigurationService().setAllConfigs(entities);
+        configurationService.protocolAdapterExtractor().updateAllAdapters(newEntities);
 
         Assert.assertEquals("instance count be reflected in configuration",
                 2,
@@ -141,7 +146,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 .withRemoteSubscriptions(remoteSubscriptionBuilder.build())
                 .build();
 
-        configurationService.bridgeConfiguration().addBridge(newBridge);
+        configurationService.bridgeExtractor().addBridge(newBridge);
 
         //-- Check the writes have been proxied onto the configuration model
         Assert.assertEquals("New bridge should be in config model",

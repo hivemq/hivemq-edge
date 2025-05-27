@@ -15,44 +15,56 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
+import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.NotFoundError;
 import com.hivemq.api.errors.topicfilters.TopicFilterNotFoundError;
-import com.hivemq.api.model.topicFilters.TopicFilterModel;
-import com.hivemq.api.model.topicFilters.TopicFilterModelList;
-import com.hivemq.api.resources.TopicFilterApi;
-import com.hivemq.http.error.ErrorType;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.persistence.topicfilter.TopicFilter;
+import com.hivemq.api.format.DataUrl;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.edge.api.TopicFiltersApi;
+import com.hivemq.edge.api.model.TopicFilterList;
 import com.hivemq.persistence.topicfilter.TopicFilterAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterDeleteResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.persistence.topicfilter.TopicFilterUpdateResult;
 import com.hivemq.util.ErrorResponseUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
-public class TopicFilterResourceImpl implements TopicFilterApi {
+public class TopicFilterResourceImpl extends AbstractApi implements TopicFiltersApi {
 
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
-    public TopicFilterResourceImpl(final @NotNull TopicFilterPersistence topicFilterPersistence) {
+    public TopicFilterResourceImpl(
+            final @NotNull TopicFilterPersistence topicFilterPersistence,
+            final @NotNull SystemInformation systemInformation) {
         this.topicFilterPersistence = topicFilterPersistence;
+        this.systemInformation = systemInformation;
     }
 
     @Override
-    public @NotNull Response addTopicFilter(final @NotNull TopicFilterModel topicFilterModel) {
+    public @NotNull Response addTopicFilters(final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final @NotNull TopicFilterAddResult addResult =
-                topicFilterPersistence.addTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+                topicFilterPersistence.addTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
         final @NotNull String name = topicFilterModel.getDescription();
         switch (addResult.getTopicFilterPutStatus()) {
             case SUCCESS:
@@ -72,15 +84,45 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
 
     @Override
     public @NotNull Response getTopicFilters() {
-        final List<TopicFilterModel> topicFilterModelList = topicFilterPersistence.getTopicFilters()
-                .stream()
-                .map(TopicFilterModel::fromTopicFilter)
-                .collect(Collectors.toList());
-        return Response.ok(new TopicFilterModelList(topicFilterModelList)).build();
+        final List<com.hivemq.edge.api.model.TopicFilter> topicFilterModelList =
+                topicFilterPersistence.getTopicFilters()
+                        .stream()
+                        .map(TopicFilterPojo::toModel)
+                        .collect(Collectors.toList());
+        return Response.ok(new TopicFilterList().items(topicFilterModelList)).build();
     }
 
     @Override
+    public Response getTopicFilter(final String filter) {
+        final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
+        if (topicFilter == null) {
+            return ErrorResponseUtil.errorResponse(new NotFoundError());
+        } else {
+            return Response.ok(topicFilter.toModel()).build();
+        }
+    }
+
+    @Override
+    public Response getTopicFilterSchema(final String filter) {
+        final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
+        if (topicFilter == null) {
+            return ErrorResponseUtil.errorResponse(new NotFoundError());
+        } else {
+            final @Nullable DataUrl schemaAsDataUrl = topicFilter.getSchema();
+            if (schemaAsDataUrl == null) {
+                return ErrorResponseUtil.errorResponse(new NotFoundError());
+            }
+            final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()));
+            return Response.ok(schema).build();
+        }
+    }
+
+
+    @Override
     public @NotNull Response deleteTopicFilter(final @NotNull String filterUriEncoded) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
 
         final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(filter);
@@ -94,23 +136,28 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
         }
     }
 
+
     @Override
     public @NotNull Response updateTopicFilter(
-            final @NotNull String filterUriEncoded, final @NotNull TopicFilterModel topicFilterModel) {
+            final @NotNull String filterUriEncoded,
+            final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
+
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
-            return ErrorResponseUtil.errorResponse(new BadRequestError(
-                    "the filter in the path '" +
-                            filter +
-                            "' (uriEncoded: '" +
-                            filterUriEncoded +
-                            "')does not fit to the filter in the body '" +
-                            topicFilterModel.getTopicFilter() +
-                            "'"));
+            return ErrorResponseUtil.errorResponse(new BadRequestError("the filter in the path '" +
+                    filter +
+                    "' (uriEncoded: '" +
+                    filterUriEncoded +
+                    "')does not fit to the filter in the body '" +
+                    topicFilterModel.getTopicFilter() +
+                    "'"));
         }
 
         final @NotNull TopicFilterUpdateResult updateResult =
-                topicFilterPersistence.updateTopicFilter(TopicFilter.fromTopicFilterModel(topicFilterModel));
+                topicFilterPersistence.updateTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
         switch (updateResult.getTopicFilterUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
@@ -121,11 +168,12 @@ public class TopicFilterResourceImpl implements TopicFilterApi {
     }
 
     @Override
-    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterModelList topicFilterModelList) {
-        final List<TopicFilter> topicFilters = topicFilterModelList.getItems()
-                .stream()
-                .map(TopicFilter::fromTopicFilterModel)
-                .collect(Collectors.toList());
+    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterList topicFilterModelList) {
+        if (!systemInformation.isConfigWriteable()) {
+            return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
+        }
+        final List<TopicFilterPojo> topicFilters =
+                topicFilterModelList.getItems().stream().map(TopicFilterPojo::fromModel).collect(Collectors.toList());
         final @NotNull TopicFilterUpdateResult updateResult =
                 topicFilterPersistence.updateAllTopicFilters(topicFilters);
         switch (updateResult.getTopicFilterUpdateStatus()) {

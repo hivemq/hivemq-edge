@@ -18,10 +18,10 @@ jobs:
         with:
           repository: 'ornl-epics/etherip'
       - name: Setup Java
-        uses: actions/setup-java@8df1039502a15bceb9433410b1a100fbe190c53b # v4
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
         with:
           distribution: 'adopt'
-          java-version: '11'
+          java-version: '17'
       - uses: whelk-io/maven-settings-xml-action@9dc09b23833fa9aa7f27b63db287951856f3433d # v3.0.0
         with:
           servers: >

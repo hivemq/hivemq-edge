@@ -16,7 +16,7 @@
 package com.hivemq.persistence.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.api.model.tags.DomainTagModel;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,13 +28,13 @@ public class DomainTag {
 
     private final @NotNull String tagName;
     private final @NotNull String adapterId;
-    private final @NotNull String description;
+    private final @Nullable String description;
     private final @NotNull JsonNode definition;
 
     public DomainTag(
             final @NotNull String tagName,
             final @NotNull String adapterId,
-            final @NotNull String description,
+            final @Nullable String description,
             final @NotNull JsonNode definition) {
         this.tagName = tagName;
         this.adapterId = adapterId;
@@ -43,12 +43,20 @@ public class DomainTag {
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(
-            final @NotNull DomainTagModel domainTag,
-            final @NotNull String adapterId) {
-        return new DomainTag(domainTag.getName(),
+            final @NotNull com.hivemq.edge.api.model.DomainTag domainTag,
+            final @NotNull String adapterId,
+            final @NotNull ObjectMapper objectMapper) {
+        return new DomainTag(
+                domainTag.getName(),
                 adapterId,
                 domainTag.getDescription(),
-                domainTag.getDefinition());
+                objectMapper.valueToTree(domainTag.getDefinition()));
+    }
+
+    public @NotNull com.hivemq.edge.api.model.DomainTag toModel() {
+        return new com.hivemq.edge.api.model.DomainTag().name(this.tagName)
+                .description(this.description)
+                .definition(this.definition);
     }
 
     public @NotNull String getTagName() {
@@ -68,7 +76,7 @@ public class DomainTag {
     }
 
     public @NotNull Map<String, Object> toTagMap() {
-        return Map.of("name", tagName, "description", description, "definition", definition);
+        return Map.of("name", tagName, "description", description != null ? description : "", "definition", definition);
     }
 
     // only tag is used as duplicates based on this field are not allowed.

@@ -16,17 +16,22 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.edge.api.model.FieldMapping;
+import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.helpers.ValidationEventImpl;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
-public class SouthboundMappingEntity {
+public class SouthboundMappingEntity implements EntityValidatable {
 
     @XmlElement(name = "topicFilter", required = true)
     private final @NotNull String topicFilter;
@@ -35,7 +40,7 @@ public class SouthboundMappingEntity {
     private final @NotNull String tagName;
 
     @XmlElement(name = "fieldMapping", required = true)
-    private final @NotNull FieldMappingEntity fieldMapping;
+    private final @Nullable FieldMappingEntity fieldMapping;
 
     @XmlElement(name = "fromNorthSchema", required = true)
     private final @NotNull String fromNorthSchema;
@@ -67,31 +72,69 @@ public class SouthboundMappingEntity {
         return topicFilter;
     }
 
+    @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        if (topicFilter == null || topicFilter.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "topicFilter is missing", null));
-        }
-        if (tagName == null || tagName.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "tagName is missing", null));
-        }
-        if (fromNorthSchema == null || fromNorthSchema.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR, "fromNorthSchema is missing", null));
-        }
+        EntityValidatable.notEmpty(validationEvents, topicFilter, "topicFilter");
+        EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
+        EntityValidatable.notEmpty(validationEvents, fromNorthSchema, "fromNorthSchema");
+        Optional.ofNullable(fieldMapping).ifPresent(entity -> entity.validate(validationEvents));
     }
 
-
-    public @NotNull SouthboundMapping to(final @NotNull ObjectMapper mapper) {
-        return new SouthboundMapping(this.getTagName(),
+    public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
+        return new SouthboundMapping(
+                this.getTagName(),
                 this.getTopicFilter(),
                 this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
                 this.fromNorthSchema);
     }
 
-    public static @NotNull SouthboundMappingEntity from(final @NotNull SouthboundMapping southboundMapping) {
-        return new SouthboundMappingEntity(southboundMapping.getTagName(),
+    public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
+        return com.hivemq.edge.api.model.SouthboundMapping
+                .builder()
+                .tagName(this.getTagName())
+                .topicFilter(this.getTopicFilter())
+                .fieldMapping(this.fieldMapping != null ?
+                        FieldMapping
+                                .builder()
+                                .instructions(
+                                        this.fieldMapping.getInstructions().stream()
+                                            .map(instruction ->
+                                                    (Instruction)Instruction
+                                                        .builder()
+                                                            .destination(instruction.getDestinationFieldName())
+                                                            .source(instruction.getSourceFieldName())
+                                                        .build()).toList()).build() : null).build();
+    }
+
+    public static @NotNull SouthboundMappingEntity fromPersistence(final @NotNull SouthboundMapping southboundMapping) {
+        return new SouthboundMappingEntity(
+                southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
                 FieldMappingEntity.from(southboundMapping.getFieldMapping()),
                 southboundMapping.getSchema());
     }
 
+    public static @NotNull SouthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping, final @NotNull String schema) {
+        return new SouthboundMappingEntity(
+                southboundMapping.getTagName(),
+                southboundMapping.getTopicFilter(),
+                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                schema);
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SouthboundMappingEntity that = (SouthboundMappingEntity) o;
+        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
+                Objects.equals(getTagName(), that.getTagName()) &&
+                Objects.equals(fieldMapping, that.fieldMapping) &&
+                Objects.equals(fromNorthSchema, that.fromNorthSchema);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTopicFilter(), getTagName(), fieldMapping, fromNorthSchema);
+    }
 }

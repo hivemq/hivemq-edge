@@ -112,4 +112,22 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     public @NotNull Boolean getOverrideUri() {
         return overrideUri;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final OpcUaSpecificAdapterConfig that = (OpcUaSpecificAdapterConfig) o;
+        return getOverrideUri() == that.getOverrideUri() &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(getUri(), that.getUri()) &&
+                Objects.equals(getAuth(), that.getAuth()) &&
+                Objects.equals(getTls(), that.getTls()) &&
+                Objects.equals(getSecurity(), that.getSecurity()) &&
+                Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, getUri(), getOverrideUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig());
+    }
 }

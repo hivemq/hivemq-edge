@@ -23,6 +23,7 @@
 
     <xs:complexType name="hiveMQConfigEntity">
         <xs:all>
+            <xs:element name="config-version" type="xs:integer" minOccurs="0"/>
             <xs:element name="mqtt-listeners" type="mqttListenersEntity" minOccurs="0"/>
             <xs:element name="mqtt-sn-listeners" type="mqttsnListenersEntity" minOccurs="0"/>
             <xs:element name="mqtt" type="mqttConfigEntity" minOccurs="0"/>
@@ -50,6 +51,15 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="protocol-adapters" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                            <xs:any processContents="skip"/>
+                        </xs:choice>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="data-combiners" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -861,7 +871,7 @@
                                                         <xs:complexType>
                                                             <xs:choice>
                                                                 <xs:element name="mqtt-topic-filter"
-                                                                            type="nonEmptyString" minOccurs="1"
+                                                                            type="nonEmptyString"
                                                                             maxOccurs="unbounded"/>
                                                             </xs:choice>
                                                         </xs:complexType>

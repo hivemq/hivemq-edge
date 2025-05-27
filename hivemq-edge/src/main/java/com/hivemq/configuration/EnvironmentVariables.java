@@ -44,6 +44,21 @@ public class EnvironmentVariables {
     public static final String CONFIG_FOLDER = "HIVEMQ_CONFIG_FOLDER";
 
     /**
+     * Name of the environment variable for configuring the config folder for secondary configs like topicfilters.
+     */
+    public static final String CONFIG_FOLDER_SECONDARY = "HIVEMQ_CONFIG_SECONDARY";
+
+    /**
+     * Name of the environment variable for activating container mode
+     */
+    public static final String CONFIG_REFRESH_INTERVAL = "HIVEMQ_CONFIG_REFRESHINTERVAL";
+
+    /**
+     * Name of the environment variable for indicating a writeable config
+     */
+    public static final String CONFIG_WRITEABLE = "HIVEMQ_CONFIG_WRITEABLE";
+
+    /**
      * Name of the environment variable for configuring the data folder.
      */
     public static final String DATA_FOLDER = "HIVEMQ_DATA_FOLDER";

@@ -15,54 +15,33 @@
  */
 package com.hivemq.protocols;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import com.hivemq.edge.modules.api.events.model.EventImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractSubscriptionSampler.class);
 
     private final long initialDelay;
     private final long period;
     private final int maxErrorsBeforeRemoval;
 
-    private final @NotNull ObjectMapper objectMapper;
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull TimeUnit unit = TimeUnit.MILLISECONDS;
     private final @NotNull String adapterId;
     private final @NotNull UUID uuid;
     private final @NotNull Date created;
-    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
 
     private volatile @Nullable ScheduledFuture<?> future;
 
@@ -70,27 +49,26 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
 
-    private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper protocolAdapter,
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapter.getAdapter();
-        this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
-        this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
-        this.objectMapper = objectMapper;
-        this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
-        this.adapterPublishService = adapterPublishService;
+
+        if (protocolAdapter.getAdapter() instanceof final PollingProtocolAdapter adapter) {
+            this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
+            this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
+            this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
+        } else if (protocolAdapter.getAdapter() instanceof final BatchPollingProtocolAdapter adapter) {
+            this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
+            this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
+            this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
+        } else {
+            throw new IllegalArgumentException("Adapter must be a polling or batch polling protocol adapter");
+        }
         this.eventService = eventService;
-        this.maxErrorsBeforeRemoval = adapter.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
-        this.protocolAdapterMetricsService = protocolAdapter.getProtocolAdapterMetricsService();
     }
 
     @Override
@@ -110,61 +88,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
-            protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), new ProtocolAdapterStopOutputImpl());
-        }
-    }
-
-
-    protected @NotNull CompletableFuture<?> captureDataSample(
-            final @NotNull ProtocolAdapterDataSample sample, final @NotNull PollingContext pollingContext) {
-        Preconditions.checkNotNull(sample);
-        Preconditions.checkNotNull(pollingContext);
-        Preconditions.checkNotNull(pollingContext.getMqttTopic());
-
-        Preconditions.checkArgument(pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
-                "QoS needs to be a valid QoS value (0,1,2)");
-        try {
-            final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
-
-            final List<byte[]> jsonPayloadsAsBytes;
-            final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
-            if (jsonPayloadCreatorOverride != null) {
-                jsonPayloadsAsBytes = jsonPayloadCreatorOverride.convertToJson(sample, objectMapper);
-            } else {
-                jsonPayloadsAsBytes = jsonPayloadDefaultCreator.convertToJson(sample, objectMapper);
-            }
-
-            for (final byte[] json : jsonPayloadsAsBytes) {
-                final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
-                        .withTopic(pollingContext.getMqttTopic())
-                        .withQoS(pollingContext.getMqttQos())
-                        .withPayload(json)
-                        .withAdapter(protocolAdapter.getAdapter());
-                final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
-                publishFuture.thenAccept(publishReturnCode -> {
-                    protocolAdapterMetricsService.incrementReadPublishSuccess();
-                    if (publishCount.incrementAndGet() == 1) {
-                        eventService.createAdapterEvent(adapterId,
-                                        protocolAdapter.getAdapterInformation().getProtocolId())
-                                .withSeverity(EventImpl.SEVERITY.INFO)
-                                .withTimestamp(System.currentTimeMillis())
-                                .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
-                                        adapterId,
-                                        pollingContext.getMqttTopic()))
-                                .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
-                                .fire();
-                    }
-                }).exceptionally(throwable -> {
-                    protocolAdapterMetricsService.incrementReadPublishFailure();
-                    log.warn("Error publishing adapter payload", throwable);
-                    return null;
-                });
-                publishFutures.add(publishFuture);
-            }
-            return CompletableFuture.allOf(publishFutures.build().toArray(new CompletableFuture[0]));
-        } catch (final Exception e) {
-            log.warn("Exception during polling of data for adapters '{}':", adapterId, e);
-            return CompletableFuture.failedFuture(e);
+            protocolAdapter.stop();
         }
     }
 

@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.reader;
 
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.MqttSnConfigEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
@@ -24,9 +26,11 @@ import com.hivemq.mqttsn.MqttsnTopicAlias;
 
 import java.util.List;
 
-public class MqttsnConfigurator {
+public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
 
     private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
+    private volatile MqttSnConfigEntity configEntity;
+    private volatile boolean initialized = false;
 
     public MqttsnConfigurator(final @NotNull MqttsnConfigurationService mqttsnConfigurationService) {
         this.mqttsnConfigurationService = mqttsnConfigurationService;
@@ -39,18 +43,33 @@ public class MqttsnConfigurator {
         }
     }
 
-    void setMqttsnConfig(final @NotNull MqttSnConfigEntity mqttsnConfig) {
-        mqttsnConfigurationService.setGatewayId(mqttsnConfig.getGatewayId());
-        setPredefinedTopicAliases(mqttsnConfig.getPredefinedTopicAliases());
-        mqttsnConfigurationService.setMaxClientIdentifierLength(mqttsnConfig.getMaxClientIdentifierLength());
-        mqttsnConfigurationService.setTopicRegistrationsHeldDuringSleepEnabled(mqttsnConfig.getTopicRegistrationsHeldDuringSleepEntity().isEnabled());
-        mqttsnConfigurationService.setAllowWakingPingToHijackSessionEnabled(mqttsnConfig.getAllowWakingPingToHijackSessionEntity().isEnabled());
-        mqttsnConfigurationService.setAllowEmptyClientIdentifierEnabled(mqttsnConfig.getAllowEmptyClientIdentifierEntity().isEnabled());
-        mqttsnConfigurationService.setAllowAnonymousPublishMinus1Enabled(mqttsnConfig.getAllowAnonymousPublishMinus1Entity().isEnabled());
+
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        if(initialized && hasChanged(this.configEntity, config.getMqttsnConfig())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
+        this.configEntity = config.getMqttsnConfig();
+        this.initialized = true;
+
+        mqttsnConfigurationService.setGatewayId(configEntity.getGatewayId());
+        setPredefinedTopicAliases(configEntity.getPredefinedTopicAliases());
+        mqttsnConfigurationService.setMaxClientIdentifierLength(configEntity.getMaxClientIdentifierLength());
+        mqttsnConfigurationService.setTopicRegistrationsHeldDuringSleepEnabled(configEntity.getTopicRegistrationsHeldDuringSleepEntity().isEnabled());
+        mqttsnConfigurationService.setAllowWakingPingToHijackSessionEnabled(configEntity.getAllowWakingPingToHijackSessionEntity().isEnabled());
+        mqttsnConfigurationService.setAllowEmptyClientIdentifierEnabled(configEntity.getAllowEmptyClientIdentifierEntity().isEnabled());
+        mqttsnConfigurationService.setAllowAnonymousPublishMinus1Enabled(configEntity.getAllowAnonymousPublishMinus1Entity().isEnabled());
 
         //Discovery
-        mqttsnConfigurationService.setDiscoveryEnabled(mqttsnConfig.getDiscoveryEntity().isEnabled());
-        mqttsnConfigurationService.setDiscoveryBroadcastIntervalSeconds(mqttsnConfig.getDiscoveryEntity().getDiscoveryInterval());
-        mqttsnConfigurationService.setDiscoveryBroadcastAddresses(mqttsnConfig.getDiscoveryEntity().getBroadcastAddresses());
+        mqttsnConfigurationService.setDiscoveryEnabled(configEntity.getDiscoveryEntity().isEnabled());
+        mqttsnConfigurationService.setDiscoveryBroadcastIntervalSeconds(configEntity.getDiscoveryEntity().getDiscoveryInterval());
+        mqttsnConfigurationService.setDiscoveryBroadcastAddresses(configEntity.getDiscoveryEntity().getBroadcastAddresses());
+
+        return ConfigResult.SUCCESS;
     }
 }

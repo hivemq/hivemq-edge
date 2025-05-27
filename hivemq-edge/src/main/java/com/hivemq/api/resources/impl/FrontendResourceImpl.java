@@ -17,7 +17,6 @@ package com.hivemq.api.resources.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.components.EnvironmentProperties;
 import com.hivemq.api.model.components.ExtensionList;
 import com.hivemq.api.model.components.GatewayConfiguration;
@@ -27,7 +26,6 @@ import com.hivemq.api.model.components.ModuleList;
 import com.hivemq.api.model.components.Notification;
 import com.hivemq.api.model.components.NotificationList;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
-import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
 import com.hivemq.configuration.HivemqId;
@@ -37,15 +35,20 @@ import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.api.FrontendApi;
+import com.hivemq.edge.api.model.Capability;
+import com.hivemq.edge.api.model.CapabilityList;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Simon L Johnson
@@ -144,7 +147,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     protected @NotNull FirstUseInformation getFirstUse() {
         //-- First use is determined by zero configuration
-        final boolean firstUse = configurationService.bridgeConfiguration().getBridges().isEmpty() &&
+        final boolean firstUse = configurationService.bridgeExtractor().getBridges().isEmpty() &&
                 protocolAdapterManager.getProtocolAdapters().isEmpty();
         //-- Populate login prefill
         String prefillUsername = null;
@@ -163,7 +166,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getNotifications() {
-
         final ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder<>();
         final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
         if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
@@ -188,8 +190,16 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getCapabilities() {
-        final CapabilityList capabilityList = capabilityService.getList();
-        return Response.ok(capabilityList).build();
+        final List<Capability> capabilities = capabilityService.getList()
+                .getItems()
+                .stream()
+                .map(cap -> (Capability) Capability.builder()
+                        .id(Capability.IdEnum.fromString(cap.getId()))
+                        .description(cap.getDescription())
+                        .displayName(cap.getDisplayName())
+                        .build()).collect(Collectors.toList());
+
+        return Response.ok(CapabilityList.builder().items(capabilities).build()).build();
     }
 
 

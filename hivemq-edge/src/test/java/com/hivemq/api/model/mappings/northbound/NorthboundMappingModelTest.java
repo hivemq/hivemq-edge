@@ -57,7 +57,7 @@ class NorthboundMappingModelTest {
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
 
-        final NorthboundMapping northboundMapping = northboundMappingModel.to();
+        final NorthboundMapping northboundMapping = northboundMappingModel.toPersitence();
         assertEquals(Long.MAX_VALUE, northboundMapping.getMessageExpiryInterval());
 
     }

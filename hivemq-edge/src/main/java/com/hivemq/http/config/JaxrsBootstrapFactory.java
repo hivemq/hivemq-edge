@@ -75,13 +75,16 @@ public class JaxrsBootstrapFactory {
                         .ciphers(httpsListener.getCipherSuites(), SupportedCipherSuiteFilter.INSTANCE)
                         .build()).context();
 
+                jaxrsConfig.setSslContext(context);
                 jaxrsConfig.setHttpsConfigurator(new HttpsConfigurator(context) {
                     @Override
                     public void configure(final @NotNull HttpsParameters params) {
-                        SSLParameters parameters = getSSLContext().getDefaultSSLParameters();
+                        final SSLContext sslContext = getSSLContext();
+                        final SSLParameters parameters = sslContext.getDefaultSSLParameters();
                         parameters.setProtocols(httpsListener.getProtocols().toArray(new String[0]));
                         parameters.setCipherSuites(httpsListener.getCipherSuites().toArray(new String[0]));
-                        params.setSSLParameters(parameters);
+                        // The SSL parameters needs to come from the supported ones, not the default ones.
+                        params.setSSLParameters(sslContext.getSupportedSSLParameters());
                     }
                 });
             } catch (SSLException e) {
