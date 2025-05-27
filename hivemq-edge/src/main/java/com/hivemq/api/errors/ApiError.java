@@ -1,6 +1,5 @@
 package com.hivemq.api.errors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public abstract class ApiError<E extends ApiError<E>> {
+    private static final String CLASS_PREFIX = "com.hivemq";
+    private static final String TYPE_PREFIX = "https://hivemq.com";
 
     @JsonProperty("code")
     @Schema(description = "Correlation id")
@@ -26,18 +27,29 @@ public abstract class ApiError<E extends ApiError<E>> {
     @JsonProperty(value = "type")
     protected @NotNull String type;
 
-    @JsonCreator
-    public ApiError(
-            @JsonProperty(value = "type") final @NotNull String type,
-            @JsonProperty(value = "title") final @NotNull String title,
-            @JsonProperty(value = "detail") final @Nullable String detail,
-            @JsonProperty(value = "status") final int status,
-            @JsonProperty(value = "code") final @Nullable String code) {
+    protected ApiError(
+            final @NotNull String title,
+            final @Nullable String detail,
+            final int status,
+            final @Nullable String code) {
+        this(null, title, detail, status, code);
+    }
+
+    protected ApiError(
+            final @Nullable String type,
+            final @NotNull String title,
+            final @Nullable String detail,
+            final int status,
+            final @Nullable String code) {
         setCode(code);
         setDetail(detail);
         setStatus(status);
         setTitle(title);
         setType(type);
+    }
+
+    public static String getTypeFromClassName(final @NotNull Class<?> clazz) {
+        return TYPE_PREFIX + clazz.getName().substring(CLASS_PREFIX.length()).replace(".", "/");
     }
 
     public @Nullable String getCode() {
@@ -80,8 +92,8 @@ public abstract class ApiError<E extends ApiError<E>> {
         return type;
     }
 
-    public @NotNull ApiError<E> setType(@NotNull final String type) {
-        this.type = Objects.requireNonNull(type);
+    public @NotNull ApiError<E> setType(@Nullable final String type) {
+        this.type = type == null ? getTypeFromClassName(getClass()) : type;
         return this;
     }
 
