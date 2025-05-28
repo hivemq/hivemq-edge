@@ -6,6 +6,7 @@ build/
 out/
 *.iml
 .idea/*
+.idea/inspectionProfiles/Project_Default.xml
 !.idea/codeStyles
 !.idea/inspectionProfiles
 !.idea/runConfigurations
