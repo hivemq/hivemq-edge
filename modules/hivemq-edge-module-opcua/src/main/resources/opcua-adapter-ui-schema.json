@@ -24,11 +24,6 @@
       "id": "opcuaToMqtt",
       "title": "OPC UA to MQTT",
       "properties": ["opcuaToMqtt"]
-    },
-    {
-      "id": "mqttToOpcua",
-      "title": "MQTT to OPC UA",
-      "properties": ["mqttToOpcua"]
     }
   ],
   "id": {
@@ -36,36 +31,23 @@
   },
   "ui:order": ["id", "uri", "overrideUri", "security", "tls", "auth", "*"],
   "opcuaToMqtt": {
-    "ui:batchMode": true,
-    "opcuaToMqttMappings": {
-      "items": {
-        "ui:order": ["node", "mqttTopic", "mqttQos", "*"],
-        "ui:collapsable": {
-          "titleKey": "mqttTopic"
-        },
-        "node": {
-          "ui:widget": "discovery:tagBrowser"
-        }
-      }
-    }
+    "ui:order": ["publishingInterval", "serverQueueSize", "*"]
   },
-  "mqttToOpcua": {
-    "ui:batchMode": true,
-    "mqttToOpcuaMappings": {
-      "items": {
-        "ui:order": ["node", "mqttTopicFilter", "mqttMaxQos", "*"],
-        "ui:collapsable": {
-          "titleKey": "mqttTopicFilter"
-        },
-        "node": {
-          "ui:widget": "discovery:tagBrowser"
-        }
-      }
+  "tls": {
+    "ui:order": ["enabled", "keystore", "truststore"],
+    "keystore": {
+      "ui:order": ["path", "password", "privateKeyPassword"]
+    },
+    "truststore": {
+      "ui:order": ["enabled", "path", "password"]
     }
   },
   "auth": {
     "basic": {
       "ui:order": ["username", "password", "*"]
+    },
+    "x509": {
+      "ui:order": ["enabled", "*"]
     }
   }
 }

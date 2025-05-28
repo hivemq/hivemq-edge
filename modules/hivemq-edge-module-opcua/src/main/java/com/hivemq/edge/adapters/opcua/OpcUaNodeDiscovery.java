@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaBrowser {
+public class OpcUaNodeDiscovery {
 
     public record CollectedNode(@NotNull String id,
                                 @NotNull String name,
@@ -92,19 +92,24 @@ public class OpcUaBrowser {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth,
-            final BrowseResult[] browseResults) {
+            final @Nullable BrowseResult[] browseResults) {
         final List<CompletableFuture<Void>> childFutures = new ArrayList<>();
         final var references = new ArrayList<ReferenceDescription>();
         final var continuationPoints = new ArrayList<ByteString>();
 
-        for (final BrowseResult result : browseResults) {
-            final var continuationPoint = result.getContinuationPoint();
-            if(continuationPoint != null) {
-                continuationPoints.add(continuationPoint);
-            }
-            final var refs = result.getReferences();
-            if(refs != null) {
-                Collections.addAll(references, result.getReferences());
+        if(browseResults != null) {
+            for (final BrowseResult result : browseResults) {
+                if(result == null) {
+                    continue;
+                }
+                final var continuationPoint = result.getContinuationPoint();
+                if(continuationPoint != null) {
+                    continuationPoints.add(continuationPoint);
+                }
+                final var refs = result.getReferences();
+                if(refs != null) {
+                    Collections.addAll(references, result.getReferences());
+                }
             }
         }
 
@@ -118,7 +123,7 @@ public class OpcUaBrowser {
         }
 
         if (!continuationPoints.isEmpty()) {
-            //TODO this looks liek a bug in Milo
+            //TODO this looks like a bug in Milo
             final var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
             if(!cont.isEmpty()) {
                 childFutures.add(Objects.requireNonNull(client)
@@ -136,19 +141,11 @@ public class OpcUaBrowser {
     }
 
     private static @Nullable NodeType getNodeType(final @NotNull ReferenceDescription ref) {
-        switch (ref.getNodeClass()) {
-            case Object:
-            case ObjectType:
-            case VariableType:
-            case ReferenceType:
-            case DataType:
-                return NodeType.OBJECT;
-            case Variable:
-                return NodeType.VALUE;
-            case View:
-                return NodeType.FOLDER;
-            default:
-                return null;
-        }
+        return switch (ref.getNodeClass()) {
+            case Object, ObjectType, VariableType, ReferenceType, DataType -> NodeType.OBJECT;
+            case Variable -> NodeType.VALUE;
+            case View -> NodeType.FOLDER;
+            default -> null;
+        };
     }
 }
