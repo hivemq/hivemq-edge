@@ -1,12 +1,16 @@
 import { expect } from 'vitest'
-import type { Node } from '@xyflow/react'
+import type { Connection, Node, NodeAddChange } from '@xyflow/react'
+
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { type PolicyOperation, Script } from '@/api/__generated__'
+import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 
 import type { FunctionData, SchemaData, WorkspaceState } from '@datahub/types.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, SchemaType } from '@datahub/types.ts'
 import {
   checkValidityPipeline,
   checkValidityTransformFunction,
+  loadPipeline,
   processOperations,
 } from '@datahub/designer/operation/OperationNode.utils.ts'
 
@@ -510,5 +514,138 @@ describe('processOperations', () => {
       id: 'my-operation-id',
     })
     expect(error).toBeUndefined()
+  })
+})
+
+describe('loadPipeline', () => {
+  it('should return no elements if no pipeline', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: { id: 'my-policy-id' },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const results = loadPipeline(MOCK_NODE_DATA_POLICY, [], null, [], [])
+    expect(results).toHaveLength(0)
+  })
+
+  it('should return fully defined HiveMq.transform elements', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: { id: 'my-policy-id' },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const policyOperations: PolicyOperation[] = [
+      {
+        id: 'node1',
+        functionId: OperationData.Function.SERDES_DESERIALIZE,
+        arguments: {
+          schemaId: 'node-schema-deserializer',
+          schemaVersion: '1',
+        },
+      },
+      {
+        id: 'node2',
+        functionId: 'fn:script1:latest',
+        arguments: {},
+      },
+      {
+        id: 'node3',
+        functionId: OperationData.Function.SERDES_SERIALIZE,
+        arguments: {
+          schemaId: 'node-schema-serializer',
+          schemaVersion: '1',
+        },
+      },
+    ]
+
+    const results = loadPipeline(
+      MOCK_NODE_DATA_POLICY,
+      policyOperations,
+      null,
+      [
+        { ...mockSchemaTempHumidity, id: 'node-schema-deserializer' },
+        { ...mockSchemaTempHumidity, id: 'node-schema-serializer' },
+      ],
+      [
+        {
+          id: 'script1',
+          version: 1,
+          createdAt: '2024-04-22T09:34:51.765Z',
+          functionType: Script.functionType.TRANSFORMATION,
+          source:
+            'Ci8qKgogKgogKiBAcGFyYW0ge09iamVjdH0gcHVibGlzaAogKiBAcGFyYW0ge3N0cmluZ30gcHVibGlzaC50b3BpYyAgICBUaGUgTVFUVCB0b3BpYyB0aGF0IGlzIGN1cnJlbnRseSBzcGVjaWZpZWQgZm9yIHRoaXMgUFVCTElTSCBwYWNrZXQuCiAqIEBwYXJhbSB7T2JqZWN0fSBwdWJsaXNoLnBheWxvYWQgIEEgbGlzdCBvZiB0aGUgbmFtZSBhbmQgdmFsdWUgb2YgYWxsIHVzZXIgcHJvcGVydGllcyBvZiB0aGUgTVFUVCA1IFBVQkxJU0ggcGFja2V0LiBUaGlzIHNldHRpbmcgaGFzIG5vIGVmZmVjdCBvbiBNUVRUIDMgY2xpZW50cy4KICogQHBhcmFtIHtSZWNvcmQ8c3RyaW5nLCBzdHJpbmc+W119IHB1Ymxpc2gudXNlclByb3BlcnRpZXMgVGhlIEpTT04gb2JqZWN0IHJlcHJlc2VudGF0aW9uIG9mIHRoZSBkZXNlcmlhbGl6ZWQgTVFUVCBwYXlsb2FkLgogKiBAcGFyYW0ge09iamVjdH0gY29udGV4dAogKiBAcGFyYW0ge1JlY29yZDxzdHJpbmcsIHN0cmluZz5bXX0gY29udGV4dC5hcmd1bWVudHMgIFRoZSBhcmd1bWVudHMgcHJvdmlkZWQgdG8gdGhlIHNjcmlwdC4gQ3VycmVudGx5LCBhcmd1bWVudHMgY2FuIG9ubHkgYmUgcHJvdmlkZWQgdmlhIGEgZGF0YSBwb2xpY3kuCiAqIEBwYXJhbSB7c3RyaW5nfSBjb250ZXh0LnBvbGljeUlkIFRoZSBwb2xpY3kgaWQgb2YgdGhlIHBvbGljeSBmcm9tIHdoaWNoIHRoZSB0cmFuc2Zvcm1hdGlvbiBmdW5jdGlvbiBpcyBjYWxsZWQuCiAqIEBwYXJhbSB7c3RyaW5nfSBjb250ZXh0LmNsaWVudElkIFRoZSBjbGllbnQgSWQgb2YgdGhlIGNsaWVudCBmcm9tIHdoaWNoIHRoZSBNUVRUIHB1Ymxpc2ggd2FzIHNlbnQuCiAqIEByZXR1cm5zIHtPYmplY3R9IFRoZSBwdWJsaXNoLW9iamVjdCBpcyBwYXNzZWQgYXMgYSBwYXJhbWV0ZXIgaW50byB0aGUgdHJhbnNmb3JtIGZ1bmN0aW9uLiBUaGUgc2FtZSBvYmplY3Qgb3IgYSBuZXcgb2JqZWN0IGlzIHJldHVybmVkIGFzIHRoZSB0cmFuc2Zvcm1lZCBvYmplY3QuCiAqLwpmdW5jdGlvbiB0cmFuc2Zvcm0ocHVibGlzaCwgY29udGV4dCkgewogIHJldHVybiBwdWJsaXNoCn0KCg==',
+        },
+      ]
+    )
+
+    // The transform node is created with a UI ID that starts with 'node_'
+    const transformNode = (results[1] as Connection).target
+    expect(transformNode).toMatch('node_')
+
+    expect(results).toStrictEqual(
+      expect.arrayContaining<NodeAddChange | Connection>([
+        {
+          item: expect.objectContaining<Partial<Node<SchemaData>>>({
+            id: 'node-schema-deserializer',
+            type: DataHubNodeType.SCHEMA,
+          }),
+          type: 'add',
+        },
+        expect.objectContaining<Connection>({
+          source: 'node-schema-deserializer',
+          sourceHandle: null,
+          target: expect.stringContaining(transformNode),
+          targetHandle: 'deserialiser',
+        }),
+        {
+          item: expect.objectContaining<Partial<Node<SchemaData>>>({
+            id: 'node-schema-serializer',
+            type: DataHubNodeType.SCHEMA,
+          }),
+          type: 'add',
+        },
+        expect.objectContaining<Connection>({
+          source: 'node-schema-serializer',
+          sourceHandle: null,
+          target: expect.stringContaining(transformNode),
+          targetHandle: 'serialiser',
+        }),
+        {
+          item: expect.objectContaining<Partial<Node<FunctionData>>>({
+            id: 'script1',
+            type: DataHubNodeType.FUNCTION,
+          }),
+          type: 'add',
+        },
+        expect.objectContaining<Connection>({
+          source: 'script1',
+          sourceHandle: null,
+          target: expect.stringContaining(transformNode),
+          targetHandle: 'function',
+        }),
+        {
+          item: expect.objectContaining<Partial<Node<OperationData>>>({
+            id: expect.stringContaining(transformNode),
+            type: 'OPERATION',
+            data: expect.objectContaining({
+              functionId: 'DataHub.transform',
+            }),
+          }),
+          type: 'add',
+        },
+        expect.objectContaining<Connection>({
+          source: 'node-id',
+          sourceHandle: null,
+          target: expect.stringContaining(transformNode),
+          targetHandle: null,
+        }),
+      ])
+    )
   })
 })
